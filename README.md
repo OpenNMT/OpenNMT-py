@@ -4,6 +4,8 @@ This is a [Pytorch](https://github.com/pytorch/pytorch)
 port of [OpenNMT](https://github.com/OpenNMT/OpenNMT),
 an open-source (MIT) neural machine translation system.
 
+[Currently we are adapting this code, kindly released by the PyTorch team.]
+
 <center style="padding: 40px"><img width="70%" src="http://opennmt.github.io/simple-attn.png" /></center>
 
 ## Quickstart
