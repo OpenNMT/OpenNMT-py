@@ -24,6 +24,7 @@ import torch
 import torch.nn as nn
 import math
 
+_INF = float('inf')
 
 class GlobalAttention(nn.Module):
     def __init__(self, dim):
