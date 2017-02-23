@@ -34,8 +34,10 @@ parser.add_argument('-tgt_vocab',
                     help="Path to an existing target vocabulary")
 
 
-parser.add_argument('-seq_length', type=int, default=50,
-                    help="Maximum sequence length")
+parser.add_argument('-src_seq_length', type=int, default=50,
+                    help="Maximum source sequence length")
+parser.add_argument('-tgt_seq_length', type=int, default=50,
+                    help="Maximum target sequence length")
 parser.add_argument('-shuffle',    type=int, default=1,
                     help="Shuffle data")
 parser.add_argument('-seed',       type=int, default=3435,
@@ -108,7 +110,7 @@ def makeData(srcFile, tgtFile, srcDicts, tgtDicts):
                 print('WARNING: source and target do not have the same number of sentences')
             break
 
-        if len(srcWords) <= opt.seq_length and len(tgtWords) <= opt.seq_length:
+        if len(srcWords) <= opt.src_seq_length and len(tgtWords) <= opt.tgt_seq_length:
 
             src += [srcDicts.convertToIdx(srcWords,
                                           onmt.Constants.UNK_WORD)]
@@ -141,8 +143,8 @@ def makeData(srcFile, tgtFile, srcDicts, tgtDicts):
     src = [src[idx] for idx in perm]
     tgt = [tgt[idx] for idx in perm]
 
-    print('Prepared %d sentences (%d ignored due to length == 0 or > %d)' %
-          (len(src), ignored, opt.seq_length))
+    print('Prepared %d sentences (%d ignored due to length == 0 or source length > %d or target length > %d)' %
+          (len(src), ignored, opt.src_seq_length, opt.tgt_seq_length))
 
     return src, tgt
 
