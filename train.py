@@ -164,6 +164,7 @@ def trainModel(model, trainData, validData, dataset, optim):
 
         total_loss, report_loss = 0, 0
         total_words, report_words = 0, 0
+        report_src_words = 0
         start = time.time()
         for i in range(len(trainData)):
 
@@ -183,16 +184,17 @@ def trainModel(model, trainData, validData, dataset, optim):
 
             report_loss += loss
             total_loss += loss
+            report_src_words += batch[0].data.ne(onmt.Constants.PAD).sum()
             num_words = targets.data.ne(onmt.Constants.PAD).sum()
             total_words += num_words
             report_words += num_words
             if i % opt.log_interval == 0 and i > 0:
-                print("Epoch %2d, %5d/%5d batches; perplexity: %6.2f; %3.0f tokens/s" %
+                print("Epoch %2d, %5d/%5d batches; perplexity: %6.2f; %3.0f Source tokens/s" %
                       (epoch, i, len(trainData),
                       math.exp(report_loss / report_words),
-                      report_words/(time.time()-start)))
+                      report_src_words/(time.time()-start)))
 
-                report_loss = report_words = 0
+                report_loss = report_words = report_src_words = 0
                 start = time.time()
 
         return total_loss / total_words
