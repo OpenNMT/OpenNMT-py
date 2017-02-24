@@ -39,9 +39,3 @@ Not yet implemented:
 - multi-GPU
 - residual connections
 
-## Performance
-
-With default parameters on a single Maxwell GPU, this version runs about 70% faster than the Lua torch OpenNMT. The improved performance comes from two main sources:
-
-- CuDNN is used for the encoder (although not for the decoder, since it can't handle attention)
-- The decoder softmax layer is batched to efficiently trade off CPU vs. memory efficiency; this can be tuned with the -max_generator_batches parameter.
