@@ -33,9 +33,9 @@ The following OpenNMT features are implemented:
 - saving and loading from checkpoints
 - inference (translation) with batching and beam search
 
-Not yet implemented:
+In development:
 
 - word features
-- multi-GPU
-- residual connections
+- multi-GPU 
+- python tokenization tools
 
