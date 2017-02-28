@@ -204,9 +204,8 @@ def trainModel(model, trainData, validData, dataset, optim):
                 print("Epoch %2d, %10d/%10d batches; perplexity: %6.2f; %3.0f Source tokens/s" %
                   (epoch, i, len(trainData), ans,
                   report_src_words/(time.time()-start)))
-
-                report_loss = report_words = report_src_words = 0
-                start = time.time()
+                  report_loss = report_words = report_src_words = 0
+                  start = time.time()
 
         return total_loss / total_words
 
