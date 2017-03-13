@@ -189,8 +189,7 @@ class Translator(object):
         #  (1) convert words to indexes
         dataset = self.buildData(srcBatch, goldBatch)
         batch = dataset[0]
-        batch = [x.transpose(0, 1) for x in batch]
-
+        batch = [x.transpose(0, 1) if x is not None else None for x in batch]
         #  (2) translate
         pred, predScore, attn, goldScore = self.translateBatch(batch)
 
