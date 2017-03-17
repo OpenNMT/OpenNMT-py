@@ -47,6 +47,7 @@ parser.add_argument('-report_every', type=int, default=100000,
 
 opt = parser.parse_args()
 
+torch.manual_seed(opt.seed)
 
 def makeVocabulary(filename, size):
     vocab = onmt.Dict([onmt.Constants.PAD_WORD, onmt.Constants.UNK_WORD,
