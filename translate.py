@@ -50,7 +50,8 @@ def reportScore(name, scoreTotal, wordsTotal):
 def main():
     opt = parser.parse_args()
     opt.cuda = opt.gpu > -1
-    torch.cuda.set_device(opt.gpu)
+    if opt.cuda:
+        torch.cuda.set_device(opt.gpu)
 
     translator = onmt.Translator(opt)
 
@@ -77,7 +78,7 @@ def main():
         predBatch, predScore, goldScore = translator.translate(srcBatch, tgtBatch)
 
         predScoreTotal += sum(score[0] for score in predScore)
-        predWordsTotal += sum(len(x) for x in predBatch)
+        predWordsTotal += sum(len(x[0]) for x in predBatch)
         if tgtF is not None:
             goldScoreTotal += sum(goldScore)
             goldWordsTotal += sum(len(x) for x in tgtBatch)
@@ -87,12 +88,18 @@ def main():
             outF.write(" ".join(predBatch[b][0]) + '\n')
 
             if opt.verbose:
-                print('SENT %d: %s' % (count, " ".join(srcBatch[b])))
+                srcSent = ' '.join(srcBatch[b])
+                if translator.tgt_dict.lower:
+                    srcSent = srcSent.lower()
+                print('SENT %d: %s' % (count, srcSent))
                 print('PRED %d: %s' % (count, " ".join(predBatch[b][0])))
                 print("PRED SCORE: %.4f" % predScore[b][0])
 
                 if tgtF is not None:
-                    print('GOLD %d: %s ' % (count, " ".join(tgtBatch[b])))
+                    tgtSent = ' '.join(tgtBatch[b])
+                    if translator.tgt_dict.lower:
+                        tgtSent = tgtSent.lower()
+                    print('GOLD %d: %s ' % (count, tgtSent))
                     print("GOLD SCORE: %.4f" % goldScore[b])
 
                 if opt.n_best > 1:

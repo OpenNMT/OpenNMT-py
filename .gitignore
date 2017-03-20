@@ -1,4 +1,3 @@
-dcgan/data
-data
-*.pyc
-OpenNMT/data
+pred.txt
+multi-bleu.perl
+*.pt

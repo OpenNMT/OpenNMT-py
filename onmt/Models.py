@@ -10,28 +10,26 @@ class Encoder(nn.Module):
         self.num_directions = 2 if opt.brnn else 1
         assert opt.rnn_size % self.num_directions == 0
         self.hidden_size = opt.rnn_size // self.num_directions
-        inputSize = opt.word_vec_size
+        input_size = opt.word_vec_size
 
         super(Encoder, self).__init__()
         self.word_lut = nn.Embedding(dicts.size(),
                                   opt.word_vec_size,
                                   padding_idx=onmt.Constants.PAD)
-        self.rnn = nn.LSTM(inputSize, self.hidden_size,
+        self.rnn = nn.LSTM(input_size, self.hidden_size,
                         num_layers=opt.layers,
                         dropout=opt.dropout,
                         bidirectional=opt.brnn)
-
-        # self.rnn.bias_ih_l0.data.div_(2)
-        # self.rnn.bias_hh_l0.data.copy_(self.rnn.bias_ih_l0.data)
 
         if opt.pre_word_vecs_enc is not None:
             pretrained = torch.load(opt.pre_word_vecs_enc)
             self.word_lut.weight.copy_(pretrained)
 
     def forward(self, input, hidden=None):
-        batch_size = input.size(0) # batch first for multi-gpu compatibility
-        emb = self.word_lut(input).transpose(0, 1)
+        emb = self.word_lut(input)
+
         if hidden is None:
+            batch_size = emb.size(1)
             h_size = (self.layers * self.num_directions, batch_size, self.hidden_size)
             h_0 = Variable(emb.data.new(*h_size).zero_(), requires_grad=False)
             c_0 = Variable(emb.data.new(*h_size).zero_(), requires_grad=False)
@@ -46,20 +44,19 @@ class StackedLSTM(nn.Module):
         super(StackedLSTM, self).__init__()
         self.dropout = nn.Dropout(dropout)
         self.num_layers = num_layers
+        self.layers = nn.ModuleList()
 
         for i in range(num_layers):
-            layer = nn.LSTMCell(input_size, rnn_size)
-            self.add_module('layer_%d' % i, layer)
+            self.layers.append(nn.LSTMCell(input_size, rnn_size))
             input_size = rnn_size
 
     def forward(self, input, hidden):
         h_0, c_0 = hidden
         h_1, c_1 = [], []
-        for i in range(self.num_layers):
-            layer = getattr(self, 'layer_%d' % i)
+        for i, layer in enumerate(self.layers):
             h_1_i, c_1_i = layer(input, (h_0[i], c_0[i]))
             input = h_1_i
-            if i + 1 != self.num_layers:
+            if i != self.num_layers:
                 input = self.dropout(input)
             h_1 += [h_1_i]
             c_1 += [c_1_i]
@@ -87,9 +84,6 @@ class Decoder(nn.Module):
         self.attn = onmt.modules.GlobalAttention(opt.rnn_size)
         self.dropout = nn.Dropout(opt.dropout)
 
-        # self.rnn.bias_ih.data.div_(2)
-        # self.rnn.bias_hh.data.copy_(self.rnn.bias_ih.data)
-
         self.hidden_size = opt.rnn_size
 
         if opt.pre_word_vecs_enc is not None:
@@ -98,39 +92,33 @@ class Decoder(nn.Module):
 
 
     def forward(self, input, hidden, context, init_output):
-        emb = self.word_lut(input).transpose(0, 1)
-
-        batch_size = input.size(0)
-
-        h_size = (batch_size, self.hidden_size)
-        output = Variable(emb.data.new(*h_size).zero_(), requires_grad=False)
+        emb = self.word_lut(input)
 
         # n.b. you can increase performance if you compute W_ih * x for all
         # iterations in parallel, but that's only possible if
         # self.input_feed=False
         outputs = []
         output = init_output
-        for i, emb_t in enumerate(emb.chunk(emb.size(0), dim=0)):
+        for emb_t in emb.split(1):
             emb_t = emb_t.squeeze(0)
             if self.input_feed:
                 emb_t = torch.cat([emb_t, output], 1)
 
-            output, h = self.rnn(emb_t, hidden)
+            output, hidden = self.rnn(emb_t, hidden)
             output, attn = self.attn(output, context.t())
             output = self.dropout(output)
             outputs += [output]
 
         outputs = torch.stack(outputs)
-        return outputs.transpose(0, 1), h, attn
+        return outputs, hidden, attn
 
 
 class NMTModel(nn.Module):
 
-    def __init__(self, encoder, decoder, generator):
+    def __init__(self, encoder, decoder):
         super(NMTModel, self).__init__()
         self.encoder = encoder
         self.decoder = decoder
-        self.generator = generator
         self.generate = False
 
     def set_generate(self, enabled):
@@ -153,7 +141,7 @@ class NMTModel(nn.Module):
 
     def forward(self, input):
         src = input[0]
-        tgt = input[1][:, :-1]  # exclude last target from inputs
+        tgt = input[1][:-1]  # exclude last target from inputs
         enc_hidden, context = self.encoder(src)
         init_output = self.make_init_decoder_output(context)
 
@@ -161,7 +149,7 @@ class NMTModel(nn.Module):
                       self._fix_enc_hidden(enc_hidden[1]))
 
         out, dec_hidden, _attn = self.decoder(tgt, enc_hidden, context, init_output)
-        if self.generate:
+        if hasattr(self, 'generator') and self.generate:
             out = self.generator(out)
 
         return out

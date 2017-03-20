@@ -46,7 +46,7 @@ class GlobalAttention(nn.Module):
         # Get attention
         attn = torch.bmm(context, targetT).squeeze(2)  # batch x sourceL
         if self.mask is not None:
-            attn.data.masked_fill_(self.mask, float('-inf'))
+            attn.data.masked_fill_(self.mask, -float('inf'))
         attn = self.sm(attn)
         attn3 = attn.view(attn.size(0), 1, attn.size(1))  # batch x 1 x sourceL
 
