@@ -3,7 +3,7 @@ import onmt
 import argparse
 import torch
 
-parser = argparse.ArgumentParser(description='preprocess.lua')
+parser = argparse.ArgumentParser(description='preprocess.py')
 
 ##
 ## **Preprocess Options**
