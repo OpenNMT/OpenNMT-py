@@ -253,8 +253,7 @@ def trainModel(model, trainData, validData, dataset, optim):
             'dicts': dataset['dicts'],
             'opt': opt,
             'epoch': epoch,
-            'optimizer': optim.optimizer.state_dict(),
-            'last_ppl': optim.last_ppl,
+            'optim': optim
         }
         torch.save(checkpoint,
                    '%s_acc_%.2f_ppl_%.2f_e%d.pt' % (opt.save_model, 100*valid_acc, valid_ppl, epoch))
@@ -307,6 +306,7 @@ def main():
     if opt.train_from_state_dict:
         print('Loading model from checkpoint at %s' % opt.train_from_state_dict)
         model.load_state_dict(checkpoint['model'])
+        generator.load_state_dict(checkpoint['generator'])
         opt.start_epoch = checkpoint['epoch'] + 1
 
     if len(opt.gpus) >= 1:
@@ -326,19 +326,20 @@ def main():
         for p in model.parameters():
             p.data.uniform_(-opt.param_init, opt.param_init)
 
-    optim = onmt.Optim(
-        model.parameters(), opt.optim, opt.learning_rate, opt.max_grad_norm,
-        lr_decay=opt.learning_rate_decay,
-        start_decay_at=opt.start_decay_at
-    )
+        optim = onmt.Optim(
+            opt.optim, opt.learning_rate, opt.max_grad_norm,
+            lr_decay=opt.learning_rate_decay,
+            start_decay_at=opt.start_decay_at
+        )
+    else:
+        print('Loading optimizer from checkpoint:')
+        optim = checkpoint['optim']
+        print(optim)
 
-    if opt.train_from:
+    optim.set_parameters(model.parameters())
+
+    if opt.train_from or opt.train_from_state_dict:
         optim.optimizer.load_state_dict(checkpoint['optim'].optimizer.state_dict())
-
-    if opt.train_from_state_dict:
-        optim.optimizer.load_state_dict(checkpoint['optimizer'])
-
-    optim.learning_rate = optim.optimizer.param_groups[0]['lr']
 
     nParams = sum([p.nelement() for p in model.parameters()])
     print('* number of parameters: %d' % nParams)
