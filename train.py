@@ -61,10 +61,6 @@ parser.add_argument('-param_init', type=float, default=0.1,
                     with support (-param_init, param_init)""")
 parser.add_argument('-optim', default='sgd',
                     help="Optimization method. [sgd|adagrad|adadelta|adam]")
-parser.add_argument('-learning_rate', type=float, default=1.0,
-                    help="""Starting learning rate. If adagrad/adadelta/adam is
-                    used, then this is the global learning rate. Recommended
-                    settings: sgd = 1, adagrad = 0.1, adadelta = 1, adam = 0.001""")
 parser.add_argument('-max_grad_norm', type=float, default=5,
                     help="""If the norm of the gradient vector exceeds this,
                     renormalize it to have the norm equal to max_grad_norm""")
@@ -79,8 +75,10 @@ parser.add_argument('-extra_shuffle', action="store_true",
                     shuffle and re-assign mini-batches""")
 
 #learning rate
-parser.add_argument('-fix_learning_rate', action='store_false', dest='update_learning_rate',
-                    help="Do not decay learning rate (may be desirable for some optimzers (e.g. Adam)")
+parser.add_argument('-learning_rate', type=float, default=1.0,
+                    help="""Starting learning rate. If adagrad/adadelta/adam is
+                    used, then this is the global learning rate. Recommended
+                    settings: sgd = 1, adagrad = 0.1, adadelta = 1, adam = 0.001""")
 parser.add_argument('-learning_rate_decay', type=float, default=0.5,
                     help="""If update_learning_rate, decay learning rate by
                     this much if (i) perplexity does not decrease on the
@@ -107,8 +105,6 @@ parser.add_argument('-gpus', default=[], nargs='+', type=int,
 
 parser.add_argument('-log_interval', type=int, default=50,
                     help="Print stats at this interval.")
-# parser.add_argument('-seed', type=int, default=3435,
-#                     help="Seed for random initialization")
 
 opt = parser.parse_args()
 
@@ -244,9 +240,8 @@ def trainModel(model, trainData, validData, dataset, optim):
         print('Validation perplexity: %g' % valid_ppl)
         print('Validation accuracy: %g' % (valid_acc*100))
 
-        #  (3) maybe update the learning rate
-        if opt.update_learning_rate:
-            optim.updateLearningRate(valid_loss, epoch)
+        #  (3) update the learning rate
+        optim.updateLearningRate(valid_loss, epoch)
 
         model_state_dict = model.module.state_dict() if len(opt.gpus) > 1 else model.state_dict()
         model_state_dict = {k: v for k, v in model_state_dict.items() if 'generator' not in k}
@@ -342,6 +337,8 @@ def main():
 
     if opt.train_from_state_dict:
         optim.optimizer.load_state_dict(checkpoint['optimizer'])
+
+    optim.learning_rate = optim.optimizer.param_groups[0]['lr']
 
     nParams = sum([p.nelement() for p in model.parameters()])
     print('* number of parameters: %d' % nParams)
