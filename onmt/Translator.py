@@ -63,7 +63,7 @@ class Translator(object):
         return tokens
 
     def translateBatch(self, srcBatch, tgtBatch):
-        batchSize = tgtBatch.size(1)
+        batchSize = srcBatch[0].size(1)
         beamSize = self.opt.beam_size
 
         #  (1) run the encoder on the src
@@ -198,7 +198,7 @@ class Translator(object):
 
         #  (3) convert indexes to words
         predBatch = []
-        for b in range(tgt.size(1)):
+        for b in range(src[0].size(1)):
             predBatch.append(
                 [self.buildTargetTokens(pred[b][n], srcBatch[b], attn[b][n])
                         for n in range(self.opt.n_best)]

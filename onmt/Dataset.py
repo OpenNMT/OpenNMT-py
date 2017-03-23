@@ -58,6 +58,8 @@ class Dataset(object):
             indices, srcBatch, tgtBatch = zip(*batch)
 
         def wrap(b):
+            if b is None:
+                return b
             b = torch.stack(b, 0).t().contiguous()
             if self.cuda:
                 b = b.cuda()
