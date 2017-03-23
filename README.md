@@ -8,8 +8,6 @@ an open-source (MIT) neural machine translation system.
 
 ## Quickstart
 
-Use of OpenNMT consists of four steps:
-
 ### 0) Download the data.
 
 ```wget https://s3.amazonaws.com/pytorch/examples/opennmt/data/onmt-data.tar && tar -xf onmt-data.tar```
@@ -50,26 +48,29 @@ wget https://staff.fnwi.uva.nl/d.elliott/wmt16/mmt16_task1_test.tgz && tar -xf m
 
 ```bash
 wget https://raw.githubusercontent.com/moses-smt/mosesdecoder/master/scripts/tokenizer/tokenizer.perl
-sed -i "s/$RealBin\/..\/share\/nonbreaking_prefixes//" tokenizer.perl
 wget https://github.com/moses-smt/mosesdecoder/blob/master/scripts/share/nonbreaking_prefixes/nonbreaking_prefix.de
 wget https://github.com/moses-smt/mosesdecoder/blob/master/scripts/share/nonbreaking_prefixes/nonbreaking_prefix.en
-for l in en de; do for f in data/multi30k/*.$l; do if [[ "$f" != *"test"* ]]; then sed -i "$ d" $f; fi; perl tokenizer.perl -no-escape -l $l -q  < $f > $f.tok; done; done
-python preprocess.py -train_src data/multi30k/train.en.tok -train_tgt data/multi30k/train.de.tok -valid_src data/multi30k/val.en.tok -valid_tgt data/multi30k/val.de.tok -save_data data/multi30k
+sed -i "s/$RealBin\/..\/share\/nonbreaking_prefixes//" tokenizer.perl
+for l in en de; do for f in data/multi30k/*.$l; do if [[ "$f" != *"test"* ]]; then sed -i "$ d" $f; fi;  done; done
+for l in en de; do for f in data/multi30k/*.$l; do perl tokenizer.perl -a -no-escape -l $l -q  < $f > $f.atok; done; done
+python preprocess.py -train_src data/multi30k/train.en.atok -train_tgt data/multi30k/train.de.atok -valid_src data/multi30k/val.en.atok -valid_tgt data/multi30k/val.de.atok -save_data data/multi30k.atok.low -lower
 ```
 
 ### 2) Train the model.
 
-```python train.py -data data/multi30k-train.pt -save_model multi30k_model -gpus 0```
+```python train.py -data data/multi30k.atok.low.train.pt -save_model multi30k_model -gpus 0```
 
 ### 3) Translate sentences.
 
-```python translate.py -gpu 0 -model multi30k_model_e13_*.pt -src data/multi30k/test.en.tok -tgt data/multi30k/test.de.tok -replace_unk -verbose -output multi30k_pred.txt```
+```bash
+python translate.py -gpu 0 -model multi30k_model_e13_*.pt -src data/multi30k/test.en.atok -tgt data/multi30k/test.de.atok -replace_unk -verbose -output multi30k.test.pred.atok
+```
 
 ### 4) Evaluate.
 
 ```bash
 wget https://raw.githubusercontent.com/moses-smt/mosesdecoder/master/scripts/generic/multi-bleu.perl
-perl multi-bleu.perl data/multi30k/test.de.tok < multi30k_pred.txt
+perl multi-bleu.perl data/multi30k/test.de.atok < multi30k.test.pred.atok
 ```
 
 ## Pretrained Models

@@ -59,37 +59,16 @@ class Translator(object):
             for i in range(len(tokens)):
                 if tokens[i] == onmt.Constants.UNK_WORD:
                     _, maxIndex = attn[i].max(0)
-                    # FIXME phrase table
                     tokens[i] = src[maxIndex[0]]
-
         return tokens
 
-    def translateBatch(self, batch):
-        srcBatch, tgtBatch = batch
-        batchSize = srcBatch.size(1)
+    def translateBatch(self, srcBatch, tgtBatch):
+        batchSize = srcBatch[0].size(1)
         beamSize = self.opt.beam_size
 
         #  (1) run the encoder on the src
-
-        encStates, context = None, None
-
-        if self.model.encoder.num_directions == 2:
-            # bidirectional encoder is negatively impacted by padding
-            # run with batch size 1 for improved translations
-            # This will be resolved when variable length LSTMs are used instead
-            encStates, context = self.model.encoder(srcBatch, hidden=encStates)
-        else:
-            # have to execute the encoder manually to deal with padding
-            context = []
-            for srcBatch_t in srcBatch.split(1):
-                encStates, context_t = self.model.encoder(srcBatch_t, hidden=encStates)
-                batchPadIdx = srcBatch_t.data.squeeze(0).eq(onmt.Constants.PAD).nonzero()
-                if batchPadIdx.nelement() > 0:
-                    batchPadIdx = batchPadIdx.squeeze(1)
-                    encStates[0].data.index_fill_(1, batchPadIdx, 0)
-                    encStates[1].data.index_fill_(1, batchPadIdx, 0)
-                context += [context_t]
-            context = torch.cat(context)
+        encStates, context = self.model.encoder(srcBatch)
+        srcBatch = srcBatch[0] # drop the lengths needed for encoder
 
         rnnSize = context.size(2)
         encStates = (self.model._fix_enc_hidden(encStates[0]),
@@ -212,17 +191,17 @@ class Translator(object):
     def translate(self, srcBatch, goldBatch):
         #  (1) convert words to indexes
         dataset = self.buildData(srcBatch, goldBatch)
-        batch = dataset[0]
+        src, tgt, indices = dataset[0]
 
         #  (2) translate
-        pred, predScore, attn, goldScore = self.translateBatch(batch)
+        pred, predScore, attn, goldScore = self.translateBatch(src, tgt)
 
         #  (3) convert indexes to words
         predBatch = []
-        for b in range(batch[0].size(1)):
+        for b in range(src[0].size(1)):
             predBatch.append(
                 [self.buildTargetTokens(pred[b][n], srcBatch[b], attn[b][n])
                         for n in range(self.opt.n_best)]
             )
 
-        return predBatch, predScore, goldScore
+        return list(zip(*sorted(zip(predBatch, predScore, goldScore, indices), key=lambda x: x[-1])))[:-1]

@@ -76,7 +76,7 @@ def main():
             continue
 
         predBatch, predScore, goldScore = translator.translate(srcBatch, tgtBatch)
-
+ 
         predScoreTotal += sum(score[0] for score in predScore)
         predWordsTotal += sum(len(x[0]) for x in predBatch)
         if tgtF is not None:

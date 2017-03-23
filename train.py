@@ -61,10 +61,6 @@ parser.add_argument('-param_init', type=float, default=0.1,
                     with support (-param_init, param_init)""")
 parser.add_argument('-optim', default='sgd',
                     help="Optimization method. [sgd|adagrad|adadelta|adam]")
-parser.add_argument('-learning_rate', type=float, default=1.0,
-                    help="""Starting learning rate. If adagrad/adadelta/adam is
-                    used, then this is the global learning rate. Recommended
-                    settings: sgd = 1, adagrad = 0.1, adadelta = 1, adam = 0.001""")
 parser.add_argument('-max_grad_norm', type=float, default=5,
                     help="""If the norm of the gradient vector exceeds this,
                     renormalize it to have the norm equal to max_grad_norm""")
@@ -79,8 +75,10 @@ parser.add_argument('-extra_shuffle', action="store_true",
                     shuffle and re-assign mini-batches""")
 
 #learning rate
-parser.add_argument('-fix_learning_rate', action='store_false', dest='update_learning_rate',
-                    help="Do not decay learning rate (may be desirable for some optimzers (e.g. Adam)")
+parser.add_argument('-learning_rate', type=float, default=1.0,
+                    help="""Starting learning rate. If adagrad/adadelta/adam is
+                    used, then this is the global learning rate. Recommended
+                    settings: sgd = 1, adagrad = 0.1, adadelta = 1, adam = 0.001""")
 parser.add_argument('-learning_rate_decay', type=float, default=0.5,
                     help="""If update_learning_rate, decay learning rate by
                     this much if (i) perplexity does not decrease on the
@@ -107,8 +105,6 @@ parser.add_argument('-gpus', default=[], nargs='+', type=int,
 
 parser.add_argument('-log_interval', type=int, default=50,
                     help="Print stats at this interval.")
-# parser.add_argument('-seed', type=int, default=3435,
-#                     help="Seed for random initialization")
 
 opt = parser.parse_args()
 
@@ -159,7 +155,7 @@ def eval(model, criterion, data):
 
     model.eval()
     for i in range(len(data)):
-        batch = data[i]
+        batch = data[i][:-1] # exclude original indices
         outputs = model(batch)
         targets = batch[1][1:]  # exclude <s> from targets
         loss, _, num_correct = memoryEfficientLoss(
@@ -194,7 +190,7 @@ def trainModel(model, trainData, validData, dataset, optim):
         for i in range(len(trainData)):
 
             batchIdx = batchOrder[i] if epoch > opt.curriculum else i
-            batch = trainData[batchIdx]
+            batch = trainData[batchIdx][:-1] # exclude original indices
 
             model.zero_grad()
             outputs = model(batch)
@@ -211,7 +207,7 @@ def trainModel(model, trainData, validData, dataset, optim):
             report_loss += loss
             report_num_correct += num_correct
             report_tgt_words += num_words
-            report_src_words += batch[0].data.ne(onmt.Constants.PAD).sum()
+            report_src_words += sum(batch[0][1])
             total_loss += loss
             total_num_correct += num_correct
             total_words += num_words
@@ -244,9 +240,8 @@ def trainModel(model, trainData, validData, dataset, optim):
         print('Validation perplexity: %g' % valid_ppl)
         print('Validation accuracy: %g' % (valid_acc*100))
 
-        #  (3) maybe update the learning rate
-        if opt.update_learning_rate:
-            optim.updateLearningRate(valid_loss, epoch)
+        #  (3) update the learning rate
+        optim.updateLearningRate(valid_loss, epoch)
 
         model_state_dict = model.module.state_dict() if len(opt.gpus) > 1 else model.state_dict()
         model_state_dict = {k: v for k, v in model_state_dict.items() if 'generator' not in k}
@@ -258,8 +253,7 @@ def trainModel(model, trainData, validData, dataset, optim):
             'dicts': dataset['dicts'],
             'opt': opt,
             'epoch': epoch,
-            'optimizer': optim.optimizer.state_dict(),
-            'last_ppl': optim.last_ppl,
+            'optim': optim
         }
         torch.save(checkpoint,
                    '%s_acc_%.2f_ppl_%.2f_e%d.pt' % (opt.save_model, 100*valid_acc, valid_ppl, epoch))
@@ -312,6 +306,7 @@ def main():
     if opt.train_from_state_dict:
         print('Loading model from checkpoint at %s' % opt.train_from_state_dict)
         model.load_state_dict(checkpoint['model'])
+        generator.load_state_dict(checkpoint['generator'])
         opt.start_epoch = checkpoint['epoch'] + 1
 
     if len(opt.gpus) >= 1:
@@ -331,17 +326,20 @@ def main():
         for p in model.parameters():
             p.data.uniform_(-opt.param_init, opt.param_init)
 
-    optim = onmt.Optim(
-        model.parameters(), opt.optim, opt.learning_rate, opt.max_grad_norm,
-        lr_decay=opt.learning_rate_decay,
-        start_decay_at=opt.start_decay_at
-    )
+        optim = onmt.Optim(
+            opt.optim, opt.learning_rate, opt.max_grad_norm,
+            lr_decay=opt.learning_rate_decay,
+            start_decay_at=opt.start_decay_at
+        )
+    else:
+        print('Loading optimizer from checkpoint:')
+        optim = checkpoint['optim']
+        print(optim)
 
-    if opt.train_from:
+    optim.set_parameters(model.parameters())
+
+    if opt.train_from or opt.train_from_state_dict:
         optim.optimizer.load_state_dict(checkpoint['optim'].optimizer.state_dict())
-
-    if opt.train_from_state_dict:
-        optim.optimizer.load_state_dict(checkpoint['optimizer'])
 
     nParams = sum([p.nelement() for p in model.parameters()])
     print('* number of parameters: %d' % nParams)

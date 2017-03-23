@@ -5,7 +5,8 @@ from torch.nn.utils import clip_grad_norm
 
 class Optim(object):
 
-    def _makeOptimizer(self):
+    def set_parameters(self, params):
+        self.params = list(params)  # careful: params may be a generator
         if self.method == 'sgd':
             self.optimizer = optim.SGD(self.params, lr=self.lr)
         elif self.method == 'adagrad':
@@ -17,8 +18,7 @@ class Optim(object):
         else:
             raise RuntimeError("Invalid optim method: " + self.method)
 
-    def __init__(self, params, method, lr, max_grad_norm, lr_decay=1, start_decay_at=None):
-        self.params = list(params)  # careful: params may be a generator
+    def __init__(self, method, lr, max_grad_norm, lr_decay=1, start_decay_at=None):
         self.last_ppl = None
         self.lr = lr
         self.max_grad_norm = max_grad_norm
@@ -26,8 +26,6 @@ class Optim(object):
         self.lr_decay = lr_decay
         self.start_decay_at = start_decay_at
         self.start_decay = False
-
-        self._makeOptimizer()
 
     def step(self):
         # Compute gradients norm.
@@ -47,5 +45,4 @@ class Optim(object):
             print("Decaying learning rate to %g" % self.lr)
 
         self.last_ppl = ppl
-
-        self._makeOptimizer()
+        self.optimizer.param_groups[0]['lr'] = self.lr
