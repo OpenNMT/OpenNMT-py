@@ -155,7 +155,7 @@ def eval(model, criterion, data):
 
     model.eval()
     for i in range(len(data)):
-        batch = data[i]
+        batch = data[i][:-1] # exclude original indices
         outputs = model(batch)
         targets = batch[1][1:]  # exclude <s> from targets
         loss, _, num_correct = memoryEfficientLoss(
@@ -190,7 +190,7 @@ def trainModel(model, trainData, validData, dataset, optim):
         for i in range(len(trainData)):
 
             batchIdx = batchOrder[i] if epoch > opt.curriculum else i
-            batch = trainData[batchIdx]
+            batch = trainData[batchIdx][:-1] # exclude original indices
 
             model.zero_grad()
             outputs = model(batch)
@@ -207,7 +207,7 @@ def trainModel(model, trainData, validData, dataset, optim):
             report_loss += loss
             report_num_correct += num_correct
             report_tgt_words += num_words
-            report_src_words += batch[0].data.ne(onmt.Constants.PAD).sum()
+            report_src_words += sum(batch[0][1])
             total_loss += loss
             total_num_correct += num_correct
             total_words += num_words

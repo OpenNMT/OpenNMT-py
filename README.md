@@ -62,13 +62,15 @@ python preprocess.py -train_src data/multi30k/train.en.atok -train_tgt data/mult
 
 ### 3) Translate sentences.
 
-```python translate.py -gpu 0 -model multi30k_model_e13_*.pt -src data/multi30k/test.en.tok -tgt data/multi30k/test.de.tok -replace_unk -verbose -output multi30k_pred.txt```
+```bash
+python translate.py -gpu 0 -model multi30k_model_e13_*.pt -src data/multi30k/test.en.atok -tgt data/multi30k/test.de.atok -replace_unk -verbose -output multi30k.test.pred.atok
+```
 
 ### 4) Evaluate.
 
 ```bash
 wget https://raw.githubusercontent.com/moses-smt/mosesdecoder/master/scripts/generic/multi-bleu.perl
-perl multi-bleu.perl data/multi30k/test.de.tok < multi30k_pred.txt
+perl multi-bleu.perl data/multi30k/test.de.atok < multi30k.test.pred.atok
 ```
 
 ## Pretrained Models

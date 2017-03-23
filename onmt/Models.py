@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 import onmt.modules
+from torch.nn.utils.rnn import pad_packed_sequence as unpack
+from torch.nn.utils.rnn import pack_padded_sequence as pack
 
 class Encoder(nn.Module):
 
@@ -26,16 +28,13 @@ class Encoder(nn.Module):
             self.word_lut.weight.copy_(pretrained)
 
     def forward(self, input, hidden=None):
-        emb = self.word_lut(input)
-
-        if hidden is None:
-            batch_size = emb.size(1)
-            h_size = (self.layers * self.num_directions, batch_size, self.hidden_size)
-            h_0 = Variable(emb.data.new(*h_size).zero_(), requires_grad=False)
-            c_0 = Variable(emb.data.new(*h_size).zero_(), requires_grad=False)
-            hidden = (h_0, c_0)
-
+        if isinstance(input, tuple):
+            emb = pack(self.word_lut(input[0]), input[1])
+        else:
+            emb = self.word_lut(input)
         outputs, hidden_t = self.rnn(emb, hidden)
+        if isinstance(input, tuple):
+            outputs = unpack(outputs)[0]
         return hidden_t, outputs
 
 
@@ -119,10 +118,6 @@ class NMTModel(nn.Module):
         super(NMTModel, self).__init__()
         self.encoder = encoder
         self.decoder = decoder
-        self.generate = False
-
-    def set_generate(self, enabled):
-        self.generate = enabled
 
     def make_init_decoder_output(self, context):
         batch_size = context.size(1)
@@ -149,7 +144,5 @@ class NMTModel(nn.Module):
                       self._fix_enc_hidden(enc_hidden[1]))
 
         out, dec_hidden, _attn = self.decoder(tgt, enc_hidden, context, init_output)
-        if hasattr(self, 'generator') and self.generate:
-            out = self.generator(out)
 
         return out
