@@ -46,6 +46,10 @@ def reportScore(name, scoreTotal, wordsTotal):
         name, scoreTotal / wordsTotal,
         name, math.exp(-scoreTotal/wordsTotal)))
 
+def addone(f):
+    for line in f:
+        yield line
+    yield None
 
 def main():
     opt = parser.parse_args()
@@ -64,16 +68,21 @@ def main():
     count = 0
 
     tgtF = open(opt.tgt) if opt.tgt else None
-    for line in open(opt.src):
+    for line in addone(open(opt.src)):
+        
+        if line is not None:
+            srcTokens = line.split()
+            srcBatch += [srcTokens]
+            if tgtF:
+                tgtTokens = tgtF.readline().split() if tgtF else None
+                tgtBatch += [tgtTokens]
 
-        srcTokens = line.split()
-        srcBatch += [srcTokens]
-        if tgtF:
-            tgtTokens = tgtF.readline().split() if tgtF else None
-            tgtBatch += [tgtTokens]
-
-        if len(srcBatch) < opt.batch_size:
-            continue
+            if len(srcBatch) < opt.batch_size:
+                continue
+        else:
+            # at the end of file, check last batch
+            if len(srcBatch) == 0:
+                break
 
         predBatch, predScore, goldScore = translator.translate(srcBatch, tgtBatch)
  
@@ -86,6 +95,7 @@ def main():
         for b in range(len(predBatch)):
             count += 1
             outF.write(" ".join(predBatch[b][0]) + '\n')
+            outF.flush()
 
             if opt.verbose:
                 srcSent = ' '.join(srcBatch[b])
