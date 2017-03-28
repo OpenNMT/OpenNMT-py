@@ -18,7 +18,7 @@ an open-source (MIT) neural machine translation system.
 
 ### 2) Train the model.
 
-```python train.py -data data/demo-train.pt -save_model demo_model -gpus 0```
+```python train.py -data data/demo.train.pt -save_model demo_model -gpus 0```
 
 ### 3) Translate sentences.
 
