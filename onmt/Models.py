@@ -85,7 +85,7 @@ class Decoder(nn.Module):
 
         self.hidden_size = opt.rnn_size
 
-        if opt.pre_word_vecs_enc is not None:
+        if opt.pre_word_vecs_dec is not None:
             pretrained = torch.load(opt.pre_word_vecs_dec)
             self.word_lut.weight.copy_(pretrained)
 
