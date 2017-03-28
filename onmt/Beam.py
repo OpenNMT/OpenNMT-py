@@ -1,3 +1,5 @@
+from __future__ import division
+
 # Class for managing the internals of the beam search process.
 #
 #

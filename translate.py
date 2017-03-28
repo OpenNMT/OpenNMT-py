@@ -1,3 +1,5 @@
+from __future__ import division
+
 import onmt
 import torch
 import argparse
