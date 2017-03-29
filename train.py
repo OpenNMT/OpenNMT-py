@@ -234,7 +234,7 @@ def trainModel(model, trainData, validData, dataset, optim):
         train_loss, train_acc = trainEpoch(epoch)
         train_ppl = math.exp(min(train_loss, 100))
         print('Train perplexity: %g' % train_ppl)
-        print('Train accuracy: %g' % train_acc)
+        print('Train accuracy: %g' % (train_acc*100))
 
         #  (2) evaluate on the validation set
         valid_loss, valid_acc = eval(model, criterion, validData)
