@@ -195,6 +195,7 @@ class Translator(object):
 
         #  (2) translate
         pred, predScore, attn, goldScore = self.translateBatch(src, tgt)
+        pred, predScore, attn, goldScore = list(zip(*sorted(zip(pred, predScore, attn, goldScore, indices), key=lambda x: x[-1])))[:-1]
 
         #  (3) convert indexes to words
         predBatch = []
@@ -204,4 +205,4 @@ class Translator(object):
                         for n in range(self.opt.n_best)]
             )
 
-        return list(zip(*sorted(zip(predBatch, predScore, goldScore, indices), key=lambda x: x[-1])))[:-1]
+        return predBatch, predScore, goldScore
