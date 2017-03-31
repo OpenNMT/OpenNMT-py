@@ -50,7 +50,7 @@ class Translator(object):
                        onmt.Constants.EOS_WORD) for b in goldBatch]
 
         return onmt.Dataset(srcData, tgtData,
-            self.opt.batch_size, self.opt.cuda)
+            self.opt.batch_size, self.opt.cuda, volatile=True)
 
     def buildTargetTokens(self, pred, src, attn):
         tokens = self.tgt_dict.convertToLabels(pred, onmt.Constants.EOS)
@@ -102,9 +102,9 @@ class Translator(object):
         #  (3) run the decoder to generate sentences, using beam search
 
         # Expand tensors for each beam.
-        context = Variable(context.data.repeat(1, beamSize, 1), volatile=True)
-        decStates = (Variable(encStates[0].data.repeat(1, beamSize, 1), volatile=True),
-                     Variable(encStates[1].data.repeat(1, beamSize, 1), volatile=True))
+        context = Variable(context.data.repeat(1, beamSize, 1))
+        decStates = (Variable(encStates[0].data.repeat(1, beamSize, 1)),
+                     Variable(encStates[1].data.repeat(1, beamSize, 1)))
 
         beam = [onmt.Beam(beamSize, self.opt.cuda) for k in range(batchSize)]
 
