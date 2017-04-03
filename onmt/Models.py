@@ -23,6 +23,7 @@ class Encoder(nn.Module):
                         dropout=opt.dropout,
                         bidirectional=opt.brnn)
 
+    def load_pretrained_vectors(self, opt):
         if opt.pre_word_vecs_enc is not None:
             pretrained = torch.load(opt.pre_word_vecs_enc)
             self.word_lut.weight.data.copy_(pretrained)
@@ -85,10 +86,10 @@ class Decoder(nn.Module):
 
         self.hidden_size = opt.rnn_size
 
+    def load_pretrained_vectors(self, opt):
         if opt.pre_word_vecs_dec is not None:
             pretrained = torch.load(opt.pre_word_vecs_dec)
             self.word_lut.weight.data.copy_(pretrained)
-
 
     def forward(self, input, hidden, context, init_output):
         emb = self.word_lut(input)
