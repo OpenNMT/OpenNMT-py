@@ -68,6 +68,10 @@ class Dataset(object):
             b = Variable(b, volatile=self.volatile)
             return b
 
+        # wrap lengths in a Variable to properly split it in DataParallel
+        lengths = torch.LongTensor(lengths).view(1, -1)
+        lengths = Variable(lengths, volatile=self.volatile)
+
         return (wrap(srcBatch), lengths), wrap(tgtBatch), indices
 
     def __len__(self):
