@@ -74,7 +74,7 @@ def initVocabulary(name, dataFile, vocabFile, vocabSize):
         print('Reading ' + name + ' vocabulary from \'' + vocabFile + '\'...')
         vocab = onmt.Dict()
         vocab.loadFile(vocabFile)
-        print('Loaded ' + vocab.size() + ' ' + name + ' words')
+        print('Loaded ' + str(vocab.size()) + ' ' + name + ' words')
 
     if vocab is None:
         # If a dictionary is still missing, generate it.
