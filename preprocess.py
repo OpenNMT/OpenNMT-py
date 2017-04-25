@@ -102,14 +102,21 @@ def makeData(srcFile, tgtFile, srcDicts, tgtDicts):
     tgtF = open(tgtFile)
 
     while True:
-        sline = srcF.readline().strip()
-        tline = tgtF.readline().strip()
+        sline = srcF.readline()
+        tline = tgtF.readline()
 
         if sline == "" and tline == "":
             break
 
         if sline == "" or tline == "":
-            print('WARNING: ignoring an empty line')
+            print('WARNING: source and target do not have the same number of sentences')
+            break
+
+        sline = sline.strip()
+        tline = tline.strip()
+
+        if sline == "" or tline == "":
+            print('WARNING: ignoring an empty line ('+str(count)+')')
             continue
 
         srcWords = sline.split()
