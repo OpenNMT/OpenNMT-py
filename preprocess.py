@@ -102,6 +102,13 @@ def makeData(srcFile, tgtFile, srcDicts, tgtDicts):
     tgtF = open(tgtFile)
 
     while True:
+        sline = srcF.readline().strip()
+        tline = tgtF.readline().strip()
+
+        if sline == "" or tline == "":
+            print('WARNING: ignoring an empty line')
+            continue
+
         srcWords = srcF.readline().split()
         tgtWords = tgtF.readline().split()
 
