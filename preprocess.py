@@ -105,17 +105,15 @@ def makeData(srcFile, tgtFile, srcDicts, tgtDicts):
         sline = srcF.readline().strip()
         tline = tgtF.readline().strip()
 
+        if sline == "" and tline == "":
+            break
+
         if sline == "" or tline == "":
             print('WARNING: ignoring an empty line')
             continue
 
-        srcWords = srcF.readline().split()
-        tgtWords = tgtF.readline().split()
-
-        if not srcWords or not tgtWords:
-            if srcWords and not tgtWords or not srcWords and tgtWords:
-                print('WARNING: source and target do not have the same number of sentences')
-            break
+        srcWords = sline.split()
+        tgtWords = tline.split()
 
         if len(srcWords) <= opt.seq_length and len(tgtWords) <= opt.seq_length:
 
