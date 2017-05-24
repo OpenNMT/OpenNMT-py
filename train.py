@@ -243,7 +243,7 @@ def trainModel(model, trainData, validData, dataset, optim):
         print('Validation accuracy: %g' % (valid_acc*100))
 
         #  (3) update the learning rate
-        optim.updateLearningRate(valid_loss, epoch)
+        optim.updateLearningRate(valid_ppl, epoch)
 
         model_state_dict = model.module.state_dict() if len(opt.gpus) > 1 else model.state_dict()
         model_state_dict = {k: v for k, v in model_state_dict.items() if 'generator' not in k}
