@@ -1,7 +1,7 @@
 ## Step 1: Preprocess the data
 
 ```bash
-th preprocess.lua -train_src data/src-train.txt -train_tgt data/tgt-train.txt -valid_src data/src-val.txt -valid_tgt data/tgt-val.txt -save_data data/demo
+python preprocess.py -train_src data/src-train.txt -train_tgt data/tgt-train.txt -valid_src data/src-val.txt -valid_tgt data/tgt-val.txt -save_data data/demo
 ```
 
 We will be working with some example data in `data/` folder.
@@ -26,7 +26,7 @@ After running the preprocessing, the following files are generated:
 
 * `demo.src.dict`: Dictionary of source vocab to index mappings.
 * `demo.tgt.dict`: Dictionary of target vocab to index mappings.
-* `demo-train.t7`: serialized Torch file containing vocabulary, training and validation data
+* `demo.train.pt`: serialized PyTorch file containing vocabulary, training and validation data
 
 The `*.dict` files are needed to check or reuse the vocabularies. These files are simple human-readable dictionaries.
 
@@ -47,24 +47,21 @@ with 11
 
 Internally the system never touches the words themselves, but uses these indices.
 
-!!! note "Note"
-    If the corpus is not tokenized, you can use [OpenNMT's tokenizer](tools/tokenization.md).
-
 ## Step 2: Train the model
 
 ```bash
-th train.lua -data data/demo-train.t7 -save_model demo-model
+python train.py -data data/demo.train.pt -save_model demo-model 
 ```
 
 The main train command is quite simple. Minimally it takes a data file
 and a save file.  This will run the default model, which consists of a
 2-layer LSTM with 500 hidden units on both the encoder/decoder. You
-can also add `-gpuid 1` to use (say) GPU 1.
+can also add `-gpus 1` to use (say) GPU 1.
 
 ## Step 3: Translate
 
 ```bash
-th translate.lua -model demo-model_epochX_PPL.t7 -src data/src-test.txt -output pred.txt
+python translate.py -model demo-model_epochX_PPL.pt -src data/src-test.txt -output pred.txt -replace_unk -verbose
 ```
 
 Now you have a model which you can use to predict on new data. We do this by running beam search. This will output predictions into `pred.txt`.
