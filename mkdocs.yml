@@ -52,11 +52,11 @@ pages:
   # - Tools:
   #     - Tokenization: tools/tokenization.md
   #     - Servers: tools/servers.md
-  # - "Reference: Options":
-  #     - "Scripts usage": options/usage.md
-  #     - "preprocess.lua": options/preprocess.md
-  #     - "train.lua": options/train.md
-  #     - "translate.lua": options/translate.md
+  - "Reference: Options":
+      # - "Scripts usage": options/usage.md
+      - "preprocess.py": options/preprocess.md
+      - "train.py": options/train.md
+      - "translate.py": options/translate.md
   #     - "tag.lua": options/tag.md
   #     - "tools/build_vocab.lua": options/build_vocab.md
   #     - "tools/release_model.lua": options/release_model.md
@@ -66,5 +66,5 @@ pages:
   #     - "tools/rest_translation_server.lua": options/rest_server.md
   #     - "tools/embeddings.lua": options/embeddings.md
   # - Extensions: extensions.md
-  # - References: references.md
+  - References: references.md
   # - "Common issues": issues.md
