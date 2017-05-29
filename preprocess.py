@@ -34,7 +34,7 @@ parser.add_argument('-tgt_vocab',
 
 parser.add_argument('-src_seq_length', type=int, default=50,
                     help="Maximum source sequence length")
-parser.add_argument('-src_seq_length_trunc', type=int, default=,0
+parser.add_argument('-src_seq_length_trunc', type=int, default=0,
                     help="Truncate source sequence length.")
 parser.add_argument('-tgt_seq_length', type=int, default=50,
                     help="Maximum target sequence length to keep.")
