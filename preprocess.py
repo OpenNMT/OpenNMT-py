@@ -131,7 +131,7 @@ def makeData(srcFile, tgtFile, srcDicts, tgtDicts):
         srcWords = sline.split()
         tgtWords = tline.split()
 
-        if len(srcWords) <= opt.seq_length and len(tgtWords) <= opt.seq_length:
+        if len(srcWords) <= opt.src_seq_length and len(tgtWords) <= opt.tgt_seq_length:
 
             # Check truncation condition.
             if opt.src_seq_length_trunc != 0:
