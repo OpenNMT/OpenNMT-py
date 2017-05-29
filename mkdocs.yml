@@ -32,6 +32,8 @@ pages:
   - Overview: index.md
   - Installation: installation.md
   - Quickstart: quickstart.md
+  - "Extended Example": extended.md
+    
   # - Data:
   #     - Preparation: data/preparation.md
   #     - "Word features": data/word_features.md
