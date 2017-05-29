@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 import argparse
 
+
 class MarkdownHelpFormatter(argparse.HelpFormatter):
     """A really bare-bones argparse help formatter that generates valid markdown.
     This will generate something like:
@@ -39,21 +40,24 @@ class MarkdownHelpFormatter(argparse.HelpFormatter):
         lines.extend(['', ''])
         return '\n'.join(lines)
 
+
 class MarkdownHelpAction(argparse.Action):
     def __init__(self, option_strings,
-                             dest=argparse.SUPPRESS, default=argparse.SUPPRESS,
-                             **kwargs):
+                 dest=argparse.SUPPRESS, default=argparse.SUPPRESS,
+                 **kwargs):
         super(MarkdownHelpAction, self).__init__(
                 option_strings=option_strings,
                 dest=dest,
                 default=default,
                 nargs=0,
                 **kwargs)
+
     def __call__(self, parser, namespace, values, option_string=None):
         parser.formatter_class = MarkdownHelpFormatter
         parser.print_help()
         parser.exit()
-        
+
+
 def add_md_help_argument(parser):
     parser.add_argument('-md', action=MarkdownHelpAction,
                         help='print Markdown-formatted help text and exit.')
