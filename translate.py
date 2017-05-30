@@ -75,7 +75,7 @@ def main():
 
 
     if opt.dump_beam != "":
-        import numpy as np
+        import json
         translator.initBeamAccum()
 
     for line in addone(open(opt.src)):
@@ -139,7 +139,7 @@ def main():
         tgtF.close()
 
     if opt.dump_beam:
-        np.savez(opt.dump_beam, **translator.beam_accum)
+        json.dump(translator.beam_accum, open(opt.dump_beam, 'w'))
 
 
 if __name__ == "__main__":
