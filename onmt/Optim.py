@@ -1,7 +1,6 @@
-import math
 import torch.optim as optim
-import torch.nn as nn
 from torch.nn.utils import clip_grad_norm
+
 
 class Optim(object):
 
@@ -18,7 +17,8 @@ class Optim(object):
         else:
             raise RuntimeError("Invalid optim method: " + self.method)
 
-    def __init__(self, method, lr, max_grad_norm, lr_decay=1, start_decay_at=None):
+    def __init__(self, method, lr, max_grad_norm,
+                 lr_decay=1, start_decay_at=None):
         self.last_ppl = None
         self.lr = lr
         self.max_grad_norm = max_grad_norm
@@ -33,7 +33,8 @@ class Optim(object):
             clip_grad_norm(self.params, self.max_grad_norm)
         self.optimizer.step()
 
-    # decay learning rate if val perf does not improve or we hit the start_decay_at limit
+    # Decay learning rate if val perf does not improve
+    # or we hit the start_decay_at limit.
     def updateLearningRate(self, ppl, epoch):
         if self.start_decay_at is not None and epoch >= self.start_decay_at:
             self.start_decay = True
