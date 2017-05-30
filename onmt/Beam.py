@@ -26,6 +26,7 @@ class Beam(object):
 
         # The score for each translation on the beam.
         self.scores = self.tt.FloatTensor(size).zero_()
+        self.allScores = []
 
         # The backpointers at each time-step.
         self.prevKs = []
@@ -67,6 +68,7 @@ class Beam(object):
         flatBeamLk = beamLk.view(-1)
 
         bestScores, bestScoresId = flatBeamLk.topk(self.size, 0, True, True)
+        self.allScores.append(self.scores)
         self.scores = bestScores
 
         # bestScoresId is flattened beam x word array, so calculate which
@@ -79,6 +81,7 @@ class Beam(object):
         # End condition is when top-of-beam is EOS.
         if self.nextYs[-1][0] == onmt.Constants.EOS:
             self.done = True
+            self.allScores.append(self.scores)
 
         return self.done
 

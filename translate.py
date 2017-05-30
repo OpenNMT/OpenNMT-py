@@ -34,13 +34,15 @@ parser.add_argument('-replace_unk', action="store_true",
 #                     tokens. See README.md for the format of this file.""")
 parser.add_argument('-verbose', action="store_true",
                     help='Print scores and predictions for each sentence')
+parser.add_argument('-dump_beam', type=str, default="",
+                    help='File to dump beam information to.')
+
 parser.add_argument('-n_best', type=int, default=1,
                     help="""If verbose is set, will output the n_best
                     decoded sentences""")
 
 parser.add_argument('-gpu', type=int, default=-1,
                     help="Device to run on")
-
 
 
 def reportScore(name, scoreTotal, wordsTotal):
@@ -70,6 +72,12 @@ def main():
     count = 0
 
     tgtF = open(opt.tgt) if opt.tgt else None
+
+
+    if opt.dump_beam != "":
+        import numpy as np
+        translator.initBeamAccum()
+
     for line in addone(open(opt.src)):
         
         if line is not None:
@@ -129,6 +137,9 @@ def main():
 
     if tgtF:
         tgtF.close()
+
+    if opt.dump_beam:
+        np.savez(opt.dump_beam, **translator.beam_accum)
 
 
 if __name__ == "__main__":
