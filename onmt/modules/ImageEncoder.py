@@ -3,9 +3,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class ImageEncoder(nn.Module):
-    def __init__(self, dim):
+    def __init__(self, opt):
         super(ImageEncoder, self).__init__()
-
+        self.layers = opt.layers
+        self.num_directions = 2 if opt.brnn else 1
+        self.hidden_size = opt.rnn_size // self.num_directions
+        
         self.layer1 = nn.SpatialConvolution(  1,  64, 3, 3, 1, 1, 1, 1)
         self.layer2 = nn.SpatialConvolution( 64, 128, 3, 3, 1, 1, 1, 1)
         self.layer3 = nn.SpatialConvolution(128, 256, 3, 3, 1, 1, 1, 1)
@@ -16,7 +19,14 @@ class ImageEncoder(nn.Module):
         self.batch_norm1 = nn.SpatialBatchNormalization(256)
         self.batch_norm2 = nn.SpatialBatchNormalization(512)
         self.batch_norm3 = nn.SpatialBatchNormalization(512)
-        
+
+        input_size =
+        self.rnn = nn.LSTM(input_size, self.hidden_size,
+                           num_layers=opt.layers,
+                           dropout=opt.dropout,
+                           bidirectional=opt.brnn)
+        self.pos_lut = nn.Embedding(100, 512)
+
     def forward(input):
         
         # input shape: (batch_size, 1, imgH, imgW)
@@ -65,4 +75,8 @@ class ImageEncoder(nn.Module):
         #  #H list of (batch_size, W, 512)
         # model:add(nn.SplitTable(1, 3)) 
 
-        return input
+        hidden_t = []
+        for row in range(input.shape(2)):
+            row_outputs, row_hidden_t = self.rnn(input[:. :, row, :], self.pos_lut(row))
+            hidden_t.append(row_hidden_t)
+        return hidden_t
