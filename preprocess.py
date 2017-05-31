@@ -148,7 +148,7 @@ def makeData(srcFile, tgtFile, srcDicts, tgtDicts):
             sizes += [len(srcWords)]            
         else:
             ignored += 1
-            
+
         count += 1
 
         if count % opt.report_every == 0:
