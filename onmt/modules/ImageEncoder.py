@@ -1,7 +1,6 @@
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
-import matplotlib.pyplot as plt
 
 class ImageEncoder(nn.Module):
     def __init__(self, opt):
