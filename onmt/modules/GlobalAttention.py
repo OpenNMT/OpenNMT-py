@@ -22,7 +22,7 @@ Constructs a unit mapping.
 
 import torch
 import torch.nn as nn
-import math
+
 
 class GlobalAttention(nn.Module):
     def __init__(self, dim):

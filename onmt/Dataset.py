@@ -1,8 +1,6 @@
 from __future__ import division
 
 import math
-import random
-
 import torch
 from torch.autograd import Variable
 
@@ -52,7 +50,8 @@ class Dataset(object):
 
         # within batch sorting by decreasing length for variable length rnns
         indices = range(len(srcBatch))
-        batch = zip(indices, srcBatch) if tgtBatch is None else zip(indices, srcBatch, tgtBatch)
+        batch = (zip(indices, srcBatch) if tgtBatch is None
+                 else zip(indices, srcBatch, tgtBatch))
         batch, lengths = zip(*sorted(zip(batch, lengths), key=lambda x: -x[1]))
         if tgtBatch is None:
             indices, srcBatch = zip(*batch)
@@ -76,7 +75,6 @@ class Dataset(object):
 
     def __len__(self):
         return self.numBatches
-
 
     def shuffle(self):
         data = list(zip(self.src, self.tgt))

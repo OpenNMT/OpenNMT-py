@@ -26,7 +26,7 @@ parser.add_argument('-max_sent_length', type=int, default=100,
                     help='Maximum sentence length.')
 parser.add_argument('-replace_unk', action="store_true",
                     help="""Replace the generated UNK tokens with the source
-                    token that had the highest attention weight. If phrase_table
+                    token that had highest attention weight. If phrase_table
                     is provided, it will lookup the identified source token and
                     give the corresponding target token. If it is not provided
                     (or the identified source token does not exist in the
@@ -44,16 +44,17 @@ parser.add_argument('-gpu', type=int, default=-1,
                     help="Device to run on")
 
 
-
 def reportScore(name, scoreTotal, wordsTotal):
     print("%s AVG SCORE: %.4f, %s PPL: %.4f" % (
         name, scoreTotal / wordsTotal,
         name, math.exp(-scoreTotal/wordsTotal)))
 
+
 def addone(f):
     for line in f:
         yield line
     yield None
+
 
 def main():
     opt = parser.parse_args()
@@ -73,7 +74,6 @@ def main():
 
     tgtF = open(opt.tgt) if opt.tgt else None
     for line in addone(open(opt.src)):
-        
         if line is not None:
             srcTokens = line.split()
             srcBatch += [srcTokens]
@@ -88,8 +88,8 @@ def main():
             if len(srcBatch) == 0:
                 break
 
-        predBatch, predScore, goldScore = translator.translate(srcBatch, tgtBatch)
- 
+        predBatch, predScore, goldScore = translator.translate(srcBatch,
+                                                               tgtBatch)
         predScoreTotal += sum(score[0] for score in predScore)
         predWordsTotal += sum(len(x[0]) for x in predBatch)
         if tgtF is not None:
@@ -119,7 +119,8 @@ def main():
                 if opt.n_best > 1:
                     print('\nBEST HYP:')
                     for n in range(opt.n_best):
-                        print("[%.4f] %s" % (predScore[b][n], " ".join(predBatch[b][n])))
+                        print("[%.4f] %s" % (predScore[b][n],
+                                             " ".join(predBatch[b][n])))
 
                 print('')
 
