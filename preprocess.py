@@ -1,13 +1,13 @@
 import onmt
+import onmt.Markdown
 
 import argparse
 import torch
 
 parser = argparse.ArgumentParser(description='preprocess.py')
+onmt.Markdown.add_md_help_argument(parser)
 
-##
-## **Preprocess Options**
-##
+# **Preprocess Options**
 
 parser.add_argument('-config',    help="Read options from this file")
 
@@ -18,7 +18,7 @@ parser.add_argument('-train_tgt', required=True,
 parser.add_argument('-valid_src', required=True,
                     help="Path to the validation source data")
 parser.add_argument('-valid_tgt', required=True,
-                     help="Path to the validation target data")
+                    help="Path to the validation target data")
 
 parser.add_argument('-save_data', required=True,
                     help="Output file for the prepared data")
@@ -49,9 +49,11 @@ opt = parser.parse_args()
 
 torch.manual_seed(opt.seed)
 
+
 def makeVocabulary(filename, size):
     vocab = onmt.Dict([onmt.Constants.PAD_WORD, onmt.Constants.UNK_WORD,
-                       onmt.Constants.BOS_WORD, onmt.Constants.EOS_WORD], lower=opt.lower)
+                       onmt.Constants.BOS_WORD, onmt.Constants.EOS_WORD],
+                      lower=opt.lower)
 
     with open(filename) as f:
         for sent in f.readlines():
@@ -111,7 +113,7 @@ def makeData(srcFile, tgtFile, srcDicts, tgtDicts):
 
         # source or target does not have same number of lines
         if sline == "" or tline == "":
-            print('WARNING: source and target do not have the same number of sentences')
+            print('WARNING: src and tgt do not have the same # of sentences')
             break
 
         sline = sline.strip()
@@ -180,13 +182,12 @@ def main():
     print('Preparing validation ...')
     valid = {}
     valid['src'], valid['tgt'] = makeData(opt.valid_src, opt.valid_tgt,
-                                    dicts['src'], dicts['tgt'])
+                                          dicts['src'], dicts['tgt'])
 
     if opt.src_vocab is None:
         saveVocabulary('source', dicts['src'], opt.save_data + '.src.dict')
     if opt.tgt_vocab is None:
         saveVocabulary('target', dicts['tgt'], opt.save_data + '.tgt.dict')
-
 
     print('Saving data to \'' + opt.save_data + '.train.pt\'...')
     save_data = {'dicts': dicts,

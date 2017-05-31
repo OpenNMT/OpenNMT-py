@@ -1,0 +1,70 @@
+site_name: OpenNMT-py
+repo_name: 'OpenNMT/OpenNMT-py'
+repo_url: https://github.com/OpenNMT/OpenNMT-py
+edit_uri: edit/master/docs/
+
+docs_dir: docs
+theme: 'material'
+extra:
+  logo: 'img/logo-alpha.png'
+  social:
+    - type: 'globe'
+      link: 'http://opennmt.net'
+    - type: 'github'
+      link: 'https://github.com/OpenNMT/OpenNMT-py'
+
+google_analytics: ['UA-89222039-1', 'opennmt.net']
+extra_javascript:
+  - https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_HTMLorMML
+extra_css:
+  - css/extra.css
+
+markdown_extensions:
+  - math
+  - sane_lists
+  - def_list
+  - fenced_code
+  - admonition
+  - codehilite(guess_lang=false)
+  - toc(permalink=true)
+
+pages:
+  - Overview: index.md
+  - Installation: installation.md
+  - Quickstart: quickstart.md
+  - "Extended Example": extended.md
+    
+  # - Data:
+  #     - Preparation: data/preparation.md
+  #     - "Word features": data/word_features.md
+  # - Training:
+  #     - Models: training/models.md
+  #     - Embeddings: training/embeddings.md
+  #     - Logs: training/logs.md
+  #     - "Multi GPU": training/multi_gpu.md
+  #     - Retraining: training/retraining.md
+  #     - "Decay strategies": training/decay.md
+  #     - "Data sampling": training/sampling.md
+  # - Translation:
+  #     - Inference: translation/inference.md
+  #     - "Beam search": translation/beam_search.md
+  #     - "Unknown words": translation/unknowns.md
+  # - Tools:
+  #     - Tokenization: tools/tokenization.md
+  #     - Servers: tools/servers.md
+  - "Reference: Options":
+      # - "Scripts usage": options/usage.md
+      - "preprocess.py": options/preprocess.md
+      - "train.py": options/train.md
+      - "translate.py": options/translate.md
+  #     - "tag.lua": options/tag.md
+  #     - "tools/build_vocab.lua": options/build_vocab.md
+  #     - "tools/release_model.lua": options/release_model.md
+  #     - "tools/tokenize.lua": options/tokenize.md
+  #     - "tools/learn_bpe.lua": options/learn_bpe.md
+  #     - "tools/translation_server.lua": options/server.md
+  #     - "tools/rest_translation_server.lua": options/rest_server.md
+  #     - "tools/embeddings.lua": options/embeddings.md
+  # - Extensions: extensions.md
+  - References: references.md
+  # - "Common issues": issues.md

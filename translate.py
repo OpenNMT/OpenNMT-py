@@ -1,11 +1,13 @@
 from __future__ import division
 
 import onmt
+import onmt.Markdown
 import torch
 import argparse
 import math
 
 parser = argparse.ArgumentParser(description='translate.py')
+onmt.Markdown.add_md_help_argument(parser)
 
 parser.add_argument('-model', required=True,
                     help='Path to model .pt file')
@@ -24,7 +26,7 @@ parser.add_argument('-max_sent_length', type=int, default=100,
                     help='Maximum sentence length.')
 parser.add_argument('-replace_unk', action="store_true",
                     help="""Replace the generated UNK tokens with the source
-                    token that had the highest attention weight. If phrase_table
+                    token that had highest attention weight. If phrase_table
                     is provided, it will lookup the identified source token and
                     give the corresponding target token. If it is not provided
                     (or the identified source token does not exist in the
@@ -50,10 +52,12 @@ def reportScore(name, scoreTotal, wordsTotal):
         name, scoreTotal / wordsTotal,
         name, math.exp(-scoreTotal/wordsTotal)))
 
+
 def addone(f):
     for line in f:
         yield line
     yield None
+
 
 def main():
     opt = parser.parse_args()
@@ -79,7 +83,6 @@ def main():
         translator.initBeamAccum()
 
     for line in addone(open(opt.src)):
-        
         if line is not None:
             srcTokens = line.split()
             srcBatch += [srcTokens]
@@ -94,8 +97,8 @@ def main():
             if len(srcBatch) == 0:
                 break
 
-        predBatch, predScore, goldScore = translator.translate(srcBatch, tgtBatch)
- 
+        predBatch, predScore, goldScore = translator.translate(srcBatch,
+                                                               tgtBatch)
         predScoreTotal += sum(score[0] for score in predScore)
         predWordsTotal += sum(len(x[0]) for x in predBatch)
         if tgtF is not None:
@@ -125,7 +128,8 @@ def main():
                 if opt.n_best > 1:
                     print('\nBEST HYP:')
                     for n in range(opt.n_best):
-                        print("[%.4f] %s" % (predScore[b][n], " ".join(predBatch[b][n])))
+                        print("[%.4f] %s" % (predScore[b][n],
+                                             " ".join(predBatch[b][n])))
 
                 print('')
 

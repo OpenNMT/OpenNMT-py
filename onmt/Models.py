@@ -5,6 +5,7 @@ import onmt.modules
 from torch.nn.utils.rnn import pad_packed_sequence as unpack
 from torch.nn.utils.rnn import pack_padded_sequence as pack
 
+
 class Encoder(nn.Module):
 
     def __init__(self, opt, dicts):
@@ -16,12 +17,12 @@ class Encoder(nn.Module):
 
         super(Encoder, self).__init__()
         self.word_lut = nn.Embedding(dicts.size(),
-                                  opt.word_vec_size,
-                                  padding_idx=onmt.Constants.PAD)
+                                     opt.word_vec_size,
+                                     padding_idx=onmt.Constants.PAD)
         self.rnn = nn.LSTM(input_size, self.hidden_size,
-                        num_layers=opt.layers,
-                        dropout=opt.dropout,
-                        bidirectional=opt.brnn)
+                           num_layers=opt.layers,
+                           dropout=opt.dropout,
+                           bidirectional=opt.brnn)
 
     def load_pretrained_vectors(self, opt):
         if opt.pre_word_vecs_enc is not None:
@@ -30,7 +31,8 @@ class Encoder(nn.Module):
 
     def forward(self, input, hidden=None):
         if isinstance(input, tuple):
-            lengths = input[1].data.view(-1).tolist() # lengths data is wrapped inside a Variable
+            # Lengths data is wrapped inside a Variable.
+            lengths = input[1].data.view(-1).tolist()
             emb = pack(self.word_lut(input[0]), lengths)
         else:
             emb = self.word_lut(input)
@@ -79,9 +81,10 @@ class Decoder(nn.Module):
 
         super(Decoder, self).__init__()
         self.word_lut = nn.Embedding(dicts.size(),
-                                  opt.word_vec_size,
-                                  padding_idx=onmt.Constants.PAD)
-        self.rnn = StackedLSTM(opt.layers, input_size, opt.rnn_size, opt.dropout)
+                                     opt.word_vec_size,
+                                     padding_idx=onmt.Constants.PAD)
+        self.rnn = StackedLSTM(opt.layers, input_size,
+                               opt.rnn_size, opt.dropout)
         self.attn = onmt.modules.GlobalAttention(opt.rnn_size)
         self.dropout = nn.Dropout(opt.dropout)
 
@@ -145,6 +148,7 @@ class NMTModel(nn.Module):
         enc_hidden = (self._fix_enc_hidden(enc_hidden[0]),
                       self._fix_enc_hidden(enc_hidden[1]))
 
-        out, dec_hidden, _attn = self.decoder(tgt, enc_hidden, context, init_output)
+        out, dec_hidden, _attn = self.decoder(tgt, enc_hidden,
+                                              context, init_output)
 
         return out
