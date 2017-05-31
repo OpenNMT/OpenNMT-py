@@ -1,6 +1,7 @@
 from __future__ import division
 
 import onmt
+import onmt.Markdown
 import argparse
 import torch
 import torch.nn as nn
@@ -10,8 +11,9 @@ import math
 import time
 
 parser = argparse.ArgumentParser(description='train.py')
+onmt.Markdown.add_md_help_argument(parser)
 
-## Data options
+# Data options
 
 parser.add_argument('-data', required=True,
                     help='Path to the *-train.pt file from preprocess.py')
@@ -26,7 +28,7 @@ parser.add_argument('-train_from', default='', type=str,
                     help="""If training from a checkpoint then this is the
                     path to the pretrained model.""")
 
-## Model options
+# Model options
 
 parser.add_argument('-layers', type=int, default=2,
                     help='Number of layers in the LSTM encoder/decoder')
@@ -46,7 +48,7 @@ parser.add_argument('-brnn_merge', default='concat',
                     help="""Merge action for the bidirectional hidden states:
                     [concat|sum]""")
 
-## Optimization options
+# Optimization options
 
 parser.add_argument('-batch_size', type=int, default=64,
                     help='Maximum batch size')
@@ -76,11 +78,12 @@ parser.add_argument('-extra_shuffle', action="store_true",
                     help="""By default only shuffle mini-batch order; when true,
                     shuffle and re-assign mini-batches""")
 
-#learning rate
+# learning rate
 parser.add_argument('-learning_rate', type=float, default=1.0,
                     help="""Starting learning rate. If adagrad/adadelta/adam is
                     used, then this is the global learning rate. Recommended
-                    settings: sgd = 1, adagrad = 0.1, adadelta = 1, adam = 0.001""")
+                    settings: sgd = 1, adagrad = 0.1,
+                    adadelta = 1, adam = 0.001""")
 parser.add_argument('-learning_rate_decay', type=float, default=0.5,
                     help="""If update_learning_rate, decay learning rate by
                     this much if (i) perplexity does not decrease on the
@@ -90,7 +93,7 @@ parser.add_argument('-start_decay_at', type=int, default=8,
                     help="""Start decaying every epoch after and including this
                     epoch""")
 
-#pretrained word vectors
+# pretrained word vectors
 
 parser.add_argument('-pre_word_vecs_enc',
                     help="""If a valid path is specified, then this will load
@@ -113,10 +116,11 @@ opt = parser.parse_args()
 print(opt)
 
 if torch.cuda.is_available() and not opt.gpus:
-    print("WARNING: You have a CUDA device, so you should probably run with -gpus 0")
+    print("WARNING: You have a CUDA device, should run with -gpus 0")
 
 if opt.gpus:
     cuda.set_device(opt.gpus[0])
+
 
 def NMTCriterion(vocabSize):
     weight = torch.ones(vocabSize)
@@ -140,7 +144,10 @@ def memoryEfficientLoss(outputs, targets, generator, crit, eval=False):
         scores_t = generator(out_t)
         loss_t = crit(scores_t, targ_t.view(-1))
         pred_t = scores_t.max(1)[1]
-        num_correct_t = pred_t.data.eq(targ_t.data).masked_select(targ_t.ne(onmt.Constants.PAD).data).sum()
+        num_correct_t = pred_t.data.eq(targ_t.data) \
+                                   .masked_select(
+                                       targ_t.ne(onmt.Constants.PAD).data) \
+                                   .sum()
         num_correct += num_correct_t
         loss += loss_t.data[0]
         if not eval:
@@ -157,9 +164,11 @@ def eval(model, criterion, data):
 
     model.eval()
     for i in range(len(data)):
-        batch = data[i][:-1] # exclude original indices
+        # exclude original indices
+        batch = data[i][:-1]
         outputs = model(batch)
-        targets = batch[1][1:]  # exclude <s> from targets
+        # exclude <s> from targets
+        targets = batch[1][1:]
         loss, _, num_correct = memoryEfficientLoss(
                 outputs, targets, model.generator, criterion, eval=True)
         total_loss += loss
@@ -174,35 +183,39 @@ def trainModel(model, trainData, validData, dataset, optim):
     print(model)
     model.train()
 
-    # define criterion of each GPU
+    # Define criterion of each GPU.
     criterion = NMTCriterion(dataset['dicts']['tgt'].size())
 
     start_time = time.time()
+
     def trainEpoch(epoch):
 
         if opt.extra_shuffle and epoch > opt.curriculum:
             trainData.shuffle()
 
-        # shuffle mini batch order
+        # Shuffle mini batch order.
         batchOrder = torch.randperm(len(trainData))
 
         total_loss, total_words, total_num_correct = 0, 0, 0
-        report_loss, report_tgt_words, report_src_words, report_num_correct = 0, 0, 0, 0
+        report_loss, report_tgt_words = 0, 0
+        report_src_words, report_num_correct = 0, 0
         start = time.time()
         for i in range(len(trainData)):
 
             batchIdx = batchOrder[i] if epoch > opt.curriculum else i
-            batch = trainData[batchIdx][:-1] # exclude original indices
+            # Exclude original indices.
+            batch = trainData[batchIdx][:-1]
 
             model.zero_grad()
             outputs = model(batch)
-            targets = batch[1][1:]  # exclude <s> from targets
+            # Exclude <s> from targets.
+            targets = batch[1][1:]
             loss, gradOutput, num_correct = memoryEfficientLoss(
                     outputs, targets, model.generator, criterion)
 
             outputs.backward(gradOutput)
 
-            # update the parameters
+            # Update the parameters.
             optim.step()
 
             num_words = targets.data.ne(onmt.Constants.PAD).sum()
@@ -214,15 +227,17 @@ def trainModel(model, trainData, validData, dataset, optim):
             total_num_correct += num_correct
             total_words += num_words
             if i % opt.log_interval == -1 % opt.log_interval:
-                print("Epoch %2d, %5d/%5d; acc: %6.2f; ppl: %6.2f; %3.0f src tok/s; %3.0f tgt tok/s; %6.0f s elapsed" %
+                print(("Epoch %2d, %5d/%5d; acc: %6.2f; ppl: %6.2f;" +
+                       "%3.0f src tok/s; %3.0f tgt tok/s; %6.0f s elapsed") %
                       (epoch, i+1, len(trainData),
-                      report_num_correct / report_tgt_words * 100,
-                      math.exp(report_loss / report_tgt_words),
-                      report_src_words/(time.time()-start),
-                      report_tgt_words/(time.time()-start),
-                      time.time()-start_time))
+                       report_num_correct / report_tgt_words * 100,
+                       math.exp(report_loss / report_tgt_words),
+                       report_src_words/(time.time()-start),
+                       report_tgt_words/(time.time()-start),
+                       time.time()-start_time))
 
-                report_loss = report_tgt_words = report_src_words = report_num_correct = 0
+                report_loss, report_tgt_words = 0, 0
+                report_src_words, report_num_correct = 0, 0
                 start = time.time()
 
         return total_loss / total_words, total_num_correct / total_words
@@ -245,9 +260,13 @@ def trainModel(model, trainData, validData, dataset, optim):
         #  (3) update the learning rate
         optim.updateLearningRate(valid_ppl, epoch)
 
-        model_state_dict = model.module.state_dict() if len(opt.gpus) > 1 else model.state_dict()
-        model_state_dict = {k: v for k, v in model_state_dict.items() if 'generator' not in k}
-        generator_state_dict = model.generator.module.state_dict() if len(opt.gpus) > 1 else model.generator.state_dict()
+        model_state_dict = (model.module.state_dict() if len(opt.gpus) > 1
+                            else model.state_dict())
+        model_state_dict = {k: v for k, v in model_state_dict.items()
+                            if 'generator' not in k}
+        generator_state_dict = (model.generator.module.state_dict()
+                                if len(opt.gpus) > 1
+                                else model.generator.state_dict())
         #  (4) drop a checkpoint
         checkpoint = {
             'model': model_state_dict,
@@ -258,15 +277,17 @@ def trainModel(model, trainData, validData, dataset, optim):
             'optim': optim
         }
         torch.save(checkpoint,
-                   '%s_acc_%.2f_ppl_%.2f_e%d.pt' % (opt.save_model, 100*valid_acc, valid_ppl, epoch))
+                   '%s_acc_%.2f_ppl_%.2f_e%d.pt'
+                   % (opt.save_model, 100*valid_acc, valid_ppl, epoch))
+
 
 def main():
-
     print("Loading data from '%s'" % opt.data)
 
     dataset = torch.load(opt.data)
 
-    dict_checkpoint = opt.train_from if opt.train_from else opt.train_from_state_dict
+    dict_checkpoint = (opt.train_from if opt.train_from
+                       else opt.train_from_state_dict)
     if dict_checkpoint:
         print('Loading dicts from checkpoint at %s' % dict_checkpoint)
         checkpoint = torch.load(dict_checkpoint)
@@ -300,13 +321,15 @@ def main():
         print('Loading model from checkpoint at %s' % opt.train_from)
         chk_model = checkpoint['model']
         generator_state_dict = chk_model.generator.state_dict()
-        model_state_dict = {k: v for k, v in chk_model.state_dict().items() if 'generator' not in k}
+        model_state_dict = {k: v for k, v in chk_model.state_dict().items()
+                            if 'generator' not in k}
         model.load_state_dict(model_state_dict)
         generator.load_state_dict(generator_state_dict)
         opt.start_epoch = checkpoint['epoch'] + 1
 
     if opt.train_from_state_dict:
-        print('Loading model from checkpoint at %s' % opt.train_from_state_dict)
+        print('Loading model from checkpoint at %s'
+              % opt.train_from_state_dict)
         model.load_state_dict(checkpoint['model'])
         generator.load_state_dict(checkpoint['generator'])
         opt.start_epoch = checkpoint['epoch'] + 1
@@ -344,7 +367,8 @@ def main():
     optim.set_parameters(model.parameters())
 
     if opt.train_from or opt.train_from_state_dict:
-        optim.optimizer.load_state_dict(checkpoint['optim'].optimizer.state_dict())
+        optim.optimizer.load_state_dict(
+            checkpoint['optim'].optimizer.state_dict())
 
     nParams = sum([p.nelement() for p in model.parameters()])
     print('* number of parameters: %d' % nParams)
