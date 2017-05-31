@@ -133,21 +133,22 @@ def makeData(srcFile, tgtFile, srcDicts, tgtDicts):
         srcWords = sline.split()
         tgtWords = tline.split()
 
-        if len(srcWords) <= opt.src_seq_length and len(tgtWords) <= opt.tgt_seq_length:
+        if len(srcWords) <= opt.src_seq_length \
+           and len(tgtWords) <= opt.tgt_seq_length:
 
             # Check truncation condition.
             if opt.src_seq_length_trunc != 0:
                 srcWords = srcWords[:opt.src_seq_length_trunc]
             if opt.tgt_seq_length_trunc != 0:
                 tgtWords = tgtWords[:opt.tgt_seq_length_trunc]
-            
+
             src += [srcDicts.convertToIdx(srcWords,
                                           onmt.Constants.UNK_WORD)]
             tgt += [tgtDicts.convertToIdx(tgtWords,
                                           onmt.Constants.UNK_WORD,
                                           onmt.Constants.BOS_WORD,
                                           onmt.Constants.EOS_WORD)]
-            sizes += [len(srcWords)]            
+            sizes += [len(srcWords)]
         else:
             ignored += 1
 
@@ -171,7 +172,8 @@ def makeData(srcFile, tgtFile, srcDicts, tgtDicts):
     src = [src[idx] for idx in perm]
     tgt = [tgt[idx] for idx in perm]
 
-    print('Prepared %d sentences (%d ignored due to length == 0 or src len > %d or tgt len > %d)' %
+    print(('Prepared %d sentences ' +
+          '(%d ignored due to length == 0 or src len > %d or tgt len > %d)') %
           (len(src), ignored, opt.src_seq_length, opt.tgt_seq_length))
 
     return src, tgt
