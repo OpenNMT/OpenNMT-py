@@ -10,7 +10,6 @@ from torch import cuda
 from torch.autograd import Variable
 import math
 import time
-import onmt.modules
 
 parser = argparse.ArgumentParser(description='train.py')
 onmt.Markdown.add_md_help_argument(parser)
@@ -315,7 +314,7 @@ def main():
         encoder = onmt.Models.Encoder(opt, dicts['src'])
     else:
         encoder = onmt.modules.ImageEncoder(opt)
-        
+
     decoder = onmt.Models.Decoder(opt, dicts['tgt'])
 
     generator = nn.Sequential(

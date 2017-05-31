@@ -1,6 +1,6 @@
-import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 
 class ImageEncoder(nn.Module):
     def __init__(self, opt):
@@ -8,13 +8,19 @@ class ImageEncoder(nn.Module):
         self.layers = opt.layers
         self.num_directions = 2 if opt.brnn else 1
         self.hidden_size = opt.rnn_size // self.num_directions
-        
-        self.layer1 = nn.Conv2d(  1,  64, kernel_size=(3, 3), padding=(3, 3), stride=(1, 1))
-        self.layer2 = nn.Conv2d( 64, 128, kernel_size=(3, 3), padding=(3, 3), stride=(1, 1))
-        self.layer3 = nn.Conv2d(128, 256, kernel_size=(3, 3), padding=(3, 3), stride=(1, 1))
-        self.layer4 = nn.Conv2d(256, 256, kernel_size=(3, 3), padding=(3, 3), stride=(1, 1))
-        self.layer5 = nn.Conv2d(256, 512, kernel_size=(3, 3), padding=(3, 3), stride=(1, 1))
-        self.layer6 = nn.Conv2d(512, 512, kernel_size=(3, 3), padding=(3, 3), stride=(1, 1))
+
+        self.layer1 = nn.Conv2d(1,   64, kernel_size=(3, 3),
+                                padding=(3, 3), stride=(1, 1))
+        self.layer2 = nn.Conv2d(64,  128, kernel_size=(3, 3),
+                                padding=(3, 3), stride=(1, 1))
+        self.layer3 = nn.Conv2d(128, 256, kernel_size=(3, 3),
+                                padding=(3, 3), stride=(1, 1))
+        self.layer4 = nn.Conv2d(256, 256, kernel_size=(3, 3),
+                                padding=(3, 3), stride=(1, 1))
+        self.layer5 = nn.Conv2d(256, 512, kernel_size=(3, 3),
+                                padding=(3, 3), stride=(1, 1))
+        self.layer6 = nn.Conv2d(512, 512, kernel_size=(3, 3),
+                                padding=(3, 3), stride=(1, 1))
 
         self.batch_norm1 = nn.BatchNorm2d(256)
         self.batch_norm2 = nn.BatchNorm2d(512)
@@ -26,10 +32,10 @@ class ImageEncoder(nn.Module):
                            dropout=opt.dropout,
                            bidirectional=opt.brnn)
         self.pos_lut = nn.Embedding(100, 512)
-        
+
     def load_pretrained_vectors(self, opt):
         pass
-        
+
     def forward(self, input):
         input = input[0]
         # input shape: (batch_size, 1, imgH, imgW)
@@ -76,7 +82,7 @@ class ImageEncoder(nn.Module):
         # # (batch_size, H, W, 512)
         # model:add(nn.Transpose({2, 3}, {3,4}))
         #  #H list of (batch_size, W, 512)
-        # model:add(nn.SplitTable(1, 3)) 
+        # model:add(nn.SplitTable(1, 3))
 
         hidden_t = []
         for row in range(input.size(2)):
