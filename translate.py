@@ -37,6 +37,10 @@ parser.add_argument('-verbose', action="store_true",
 parser.add_argument('-n_best', type=int, default=1,
                     help="""If verbose is set, will output the n_best
                     decoded sentences""")
+parser.add_argument('-dump_input_encoding', action="store_true",
+                    help="""Instead of generating target tokens conditional
+                    on source tokens, the representation (a.k.a. encoding/
+                    input) is printed.""")
 
 parser.add_argument('-gpu', type=int, default=-1,
                     help="Device to run on")
@@ -71,7 +75,7 @@ def main():
 
     tgtF = open(opt.tgt) if opt.tgt else None
     for line in addone(open(opt.src)):
-        
+
         if line is not None:
             srcTokens = line.split()
             srcBatch += [srcTokens]
@@ -86,44 +90,51 @@ def main():
             if len(srcBatch) == 0:
                 break
 
-        predBatch, predScore, goldScore = translator.translate(srcBatch, tgtBatch)
- 
-        predScoreTotal += sum(score[0] for score in predScore)
-        predWordsTotal += sum(len(x[0]) for x in predBatch)
-        if tgtF is not None:
-            goldScoreTotal += sum(goldScore)
-            goldWordsTotal += sum(len(x) for x in tgtBatch)
+        if opt.dump_input_encoding:
+            # predBatch is a batch_size x rnn_size torch FloatTensors
+            predBatch = translator.dump_input_encoding(srcBatch, tgtBatch)
+            for b in range(len(predBatch)):
+                count += 1
+                outF.write('%d ' % count + " ".join([str(fl) for fl in predBatch[b].data.tolist()]) + '\n')
+                outF.flush()
+        else:
+            predBatch, predScore, goldScore = translator.translate(srcBatch, tgtBatch)
 
-        for b in range(len(predBatch)):
-            count += 1
-            outF.write(" ".join(predBatch[b][0]) + '\n')
-            outF.flush()
+            predScoreTotal += sum(score[0] for score in predScore)
+            predWordsTotal += sum(len(x[0]) for x in predBatch)
+            if tgtF is not None:
+                goldScoreTotal += sum(goldScore)
+                goldWordsTotal += sum(len(x) for x in tgtBatch)
 
-            if opt.verbose:
-                srcSent = ' '.join(srcBatch[b])
-                if translator.tgt_dict.lower:
-                    srcSent = srcSent.lower()
-                print('SENT %d: %s' % (count, srcSent))
-                print('PRED %d: %s' % (count, " ".join(predBatch[b][0])))
-                print("PRED SCORE: %.4f" % predScore[b][0])
+            for b in range(len(predBatch)):
+                count += 1
+                outF.write(" ".join(predBatch[b][0]) + '\n')
+                outF.flush()
 
-                if tgtF is not None:
-                    tgtSent = ' '.join(tgtBatch[b])
+                if opt.verbose:
+                    srcSent = ' '.join(srcBatch[b])
                     if translator.tgt_dict.lower:
-                        tgtSent = tgtSent.lower()
-                    print('GOLD %d: %s ' % (count, tgtSent))
-                    print("GOLD SCORE: %.4f" % goldScore[b])
+                        srcSent = srcSent.lower()
+                    print('SENT %d: %s' % (count, srcSent))
+                    print('PRED %d: %s' % (count, " ".join(predBatch[b][0])))
+                    print("PRED SCORE: %.4f" % predScore[b][0])
 
-                if opt.n_best > 1:
-                    print('\nBEST HYP:')
-                    for n in range(opt.n_best):
-                        print("[%.4f] %s" % (predScore[b][n], " ".join(predBatch[b][n])))
+                    if tgtF is not None:
+                        tgtSent = ' '.join(tgtBatch[b])
+                        if translator.tgt_dict.lower:
+                            tgtSent = tgtSent.lower()
+                        print('GOLD %d: %s ' % (count, tgtSent))
+                        print("GOLD SCORE: %.4f" % goldScore[b])
 
-                print('')
+                    if opt.n_best > 1:
+                        print('\nBEST HYP:')
+                        for n in range(opt.n_best):
+                            print("[%.4f] %s" % (predScore[b][n], " ".join(predBatch[b][n])))
+
+                    print('')
+            reportScore('PRED', predScoreTotal, predWordsTotal)
 
         srcBatch, tgtBatch = [], []
-
-    reportScore('PRED', predScoreTotal, predWordsTotal)
     if tgtF:
         reportScore('GOLD', goldScoreTotal, goldWordsTotal)
 
