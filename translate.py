@@ -77,7 +77,6 @@ def main():
 
     tgtF = open(opt.tgt) if opt.tgt else None
 
-
     if opt.dump_beam != "":
         import json
         translator.initBeamAccum()

@@ -2,7 +2,7 @@ import onmt
 import torch.nn as nn
 import torch
 from torch.autograd import Variable
-import math
+
 
 class Translator(object):
     def __init__(self, opt):
@@ -45,7 +45,6 @@ class Translator(object):
             "beam_parent_ids": [],
             "scores": [],
             "log_probs": []}
-
 
     def buildData(self, srcBatch, goldBatch):
         srcData = [self.src_dict.convertToIdx(b,
@@ -190,9 +189,7 @@ class Translator(object):
 
             remainingSents = len(active)
 
-
         #  (4) package everything up
-
         allHyp, allScores, allAttn = [], [], []
         n_best = self.opt.n_best
 
@@ -208,11 +205,16 @@ class Translator(object):
             allAttn += [attn]
 
             if self.beam_accum:
-                self.beam_accum["beam_parent_ids"].append([t.tolist() for t in beam[b].prevKs])
-                self.beam_accum["scores"].append([["%4f"%math.exp(s) for s in t.tolist()]
-                                                  for t in beam[b].allScores][1:])
-                self.beam_accum["predicted_ids"].append([[self.tgt_dict.getLabel(id) for id in t.tolist()]
-                                                         for t in beam[b].nextYs][1:])
+                self.beam_accum["beam_parent_ids"].append(
+                    [t.tolist()
+                     for t in beam[b].prevKs])
+                self.beam_accum["scores"].append([
+                    ["%4f" % s for s in t.tolist()]
+                    for t in beam[b].allScores][1:])
+                self.beam_accum["predicted_ids"].append(
+                    [[self.tgt_dict.getLabel(id)
+                      for id in t.tolist()]
+                     for t in beam[b].nextYs][1:])
 
         return allHyp, allScores, allAttn, goldScores
 
