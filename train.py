@@ -1,6 +1,7 @@
 from __future__ import division
 
 import onmt
+import onmt.Markdown
 import argparse
 import torch
 import torch.nn as nn
@@ -10,6 +11,7 @@ import math
 import time
 
 parser = argparse.ArgumentParser(description='train.py')
+onmt.Markdown.add_md_help_argument(parser)
 
 ## Data options
 

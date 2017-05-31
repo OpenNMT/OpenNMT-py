@@ -1,9 +1,11 @@
 import onmt
+import onmt.Markdown
 
 import argparse
 import torch
 
 parser = argparse.ArgumentParser(description='preprocess.py')
+onmt.Markdown.add_md_help_argument(parser)
 
 ##
 ## **Preprocess Options**
