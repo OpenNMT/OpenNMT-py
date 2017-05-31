@@ -2,6 +2,7 @@ from __future__ import division
 
 import onmt
 import onmt.Markdown
+import onmt.modules
 import argparse
 import torch
 import torch.nn as nn
@@ -48,7 +49,16 @@ parser.add_argument('-brnn_merge', default='concat',
                     help="""Merge action for the bidirectional hidden states:
                     [concat|sum]""")
 
+<<<<<<< 8bd17161fe3cadd995bbf3f2cb774079c681f9eb
 # Optimization options
+=======
+parser.add_argument('-encoder_type', default='text',
+                    help="""type of encoder to use""")
+
+
+
+## Optimization options
+>>>>>>> .
 
 parser.add_argument('-batch_size', type=int, default=64,
                     help='Maximum batch size')
@@ -308,7 +318,11 @@ def main():
 
     print('Building model...')
 
-    encoder = onmt.Models.Encoder(opt, dicts['src'])
+    if opt.encoder_type == "text":
+        encoder = onmt.Models.Encoder(opt, dicts['src'])
+    else:
+        encoder = onmt.modules.ImageEncoder(opt)
+        
     decoder = onmt.Models.Decoder(opt, dicts['tgt'])
 
     generator = nn.Sequential(

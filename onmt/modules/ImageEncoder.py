@@ -9,65 +9,68 @@ class ImageEncoder(nn.Module):
         self.num_directions = 2 if opt.brnn else 1
         self.hidden_size = opt.rnn_size // self.num_directions
         
-        self.layer1 = nn.SpatialConvolution(  1,  64, 3, 3, 1, 1, 1, 1)
-        self.layer2 = nn.SpatialConvolution( 64, 128, 3, 3, 1, 1, 1, 1)
-        self.layer3 = nn.SpatialConvolution(128, 256, 3, 3, 1, 1, 1, 1)
-        self.layer4 = nn.SpatialConvolution(256, 256, 3, 3, 1, 1, 1, 1)
-        self.layer5 = nn.SpatialConvolution(256, 512, 3, 3, 1, 1, 1, 1)
-        self.layer6 = nn.SpatialConvolution(512, 512, 3, 3, 1, 1, 1, 1)
+        self.layer1 = nn.Conv2d(  1,  64, kernel_size=(3, 3), padding=(3, 3), stride=(1, 1))
+        self.layer2 = nn.Conv2d( 64, 128, kernel_size=(3, 3), padding=(3, 3), stride=(1, 1))
+        self.layer3 = nn.Conv2d(128, 256, kernel_size=(3, 3), padding=(3, 3), stride=(1, 1))
+        self.layer4 = nn.Conv2d(256, 256, kernel_size=(3, 3), padding=(3, 3), stride=(1, 1))
+        self.layer5 = nn.Conv2d(256, 512, kernel_size=(3, 3), padding=(3, 3), stride=(1, 1))
+        self.layer6 = nn.Conv2d(512, 512, kernel_size=(3, 3), padding=(3, 3), stride=(1, 1))
 
-        self.batch_norm1 = nn.SpatialBatchNormalization(256)
-        self.batch_norm2 = nn.SpatialBatchNormalization(512)
-        self.batch_norm3 = nn.SpatialBatchNormalization(512)
+        self.batch_norm1 = nn.BatchNorm2d(256)
+        self.batch_norm2 = nn.BatchNorm2d(512)
+        self.batch_norm3 = nn.BatchNorm2d(512)
 
-        input_size =
-        self.rnn = nn.LSTM(input_size, self.hidden_size,
+        input_size = 512
+        self.rnn = nn.LSTM(input_size, 512,
                            num_layers=opt.layers,
                            dropout=opt.dropout,
                            bidirectional=opt.brnn)
         self.pos_lut = nn.Embedding(100, 512)
-
-    def forward(input):
         
+    def load_pretrained_vectors(self, opt):
+        pass
+        
+    def forward(self, input):
+        input = input[0]
         # input shape: (batch_size, 1, imgH, imgW)
-        input = (input - 128.0) / 128.0
+        # input = (input - 128.0) / 128.0
 
         # (batch_size, 64, imgH, imgW)
         # layer 1
-        input = F.relu(self.layer1(input), true)
+        input = F.relu(self.layer1(input[:, 0:1, :, :]), True)
 
         # (batch_size, 64, imgH/2, imgW/2)
-        input = F.max_pool2d(input, 2, 2, 2, 2)
+        input = F.max_pool2d(input, kernel_size=(2, 2), stride=(2, 2))
 
         # (batch_size, 128, imgH/2, imgW/2)
         # layer 2
-        input = F.relu(self.layer2(input), true)
+        input = F.relu(self.layer2(input), True)
 
         # (batch_size, 128, imgH/2/2, imgW/2/2)
-        input = F.max_pool2d(input, 2, 2, 2, 2)
+        input = F.max_pool2d(input, kernel_size=(2, 2), stride=(2, 2))
 
         #  (batch_size, 256, imgH/2/2, imgW/2/2)
         # layer 3
         # batch norm 1
-        input = F.relu(self.batch_norm1(self.layer3(input)), true)
+        input = F.relu(self.batch_norm1(self.layer3(input)), True)
 
         # (batch_size, 256, imgH/2/2, imgW/2/2)
         # layer4
-        input = F.relu(self.layer4(input), true)
+        input = F.relu(self.layer4(input), True)
 
         # (batch_size, 256, imgH/2/2/2, imgW/2/2)
-        input = F.max_pool2d(input, 1, 2, 1, 2, 0, 0)) 
+        input = F.max_pool2d(input, kernel_size=(1, 2), stride=(1, 2))
 
         # (batch_size, 512, imgH/2/2/2, imgW/2/2)
         # layer 5
         # batch norm 2
-        input = F.relu(self.batch_norm2(self.layer5(input)), true)
+        input = F.relu(self.batch_norm2(self.layer5(input)), True)
 
         # (batch_size, 512, imgH/2/2/2, imgW/2/2/2)
-        input = F.max_pool2d(input, 2, 1, 2, 1, 0, 0)
+        input = F.max_pool2d(input, kernel_size=(2, 1), stride=(2, 1))
 
         # (batch_size, 512, imgH/2/2/2, imgW/2/2/2)
-        input = F.relu(self.batch_norm3(self.layer6(input)), true)
+        input = F.relu(self.batch_norm3(self.layer6(input)), True)
 
         # # (batch_size, 512, H, W)
         # # (batch_size, H, W, 512)
@@ -76,7 +79,8 @@ class ImageEncoder(nn.Module):
         # model:add(nn.SplitTable(1, 3)) 
 
         hidden_t = []
-        for row in range(input.shape(2)):
-            row_outputs, row_hidden_t = self.rnn(input[:. :, row, :], self.pos_lut(row))
+        for row in range(input.size(2)):
+            print(input[:, :, row, :].size())
+            row_outputs, row_hidden_t = self.rnn(input[:, :, row, :], None)
             hidden_t.append(row_hidden_t)
         return hidden_t
