@@ -2,6 +2,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch
 
+
 class ImageEncoder(nn.Module):
     def __init__(self, opt):
         super(ImageEncoder, self).__init__()
@@ -86,5 +87,5 @@ class ImageEncoder(nn.Module):
             outputs, hidden_t = self.rnn(inp)
             all_outputs.append(outputs)
         out = torch.cat(all_outputs, 0)
-        
+
         return hidden_t, out
