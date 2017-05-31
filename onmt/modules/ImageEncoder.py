@@ -1,6 +1,8 @@
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
+import torch.cuda
+from torch.autograd import Variable
 
 class ImageEncoder(nn.Module):
     def __init__(self, opt):
@@ -38,7 +40,7 @@ class ImageEncoder(nn.Module):
 
     def forward(self, input):
         input = input[0]
-
+        batchSize = input.size(0)
         # (batch_size, 64, imgH, imgW)
         # layer 1
         input = F.relu(self.layer1(input[:, 0:1, :, :]-0.5), True)
@@ -81,8 +83,10 @@ class ImageEncoder(nn.Module):
         all_outputs = []
         for row in range(input.size(2)):
             inp = input[:, :, row, :].transpose(0, 2).transpose(1, 2)
-            outputs, hidden_t = self.rnn(inp)
-            all_outputs.append(outputs)
+            pos_emb = self.pos_lut(Variable(torch.cuda.LongTensor(batchSize).fill_(row)))
+            with_pos = torch.cat((pos_emb.view(1, pos_emb.size(0), pos_emb.size(1)), inp), 0)
+            outputs, hidden_t = self.rnn(with_pos)
+            all_outputs.append(outputs) 
         out = torch.cat(all_outputs, 0)
 
         return hidden_t, out
