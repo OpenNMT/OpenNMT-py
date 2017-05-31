@@ -11,17 +11,17 @@ class ImageEncoder(nn.Module):
         self.hidden_size = opt.rnn_size // self.num_directions
 
         self.layer1 = nn.Conv2d(1,   64, kernel_size=(3, 3),
-                                padding=(3, 3), stride=(1, 1))
+                                padding=(1, 1), stride=(1, 1))
         self.layer2 = nn.Conv2d(64,  128, kernel_size=(3, 3),
-                                padding=(3, 3), stride=(1, 1))
+                                padding=(1, 1), stride=(1, 1))
         self.layer3 = nn.Conv2d(128, 256, kernel_size=(3, 3),
-                                padding=(3, 3), stride=(1, 1))
+                                padding=(1, 1), stride=(1, 1))
         self.layer4 = nn.Conv2d(256, 256, kernel_size=(3, 3),
-                                padding=(3, 3), stride=(1, 1))
+                                padding=(1, 1), stride=(1, 1))
         self.layer5 = nn.Conv2d(256, 512, kernel_size=(3, 3),
-                                padding=(3, 3), stride=(1, 1))
+                                padding=(1, 1), stride=(1, 1))
         self.layer6 = nn.Conv2d(512, 512, kernel_size=(3, 3),
-                                padding=(3, 3), stride=(1, 1))
+                                padding=(1, 1), stride=(1, 1))
 
         self.batch_norm1 = nn.BatchNorm2d(256)
         self.batch_norm2 = nn.BatchNorm2d(512)
@@ -39,6 +39,7 @@ class ImageEncoder(nn.Module):
 
     def forward(self, input):
         input = input[0]
+
         # input shape: (batch_size, 1, imgH, imgW)
         # input = (input - 128.0) / 128.0
 
@@ -78,7 +79,7 @@ class ImageEncoder(nn.Module):
 
         # (batch_size, 512, imgH/2/2/2, imgW/2/2/2)
         input = F.relu(self.batch_norm3(self.layer6(input)), True)
-
+        
         # # (batch_size, 512, H, W)
         # # (batch_size, H, W, 512)
         all_outputs = []
