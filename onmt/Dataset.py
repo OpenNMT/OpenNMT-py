@@ -10,7 +10,6 @@ import onmt
 
 
 class Dataset(object):
-
     def __init__(self, srcData, tgtData, batchSize, cuda, volatile=False):
         self.src = srcData
         if tgtData:
@@ -25,18 +24,32 @@ class Dataset(object):
         self.volatile = volatile
 
     def _batchify(self, data, align_right=False, include_lengths=False):
-        lengths = [x.size(0) for x in data]
-        max_length = max(lengths)
-        out = data[0].new(len(data), max_length).fill_(onmt.Constants.PAD)
-        for i in range(len(data)):
-            data_length = data[i].size(0)
-            offset = max_length - data_length if align_right else 0
-            out[i].narrow(0, offset, data_length).copy_(data[i])
-
-        if include_lengths:
-            return out, lengths
+        if data[0].dim() == 1:
+            lengths = [x.size(0) for x in data]
+            max_length = max(lengths)
+            out = data[0].new(len(data), max_length).fill_(onmt.Constants.PAD)
+            for i in range(len(data)):
+                data_length = data[i].size(0)
+                offset = max_length - data_length if align_right else 0
+                out[i].narrow(0, offset, data_length).copy_(data[i])
+            if include_lengths:
+                return out, lengths
+            else:
+                return out
         else:
-            return out
+            heights = [x.size(1) for x in data]
+            max_height = max(heights)
+            widths = [x.size(2) for x in data]
+            max_width = max(widths)
+
+            out = data[0].new(len(data), 3, max_height, max_width).fill_(0)
+            for i in range(len(data)):
+                data_height = data[i].size(1)
+                data_width = data[i].size(2)
+                height_offset = max_height - data_height if align_right else 0
+                width_offset = max_width - data_width if align_right else 0
+                out[i].narrow(1, height_offset, data_height).narrow(2, width_offset, data_width).copy_(data[i])
+            return out, widths
 
     def __getitem__(self, index):
         assert index < self.numBatches, "%d > %d" % (index, self.numBatches)
@@ -62,7 +75,9 @@ class Dataset(object):
         def wrap(b):
             if b is None:
                 return b
-            b = torch.stack(b, 0).t().contiguous()
+            b = torch.stack(b, 0)
+            if b.dim() == 2:
+                b = torch.stack(b, 0).t().contiguous()
             if self.cuda:
                 b = b.cuda()
             b = Variable(b, volatile=self.volatile)
@@ -71,7 +86,6 @@ class Dataset(object):
         # wrap lengths in a Variable to properly split it in DataParallel
         lengths = torch.LongTensor(lengths).view(1, -1)
         lengths = Variable(lengths, volatile=self.volatile)
-
         return (wrap(srcBatch), lengths), wrap(tgtBatch), indices
 
     def __len__(self):

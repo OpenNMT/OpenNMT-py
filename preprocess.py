@@ -2,6 +2,8 @@ import onmt
 
 import argparse
 import torch
+from PIL import Image
+from torchvision import transforms
 
 parser = argparse.ArgumentParser(description='preprocess.py')
 
@@ -10,6 +12,12 @@ parser = argparse.ArgumentParser(description='preprocess.py')
 ##
 
 parser.add_argument('-config',    help="Read options from this file")
+
+parser.add_argument('-src_type', default="text",
+                    help="Type of the source input")
+parser.add_argument('-src_img_dir', default=".",
+                    help="Location of source images")
+
 
 parser.add_argument('-train_src', required=True,
                     help="Path to the training source data")
@@ -127,8 +135,11 @@ def makeData(srcFile, tgtFile, srcDicts, tgtDicts):
 
         if len(srcWords) <= opt.seq_length and len(tgtWords) <= opt.seq_length:
 
-            src += [srcDicts.convertToIdx(srcWords,
-                                          onmt.Constants.UNK_WORD)]
+            if opt.src_type == "text":
+                src += [srcDicts.convertToIdx(srcWords,
+                                              onmt.Constants.UNK_WORD)]
+            else:
+                src += [transforms.ToTensor()(Image.open(opt.src_img_dir + "/" + srcWords[0]))]
             tgt += [tgtDicts.convertToIdx(tgtWords,
                                           onmt.Constants.UNK_WORD,
                                           onmt.Constants.BOS_WORD,
@@ -167,8 +178,11 @@ def makeData(srcFile, tgtFile, srcDicts, tgtDicts):
 def main():
 
     dicts = {}
-    dicts['src'] = initVocabulary('source', opt.train_src, opt.src_vocab,
-                                  opt.src_vocab_size)
+    dicts['src'] = onmt.Dict()
+    if opt.src_type == "text":
+        dicts['src'] = initVocabulary('source', opt.train_src, opt.src_vocab,
+                                      opt.src_vocab_size)
+    
     dicts['tgt'] = initVocabulary('target', opt.train_tgt, opt.tgt_vocab,
                                   opt.tgt_vocab_size)
 
@@ -180,7 +194,7 @@ def main():
     print('Preparing validation ...')
     valid = {}
     valid['src'], valid['tgt'] = makeData(opt.valid_src, opt.valid_tgt,
-                                    dicts['src'], dicts['tgt'])
+                                          dicts['src'], dicts['tgt'])
 
     if opt.src_vocab is None:
         saveVocabulary('source', dicts['src'], opt.save_data + '.src.dict')

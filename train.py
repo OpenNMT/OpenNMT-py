@@ -1,6 +1,7 @@
 from __future__ import division
 
 import onmt
+import onmt.modules
 import argparse
 import torch
 import torch.nn as nn
@@ -8,6 +9,7 @@ from torch import cuda
 from torch.autograd import Variable
 import math
 import time
+import onmt.modules
 
 parser = argparse.ArgumentParser(description='train.py')
 
@@ -45,6 +47,11 @@ parser.add_argument('-brnn', action='store_true',
 parser.add_argument('-brnn_merge', default='concat',
                     help="""Merge action for the bidirectional hidden states:
                     [concat|sum]""")
+
+parser.add_argument('-encoder_type', default='text',
+                    help="""type of encoder to use""")
+
+
 
 ## Optimization options
 
@@ -287,7 +294,11 @@ def main():
 
     print('Building model...')
 
-    encoder = onmt.Models.Encoder(opt, dicts['src'])
+    if opt.encoder_type == "text":
+        encoder = onmt.Models.Encoder(opt, dicts['src'])
+    else:
+        encoder = onmt.modules.ImageEncoder(opt)
+        
     decoder = onmt.Models.Decoder(opt, dicts['tgt'])
 
     generator = nn.Sequential(
