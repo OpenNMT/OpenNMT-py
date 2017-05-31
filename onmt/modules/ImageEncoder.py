@@ -1,6 +1,6 @@
 import torch.nn as nn
 import torch.nn.functional as F
-
+import torch
 
 class ImageEncoder(nn.Module):
     def __init__(self, opt):
@@ -80,13 +80,11 @@ class ImageEncoder(nn.Module):
 
         # # (batch_size, 512, H, W)
         # # (batch_size, H, W, 512)
-        # model:add(nn.Transpose({2, 3}, {3,4}))
-        #  #H list of (batch_size, W, 512)
-        # model:add(nn.SplitTable(1, 3))
-
-        hidden_t = []
+        all_outputs = []
         for row in range(input.size(2)):
-            print(input[:, :, row, :].size())
-            row_outputs, row_hidden_t = self.rnn(input[:, :, row, :], None)
-            hidden_t.append(row_hidden_t)
-        return hidden_t
+            inp = input[:, :, row, :].transpose(0, 2).transpose(1, 2)
+            outputs, hidden_t = self.rnn(inp)
+            all_outputs.append(outputs)
+        out = torch.cat(all_outputs, 0)
+        
+        return hidden_t, out
