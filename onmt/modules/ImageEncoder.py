@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
-
+import matplotlib.pyplot as plt
 
 class ImageEncoder(nn.Module):
     def __init__(self, opt):
@@ -40,12 +40,9 @@ class ImageEncoder(nn.Module):
     def forward(self, input):
         input = input[0]
 
-        # input shape: (batch_size, 1, imgH, imgW)
-        # input = (input - 128.0) / 128.0
-
         # (batch_size, 64, imgH, imgW)
         # layer 1
-        input = F.relu(self.layer1(input[:, 0:1, :, :]), True)
+        input = F.relu(self.layer1(input[:, 0:1, :, :]-0.5), True)
 
         # (batch_size, 64, imgH/2, imgW/2)
         input = F.max_pool2d(input, kernel_size=(2, 2), stride=(2, 2))
