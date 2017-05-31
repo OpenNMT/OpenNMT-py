@@ -50,7 +50,6 @@ parser.add_argument('-brnn_merge', default='concat',
                     help="""Merge action for the bidirectional hidden states:
                     [concat|sum]""")
 
-
 # Optimization options
 parser.add_argument('-encoder_type', default='text',
                     help="""type of encoder to use""")
