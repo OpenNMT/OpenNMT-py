@@ -1,0 +1,434 @@
+{
+    "docs": [
+        {
+            "location": "/", 
+            "text": "This portal provides a detailled documentation of the OpenNMT toolkit. It describes how to use the PyTorch project and how it works.\n\n\nFor the Lua Torch version, visit the documentation at \nGitHub\n.\n\n\nAdditional resources\n\n\nYou can find additional help or tutorials in the following resources:\n\n\n\n\nForum\n\n\nGitter channel\n\n\n\n\n\n\nNote\n\n\nIf you find an error in this documentation, please consider \nopening an issue\n or directly submitting a modification by clicking on the edit button at the top of a page.", 
+            "title": "Overview"
+        }, 
+        {
+            "location": "/#additional-resources", 
+            "text": "You can find additional help or tutorials in the following resources:   Forum  Gitter channel    Note  If you find an error in this documentation, please consider  opening an issue  or directly submitting a modification by clicking on the edit button at the top of a page.", 
+            "title": "Additional resources"
+        }, 
+        {
+            "location": "/installation/", 
+            "text": "Standard\n\n\n1. \nInstall PyTorch\n\n\n2. Clone the OpenNMT-py repository:\n\n\ngit clone https://github.com/OpenNMT/OpenNMT-py\n\ncd\n OpenNMT-py\n\n\n\n\n\nAnd you are ready to go! Take a look at the \nquickstart\n to familiarize yourself with the main training workflow.", 
+            "title": "Installation"
+        }, 
+        {
+            "location": "/installation/#standard", 
+            "text": "1.  Install PyTorch  2. Clone the OpenNMT-py repository:  git clone https://github.com/OpenNMT/OpenNMT-py cd  OpenNMT-py  And you are ready to go! Take a look at the  quickstart  to familiarize yourself with the main training workflow.", 
+            "title": "Standard"
+        }, 
+        {
+            "location": "/quickstart/", 
+            "text": "Step 1: Preprocess the data\n\n\npython preprocess.py -train_src data/src-train.txt -train_tgt data/tgt-train.txt -valid_src data/src-val.txt -valid_tgt data/tgt-val.txt -save_data data/demo\n\n\n\n\n\nWe will be working with some example data in \ndata/\n folder.\n\n\nThe data consists of parallel source (\nsrc\n) and target (\ntgt\n) data containing one sentence per line with tokens separated by a space:\n\n\n\n\nsrc-train.txt\n\n\ntgt-train.txt\n\n\nsrc-val.txt\n\n\ntgt-val.txt\n\n\n\n\nValidation files are required and used to evaluate the convergence of the training. It usually contains no more than 5000 sentences.\n\n\n$ head -n 3 data/src-train.txt\nIt is not acceptable that , with the help of the national bureaucracies , Parliament \napos;s legislative prerogative should be made null and void by means of implementing provisions whose content , purpose and extent are not laid down in advance .\nFederal Master Trainer and Senior Instructor of the Italian Federation of Aerobic Fitness , Group Fitness , Postural Gym , Stretching and Pilates; from 2004 , he has been collaborating with Antiche Terme as personal Trainer and Instructor of Stretching , Pilates and Postural Gym .\n\nquot; Two soldiers came up to me and told me that if I refuse to sleep with them , they will kill me . They beat me and ripped my clothes .\n\n\n\n\n\nAfter running the preprocessing, the following files are generated:\n\n\n\n\ndemo.src.dict\n: Dictionary of source vocab to index mappings.\n\n\ndemo.tgt.dict\n: Dictionary of target vocab to index mappings.\n\n\ndemo.train.pt\n: serialized PyTorch file containing vocabulary, training and validation data\n\n\n\n\nThe \n*.dict\n files are needed to check or reuse the vocabularies. These files are simple human-readable dictionaries.\n\n\n$ head -n 10 data/demo.src.dict\n\nblank\n 1\n\nunk\n 2\n\ns\n 3\n\n/s\n 4\nIt 5\nis 6\nnot 7\nacceptable 8\nthat 9\n, 10\nwith 11\n\n\n\n\n\nInternally the system never touches the words themselves, but uses these indices.\n\n\nStep 2: Train the model\n\n\npython train.py -data data/demo.train.pt -save_model demo-model \n\n\n\n\n\nThe main train command is quite simple. Minimally it takes a data file\nand a save file.  This will run the default model, which consists of a\n2-layer LSTM with 500 hidden units on both the encoder/decoder. You\ncan also add \n-gpus 1\n to use (say) GPU 1.\n\n\nStep 3: Translate\n\n\npython translate.py -model demo-model_epochX_PPL.pt -src data/src-test.txt -output pred.txt -replace_unk -verbose\n\n\n\n\n\nNow you have a model which you can use to predict on new data. We do this by running beam search. This will output predictions into \npred.txt\n.\n\n\n\n\nNote\n\n\nThe predictions are going to be quite terrible, as the demo dataset is small. Try running on some larger datasets! For example you can download millions of parallel sentences for \ntranslation\n or \nsummarization\n.", 
+            "title": "Quickstart"
+        }, 
+        {
+            "location": "/quickstart/#step-1-preprocess-the-data", 
+            "text": "python preprocess.py -train_src data/src-train.txt -train_tgt data/tgt-train.txt -valid_src data/src-val.txt -valid_tgt data/tgt-val.txt -save_data data/demo  We will be working with some example data in  data/  folder.  The data consists of parallel source ( src ) and target ( tgt ) data containing one sentence per line with tokens separated by a space:   src-train.txt  tgt-train.txt  src-val.txt  tgt-val.txt   Validation files are required and used to evaluate the convergence of the training. It usually contains no more than 5000 sentences.  $ head -n 3 data/src-train.txt\nIt is not acceptable that , with the help of the national bureaucracies , Parliament  apos;s legislative prerogative should be made null and void by means of implementing provisions whose content , purpose and extent are not laid down in advance .\nFederal Master Trainer and Senior Instructor of the Italian Federation of Aerobic Fitness , Group Fitness , Postural Gym , Stretching and Pilates; from 2004 , he has been collaborating with Antiche Terme as personal Trainer and Instructor of Stretching , Pilates and Postural Gym . quot; Two soldiers came up to me and told me that if I refuse to sleep with them , they will kill me . They beat me and ripped my clothes .  After running the preprocessing, the following files are generated:   demo.src.dict : Dictionary of source vocab to index mappings.  demo.tgt.dict : Dictionary of target vocab to index mappings.  demo.train.pt : serialized PyTorch file containing vocabulary, training and validation data   The  *.dict  files are needed to check or reuse the vocabularies. These files are simple human-readable dictionaries.  $ head -n 10 data/demo.src.dict blank  1 unk  2 s  3 /s  4\nIt 5\nis 6\nnot 7\nacceptable 8\nthat 9\n, 10\nwith 11  Internally the system never touches the words themselves, but uses these indices.", 
+            "title": "Step 1: Preprocess the data"
+        }, 
+        {
+            "location": "/quickstart/#step-2-train-the-model", 
+            "text": "python train.py -data data/demo.train.pt -save_model demo-model   The main train command is quite simple. Minimally it takes a data file\nand a save file.  This will run the default model, which consists of a\n2-layer LSTM with 500 hidden units on both the encoder/decoder. You\ncan also add  -gpus 1  to use (say) GPU 1.", 
+            "title": "Step 2: Train the model"
+        }, 
+        {
+            "location": "/quickstart/#step-3-translate", 
+            "text": "python translate.py -model demo-model_epochX_PPL.pt -src data/src-test.txt -output pred.txt -replace_unk -verbose  Now you have a model which you can use to predict on new data. We do this by running beam search. This will output predictions into  pred.txt .   Note  The predictions are going to be quite terrible, as the demo dataset is small. Try running on some larger datasets! For example you can download millions of parallel sentences for  translation  or  summarization .", 
+            "title": "Step 3: Translate"
+        }, 
+        {
+            "location": "/extended/", 
+            "text": "Some useful tools:\n\n\nThe example below uses the Moses tokenizer (http://www.statmt.org/moses/) to prepare the data and the moses BLEU script for evaluation.\n\n\nwget https://raw.githubusercontent.com/moses-smt/mosesdecoder/master/scripts/tokenizer/tokenizer.perl\nwget https://raw.githubusercontent.com/moses-smt/mosesdecoder/master/scripts/share/nonbreaking_prefixes/nonbreaking_prefix.de\nwget https://raw.githubusercontent.com/moses-smt/mosesdecoder/master/scripts/share/nonbreaking_prefixes/nonbreaking_prefix.en\nsed -i \ns/\n$RealBin\n\\/..\\/share\\/nonbreaking_prefixes//\n tokenizer.perl\nwget https://raw.githubusercontent.com/moses-smt/mosesdecoder/master/scripts/generic/multi-bleu.perl\n\n\n\n\n\nWMT'16 Multimodal Translation: Multi30k (de-en)\n\n\nAn example of training for the WMT'16 Multimodal Translation task (http://www.statmt.org/wmt16/multimodal-task.html).\n\n\n0) Download the data.\n\n\nmkdir -p data/multi30k\nwget http://www.quest.dcs.shef.ac.uk/wmt16_files_mmt/training.tar.gz \n  tar -xf training.tar.gz -C data/multi30k \n rm training.tar.gz\nwget http://www.quest.dcs.shef.ac.uk/wmt16_files_mmt/validation.tar.gz \n tar -xf validation.tar.gz -C data/multi30k \n rm validation.tar.gz\nwget https://staff.fnwi.uva.nl/d.elliott/wmt16/mmt16_task1_test.tgz \n tar -xf mmt16_task1_test.tgz -C data/multi30k \n rm mmt16_task1_test.tgz\n\n\n\n\n\n1) Preprocess the data.\n\n\nfor\n l in en de\n;\n \ndo\n \nfor\n f in data/multi30k/*.\n$l\n;\n \ndo\n \nif\n \n[[\n \n$f\n !\n=\n *\ntest\n* \n]]\n;\n \nthen\n sed -i \n$\n d\n \n$f\n;\n \nfi\n;\n  \ndone\n;\n \ndone\n\n\nfor\n l in en de\n;\n \ndo\n \nfor\n f in data/multi30k/*.\n$l\n;\n \ndo\n perl tokenizer.perl -a -no-escape -l \n$l\n -q  \n \n$f\n \n \n$f\n.atok\n;\n \ndone\n;\n \ndone\n\npython preprocess.py -train_src data/multi30k/train.en.atok -train_tgt data/multi30k/train.de.atok -valid_src data/multi30k/val.en.atok -valid_tgt data/multi30k/val.de.atok -save_data data/multi30k.atok.low -lower\n\n\n\n\n\n2) Train the model.\n\n\npython train.py -data data/multi30k.atok.low.train.pt -save_model multi30k_model -gpus \n0\n\n\n\n\n\n\n3) Translate sentences.\n\n\npython translate.py -gpu \n0\n -model multi30k_model_e13_*.pt -src data/multi30k/test.en.atok -tgt data/multi30k/test.de.atok -replace_unk -verbose -output multi30k.test.pred.atok\n\n\n\n\n\n4) Evaluate.\n\n\nperl multi-bleu.perl data/multi30k/test.de.atok \n multi30k.test.pred.atok\n\n\n\n\n\nPretrained Models\n\n\nThe following pretrained models can be downloaded and used with translate.py (These were trained with an older version of the code; they will be updated soon).\n\n\n\n\nonmt_model_en_de_200k\n: An English-German translation model based on the 200k sentence dataset at \nOpenNMT/IntegrationTesting\n. Perplexity: 21.\n\n\nonmt_model_en_fr_b1M\n: An English-French model trained on benchmark-1M. Perplexity: 4.85.", 
+            "title": "Extended Example"
+        }, 
+        {
+            "location": "/extended/#some-useful-tools", 
+            "text": "The example below uses the Moses tokenizer (http://www.statmt.org/moses/) to prepare the data and the moses BLEU script for evaluation.  wget https://raw.githubusercontent.com/moses-smt/mosesdecoder/master/scripts/tokenizer/tokenizer.perl\nwget https://raw.githubusercontent.com/moses-smt/mosesdecoder/master/scripts/share/nonbreaking_prefixes/nonbreaking_prefix.de\nwget https://raw.githubusercontent.com/moses-smt/mosesdecoder/master/scripts/share/nonbreaking_prefixes/nonbreaking_prefix.en\nsed -i  s/ $RealBin \\/..\\/share\\/nonbreaking_prefixes//  tokenizer.perl\nwget https://raw.githubusercontent.com/moses-smt/mosesdecoder/master/scripts/generic/multi-bleu.perl", 
+            "title": "Some useful tools:"
+        }, 
+        {
+            "location": "/extended/#wmt16-multimodal-translation-multi30k-de-en", 
+            "text": "An example of training for the WMT'16 Multimodal Translation task (http://www.statmt.org/wmt16/multimodal-task.html).", 
+            "title": "WMT'16 Multimodal Translation: Multi30k (de-en)"
+        }, 
+        {
+            "location": "/extended/#0-download-the-data", 
+            "text": "mkdir -p data/multi30k\nwget http://www.quest.dcs.shef.ac.uk/wmt16_files_mmt/training.tar.gz    tar -xf training.tar.gz -C data/multi30k   rm training.tar.gz\nwget http://www.quest.dcs.shef.ac.uk/wmt16_files_mmt/validation.tar.gz   tar -xf validation.tar.gz -C data/multi30k   rm validation.tar.gz\nwget https://staff.fnwi.uva.nl/d.elliott/wmt16/mmt16_task1_test.tgz   tar -xf mmt16_task1_test.tgz -C data/multi30k   rm mmt16_task1_test.tgz", 
+            "title": "0) Download the data."
+        }, 
+        {
+            "location": "/extended/#1-preprocess-the-data", 
+            "text": "for  l in en de ;   do   for  f in data/multi30k/*. $l ;   do   if   [[   $f  ! =  * test *  ]] ;   then  sed -i  $  d   $f ;   fi ;    done ;   done  for  l in en de ;   do   for  f in data/multi30k/*. $l ;   do  perl tokenizer.perl -a -no-escape -l  $l  -q     $f     $f .atok ;   done ;   done \npython preprocess.py -train_src data/multi30k/train.en.atok -train_tgt data/multi30k/train.de.atok -valid_src data/multi30k/val.en.atok -valid_tgt data/multi30k/val.de.atok -save_data data/multi30k.atok.low -lower", 
+            "title": "1) Preprocess the data."
+        }, 
+        {
+            "location": "/extended/#2-train-the-model", 
+            "text": "python train.py -data data/multi30k.atok.low.train.pt -save_model multi30k_model -gpus  0", 
+            "title": "2) Train the model."
+        }, 
+        {
+            "location": "/extended/#3-translate-sentences", 
+            "text": "python translate.py -gpu  0  -model multi30k_model_e13_*.pt -src data/multi30k/test.en.atok -tgt data/multi30k/test.de.atok -replace_unk -verbose -output multi30k.test.pred.atok", 
+            "title": "3) Translate sentences."
+        }, 
+        {
+            "location": "/extended/#4-evaluate", 
+            "text": "perl multi-bleu.perl data/multi30k/test.de.atok   multi30k.test.pred.atok", 
+            "title": "4) Evaluate."
+        }, 
+        {
+            "location": "/extended/#pretrained-models", 
+            "text": "The following pretrained models can be downloaded and used with translate.py (These were trained with an older version of the code; they will be updated soon).   onmt_model_en_de_200k : An English-German translation model based on the 200k sentence dataset at  OpenNMT/IntegrationTesting . Perplexity: 21.  onmt_model_en_fr_b1M : An English-French model trained on benchmark-1M. Perplexity: 4.85.", 
+            "title": "Pretrained Models"
+        }, 
+        {
+            "location": "/options/preprocess/", 
+            "text": "preprocess.py:\n\n\nusage: preprocess.py [-h] [-md] [-config CONFIG] -train_src TRAIN_SRC\n                     -train_tgt TRAIN_TGT -valid_src VALID_SRC -valid_tgt\n                     VALID_TGT -save_data SAVE_DATA\n                     [-src_vocab_size SRC_VOCAB_SIZE]\n                     [-tgt_vocab_size TGT_VOCAB_SIZE] [-src_vocab SRC_VOCAB]\n                     [-tgt_vocab TGT_VOCAB] [-seq_length SEQ_LENGTH]\n                     [-shuffle SHUFFLE] [-seed SEED] [-lower]\n                     [-report_every REPORT_EVERY]\n\n\n\n\n\npreprocess.py\n\n\noptional arguments\n:\n\n\n-h, --help\n\n\nshow this help message and exit\n\n\n\n\n\n-md\n\n\nprint Markdown-formatted help text and exit.\n\n\n\n\n\n-config CONFIG\n\n\nRead options from this file\n\n\n\n\n\n-train_src TRAIN_SRC\n\n\nPath to the training source data\n\n\n\n\n\n-train_tgt TRAIN_TGT\n\n\nPath to the training target data\n\n\n\n\n\n-valid_src VALID_SRC\n\n\nPath to the validation source data\n\n\n\n\n\n-valid_tgt VALID_TGT\n\n\nPath to the validation target data\n\n\n\n\n\n-save_data SAVE_DATA\n\n\nOutput file for the prepared data\n\n\n\n\n\n-src_vocab_size SRC_VOCAB_SIZE\n\n\nSize of the source vocabulary\n\n\n\n\n\n-tgt_vocab_size TGT_VOCAB_SIZE\n\n\nSize of the target vocabulary\n\n\n\n\n\n-src_vocab SRC_VOCAB\n\n\nPath to an existing source vocabulary\n\n\n\n\n\n-tgt_vocab TGT_VOCAB\n\n\nPath to an existing target vocabulary\n\n\n\n\n\n-seq_length SEQ_LENGTH\n\n\nMaximum sequence length\n\n\n\n\n\n-shuffle SHUFFLE\n\n\nShuffle data\n\n\n\n\n\n-seed SEED\n\n\nRandom seed\n\n\n\n\n\n-lower\n\n\nlowercase data\n\n\n\n\n\n-report_every REPORT_EVERY\n\n\nReport status every this many sentences", 
+            "title": "preprocess.py"
+        }, 
+        {
+            "location": "/options/preprocess/#preprocesspy", 
+            "text": "usage: preprocess.py [-h] [-md] [-config CONFIG] -train_src TRAIN_SRC\n                     -train_tgt TRAIN_TGT -valid_src VALID_SRC -valid_tgt\n                     VALID_TGT -save_data SAVE_DATA\n                     [-src_vocab_size SRC_VOCAB_SIZE]\n                     [-tgt_vocab_size TGT_VOCAB_SIZE] [-src_vocab SRC_VOCAB]\n                     [-tgt_vocab TGT_VOCAB] [-seq_length SEQ_LENGTH]\n                     [-shuffle SHUFFLE] [-seed SEED] [-lower]\n                     [-report_every REPORT_EVERY]  preprocess.py", 
+            "title": "preprocess.py:"
+        }, 
+        {
+            "location": "/options/preprocess/#optional-arguments", 
+            "text": "", 
+            "title": "optional arguments:"
+        }, 
+        {
+            "location": "/options/preprocess/#-h-help", 
+            "text": "show this help message and exit", 
+            "title": "-h, --help"
+        }, 
+        {
+            "location": "/options/preprocess/#-md", 
+            "text": "print Markdown-formatted help text and exit.", 
+            "title": "-md"
+        }, 
+        {
+            "location": "/options/preprocess/#-config-config", 
+            "text": "Read options from this file", 
+            "title": "-config CONFIG"
+        }, 
+        {
+            "location": "/options/preprocess/#-train_src-train_src", 
+            "text": "Path to the training source data", 
+            "title": "-train_src TRAIN_SRC"
+        }, 
+        {
+            "location": "/options/preprocess/#-train_tgt-train_tgt", 
+            "text": "Path to the training target data", 
+            "title": "-train_tgt TRAIN_TGT"
+        }, 
+        {
+            "location": "/options/preprocess/#-valid_src-valid_src", 
+            "text": "Path to the validation source data", 
+            "title": "-valid_src VALID_SRC"
+        }, 
+        {
+            "location": "/options/preprocess/#-valid_tgt-valid_tgt", 
+            "text": "Path to the validation target data", 
+            "title": "-valid_tgt VALID_TGT"
+        }, 
+        {
+            "location": "/options/preprocess/#-save_data-save_data", 
+            "text": "Output file for the prepared data", 
+            "title": "-save_data SAVE_DATA"
+        }, 
+        {
+            "location": "/options/preprocess/#-src_vocab_size-src_vocab_size", 
+            "text": "Size of the source vocabulary", 
+            "title": "-src_vocab_size SRC_VOCAB_SIZE"
+        }, 
+        {
+            "location": "/options/preprocess/#-tgt_vocab_size-tgt_vocab_size", 
+            "text": "Size of the target vocabulary", 
+            "title": "-tgt_vocab_size TGT_VOCAB_SIZE"
+        }, 
+        {
+            "location": "/options/preprocess/#-src_vocab-src_vocab", 
+            "text": "Path to an existing source vocabulary", 
+            "title": "-src_vocab SRC_VOCAB"
+        }, 
+        {
+            "location": "/options/preprocess/#-tgt_vocab-tgt_vocab", 
+            "text": "Path to an existing target vocabulary", 
+            "title": "-tgt_vocab TGT_VOCAB"
+        }, 
+        {
+            "location": "/options/preprocess/#-seq_length-seq_length", 
+            "text": "Maximum sequence length", 
+            "title": "-seq_length SEQ_LENGTH"
+        }, 
+        {
+            "location": "/options/preprocess/#-shuffle-shuffle", 
+            "text": "Shuffle data", 
+            "title": "-shuffle SHUFFLE"
+        }, 
+        {
+            "location": "/options/preprocess/#-seed-seed", 
+            "text": "Random seed", 
+            "title": "-seed SEED"
+        }, 
+        {
+            "location": "/options/preprocess/#-lower", 
+            "text": "lowercase data", 
+            "title": "-lower"
+        }, 
+        {
+            "location": "/options/preprocess/#-report_every-report_every", 
+            "text": "Report status every this many sentences", 
+            "title": "-report_every REPORT_EVERY"
+        }, 
+        {
+            "location": "/options/train/", 
+            "text": "train.py:\n\n\nusage: train.py [-h] [-md] -data DATA [-save_model SAVE_MODEL]\n                [-train_from_state_dict TRAIN_FROM_STATE_DICT]\n                [-train_from TRAIN_FROM] [-layers LAYERS] [-rnn_size RNN_SIZE]\n                [-word_vec_size WORD_VEC_SIZE] [-input_feed INPUT_FEED]\n                [-brnn] [-brnn_merge BRNN_MERGE] [-batch_size BATCH_SIZE]\n                [-max_generator_batches MAX_GENERATOR_BATCHES]\n                [-epochs EPOCHS] [-start_epoch START_EPOCH]\n                [-param_init PARAM_INIT] [-optim OPTIM]\n                [-max_grad_norm MAX_GRAD_NORM] [-dropout DROPOUT]\n                [-curriculum] [-extra_shuffle] [-learning_rate LEARNING_RATE]\n                [-learning_rate_decay LEARNING_RATE_DECAY]\n                [-start_decay_at START_DECAY_AT]\n                [-pre_word_vecs_enc PRE_WORD_VECS_ENC]\n                [-pre_word_vecs_dec PRE_WORD_VECS_DEC] [-gpus GPUS [GPUS ...]]\n                [-log_interval LOG_INTERVAL]\n\n\n\n\n\ntrain.py\n\n\noptional arguments\n:\n\n\n-h, --help\n\n\nshow this help message and exit\n\n\n\n\n\n-md\n\n\nprint Markdown-formatted help text and exit.\n\n\n\n\n\n-data DATA\n\n\nPath to the *-train.pt file from preprocess.py\n\n\n\n\n\n-save_model SAVE_MODEL\n\n\nModel filename (the model will be saved as \nsave_model\n_epochN_PPL.pt where PPL\nis the validation perplexity\n\n\n\n\n\n-train_from_state_dict TRAIN_FROM_STATE_DICT\n\n\nIf training from a checkpoint then this is the path to the pretrained model\ns\nstate_dict.\n\n\n\n\n\n-train_from TRAIN_FROM\n\n\nIf training from a checkpoint then this is the path to the pretrained model.\n\n\n\n\n\n-layers LAYERS\n\n\nNumber of layers in the LSTM encoder/decoder\n\n\n\n\n\n-rnn_size RNN_SIZE\n\n\nSize of LSTM hidden states\n\n\n\n\n\n-word_vec_size WORD_VEC_SIZE\n\n\nWord embedding sizes\n\n\n\n\n\n-input_feed INPUT_FEED\n\n\nFeed the context vector at each time step as additional input (via concatenation\nwith the word embeddings) to the decoder.\n\n\n\n\n\n-brnn\n\n\nUse a bidirectional encoder\n\n\n\n\n\n-brnn_merge BRNN_MERGE\n\n\nMerge action for the bidirectional hidden states: [concat|sum]\n\n\n\n\n\n-batch_size BATCH_SIZE\n\n\nMaximum batch size\n\n\n\n\n\n-max_generator_batches MAX_GENERATOR_BATCHES\n\n\nMaximum batches of words in a sequence to run the generator on in parallel.\nHigher is faster, but uses more memory.\n\n\n\n\n\n-epochs EPOCHS\n\n\nNumber of training epochs\n\n\n\n\n\n-start_epoch START_EPOCH\n\n\nThe epoch from which to start\n\n\n\n\n\n-param_init PARAM_INIT\n\n\nParameters are initialized over uniform distribution with support (-param_init,\nparam_init)\n\n\n\n\n\n-optim OPTIM\n\n\nOptimization method. [sgd|adagrad|adadelta|adam]\n\n\n\n\n\n-max_grad_norm MAX_GRAD_NORM\n\n\nIf the norm of the gradient vector exceeds this, renormalize it to have the norm\nequal to max_grad_norm\n\n\n\n\n\n-dropout DROPOUT\n\n\nDropout probability; applied between LSTM stacks.\n\n\n\n\n\n-curriculum\n\n\nFor this many epochs, order the minibatches based on source sequence length.\nSometimes setting this to 1 will increase convergence speed.\n\n\n\n\n\n-extra_shuffle\n\n\nBy default only shuffle mini-batch order; when true, shuffle and re-assign mini-\nbatches\n\n\n\n\n\n-learning_rate LEARNING_RATE\n\n\nStarting learning rate. If adagrad/adadelta/adam is used, then this is the\nglobal learning rate. Recommended settings: sgd = 1, adagrad = 0.1, adadelta =\n1, adam = 0.001\n\n\n\n\n\n-learning_rate_decay LEARNING_RATE_DECAY\n\n\nIf update_learning_rate, decay learning rate by this much if (i) perplexity does\nnot decrease on the validation set or (ii) epoch has gone past start_decay_at\n\n\n\n\n\n-start_decay_at START_DECAY_AT\n\n\nStart decaying every epoch after and including this epoch\n\n\n\n\n\n-pre_word_vecs_enc PRE_WORD_VECS_ENC\n\n\nIf a valid path is specified, then this will load pretrained word embeddings on\nthe encoder side. See README for specific formatting instructions.\n\n\n\n\n\n-pre_word_vecs_dec PRE_WORD_VECS_DEC\n\n\nIf a valid path is specified, then this will load pretrained word embeddings on\nthe decoder side. See README for specific formatting instructions.\n\n\n\n\n\n-gpus GPUS [GPUS ...]\n\n\nUse CUDA on the listed devices.\n\n\n\n\n\n-log_interval LOG_INTERVAL\n\n\nPrint stats at this interval.", 
+            "title": "train.py"
+        }, 
+        {
+            "location": "/options/train/#trainpy", 
+            "text": "usage: train.py [-h] [-md] -data DATA [-save_model SAVE_MODEL]\n                [-train_from_state_dict TRAIN_FROM_STATE_DICT]\n                [-train_from TRAIN_FROM] [-layers LAYERS] [-rnn_size RNN_SIZE]\n                [-word_vec_size WORD_VEC_SIZE] [-input_feed INPUT_FEED]\n                [-brnn] [-brnn_merge BRNN_MERGE] [-batch_size BATCH_SIZE]\n                [-max_generator_batches MAX_GENERATOR_BATCHES]\n                [-epochs EPOCHS] [-start_epoch START_EPOCH]\n                [-param_init PARAM_INIT] [-optim OPTIM]\n                [-max_grad_norm MAX_GRAD_NORM] [-dropout DROPOUT]\n                [-curriculum] [-extra_shuffle] [-learning_rate LEARNING_RATE]\n                [-learning_rate_decay LEARNING_RATE_DECAY]\n                [-start_decay_at START_DECAY_AT]\n                [-pre_word_vecs_enc PRE_WORD_VECS_ENC]\n                [-pre_word_vecs_dec PRE_WORD_VECS_DEC] [-gpus GPUS [GPUS ...]]\n                [-log_interval LOG_INTERVAL]  train.py", 
+            "title": "train.py:"
+        }, 
+        {
+            "location": "/options/train/#optional-arguments", 
+            "text": "", 
+            "title": "optional arguments:"
+        }, 
+        {
+            "location": "/options/train/#-h-help", 
+            "text": "show this help message and exit", 
+            "title": "-h, --help"
+        }, 
+        {
+            "location": "/options/train/#-md", 
+            "text": "print Markdown-formatted help text and exit.", 
+            "title": "-md"
+        }, 
+        {
+            "location": "/options/train/#-data-data", 
+            "text": "Path to the *-train.pt file from preprocess.py", 
+            "title": "-data DATA"
+        }, 
+        {
+            "location": "/options/train/#-save_model-save_model", 
+            "text": "Model filename (the model will be saved as  save_model _epochN_PPL.pt where PPL\nis the validation perplexity", 
+            "title": "-save_model SAVE_MODEL"
+        }, 
+        {
+            "location": "/options/train/#-train_from_state_dict-train_from_state_dict", 
+            "text": "If training from a checkpoint then this is the path to the pretrained model s\nstate_dict.", 
+            "title": "-train_from_state_dict TRAIN_FROM_STATE_DICT"
+        }, 
+        {
+            "location": "/options/train/#-train_from-train_from", 
+            "text": "If training from a checkpoint then this is the path to the pretrained model.", 
+            "title": "-train_from TRAIN_FROM"
+        }, 
+        {
+            "location": "/options/train/#-layers-layers", 
+            "text": "Number of layers in the LSTM encoder/decoder", 
+            "title": "-layers LAYERS"
+        }, 
+        {
+            "location": "/options/train/#-rnn_size-rnn_size", 
+            "text": "Size of LSTM hidden states", 
+            "title": "-rnn_size RNN_SIZE"
+        }, 
+        {
+            "location": "/options/train/#-word_vec_size-word_vec_size", 
+            "text": "Word embedding sizes", 
+            "title": "-word_vec_size WORD_VEC_SIZE"
+        }, 
+        {
+            "location": "/options/train/#-input_feed-input_feed", 
+            "text": "Feed the context vector at each time step as additional input (via concatenation\nwith the word embeddings) to the decoder.", 
+            "title": "-input_feed INPUT_FEED"
+        }, 
+        {
+            "location": "/options/train/#-brnn", 
+            "text": "Use a bidirectional encoder", 
+            "title": "-brnn"
+        }, 
+        {
+            "location": "/options/train/#-brnn_merge-brnn_merge", 
+            "text": "Merge action for the bidirectional hidden states: [concat|sum]", 
+            "title": "-brnn_merge BRNN_MERGE"
+        }, 
+        {
+            "location": "/options/train/#-batch_size-batch_size", 
+            "text": "Maximum batch size", 
+            "title": "-batch_size BATCH_SIZE"
+        }, 
+        {
+            "location": "/options/train/#-max_generator_batches-max_generator_batches", 
+            "text": "Maximum batches of words in a sequence to run the generator on in parallel.\nHigher is faster, but uses more memory.", 
+            "title": "-max_generator_batches MAX_GENERATOR_BATCHES"
+        }, 
+        {
+            "location": "/options/train/#-epochs-epochs", 
+            "text": "Number of training epochs", 
+            "title": "-epochs EPOCHS"
+        }, 
+        {
+            "location": "/options/train/#-start_epoch-start_epoch", 
+            "text": "The epoch from which to start", 
+            "title": "-start_epoch START_EPOCH"
+        }, 
+        {
+            "location": "/options/train/#-param_init-param_init", 
+            "text": "Parameters are initialized over uniform distribution with support (-param_init,\nparam_init)", 
+            "title": "-param_init PARAM_INIT"
+        }, 
+        {
+            "location": "/options/train/#-optim-optim", 
+            "text": "Optimization method. [sgd|adagrad|adadelta|adam]", 
+            "title": "-optim OPTIM"
+        }, 
+        {
+            "location": "/options/train/#-max_grad_norm-max_grad_norm", 
+            "text": "If the norm of the gradient vector exceeds this, renormalize it to have the norm\nequal to max_grad_norm", 
+            "title": "-max_grad_norm MAX_GRAD_NORM"
+        }, 
+        {
+            "location": "/options/train/#-dropout-dropout", 
+            "text": "Dropout probability; applied between LSTM stacks.", 
+            "title": "-dropout DROPOUT"
+        }, 
+        {
+            "location": "/options/train/#-curriculum", 
+            "text": "For this many epochs, order the minibatches based on source sequence length.\nSometimes setting this to 1 will increase convergence speed.", 
+            "title": "-curriculum"
+        }, 
+        {
+            "location": "/options/train/#-extra_shuffle", 
+            "text": "By default only shuffle mini-batch order; when true, shuffle and re-assign mini-\nbatches", 
+            "title": "-extra_shuffle"
+        }, 
+        {
+            "location": "/options/train/#-learning_rate-learning_rate", 
+            "text": "Starting learning rate. If adagrad/adadelta/adam is used, then this is the\nglobal learning rate. Recommended settings: sgd = 1, adagrad = 0.1, adadelta =\n1, adam = 0.001", 
+            "title": "-learning_rate LEARNING_RATE"
+        }, 
+        {
+            "location": "/options/train/#-learning_rate_decay-learning_rate_decay", 
+            "text": "If update_learning_rate, decay learning rate by this much if (i) perplexity does\nnot decrease on the validation set or (ii) epoch has gone past start_decay_at", 
+            "title": "-learning_rate_decay LEARNING_RATE_DECAY"
+        }, 
+        {
+            "location": "/options/train/#-start_decay_at-start_decay_at", 
+            "text": "Start decaying every epoch after and including this epoch", 
+            "title": "-start_decay_at START_DECAY_AT"
+        }, 
+        {
+            "location": "/options/train/#-pre_word_vecs_enc-pre_word_vecs_enc", 
+            "text": "If a valid path is specified, then this will load pretrained word embeddings on\nthe encoder side. See README for specific formatting instructions.", 
+            "title": "-pre_word_vecs_enc PRE_WORD_VECS_ENC"
+        }, 
+        {
+            "location": "/options/train/#-pre_word_vecs_dec-pre_word_vecs_dec", 
+            "text": "If a valid path is specified, then this will load pretrained word embeddings on\nthe decoder side. See README for specific formatting instructions.", 
+            "title": "-pre_word_vecs_dec PRE_WORD_VECS_DEC"
+        }, 
+        {
+            "location": "/options/train/#-gpus-gpus-gpus", 
+            "text": "Use CUDA on the listed devices.", 
+            "title": "-gpus GPUS [GPUS ...]"
+        }, 
+        {
+            "location": "/options/train/#-log_interval-log_interval", 
+            "text": "Print stats at this interval.", 
+            "title": "-log_interval LOG_INTERVAL"
+        }, 
+        {
+            "location": "/options/translate/", 
+            "text": "translate.py:\n\n\nusage: translate.py [-h] [-md] -model MODEL -src SRC [-tgt TGT]\n                    [-output OUTPUT] [-beam_size BEAM_SIZE]\n                    [-batch_size BATCH_SIZE]\n                    [-max_sent_length MAX_SENT_LENGTH] [-replace_unk]\n                    [-verbose] [-n_best N_BEST] [-gpu GPU]\n\n\n\n\n\ntranslate.py\n\n\noptional arguments\n:\n\n\n-h, --help\n\n\nshow this help message and exit\n\n\n\n\n\n-md\n\n\nprint Markdown-formatted help text and exit.\n\n\n\n\n\n-model MODEL\n\n\nPath to model .pt file\n\n\n\n\n\n-src SRC\n\n\nSource sequence to decode (one line per sequence)\n\n\n\n\n\n-tgt TGT\n\n\nTrue target sequence (optional)\n\n\n\n\n\n-output OUTPUT\n\n\nPath to output the predictions (each line will be the decoded sequence\n\n\n\n\n\n-beam_size BEAM_SIZE\n\n\nBeam size\n\n\n\n\n\n-batch_size BATCH_SIZE\n\n\nBatch size\n\n\n\n\n\n-max_sent_length MAX_SENT_LENGTH\n\n\nMaximum sentence length.\n\n\n\n\n\n-replace_unk\n\n\nReplace the generated UNK tokens with the source token that had the highest\nattention weight. If phrase_table is provided, it will lookup the identified\nsource token and give the corresponding target token. If it is not provided (or\nthe identified source token does not exist in the table) then it will copy the\nsource token\n\n\n\n\n\n-verbose\n\n\nPrint scores and predictions for each sentence\n\n\n\n\n\n-n_best N_BEST\n\n\nIf verbose is set, will output the n_best decoded sentences\n\n\n\n\n\n-gpu GPU\n\n\nDevice to run on", 
+            "title": "translate.py"
+        }, 
+        {
+            "location": "/options/translate/#translatepy", 
+            "text": "usage: translate.py [-h] [-md] -model MODEL -src SRC [-tgt TGT]\n                    [-output OUTPUT] [-beam_size BEAM_SIZE]\n                    [-batch_size BATCH_SIZE]\n                    [-max_sent_length MAX_SENT_LENGTH] [-replace_unk]\n                    [-verbose] [-n_best N_BEST] [-gpu GPU]  translate.py", 
+            "title": "translate.py:"
+        }, 
+        {
+            "location": "/options/translate/#optional-arguments", 
+            "text": "", 
+            "title": "optional arguments:"
+        }, 
+        {
+            "location": "/options/translate/#-h-help", 
+            "text": "show this help message and exit", 
+            "title": "-h, --help"
+        }, 
+        {
+            "location": "/options/translate/#-md", 
+            "text": "print Markdown-formatted help text and exit.", 
+            "title": "-md"
+        }, 
+        {
+            "location": "/options/translate/#-model-model", 
+            "text": "Path to model .pt file", 
+            "title": "-model MODEL"
+        }, 
+        {
+            "location": "/options/translate/#-src-src", 
+            "text": "Source sequence to decode (one line per sequence)", 
+            "title": "-src SRC"
+        }, 
+        {
+            "location": "/options/translate/#-tgt-tgt", 
+            "text": "True target sequence (optional)", 
+            "title": "-tgt TGT"
+        }, 
+        {
+            "location": "/options/translate/#-output-output", 
+            "text": "Path to output the predictions (each line will be the decoded sequence", 
+            "title": "-output OUTPUT"
+        }, 
+        {
+            "location": "/options/translate/#-beam_size-beam_size", 
+            "text": "Beam size", 
+            "title": "-beam_size BEAM_SIZE"
+        }, 
+        {
+            "location": "/options/translate/#-batch_size-batch_size", 
+            "text": "Batch size", 
+            "title": "-batch_size BATCH_SIZE"
+        }, 
+        {
+            "location": "/options/translate/#-max_sent_length-max_sent_length", 
+            "text": "Maximum sentence length.", 
+            "title": "-max_sent_length MAX_SENT_LENGTH"
+        }, 
+        {
+            "location": "/options/translate/#-replace_unk", 
+            "text": "Replace the generated UNK tokens with the source token that had the highest\nattention weight. If phrase_table is provided, it will lookup the identified\nsource token and give the corresponding target token. If it is not provided (or\nthe identified source token does not exist in the table) then it will copy the\nsource token", 
+            "title": "-replace_unk"
+        }, 
+        {
+            "location": "/options/translate/#-verbose", 
+            "text": "Print scores and predictions for each sentence", 
+            "title": "-verbose"
+        }, 
+        {
+            "location": "/options/translate/#-n_best-n_best", 
+            "text": "If verbose is set, will output the n_best decoded sentences", 
+            "title": "-n_best N_BEST"
+        }, 
+        {
+            "location": "/options/translate/#-gpu-gpu", 
+            "text": "Device to run on", 
+            "title": "-gpu GPU"
+        }, 
+        {
+            "location": "/references/", 
+            "text": "This is the list of papers, OpenNMT has been inspired on:\n\n\n\n\nLuong, M. T., Pham, H., \n Manning, C. D. (2015). \nEffective approaches to attention-based neural machine translation\n. arXiv preprint arXiv:1508.04025.\n\n\nSennrich, R., \n Haddow, B. (2016). \nLinguistic input features improve neural machine translation\n. arXiv preprint arXiv:1606.02892.\n\n\nSennrich, R., Haddow, B., \n Birch, A. (2015). \nNeural machine translation of rare words with subword units\n. arXiv preprint arXiv:1508.07909.\n\n\nWu, Y., Schuster, M., Chen, Z., Le, Q. V., Norouzi, M., Macherey, W., ... \n Klingner, J. (2016). \nGoogle's Neural Machine Translation System: Bridging the Gap between Human and Machine Translation\n. arXiv preprint arXiv:1609.08144.\n\n\nJean, S., Cho, K., Memisevic, R., Bengio, Y. (2015). \nOn Using Very Large Target Vocabulary for Neural Machine Translation\n. ACL 2015", 
+            "title": "References"
+        }
+    ]
+}

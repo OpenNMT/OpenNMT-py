@@ -1,0 +1,829 @@
+
+<!DOCTYPE html>
+<html class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="shortcut icon" href="../../assets/images/favicon.png">
+      
+      <meta name="generator" content="mkdocs-0.16.3, mkdocs-material-1.5.5">
+    
+    
+      
+        <title>preprocess.py - OpenNMT-py</title>
+      
+    
+    
+      <script src="../../assets/javascripts/modernizr-56ade86843.js"></script>
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/application-b1a1975878.css">
+      
+    
+    
+      
+        
+        
+        
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono">
+        <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
+      
+      <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    
+    
+      <link rel="stylesheet" href="../../css/extra.css">
+    
+    
+  </head>
+  
+  
+  
+  
+    <body>
+  
+    <svg class="md-svg">
+      <defs>
+        
+        
+          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448" viewBox="0 0 416 448" id="github"><path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19T128 352t-18.125-8.5-10.75-19T96 304t3.125-20.5 10.75-19T128 256t18.125 8.5 10.75 19T160 304zm160 0q0 10-3.125 20.5t-10.75 19T288 352t-18.125-8.5-10.75-19T256 304t3.125-20.5 10.75-19T288 256t18.125 8.5 10.75 19T320 304zm40 0q0-30-17.25-51T296 232q-10.25 0-48.75 5.25Q229.5 240 208 240t-39.25-2.75Q130.75 232 120 232q-29.5 0-46.75 21T56 304q0 22 8 38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0 37.25-1.75t35-7.375 30.5-15 20.25-25.75T360 304zm56-44q0 51.75-15.25 82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5T212 416q-19.5 0-35.5-.75t-36.875-3.125-38.125-7.5-34.25-12.875T37 371.5t-21.5-28.75Q0 312 0 260q0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25 30.875Q171.5 96 212 96q37 0 70 8 26.25-20.5 46.75-30.25T376 64q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34 99.5z"/></svg>
+        
+      </defs>
+    </svg>
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="drawer">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="search">
+    <label class="md-overlay" data-md-component="overlay" for="drawer"></label>
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid">
+    <div class="md-flex">
+      <div class="md-flex__cell md-flex__cell--shrink">
+        
+          <a href="../.." title="OpenNMT-py" class="md-logo md-header-nav__button">
+            <img src="../../img/logo-alpha.png" width="24" height="24">
+          </a>
+        
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <label class="md-icon md-icon--menu md-header-nav__button" for="drawer"></label>
+      </div>
+      <div class="md-flex__cell md-flex__cell--stretch">
+        <span class="md-flex__ellipsis md-header-nav__title">
+          
+            
+              
+                <span class="md-header-nav__parent">
+                  Reference: Options
+                </span>
+              
+            
+            preprocess.py
+          
+        </span>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        
+          <label class="md-icon md-icon--search md-header-nav__button" for="search"></label>
+          
+<div class="md-search" data-md-component="search">
+  <div class="md-search__overlay"></div>
+  <div class="md-search__inner">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" required placeholder="Search" accesskey="s" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query">
+      <label class="md-icon md-search__icon" for="search"></label>
+      <button type="reset" class="md-icon md-search__icon" data-md-component="reset">close</button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="result">
+          <div class="md-search-result__meta" data-md-lang-result-none="No matching documents" data-md-lang-result-one="1 matching document" data-md-lang-result-other="# matching documents">
+            Type to start searching
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+        
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <div class="md-header-nav__source">
+          
+            
+
+
+  
+
+
+  <a href="https://github.com/OpenNMT/OpenNMT-py" title="Go to repository" class="md-source" data-md-source="github">
+    
+      <div class="md-source__icon">
+        <svg viewBox="0 0 24 24" width="24" height="24">
+          <use xlink:href="#github" width="24" height="24"></use>
+        </svg>
+      </div>
+    
+    <div class="md-source__repository">
+      OpenNMT/OpenNMT-py
+    </div>
+  </a>
+
+          
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+    
+    <div class="md-container">
+      
+      
+      <main class="md-main">
+        <div class="md-main__inner md-grid" data-md-component="container">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" data-md-level="0">
+  <label class="md-nav__title md-nav__title--site" for="drawer">
+    
+      <i class="md-logo md-nav__button">
+        <img src="../../img/logo-alpha.png">
+      </i>
+    
+    OpenNMT-py
+  </label>
+  
+    <div class="md-nav__source">
+      
+
+
+  
+
+
+  <a href="https://github.com/OpenNMT/OpenNMT-py" title="Go to repository" class="md-source" data-md-source="github">
+    
+      <div class="md-source__icon">
+        <svg viewBox="0 0 24 24" width="24" height="24">
+          <use xlink:href="#github" width="24" height="24"></use>
+        </svg>
+      </div>
+    
+    <div class="md-source__repository">
+      OpenNMT/OpenNMT-py
+    </div>
+  </a>
+
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../.." title="Overview" class="md-nav__link">
+      Overview
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../installation/" title="Installation" class="md-nav__link">
+      Installation
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../quickstart/" title="Quickstart" class="md-nav__link">
+      Quickstart
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../extended/" title="Extended Example" class="md-nav__link">
+      Extended Example
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5" type="checkbox" id="nav-5" checked>
+    
+    <label class="md-nav__link" for="nav-5">
+      Reference: Options
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-5">
+        Reference: Options
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="toc">
+        preprocess.py
+      </label>
+    
+    <a href="./" title="preprocess.py" class="md-nav__link md-nav__link--active">
+      preprocess.py
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#optional-arguments" title="optional arguments:" class="md-nav__link">
+    optional arguments:
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#-h-help" title="-h, --help" class="md-nav__link">
+    -h, --help
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-md" title="-md" class="md-nav__link">
+    -md
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-config-config" title="-config CONFIG" class="md-nav__link">
+    -config CONFIG
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-train_src-train_src" title="-train_src TRAIN_SRC" class="md-nav__link">
+    -train_src TRAIN_SRC
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-train_tgt-train_tgt" title="-train_tgt TRAIN_TGT" class="md-nav__link">
+    -train_tgt TRAIN_TGT
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-valid_src-valid_src" title="-valid_src VALID_SRC" class="md-nav__link">
+    -valid_src VALID_SRC
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-valid_tgt-valid_tgt" title="-valid_tgt VALID_TGT" class="md-nav__link">
+    -valid_tgt VALID_TGT
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-save_data-save_data" title="-save_data SAVE_DATA" class="md-nav__link">
+    -save_data SAVE_DATA
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-src_vocab_size-src_vocab_size" title="-src_vocab_size SRC_VOCAB_SIZE" class="md-nav__link">
+    -src_vocab_size SRC_VOCAB_SIZE
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-tgt_vocab_size-tgt_vocab_size" title="-tgt_vocab_size TGT_VOCAB_SIZE" class="md-nav__link">
+    -tgt_vocab_size TGT_VOCAB_SIZE
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-src_vocab-src_vocab" title="-src_vocab SRC_VOCAB" class="md-nav__link">
+    -src_vocab SRC_VOCAB
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-tgt_vocab-tgt_vocab" title="-tgt_vocab TGT_VOCAB" class="md-nav__link">
+    -tgt_vocab TGT_VOCAB
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-seq_length-seq_length" title="-seq_length SEQ_LENGTH" class="md-nav__link">
+    -seq_length SEQ_LENGTH
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-shuffle-shuffle" title="-shuffle SHUFFLE" class="md-nav__link">
+    -shuffle SHUFFLE
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-seed-seed" title="-seed SEED" class="md-nav__link">
+    -seed SEED
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-lower" title="-lower" class="md-nav__link">
+    -lower
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-report_every-report_every" title="-report_every REPORT_EVERY" class="md-nav__link">
+    -report_every REPORT_EVERY
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+      
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../train/" title="train.py" class="md-nav__link">
+      train.py
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../translate/" title="translate.py" class="md-nav__link">
+      translate.py
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../references/" title="References" class="md-nav__link">
+      References
+    </a>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#optional-arguments" title="optional arguments:" class="md-nav__link">
+    optional arguments:
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#-h-help" title="-h, --help" class="md-nav__link">
+    -h, --help
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-md" title="-md" class="md-nav__link">
+    -md
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-config-config" title="-config CONFIG" class="md-nav__link">
+    -config CONFIG
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-train_src-train_src" title="-train_src TRAIN_SRC" class="md-nav__link">
+    -train_src TRAIN_SRC
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-train_tgt-train_tgt" title="-train_tgt TRAIN_TGT" class="md-nav__link">
+    -train_tgt TRAIN_TGT
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-valid_src-valid_src" title="-valid_src VALID_SRC" class="md-nav__link">
+    -valid_src VALID_SRC
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-valid_tgt-valid_tgt" title="-valid_tgt VALID_TGT" class="md-nav__link">
+    -valid_tgt VALID_TGT
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-save_data-save_data" title="-save_data SAVE_DATA" class="md-nav__link">
+    -save_data SAVE_DATA
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-src_vocab_size-src_vocab_size" title="-src_vocab_size SRC_VOCAB_SIZE" class="md-nav__link">
+    -src_vocab_size SRC_VOCAB_SIZE
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-tgt_vocab_size-tgt_vocab_size" title="-tgt_vocab_size TGT_VOCAB_SIZE" class="md-nav__link">
+    -tgt_vocab_size TGT_VOCAB_SIZE
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-src_vocab-src_vocab" title="-src_vocab SRC_VOCAB" class="md-nav__link">
+    -src_vocab SRC_VOCAB
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-tgt_vocab-tgt_vocab" title="-tgt_vocab TGT_VOCAB" class="md-nav__link">
+    -tgt_vocab TGT_VOCAB
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-seq_length-seq_length" title="-seq_length SEQ_LENGTH" class="md-nav__link">
+    -seq_length SEQ_LENGTH
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-shuffle-shuffle" title="-shuffle SHUFFLE" class="md-nav__link">
+    -shuffle SHUFFLE
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-seed-seed" title="-seed SEED" class="md-nav__link">
+    -seed SEED
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-lower" title="-lower" class="md-nav__link">
+    -lower
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-report_every-report_every" title="-report_every REPORT_EVERY" class="md-nav__link">
+    -report_every REPORT_EVERY
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+      
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                  <a href="https://github.com/OpenNMT/OpenNMT-py/edit/master/docs/options/preprocess.md" title="Edit this page" class="md-icon md-content__icon">edit</a>
+                
+                
+                <!--- This file was automatically generated. Do not modify it manually but use the docs/options/generate.sh script instead. -->
+
+<h1 id="preprocesspy">preprocess.py:<a class="headerlink" href="#preprocesspy" title="Permanent link">&para;</a></h1>
+<div class="codehilite"><pre><span></span>usage: preprocess.py [-h] [-md] [-config CONFIG] -train_src TRAIN_SRC
+                     -train_tgt TRAIN_TGT -valid_src VALID_SRC -valid_tgt
+                     VALID_TGT -save_data SAVE_DATA
+                     [-src_vocab_size SRC_VOCAB_SIZE]
+                     [-tgt_vocab_size TGT_VOCAB_SIZE] [-src_vocab SRC_VOCAB]
+                     [-tgt_vocab TGT_VOCAB] [-seq_length SEQ_LENGTH]
+                     [-shuffle SHUFFLE] [-seed SEED] [-lower]
+                     [-report_every REPORT_EVERY]
+</pre></div>
+
+
+<p>preprocess.py</p>
+<h2 id="optional-arguments"><strong>optional arguments</strong>:<a class="headerlink" href="#optional-arguments" title="Permanent link">&para;</a></h2>
+<h3 id="-h-help"><strong>-h, --help</strong><a class="headerlink" href="#-h-help" title="Permanent link">&para;</a></h3>
+<div class="codehilite"><pre><span></span>show this help message and exit
+</pre></div>
+
+
+<h3 id="-md"><strong>-md</strong><a class="headerlink" href="#-md" title="Permanent link">&para;</a></h3>
+<div class="codehilite"><pre><span></span>print Markdown-formatted help text and exit.
+</pre></div>
+
+
+<h3 id="-config-config"><strong>-config CONFIG</strong><a class="headerlink" href="#-config-config" title="Permanent link">&para;</a></h3>
+<div class="codehilite"><pre><span></span>Read options from this file
+</pre></div>
+
+
+<h3 id="-train_src-train_src"><strong>-train_src TRAIN_SRC</strong><a class="headerlink" href="#-train_src-train_src" title="Permanent link">&para;</a></h3>
+<div class="codehilite"><pre><span></span>Path to the training source data
+</pre></div>
+
+
+<h3 id="-train_tgt-train_tgt"><strong>-train_tgt TRAIN_TGT</strong><a class="headerlink" href="#-train_tgt-train_tgt" title="Permanent link">&para;</a></h3>
+<div class="codehilite"><pre><span></span>Path to the training target data
+</pre></div>
+
+
+<h3 id="-valid_src-valid_src"><strong>-valid_src VALID_SRC</strong><a class="headerlink" href="#-valid_src-valid_src" title="Permanent link">&para;</a></h3>
+<div class="codehilite"><pre><span></span>Path to the validation source data
+</pre></div>
+
+
+<h3 id="-valid_tgt-valid_tgt"><strong>-valid_tgt VALID_TGT</strong><a class="headerlink" href="#-valid_tgt-valid_tgt" title="Permanent link">&para;</a></h3>
+<div class="codehilite"><pre><span></span>Path to the validation target data
+</pre></div>
+
+
+<h3 id="-save_data-save_data"><strong>-save_data SAVE_DATA</strong><a class="headerlink" href="#-save_data-save_data" title="Permanent link">&para;</a></h3>
+<div class="codehilite"><pre><span></span>Output file for the prepared data
+</pre></div>
+
+
+<h3 id="-src_vocab_size-src_vocab_size"><strong>-src_vocab_size SRC_VOCAB_SIZE</strong><a class="headerlink" href="#-src_vocab_size-src_vocab_size" title="Permanent link">&para;</a></h3>
+<div class="codehilite"><pre><span></span>Size of the source vocabulary
+</pre></div>
+
+
+<h3 id="-tgt_vocab_size-tgt_vocab_size"><strong>-tgt_vocab_size TGT_VOCAB_SIZE</strong><a class="headerlink" href="#-tgt_vocab_size-tgt_vocab_size" title="Permanent link">&para;</a></h3>
+<div class="codehilite"><pre><span></span>Size of the target vocabulary
+</pre></div>
+
+
+<h3 id="-src_vocab-src_vocab"><strong>-src_vocab SRC_VOCAB</strong><a class="headerlink" href="#-src_vocab-src_vocab" title="Permanent link">&para;</a></h3>
+<div class="codehilite"><pre><span></span>Path to an existing source vocabulary
+</pre></div>
+
+
+<h3 id="-tgt_vocab-tgt_vocab"><strong>-tgt_vocab TGT_VOCAB</strong><a class="headerlink" href="#-tgt_vocab-tgt_vocab" title="Permanent link">&para;</a></h3>
+<div class="codehilite"><pre><span></span>Path to an existing target vocabulary
+</pre></div>
+
+
+<h3 id="-seq_length-seq_length"><strong>-seq_length SEQ_LENGTH</strong><a class="headerlink" href="#-seq_length-seq_length" title="Permanent link">&para;</a></h3>
+<div class="codehilite"><pre><span></span>Maximum sequence length
+</pre></div>
+
+
+<h3 id="-shuffle-shuffle"><strong>-shuffle SHUFFLE</strong><a class="headerlink" href="#-shuffle-shuffle" title="Permanent link">&para;</a></h3>
+<div class="codehilite"><pre><span></span>Shuffle data
+</pre></div>
+
+
+<h3 id="-seed-seed"><strong>-seed SEED</strong><a class="headerlink" href="#-seed-seed" title="Permanent link">&para;</a></h3>
+<div class="codehilite"><pre><span></span>Random seed
+</pre></div>
+
+
+<h3 id="-lower"><strong>-lower</strong><a class="headerlink" href="#-lower" title="Permanent link">&para;</a></h3>
+<div class="codehilite"><pre><span></span>lowercase data
+</pre></div>
+
+
+<h3 id="-report_every-report_every"><strong>-report_every REPORT_EVERY</strong><a class="headerlink" href="#-report_every-report_every" title="Permanent link">&para;</a></h3>
+<div class="codehilite"><pre><span></span>Report status every this many sentences
+</pre></div>
+                
+                  
+                
+              
+              
+                
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid">
+        
+          <a href="../../extended/" title="Extended Example" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
+            </div>
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                Extended Example
+              </span>
+            </div>
+          </a>
+        
+        
+          <a href="../train/" title="train.py" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                train.py
+              </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        powered by
+        <a href="http://www.mkdocs.org" title="MkDocs">MkDocs</a>
+        and
+        <a href="http://squidfunk.github.io/mkdocs-material/" title="Material for MkDocs">
+          Material for MkDocs</a>
+      </div>
+      
+        
+  <div class="md-footer-social">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    
+      <a href="http://opennmt.net" class="md-footer-social__link fa fa-globe"></a>
+    
+      <a href="https://github.com/OpenNMT/OpenNMT-py" class="md-footer-social__link fa fa-github"></a>
+    
+  </div>
+
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../../assets/javascripts/application-ad1183cb07.js"></script>
+      <script>app.initialize({url:{base:"../.."}})</script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_HTMLorMML"></script>
+      
+    
+    
+      
+      <script>!function(e,t,a,n,o,c,i){e.GoogleAnalyticsObject=o,e[o]=e[o]||function(){(e[o].q=e[o].q||[]).push(arguments)},e[o].l=1*new Date,c=t.createElement(a),i=t.getElementsByTagName(a)[0],c.async=1,c.src=n,i.parentNode.insertBefore(c,i)}(window,document,"script","https://www.google-analytics.com/analytics.js","ga"),ga("create","UA-89222039-1","opennmt.net"),ga("set","anonymizeIp",!0),ga("send","pageview");var links=document.getElementsByTagName("a");Array.prototype.map.call(links,function(e){e.host!=document.location.host&&e.addEventListener("click",function(){var t=e.getAttribute("data-md-action")||"follow";ga("send","event","outbound",t,e.href)})});var query=document.forms.search.query;query.addEventListener("blur",function(){if(this.value){var e=document.location.pathname;ga("send","pageview",e+"?q="+this.value)}})</script>
+      
+    
+  </body>
+</html>
