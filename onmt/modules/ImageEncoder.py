@@ -79,7 +79,7 @@ class ImageEncoder(nn.Module):
 
         # (batch_size, 512, imgH/2/2/2, imgW/2/2/2)
         input = F.relu(self.batch_norm3(self.layer6(input)), True)
-        
+
         # # (batch_size, 512, H, W)
         # # (batch_size, H, W, 512)
         all_outputs = []
