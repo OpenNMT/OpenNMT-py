@@ -2,6 +2,8 @@ import onmt
 import torch.nn as nn
 import torch
 from torch.autograd import Variable
+from PIL import Image
+from torchvision import transforms
 
 
 class Translator(object):
@@ -16,7 +18,11 @@ class Translator(object):
         self.src_dict = checkpoint['dicts']['src']
         self.tgt_dict = checkpoint['dicts']['tgt']
 
-        encoder = onmt.Models.Encoder(model_opt, self.src_dict)
+        if model_opt.encoder_type == "text":
+            encoder = onmt.Models.Encoder(model_opt, self.src_dict)
+        else:
+            encoder = onmt.Models.Encoder(model_opt)
+            
         decoder = onmt.Models.Decoder(model_opt, self.tgt_dict)
         model = onmt.Models.NMTModel(encoder, decoder)
 
@@ -38,6 +44,7 @@ class Translator(object):
 
         self.model = model
         self.model.eval()
+        self.model_opt = model_opt
 
     def initBeamAccum(self):
         self.beam_accum = {
@@ -46,10 +53,17 @@ class Translator(object):
             "scores": [],
             "log_probs": []}
 
+
     def buildData(self, srcBatch, goldBatch):
-        srcData = [self.src_dict.convertToIdx(b,
-                                              onmt.Constants.UNK_WORD)
-                   for b in srcBatch]
+        if model_opt.encoder_type == "text": 
+            srcData = [self.src_dict.convertToIdx(b,
+                                                  onmt.Constants.UNK_WORD)
+                       for b in srcBatch]
+        else:
+            srcData = [transforms.ToTensor()(
+                Image.open(opt.src_img_dir + "/" + b))
+                       for b in srcBatch]
+            
         tgtData = None
         if goldBatch:
             tgtData = [self.tgt_dict.convertToIdx(b,
