@@ -46,7 +46,8 @@ class Dataset(object):
                 data_width = data[i].size(2)
                 height_offset = max_height - data_height if align_right else 0
                 width_offset = max_width - data_width if align_right else 0
-                out[i].narrow(1, height_offset, data_height).narrow(2, width_offset, data_width).copy_(data[i])
+                out[i].narrow(1, height_offset, data_height) \
+                      .narrow(2, width_offset, data_width).copy_(data[i])
             return out, widths
 
     def __getitem__(self, index):

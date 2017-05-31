@@ -154,7 +154,8 @@ def makeData(srcFile, tgtFile, srcDicts, tgtDicts):
                 src += [srcDicts.convertToIdx(srcWords,
                                               onmt.Constants.UNK_WORD)]
             else:
-                src += [transforms.ToTensor()(Image.open(opt.src_img_dir + "/" + srcWords[0]))]
+                src += [transforms.ToTensor()(
+                    Image.open(opt.src_img_dir + "/" + srcWords[0]))]
             tgt += [tgtDicts.convertToIdx(tgtWords,
                                           onmt.Constants.UNK_WORD,
                                           onmt.Constants.BOS_WORD,
@@ -197,7 +198,6 @@ def main():
     if opt.src_type == "text":
         dicts['src'] = initVocabulary('source', opt.train_src, opt.src_vocab,
                                       opt.src_vocab_size)
-    
     dicts['tgt'] = initVocabulary('target', opt.train_tgt, opt.tgt_vocab,
                                   opt.tgt_vocab_size)
 
