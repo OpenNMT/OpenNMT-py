@@ -215,7 +215,7 @@ class Translator(object):
         #  run the encoder on the src, return final encoder hidden state
         encStates, context = self.model.encoder(src)
         hidden_states = self.model._fix_enc_hidden(encStates[0])
-        hs_final = hidden_state[:-1, :, :].squeeze()
+        hs_final = hidden_states[:-1, :, :].squeeze()
         hs_final_norm = torch.div(hs_final, torch.norm(hs_final, 2, 1).expand(hs_final.size()))
         return hs_final_norm
 
