@@ -197,7 +197,7 @@ class Translator(object):
         pred, predScore, attn, goldScore = self.translateBatch(src, tgt)
         pred, predScore, attn, goldScore = list(zip(*sorted(zip(pred, predScore, attn, goldScore, indices), key=lambda x: x[-1])))[:-1]
 
-        #  (3) convert indexes to words, or X
+        #  (3) convert indexes to words
         predBatch = []
         for b in range(src[0].size(1)):
             predBatch.append(
@@ -212,9 +212,11 @@ class Translator(object):
         dataset = self.buildData(srcBatch, goldBatch)
         src, tgt, indices = dataset[0]
 
-        #  (1) run the encoder on the src
+        #  run the encoder on the src, return final encoder hidden state
         encStates, context = self.model.encoder(src)
-        hidden_state = self.model._fix_enc_hidden(encStates[0])
-        return hidden_state[:-1, :, :].squeeze() # return final hidden state of top layer
+        hidden_states = self.model._fix_enc_hidden(encStates[0])
+        hs_final = hidden_state[:-1, :, :].squeeze()
+        hs_final_norm = torch.div(hs_final, torch.norm(hs_final, 2, 1).expand(hs_final.size()))
+        return hs_final_norm
 
 
