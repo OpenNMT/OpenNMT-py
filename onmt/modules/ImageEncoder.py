@@ -4,6 +4,7 @@ import torch
 import torch.cuda
 from torch.autograd import Variable
 
+
 class ImageEncoder(nn.Module):
     def __init__(self, opt):
         super(ImageEncoder, self).__init__()
@@ -82,11 +83,14 @@ class ImageEncoder(nn.Module):
         # # (batch_size, H, W, 512)
         all_outputs = []
         for row in range(input.size(2)):
-            inp = input[:, :, row, :].transpose(0, 2).transpose(1, 2)
-            pos_emb = self.pos_lut(Variable(torch.cuda.LongTensor(batchSize).fill_(row)))
-            with_pos = torch.cat((pos_emb.view(1, pos_emb.size(0), pos_emb.size(1)), inp), 0)
+            inp = input[:, :, row, :].transpose(0, 2)\
+                                     .transpose(1, 2)
+            pos_emb = self.pos_lut(
+                Variable(torch.cuda.LongTensor(batchSize).fill_(row)))
+            with_pos = torch.cat(
+                (pos_emb.view(1, pos_emb.size(0), pos_emb.size(1)), inp), 0)
             outputs, hidden_t = self.rnn(with_pos)
-            all_outputs.append(outputs) 
+            all_outputs.append(outputs)
         out = torch.cat(all_outputs, 0)
 
         return hidden_t, out
