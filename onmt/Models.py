@@ -97,7 +97,7 @@ class Decoder(nn.Module):
 
     def forward(self, input, hidden, context, init_output):
         emb = self.word_lut(input)
-        
+
         # n.b. you can increase performance if you compute W_ih * x for all
         # iterations in parallel, but that's only possible if
         # self.input_feed=False

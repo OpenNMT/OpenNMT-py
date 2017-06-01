@@ -22,7 +22,7 @@ class Translator(object):
             encoder = onmt.Models.Encoder(model_opt, self.src_dict)
         else:
             encoder = onmt.modules.ImageEncoder(model_opt)
-            
+
         decoder = onmt.Models.Decoder(model_opt, self.tgt_dict)
         model = onmt.Models.NMTModel(encoder, decoder)
 
@@ -45,9 +45,10 @@ class Translator(object):
         self.model = model
         self.model.eval()
         self.model_opt = model_opt
-        
+
     def buildData(self, srcBatch, goldBatch):
-        if "encoder_type" not in self.model_opt or self.model_opt.encoder_type == "text": 
+        if "encoder_type" not in self.model_opt or \
+           self.model_opt.encoder_type == "text":
             srcData = [self.src_dict.convertToIdx(b,
                                                   onmt.Constants.UNK_WORD)
                        for b in srcBatch]
@@ -55,7 +56,7 @@ class Translator(object):
             srcData = [transforms.ToTensor()(
                 Image.open(self.opt.src_img_dir + "/" + b[0]))
                        for b in srcBatch]
-            
+
         tgtData = None
         if goldBatch:
             tgtData = [self.tgt_dict.convertToIdx(b,
@@ -205,7 +206,6 @@ class Translator(object):
         allHyp, allScores, allAttn = [], [], []
         n_best = self.opt.n_best
 
-        
         for b in range(batchSize):
             scores, ks = beam[b].sortBest()
 
