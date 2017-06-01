@@ -8,6 +8,7 @@ class Translator(object):
     def __init__(self, opt):
         self.opt = opt
         self.tt = torch.cuda if opt.cuda else torch
+        self.beam_accum = None
 
         checkpoint = torch.load(opt.model)
 
@@ -37,6 +38,13 @@ class Translator(object):
 
         self.model = model
         self.model.eval()
+
+    def initBeamAccum(self):
+        self.beam_accum = {
+            "predicted_ids": [],
+            "beam_parent_ids": [],
+            "scores": [],
+            "log_probs": []}
 
     def buildData(self, srcBatch, goldBatch):
         srcData = [self.src_dict.convertToIdx(b,
@@ -182,7 +190,6 @@ class Translator(object):
             remainingSents = len(active)
 
         #  (4) package everything up
-
         allHyp, allScores, allAttn = [], [], []
         n_best = self.opt.n_best
 
@@ -196,6 +203,18 @@ class Translator(object):
             attn = [a.index_select(1, valid_attn) for a in attn]
             allHyp += [hyps]
             allAttn += [attn]
+
+            if self.beam_accum:
+                self.beam_accum["beam_parent_ids"].append(
+                    [t.tolist()
+                     for t in beam[b].prevKs])
+                self.beam_accum["scores"].append([
+                    ["%4f" % s for s in t.tolist()]
+                    for t in beam[b].allScores][1:])
+                self.beam_accum["predicted_ids"].append(
+                    [[self.tgt_dict.getLabel(id)
+                      for id in t.tolist()]
+                     for t in beam[b].nextYs][1:])
 
         return allHyp, allScores, allAttn, goldScores
 
