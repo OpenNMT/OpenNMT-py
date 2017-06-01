@@ -222,19 +222,25 @@ class Translator(object):
         return allHyp, allScores, allAttn, goldScores
 
     def translate(self, srcBatch, goldBatch):
+
         #  (1) convert words to indexes
         dataset = self.buildData(srcBatch, goldBatch)
         src, tgt, indices = dataset[0]
+        if src[0].dim() == 2:
+            batchSize = src[0].size(1)
+        else:
+            batchSize = src[0].size(0)
 
         #  (2) translate
         pred, predScore, attn, goldScore = self.translateBatch(src, tgt)
+        assert(len(pred) == len(attn))
         pred, predScore, attn, goldScore = list(zip(
             *sorted(zip(pred, predScore, attn, goldScore, indices),
                     key=lambda x: x[-1])))[:-1]
 
         #  (3) convert indexes to words
         predBatch = []
-        for b in range(src[0].size(1)):
+        for b in range(batchSize):
             predBatch.append(
                 [self.buildTargetTokens(pred[b][n], srcBatch[b], attn[b][n])
                  for n in range(self.opt.n_best)]

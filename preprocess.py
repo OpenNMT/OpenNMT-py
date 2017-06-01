@@ -140,9 +140,10 @@ def makeData(srcFile, tgtFile, srcDicts, tgtDicts):
             if opt.src_type == "text":
                 src += [srcDicts.convertToIdx(srcWords,
                                               onmt.Constants.UNK_WORD)]
-            else:
+            elif opt.src_type == "image":
                 src += [transforms.ToTensor()(
                     Image.open(opt.src_img_dir + "/" + srcWords[0]))]
+
             tgt += [tgtDicts.convertToIdx(tgtWords,
                                           onmt.Constants.UNK_WORD,
                                           onmt.Constants.BOS_WORD,
