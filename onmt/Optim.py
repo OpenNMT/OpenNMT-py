@@ -28,14 +28,17 @@ class Optim(object):
         self.start_decay = False
 
     def step(self):
-        # Compute gradients norm.
+        "Compute gradients norm."
         if self.max_grad_norm:
             clip_grad_norm(self.params, self.max_grad_norm)
         self.optimizer.step()
 
-    # Decay learning rate if val perf does not improve
-    # or we hit the start_decay_at limit.
     def updateLearningRate(self, ppl, epoch):
+        """
+        Decay learning rate if val perf does not improve
+        or we hit the start_decay_at limit.
+        """
+
         if self.start_decay_at is not None and epoch >= self.start_decay_at:
             self.start_decay = True
         if self.last_ppl is not None and ppl > self.last_ppl:

@@ -1,19 +1,20 @@
 from __future__ import division
-
-# Class for managing the internals of the beam search process.
-#
-#
-#         hyp1#-hyp1---hyp1 -hyp1
-#                 \             /
-#         hyp2 \-hyp2 /-hyp2#hyp2
-#                               /      \
-#         hyp3#-hyp3---hyp3 -hyp3
-#         ========================
-#
-# Takes care of beams, back pointers, and scores.
-
 import torch
 import onmt
+
+"""
+ Class for managing the internals of the beam search process.
+
+
+         hyp1-hyp1---hyp1 -hyp1
+                 \             /
+         hyp2 \-hyp2 /-hyp2hyp2
+                               /      \
+         hyp3-hyp3---hyp3 -hyp3
+         ========================
+
+ Takes care of beams, back pointers, and scores.
+"""
 
 
 class Beam(object):
@@ -37,25 +38,26 @@ class Beam(object):
         # The attentions (matrix) for each time.
         self.attn = []
 
-    # Get the outputs for the current timestep.
     def getCurrentState(self):
+        "Get the outputs for the current timestep."
         return self.nextYs[-1]
 
-    # Get the backpointers for the current timestep.
     def getCurrentOrigin(self):
+        "Get the backpointers for the current timestep."
         return self.prevKs[-1]
 
-    #  Given prob over words for every last beam `wordLk` and attention
-    #   `attnOut`: Compute and update the beam search.
-    #
-    # Parameters:
-    #
-    #     * `wordLk`- probs of advancing from the last step (K x words)
-    #     * `attnOut`- attention at the last step
-    #
-    # Returns: True if beam search is complete.
     def advance(self, wordLk, attnOut):
+        """
+        Given prob over words for every last beam `wordLk` and attention
+        `attnOut`: Compute and update the beam search.
 
+        Parameters:
+
+        * `wordLk`- probs of advancing from the last step (K x words)
+        * `attnOut`- attention at the last step
+
+        Returns: True if beam search is complete.
+        """
         numWords = wordLk.size(1)
 
         # Sum the previous scores.
@@ -85,22 +87,24 @@ class Beam(object):
     def sortBest(self):
         return torch.sort(self.scores, 0, True)
 
-    # Get the score of the best in the beam.
     def getBest(self):
+        "Get the score of the best in the beam."
         scores, ids = self.sortBest()
         return scores[1], ids[1]
 
-    # Walk back to construct the full hypothesis.
-    #
-    # Parameters.
-    #
-    #     * `k` - the position in the beam to construct.
-    #
-    # Returns.
-    #
-    #     1. The hypothesis
-    #     2. The attention at each time step.
     def getHyp(self, k):
+        """
+        Walk back to construct the full hypothesis.
+
+        Parameters.
+
+             * `k` - the position in the beam to construct.
+
+         Returns.
+
+            1. The hypothesis
+            2. The attention at each time step.
+        """
         hyp, attn = [], []
         # print(len(self.prevKs), len(self.nextYs), len(self.attn))
         for j in range(len(self.prevKs) - 1, -1, -1):
