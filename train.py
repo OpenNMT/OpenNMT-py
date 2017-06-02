@@ -51,7 +51,7 @@ parser.add_argument('-brnn_merge', default='concat',
 
 # Optimization options
 parser.add_argument('-encoder_type', default='text',
-                    help="""type of encoder to use""")
+                    help="Type of encoder to use. Options are [text|img].")
 parser.add_argument('-batch_size', type=int, default=64,
                     help='Maximum batch size')
 parser.add_argument('-max_generator_batches', type=int, default=32,
@@ -287,7 +287,7 @@ def main():
     print("Loading data from '%s'" % opt.data)
 
     dataset = torch.load(opt.data)
-
+    
     dict_checkpoint = (opt.train_from if opt.train_from
                        else opt.train_from_state_dict)
     if dict_checkpoint:
@@ -312,9 +312,12 @@ def main():
 
     if opt.encoder_type == "text":
         encoder = onmt.Models.Encoder(opt, dicts['src'])
-    else:
+    elif opt.encoder_type == "img":
         encoder = onmt.modules.ImageEncoder(opt)
-
+        assert("type" not in dataset or dataset["type"] == "img")
+    else:
+        print("Unsupported encoder type %s"%(opt.encoder_type))
+        
     decoder = onmt.Models.Decoder(opt, dicts['tgt'])
 
     generator = nn.Sequential(
