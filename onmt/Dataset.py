@@ -8,8 +8,10 @@ import onmt
 
 
 class Dataset(object):
-    def __init__(self, srcData, tgtData, batchSize, cuda, volatile=False):
+    def __init__(self, srcData, tgtData, batchSize, cuda,
+                 volatile=False, data_type="text"):
         self.src = srcData
+        self._type = data_type
         if tgtData:
             self.tgt = tgtData
             assert(len(self.src) == len(self.tgt))
@@ -22,7 +24,7 @@ class Dataset(object):
         self.volatile = volatile
 
     def _batchify(self, data, align_right=False, include_lengths=False):
-        if data[0].dim() == 1:
+        if self._type == "text":
             lengths = [x.size(0) for x in data]
             max_length = max(lengths)
             out = data[0].new(len(data), max_length).fill_(onmt.Constants.PAD)
@@ -34,7 +36,7 @@ class Dataset(object):
                 return out, lengths
             else:
                 return out
-        else:
+        elif self._type == "img":
             heights = [x.size(1) for x in data]
             max_height = max(heights)
             widths = [x.size(2) for x in data]
@@ -76,7 +78,7 @@ class Dataset(object):
             if b is None:
                 return b
             b = torch.stack(b, 0)
-            if b.dim() == 2:
+            if self._type == "text":
                 b = torch.stack(b, 0).t().contiguous()
             if self.cuda:
                 b = b.cuda()

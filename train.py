@@ -296,10 +296,12 @@ def main():
         dataset['dicts'] = checkpoint['dicts']
 
     trainData = onmt.Dataset(dataset['train']['src'],
-                             dataset['train']['tgt'], opt.batch_size, opt.gpus)
+                             dataset['train']['tgt'], opt.batch_size, opt.gpus,
+                             data_type=dataset.get("type", "text"))
     validData = onmt.Dataset(dataset['valid']['src'],
                              dataset['valid']['tgt'], opt.batch_size, opt.gpus,
-                             volatile=True)
+                             volatile=True.
+                             data_type=dataset.get("type", "text"))
 
     dicts = dataset['dicts']
     print(' * vocabulary size. source = %d; target = %d' %

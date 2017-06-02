@@ -3,8 +3,6 @@ import onmt.modules
 import torch.nn as nn
 import torch
 from torch.autograd import Variable
-from PIL import Image
-from torchvision import transforms
 
 
 class Translator(object):
@@ -18,10 +16,15 @@ class Translator(object):
         model_opt = checkpoint['opt']
         self.src_dict = checkpoint['dicts']['src']
         self.tgt_dict = checkpoint['dicts']['tgt']
-
-        if "encoder_type" not in model_opt or model_opt.encoder_type == "text":
+        self._type = model_opt.get("encoder_type", "text")
+        
+        
+        if self._type == "text":
             encoder = onmt.Models.Encoder(model_opt, self.src_dict)
-        else:
+        elif self._type == "img":
+            # Need additional libraries for images.
+            from PIL import Image
+            from torchvision import ToTensor
             encoder = onmt.modules.ImageEncoder(model_opt)
 
         decoder = onmt.Models.Decoder(model_opt, self.tgt_dict)
@@ -45,7 +48,6 @@ class Translator(object):
 
         self.model = model
         self.model.eval()
-        self.model_opt = model_opt
 
     def initBeamAccum(self):
         self.beam_accum = {
@@ -55,12 +57,12 @@ class Translator(object):
             "log_probs": []}
 
     def buildData(self, srcBatch, goldBatch):
-        if "encoder_type" not in self.model_opt or \
-           self.model_opt.encoder_type == "text":
+        # This needs to be the same as preprocess.py. 
+        if self._type == "text":
             srcData = [self.src_dict.convertToIdx(b,
                                                   onmt.Constants.UNK_WORD)
                        for b in srcBatch]
-        else:
+        elif self._type == "img":
             srcData = [transforms.ToTensor()(
                 Image.open(self.opt.src_img_dir + "/" + b[0]))
                        for b in srcBatch]
@@ -73,7 +75,8 @@ class Translator(object):
                        onmt.Constants.EOS_WORD) for b in goldBatch]
 
         return onmt.Dataset(srcData, tgtData,
-                            self.opt.batch_size, self.opt.cuda, volatile=True)
+                            , self.opt.cuda, volatile=True,
+                            data_type=self._type)
 
     def buildTargetTokens(self, pred, src, attn):
         tokens = self.tgt_dict.convertToLabels(pred, onmt.Constants.EOS)
@@ -87,10 +90,7 @@ class Translator(object):
 
     def translateBatch(self, srcBatch, tgtBatch):
         # Batch size is in different location depending on data.
-        if srcBatch[0].dim() == 2:
-            batchSize = srcBatch[0].size(1)
-        else:
-            batchSize = srcBatch[0].size(0)
+        batchSize = self.opt.batch_size
         beamSize = self.opt.beam_size
 
         #  (1) run the encoder on the src
@@ -233,24 +233,20 @@ class Translator(object):
                       for id in t.tolist()]
                      for t in beam[b].nextYs][1:])
 
-            if srcBatch.data.dim() == 2:
+            if self._type == "text":
                 valid_attn = srcBatch.data[:, b].ne(onmt.Constants.PAD) \
                                                 .nonzero().squeeze(1)
                 attn = [a.index_select(1, valid_attn) for a in attn]
                 allAttn += [attn]
-            else:
+            elif self._type == "img":
                 allAttn += [[0]]
         return allHyp, allScores, allAttn, goldScores
 
     def translate(self, srcBatch, goldBatch):
-
         #  (1) convert words to indexes
         dataset = self.buildData(srcBatch, goldBatch)
         src, tgt, indices = dataset[0]
-        if src[0].dim() == 2:
-            batchSize = src[0].size(1)
-        else:
-            batchSize = src[0].size(0)
+        batchSize = self.opt.batch_size
 
         #  (2) translate
         pred, predScore, attn, goldScore = self.translateBatch(src, tgt)
