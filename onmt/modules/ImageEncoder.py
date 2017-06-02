@@ -10,9 +10,9 @@ class ImageEncoder(nn.Module):
         super(ImageEncoder, self).__init__()
         self.layers = opt.layers
         self.num_directions = 2 if opt.brnn else 1
-        self.hidden_size = opt.rnn_size // self.num_directions
+        self.hidden_size = opt.rnn_size
 
-        self.layer1 = nn.Conv2d(1,   64, kernel_size=(3, 3),
+        self.layer1 = nn.Conv2d(3,   64, kernel_size=(3, 3),
                                 padding=(1, 1), stride=(1, 1))
         self.layer2 = nn.Conv2d(64,  128, kernel_size=(3, 3),
                                 padding=(1, 1), stride=(1, 1))
@@ -30,11 +30,11 @@ class ImageEncoder(nn.Module):
         self.batch_norm3 = nn.BatchNorm2d(512)
 
         input_size = 512
-        self.rnn = nn.LSTM(input_size, 512,
+        self.rnn = nn.LSTM(input_size, opt.rnn_size,
                            num_layers=opt.layers,
                            dropout=opt.dropout,
                            bidirectional=opt.brnn)
-        self.pos_lut = nn.Embedding(100, 512)
+        self.pos_lut = nn.Embedding(1000, input_size)
 
     def load_pretrained_vectors(self, opt):
         pass
@@ -44,7 +44,7 @@ class ImageEncoder(nn.Module):
         batchSize = input.size(0)
         # (batch_size, 64, imgH, imgW)
         # layer 1
-        input = F.relu(self.layer1(input[:, 0:1, :, :]-0.5), True)
+        input = F.relu(self.layer1(input[:, :, :, :]-0.5), True)
 
         # (batch_size, 64, imgH/2, imgW/2)
         input = F.max_pool2d(input, kernel_size=(2, 2), stride=(2, 2))

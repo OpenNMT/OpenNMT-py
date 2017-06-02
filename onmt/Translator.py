@@ -26,6 +26,10 @@ class Translator(object):
         self._type = model_opt.encoder_type \
             if "encoder_type" in model_opt else "text"
 
+        # For old models.
+        if self._type == "image":
+            self._type = "img"
+
         if self._type == "text":
             encoder = onmt.Models.Encoder(model_opt, self.src_dict)
         elif self._type == "img":
@@ -121,6 +125,7 @@ class Translator(object):
 
         #  This mask is applied to the attention model inside the decoder
         #  so that the attention ignores source padding
+        padMask = None
         if useMasking:
             padMask = srcBatch.data.eq(onmt.Constants.PAD).t()
 
@@ -136,7 +141,6 @@ class Translator(object):
             decOut = self.model.make_init_decoder_output(context)
             mask(padMask)
             initOutput = self.model.make_init_decoder_output(context)
-
             decOut, decStates, attn = self.model.decoder(
                 tgtBatch[:-1], decStates, context, initOutput)
             for dec_t, tgt_t in zip(decOut, tgtBatch[1:].data):
@@ -168,7 +172,6 @@ class Translator(object):
         remainingSents = batchSize
         for i in range(self.opt.max_sent_length):
             mask(padMask)
-
             # Prepare decoder input.
             input = torch.stack([b.getCurrentState() for b in beam
                                  if not b.done]).t().contiguous().view(1, -1)
@@ -222,7 +225,8 @@ class Translator(object):
                          updateActive(decStates[1]))
             decOut = updateActive(decOut)
             context = updateActive(context)
-            # padMask = padMask.index_select(1, activeIdx)
+            if useMasking:
+                padMask = padMask.index_select(1, activeIdx)
 
             remainingSents = len(active)
 

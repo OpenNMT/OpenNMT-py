@@ -300,7 +300,7 @@ def main():
     validData = onmt.Dataset(dataset['valid']['src'],
                              dataset['valid']['tgt'], opt.batch_size, opt.gpus,
                              volatile=True,
-                             data_typ=dataset.get("type", "text"))
+                             data_type=dataset.get("type", "text"))
 
     dicts = dataset['dicts']
     print(' * vocabulary size. source = %d; target = %d' %

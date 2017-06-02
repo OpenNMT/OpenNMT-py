@@ -23,8 +23,9 @@ class Dataset(object):
         self.numBatches = math.ceil(len(self.src)/batchSize)
         self.volatile = volatile
 
-    def _batchify(self, data, align_right=False, include_lengths=False):
-        if self._type == "text":
+    def _batchify(self, data, align_right=False,
+                  include_lengths=False, dtype="text"):
+        if dtype == "text":
             lengths = [x.size(0) for x in data]
             max_length = max(lengths)
             out = data[0].new(len(data), max_length).fill_(onmt.Constants.PAD)
@@ -36,7 +37,7 @@ class Dataset(object):
                 return out, lengths
             else:
                 return out
-        elif self._type == "img":
+        elif dtype == "img":
             heights = [x.size(1) for x in data]
             max_height = max(heights)
             widths = [x.size(2) for x in data]
@@ -56,11 +57,12 @@ class Dataset(object):
         assert index < self.numBatches, "%d > %d" % (index, self.numBatches)
         srcBatch, lengths = self._batchify(
             self.src[index*self.batchSize:(index+1)*self.batchSize],
-            align_right=False, include_lengths=True)
+            align_right=False, include_lengths=True, dtype=self._type)
 
         if self.tgt:
             tgtBatch = self._batchify(
-                self.tgt[index*self.batchSize:(index+1)*self.batchSize])
+                self.tgt[index*self.batchSize:(index+1)*self.batchSize],
+                dtype="text")
         else:
             tgtBatch = None
 
@@ -74,11 +76,11 @@ class Dataset(object):
         else:
             indices, srcBatch, tgtBatch = zip(*batch)
 
-        def wrap(b):
+        def wrap(b, dtype="text"):
             if b is None:
                 return b
             b = torch.stack(b, 0)
-            if self._type == "text":
+            if dtype == "text":
                 b = b.t().contiguous()
             if self.cuda:
                 b = b.cuda()
@@ -88,7 +90,8 @@ class Dataset(object):
         # wrap lengths in a Variable to properly split it in DataParallel
         lengths = torch.LongTensor(lengths).view(1, -1)
         lengths = Variable(lengths, volatile=self.volatile)
-        return (wrap(srcBatch), lengths), wrap(tgtBatch), indices
+        return (wrap(srcBatch, self._type), lengths), \
+            wrap(tgtBatch, "text"), indices
 
     def __len__(self):
         return self.numBatches
