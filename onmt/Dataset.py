@@ -79,7 +79,7 @@ class Dataset(object):
                 return b
             b = torch.stack(b, 0)
             if self._type == "text":
-                b = torch.stack(b, 0).t().contiguous()
+                b = b.t().contiguous()
             if self.cuda:
                 b = b.cuda()
             b = Variable(b, volatile=self.volatile)
