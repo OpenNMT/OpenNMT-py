@@ -44,6 +44,7 @@ parser.add_argument('-src_vocab',
                     help="Path to an existing source vocabulary")
 parser.add_argument('-tgt_vocab',
                     help="Path to an existing target vocabulary")
+# parser.add_argument('-features_vocabs_prefix', '', [[Path prefix to existing features vocabularies]])
 
 parser.add_argument('-src_seq_length', type=int, default=50,
                     help="Maximum source sequence length")
@@ -146,12 +147,13 @@ def initVocabulary(name, dataFile, vocabFile, vocabSize):
     if vocab is None:
         # If a dictionary is still missing, generate it.
         print('Building ' + name + ' vocabulary...')
-        genWordVocab = makeVocabulary(dataFile, vocabSize)
+        genWordVocab, genFeaturesVocabs = makeVocabulary(dataFile, vocabSize)
 
         vocab = genWordVocab
+        featuresVocabs = genFeaturesVocabs
 
     print()
-    return vocab
+    return vocab, featuresVocabs
 
 
 def saveVocabulary(name, vocab, file):
@@ -165,8 +167,9 @@ def saveVocabulary(name, vocab, file):
          vocabs[j].writeFile(file)
   
 
-def makeData(srcFile, tgtFile, srcDicts, tgtDicts):
+def makeData(srcFile, tgtFile, srcDicts, tgtDicts, srcFeatureDicts, tgtFeatureDicts):
     src, tgt = [], []
+    srcFeatures, tgtFeatures = [], []
     sizes = []
     count, ignored = 0, 0
 
@@ -195,8 +198,8 @@ def makeData(srcFile, tgtFile, srcDicts, tgtDicts):
             print('WARNING: ignoring an empty line ('+str(count+1)+')')
             continue
 
-        srcWords = sline.split()
-        tgtWords = tline.split()
+        srcWords, srcFeatures, _ = extractFeatures(sline.split())
+        tgtWords, tgtFeatures, _ = extractFeatures(tline.split())
 
         if len(srcWords) <= opt.src_seq_length \
            and len(tgtWords) <= opt.tgt_seq_length:
@@ -204,22 +207,31 @@ def makeData(srcFile, tgtFile, srcDicts, tgtDicts):
             # Check truncation condition.
             if opt.src_seq_length_trunc != 0:
                 srcWords = srcWords[:opt.src_seq_length_trunc]
+                srcFeatures = srcFeatures[:opt.src_seq_length_trunc]
             if opt.tgt_seq_length_trunc != 0:
                 tgtWords = tgtWords[:opt.tgt_seq_length_trunc]
+                tgtFeatures = tgtFeatures[:opt.tgt_seq_length_trunc]
 
             if opt.src_type == "text":
                 src += [srcDicts.convertToIdx(srcWords,
                                               onmt.Constants.UNK_WORD)]
+                if srcFeatureDicts:
+                    srcFeatures.append(generateSource(srcDicts.features, srcFeats, true))
             elif opt.src_type == "img":
                 loadImageLibs()
                 src += [transforms.ToTensor()(
                     Image.open(opt.src_img_dir + "/" + srcWords[0]))]
 
+
+            sizes += [len(srcWords)]      
+
             tgt += [tgtDicts.convertToIdx(tgtWords,
                                           onmt.Constants.UNK_WORD,
                                           onmt.Constants.BOS_WORD,
                                           onmt.Constants.EOS_WORD)]
-            sizes += [len(srcWords)]
+            tgtFeatures.append(generateTarget(tgtDicts.features, tgtFeats, true))
+            
+            
         else:
             ignored += 1
 
@@ -236,18 +248,22 @@ def makeData(srcFile, tgtFile, srcDicts, tgtDicts):
         perm = torch.randperm(len(src))
         src = [src[idx] for idx in perm]
         tgt = [tgt[idx] for idx in perm]
+        srcFeatures = [srcFeatures[idx] for idx in perm]
+        tgtFeatures = [tgtFeatures[idx] for idx in perm]
         sizes = [sizes[idx] for idx in perm]
 
     print('... sorting sentences by size')
     _, perm = torch.sort(torch.Tensor(sizes))
     src = [src[idx] for idx in perm]
     tgt = [tgt[idx] for idx in perm]
+    srcFeatures = [srcFeatures[idx] for idx in perm]
+    tgtFeatures = [tgtFeatures[idx] for idx in perm]
 
     print(('Prepared %d sentences ' +
           '(%d ignored due to length == 0 or src len > %d or tgt len > %d)') %
           (len(src), ignored, opt.src_seq_length, opt.tgt_seq_length))
 
-    return src, tgt
+    return src, tgt, srcFeatures, tgtFeatures
 
 
 def main():
@@ -255,26 +271,33 @@ def main():
     dicts = {}
     dicts['src'] = onmt.Dict()
     if opt.src_type == "text":
-        dicts['src'] = initVocabulary('source', opt.train_src, opt.src_vocab,
-                                      opt.src_vocab_size)
+        dicts['src'], dicts['src_features'] = \
+                initVocabulary('source', opt.train_src, opt.src_vocab,
+                               opt.src_vocab_size)
 
-    dicts['tgt'] = initVocabulary('target', opt.train_tgt, opt.tgt_vocab,
-                                  opt.tgt_vocab_size)
+    dicts['tgt'], dicts['tgt_features'] = \
+                initVocabulary('target', opt.train_tgt, opt.tgt_vocab,
+                               opt.tgt_vocab_size)
 
     print('Preparing training ...')
     train = {}
     train['src'], train['tgt'] = makeData(opt.train_src, opt.train_tgt,
-                                          dicts['src'], dicts['tgt'])
+                                          dicts['src'], dicts['tgt'],
+                                          dicts['src_features'], dicts['tgt_features'])
 
     print('Preparing validation ...')
     valid = {}
     valid['src'], valid['tgt'] = makeData(opt.valid_src, opt.valid_tgt,
-                                          dicts['src'], dicts['tgt'])
+                                          dicts['src'], dicts['tgt'],
+                                          dicts['src_features'], dicts['tgt_features'])
 
     if opt.src_vocab is None:
         saveVocabulary('source', dicts['src'], opt.save_data + '.src.dict')
     if opt.tgt_vocab is None:
         saveVocabulary('target', dicts['tgt'], opt.save_data + '.tgt.dict')
+    if opt.features_vocabs_prefix:len() == 0:
+        saveFeaturesVocabularies('source', data.dicts.src.features, opt.save_data)
+        saveFeaturesVocabularies('target', data.dicts.tgt.features, opt.save_data)
 
     print('Saving data to \'' + opt.save_data + '.train.pt\'...')
     save_data = {'dicts': dicts,
