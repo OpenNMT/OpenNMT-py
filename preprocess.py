@@ -69,22 +69,68 @@ opt = parser.parse_args()
 torch.manual_seed(opt.seed)
 
 
+def extractFeatures(tokens):
+    "Separate words and features (if any)."
+    words = []
+    features = []
+    numFeatures = None
+
+    for t in range(len(tokens)):
+        field = onmt.utils.String.split(tokens[t], '￨')
+        word = field[0]
+        if len(word) > 0:
+            words.append(word)
+
+        if numFeatures == None:
+            numFeatures = len(field) - 1
+        else:
+            assert(len(field) - 1 == numFeatures,
+                   "all words must have the same number of features")
+      
+        if len(field) > 1:
+            for i in range(1, len(field)):
+                if features[i - 1] == nil:
+                    features[i - 1] = []
+                features[i - 1].append(field[i])
+    return words, features, numFeatures if numFeatures else 0
+
+def hasFeatures(filename):
+    with open(filename) as f:
+        for l in f:
+            _, _, numFeatures = extractFeatures(l.strip().split())
+            break
+    return numFeatures > 0
+
 def makeVocabulary(filename, size):
     vocab = onmt.Dict([onmt.Constants.PAD_WORD, onmt.Constants.UNK_WORD,
                        onmt.Constants.BOS_WORD, onmt.Constants.EOS_WORD],
                       lower=opt.lower)
-
+    
+    featuresVocabs = {}
     with open(filename) as f:
         for sent in f.readlines():
-            for word in sent.split():
-                vocab.add(word)
+            words, features, numFeatures = extractFeatures(sent.split())
+
+            if len(featuresVocabs) == 0 and numFeatures > 0:
+              for j in range(numFeatures) do
+                featuresVocabs[j] = onmt.utils.Dict.new([onmt.Constants.PAD_WORD, onmt.Constants.UNK_WORD,
+                                                         onmt.Constants.BOS_WORD, onmt.Constants.EOS_WORD])
+            else:
+              assert(len(featuresVocabs) == numFeatures,
+                     "all sentences must have the same numbers of additional features")
+
+
+            for i in range(len(words)):
+              vocab.add(words[i])
+              for j in range(numFeatures):
+                  featuresVocabs[j].add(features[j][i])
 
     originalSize = vocab.size()
     vocab = vocab.prune(size)
     print('Created dictionary of size %d (pruned from %d)' %
           (vocab.size(), originalSize))
 
-    return vocab
+    return vocab, featuresVocabs
 
 
 def initVocabulary(name, dataFile, vocabFile, vocabSize):
@@ -112,6 +158,12 @@ def saveVocabulary(name, vocab, file):
     print('Saving ' + name + ' vocabulary to \'' + file + '\'...')
     vocab.writeFile(file)
 
+ def saveFeaturesVocabularies(name, vocabs, prefix):
+     for j range(len(vocabs)):
+         file = prefix + '.' + name + '_feature_' + j + '.dict'
+         print('Saving ' + name + ' feature ' + j + ' vocabulary to \'' + file + '\'...')
+         vocabs[j].writeFile(file)
+  
 
 def makeData(srcFile, tgtFile, srcDicts, tgtDicts):
     src, tgt = [], []
