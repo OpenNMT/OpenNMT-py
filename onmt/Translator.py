@@ -219,6 +219,7 @@ class Translator(object):
             allScores += [scores[:n_best]]
             hyps, attn = zip(*[beam[b].getHyp(k) for k in ks[:n_best]])
             allHyp += [hyps]
+<<<<<<< HEAD
             allAttn += [attn]
 
             if self.beam_accum:
@@ -233,6 +234,8 @@ class Translator(object):
                       for id in t.tolist()]
                      for t in beam[b].nextYs][1:])
 
+=======
+>>>>>>> 33f7f331d113ef39874c595504768bea3d8aa8bd
             if srcBatch.data.dim() == 2:
                 valid_attn = srcBatch.data[:, b].ne(onmt.Constants.PAD) \
                                                 .nonzero().squeeze(1)
