@@ -16,7 +16,7 @@ class Translator(object):
         model_opt = checkpoint['opt']
         self.src_dict = checkpoint['dicts']['src']
         self.tgt_dict = checkpoint['dicts']['tgt']
-        self._type = model_opt.get("encoder_type", "text")
+        self._type = model_opt.encoder_type if "encoder_type" in model_opt else "text"
         
         
         if self._type == "text":
@@ -56,6 +56,12 @@ class Translator(object):
             "scores": [],
             "log_probs": []}
 
+    def _getBatchSize(self, batch):
+        if self._type == "text":
+            return batch.size(1)
+        else:
+            return batch.size(0)
+        
     def buildData(self, srcBatch, goldBatch):
         # This needs to be the same as preprocess.py. 
         if self._type == "text":
@@ -74,8 +80,8 @@ class Translator(object):
                        onmt.Constants.BOS_WORD,
                        onmt.Constants.EOS_WORD) for b in goldBatch]
 
-        return onmt.Dataset(srcData, tgtData,
-                            , self.opt.cuda, volatile=True,
+        return onmt.Dataset(srcData, tgtData, self.opt.batch_size,
+                            self.opt.cuda, volatile=True,
                             data_type=self._type)
 
     def buildTargetTokens(self, pred, src, attn):
@@ -90,7 +96,7 @@ class Translator(object):
 
     def translateBatch(self, srcBatch, tgtBatch):
         # Batch size is in different location depending on data.
-        batchSize = self.opt.batch_size
+
         beamSize = self.opt.beam_size
 
         #  (1) run the encoder on the src
@@ -99,22 +105,23 @@ class Translator(object):
         
         # Drop the lengths needed for encoder.
         srcBatch = srcBatch[0]
-
+        batchSize = self._getBatchSize(srcBatch)
+        
         rnnSize = context.size(2)
         encStates = (self.model._fix_enc_hidden(encStates[0]),
                      self.model._fix_enc_hidden(encStates[1]))
 
         decoder = self.model.decoder
-        attn = decoder.attn
-        use_masking = self._type == "text"
+        attentionLayer = decoder.attn
+        useMasking = self._type == "text"
         
         #  This mask is applied to the attention model inside the decoder
         #  so that the attention ignores source padding
-        if use_masking:
+        if useMasking:
             padMask = srcBatch.data.eq(onmt.Constants.PAD).t()
         def mask(padMask):
-            if use_masking:
-                attn.applyMask(padMask)
+            if useMasking:
+                attentionLayer.applyMask(padMask)
             
 
         #  (2) if a target is specified, compute the 'goldScore'
@@ -147,7 +154,7 @@ class Translator(object):
 
         decOut = self.model.make_init_decoder_output(context)
 
-        if use_masking:
+        if useMasking:
             padMask = srcBatch.data.eq(onmt.Constants.PAD).t() \
                                                           .unsqueeze(0) \
                                                           .repeat(beamSize, 1, 1)
@@ -224,6 +231,10 @@ class Translator(object):
             allScores += [scores[:n_best]]
             hyps, attn = zip(*[beam[b].getHyp(k) for k in ks[:n_best]])
             allHyp += [hyps]
+            if useMasking:
+                valid_attn = srcBatch.data[:, b].ne(onmt.Constants.PAD) \
+                                                .nonzero().squeeze(1)
+                attn = [a.index_select(1, valid_attn) for a in attn]
             allAttn += [attn]
 
             if self.beam_accum:
@@ -238,20 +249,13 @@ class Translator(object):
                       for id in t.tolist()]
                      for t in beam[b].nextYs][1:])
 
-            if self._type == "text":
-                valid_attn = srcBatch.data[:, b].ne(onmt.Constants.PAD) \
-                                                .nonzero().squeeze(1)
-                attn = [a.index_select(1, valid_attn) for a in attn]
-                allAttn += [attn]
-            elif self._type == "img":
-                allAttn += [[0]]
         return allHyp, allScores, allAttn, goldScores
 
     def translate(self, srcBatch, goldBatch):
         #  (1) convert words to indexes
         dataset = self.buildData(srcBatch, goldBatch)
         src, tgt, indices = dataset[0]
-        batchSize = self.opt.batch_size
+        batchSize = self._getBatchSize(src[0])
 
         #  (2) translate
         pred, predScore, attn, goldScore = self.translateBatch(src, tgt)
