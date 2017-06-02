@@ -26,10 +26,6 @@ class Translator(object):
         self._type = model_opt.encoder_type \
             if "encoder_type" in model_opt else "text"
 
-        # For old models.
-        if self._type == "image":
-            self._type = "img"
-
         if self._type == "text":
             encoder = onmt.Models.Encoder(model_opt, self.src_dict)
         elif self._type == "img":
