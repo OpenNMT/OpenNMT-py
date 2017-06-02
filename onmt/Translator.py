@@ -5,6 +5,13 @@ import torch
 from torch.autograd import Variable
 
 
+def loadImageLibs():
+    "Conditional import of torch image libs."
+    global Image, transforms
+    from PIL import Image
+    from torchvision import transforms
+
+
 class Translator(object):
     def __init__(self, opt):
         self.opt = opt
@@ -16,15 +23,13 @@ class Translator(object):
         model_opt = checkpoint['opt']
         self.src_dict = checkpoint['dicts']['src']
         self.tgt_dict = checkpoint['dicts']['tgt']
-        self._type = model_opt.encoder_type if "encoder_type" in model_opt else "text"
-        
-        
+        self._type = model_opt.encoder_type \
+            if "encoder_type" in model_opt else "text"
+
         if self._type == "text":
             encoder = onmt.Models.Encoder(model_opt, self.src_dict)
         elif self._type == "img":
-            # Need additional libraries for images.
-            from PIL import Image
-            from torchvision import ToTensor
+            loadImageLibs()
             encoder = onmt.modules.ImageEncoder(model_opt)
 
         decoder = onmt.Models.Decoder(model_opt, self.tgt_dict)
@@ -61,9 +66,9 @@ class Translator(object):
             return batch.size(1)
         else:
             return batch.size(0)
-        
+
     def buildData(self, srcBatch, goldBatch):
-        # This needs to be the same as preprocess.py. 
+        # This needs to be the same as preprocess.py.
         if self._type == "text":
             srcData = [self.src_dict.convertToIdx(b,
                                                   onmt.Constants.UNK_WORD)
@@ -101,12 +106,11 @@ class Translator(object):
 
         #  (1) run the encoder on the src
         encStates, context = self.model.encoder(srcBatch)
-        
-        
+
         # Drop the lengths needed for encoder.
         srcBatch = srcBatch[0]
         batchSize = self._getBatchSize(srcBatch)
-        
+
         rnnSize = context.size(2)
         encStates = (self.model._fix_enc_hidden(encStates[0]),
                      self.model._fix_enc_hidden(encStates[1]))
@@ -114,15 +118,15 @@ class Translator(object):
         decoder = self.model.decoder
         attentionLayer = decoder.attn
         useMasking = self._type == "text"
-        
+
         #  This mask is applied to the attention model inside the decoder
         #  so that the attention ignores source padding
         if useMasking:
             padMask = srcBatch.data.eq(onmt.Constants.PAD).t()
+
         def mask(padMask):
             if useMasking:
                 attentionLayer.applyMask(padMask)
-            
 
         #  (2) if a target is specified, compute the 'goldScore'
         #  (i.e. log likelihood) of the target under the model
@@ -155,9 +159,10 @@ class Translator(object):
         decOut = self.model.make_init_decoder_output(context)
 
         if useMasking:
-            padMask = srcBatch.data.eq(onmt.Constants.PAD).t() \
-                                                          .unsqueeze(0) \
-                                                          .repeat(beamSize, 1, 1)
+            padMask = srcBatch.data.eq(
+                onmt.Constants.PAD).t() \
+                                   .unsqueeze(0) \
+                                   .repeat(beamSize, 1, 1)
 
         batchIdx = list(range(batchSize))
         remainingSents = batchSize

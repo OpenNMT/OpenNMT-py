@@ -3,6 +3,14 @@ import onmt.Markdown
 import argparse
 import torch
 
+
+def loadImageLibs():
+    "Conditional import of torch image libs."
+    global Image, transforms
+    from PIL import Image
+    from torchvision import transforms
+
+
 parser = argparse.ArgumentParser(description='preprocess.py')
 onmt.Markdown.add_md_help_argument(parser)
 
@@ -151,6 +159,7 @@ def makeData(srcFile, tgtFile, srcDicts, tgtDicts):
                 src += [srcDicts.convertToIdx(srcWords,
                                               onmt.Constants.UNK_WORD)]
             elif opt.src_type == "img":
+                loadImageLibs()
                 src += [transforms.ToTensor()(
                     Image.open(opt.src_img_dir + "/" + srcWords[0]))]
 
@@ -196,10 +205,6 @@ def main():
     if opt.src_type == "text":
         dicts['src'] = initVocabulary('source', opt.train_src, opt.src_vocab,
                                       opt.src_vocab_size)
-    elif opt.src_type == "img":
-        # Need additional libraries for images.
-        from PIL import Image
-        from torchvision import ToTensor
 
     dicts['tgt'] = initVocabulary('target', opt.train_tgt, opt.tgt_vocab,
                                   opt.tgt_vocab_size)
@@ -221,7 +226,7 @@ def main():
 
     print('Saving data to \'' + opt.save_data + '.train.pt\'...')
     save_data = {'dicts': dicts,
-                 'type' : opt.src_type, 
+                 'type':  opt.src_type,
                  'train': train,
                  'valid': valid}
     torch.save(save_data, opt.save_data + '.train.pt')

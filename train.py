@@ -287,7 +287,6 @@ def main():
     print("Loading data from '%s'" % opt.data)
 
     dataset = torch.load(opt.data)
-    
     dict_checkpoint = (opt.train_from if opt.train_from
                        else opt.train_from_state_dict)
     if dict_checkpoint:
@@ -300,8 +299,8 @@ def main():
                              data_type=dataset.get("type", "text"))
     validData = onmt.Dataset(dataset['valid']['src'],
                              dataset['valid']['tgt'], opt.batch_size, opt.gpus,
-                             volatile=True.
-                             data_type=dataset.get("type", "text"))
+                             volatile=True,
+                             data_typ=dataset.get("type", "text"))
 
     dicts = dataset['dicts']
     print(' * vocabulary size. source = %d; target = %d' %
@@ -318,8 +317,8 @@ def main():
         encoder = onmt.modules.ImageEncoder(opt)
         assert("type" not in dataset or dataset["type"] == "img")
     else:
-        print("Unsupported encoder type %s"%(opt.encoder_type))
-        
+        print("Unsupported encoder type %s" % (opt.encoder_type))
+
     decoder = onmt.Models.Decoder(opt, dicts['tgt'])
 
     generator = nn.Sequential(
