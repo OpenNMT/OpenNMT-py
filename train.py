@@ -2,6 +2,7 @@ from __future__ import division
 
 import onmt
 import onmt.Markdown
+import onmt.modules
 import argparse
 import torch
 import torch.nn as nn
@@ -49,7 +50,8 @@ parser.add_argument('-brnn_merge', default='concat',
                     [concat|sum]""")
 
 # Optimization options
-
+parser.add_argument('-encoder_type', default='text',
+                    help="Type of encoder to use. Options are [text|img].")
 parser.add_argument('-batch_size', type=int, default=64,
                     help='Maximum batch size')
 parser.add_argument('-max_generator_batches', type=int, default=32,
@@ -285,7 +287,6 @@ def main():
     print("Loading data from '%s'" % opt.data)
 
     dataset = torch.load(opt.data)
-
     dict_checkpoint = (opt.train_from if opt.train_from
                        else opt.train_from_state_dict)
     if dict_checkpoint:
@@ -294,10 +295,12 @@ def main():
         dataset['dicts'] = checkpoint['dicts']
 
     trainData = onmt.Dataset(dataset['train']['src'],
-                             dataset['train']['tgt'], opt.batch_size, opt.gpus)
+                             dataset['train']['tgt'], opt.batch_size, opt.gpus,
+                             data_type=dataset.get("type", "text"))
     validData = onmt.Dataset(dataset['valid']['src'],
                              dataset['valid']['tgt'], opt.batch_size, opt.gpus,
-                             volatile=True)
+                             volatile=True,
+                             data_type=dataset.get("type", "text"))
 
     dicts = dataset['dicts']
     print(' * vocabulary size. source = %d; target = %d' %
@@ -308,7 +311,14 @@ def main():
 
     print('Building model...')
 
-    encoder = onmt.Models.Encoder(opt, dicts['src'])
+    if opt.encoder_type == "text":
+        encoder = onmt.Models.Encoder(opt, dicts['src'])
+    elif opt.encoder_type == "img":
+        encoder = onmt.modules.ImageEncoder(opt)
+        assert("type" not in dataset or dataset["type"] == "img")
+    else:
+        print("Unsupported encoder type %s" % (opt.encoder_type))
+
     decoder = onmt.Models.Decoder(opt, dicts['tgt'])
 
     generator = nn.Sequential(

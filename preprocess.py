@@ -1,8 +1,15 @@
 import onmt
 import onmt.Markdown
-
 import argparse
 import torch
+
+
+def loadImageLibs():
+    "Conditional import of torch image libs."
+    global Image, transforms
+    from PIL import Image
+    from torchvision import transforms
+
 
 parser = argparse.ArgumentParser(description='preprocess.py')
 onmt.Markdown.add_md_help_argument(parser)
@@ -10,6 +17,12 @@ onmt.Markdown.add_md_help_argument(parser)
 # **Preprocess Options**
 
 parser.add_argument('-config',    help="Read options from this file")
+
+parser.add_argument('-src_type', default="text",
+                    help="Type of the source input. Options are [text|img].")
+parser.add_argument('-src_img_dir', default=".",
+                    help="Location of source images")
+
 
 parser.add_argument('-train_src', required=True,
                     help="Path to the training source data")
@@ -142,8 +155,14 @@ def makeData(srcFile, tgtFile, srcDicts, tgtDicts):
             if opt.tgt_seq_length_trunc != 0:
                 tgtWords = tgtWords[:opt.tgt_seq_length_trunc]
 
-            src += [srcDicts.convertToIdx(srcWords,
-                                          onmt.Constants.UNK_WORD)]
+            if opt.src_type == "text":
+                src += [srcDicts.convertToIdx(srcWords,
+                                              onmt.Constants.UNK_WORD)]
+            elif opt.src_type == "img":
+                loadImageLibs()
+                src += [transforms.ToTensor()(
+                    Image.open(opt.src_img_dir + "/" + srcWords[0]))]
+
             tgt += [tgtDicts.convertToIdx(tgtWords,
                                           onmt.Constants.UNK_WORD,
                                           onmt.Constants.BOS_WORD,
@@ -182,8 +201,11 @@ def makeData(srcFile, tgtFile, srcDicts, tgtDicts):
 def main():
 
     dicts = {}
-    dicts['src'] = initVocabulary('source', opt.train_src, opt.src_vocab,
-                                  opt.src_vocab_size)
+    dicts['src'] = onmt.Dict()
+    if opt.src_type == "text":
+        dicts['src'] = initVocabulary('source', opt.train_src, opt.src_vocab,
+                                      opt.src_vocab_size)
+
     dicts['tgt'] = initVocabulary('target', opt.train_tgt, opt.tgt_vocab,
                                   opt.tgt_vocab_size)
 
@@ -204,6 +226,7 @@ def main():
 
     print('Saving data to \'' + opt.save_data + '.train.pt\'...')
     save_data = {'dicts': dicts,
+                 'type':  opt.src_type,
                  'train': train,
                  'valid': valid}
     torch.save(save_data, opt.save_data + '.train.pt')
