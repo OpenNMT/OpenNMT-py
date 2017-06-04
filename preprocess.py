@@ -1,8 +1,10 @@
+# -*- coding: utf-8 -*-
+
 import onmt
 import onmt.Markdown
 import argparse
 import torch
-
+import codecs
 
 def loadImageLibs():
     "Conditional import of torch image libs."
@@ -44,8 +46,9 @@ parser.add_argument('-src_vocab',
                     help="Path to an existing source vocabulary")
 parser.add_argument('-tgt_vocab',
                     help="Path to an existing target vocabulary")
-# parser.add_argument('-features_vocabs_prefix', '', [[Path prefix to existing features vocabularies]])
-
+parser.add_argument('-features_vocabs_prefix', type=str, default='',
+                    help="Path prefix to existing features vocabularies")
+ 
 parser.add_argument('-src_seq_length', type=int, default=50,
                     help="Maximum source sequence length")
 parser.add_argument('-src_seq_length_trunc', type=int, default=0,
@@ -71,13 +74,13 @@ torch.manual_seed(opt.seed)
 
 
 def extractFeatures(tokens):
-    "Separate words and features (if any)."
+    "Given a list of token separate out words and features (if any)."
     words = []
-    features = []
+    features = {}
     numFeatures = None
 
     for t in range(len(tokens)):
-        field = onmt.utils.String.split(tokens[t], '￨')
+        field = tokens[t].split(u"￨")
         word = field[0]
         if len(word) > 0:
             words.append(word)
@@ -85,40 +88,42 @@ def extractFeatures(tokens):
         if numFeatures == None:
             numFeatures = len(field) - 1
         else:
-            assert(len(field) - 1 == numFeatures,
-                   "all words must have the same number of features")
+            assert (len(field) - 1 == numFeatures), \
+                "all words must have the same number of features"
       
         if len(field) > 1:
             for i in range(1, len(field)):
-                if features[i - 1] == nil:
+                if (i-1) not in features:
                     features[i - 1] = []
                 features[i - 1].append(field[i])
     return words, features, numFeatures if numFeatures else 0
 
 def hasFeatures(filename):
-    with open(filename) as f:
+    "Check the number of features associated with each token."
+    with codecs.open(filename, "r", "utf-8") as f:
         for l in f:
             _, _, numFeatures = extractFeatures(l.strip().split())
             break
     return numFeatures > 0
 
 def makeVocabulary(filename, size):
+    "Construct the word and feature vocabs."
     vocab = onmt.Dict([onmt.Constants.PAD_WORD, onmt.Constants.UNK_WORD,
                        onmt.Constants.BOS_WORD, onmt.Constants.EOS_WORD],
                       lower=opt.lower)
     
     featuresVocabs = {}
-    with open(filename) as f:
+    with codecs.open(filename, "r", "utf-8") as f:
         for sent in f.readlines():
             words, features, numFeatures = extractFeatures(sent.split())
 
             if len(featuresVocabs) == 0 and numFeatures > 0:
-              for j in range(numFeatures) do
-                featuresVocabs[j] = onmt.utils.Dict.new([onmt.Constants.PAD_WORD, onmt.Constants.UNK_WORD,
-                                                         onmt.Constants.BOS_WORD, onmt.Constants.EOS_WORD])
+              for j in range(numFeatures):
+                featuresVocabs[j] = onmt.Dict([onmt.Constants.PAD_WORD, onmt.Constants.UNK_WORD,
+                                               onmt.Constants.BOS_WORD, onmt.Constants.EOS_WORD])
             else:
-              assert(len(featuresVocabs) == numFeatures,
-                     "all sentences must have the same numbers of additional features")
+              assert len(featuresVocabs) == numFeatures, \
+                     "all sentences must have the same numbers of additional features"
 
 
             for i in range(len(words)):
@@ -135,7 +140,8 @@ def makeVocabulary(filename, size):
 
 
 def initVocabulary(name, dataFile, vocabFile, vocabSize):
-
+    """If `vocabFile` exists, read it in, 
+    Else, generate from data."""
     vocab = None
     if vocabFile is not None:
         # If given, load existing word dictionary.
@@ -148,34 +154,33 @@ def initVocabulary(name, dataFile, vocabFile, vocabSize):
         # If a dictionary is still missing, generate it.
         print('Building ' + name + ' vocabulary...')
         genWordVocab, genFeaturesVocabs = makeVocabulary(dataFile, vocabSize)
-
+        
         vocab = genWordVocab
         featuresVocabs = genFeaturesVocabs
 
     print()
     return vocab, featuresVocabs
 
-
 def saveVocabulary(name, vocab, file):
     print('Saving ' + name + ' vocabulary to \'' + file + '\'...')
     vocab.writeFile(file)
 
- def saveFeaturesVocabularies(name, vocabs, prefix):
-     for j range(len(vocabs)):
-         file = prefix + '.' + name + '_feature_' + j + '.dict'
-         print('Saving ' + name + ' feature ' + j + ' vocabulary to \'' + file + '\'...')
+def saveFeaturesVocabularies(name, vocabs, prefix):
+     for j in range(len(vocabs)):
+         file = prefix + '.' + name + '_feature_' + str(j) + '.dict'
+         print('Saving ' + name + ' feature ' + str(j) + ' vocabulary to \'' + file + '\'...')
          vocabs[j].writeFile(file)
   
 
 def makeData(srcFile, tgtFile, srcDicts, tgtDicts, srcFeatureDicts, tgtFeatureDicts):
     src, tgt = [], []
-    srcFeatures, tgtFeatures = [], []
+    srcFeats, tgtFeats = [[] * len(srcFeatureDicts)], [[] * len(tgtFeatureDicts)]
     sizes = []
     count, ignored = 0, 0
 
     print('Processing %s & %s ...' % (srcFile, tgtFile))
-    srcF = open(srcFile)
-    tgtF = open(tgtFile)
+    srcF = codecs.open(srcFile, "r", "utf-8")
+    tgtF = codecs.open(tgtFile, "r", "utf-8")
 
     while True:
         sline = srcF.readline()
@@ -216,7 +221,9 @@ def makeData(srcFile, tgtFile, srcDicts, tgtDicts, srcFeatureDicts, tgtFeatureDi
                 src += [srcDicts.convertToIdx(srcWords,
                                               onmt.Constants.UNK_WORD)]
                 if srcFeatureDicts:
-                    srcFeatures.append(generateSource(srcDicts.features, srcFeats, true))
+                    for j in range(len(srcFeatureDicts)):
+                        srcFeats[j] += [srcFeatureDicts[j].convertToIdx(srcFeatures[j],
+                                                                        onmt.Constants.UNK_WORD)]
             elif opt.src_type == "img":
                 loadImageLibs()
                 src += [transforms.ToTensor()(
@@ -229,7 +236,11 @@ def makeData(srcFile, tgtFile, srcDicts, tgtDicts, srcFeatureDicts, tgtFeatureDi
                                           onmt.Constants.UNK_WORD,
                                           onmt.Constants.BOS_WORD,
                                           onmt.Constants.EOS_WORD)]
-            tgtFeatures.append(generateTarget(tgtDicts.features, tgtFeats, true))
+            if tgtFeatureDicts:
+                for j in range(len(tgtFeatureDicts)):
+                    tgtFeats[j] += [tgtFeatureDicts[j].convertToIdx(tgtFeatures[j],
+                                                                    onmt.Constants.UNK_WORD)
+]
             
             
         else:
@@ -248,16 +259,20 @@ def makeData(srcFile, tgtFile, srcDicts, tgtDicts, srcFeatureDicts, tgtFeatureDi
         perm = torch.randperm(len(src))
         src = [src[idx] for idx in perm]
         tgt = [tgt[idx] for idx in perm]
-        srcFeatures = [srcFeatures[idx] for idx in perm]
-        tgtFeatures = [tgtFeatures[idx] for idx in perm]
+        for j in range(len(srcFeatureDicts)):
+            srcFeats[j] = [srcFeats[j][idx] for idx in perm]
+        for j in range(len(tgtFeatureDicts)):
+            tgtFeats[j] = [tgtFeats[j][idx] for idx in perm]
         sizes = [sizes[idx] for idx in perm]
 
     print('... sorting sentences by size')
     _, perm = torch.sort(torch.Tensor(sizes))
     src = [src[idx] for idx in perm]
     tgt = [tgt[idx] for idx in perm]
-    srcFeatures = [srcFeatures[idx] for idx in perm]
-    tgtFeatures = [tgtFeatures[idx] for idx in perm]
+    for j in range(len(srcFeatureDicts)):
+        srcFeats[j] = [srcFeats[j][idx] for idx in perm]
+    for j in range(len(tgtFeatureDicts)):
+        tgtFeats[j] = [tgtFeats[j][idx] for idx in perm]
 
     print(('Prepared %d sentences ' +
           '(%d ignored due to length == 0 or src len > %d or tgt len > %d)') %
@@ -281,23 +296,25 @@ def main():
 
     print('Preparing training ...')
     train = {}
-    train['src'], train['tgt'] = makeData(opt.train_src, opt.train_tgt,
-                                          dicts['src'], dicts['tgt'],
-                                          dicts['src_features'], dicts['tgt_features'])
-
+    train['src'], train['tgt'], train['src_features'], train['tgt_features'] \
+        = makeData(opt.train_src, opt.train_tgt,
+                   dicts['src'], dicts['tgt'],
+                   dicts['src_features'], dicts['tgt_features'])
+    
     print('Preparing validation ...')
     valid = {}
-    valid['src'], valid['tgt'] = makeData(opt.valid_src, opt.valid_tgt,
-                                          dicts['src'], dicts['tgt'],
-                                          dicts['src_features'], dicts['tgt_features'])
+    valid['src'], valid['tgt'], valid['src_features'], valid['tgt_features'] \
+        = makeData(opt.valid_src, opt.valid_tgt,
+                   dicts['src'], dicts['tgt'],
+                   dicts['src_features'], dicts['tgt_features'])
 
     if opt.src_vocab is None:
         saveVocabulary('source', dicts['src'], opt.save_data + '.src.dict')
     if opt.tgt_vocab is None:
         saveVocabulary('target', dicts['tgt'], opt.save_data + '.tgt.dict')
-    if opt.features_vocabs_prefix:len() == 0:
-        saveFeaturesVocabularies('source', data.dicts.src.features, opt.save_data)
-        saveFeaturesVocabularies('target', data.dicts.tgt.features, opt.save_data)
+    if opt.features_vocabs_prefix:
+        saveFeaturesVocabularies('source', dicts['src_features'], opt.save_data)
+        saveFeaturesVocabularies('target', dicts['tgt_features'], opt.save_data)
 
     print('Saving data to \'' + opt.save_data + '.train.pt\'...')
     save_data = {'dicts': dicts,
