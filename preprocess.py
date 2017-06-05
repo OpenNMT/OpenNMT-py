@@ -171,8 +171,8 @@ def saveFeaturesVocabularies(name, vocabs, prefix):
 def makeData(srcFile, tgtFile, srcDicts, tgtDicts,
              srcFeatureDicts, tgtFeatureDicts):
     src, tgt = [], []
-    srcFeats = [[] * len(srcFeatureDicts)]
-    tgtFeats = [[] * len(tgtFeatureDicts)]
+    srcFeats = [[] for i in range(len(srcFeatureDicts))]
+    tgtFeats = [[] for i in range(len(tgtFeatureDicts))]
     sizes = []
     count, ignored = 0, 0
 

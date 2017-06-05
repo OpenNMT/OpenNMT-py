@@ -43,11 +43,12 @@ class Encoder(nn.Module):
         def embed(input):
             if self.feature_luts:
                 word = self.word_lut(input[:, :, 0])
-                features = [feature_lut(input[:, :, j+1])
-                            for j, feature_lut in enumerate(self.feature_luts)]
-                emb = nn.ReLU()(self.linear(torch.cat([word.view(-1, word.size(-1))] + 
-                                                      [f.view(-1, f[0].size(-1)) for f in features], 1)))
-                emb = emb.view(word.size(0), word.size(1), -1)
+                # features = [feature_lut(input[:, :, j+1])
+                #             for j, feature_lut in enumerate(self.feature_luts)]
+                # emb = nn.Tanh()(self.linear(torch.cat([word.view(-1, word.size(-1))] + 
+                #                                       [f.view(-1, f[0].size(-1)) for f in features], 1)))
+                # emb = emb.view(word.size(0), word.size(1), -1)
+                emb = word
             else:
                 emb = self.word_lut(input)
             return emb
@@ -55,13 +56,19 @@ class Encoder(nn.Module):
         if isinstance(input, tuple):
             # Lengths data is wrapped inside a Variable.
             lengths = input[1].data.view(-1).tolist()
-            emb = pack(embed(input[0]), lengths)
+            pre_emb = embed(input[0])
+            emb = pack(pre_emb, lengths)
         else:
             emb = embed(input)
+
         outputs, hidden_t = self.rnn(emb, hidden)
+
         if isinstance(input, tuple):
             outputs = unpack(outputs)[0]
+            
+
         return hidden_t, outputs
+        # return hidden_t, pre_emb
 
 
 class StackedLSTM(nn.Module):
