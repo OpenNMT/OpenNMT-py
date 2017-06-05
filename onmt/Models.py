@@ -8,7 +8,7 @@ from torch.nn.utils.rnn import pack_padded_sequence as pack
 
 class Encoder(nn.Module):
 
-    def __init__(self, opt, dicts):
+    def __init__(self, opt, dicts, feature_dicts=None):
         self.layers = opt.layers
         self.num_directions = 2 if opt.brnn else 1
         assert opt.rnn_size % self.num_directions == 0
@@ -19,6 +19,16 @@ class Encoder(nn.Module):
         self.word_lut = nn.Embedding(dicts.size(),
                                      opt.word_vec_size,
                                      padding_idx=onmt.Constants.PAD)
+        if feature_dicts:
+            self.feature_luts = nn.ModuleList([
+                nn.Embedding(feature_dict.size(),
+                             opt.feature_vec_size,
+                             padding_idx=onmt.Constants.PAD)
+                for feature_dict in feature_dicts])
+            input_size += len(feature_dicts) * opt.feature_vec_size
+            self.linear = nn.Linear(input_size, input_size)
+        else:
+            self.feature_luts = []
         self.rnn = nn.LSTM(input_size, self.hidden_size,
                            num_layers=opt.layers,
                            dropout=opt.dropout,
@@ -30,12 +40,24 @@ class Encoder(nn.Module):
             self.word_lut.weight.data.copy_(pretrained)
 
     def forward(self, input, hidden=None):
+        def embed(input):
+            if self.feature_luts:
+                word = self.word_lut(input[:, :, 0])
+                features = [feature_lut(input[:, :, j+1])
+                            for j, feature_lut in enumerate(self.feature_luts)]
+                emb = nn.ReLU()(self.linear(torch.cat([word.view(-1, word.size(-1))] + 
+                                                      [f.view(-1, f[0].size(-1)) for f in features], 1)))
+                emb = emb.view(word.size(0), word.size(1), -1)
+            else:
+                emb = self.word_lut(input)
+            return emb
+            
         if isinstance(input, tuple):
             # Lengths data is wrapped inside a Variable.
             lengths = input[1].data.view(-1).tolist()
-            emb = pack(self.word_lut(input[0]), lengths)
+            emb = pack(embed(input[0]), lengths)
         else:
-            emb = self.word_lut(input)
+            emb = embed(input)
         outputs, hidden_t = self.rnn(emb, hidden)
         if isinstance(input, tuple):
             outputs = unpack(outputs)[0]

@@ -1,6 +1,7 @@
 import torch
 import codecs
 
+
 class Dict(object):
     def __init__(self, data=None, lower=False):
         self.idxToLabel = {}

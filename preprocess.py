@@ -6,6 +6,7 @@ import argparse
 import torch
 import codecs
 
+
 def loadImageLibs():
     "Conditional import of torch image libs."
     global Image, transforms
@@ -48,7 +49,6 @@ parser.add_argument('-tgt_vocab',
                     help="Path to an existing target vocabulary")
 parser.add_argument('-features_vocabs_prefix', type=str, default='',
                     help="Path prefix to existing features vocabularies")
- 
 parser.add_argument('-src_seq_length', type=int, default=50,
                     help="Maximum source sequence length")
 parser.add_argument('-src_seq_length_trunc', type=int, default=0,
@@ -76,7 +76,7 @@ torch.manual_seed(opt.seed)
 def extractFeatures(tokens):
     "Given a list of token separate out words and features (if any)."
     words = []
-    features = {}
+    features = []
     numFeatures = None
 
     for t in range(len(tokens)):
@@ -85,51 +85,45 @@ def extractFeatures(tokens):
         if len(word) > 0:
             words.append(word)
 
-        if numFeatures == None:
-            numFeatures = len(field) - 1
-        else:
-            assert (len(field) - 1 == numFeatures), \
-                "all words must have the same number of features"
-      
-        if len(field) > 1:
-            for i in range(1, len(field)):
-                if (i-1) not in features:
-                    features[i - 1] = []
-                features[i - 1].append(field[i])
+            if numFeatures is None:
+                numFeatures = len(field) - 1
+            else:
+                assert (len(field) - 1 == numFeatures), \
+                    "all words must have the same number of features"
+
+            if len(field) > 1:
+                for i in range(1, len(field)):
+                    if len(features) <= i-1:
+                        features.append([])
+                    features[i - 1].append(field[i])
+                    assert (len(features[i - 1]) == len(words))
     return words, features, numFeatures if numFeatures else 0
 
-def hasFeatures(filename):
-    "Check the number of features associated with each token."
-    with codecs.open(filename, "r", "utf-8") as f:
-        for l in f:
-            _, _, numFeatures = extractFeatures(l.strip().split())
-            break
-    return numFeatures > 0
 
 def makeVocabulary(filename, size):
     "Construct the word and feature vocabs."
     vocab = onmt.Dict([onmt.Constants.PAD_WORD, onmt.Constants.UNK_WORD,
                        onmt.Constants.BOS_WORD, onmt.Constants.EOS_WORD],
                       lower=opt.lower)
-    
-    featuresVocabs = {}
+    featuresVocabs = []
     with codecs.open(filename, "r", "utf-8") as f:
         for sent in f.readlines():
             words, features, numFeatures = extractFeatures(sent.split())
 
             if len(featuresVocabs) == 0 and numFeatures > 0:
-              for j in range(numFeatures):
-                featuresVocabs[j] = onmt.Dict([onmt.Constants.PAD_WORD, onmt.Constants.UNK_WORD,
-                                               onmt.Constants.BOS_WORD, onmt.Constants.EOS_WORD])
+                for j in range(numFeatures):
+                    featuresVocabs.append(onmt.Dict([onmt.Constants.PAD_WORD,
+                                                   onmt.Constants.UNK_WORD,
+                                                   onmt.Constants.BOS_WORD,
+                                                   onmt.Constants.EOS_WORD]))
             else:
-              assert len(featuresVocabs) == numFeatures, \
-                     "all sentences must have the same numbers of additional features"
-
+                assert len(featuresVocabs) == numFeatures, \
+                    "all sentences must have the same number of features"
 
             for i in range(len(words)):
-              vocab.add(words[i])
-              for j in range(numFeatures):
-                  featuresVocabs[j].add(features[j][i])
+                vocab.add(words[i])
+                for j in range(numFeatures):
+                    featuresVocabs[j].add(features[j][i])
 
     originalSize = vocab.size()
     vocab = vocab.prune(size)
@@ -140,7 +134,7 @@ def makeVocabulary(filename, size):
 
 
 def initVocabulary(name, dataFile, vocabFile, vocabSize):
-    """If `vocabFile` exists, read it in, 
+    """If `vocabFile` exists, read it in,
     Else, generate from data."""
     vocab = None
     if vocabFile is not None:
@@ -154,27 +148,31 @@ def initVocabulary(name, dataFile, vocabFile, vocabSize):
         # If a dictionary is still missing, generate it.
         print('Building ' + name + ' vocabulary...')
         genWordVocab, genFeaturesVocabs = makeVocabulary(dataFile, vocabSize)
-        
         vocab = genWordVocab
         featuresVocabs = genFeaturesVocabs
 
     print()
     return vocab, featuresVocabs
 
+
 def saveVocabulary(name, vocab, file):
     print('Saving ' + name + ' vocabulary to \'' + file + '\'...')
     vocab.writeFile(file)
 
-def saveFeaturesVocabularies(name, vocabs, prefix):
-     for j in range(len(vocabs)):
-         file = prefix + '.' + name + '_feature_' + str(j) + '.dict'
-         print('Saving ' + name + ' feature ' + str(j) + ' vocabulary to \'' + file + '\'...')
-         vocabs[j].writeFile(file)
-  
 
-def makeData(srcFile, tgtFile, srcDicts, tgtDicts, srcFeatureDicts, tgtFeatureDicts):
+def saveFeaturesVocabularies(name, vocabs, prefix):
+    for j in range(len(vocabs)):
+        file = prefix + '.' + name + '_feature_' + str(j) + '.dict'
+        print('Saving ' + name + ' feature ' + str(j) +
+              ' vocabulary to \'' + file + '\'...')
+        vocabs[j].writeFile(file)
+
+
+def makeData(srcFile, tgtFile, srcDicts, tgtDicts,
+             srcFeatureDicts, tgtFeatureDicts):
     src, tgt = [], []
-    srcFeats, tgtFeats = [[] * len(srcFeatureDicts)], [[] * len(tgtFeatureDicts)]
+    srcFeats = [[] * len(srcFeatureDicts)]
+    tgtFeats = [[] * len(tgtFeatureDicts)]
     sizes = []
     count, ignored = 0, 0
 
@@ -222,27 +220,24 @@ def makeData(srcFile, tgtFile, srcDicts, tgtDicts, srcFeatureDicts, tgtFeatureDi
                                               onmt.Constants.UNK_WORD)]
                 if srcFeatureDicts:
                     for j in range(len(srcFeatureDicts)):
-                        srcFeats[j] += [srcFeatureDicts[j].convertToIdx(srcFeatures[j],
-                                                                        onmt.Constants.UNK_WORD)]
+                        srcFeats[j] += [srcFeatureDicts[j].
+                                        convertToIdx(srcFeatures[j],
+                                                     onmt.Constants.UNK_WORD)]
             elif opt.src_type == "img":
                 loadImageLibs()
                 src += [transforms.ToTensor()(
                     Image.open(opt.src_img_dir + "/" + srcWords[0]))]
 
-
-            sizes += [len(srcWords)]      
-
+            sizes += [len(srcWords)]
             tgt += [tgtDicts.convertToIdx(tgtWords,
                                           onmt.Constants.UNK_WORD,
                                           onmt.Constants.BOS_WORD,
                                           onmt.Constants.EOS_WORD)]
             if tgtFeatureDicts:
                 for j in range(len(tgtFeatureDicts)):
-                    tgtFeats[j] += [tgtFeatureDicts[j].convertToIdx(tgtFeatures[j],
-                                                                    onmt.Constants.UNK_WORD)
-]
-            
-            
+                    tgtFeats[j] += [tgtFeatureDicts[j].
+                                    convertToIdx(tgtFeatures[j],
+                                                 onmt.Constants.UNK_WORD)]
         else:
             ignored += 1
 
@@ -278,7 +273,7 @@ def makeData(srcFile, tgtFile, srcDicts, tgtDicts, srcFeatureDicts, tgtFeatureDi
           '(%d ignored due to length == 0 or src len > %d or tgt len > %d)') %
           (len(src), ignored, opt.src_seq_length, opt.tgt_seq_length))
 
-    return src, tgt, srcFeatures, tgtFeatures
+    return src, tgt, srcFeats, tgtFeats
 
 
 def main():
@@ -291,8 +286,10 @@ def main():
                                opt.src_vocab_size)
 
     dicts['tgt'], dicts['tgt_features'] = \
-                initVocabulary('target', opt.train_tgt, opt.tgt_vocab,
-                               opt.tgt_vocab_size)
+        initVocabulary('target',
+                       opt.train_tgt,
+                       opt.tgt_vocab,
+                       opt.tgt_vocab_size)
 
     print('Preparing training ...')
     train = {}
@@ -300,7 +297,6 @@ def main():
         = makeData(opt.train_src, opt.train_tgt,
                    dicts['src'], dicts['tgt'],
                    dicts['src_features'], dicts['tgt_features'])
-    
     print('Preparing validation ...')
     valid = {}
     valid['src'], valid['tgt'], valid['src_features'], valid['tgt_features'] \
@@ -313,8 +309,10 @@ def main():
     if opt.tgt_vocab is None:
         saveVocabulary('target', dicts['tgt'], opt.save_data + '.tgt.dict')
     if opt.features_vocabs_prefix:
-        saveFeaturesVocabularies('source', dicts['src_features'], opt.save_data)
-        saveFeaturesVocabularies('target', dicts['tgt_features'], opt.save_data)
+        saveFeaturesVocabularies('source', dicts['src_features'],
+                                 opt.save_data)
+        saveFeaturesVocabularies('target', dicts['tgt_features'],
+                                 opt.save_data)
 
     print('Saving data to \'' + opt.save_data + '.train.pt\'...')
     save_data = {'dicts': dicts,

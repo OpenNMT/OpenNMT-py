@@ -37,6 +37,9 @@ parser.add_argument('-rnn_size', type=int, default=500,
                     help='Size of LSTM hidden states')
 parser.add_argument('-word_vec_size', type=int, default=500,
                     help='Word embedding sizes')
+parser.add_argument('-feature_vec_size', type=int, default=100,
+                    help='Feature vec sizes')
+
 parser.add_argument('-input_feed', type=int, default=1,
                     help="""Feed the context vector at each time step as
                     additional input (via concatenation with the word
@@ -296,15 +299,25 @@ def main():
 
     trainData = onmt.Dataset(dataset['train']['src'],
                              dataset['train']['tgt'], opt.batch_size, opt.gpus,
-                             data_type=dataset.get("type", "text"))
+                             data_type=dataset.get("type", "text"),
+                             srcFeatures=dataset['train'].get('src_features', None),
+                             tgtFeatures=dataset['train'].get('tgt_features', None))
     validData = onmt.Dataset(dataset['valid']['src'],
                              dataset['valid']['tgt'], opt.batch_size, opt.gpus,
                              volatile=True,
-                             data_type=dataset.get("type", "text"))
+                             data_type=dataset.get("type", "text"),
+                             srcFeatures=dataset['valid'].get('src_features', None),
+                             tgtFeatures=dataset['valid'].get('tgt_features', None))
 
     dicts = dataset['dicts']
     print(' * vocabulary size. source = %d; target = %d' %
           (dicts['src'].size(), dicts['tgt'].size()))
+    if 'src_features' in dicts:
+        for j in range(len(dicts['src_features'])):
+            print(' * src feature %d size = %d' %
+                  (j, dicts['src_features'][j].size()))
+
+    dicts = dataset['dicts']
     print(' * number of training sentences. %d' %
           len(dataset['train']['src']))
     print(' * maximum batch size. %d' % opt.batch_size)
@@ -312,7 +325,8 @@ def main():
     print('Building model...')
 
     if opt.encoder_type == "text":
-        encoder = onmt.Models.Encoder(opt, dicts['src'])
+        encoder = onmt.Models.Encoder(opt, dicts['src'],
+                                      dicts.get('src_features', None))
     elif opt.encoder_type == "img":
         encoder = onmt.modules.ImageEncoder(opt)
         assert("type" not in dataset or dataset["type"] == "img")
