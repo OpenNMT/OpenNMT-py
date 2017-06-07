@@ -33,7 +33,7 @@ class Encoder(nn.Module):
                            num_layers=opt.layers,
                            dropout=opt.dropout,
                            bidirectional=opt.brnn)
-
+        self.activation = nn.ReLU()
     def load_pretrained_vectors(self, opt):
         if opt.pre_word_vecs_enc is not None:
             pretrained = torch.load(opt.pre_word_vecs_enc)
@@ -43,12 +43,11 @@ class Encoder(nn.Module):
         def embed(input):
             if self.feature_luts:
                 word = self.word_lut(input[:, :, 0])
-                # features = [feature_lut(input[:, :, j+1])
-                #             for j, feature_lut in enumerate(self.feature_luts)]
-                # emb = nn.Tanh()(self.linear(torch.cat([word.view(-1, word.size(-1))] + 
-                #                                       [f.view(-1, f[0].size(-1)) for f in features], 1)))
-                # emb = emb.view(word.size(0), word.size(1), -1)
-                emb = word
+                features = [feature_lut(input[:, :, j+1])
+                            for j, feature_lut in enumerate(self.feature_luts)]
+                emb = torch.cat([word] +  features, -1)
+                emb2 = self.activation(self.linear(emb.view(-1, emb.size(-1))))
+                emb = emb2.view(emb.size(0), emb.size(1), -1)                
             else:
                 emb = self.word_lut(input)
             return emb
@@ -62,13 +61,11 @@ class Encoder(nn.Module):
             emb = embed(input)
 
         outputs, hidden_t = self.rnn(emb, hidden)
-
         if isinstance(input, tuple):
             outputs = unpack(outputs)[0]
             
-
-        return hidden_t, outputs
-        # return hidden_t, pre_emb
+        # return hidden_t, outputs
+        return hidden_t, pre_emb #tuple([pre_emb[i] for i in range(pre_emb.size(0))])
 
 
 class StackedLSTM(nn.Module):
@@ -118,6 +115,7 @@ class Decoder(nn.Module):
         self.dropout = nn.Dropout(opt.dropout)
 
         self.hidden_size = opt.rnn_size
+        self.trunc_bptt_cutoff = opt.trunc_bptt_cutoff
 
     def load_pretrained_vectors(self, opt):
         if opt.pre_word_vecs_dec is not None:
@@ -125,6 +123,9 @@ class Decoder(nn.Module):
             self.word_lut.weight.data.copy_(pretrained)
 
     def forward(self, input, hidden, context, init_output):
+        """
+        context : batch x src_size x hidden
+        """
         emb = self.word_lut(input)
 
         # n.b. you can increase performance if you compute W_ih * x for all
@@ -132,12 +133,15 @@ class Decoder(nn.Module):
         # self.input_feed=False
         outputs = []
         output = init_output
-        for emb_t in emb.split(1):
+        for i, emb_t in enumerate(emb.split(1)):
             emb_t = emb_t.squeeze(0)
             if self.input_feed:
                 emb_t = torch.cat([emb_t, output], 1)
 
             output, hidden = self.rnn(emb_t, hidden)
+            if self.trunc_bptt_cutoff \
+               and i != 0 and i % self.trunc_bptt_cutoff == 0:
+                hidden = [h.detach() for h in hidden]
             output, attn = self.attn(output, context.t())
             output = self.dropout(output)
             outputs += [output]
@@ -168,7 +172,7 @@ class NMTModel(nn.Module):
         else:
             return h
 
-    def forward(self, input):
+    def forward(self, input, dec_hidden=None):
         src = input[0]
         tgt = input[1][:-1]  # exclude last target from inputs
         enc_hidden, context = self.encoder(src)
@@ -176,8 +180,9 @@ class NMTModel(nn.Module):
 
         enc_hidden = (self._fix_enc_hidden(enc_hidden[0]),
                       self._fix_enc_hidden(enc_hidden[1]))
+        out, dec_hidden, _attn = self.decoder(tgt, 
+                                              enc_hidden if dec_hidden is None else dec_hidden,
+                                              context,
+                                              init_output)
 
-        out, dec_hidden, _attn = self.decoder(tgt, enc_hidden,
-                                              context, init_output)
-
-        return out
+        return out, _attn, dec_hidden

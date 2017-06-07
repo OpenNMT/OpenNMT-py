@@ -10,9 +10,11 @@ import onmt
 class Dataset(object):
     def __init__(self, srcData, tgtData, batchSize, cuda,
                  volatile=False, data_type="text",
-                 srcFeatures=None, tgtFeatures=None):
+                 srcFeatures=None, tgtFeatures=None,
+                 idxAlignment=None):
         self.src = srcData
         self.srcFeatures = srcFeatures
+        self.idxAlignment = idxAlignment
         self._type = data_type
         if tgtData:
             self.tgt = tgtData

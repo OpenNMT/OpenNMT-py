@@ -45,6 +45,14 @@ class Dict(object):
         except KeyError:
             return default
 
+    def align(self, other):
+        "Find the id of each label in other dict."
+        alignment = [-1] * self.size()
+        for idx, label in self.idxToLabel.items():
+            if label in other.labelToIdx:
+                alignment[idx] = other.labelToIdx[label]
+        return alignment
+        
     def getLabel(self, idx, default=None):
         try:
             return self.idxToLabel[idx]

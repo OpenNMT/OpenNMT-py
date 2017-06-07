@@ -82,6 +82,8 @@ parser.add_argument('-curriculum', action="store_true",
 parser.add_argument('-extra_shuffle', action="store_true",
                     help="""By default only shuffle mini-batch order; when true,
                     shuffle and re-assign mini-batches""")
+parser.add_argument('-trunc_bptt_cutoff', type=int, default=0,
+                    help="""Truncated bptt.""")
 
 # learning rate
 parser.add_argument('-learning_rate', type=float, default=1.0,
@@ -136,7 +138,8 @@ def NMTCriterion(vocabSize):
     return crit
 
 
-def memoryEfficientLoss(outputs, targets, generator, crit, eval=False):
+def memoryEfficientLoss(outputs, targets, generator, crit, eval=False,
+                        src=None, attns=None):
     # compute generations one piece at a time
     num_correct, loss = 0, 0
     outputs = Variable(outputs.data, requires_grad=(not eval), volatile=eval)
@@ -144,9 +147,13 @@ def memoryEfficientLoss(outputs, targets, generator, crit, eval=False):
     batch_size = outputs.size(1)
     outputs_split = torch.split(outputs, opt.max_generator_batches)
     targets_split = torch.split(targets, opt.max_generator_batches)
-    for i, (out_t, targ_t) in enumerate(zip(outputs_split, targets_split)):
+    attns_split = torch.split(attns, opt.max_generator_batches)
+    for i, (out_t, targ_t, attn_t) in enumerate(zip(outputs_split, targets_split, attns_split)):
         out_t = out_t.view(-1, out_t.size(2))
-        scores_t = generator(out_t)
+        if False:
+            scores_t = generator(out_t)
+        else:
+            scores_t = generator(out_t, src, attn_t)
         loss_t = crit(scores_t, targ_t.view(-1))
         pred_t = scores_t.max(1)[1]
         num_correct_t = pred_t.data.eq(targ_t.data) \
@@ -171,7 +178,7 @@ def eval(model, criterion, data):
     for i in range(len(data)):
         # exclude original indices
         batch = data[i][:-1]
-        outputs = model(batch)
+        outputs, _ = model(batch)
         # exclude <s> from targets
         targets = batch[1][1:]
         loss, _, num_correct = memoryEfficientLoss(
@@ -192,7 +199,7 @@ def trainModel(model, trainData, validData, dataset, optim):
     criterion = NMTCriterion(dataset['dicts']['tgt'].size())
 
     start_time = time.time()
-
+    
     def trainEpoch(epoch):
 
         if opt.extra_shuffle and epoch > opt.curriculum:
@@ -211,26 +218,40 @@ def trainModel(model, trainData, validData, dataset, optim):
             # Exclude original indices.
             batch = trainData[batchIdx][:-1]
 
-            model.zero_grad()
-            outputs = model(batch)
-            # Exclude <s> from targets.
-            targets = batch[1][1:]
-            loss, gradOutput, num_correct = memoryEfficientLoss(
-                    outputs, targets, model.generator, criterion)
+            dec_hidden = None
+            trunc_size = 100
+            for j in range((batch[1].size(0) // trunc_size) + 1):
+                if batch[1].size(0) - 1  <= j * trunc_size: continue
+                trunc_batch = (batch[0], batch[1][j * trunc_size: (j+1) * trunc_size])
+                
+                model.zero_grad()
+                outputs, attn, dec_hidden = model(trunc_batch,
+                                                  dec_hidden=dec_hidden)
+                print(attn.size())
+                # Reuse hidden state.
+                for h in dec_hidden:
+                    h.detach_()
+                # Exclude <s> from targets.
+                targets = trunc_batch[1][1:]
+                loss, gradOutput, num_correct = memoryEfficientLoss(
+                    outputs, targets, model.generator, criterion,
+                    batch[0][0], attn)
 
-            outputs.backward(gradOutput)
+                outputs.backward(gradOutput)
+                
+                # Update the parameters.
+                optim.step()
 
-            # Update the parameters.
-            optim.step()
-
-            num_words = targets.data.ne(onmt.Constants.PAD).sum()
-            report_loss += loss
-            report_num_correct += num_correct
-            report_tgt_words += num_words
+                num_words = targets.data.ne(onmt.Constants.PAD).sum()
+                report_loss += loss
+                report_num_correct += num_correct
+                report_tgt_words += num_words
+                total_loss += loss
+                total_num_correct += num_correct
+                total_words += num_words
+                
             report_src_words += batch[0][1].data.sum()
-            total_loss += loss
-            total_num_correct += num_correct
-            total_words += num_words
+            
             if i % opt.log_interval == -1 % opt.log_interval:
                 print(("Epoch %2d, %5d/%5d; acc: %6.2f; ppl: %6.2f;" +
                        "%3.0f src tok/s; %3.0f tgt tok/s; %6.0f s elapsed") %
@@ -335,9 +356,12 @@ def main():
 
     decoder = onmt.Models.Decoder(opt, dicts['tgt'])
 
-    generator = nn.Sequential(
-        nn.Linear(opt.rnn_size, dicts['tgt'].size()),
-        nn.LogSoftmax())
+    if False:
+        generator = nn.Sequential(
+            nn.Linear(opt.rnn_size, dicts['tgt'].size()),
+            nn.LogSoftmax())
+    else:
+        generator = onmt.modules.CopyGenerator(opt, dicts['src'], dicts['tgt'])
 
     model = onmt.Models.NMTModel(encoder, decoder)
 
