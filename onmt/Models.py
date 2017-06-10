@@ -7,7 +7,6 @@ from torch.nn.utils.rnn import pack_padded_sequence as pack
 
 
 class Encoder(nn.Module):
-
     def __init__(self, opt, dicts, feature_dicts=None):
         self.layers = opt.layers
         self.num_directions = 2 if opt.brnn else 1
@@ -25,15 +24,19 @@ class Encoder(nn.Module):
                              opt.feature_vec_size,
                              padding_idx=onmt.Constants.PAD)
                 for feature_dict in feature_dicts])
-            input_size += len(feature_dicts) * opt.feature_vec_size
-            self.linear = nn.Linear(input_size, input_size)
+
+            self.linear = nn.Linear(input_size + len(feature_dicts) * opt.feature_vec_size,
+                                    self.hidden_size)
+            input_size = self.hidden_size
+            # 
         else:
-            self.feature_luts = []
-        self.rnn = nn.LSTM(input_size, self.hidden_size,
+            self.feature_luts = nn.ModuleList([])
+        self.rnn = nn.LSTM(self.hidden_size, self.hidden_size,
                            num_layers=opt.layers,
                            dropout=opt.dropout,
                            bidirectional=opt.brnn)
         self.activation = nn.ReLU()
+
     def load_pretrained_vectors(self, opt):
         if opt.pre_word_vecs_enc is not None:
             pretrained = torch.load(opt.pre_word_vecs_enc)
@@ -112,6 +115,7 @@ class Decoder(nn.Module):
         self.rnn = StackedLSTM(opt.layers, input_size,
                                opt.rnn_size, opt.dropout)
         self.attn = onmt.modules.GlobalAttention(opt.rnn_size)
+        self.copy_attn = onmt.modules.GlobalAttention(opt.rnn_size)
         self.dropout = nn.Dropout(opt.dropout)
 
         self.hidden_size = opt.rnn_size
@@ -132,22 +136,26 @@ class Decoder(nn.Module):
         # iterations in parallel, but that's only possible if
         # self.input_feed=False
         outputs = []
+        attns = []
         output = init_output
+        copy_output = init_output
         for i, emb_t in enumerate(emb.split(1)):
             emb_t = emb_t.squeeze(0)
             if self.input_feed:
-                emb_t = torch.cat([emb_t, output], 1)
+                emb_t = torch.cat([emb_t, copy_output], 1)
 
             output, hidden = self.rnn(emb_t, hidden)
             if self.trunc_bptt_cutoff \
                and i != 0 and i % self.trunc_bptt_cutoff == 0:
                 hidden = [h.detach() for h in hidden]
             output, attn = self.attn(output, context.t())
+            copy_output, copy_attn = self.copy_attn(output, context.t())
             output = self.dropout(output)
             outputs += [output]
-
+            attns += [copy_attn]
         outputs = torch.stack(outputs)
-        return outputs, hidden, attn
+        attns = torch.stack(attns)
+        return outputs, hidden, attns
 
 
 class NMTModel(nn.Module):

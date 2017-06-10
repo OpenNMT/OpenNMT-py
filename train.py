@@ -143,6 +143,7 @@ def memoryEfficientLoss(outputs, targets, generator, crit, eval=False,
     # compute generations one piece at a time
     num_correct, loss = 0, 0
     outputs = Variable(outputs.data, requires_grad=(not eval), volatile=eval)
+    attns = Variable(attns.data, requires_grad=(not eval), volatile=eval)
 
     batch_size = outputs.size(1)
     outputs_split = torch.split(outputs, opt.max_generator_batches)
@@ -150,6 +151,7 @@ def memoryEfficientLoss(outputs, targets, generator, crit, eval=False,
     attns_split = torch.split(attns, opt.max_generator_batches)
     for i, (out_t, targ_t, attn_t) in enumerate(zip(outputs_split, targets_split, attns_split)):
         out_t = out_t.view(-1, out_t.size(2))
+        attn_t = attn_t.view(-1, attn_t.size(2))
         if False:
             scores_t = generator(out_t)
         else:
@@ -163,10 +165,11 @@ def memoryEfficientLoss(outputs, targets, generator, crit, eval=False,
         num_correct += num_correct_t
         loss += loss_t.data[0]
         if not eval:
-            loss_t.div(batch_size).backward()
+            loss_t.div(batch_size).backward(retain_variables=False)
 
     grad_output = None if outputs.grad is None else outputs.grad.data
-    return loss, grad_output, num_correct
+    grad_attns = None if attns.grad is None else attns.grad.data
+    return loss, grad_output, grad_attns, num_correct
 
 
 def eval(model, criterion, data):
@@ -178,11 +181,12 @@ def eval(model, criterion, data):
     for i in range(len(data)):
         # exclude original indices
         batch = data[i][:-1]
-        outputs, _ = model(batch)
+        outputs, attn, dec_hidden = model(batch)
         # exclude <s> from targets
         targets = batch[1][1:]
-        loss, _, num_correct = memoryEfficientLoss(
-                outputs, targets, model.generator, criterion, eval=True)
+        loss, _, _, num_correct = memoryEfficientLoss(
+            outputs, targets, model.generator, criterion, eval=True,
+            src=batch[0][0], attns=attn)
         total_loss += loss
         total_num_correct += num_correct
         total_words += targets.data.ne(onmt.Constants.PAD).sum()
@@ -227,18 +231,22 @@ def trainModel(model, trainData, validData, dataset, optim):
                 model.zero_grad()
                 outputs, attn, dec_hidden = model(trunc_batch,
                                                   dec_hidden=dec_hidden)
-                print(attn.size())
+
+        
                 # Reuse hidden state.
                 for h in dec_hidden:
                     h.detach_()
+
+                
                 # Exclude <s> from targets.
                 targets = trunc_batch[1][1:]
-                loss, gradOutput, num_correct = memoryEfficientLoss(
+                loss, gradOutput, gradAttn, num_correct = memoryEfficientLoss(
                     outputs, targets, model.generator, criterion,
-                    batch[0][0], attn)
+                    src=batch[0][0], attns=attn)
 
-                outputs.backward(gradOutput)
-                
+
+                torch.autograd.backward([outputs, attn], [gradOutput, gradAttn])
+
                 # Update the parameters.
                 optim.step()
 

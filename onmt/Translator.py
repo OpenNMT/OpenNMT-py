@@ -12,6 +12,32 @@ def loadImageLibs():
     from torchvision import transforms
 
 
+def extractFeatures(tokens):
+    "Given a list of token separate out words and features (if any)."
+    words = []
+    features = []
+    numFeatures = None
+
+    for t in range(len(tokens)):
+        field = tokens[t].split(u"￨")
+        word = field[0]
+        if len(word) > 0:
+            words.append(word)
+
+            if numFeatures is None:
+                numFeatures = len(field) - 1
+            else:
+                assert (len(field) - 1 == numFeatures), \
+                    "all words must have the same number of features"
+
+            if len(field) > 1:
+                for i in range(1, len(field)):
+                    if len(features) <= i-1:
+                        features.append([])
+                    features[i - 1].append(field[i])
+                    assert (len(features[i - 1]) == len(words))
+    return words, features, numFeatures if numFeatures else 0
+
 class Translator(object):
     def __init__(self, opt):
         self.opt = opt
@@ -23,11 +49,13 @@ class Translator(object):
         model_opt = checkpoint['opt']
         self.src_dict = checkpoint['dicts']['src']
         self.tgt_dict = checkpoint['dicts']['tgt']
+        self.src_feature_dicts = checkpoint['dicts'].get('src_features', None)
         self._type = model_opt.encoder_type \
             if "encoder_type" in model_opt else "text"
 
         if self._type == "text":
-            encoder = onmt.Models.Encoder(model_opt, self.src_dict)
+            encoder = onmt.Models.Encoder(model_opt, self.src_dict, \
+                                          self.src_feature_dicts)
         elif self._type == "img":
             loadImageLibs()
             encoder = onmt.modules.ImageEncoder(model_opt)
@@ -35,9 +63,13 @@ class Translator(object):
         decoder = onmt.Models.Decoder(model_opt, self.tgt_dict)
         model = onmt.Models.NMTModel(encoder, decoder)
 
-        generator = nn.Sequential(
-            nn.Linear(model_opt.rnn_size, self.tgt_dict.size()),
-            nn.LogSoftmax())
+        if False:
+            generator = nn.Sequential(
+                nn.Linear(model_opt.rnn_size, self.tgt_dict.size()),
+                nn.LogSoftmax())
+        else:
+            generator = onmt.modules.CopyGenerator(model_opt, self.src_dict, self.tgt_dict)
+
 
         model.load_state_dict(checkpoint['model'])
         generator.load_state_dict(checkpoint['generator'])
@@ -68,11 +100,22 @@ class Translator(object):
             return batch.size(0)
 
     def buildData(self, srcBatch, goldBatch):
+        if self.src_feature_dicts:
+            srcFeats = [[] for i in range(len(self.src_feature_dicts))]
+        srcData = []
+        
         # This needs to be the same as preprocess.py.
         if self._type == "text":
-            srcData = [self.src_dict.convertToIdx(b,
-                                                  onmt.Constants.UNK_WORD)
-                       for b in srcBatch]
+            for b in srcBatch:
+                srcWords, srcFeatures, _ = extractFeatures(b)
+                srcData += [self.src_dict.convertToIdx(srcWords,
+                                                       onmt.Constants.UNK_WORD)]
+                if self.src_feature_dicts:
+                    for j in range(len(self.src_feature_dicts)):
+                        srcFeats[j] += [self.src_feature_dicts[j].
+                                        convertToIdx(srcFeatures[j],
+                                                     onmt.Constants.UNK_WORD)]
+
         elif self._type == "img":
             srcData = [transforms.ToTensor()(
                 Image.open(self.opt.src_img_dir + "/" + b[0]))
@@ -87,7 +130,8 @@ class Translator(object):
 
         return onmt.Dataset(srcData, tgtData, self.opt.batch_size,
                             self.opt.cuda, volatile=True,
-                            data_type=self._type)
+                            data_type=self._type,
+                            srcFeatures=srcFeats)
 
     def buildTargetTokens(self, pred, src, attn):
         tokens = self.tgt_dict.convertToLabels(pred, onmt.Constants.EOS)
@@ -118,12 +162,12 @@ class Translator(object):
         decoder = self.model.decoder
         attentionLayer = decoder.attn
         useMasking = self._type == "text"
-
+        useMasking = False
         #  This mask is applied to the attention model inside the decoder
         #  so that the attention ignores source padding
         padMask = None
         if useMasking:
-            padMask = srcBatch.data.eq(onmt.Constants.PAD).t()
+            padMask = srcBatch[:,:,0].data.eq(onmt.Constants.PAD).t()
 
         def mask(padMask):
             if useMasking:
@@ -159,7 +203,7 @@ class Translator(object):
         decOut = self.model.make_init_decoder_output(context)
 
         if useMasking:
-            padMask = srcBatch.data.eq(
+            padMask = srcBatch.data[:,:,0].eq(
                 onmt.Constants.PAD).t() \
                                    .unsqueeze(0) \
                                    .repeat(beamSize, 1, 1)
@@ -175,14 +219,20 @@ class Translator(object):
                 Variable(input, volatile=True), decStates, context, decOut)
             # decOut: 1 x (beam*batch) x numWords
             decOut = decOut.squeeze(0)
-            out = self.model.generator.forward(decOut)
+
+
+            attn = attn.view(beamSize, remainingSents, -1) \
+                       .transpose(0, 1).contiguous()
+            
+            if False:
+                out = self.model.generator.forward(decOut)
+            else:
+                out = self.model.generator.forward(decOut, srcBatch,
+                                                   attn.view(-1, srcBatch.size(0)))
 
             # batch x beam x numWords
             wordLk = out.view(beamSize, remainingSents, -1) \
                         .transpose(0, 1).contiguous()
-            attn = attn.view(beamSize, remainingSents, -1) \
-                       .transpose(0, 1).contiguous()
-
             active = []
             for b in range(batchSize):
                 if beam[b].done:
@@ -275,5 +325,5 @@ class Translator(object):
                 [self.buildTargetTokens(pred[b][n], srcBatch[b], attn[b][n])
                  for n in range(self.opt.n_best)]
             )
-
-        return predBatch, predScore, goldScore
+        print("here")
+        return predBatch, predScore, goldScore, attn, src

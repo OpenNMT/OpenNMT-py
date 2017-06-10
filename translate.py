@@ -98,8 +98,8 @@ def main():
             if len(srcBatch) == 0:
                 break
 
-        predBatch, predScore, goldScore = translator.translate(srcBatch,
-                                                               tgtBatch)
+        predBatch, predScore, goldScore, attn, src = translator.translate(srcBatch,
+                                                                     tgtBatch)
         predScoreTotal += sum(score[0] for score in predScore)
         predWordsTotal += sum(len(x[0]) for x in predBatch)
         if tgtF is not None:
@@ -108,6 +108,7 @@ def main():
 
         for b in range(len(predBatch)):
             count += 1
+            print(predBatch[b][0])
             outF.write(" ".join(predBatch[b][0]) + '\n')
             outF.flush()
 
@@ -133,6 +134,11 @@ def main():
                                              " ".join(predBatch[b][n])))
 
                 print('')
+                for i, w  in enumerate(predBatch[b][0]):
+                    print(w)
+                    _, ids = attn[b][0][i].sort(0, descending=True)
+                    for j in ids[:5].tolist():
+                        print("\t%s\t%d\t%3f" % (srcTokens[j], j, attn[b][0][i][j]))
 
         srcBatch, tgtBatch = [], []
 
