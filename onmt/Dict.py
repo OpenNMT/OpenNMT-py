@@ -2,6 +2,7 @@ import torch
 import codecs
 import onmt
 
+
 class Dict(object):
     def __init__(self, data=None, lower=False):
         self.idxToLabel = {}
@@ -52,7 +53,7 @@ class Dict(object):
             if label in other.labelToIdx:
                 alignment[idx] = other.labelToIdx[label]
         return alignment
-        
+
     def getLabel(self, idx, default=None):
         try:
             return self.idxToLabel[idx]

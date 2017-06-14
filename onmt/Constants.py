@@ -4,7 +4,7 @@ UNK = 1
 BOS = 2
 EOS = 3
 
-# Needs to be explicitly turned on. 
+# Indicates that a source token should be copied.
 COPY = 4
 
 PAD_WORD = '<blank>'

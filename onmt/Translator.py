@@ -1,42 +1,10 @@
 import onmt
 import onmt.modules
+import onmt.IO
 import torch.nn as nn
 import torch
 from torch.autograd import Variable
 
-
-def loadImageLibs():
-    "Conditional import of torch image libs."
-    global Image, transforms
-    from PIL import Image
-    from torchvision import transforms
-
-
-def extractFeatures(tokens):
-    "Given a list of token separate out words and features (if any)."
-    words = []
-    features = []
-    numFeatures = None
-
-    for t in range(len(tokens)):
-        field = tokens[t].split(u"￨")
-        word = field[0]
-        if len(word) > 0:
-            words.append(word)
-
-            if numFeatures is None:
-                numFeatures = len(field) - 1
-            else:
-                assert (len(field) - 1 == numFeatures), \
-                    "all words must have the same number of features"
-
-            if len(field) > 1:
-                for i in range(1, len(field)):
-                    if len(features) <= i-1:
-                        features.append([])
-                    features[i - 1].append(field[i])
-                    assert (len(features[i - 1]) == len(words))
-    return words, features, numFeatures if numFeatures else 0
 
 class Translator(object):
     def __init__(self, opt):
@@ -53,8 +21,11 @@ class Translator(object):
         self._type = model_opt.encoder_type \
             if "encoder_type" in model_opt else "text"
 
+        genType = model_opt.gen_type \
+            if "gen_type" in model_opt else "std"
+        
         if self._type == "text":
-            encoder = onmt.Models.Encoder(model_opt, self.src_dict, \
+            encoder = onmt.Models.Encoder(model_opt, self.src_dict,
                                           self.src_feature_dicts)
         elif self._type == "img":
             loadImageLibs()
@@ -63,13 +34,13 @@ class Translator(object):
         decoder = onmt.Models.Decoder(model_opt, self.tgt_dict)
         model = onmt.Models.NMTModel(encoder, decoder)
 
-        if False:
+        if genType == "std":
             generator = nn.Sequential(
                 nn.Linear(model_opt.rnn_size, self.tgt_dict.size()),
                 nn.LogSoftmax())
-        else:
-            generator = onmt.modules.CopyGenerator(model_opt, self.src_dict, self.tgt_dict)
-
+        elif genType == "copy":
+            generator = onmt.modules.CopyGenerator(model_opt, self.src_dict,
+                                                   self.tgt_dict)
 
         model.load_state_dict(checkpoint['model'])
         generator.load_state_dict(checkpoint['generator'])
@@ -93,40 +64,22 @@ class Translator(object):
             "scores": [],
             "log_probs": []}
 
-    def _getBatchSize(self, batch):
-        if self._type == "text":
-            return batch.size(1)
-        else:
-            return batch.size(0)
-
     def buildData(self, srcBatch, goldBatch):
+        srcFeats = []
         if self.src_feature_dicts:
             srcFeats = [[] for i in range(len(self.src_feature_dicts))]
         srcData = []
-        
-        # This needs to be the same as preprocess.py.
-        if self._type == "text":
-            for b in srcBatch:
-                srcWords, srcFeatures, _ = extractFeatures(b)
-                srcData += [self.src_dict.convertToIdx(srcWords,
-                                                       onmt.Constants.UNK_WORD)]
-                if self.src_feature_dicts:
-                    for j in range(len(self.src_feature_dicts)):
-                        srcFeats[j] += [self.src_feature_dicts[j].
-                                        convertToIdx(srcFeatures[j],
-                                                     onmt.Constants.UNK_WORD)]
-
-        elif self._type == "img":
-            srcData = [transforms.ToTensor()(
-                Image.open(self.opt.src_img_dir + "/" + b[0]))
-                       for b in srcBatch]
-
         tgtData = None
+        for b in srcBatct:
+            srcWords, srcFeat = onmt.IO.readSrcLine(b, self.src_dict, self.src_feature_dicts, self._type)
+            srcData += [srcWords]
+            for i in range(len(srcFeats)):
+                srcFeats[i] += [srcFeat[i]]
+
         if goldBatch:
-            tgtData = [self.tgt_dict.convertToIdx(b,
-                       onmt.Constants.UNK_WORD,
-                       onmt.Constants.BOS_WORD,
-                       onmt.Constants.EOS_WORD) for b in goldBatch]
+            for b in goldBatch:
+                tgtWords, tgtFeat = onmt.IO.readTgtLine(b, self.src_dict, None, self._type)
+                tgtData += [tgtWords]
 
         return onmt.Dataset(srcData, tgtData, self.opt.batch_size,
                             self.opt.cuda, volatile=True,
@@ -143,17 +96,12 @@ class Translator(object):
                     tokens[i] = src[maxIndex[0]]
         return tokens
 
-    def translateBatch(self, srcBatch, tgtBatch):
-        # Batch size is in different location depending on data.
-
+    def translateBatch(self, batch):
         beamSize = self.opt.beam_size
-
+        batchSize = batch.batchSize
+        
         #  (1) run the encoder on the src
-        encStates, context = self.model.encoder(srcBatch)
-
-        # Drop the lengths needed for encoder.
-        srcBatch = srcBatch[0]
-        batchSize = self._getBatchSize(srcBatch)
+        encStates, context = self.model.encoder(batch.src)
 
         rnnSize = context.size(2)
         encStates = (self.model._fix_enc_hidden(encStates[0]),
@@ -161,14 +109,16 @@ class Translator(object):
 
         decoder = self.model.decoder
         attentionLayer = decoder.attn
-        useMasking = self._type == "text"
+        useMasking = (self._type == "text")
+
+        # TODO: Fix ME!
         useMasking = False
+
         #  This mask is applied to the attention model inside the decoder
         #  so that the attention ignores source padding
         padMask = None
         if useMasking:
-            padMask = srcBatch[:,:,0].data.eq(onmt.Constants.PAD).t()
-
+            padMask = batch.words().data.eq(onmt.Constants.PAD).t()
         def mask(padMask):
             if useMasking:
                 attentionLayer.applyMask(padMask)
@@ -176,14 +126,14 @@ class Translator(object):
         #  (2) if a target is specified, compute the 'goldScore'
         #  (i.e. log likelihood) of the target under the model
         goldScores = context.data.new(batchSize).zero_()
-        if tgtBatch is not None:
+        if batch.tgt is not None:
             decStates = encStates
             decOut = self.model.make_init_decoder_output(context)
             mask(padMask)
             initOutput = self.model.make_init_decoder_output(context)
             decOut, decStates, attn = self.model.decoder(
-                tgtBatch[:-1], decStates, context, initOutput)
-            for dec_t, tgt_t in zip(decOut, tgtBatch[1:].data):
+                batch.tgt[:-1], decStates, context, initOutput)
+            for dec_t, tgt_t in zip(decOut, batch.tgt[1:].data):
                 gen_t = self.model.generator.forward(dec_t)
                 tgt_t = tgt_t.unsqueeze(1)
                 scores = gen_t.data.gather(1, tgt_t)
@@ -192,9 +142,9 @@ class Translator(object):
 
         #  (3) run the decoder to generate sentences, using beam search
 
-        # Expand tensors for each beam.
+        # Each hypothesis in the beam uses the same context
+        # and initial decoder state
         context = Variable(context.data.repeat(1, beamSize, 1))
-
         decStates = (Variable(encStates[0].data.repeat(1, beamSize, 1)),
                      Variable(encStates[1].data.repeat(1, beamSize, 1)))
 
@@ -203,7 +153,7 @@ class Translator(object):
         decOut = self.model.make_init_decoder_output(context)
 
         if useMasking:
-            padMask = srcBatch.data[:,:,0].eq(
+            padMask = batch.src.data[:, :, 0].eq(
                 onmt.Constants.PAD).t() \
                                    .unsqueeze(0) \
                                    .repeat(beamSize, 1, 1)
@@ -220,15 +170,13 @@ class Translator(object):
             # decOut: 1 x (beam*batch) x numWords
             decOut = decOut.squeeze(0)
 
-
             attn = attn.view(beamSize, remainingSents, -1) \
                        .transpose(0, 1).contiguous()
-            
             if False:
                 out = self.model.generator.forward(decOut)
             else:
-                out = self.model.generator.forward(decOut, srcBatch,
-                                                   attn.view(-1, srcBatch.size(0)))
+                out = self.model.generator.forward(decOut, batch.src,
+                                                   attn.view(-1, batch.src.size(0)))
 
             # batch x beam x numWords
             wordLk = out.view(beamSize, remainingSents, -1) \
@@ -287,7 +235,7 @@ class Translator(object):
             hyps, attn = zip(*[beam[b].getHyp(k) for k in ks[:n_best]])
             allHyp += [hyps]
             if useMasking:
-                valid_attn = srcBatch.data[:, b].ne(onmt.Constants.PAD) \
+                valid_attn = batch.src.data[:, b].ne(onmt.Constants.PAD) \
                                                 .nonzero().squeeze(1)
                 attn = [a.index_select(1, valid_attn) for a in attn]
             allAttn += [attn]
@@ -309,13 +257,13 @@ class Translator(object):
     def translate(self, srcBatch, goldBatch):
         #  (1) convert words to indexes
         dataset = self.buildData(srcBatch, goldBatch)
-        src, tgt, indices = dataset[0]
-        batchSize = self._getBatchSize(src[0])
+        batch = dataset[0]
+        batchSize = batch.batchSize
 
         #  (2) translate
-        pred, predScore, attn, goldScore = self.translateBatch(src, tgt)
+        pred, predScore, attn, goldScore = self.translateBatch(batch)
         pred, predScore, attn, goldScore = list(zip(
-            *sorted(zip(pred, predScore, attn, goldScore, indices),
+            *sorted(zip(pred, predScore, attn, goldScore, batch.indices),
                     key=lambda x: x[-1])))[:-1]
 
         #  (3) convert indexes to words
@@ -325,5 +273,5 @@ class Translator(object):
                 [self.buildTargetTokens(pred[b][n], srcBatch[b], attn[b][n])
                  for n in range(self.opt.n_best)]
             )
-        print("here")
-        return predBatch, predScore, goldScore, attn, src
+
+        return predBatch, predScore, goldScore, attn, batch.src
