@@ -142,7 +142,7 @@ class Decoder(nn.Module):
         for i, emb_t in enumerate(emb.split(1)):
             emb_t = emb_t.squeeze(0)
             if self.input_feed:
-                emb_t = torch.cat([emb_t, copy_output], 1)
+                emb_t = torch.cat([emb_t, output], 1)
 
             output, hidden = self.rnn(emb_t, hidden)
             if self.trunc_bptt_cutoff \
