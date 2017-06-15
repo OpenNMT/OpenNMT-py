@@ -75,7 +75,8 @@ def makeVocabulary(filename, size):
     featuresVocabs = []
     with codecs.open(filename, "r", "utf-8") as f:
         for sent in f.readlines():
-            words, features, numFeatures = onmt.IO.extractFeatures(sent.split())
+            words, features, numFeatures \
+                = onmt.IO.extractFeatures(sent.split())
 
             if len(featuresVocabs) == 0 and numFeatures > 0:
                 for j in range(numFeatures):
@@ -181,17 +182,22 @@ def makeData(srcFile, tgtFile, srcDicts, tgtDicts,
 
             if opt.tgt_seq_length_trunc != 0:
                 tgtLine = tgtLine[:opt.tgt_seq_length_trunc]
-                
-            srcWords, srcFeat = onmt.IO.readSrcLine(srcLine, srcDicts, srcFeatureDicts)
+
+            srcWords, srcFeat \
+                = onmt.IO.readSrcLine(srcLine, srcDicts,
+                                      srcFeatureDicts,
+                                      _type=opt.src_type,
+                                      src_img_dir=opt.src_img_dir)
             src += [srcWords]
             for i in range(len(srcFeats)):
                 srcFeats[i] += [srcFeat[i]]
 
-            tgtWords, tgtFeat = onmt.IO.readTgtLine(tgtLine, tgtDicts, tgtFeatureDicts)
+            tgtWords, tgtFeat = onmt.IO.readTgtLine(tgtLine, tgtDicts,
+                                                    tgtFeatureDicts)
             tgt += [tgtWords]
             for i in range(len(tgtFeats)):
                 tgtFeats[i] += [tgtFeat[i]]
-            
+
             sizes += [len(srcWords)]
         else:
             ignored += 1

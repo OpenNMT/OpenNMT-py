@@ -23,12 +23,11 @@ class Translator(object):
 
         genType = model_opt.gen_type \
             if "gen_type" in model_opt else "std"
-        
+
         if self._type == "text":
             encoder = onmt.Models.Encoder(model_opt, self.src_dict,
                                           self.src_feature_dicts)
         elif self._type == "img":
-            loadImageLibs()
             encoder = onmt.modules.ImageEncoder(model_opt)
 
         decoder = onmt.Models.Decoder(model_opt, self.tgt_dict)
@@ -70,15 +69,18 @@ class Translator(object):
             srcFeats = [[] for i in range(len(self.src_feature_dicts))]
         srcData = []
         tgtData = None
-        for b in srcBatct:
-            srcWords, srcFeat = onmt.IO.readSrcLine(b, self.src_dict, self.src_feature_dicts, self._type)
+        for b in srcBatch:
+            srcWords, srcFeat = onmt.IO.readSrcLine(b, self.src_dict,
+                                                    self.src_feature_dicts,
+                                                    self._type)
             srcData += [srcWords]
             for i in range(len(srcFeats)):
                 srcFeats[i] += [srcFeat[i]]
 
         if goldBatch:
             for b in goldBatch:
-                tgtWords, tgtFeat = onmt.IO.readTgtLine(b, self.src_dict, None, self._type)
+                tgtWords, tgtFeat = onmt.IO.readTgtLine(b, self.src_dict,
+                                                        None, self._type)
                 tgtData += [tgtWords]
 
         return onmt.Dataset(srcData, tgtData, self.opt.batch_size,
@@ -99,7 +101,7 @@ class Translator(object):
     def translateBatch(self, batch):
         beamSize = self.opt.beam_size
         batchSize = batch.batchSize
-        
+
         #  (1) run the encoder on the src
         encStates, context = self.model.encoder(batch.src)
 
@@ -119,6 +121,7 @@ class Translator(object):
         padMask = None
         if useMasking:
             padMask = batch.words().data.eq(onmt.Constants.PAD).t()
+
         def mask(padMask):
             if useMasking:
                 attentionLayer.applyMask(padMask)
@@ -175,7 +178,8 @@ class Translator(object):
             if False:
                 out = self.model.generator.forward(decOut)
             else:
-                out = self.model.generator.forward(decOut, batch.src,
+                out \
+                    = self.model.generator.forward(decOut, batch.src,
                                                    attn.view(-1, batch.src.size(0)))
 
             # batch x beam x numWords

@@ -5,16 +5,17 @@ import onmt.modules
 from torch.nn.utils.rnn import pad_packed_sequence as unpack
 from torch.nn.utils.rnn import pack_padded_sequence as pack
 
-"""
-Encoder recurrent neural network.
-"""
 
 class Encoder(nn.Module):
+    """
+    Encoder recurrent neural network.
+    """
+
     def __init__(self, opt, dicts, feature_dicts=None):
         """
         Args:
             opt: Model options.
-            dicts (`Dict`): The src dictionary 
+            dicts (`Dict`): The src dictionary
             features_dicts (`[Dict]`): List of src feature dictionaries.
         """
         # Number of rnn layers.
@@ -44,7 +45,7 @@ class Encoder(nn.Module):
                 for feature_dict in feature_dicts])
 
             # MLP on features and words.
-            self.activation = nn.ReLU()            
+            self.activation = nn.ReLU()
             self.linear = nn.Linear(input_size +
                                     len(feature_dicts) * opt.feature_vec_size,
                                     self.hidden_size)
@@ -64,7 +65,6 @@ class Encoder(nn.Module):
             pretrained = torch.load(opt.pre_word_vecs_enc)
             self.word_lut.weight.data.copy_(pretrained)
 
-
     def _embed(self, src_input):
         """
         Embed the words or utilize features.
@@ -79,24 +79,23 @@ class Encoder(nn.Module):
         else:
             emb = self.word_lut(src_input[:, :, 0])
         return emb
-        
-            
+
     def forward(self, input, lengths=None, hidden=None):
         """
         Args:
             input ((cuda) LongTensor): len x batch x #feat
-            lengths: 
-            hidden: Initial hidden state. 
-        Returns: 
-            Encoder final state, Encoder hidden states, 
+            lengths:
+            hidden: Initial hidden state.
+        Returns:
+            Encoder final state, Encoder hidden states,
         """
         if lengths:
             # Lengths data is wrapped inside a Variable.
             lengths = lengths.data.view(-1).tolist()
-            pre_emb = embed(input)
+            pre_emb = self._embed(input)
             emb = pack(pre_emb, lengths)
         else:
-            emb = embed(input)
+            emb = self._embed(input)
 
         outputs, hidden_t = self.rnn(emb, hidden)
         if lengths:
@@ -136,11 +135,11 @@ class StackedLSTM(nn.Module):
         return input, (h_1, c_1)
 
 
-"""
-Main decoder object.
-"""
-    
 class Decoder(nn.Module):
+    """
+    Main decoder object.
+    """
+
     def __init__(self, opt, dicts):
         self.layers = opt.layers
         self.input_feed = opt.input_feed
@@ -160,7 +159,6 @@ class Decoder(nn.Module):
 
         # Separate Copy Attention.
         self.copy_attn = onmt.modules.GlobalAttention(opt.rnn_size)
-                
 
     def load_pretrained_vectors(self, opt):
         if opt.pre_word_vecs_dec is not None:
@@ -187,7 +185,7 @@ class Decoder(nn.Module):
         # iterations in parallel, but that's only possible if
         # self.input_feed=False
         outputs = []
-        attns = {"std" : [], "copy" : []}
+        attns = {"std": [], "copy": []}
         output = init_output
         for i, emb_t in enumerate(emb.split(1)):
             emb_t = emb_t.squeeze(0)
@@ -196,11 +194,11 @@ class Decoder(nn.Module):
 
             output, hidden = self.rnn(emb_t, hidden)
             output, attn = self.attn(output, context.t())
-            
+
             output = self.dropout(output)
             outputs += [output]
             attns["std"] += [attn]
-            
+
             # COPY
             if True:
                 _, copy_attn = self.copy_attn(output, context.t())
@@ -247,7 +245,7 @@ class NMTModel(nn.Module):
     def forward(self, input, dec_hidden=None):
         """
         Args:
-            input: A `Batch` object. 
+            input: A `Batch` object.
             dec_hidden: Initialize with a decoder hidden state.
         Returns:
             out:

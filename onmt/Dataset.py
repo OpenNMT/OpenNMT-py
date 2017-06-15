@@ -6,27 +6,29 @@ from torch.autograd import Variable
 
 import onmt
 
-"""
-Manages dataset creation and usage.
 
-Example: 
-
-    `batch = data[batchnum]`
-"""
 class Dataset(object):
+    """
+    Manages dataset creation and usage.
+
+    Example:
+
+        `batch = data[batchnum]`
+    """
+
     def __init__(self, srcData, tgtData, batchSize, cuda,
                  volatile=False, data_type="text",
                  srcFeatures=None, tgtFeatures=None):
         """
         Construct a data set
-        
+
         Args:
             srcData, tgtData: The first parameter.
-            batchSize: Training batchSize to use. 
-            cuda: Return batches on gpu. 
-            volitile: 
-            data_type: Format of the source arguments 
-                       Options ["text", "img"]. 
+            batchSize: Training batchSize to use.
+            cuda: Return batches on gpu.
+            volitile:
+            data_type: Format of the source arguments
+                       Options ["text", "img"].
             srcFeatures: Source features aligned with srcData.
             tgtFeatures: (Currently not supported.)
         """
@@ -132,7 +134,7 @@ class Dataset(object):
         # wrap lengths in a Variable to properly split it in DataParallel
         lengths = torch.LongTensor(lengths).view(1, -1)
         lengths = Variable(lengths, volatile=self.volatile)
-        
+
         return Batch(wrap(srcBatch, self._type),
                      wrap(tgtBatch, "text"),
                      lengths,
@@ -160,7 +162,7 @@ class Batch(object):
 
     def features(self, j):
         return self.src[:, :, j+1]
-    
+
     def truncate(self, start, end):
         return Batch(self.src, self.tgt[start:end],
                      self.lengths, self.indices)

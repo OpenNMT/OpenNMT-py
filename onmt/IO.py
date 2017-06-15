@@ -1,4 +1,4 @@
-import onmt.Constants.UNK_WORD
+import onmt.Constants
 
 
 def loadImageLibs():
@@ -8,40 +8,43 @@ def loadImageLibs():
     from torchvision import transforms
 
 
-def readSrcLine(src_line, src_dict, src_feature_dicts, _type="text"):
-    srcFeat = None
-    if self._type == "text":
+def readSrcLine(src_line, src_dict, src_feature_dicts,
+                _type="text", src_img_dir=""):
+    srcFeats = None
+    if _type == "text":
         srcWords, srcFeatures, _ = extractFeatures(src_line)
         srcData = src_dict.convertToIdx(srcWords,
                                         onmt.Constants.UNK_WORD)
         if src_feature_dicts:
-            srcFeat = [src_feature_dicts[j].
-                       convertToIdx(srcFeatures[j],
-                                    onmt.Constants.UNK_WORD)
-                       for j in range(len(src_feature_dicts))]
+            srcFeats = [src_feature_dicts[j].
+                        convertToIdx(srcFeatures[j],
+                                     onmt.Constants.UNK_WORD)
+                        for j in range(len(src_feature_dicts))]
     elif _type == "img":
         if not transforms:
             loadImageLibs()
-        srcData = [transforms.ToTensor()(
-            Image.open(self.opt.src_img_dir + "/" + b[0]))
-                   for b in srcBatch]
+        srcData = transforms.ToTensor()(
+            Image.open(src_img_dir + "/" + srcWords[0]))
 
-    return srcData, srcFeat
+    return srcData, srcFeats
+
 
 def readTgtLine(tgt_line, tgt_dict, tgt_feature_dicts, _type="text"):
+    tgtFeats = None
     tgtWords, tgtFeatures, _ = extractFeatures(tgt_line)
-    tgtData = tgt_dict.convertToIdx(tgtWords,
-                                    onmt.Constants.UNK_WORD,
-                                    onmt.Constants.BOS_WORD,
-                                    onmt.Constants.EOS_WORD)]
-    if tgtFeatureDicts:
+    tgtData = [tgt_dict.convertToIdx(tgtWords,
+                                     onmt.Constants.UNK_WORD,
+                                     onmt.Constants.BOS_WORD,
+                                     onmt.Constants.EOS_WORD)]
+    if tgt_feature_dicts:
         tgtFeats = [tgt_feature_dicts[j].
                     convertToIdx(tgtFeatures[j],
                                  onmt.Constants.UNK_WORD)
                     for j in range(len(tgt_feature_dicts))]
-        
-    return tgtData, tgtFeat
-            
+
+    return tgtData, tgtFeats
+
+
 def extractFeatures(tokens):
     "Given a list of token separate out words and features (if any)."
     words = []

@@ -158,13 +158,12 @@ def memoryEfficientLoss(outputs, generator, crit, batch,
 
         out_t = out_t.view(-1, out_t.size(2))
         attn_t = attn_t.view(-1, attn_t.size(2))
-        # Depending on generator type. 
+        # Depending on generator type.
         if False:
             scores_t = generator(out_t)
         else:
             scores_t = generator(out_t, batch.src, attn_t)
 
-            
         loss_t = crit(scores_t, targ_t.view(-1))
         pred_t = scores_t.max(1)[1]
         num_correct_t = pred_t.data.eq(targ_t.data) \
@@ -233,12 +232,12 @@ def trainModel(model, trainData, validData, dataset, optim):
             batch = trainData[batchIdx][:-1]
 
             dec_hidden = None
-            
+
             trunc_size = opt.truncated_decoder
             r = [0]
             if trunc_size:
                 r = range((batch.tgt.size(0) // trunc_size) + 1)
-            
+
             for j in r:
                 if trunc_size:
                     if batch.tgt.size(0) - 1 <= j * trunc_size:
@@ -250,9 +249,10 @@ def trainModel(model, trainData, validData, dataset, optim):
 
                 # Main training loop
                 model.zero_grad()
-                outputs, attn, dec_hidden = model(trunc_batch,
-                                                  dec_hidden= (h.detach() for h in dec_hidden)
-                                                  if dec_hidden else None)
+                outputs, attn, dec_hidden \
+                    = model(trunc_batch,
+                            dec_hidden=(h.detach()for h in dec_hidden)
+                            if dec_hidden else None)
 
                 # Exclude <s> from targets.
                 targets = trunc_batch.tgt[1:]
@@ -274,7 +274,7 @@ def trainModel(model, trainData, validData, dataset, optim):
                 total_num_correct += num_correct
                 total_words += num_words
             report_src_words += batch.lengths.data.sum()
-            
+
             if i % opt.log_interval == -1 % opt.log_interval:
                 print(("Epoch %2d, %5d/%5d; acc: %6.2f; ppl: %6.2f;" +
                        "%3.0f src tok/s; %3.0f tgt tok/s; %6.0f s elapsed") %
