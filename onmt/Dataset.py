@@ -139,7 +139,7 @@ class Dataset(object):
                      wrap(tgtBatch, "text"),
                      lengths,
                      indices,
-                     self.src[s:e].size(0))
+                     len(self.src[s:e]))
 
     def __len__(self):
         return self.numBatches
@@ -150,6 +150,9 @@ class Dataset(object):
 
 
 class Batch(object):
+    """
+    Object containing a single batch of data points.
+    """
     def __init__(self, src, tgt, lengths, indices, batchSize):
         self.src = src
         self.tgt = tgt
@@ -164,5 +167,8 @@ class Batch(object):
         return self.src[:, :, j+1]
 
     def truncate(self, start, end):
+        """
+        Return a batch containing section from start:end.
+        """
         return Batch(self.src, self.tgt[start:end],
                      self.lengths, self.indices)

@@ -14,60 +14,62 @@ class CopyGenerator(nn.Module):
 
     def __init__(self, opt, src_dict, tgt_dict):
         super(CopyGenerator, self).__init__()
-        self.src_dict = src_dict
-        self.tgt_dict = tgt_dict
         self.linear = nn.Linear(opt.rnn_size, tgt_dict.size())
         self.alignment = torch.cuda.LongTensor(src_dict.align(tgt_dict))
-        self.opt = opt
 
     def forward(self, hidden, src, attn):
         """
-        src : src_len x batch x features
-        attn : (len * batch) x src_len
-        hidden : (len * batch) x hidden
+        hidden (FloatTensor): batch x hidden
+        src (LongTensor):     batch x src_len #x features  #src_len x batch x features 
+        attn (FloatTensor):   batch x src_len
         """
-
-        # Add a variable for each of the source words.
-        words = src[:, :, 0].data.contiguous()
-
-        size = words.size()
-        full_size = hidden.size(0)
-        batch_size = size[1]
-        len_size = full_size // batch_size
-
+        # Hack to get around log.
+        eps = 1e-10
+                
         # Original probabilities.
         logits = self.linear(hidden)
+        mod_logits = logits.clone()
+        mod_logits[:, onmt.Constants.COPY] = 1e-10
+        prob = F.softmax(mod_logits)
+
+        # Probability of copying p(z) batch
         copy = F.sigmoid(logits[:, onmt.Constants.COPY])
-        logits2 = logits.clone()
-        logits2[:, onmt.Constants.COPY] = 1e-10
-        prob = F.softmax(logits2)
+        
+        # Mapping of source words to targets
+        # (batch x src_len)
+        src_to_target = Variable(self.alignment[src.data.view(-1)].view(src.data.size()))
+
+        # Probability of copying each word: p(z) * attn
+        # (tgt_len x batch x src_len)
+        copy = copy.view(copy.size() + (1,))
+        mul_attn = torch.mul(attn, copy.expand_as(attn))
+
+        # Probibility of not copying: p(w) * (1 - p(z))
+        prob = torch.mul(prob,  1 - copy.expand_as(prob))
+
+        # Add in the extra scores.
+        out_prob = prob.clone()
+        for b in range(prob.size(0)):
+            out_prob[b] = prob[b].index_add(0, src_to_target[b], mul_attn[b])
+
+        # drop padding and renorm.
+        out_prob[:, onmt.Constants.PAD] = eps
+        norm = out_prob.sum(1).expand(out_prob.size())
+        return out_prob.div(norm).add(eps).log()
+
         # debug = False # copy.data[0] > 0.1
         # if debug:
         #     print("\tCOPY %3f"%copy.data[0])
         #     v, mid = prob[0].data.max(0)
         #     print(self.tgt_dict.getLabel(mid[0], "FAIL"), v[0])
 
-        # Mapping of source words to targets
-        src_to_target = Variable(self.alignment[words.view(-1)]
-                                 .contiguous().view(size)
-                                 .t().contiguous())
-
-        # Probability of copying each word.
-        mul_attn = torch.mul(attn, copy.view(copy.size() + (1,))
-                             .expand_as(attn))
-        eps = 1e-10
-
         # Add in the copying of each word to the generated prob.
-        prob_size = prob.size()
-        prob = torch.mul(prob,  1 - copy.view(copy.size() + (1,))
-                         .expand_as(prob))
-        prob = prob.view(len_size, batch_size, -1)
-        mul_attn = mul_attn.view(len_size, batch_size, -1)
-        out_prob = prob.clone()
-
-        for b in range(batch_size):
-            out_prob[:, b] = prob[:, b].index_add(1, src_to_target[b],
-                                                  mul_attn[:, b])
+        # prob_size = prob.size()        
+        # prob = prob.view(len_size, batch_size, -1)
+        # mul_attn = mul_attn.view(len_size, batch_size, -1)
+        # out_prob = prob.clone()
+        
+            
         # if debug:
         #     _, ids = attn[0].cpu().data.sort(0, descending=True)
 
@@ -91,12 +93,9 @@ class CopyGenerator(nn.Module):
         #                                      mul_attn[0, 0, j].data[0]))
 
         # Drop any uncopyable terms.
-        out_prob[:, :, onmt.Constants.PAD] = 1e-10
+
         # if debug:
         #     v, mid = out_prob[0,0].data.max(0)
         #     print(self.tgt_dict.getLabel(mid[0], "FAIL"), v[0])
 
         # out_prob[:, :, onmt.Constants.COPY] = 1e-20
-        norm = out_prob.sum(2).expand(out_prob.size())
-        out_prob = out_prob.div(norm)
-        return out_prob.add(eps).log().view(prob_size)

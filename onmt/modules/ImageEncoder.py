@@ -39,8 +39,7 @@ class ImageEncoder(nn.Module):
     def load_pretrained_vectors(self, opt):
         pass
 
-    def forward(self, input):
-        input = input[0]
+    def forward(self, input, lengths=None):
         batchSize = input.size(0)
         # (batch_size, 64, imgH, imgW)
         # layer 1

@@ -51,6 +51,12 @@ parser.add_argument('-brnn', action='store_true',
 parser.add_argument('-brnn_merge', default='concat',
                     help="""Merge action for the bidirectional hidden states:
                     [concat|sum]""")
+parser.add_argument('-copy_attn', action="store_true",
+                    help='Train copy attention layer.')
+parser.add_argument('-encoder_layer', type=str, default='',
+                    help='Type of encoder layer to use. [|mean]')
+
+
 
 # Optimization options
 parser.add_argument('-encoder_type', default='text',
@@ -140,29 +146,54 @@ def NMTCriterion(vocabSize):
 
 def memoryEfficientLoss(outputs, generator, crit, batch,
                         eval=False, attns=None):
+    """
+    Args:
+        outputs (FloatTensor): tgt_len x batch x rnn_size
+        generator (Function): ( any x rnn_size ) -> ( any x tgt_vocab ) 
+        crit (Criterion): ( any x tgt_vocab ) 
+        batch (`Batch`): Data object 
+        eval (bool): train or eval 
+        attns (FloatTensor): src_len x batch
+
+    Returns:
+        loss (float): accumulated loss value 
+        grad_output: grad of loss wrt outputs
+        grad_attns: grad of loss wrt attns
+        num_correct (int): number of correct targets
+    
+    """
     targets = batch.tgt[1:]
     # compute generations one piece at a time
     num_correct, loss = 0, 0
 
     # These will require gradients.
     outputs = Variable(outputs.data, requires_grad=(not eval), volatile=eval)
-    attns = Variable(attns.data, requires_grad=(not eval), volatile=eval)
 
-    batch_size = outputs.size(1)
-    outputs_split = torch.split(outputs, opt.max_generator_batches)
-    targets_split = torch.split(targets, opt.max_generator_batches)
-    attns_split = torch.split(attns, opt.max_generator_batches)
-    for i, (out_t, targ_t, attn_t) in enumerate(zip(outputs_split,
-                                                    targets_split,
-                                                    attns_split)):
+    batch_size = batch.batchSize
+    d = {"out": outputs, "tgt": targets}
+    
+    if attns is not None:
+        # These will require gradients as well.
+        attns = Variable(attns.data, requires_grad=(not eval), volatile=eval)
+        d["attn"] = attns
+        
+    for k in d:
+        d[k] = torch.split(d[k], opt.max_generator_batches)
+    for i, targ_t in enumerate(d["tgt"]):
+        out_t = d["out"][i].view(-1, d["out"][i].size(2))
 
-        out_t = out_t.view(-1, out_t.size(2))
-        attn_t = attn_t.view(-1, attn_t.size(2))
         # Depending on generator type.
-        if False:
+        if attns is None:
             scores_t = generator(out_t)
         else:
-            scores_t = generator(out_t, batch.src, attn_t)
+            attn_t = d["attn"][i]
+            words = batch.words().t()
+            src_t = words.contiguous().view((1,) + words.size()) \
+                                          .expand(attn_t.size())
+
+            attn_t = attn_t.view(-1, d["attn"][i].size(2))
+            src_t = src_t.contiguous().view(-1, src_t.size(2))            
+            scores_t = generator(out_t, src_t, attn_t)
 
         loss_t = crit(scores_t, targ_t.view(-1))
         pred_t = scores_t.max(1)[1]
@@ -177,7 +208,7 @@ def memoryEfficientLoss(outputs, generator, crit, batch,
 
     # Return the gradients
     grad_output = None if outputs.grad is None else outputs.grad.data
-    grad_attns = None if attns.grad is None else attns.grad.data
+    grad_attns = None if not attns or  attns.grad is None else attns.grad.data
     return loss, grad_output, grad_attns, num_correct
 
 
@@ -188,14 +219,13 @@ def eval(model, criterion, data):
 
     model.eval()
     for i in range(len(data)):
-        # exclude original indices
-        batch = data[i][:-1]
+        batch = data[i]
         outputs, attn, dec_hidden = model(batch)
         # exclude <s> from targets
         targets = batch.tgt[1:]
         loss, _, _, num_correct = memoryEfficientLoss(
             outputs, model.generator, criterion, batch, eval=True,
-            attns=attn)
+            attns=attn.get("copy"))
         total_loss += loss
         total_num_correct += num_correct
         total_words += targets.data.ne(onmt.Constants.PAD).sum()
@@ -225,11 +255,10 @@ def trainModel(model, trainData, validData, dataset, optim):
         report_loss, report_tgt_words = 0, 0
         report_src_words, report_num_correct = 0, 0
         start = time.time()
-        for i in range(len(trainData)):
+        for i in len(trainData)):
 
             batchIdx = batchOrder[i] if epoch > opt.curriculum else i
-            # Exclude original indices.
-            batch = trainData[batchIdx][:-1]
+            batch = trainData[batchIdx]
 
             dec_hidden = None
 
@@ -258,10 +287,13 @@ def trainModel(model, trainData, validData, dataset, optim):
                 targets = trunc_batch.tgt[1:]
                 loss, gradOutput, gradAttn, num_correct = memoryEfficientLoss(
                     outputs, model.generator, criterion, trunc_batch,
-                    attns=attn["copy"])
+                    attns=attn.get("copy"))
 
-                torch.autograd.backward([outputs, attn["copy"]],
-                                        [gradOutput, gradAttn])
+                var, grad = [outputs], [gradOutput]
+                if gradAttn is not None:
+                    var, grad = [outputs, attn["copy"]], [gradOutput, gradAttn]
+                    
+                torch.autograd.backward(var, grad)
 
                 # Update the parameters.
                 optim.step()
@@ -379,12 +411,13 @@ def main():
 
     decoder = onmt.Models.Decoder(opt, dicts['tgt'])
 
-    if False:
+    
+    if opt.copy_attn:
+        generator = onmt.modules.CopyGenerator(opt, dicts['src'], dicts['tgt'])
+    else:
         generator = nn.Sequential(
             nn.Linear(opt.rnn_size, dicts['tgt'].size()),
             nn.LogSoftmax())
-    else:
-        generator = onmt.modules.CopyGenerator(opt, dicts['src'], dicts['tgt'])
 
     model = onmt.Models.NMTModel(encoder, decoder)
 

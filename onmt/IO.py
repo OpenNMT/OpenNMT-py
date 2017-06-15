@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import onmt.Constants
 
 
@@ -32,10 +34,10 @@ def readSrcLine(src_line, src_dict, src_feature_dicts,
 def readTgtLine(tgt_line, tgt_dict, tgt_feature_dicts, _type="text"):
     tgtFeats = None
     tgtWords, tgtFeatures, _ = extractFeatures(tgt_line)
-    tgtData = [tgt_dict.convertToIdx(tgtWords,
-                                     onmt.Constants.UNK_WORD,
-                                     onmt.Constants.BOS_WORD,
-                                     onmt.Constants.EOS_WORD)]
+    tgtData = tgt_dict.convertToIdx(tgtWords,
+                                    onmt.Constants.UNK_WORD,
+                                    onmt.Constants.BOS_WORD,
+                                    onmt.Constants.EOS_WORD)
     if tgt_feature_dicts:
         tgtFeats = [tgt_feature_dicts[j].
                     convertToIdx(tgtFeatures[j],
