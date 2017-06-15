@@ -99,7 +99,7 @@ class Encoder(nn.Module):
             hidden: Initial hidden state.
 
         Returns:
-            hidden_t (FloatTensor): Pair of 1 x batch x rnn_size - final Encoder state
+            hidden_t (FloatTensor): Pair of layers x batch x rnn_size - final Encoder state
             outputs (FloatTensor):  len x batch x rnn_size -  Memory bank
         """
         if lengths:
@@ -112,7 +112,9 @@ class Encoder(nn.Module):
             pre_emb = emb
             
         if self.encoder_layer == "mean":
-            mean = pre_emb.mean(0).view(1, pre_emb.size(1), pre_emb.size(2))
+            mean = pre_emb.mean(0).view(1, pre_emb.size(1), pre_emb.size(2)) \
+                   .expand(self.layers, pre_emb.size(1), pre_emb.size(2))
+
             return (mean, mean), pre_emb
         
         outputs, hidden_t = self.rnn(emb, hidden)

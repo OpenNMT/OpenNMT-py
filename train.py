@@ -187,13 +187,9 @@ def memoryEfficientLoss(outputs, generator, crit, batch,
             scores_t = generator(out_t)
         else:
             attn_t = d["attn"][i]
-            words = batch.words().t()
-            src_t = words.contiguous().view((1,) + words.size()) \
-                                          .expand(attn_t.size())
-
+            words = batch.words().t().contiguous()
             attn_t = attn_t.view(-1, d["attn"][i].size(2))
-            src_t = src_t.contiguous().view(-1, src_t.size(2))            
-            scores_t = generator(out_t, src_t, attn_t)
+            scores_t = generator(out_t, words, attn_t)
 
         loss_t = crit(scores_t, targ_t.view(-1))
         pred_t = scores_t.max(1)[1]
@@ -208,7 +204,7 @@ def memoryEfficientLoss(outputs, generator, crit, batch,
 
     # Return the gradients
     grad_output = None if outputs.grad is None else outputs.grad.data
-    grad_attns = None if not attns or  attns.grad is None else attns.grad.data
+    grad_attns = None if not attns or attns.grad is None else attns.grad.data
     return loss, grad_output, grad_attns, num_correct
 
 
@@ -255,7 +251,7 @@ def trainModel(model, trainData, validData, dataset, optim):
         report_loss, report_tgt_words = 0, 0
         report_src_words, report_num_correct = 0, 0
         start = time.time()
-        for i in len(trainData)):
+        for i in range(len(trainData)):
 
             batchIdx = batchOrder[i] if epoch > opt.curriculum else i
             batch = trainData[batchIdx]
@@ -292,7 +288,6 @@ def trainModel(model, trainData, validData, dataset, optim):
                 var, grad = [outputs], [gradOutput]
                 if gradAttn is not None:
                     var, grad = [outputs, attn["copy"]], [gradOutput, gradAttn]
-                    
                 torch.autograd.backward(var, grad)
 
                 # Update the parameters.

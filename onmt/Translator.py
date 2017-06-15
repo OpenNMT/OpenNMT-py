@@ -21,8 +21,8 @@ class Translator(object):
         self._type = model_opt.encoder_type \
             if "encoder_type" in model_opt else "text"
 
-        genType = model_opt.gen_type \
-            if "gen_type" in model_opt else "std"
+        self.copy_attn = model_opt.copy_attn \
+            if "copy_attn" in model_opt else "std"
 
         if self._type == "text":
             encoder = onmt.Models.Encoder(model_opt, self.src_dict,
@@ -33,11 +33,11 @@ class Translator(object):
         decoder = onmt.Models.Decoder(model_opt, self.tgt_dict)
         model = onmt.Models.NMTModel(encoder, decoder)
 
-        if genType == "std":
+        if not self.copy_attn:
             generator = nn.Sequential(
                 nn.Linear(model_opt.rnn_size, self.tgt_dict.size()),
                 nn.LogSoftmax())
-        elif genType == "copy":
+        elif self.copy_attn:
             generator = onmt.modules.CopyGenerator(model_opt, self.src_dict,
                                                    self.tgt_dict)
 
@@ -113,9 +113,6 @@ class Translator(object):
         attentionLayer = decoder.attn
         useMasking = (self._type == "text")
 
-        # TODO: Fix ME!
-        useMasking = False
-
         #  This mask is applied to the attention model inside the decoder
         #  so that the attention ignores source padding
         padMask = None
@@ -173,14 +170,19 @@ class Translator(object):
             # decOut: 1 x (beam*batch) x numWords
             decOut = decOut.squeeze(0)
 
-            attn = attn.view(beamSize, remainingSents, -1) \
-                       .transpose(0, 1).contiguous()
-            if False:
+            attn["std"] = attn["std"].view(beamSize, remainingSents, -1) \
+                                     .transpose(0, 1).contiguous()
+            if not self.copy_attn:
                 out = self.model.generator.forward(decOut)
             else:
+                words = batch.words().t()
+                words = torch.stack([words[i] for i, b in enumerate(beam) if not b.done]).contiguous() 
+                attn_copy = attn["copy"].view(beamSize, remainingSents, -1) \
+                       .transpose(0, 1).contiguous()
+                            
                 out \
-                    = self.model.generator.forward(decOut, batch.src,
-                                                   attn.view(-1, batch.src.size(0)))
+                    = self.model.generator.forward(decOut, words,
+                                                   attn_copy.view(-1, batch.src.size(0)))
 
             # batch x beam x numWords
             wordLk = out.view(beamSize, remainingSents, -1) \
@@ -191,7 +193,7 @@ class Translator(object):
                     continue
 
                 idx = batchIdx[b]
-                if not beam[b].advance(wordLk.data[idx], attn.data[idx]):
+                if not beam[b].advance(wordLk.data[idx], attn["std"].data[idx]):
                     active += [b]
 
                 for decState in decStates:  # iterate over h, c
@@ -239,7 +241,7 @@ class Translator(object):
             hyps, attn = zip(*[beam[b].getHyp(k) for k in ks[:n_best]])
             allHyp += [hyps]
             if useMasking:
-                valid_attn = batch.src.data[:, b].ne(onmt.Constants.PAD) \
+                valid_attn = batch.src.data[:, b, 0].ne(onmt.Constants.PAD) \
                                                 .nonzero().squeeze(1)
                 attn = [a.index_select(1, valid_attn) for a in attn]
             allAttn += [attn]

@@ -96,6 +96,7 @@ class Dataset(object):
         assert index < self.numBatches, "%d > %d" % (index, self.numBatches)
         s = index*self.batchSize
         e = (index+1)*self.batchSize
+        batch_size = len(self.src[s:e])
         srcBatch, lengths = self._batchify(
             self.src[s:e],
             align_right=False, include_lengths=True,
@@ -139,7 +140,7 @@ class Dataset(object):
                      wrap(tgtBatch, "text"),
                      lengths,
                      indices,
-                     len(self.src[s:e]))
+                     batch_size)
 
     def __len__(self):
         return self.numBatches
@@ -171,4 +172,4 @@ class Batch(object):
         Return a batch containing section from start:end.
         """
         return Batch(self.src, self.tgt[start:end],
-                     self.lengths, self.indices)
+                     self.lengths, self.indices, self.batchSize)
