@@ -53,6 +53,8 @@ parser.add_argument('-brnn_merge', default='concat',
                     [concat|sum]""")
 parser.add_argument('-copy_attn', action="store_true",
                     help='Train copy attention layer.')
+parser.add_argument('-coverage_attn', action="store_true",
+                    help='Train a coverage attention layer.')
 parser.add_argument('-encoder_layer', type=str, default='',
                     help='Type of encoder layer to use. [|mean]')
 
@@ -145,7 +147,8 @@ def NMTCriterion(vocabSize):
 
 
 def memoryEfficientLoss(outputs, generator, crit, batch,
-                        eval=False, attns=None):
+                        eval=False,
+                        attns=None, coverage=None, copy=None):
     """
     Args:
         outputs (FloatTensor): tgt_len x batch x rnn_size
@@ -168,7 +171,6 @@ def memoryEfficientLoss(outputs, generator, crit, batch,
 
     # These will require gradients.
     outputs = Variable(outputs.data, requires_grad=(not eval), volatile=eval)
-
     batch_size = batch.batchSize
     d = {"out": outputs, "tgt": targets}
     
@@ -176,6 +178,11 @@ def memoryEfficientLoss(outputs, generator, crit, batch,
         # These will require gradients as well.
         attns = Variable(attns.data, requires_grad=(not eval), volatile=eval)
         d["attn"] = attns
+        
+    if coverage is not None:
+        # These will require gradients as well.
+        coverage = Variable(coverage.data, requires_grad=(not eval), volatile=eval)
+        d["coverage"] = coverage
         
     for k in d:
         d[k] = torch.split(d[k], opt.max_generator_batches)
@@ -186,12 +193,23 @@ def memoryEfficientLoss(outputs, generator, crit, batch,
         if attns is None:
             scores_t = generator(out_t)
         else:
+            # scores_t = generator(out_t)
             attn_t = d["attn"][i]
             words = batch.words().t().contiguous()
             attn_t = attn_t.view(-1, d["attn"][i].size(2))
             scores_t = generator(out_t, words, attn_t)
-
         loss_t = crit(scores_t, targ_t.view(-1))
+        # if attns is None:
+        #     loss_t = crit(scores_t, targ_t.view(-1))
+        # else:
+        #     copy_t = generator.copy(out_t)
+        #     loss = scores_t[targ_t.view(-1)].exp().mul((1-copy_t))
+        #     loss += attn.mul(copy_mask).mul(copy_t).sum(2) # copy scores
+        #     loss = loss.log()
+        #     loss.masked_select(targ_t.view(-1).ne(onm.Constants.PAD)) = 0
+        if coverage is not None:
+            loss_t += 0.1 * torch.min(d["coverage"][i], d["attn"][i]).sum()
+            
         pred_t = scores_t.max(1)[1]
         num_correct_t = pred_t.data.eq(targ_t.data) \
                                    .masked_select(
@@ -205,7 +223,8 @@ def memoryEfficientLoss(outputs, generator, crit, batch,
     # Return the gradients
     grad_output = None if outputs.grad is None else outputs.grad.data
     grad_attns = None if not attns or attns.grad is None else attns.grad.data
-    return loss, grad_output, grad_attns, num_correct
+    grad_coverage = None if not coverage or coverage.grad is None else coverage.grad.data
+    return loss, grad_output, grad_attns, grad_coverage, num_correct
 
 
 def eval(model, criterion, data):
@@ -219,9 +238,9 @@ def eval(model, criterion, data):
         outputs, attn, dec_hidden = model(batch)
         # exclude <s> from targets
         targets = batch.tgt[1:]
-        loss, _, _, num_correct = memoryEfficientLoss(
+        loss, _, _, _, num_correct = memoryEfficientLoss(
             outputs, model.generator, criterion, batch, eval=True,
-            attns=attn.get("copy"))
+            attns=attn.get("copy"), coverage=attn.get("coverage"))
         total_loss += loss
         total_num_correct += num_correct
         total_words += targets.data.ne(onmt.Constants.PAD).sum()
@@ -263,6 +282,7 @@ def trainModel(model, trainData, validData, dataset, optim):
             if trunc_size:
                 r = range((batch.tgt.size(0) // trunc_size) + 1)
 
+            #fix me!
             for j in r:
                 if trunc_size:
                     if batch.tgt.size(0) - 1 <= j * trunc_size:
@@ -281,13 +301,17 @@ def trainModel(model, trainData, validData, dataset, optim):
 
                 # Exclude <s> from targets.
                 targets = trunc_batch.tgt[1:]
-                loss, gradOutput, gradAttn, num_correct = memoryEfficientLoss(
+                loss, gradOutput, gradAttn, gradCov, num_correct = memoryEfficientLoss(
                     outputs, model.generator, criterion, trunc_batch,
-                    attns=attn.get("copy"))
+                    attns=attn.get("copy"), coverage=attn.get("coverage"))
 
                 var, grad = [outputs], [gradOutput]
                 if gradAttn is not None:
                     var, grad = [outputs, attn["copy"]], [gradOutput, gradAttn]
+                if gradCov is not None:
+                    var.append(attn["coverage"])
+                    grad.append(gradCov)
+
                 torch.autograd.backward(var, grad)
 
                 # Update the parameters.

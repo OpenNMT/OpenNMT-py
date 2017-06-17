@@ -72,6 +72,7 @@ class Dataset(object):
                               .copy_(features[j][i])
                 else:
                     out[i].narrow(0, offset, data_length).copy_(data[i])
+
             if include_lengths:
                 return out, lengths
             else:
@@ -103,7 +104,8 @@ class Dataset(object):
             features=[f[s:e] for f in self.srcFeatures]
             if self.srcFeatures else None,
             dtype=self._type)
-
+        if srcBatch.dim() == 2:
+            srcBatch = srcBatch.unsqueeze(2)
         if self.tgt:
             tgtBatch = self._batchify(
                 self.tgt[index*self.batchSize:(index+1)*self.batchSize],

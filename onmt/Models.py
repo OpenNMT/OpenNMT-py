@@ -1,10 +1,32 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.autograd import Variable
 import onmt.modules
 from torch.nn.utils.rnn import pad_packed_sequence as unpack
 from torch.nn.utils.rnn import pack_padded_sequence as pack
+import math
 
+class Bottle(nn.Module):
+        def forward(self, input):
+            if len(input.size()) <= 2:
+                return super(Bottle, self).forward(input)
+            size = input.size()[:2]
+            out = super(Bottle, self).forward(input.view(size[0]*size[1], -1))
+            return out.contiguous().view(size[0], size[1], -1)
+            
+class BLinear(Bottle, nn.Linear):
+    pass
+class BLayerNorm(Bottle, onmt.modules.LayerNorm):
+    pass
+
+def make_positional_embeddings(batch, dim, max_len):
+    pe = torch.FloatTensor(max_len, batch, dim).fill_(0)
+    for i in range(dim):
+        for j in range(max_len):
+            k = float(j) / (10000.0 ** (2.0*i / float(dim)))
+            pe[j, :,  i] = math.cos(k) if i % 2 == 1 else math.sin(k)
+    return pe
 
 class Encoder(nn.Module):
     """
@@ -61,6 +83,13 @@ class Encoder(nn.Module):
                            dropout=opt.dropout,
                            bidirectional=opt.brnn)
 
+
+        self.multiattn = nn.ModuleList([onmt.modules.MultiHeadedAttention(8, self.hidden_size) for _ in range(self.layers)])
+        self.linear_out = nn.ModuleList([BLinear(self.hidden_size, 2*self.hidden_size) for _ in range(self.layers)])
+        self.linear_final = nn.ModuleList([BLinear(2*self.hidden_size, self.hidden_size) for _ in range(self.layers)])
+
+        self.layer_norm = nn.ModuleList([BLayerNorm(self.hidden_size) for _ in range(self.layers)])
+
         
     def load_pretrained_vectors(self, opt):
         if opt.pre_word_vecs_enc is not None:
@@ -114,10 +143,22 @@ class Encoder(nn.Module):
         if self.encoder_layer == "mean":
             mean = pre_emb.mean(0).view(1, pre_emb.size(1), pre_emb.size(2)) \
                    .expand(self.layers, pre_emb.size(1), pre_emb.size(2))
-
             return (mean, mean), pre_emb
-        
-        outputs, hidden_t = self.rnn(emb, hidden)
+
+        if True:
+            outputs, hidden_t = self.rnn(emb, hidden)
+        else:
+            mean = pre_emb.mean(0).view(1, pre_emb.size(1), pre_emb.size(2)) \
+                   .expand(self.layers, pre_emb.size(1), pre_emb.size(2))
+            out = pre_emb.transpose(0, 1).contiguous()
+            for i in range(self.layers):
+                # feed forward
+                ff_in, _ = self.multiattn[i](out, out, out)
+                # ff_in = out
+                ff_out = self.linear_final[i](F.relu(self.linear_out[i](ff_in)))
+                out = self.layer_norm[i](ff_in + F.dropout(ff_out, p=0.1))
+                # out = self.layer_norm[i](F.relu(ff_in + ff_out)).contiguous()
+            return (mean, mean), out.transpose(0, 1).contiguous()
         if lengths:
             outputs = unpack(outputs)[0]
         return hidden_t, outputs
@@ -182,14 +223,24 @@ class Decoder(nn.Module):
         self.hidden_size = opt.rnn_size
 
         # Std attention layer.
-        self.attn = onmt.modules.GlobalAttention(opt.rnn_size)
+        self.attn = onmt.modules.GlobalAttention(opt.rnn_size, opt.coverage_attn)
         
         # Separate Copy Attention.
         self._copy = False
         if opt.copy_attn:
             self.copy_attn = onmt.modules.GlobalAttention(opt.rnn_size)
             self._copy = True
-            
+
+        self._coverage = opt.coverage_attn
+
+        # Multiheaded
+        self.multiattn1 = nn.ModuleList([onmt.modules.MultiHeadedAttention(8, self.hidden_size) for _ in range(self.layers)])
+        self.multiattn2 = nn.ModuleList([onmt.modules.MultiHeadedAttention(8, self.hidden_size) for _ in range(self.layers)])
+        self.linear_out = nn.ModuleList([BLinear(self.hidden_size, 2*self.hidden_size) for _ in range(self.layers)])
+        self.linear_final = nn.ModuleList([BLinear(2*self.hidden_size, self.hidden_size) for _ in range(self.layers)])
+        self.layer_norm = nn.ModuleList([BLayerNorm(self.hidden_size) for _ in range(self.layers)])
+        self.pe = Variable(make_positional_embeddings(50, opt.word_vec_size, 2000).cuda())
+        
     def load_pretrained_vectors(self, opt):
         if opt.pre_word_vecs_dec is not None:
             pretrained = torch.load(opt.pre_word_vecs_dec)
@@ -219,24 +270,62 @@ class Decoder(nn.Module):
         attns = {"std": []}
         if self._copy:
             attns["copy"] = []
-            
+        if self._coverage:
+            attns["coverage"] = []
+
         output = init_feed
-        for i, emb_t in enumerate(emb.split(1)):
-            emb_t = emb_t.squeeze(0)
-            if self.input_feed:
-                emb_t = torch.cat([emb_t, output], 1)
+        coverage = None
 
-            output, hidden = self.rnn(emb_t, hidden)
-            output, attn = self.attn(output, context.t())
 
-            output = self.dropout(output)
-            outputs += [output]
-            attns["std"] += [attn]
+        if False:
 
-            # COPY
+            output = emb.transpose(0, 1).contiguous() + self.pe[:emb.size(0), :emb.size(1), :emb.size(2)]
+            output = F.dropout(output, 0.1)
+            
+            src_context = context.transpose(0,1).contiguous()
+            for i in range(self.layers):
+                # feed forward
+                query, _ = self.multiattn1[i](output, output, output, mask=True)
+                mid, attn = self.multiattn2[i](src_context, src_context, query)
+                ff_out = self.linear_final[i](F.relu(self.linear_out[i](mid.contiguous())))
+                output = self.layer_norm[i](mid + F.dropout(ff_out, p=0.1)).contiguous()
+                
+            outputs = output.transpose(0, 1).contiguous()
+            attns["std"] = attn
             if self._copy:
-                _, copy_attn = self.copy_attn(output, context.t())
-                attns["copy"] += [copy_attn]
+                attns["copy"] = attn
+            return outputs, hidden, attns
+        else:        
+            for i, emb_t in enumerate(emb.split(1)):
+                emb_t = emb_t.squeeze(0)
+                if self.input_feed:
+                    emb_t = torch.cat([emb_t, output], 1)
+
+
+                output, hidden = self.rnn(emb_t, hidden)
+                output, attn = self.attn(output, context.t(), coverage)
+
+
+
+                if self._coverage:
+                    if coverage:
+                        coverage = coverage + attn
+                    else:
+                        coverage = attn
+                    attns["coverage"] += [coverage]                
+
+                output = self.dropout(output)
+                outputs += [output]
+                attns["std"] += [attn]
+
+
+                # COPY
+                if self._copy:
+                    _, copy_attn = self.copy_attn(output, context.t())
+                    attns["copy"] += [copy_attn]
+
+                elif self._copy:
+                    attns["copy"] += [attn]
         outputs = torch.stack(outputs)
         for k in attns:
             attns[k] = torch.stack(attns[k])

@@ -72,15 +72,14 @@ class CopyGenerator(nn.Module):
         mul_attn = mul_attn.view(size[0] // b, b * mul_attn.size(1))
         out_prob = prob.index_add(1, index_add, mul_attn)
         out_prob = out_prob.view(size)
-        prob = out_prob.view(size)
-        mul_attn = mul_attn.view(attn.size())
         if verbose:
+            prob = out_prob.view(size)
+            mul_attn = mul_attn.view(attn.size())
             self._debug_copy(src, copy, prob, out_prob, attn, mul_attn)
         
         # Drop padding and renorm.
         out_prob[:, onmt.Constants.PAD] = eps
         norm = out_prob.sum(1).expand(out_prob.size())
-
         return out_prob.div(norm).add(eps).log()
 
     def _debug_copy(self, src, copy, prob, out_prob, attn, mul_attn):
