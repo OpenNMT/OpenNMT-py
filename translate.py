@@ -119,24 +119,24 @@ def main():
                 if translator.tgt_dict.lower:
                     srcSent = srcSent.lower()
                 os.write(1, bytes('SENT %d: %s\n' % (count, srcSent), 'UTF-8'))
-                os.write(1, bytes('PRED %d: %s\n' % \
-                    (count, " ".join(predBatch[b][0])), 'UTF-8'))
+                os.write(1, bytes('PRED %d: %s\n' %
+                                  (count, " ".join(predBatch[b][0])), 'UTF-8'))
                 print("PRED SCORE: %.4f" % predScore[b][0])
 
                 if tgtF is not None:
                     tgtSent = ' '.join(tgtBatch[b])
                     if translator.tgt_dict.lower:
                         tgtSent = tgtSent.lower()
-                    os.write(1, bytes('GOLD %d: %s\n' % \
-                        (count, tgtSent), 'UTF-8'))
+                    os.write(1, bytes('GOLD %d: %s\n' %
+                             (count, tgtSent), 'UTF-8'))
                     print("GOLD SCORE: %.4f" % goldScore[b])
 
                 if opt.n_best > 1:
                     print('\nBEST HYP:')
                     for n in range(opt.n_best):
                         os.write(1, bytes("[%.4f] %s\n" % (predScore[b][n],
-                                             " ".join(predBatch[b][n])),
-                                             'UTF-8'))
+                                 " ".join(predBatch[b][n])),
+                            'UTF-8'))
 
                 print('')
 
@@ -150,8 +150,8 @@ def main():
         tgtF.close()
 
     if opt.dump_beam:
-        json.dump(translator.beam_accum, \
-            codecs.open(opt.dump_beam, 'w', 'utf-8'))
+        json.dump(translator.beam_accum,
+                  codecs.open(opt.dump_beam, 'w', 'utf-8'))
 
 
 if __name__ == "__main__":
