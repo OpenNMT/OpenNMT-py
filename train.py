@@ -1,7 +1,9 @@
 from __future__ import division
 
 import onmt
+import onmt.Encoders
 import onmt.Markdown
+import onmt.Models
 import onmt.modules
 import argparse
 import torch
@@ -114,7 +116,8 @@ parser.add_argument('-log_interval', type=int, default=50,
                     help="Print stats at this interval.")
 
 parser.add_argument('-seed', type=int, default=-1,
-                    help="Random seed used for the experiments reproducibility")
+                    help="""Random seed used for the experiments
+                    reproducibility.""")
 
 opt = parser.parse_args()
 
@@ -320,7 +323,7 @@ def main():
     print('Building model...')
 
     if opt.encoder_type == "text":
-        encoder = onmt.Models.Encoder(opt, dicts['src'])
+        encoder = onmt.Encoders.Encoder(opt, dicts['src'])
     elif opt.encoder_type == "img":
         encoder = onmt.modules.ImageEncoder(opt)
         assert("type" not in dataset or dataset["type"] == "img")
