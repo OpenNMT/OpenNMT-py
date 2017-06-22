@@ -113,15 +113,23 @@ parser.add_argument('-gpus', default=[], nargs='+', type=int,
 parser.add_argument('-log_interval', type=int, default=50,
                     help="Print stats at this interval.")
 
+parser.add_argument('-seed', type=int, default=-1,
+                    help="Random seed used for the experiments reproducibility")
+
 opt = parser.parse_args()
 
 print(opt)
+
+if opt.seed > 0:
+    torch.manual_seed(opt.seed)
 
 if torch.cuda.is_available() and not opt.gpus:
     print("WARNING: You have a CUDA device, should run with -gpus 0")
 
 if opt.gpus:
     cuda.set_device(opt.gpus[0])
+    if opt.seed > 0:
+        torch.cuda.manual_seed(opt.seed)
 
 
 def NMTCriterion(vocabSize):
