@@ -1,7 +1,6 @@
 from __future__ import division
 
 import onmt
-import onmt.Encoders
 import onmt.Markdown
 import onmt.Models
 import onmt.modules
@@ -43,6 +42,9 @@ parser.add_argument('-input_feed', type=int, default=1,
                     help="""Feed the context vector at each time step as
                     additional input (via concatenation with the word
                     embeddings) to the decoder.""")
+parser.add_argument('-rnn_type', type=str, default='LSTM',
+                    choices=['LSTM', 'GRU'],
+                    help="""The gate type to use in the RNNs""")
 # parser.add_argument('-residual',   action="store_true",
 #                     help="Add residual connections between RNN layers.")
 parser.add_argument('-brnn', action='store_true',
@@ -323,7 +325,7 @@ def main():
     print('Building model...')
 
     if opt.encoder_type == "text":
-        encoder = onmt.Encoders.Encoder(opt, dicts['src'])
+        encoder = onmt.Models.Encoder(opt, dicts['src'])
     elif opt.encoder_type == "img":
         encoder = onmt.modules.ImageEncoder(opt)
         assert("type" not in dataset or dataset["type"] == "img")
