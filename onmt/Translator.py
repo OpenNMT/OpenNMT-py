@@ -19,7 +19,8 @@ class Translator(object):
         self.tt = torch.cuda if opt.cuda else torch
         self.beam_accum = None
 
-        checkpoint = torch.load(opt.model)
+        checkpoint = torch.load(opt.model,
+                                map_location=lambda storage, loc: storage)
 
         model_opt = checkpoint['opt']
         self.src_dict = checkpoint['dicts']['src']
