@@ -142,6 +142,7 @@ def makeData(srcFile, tgtFile, srcDicts, tgtDicts,
     src, tgt = [], []
     srcFeats = [[] for i in range(len(srcFeatureDicts))]
     tgtFeats = [[] for i in range(len(tgtFeatureDicts))]
+    alignments = []
     sizes = []
     count, ignored = 0, 0
 
@@ -183,22 +184,23 @@ def makeData(srcFile, tgtFile, srcDicts, tgtDicts,
             if opt.tgt_seq_length_trunc != 0:
                 tgtLine = tgtLine[:opt.tgt_seq_length_trunc]
 
-            srcWords, srcFeat \
+            srcWords, srcData, srcFeat \
                 = onmt.IO.readSrcLine(srcLine, srcDicts,
                                       srcFeatureDicts,
                                       _type=opt.src_type,
                                       src_img_dir=opt.src_img_dir)
-            src += [srcWords]
+            src += [srcData]
             for i in range(len(srcFeats)):
                 srcFeats[i] += [srcFeat[i]]
 
-            tgtWords, tgtFeat = onmt.IO.readTgtLine(tgtLine, tgtDicts,
-                                                    tgtFeatureDicts)
-            tgt += [tgtWords]
+            tgtWords, tgtData, tgtFeat = onmt.IO.readTgtLine(tgtLine, tgtDicts,
+                                                             tgtFeatureDicts)
+            tgt += [tgtData]
             for i in range(len(tgtFeats)):
                 tgtFeats[i] += [tgtFeat[i]]
 
-            sizes += [len(srcWords)]
+            alignments += [onmt.IO.align(srcWords, tgtWords)]
+            sizes += [len(srcData)]
         else:
             ignored += 1
 
@@ -215,6 +217,7 @@ def makeData(srcFile, tgtFile, srcDicts, tgtDicts,
         perm = torch.randperm(len(src))
         src = [src[idx] for idx in perm]
         tgt = [tgt[idx] for idx in perm]
+        alignments = [alignments[idx] for idx in perm]
         for j in range(len(srcFeatureDicts)):
             srcFeats[j] = [srcFeats[j][idx] for idx in perm]
         for j in range(len(tgtFeatureDicts)):
@@ -225,6 +228,7 @@ def makeData(srcFile, tgtFile, srcDicts, tgtDicts,
     _, perm = torch.sort(torch.Tensor(sizes))
     src = [src[idx] for idx in perm]
     tgt = [tgt[idx] for idx in perm]
+    alignments = [alignments[idx] for idx in perm]
     for j in range(len(srcFeatureDicts)):
         srcFeats[j] = [srcFeats[j][idx] for idx in perm]
     for j in range(len(tgtFeatureDicts)):
@@ -234,7 +238,7 @@ def makeData(srcFile, tgtFile, srcDicts, tgtDicts,
           '(%d ignored due to length == 0 or src len > %d or tgt len > %d)') %
           (len(src), ignored, opt.src_seq_length, opt.tgt_seq_length))
 
-    return src, tgt, srcFeats, tgtFeats
+    return src, tgt, srcFeats, tgtFeats, alignments
 
 
 def main():
@@ -254,13 +258,17 @@ def main():
 
     print('Preparing training ...')
     train = {}
-    train['src'], train['tgt'], train['src_features'], train['tgt_features'] \
+    train['src'], train['tgt'], \
+    train['src_features'], train['tgt_features'], \
+    train['alignments'] \
         = makeData(opt.train_src, opt.train_tgt,
                    dicts['src'], dicts['tgt'],
                    dicts['src_features'], dicts['tgt_features'])
     print('Preparing validation ...')
     valid = {}
-    valid['src'], valid['tgt'], valid['src_features'], valid['tgt_features'] \
+    valid['src'], valid['tgt'], \
+    valid['src_features'], valid['tgt_features'], \
+    valid['alignments'] \
         = makeData(opt.valid_src, opt.valid_tgt,
                    dicts['src'], dicts['tgt'],
                    dicts['src_features'], dicts['tgt_features'])

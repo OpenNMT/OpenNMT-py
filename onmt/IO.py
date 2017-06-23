@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import torch
 import onmt.Constants
 
 
@@ -9,6 +9,23 @@ def loadImageLibs():
     from PIL import Image
     from torchvision import transforms
 
+
+def align(src_tokens, tgt_tokens):
+    """
+    Given two sequences of tokens, return 
+    a mask of where there is overlap.
+
+    Returns:
+        mask: tgt_len x src_len
+    """
+    mask = torch.ByteTensor(len(src_tokens), len(tgt_tokens)).fill_(0)
+    
+    for i in range(len(src_tokens)):
+        for j in range(len(tgt_tokens)):
+            if src_tokens[i] == tgt_tokens[j]:
+                mask[i][j] = 1
+    return mask
+    
 
 def readSrcLine(src_line, src_dict, src_feature_dicts,
                 _type="text", src_img_dir=""):
@@ -28,7 +45,7 @@ def readSrcLine(src_line, src_dict, src_feature_dicts,
         srcData = transforms.ToTensor()(
             Image.open(src_img_dir + "/" + srcWords[0]))
 
-    return srcData, srcFeats
+    return srcWords, srcData, srcFeats
 
 
 def readTgtLine(tgt_line, tgt_dict, tgt_feature_dicts, _type="text"):
@@ -44,7 +61,7 @@ def readTgtLine(tgt_line, tgt_dict, tgt_feature_dicts, _type="text"):
                                  onmt.Constants.UNK_WORD)
                     for j in range(len(tgt_feature_dicts))]
 
-    return tgtData, tgtFeats
+    return tgtWords, tgtData, tgtFeats
 
 
 def extractFeatures(tokens):

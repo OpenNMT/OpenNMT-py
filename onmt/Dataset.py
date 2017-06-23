@@ -18,7 +18,7 @@ class Dataset(object):
 
     def __init__(self, srcData, tgtData, batchSize, cuda,
                  volatile=False, data_type="text",
-                 srcFeatures=None, tgtFeatures=None):
+                 srcFeatures=None, tgtFeatures=None, alignment=None):
         """
         Construct a data set
 
@@ -31,6 +31,7 @@ class Dataset(object):
                        Options ["text", "img"].
             srcFeatures: Source features aligned with srcData.
             tgtFeatures: (Currently not supported.)
+            alignment: Alignment masks between src and tgt for copying.
         """
         self.src = srcData
         self.srcFeatures = srcFeatures
@@ -43,7 +44,7 @@ class Dataset(object):
             self.tgt = None
             self.tgtFeatures = None
         self.cuda = cuda
-
+        self.alignment = alignment
         self.batchSize = batchSize
         self.numBatches = math.ceil(len(self.src)/batchSize)
         self.volatile = volatile
@@ -110,19 +111,41 @@ class Dataset(object):
             tgtBatch = self._batchify(
                 self.tgt[index*self.batchSize:(index+1)*self.batchSize],
                 dtype="text")
+            tgt_lengths = [x.size(0) for x in self.tgt[index*self.batchSize:(index+1)*self.batchSize]]
         else:
             tgtBatch = None
 
-        # within batch sorting by decreasing length for variable length rnns
-        indices = range(len(srcBatch))
-        batch = (zip(indices, srcBatch) if tgtBatch is None
-                 else zip(indices, srcBatch, tgtBatch))
-        batch, lengths = zip(*sorted(zip(batch, lengths), key=lambda x: -x[1]))
-        if tgtBatch is None:
-            indices, srcBatch = zip(*batch)
-        else:
-            indices, srcBatch, tgtBatch = zip(*batch)
 
+
+        
+        # Create a copying alignment
+        alignment = None
+        if self.alignment:
+            src_len = srcBatch.size(1)
+            tgt_len = tgtBatch.size(1)
+            batch = tgtBatch.size(0)
+            alignment = torch.ByteTensor(tgt_len, batch, src_len).fill_(0)
+            region = self.alignment[s:e]
+            for i in range(len(region)):
+                alignment[1:region[i].size(1)+1, i, :region[i].size(0)] = region[i].t()
+            alignment = alignment.float()
+
+            if self.cuda:
+                alignment = alignment.cuda()
+        # tgt_len x batch x src_len
+        lengths = torch.LongTensor(lengths)
+        indices = range(len(srcBatch))
+        # within batch sorting by decreasing length for variable length rnns
+        lengths, perm = torch.sort(torch.LongTensor(lengths), 0, descending=True)
+
+
+        indices = [indices[p] for p in perm]
+        srcBatch = [srcBatch[p] for p in perm]
+        if tgtBatch is not None:
+            tgtBatch = [tgtBatch[p] for p in perm]
+        if alignment is not None:
+            alignment = alignment.transpose(0, 1)[perm.cuda()].transpose(0, 1)
+            alignment = alignment.contiguous()
         def wrap(b, dtype="text"):
             if b is None:
                 return b
@@ -133,16 +156,18 @@ class Dataset(object):
                 b = b.cuda()
             b = Variable(b, volatile=self.volatile)
             return b
+        
 
         # wrap lengths in a Variable to properly split it in DataParallel
-        lengths = torch.LongTensor(lengths).view(1, -1)
+        lengths = lengths.view(1, -1)
         lengths = Variable(lengths, volatile=self.volatile)
 
         return Batch(wrap(srcBatch, self._type),
                      wrap(tgtBatch, "text"),
                      lengths,
                      indices,
-                     batch_size)
+                     batch_size,
+                     alignment=alignment)
 
     def __len__(self):
         return self.numBatches
@@ -156,13 +181,14 @@ class Batch(object):
     """
     Object containing a single batch of data points.
     """
-    def __init__(self, src, tgt, lengths, indices, batchSize):
+    def __init__(self, src, tgt, lengths, indices, batchSize, alignment=None):
         self.src = src
         self.tgt = tgt
         self.lengths = lengths
         self.indices = indices
         self.batchSize = batchSize
-
+        self.alignment = alignment
+            
     def words(self):
         return self.src[:, :, 0]
 
@@ -174,4 +200,5 @@ class Batch(object):
         Return a batch containing section from start:end.
         """
         return Batch(self.src, self.tgt[start:end],
-                     self.lengths, self.indices, self.batchSize)
+                     self.lengths, self.indices, self.batchSize,
+                     self.alignment[start:end])

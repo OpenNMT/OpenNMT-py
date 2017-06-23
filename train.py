@@ -55,8 +55,10 @@ parser.add_argument('-copy_attn', action="store_true",
                     help='Train copy attention layer.')
 parser.add_argument('-coverage_attn', action="store_true",
                     help='Train a coverage attention layer.')
-parser.add_argument('-encoder_layer', type=str, default='',
-                    help='Type of encoder layer to use. [|mean]')
+parser.add_argument('-encoder_layer', type=str, default='rnn',
+                    help='Type of encoder layer to use. [rnn|mean|transformer]')
+parser.add_argument('-decoder_layer', type=str, default='rnn',
+                    help='Type of decoder layer to use. [rnn|transformer]')
 
 
 
@@ -83,6 +85,9 @@ parser.add_argument('-max_grad_norm', type=float, default=5,
                     renormalize it to have the norm equal to max_grad_norm""")
 parser.add_argument('-dropout', type=float, default=0.3,
                     help='Dropout probability; applied between LSTM stacks.')
+parser.add_argument('-position_encoding', action='store_true',
+                    help='Use a sinusoid to mark relative words positions.')
+
 parser.add_argument('-curriculum', action="store_true",
                     help="""For this many epochs, order the minibatches based
                     on source sequence length. Sometimes setting this to 1 will
@@ -166,6 +171,7 @@ def memoryEfficientLoss(outputs, generator, crit, batch,
     
     """
     targets = batch.tgt[1:]
+    
     # compute generations one piece at a time
     num_correct, loss = 0, 0
 
@@ -175,12 +181,11 @@ def memoryEfficientLoss(outputs, generator, crit, batch,
     d = {"out": outputs, "tgt": targets}
     
     if attns is not None:
-        # These will require gradients as well.
         attns = Variable(attns.data, requires_grad=(not eval), volatile=eval)
         d["attn"] = attns
+        d["align"] = batch.alignment[1:]
         
     if coverage is not None:
-        # These will require gradients as well.
         coverage = Variable(coverage.data, requires_grad=(not eval), volatile=eval)
         d["coverage"] = coverage
         
@@ -188,25 +193,24 @@ def memoryEfficientLoss(outputs, generator, crit, batch,
         d[k] = torch.split(d[k], opt.max_generator_batches)
     for i, targ_t in enumerate(d["tgt"]):
         out_t = d["out"][i].view(-1, d["out"][i].size(2))
-
+        
+        
         # Depending on generator type.
         if attns is None:
             scores_t = generator(out_t)
+            loss_t = crit(scores_t, targ_t.view(-1))
         else:
             # scores_t = generator(out_t)
             attn_t = d["attn"][i]
+            align_t = d["align"][i].view(-1, d["align"][i].size(2))
             words = batch.words().t().contiguous()
             attn_t = attn_t.view(-1, d["attn"][i].size(2))
-            scores_t = generator(out_t, words, attn_t)
-        loss_t = crit(scores_t, targ_t.view(-1))
-        # if attns is None:
-        #     loss_t = crit(scores_t, targ_t.view(-1))
-        # else:
-        #     copy_t = generator.copy(out_t)
-        #     loss = scores_t[targ_t.view(-1)].exp().mul((1-copy_t))
-        #     loss += attn.mul(copy_mask).mul(copy_t).sum(2) # copy scores
-        #     loss = loss.log()
-        #     loss.masked_select(targ_t.view(-1).ne(onm.Constants.PAD)) = 0
+
+            # probability of words, probability of attn
+            scores_t, c_attn_t = generator(out_t, words, attn_t)
+            loss_t = crit(scores_t, c_attn_t, targ_t.view(-1), align_t)
+            # loss_t = crit(scores_t, targ_t.view(-1))
+            
         if coverage is not None:
             loss_t += 0.1 * torch.min(d["coverage"][i], d["attn"][i]).sum()
             
@@ -231,9 +235,8 @@ def eval(model, criterion, data):
     total_loss = 0
     total_words = 0
     total_num_correct = 0
-
     model.eval()
-    for i in range(len(data)):
+    for i in range(100):#len(data)):
         batch = data[i]
         outputs, attn, dec_hidden = model(batch)
         # exclude <s> from targets
@@ -250,11 +253,24 @@ def eval(model, criterion, data):
 
 
 def trainModel(model, trainData, validData, dataset, optim):
-    print(model)
+    # print(model)
     model.train()
-
+    
+    
     # Define criterion of each GPU.
-    criterion = NMTCriterion(dataset['dicts']['tgt'].size())
+    if not opt.copy_attn:
+        criterion = NMTCriterion(dataset['dicts']['tgt'].size())
+    else:
+        criterion = onmt.modules.copy_criterion
+    # valid_loss, valid_acc = eval(model, criterion, trainData)
+    # valid_ppl = math.exp(min(valid_loss, 100))
+    # print('Train perplexity: %g' % valid_ppl)
+    # print('Tarain accuracy: %g' % (valid_acc*100))
+
+    # valid_loss, valid_acc = eval(model, criterion, validData)
+    # valid_ppl = math.exp(min(valid_loss, 100))
+    # print('Validation perplexity: %g' % valid_ppl)
+    # print('Validation accuracy: %g' % (valid_acc*100))
 
     start_time = time.time()
 
@@ -304,7 +320,6 @@ def trainModel(model, trainData, validData, dataset, optim):
                 loss, gradOutput, gradAttn, gradCov, num_correct = memoryEfficientLoss(
                     outputs, model.generator, criterion, trunc_batch,
                     attns=attn.get("copy"), coverage=attn.get("coverage"))
-
                 var, grad = [outputs], [gradOutput]
                 if gradAttn is not None:
                     var, grad = [outputs, attn["copy"]], [gradOutput, gradAttn]
@@ -316,7 +331,7 @@ def trainModel(model, trainData, validData, dataset, optim):
 
                 # Update the parameters.
                 optim.step()
-
+                
                 num_words = targets.data.ne(onmt.Constants.PAD).sum()
                 report_loss += loss
                 report_num_correct += num_correct
@@ -331,9 +346,9 @@ def trainModel(model, trainData, validData, dataset, optim):
                        "%3.0f src tok/s; %3.0f tgt tok/s; %6.0f s elapsed") %
                       (epoch, i+1, len(trainData),
                        report_num_correct / report_tgt_words * 100,
-                       math.exp(report_loss / report_tgt_words),
-                       report_src_words/(time.time()-start),
-                       report_tgt_words/(time.time()-start),
+                       math.exp(report_loss / report_tgt_words) ,
+                       report_src_words/(time.time()-start + 1e-5),
+                       report_tgt_words/(time.time()-start + 1e-5),
                        time.time()-start_time))
 
                 report_loss, report_tgt_words = 0, 0
@@ -352,6 +367,11 @@ def trainModel(model, trainData, validData, dataset, optim):
         print('Train accuracy: %g' % (train_acc*100))
 
         #  (2) evaluate on the validation set
+        valid_loss, valid_acc = eval(model, criterion, trainData)
+        valid_ppl = math.exp(min(valid_loss, 100))
+        print('Train perplexity: %g' % valid_ppl)
+        print('Train accuracy: %g' % (valid_acc*100))
+
         valid_loss, valid_acc = eval(model, criterion, validData)
         valid_ppl = math.exp(min(valid_loss, 100))
         print('Validation perplexity: %g' % valid_ppl)
@@ -396,13 +416,15 @@ def main():
                              dataset['train']['tgt'], opt.batch_size, opt.gpus,
                              data_type=dataset.get("type", "text"),
                              srcFeatures=dataset['train'].get('src_features'),
-                             tgtFeatures=dataset['train'].get('tgt_features'))
+                             tgtFeatures=dataset['train'].get('tgt_features'),
+                             alignment=dataset['train'].get('alignments'))
     validData = onmt.Dataset(dataset['valid']['src'],
                              dataset['valid']['tgt'], opt.batch_size, opt.gpus,
                              volatile=True,
                              data_type=dataset.get("type", "text"),
                              srcFeatures=dataset['valid'].get('src_features'),
-                             tgtFeatures=dataset['valid'].get('tgt_features'))
+                             tgtFeatures=dataset['valid'].get('tgt_features'),
+                             alignment=dataset['valid'].get('alignments'))
 
     dicts = dataset['dicts']
     print(' * vocabulary size. source = %d; target = %d' %
@@ -437,6 +459,8 @@ def main():
         generator = nn.Sequential(
             nn.Linear(opt.rnn_size, dicts['tgt'].size()),
             nn.LogSoftmax())
+        # if True:
+        #     generator[0].weight = decoder.word_lut.weight
 
     model = onmt.Models.NMTModel(encoder, decoder)
 
@@ -471,8 +495,10 @@ def main():
     model.generator = generator
 
     if not opt.train_from_state_dict and not opt.train_from:
-        for p in model.parameters():
-            p.data.uniform_(-opt.param_init, opt.param_init)
+        if opt.param_init != 0.0:
+            print('Intializing params')
+            for p in model.parameters():
+                p.data.uniform_(-opt.param_init, opt.param_init)
 
         encoder.load_pretrained_vectors(opt)
         decoder.load_pretrained_vectors(opt)
