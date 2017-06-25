@@ -115,7 +115,7 @@ class Translator(object):
         useMasking = (self._type == "text")
 
         #  This mask is applied to the attention model inside the decoder
-        #  so that the attention ignores source padding
+        #  so that the attention ignores source (padding
         padMask = None
         if useMasking:
             padMask = batch.words().data.eq(onmt.Constants.PAD).t()
@@ -148,7 +148,10 @@ class Translator(object):
         context = Variable(context.data.repeat(1, beamSize, 1))
         decStates = (Variable(encStates[0].data.repeat(1, beamSize, 1)),
                      Variable(encStates[1].data.repeat(1, beamSize, 1)))
-        # decStates = None
+
+        if True:
+            decStates = None
+
 
         beam = [onmt.Beam(beamSize, self.opt.cuda) for k in range(batchSize)]
 
@@ -168,8 +171,9 @@ class Translator(object):
             input = torch.stack([b.getCurrentState() for b in beam
                                  if not b.done]).t().contiguous().view(1, -1)
             decOut, decStates, attn = self.model.decoder(
-                Variable(input, volatile=True), decStates, context, decOut)
+                Variable(input, volatile=True), batch.src, decStates, context, decOut)
 
+            
             # decOut: 1 x (beam*batch) x numWords
             decOut = decOut.squeeze(0)
 
@@ -206,7 +210,7 @@ class Translator(object):
                 if not beam[b].advance(wordLk.data[idx], attn["std"].data[idx]):
                     active += [b]
 
-                if True: 
+                if False: 
                     for decState in decStates:  # iterate over h, c
                         # layers x beam*sent x dim
                         sentStates = decState.view(-1, beamSize,
@@ -237,7 +241,7 @@ class Translator(object):
                 newSize[batchPos] = newSize[batchPos] * len(activeIdx) // remainingSents
                 return Variable(view.index_select(1, activeIdx)
                                 .view(*newSize), volatile=True)
-            if True:
+            if False:
                 decStates = (updateActive(decStates[0]),
                              updateActive(decStates[1]))
             else:

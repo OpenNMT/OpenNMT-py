@@ -34,8 +34,10 @@ class Optim(object):
         "Compute gradients norm."
         self._step += 1
         if self.method == 'adam':
-            def rate(a): return (512**(-0.5) * min(a**(-0.5), a * 4000**(-1.5)))
-            self.lr = rate(self._step)
+            # def rate(a): return 10 * (512**(-0.5) * min(a**(-0.5), a * 16000**(-1.5)))
+            def rate(a): return  (1024**(-0.5) * min(a**(-0.5), a * 4000**(-1.5)))
+            self.lr = rate(1 + int(self._step))
+            # print(self.lr)
             self.optimizer.param_groups[0]['lr'] = self.lr
         if self.max_grad_norm:
             clip_grad_norm(self.params, self.max_grad_norm)

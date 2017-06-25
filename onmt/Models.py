@@ -135,7 +135,7 @@ class Encoder(nn.Module):
             # emb = emb * math.sqrt(emb.size(2))
             # if self.encoder_layer == "transformer":
             emb = emb + Variable(self.pe[:emb.size(0), :1, :emb.size(2)].expand_as(emb))
-            emb = emb * math.sqrt(self.word_vec_size)
+            # emb = emb * math.sqrt(self.word_vec_size)
             emb = self.dropout(emb)
         return emb
 
@@ -258,14 +258,37 @@ class TransformerDecoder(nn.Module):
 
         pad_mask = get_attn_padding_mask(tgt_words.transpose(0,1), src_words.transpose(0,1))
         # bxsqxsk
-        
+
+        def input_hook(grad):
+            print("input grad", grad[0].sum(1))
+        # input.register_hook(input_hook)
         # input = input.fill(0)
         # input[0, 7, :].fill(1)
         # input = Variable(input.data, requires_grad=True)
-        query, _ = self.self_attn(input, input, input, mask=dec_mask)
-        mid, attn = self.context_attn(context, context, query, mask=pad_mask)
-        output = self.feed_forward(mid)
+        query, attn = self.self_attn(input, input, input, mask=dec_mask)
+        # print("ATTN", " ".join(["%3f"%j for j in attn.data[0, 10]]))
 
+        def attn_hook(grad):
+            print(grad.sum())
+            grad = grad.view(grad.size(0) // 8, 8, grad.size(1), grad.size(2))
+            for i in range(8):
+                print("GRAD",i, " ".join(["%3f"%j for j in grad.data[0, i, 10]]))
+                print(grad[0, i, 9].sum())
+            print()
+
+        def query_hook(grad):
+            print("Out", "%3f" % grad.data[0, 10].sum())
+            
+        # query.register_hook(query_hook)
+        # query[0, 10, 0].backward()
+        # exit()
+        # self.self_attn.register_backward_hook(
+        #     lambda _, grad_input, grad_output: print(len(grad_output)))
+        mid, attn = self.context_attn(context, context, query, mask=pad_mask)
+        # mid = query
+        output = self.feed_forward(mid)
+        # output[0, 10, 0].backward()
+        # exit()
         # ff_out = self.layer2(F.relu(self.layer1(mid.contiguous())))
         # output = self.norm(mid, ff_out)
         # output[3, 7, 0].backward()
@@ -346,13 +369,14 @@ class Decoder(nn.Module):
             hidden_t (FloatTensor): Last hidden state tuple (1 x batch x rnn_size)
             attns (FloatTensor): Dictionary of (src_len x batch)
         """
-        # if self.decoder_layer == "transformer" and hidden:
-        #     input = torch.cat([hidden, input], 0)
+        if False:
+            if self.decoder_layer == "transformer" and hidden:
+                input = torch.cat([hidden, input], 0)
             
         emb = self.word_lut(input)
         if self.positional_encoding:
             emb = emb + Variable(self.pe[:emb.size(0), :1, :emb.size(2)].expand_as(emb))
-            emb = emb * math.sqrt(emb.size(2))
+            # emb = emb * math.sqrt(emb.size(2))
             
         # n.b. you can increase performance if you compute W_ih * x for all
         # iterations in parallel, but that's only possible if
@@ -376,10 +400,11 @@ class Decoder(nn.Module):
                 output, attn = self.transformer[i](output, src_context, src[:,:,0], input)
             outputs = output.transpose(0, 1).contiguous()
 
-            # if hidden:
-            #     outputs = outputs[hidden.size(0):]
-            #     attn = attn[:, hidden.size(0):].squeeze()
-            #     attn = torch.stack([attn])
+            if False:
+                if hidden:
+                    outputs = outputs[hidden.size(0):]
+                    attn = attn[:, hidden.size(0):].squeeze()
+                    attn = torch.stack([attn])
                 
             attns["std"] = attn
             if self._copy:
