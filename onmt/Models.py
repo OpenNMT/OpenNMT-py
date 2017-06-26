@@ -139,7 +139,7 @@ class Decoder(nn.Module):
                 emb_t = torch.cat([emb_t, output], 1)
 
             output, hidden = self.rnn(emb_t, hidden)
-            output, attn = self.attn(output, context.t())
+            output, attn = self.attn(output, context.transpose(0, 1))
             output = self.dropout(output)
             outputs += [output]
 
