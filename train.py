@@ -112,6 +112,9 @@ parser.add_argument('-learning_rate_decay', type=float, default=0.5,
 parser.add_argument('-start_decay_at', type=int, default=8,
                     help="""Start decaying every epoch after and including this
                     epoch""")
+parser.add_argument('-warmup_steps', type=int, default=4000,
+                    help="""""")
+
 
 # pretrained word vectors
 
@@ -201,10 +204,11 @@ def memoryEfficientLoss(outputs, generator, crit, batch,
         
         # Depending on generator type.
         if attns is None:
-            start = time.time()
+            # start = time.time()
+            # print(out_t.size())
             scores_t = generator(out_t)
             # print("gen", time.time() - start)
-            start = time.time()
+            # start = time.time()
             loss_t = crit(scores_t, targ_t.view(-1))
             # print("crit", time.time() - start)
         else:
@@ -522,7 +526,9 @@ def main():
         optim = onmt.Optim(
             opt.optim, opt.learning_rate, opt.max_grad_norm,
             lr_decay=opt.learning_rate_decay,
-            start_decay_at=opt.start_decay_at
+            start_decay_at=opt.start_decay_at,
+            opt=opt
+            
         )
     else:
         print('Loading optimizer from checkpoint:')

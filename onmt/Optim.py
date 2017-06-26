@@ -20,7 +20,7 @@ class Optim(object):
 
 
     def __init__(self, method, lr, max_grad_norm,
-                 lr_decay=1, start_decay_at=None):
+                 lr_decay=1, start_decay_at=None, opt=None):
         self.last_ppl = None
         self.lr = lr
         self.max_grad_norm = max_grad_norm
@@ -29,16 +29,15 @@ class Optim(object):
         self.start_decay_at = start_decay_at
         self.start_decay = False
         self._step = 0
+        self.opt = opt
         
     def step(self):
         "Compute gradients norm."
         self._step += 1
         if self.method == 'adam':
-            # def rate(a): return 10 * (512**(-0.5) * min(a**(-0.5), a * 16000**(-1.5)))
-            # def rate(a): return  (1024**(-0.5) * min(a**(-0.5), a * 4000**(-1.5)))
-            def rate(a): return  2*(512**(-0.5) * min(a**(-0.5), a * 16000**(-1.5)))
+            def rate(a):
+                return self.opt.learning_rate*(self.opt.rnn_size**(-0.5) * min(a**(-0.5), a*self.opt.warmup_steps**(-1.5)))
             self.lr = rate(1 + int(self._step))
-            # print(self.lr)
             self.optimizer.param_groups[0]['lr'] = self.lr
         if self.max_grad_norm:
             clip_grad_norm(self.params, self.max_grad_norm)
