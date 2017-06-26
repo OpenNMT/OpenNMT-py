@@ -4,9 +4,12 @@ import torch.nn.init as init
 import onmt.modules
 import numpy as np
 from torch.autograd import Variable
-from onmt.modules import LayerNorm
-from onmt.modules.Util import LayerNorm, Bottle, BottleLinear, BottleLayerNorm, BottleSoftmax
+from onmt.modules import LayerNorm, DependencyTree
+from onmt.modules.Util import LayerNorm, Bottle, Bottle2, BottleLinear, BottleLayerNorm, BottleSoftmax
 import math
+
+class BottleStruct(Bottle2, DependencyTree):
+    pass
 
 class Linear(nn.Module):
     ''' Simple Linear layer with xavier init '''
@@ -45,7 +48,7 @@ class ScaledDotProductAttention(nn.Module):
 class MultiHeadedAttention(nn.Module):
     ''' Multi-Head Attention module '''
 
-    def __init__(self, n_head, d_model, p=0.1):
+    def __init__(self, n_head, d_model, p=0.1, use_struct=False):
 
         dropout = p
         dim_size = d_model
@@ -68,8 +71,11 @@ class MultiHeadedAttention(nn.Module):
         heads = self.heads = n_head
         self.linear_keys = BottleLinear(dim_size, heads * self.d_k, bias=False)
         self.linear_values = BottleLinear(dim_size, heads * self.d_k, bias=False)
-        self.linear_query = BottleLinear(dim_size, heads * self.d_k, bias=False) 
-        self.sm = BottleSoftmax()
+        self.linear_query = BottleLinear(dim_size, heads * self.d_k, bias=False)
+        if use_struct:
+            self.sm = BottleStruct()
+        else:
+            self.sm = BottleSoftmax()
         self.activation = nn.ReLU()
         self.layer_norm = BottleLayerNorm(dim_size)
         self.dropout = nn.Dropout(p)
@@ -125,6 +131,7 @@ class MultiHeadedAttention(nn.Module):
                 mask = mask.unsqueeze(1).expand_as(scaled)
                 scaled = scaled.masked_fill(Variable(mask), -float('inf'))
                 # scaled.data.masked_fill_(mask, -float('inf'))
+                # print(scaled.size())
                 scaled = smash(scaled)
             attn = self.dropout(self.sm(scaled))
             # attn = self.sm(scaled)

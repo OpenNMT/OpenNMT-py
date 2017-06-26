@@ -6,6 +6,7 @@ from torch.nn.utils.rnn import pad_packed_sequence as unpack
 from torch.nn.utils.rnn import pack_padded_sequence as pack
 import math
 import numpy as np
+import time 
 
 def make_positional_encodings(dim, max_len):
     pe = torch.FloatTensor(max_len, 1, dim).fill_(0)
@@ -25,14 +26,12 @@ def get_attn_padding_mask(seq_q, seq_k):
     pad_attn_mask = pad_attn_mask.expand(mb_size, len_q, len_k) # bxsqxsk
     return pad_attn_mask
 
-def get_attn_subsequent_mask(seq):
+def get_attn_subsequent_mask(size):
     ''' Get an attention mask to avoid using the subsequent info.'''
-    assert seq.dim() == 2
-    attn_shape = (seq.size(0), seq.size(1), seq.size(1))
+    # assert seq.dim() == 2
+    attn_shape = (1, size, size)
     subsequent_mask = np.triu(np.ones(attn_shape), k=1).astype('uint8')
     subsequent_mask = torch.from_numpy(subsequent_mask)
-    if seq.is_cuda:
-        subsequent_mask = subsequent_mask.cuda()
     return subsequent_mask
 
 
@@ -100,7 +99,7 @@ class Encoder(nn.Module):
             self.pe = make_positional_encodings(opt.word_vec_size, 5000).cuda()
         if self.encoder_layer == "transformer":
             self.transformer = nn.ModuleList([TransformerEncoder(self.hidden_size, opt)
-                                               for _ in range(opt.layers)])
+                                               for i in range(opt.layers)])
         
     def load_pretrained_vectors(self, opt):
         if opt.pre_word_vecs_enc is not None:
@@ -150,7 +149,7 @@ class Encoder(nn.Module):
             hidden_t (FloatTensor): Pair of layers x batch x rnn_size - final Encoder state
             outputs (FloatTensor):  len x batch x rnn_size -  Memory bank
         """
-        if lengths:
+        if lengths is not None:
             # Lengths data is wrapped inside a Variable.
             lengths = lengths.data.view(-1).tolist()
             pre_emb = self._embed(input)
@@ -214,18 +213,23 @@ class StackedLSTM(nn.Module):
 
 
 class TransformerEncoder(nn.Module):
-    def __init__(self, hidden_size, opt):
+    def __init__(self, hidden_size, opt, use_struct=False):
         super(TransformerEncoder, self).__init__()
 
         self.self_attn = onmt.modules.MultiHeadedAttention(8, hidden_size,
-                                                           p=opt.dropout)
-        self.feed_forward = onmt.modules.PositionwiseFeedForward(hidden_size, 4*hidden_size,
+                                                           p=opt.dropout, 
+                                                           use_struct=use_struct)
+        self.feed_forward = onmt.modules.PositionwiseFeedForward(hidden_size, 2048,
                                                                  opt.dropout)
 
     def forward(self, input, words):
+        start = time.time()
+
         mask = get_attn_padding_mask(words.transpose(0,1), words.transpose(0,1))
         mid, _ = self.self_attn(input, input, input, mask=mask)
-        return self.feed_forward(mid)
+        out = self.feed_forward(mid)
+        # print("encoder", time.time() - start)
+        return out
 
 class TransformerDecoder(nn.Module):
     """
@@ -237,9 +241,10 @@ class TransformerDecoder(nn.Module):
                                                            p=opt.dropout)
         self.context_attn = onmt.modules.MultiHeadedAttention(8, hidden_size,
                                                               p=opt.dropout)
-        self.feed_forward = onmt.modules.PositionwiseFeedForward(hidden_size, 4*hidden_size,
+        self.feed_forward = onmt.modules.PositionwiseFeedForward(hidden_size, 2048,
                                                                  opt.dropout)
         self.dropout = opt.dropout
+        self.mask = get_attn_subsequent_mask(5000).cuda()
         
     def forward(self, input, context, src_words, tgt_words):
         """
@@ -250,34 +255,37 @@ class TransformerDecoder(nn.Module):
             output : batch x len x hidden
             attn : batch x len x qlen 
         """
+        start = time.time()
         attn_mask = get_attn_padding_mask(tgt_words.transpose(0,1), tgt_words.transpose(0,1))
         # bxsqxsk
-        sub_mask = get_attn_subsequent_mask(tgt_words.transpose(0,1))
+        # sub_mask = get_attn_subsequent_mask(tgt_words.transpose(0,1))
         # bxsqxsq
-        dec_mask = torch.gt(attn_mask + sub_mask, 0)
+        dec_mask = torch.gt(attn_mask + self.mask[:, :attn_mask.size(1), :attn_mask.size(1)].expand_as(attn_mask), 0)
+        # dec_mask = attn_mask
 
         pad_mask = get_attn_padding_mask(tgt_words.transpose(0,1), src_words.transpose(0,1))
         # bxsqxsk
-
-        def input_hook(grad):
-            print("input grad", grad[0].sum(1))
+        start2 = time.time()
+        # def input_hook(grad):
+        #     print("input grad", grad[0].sum(1))
         # input.register_hook(input_hook)
         # input = input.fill(0)
         # input[0, 7, :].fill(1)
         # input = Variable(input.data, requires_grad=True)
+
         query, attn = self.self_attn(input, input, input, mask=dec_mask)
         # print("ATTN", " ".join(["%3f"%j for j in attn.data[0, 10]]))
 
-        def attn_hook(grad):
-            print(grad.sum())
-            grad = grad.view(grad.size(0) // 8, 8, grad.size(1), grad.size(2))
-            for i in range(8):
-                print("GRAD",i, " ".join(["%3f"%j for j in grad.data[0, i, 10]]))
-                print(grad[0, i, 9].sum())
-            print()
+        # def attn_hook(grad):
+        #     print(grad.sum())
+        #     grad = grad.view(grad.size(0) // 8, 8, grad.size(1), grad.size(2))
+        #     for i in range(8):
+        #         print("GRAD",i, " ".join(["%3f"%j for j in grad.data[0, i, 10]]))
+        #         print(grad[0, i, 9].sum())
+        #     print()
 
-        def query_hook(grad):
-            print("Out", "%3f" % grad.data[0, 10].sum())
+        # def query_hook(grad):
+        #     print("Out", "%3f" % grad.data[0, 10].sum())
             
         # query.register_hook(query_hook)
         # query[0, 10, 0].backward()
@@ -297,7 +305,8 @@ class TransformerDecoder(nn.Module):
         # print(input.grad[3, 7, 0])
         # print(input.grad[3, 8, 0])
         # exit()
-        
+        # print("decoder2", time.time() - start2)
+        # print("decoder", time.time() - start)
         return output, attn
 
 class Decoder(nn.Module):
@@ -331,16 +340,16 @@ class Decoder(nn.Module):
         self.emb_dropout = nn.Dropout(opt.dropout)
         self.hidden_size = opt.rnn_size
 
+        self._coverage = opt.coverage_attn if "coverage_attn" in opt else False
         # Std attention layer.
-        self.attn = onmt.modules.GlobalAttention(opt.rnn_size, opt.coverage_attn)
+        self.attn = onmt.modules.GlobalAttention(opt.rnn_size, self._coverage)
         
         # Separate Copy Attention.
         self._copy = False
-        if opt.copy_attn:
+        if opt.copy_attn if "copy_attn" in opt else False:
             self.copy_attn = onmt.modules.GlobalAttention(opt.rnn_size)
             self._copy = True
 
-        self._coverage = opt.coverage_attn
         
         if self.positional_encoding:
             self.pe = make_positional_encodings(opt.word_vec_size, 5000).cuda()
@@ -419,7 +428,7 @@ class Decoder(nn.Module):
 
 
                 output, hidden = self.rnn(emb_t, hidden)
-                output, attn = self.attn(output, context.t(), coverage)
+                output, attn = self.attn(output, context.transpose(0, 1), coverage)
 
                 if self._coverage:
                     if coverage:
@@ -491,6 +500,7 @@ class NMTModel(nn.Module):
             attns (FloatTensor): Dictionary of (src_len x batch)
             dec_hidden (FloatTensor): tuple (1 x batch x rnn_size) -- Init hidden state
         """
+        start = time.time()
         src = input.src
         tgt = input.tgt[:-1]  # exclude last target from inputs
         enc_hidden, context = self.encoder(src, input.lengths)
@@ -503,5 +513,5 @@ class NMTModel(nn.Module):
                                               else dec_hidden,
                                               context,
                                               init_output)
-
+        # print(time.time() - start)
         return out, attns, dec_hidden

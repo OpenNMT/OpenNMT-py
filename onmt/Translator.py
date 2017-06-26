@@ -34,7 +34,7 @@ class Translator(object):
         decoder = onmt.Models.Decoder(model_opt, self.tgt_dict)
         model = onmt.Models.NMTModel(encoder, decoder)
 
-        if not self.copy_attn:
+        if self.copy_attn == "std":
             generator = nn.Sequential(
                 nn.Linear(model_opt.rnn_size, self.tgt_dict.size()),
                 nn.LogSoftmax())
@@ -149,8 +149,8 @@ class Translator(object):
         decStates = (Variable(encStates[0].data.repeat(1, beamSize, 1)),
                      Variable(encStates[1].data.repeat(1, beamSize, 1)))
 
-        if True:
-            decStates = None
+        # if True:
+        #     decStates = None
 
 
         beam = [onmt.Beam(beamSize, self.opt.cuda) for k in range(batchSize)]
@@ -179,11 +179,12 @@ class Translator(object):
 
             attn["std"] = attn["std"].view(beamSize, remainingSents, -1) \
                                      .transpose(0, 1).contiguous()
-            if not self.copy_attn:
+            if not self.copy_attn or self.copy_attn == "std":
                 out = self.model.generator.forward(decOut)
             else:
                 words = batch.words().t()
                 words = torch.stack([words[i] for i, b in enumerate(beam) if not b.done]).contiguous() 
+                
                 attn_copy = attn["copy"].view(beamSize, remainingSents, -1) \
                        .transpose(0, 1).contiguous()
                             
@@ -210,7 +211,7 @@ class Translator(object):
                 if not beam[b].advance(wordLk.data[idx], attn["std"].data[idx]):
                     active += [b]
 
-                if False: 
+                if True: 
                     for decState in decStates:  # iterate over h, c
                         # layers x beam*sent x dim
                         sentStates = decState.view(-1, beamSize,
@@ -241,7 +242,7 @@ class Translator(object):
                 newSize[batchPos] = newSize[batchPos] * len(activeIdx) // remainingSents
                 return Variable(view.index_select(1, activeIdx)
                                 .view(*newSize), volatile=True)
-            if False:
+            if True:
                 decStates = (updateActive(decStates[0]),
                              updateActive(decStates[1]))
             else:

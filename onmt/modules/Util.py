@@ -12,6 +12,14 @@ class Bottle(nn.Module):
             out = super(Bottle, self).forward(input.view(size[0]*size[1], -1))
             return out.contiguous().view(size[0], size[1], -1)
 
+class Bottle2(nn.Module):
+        def forward(self, input):
+            if len(input.size()) <= 3:
+                return super(Bottle2, self).forward(input)
+            size = input.size()
+            out = super(Bottle2, self).forward(input.view(size[0]*size[1], size[2], size[3]))
+            return out.contiguous().view(size[0], size[1], size[2], size[3])
+
 # class LayerNorm(nn.Module):
 #     def __init__(self, d_hid, eps=1e-3):
 #         super(LayerNorm, self).__init__()
@@ -44,8 +52,8 @@ class LayerNorm(nn.Module):
     def forward(self, z):
         if z.size(1) == 1:
             return z
-        mu = torch.mean(z, dim=1)
-        sigma = torch.std(z, dim=1)
+        mu = torch.mean(z, dim=1).unsqueeze(1)
+        sigma = torch.std(z, dim=1).unsqueeze(1)
         ln_out = (z - mu.expand_as(z)) / (sigma.expand_as(z) + self.eps)
         ln_out = ln_out * self.a_2.expand_as(ln_out) + self.b_2.expand_as(ln_out)
         return ln_out

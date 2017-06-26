@@ -175,6 +175,7 @@ def memoryEfficientLoss(outputs, generator, crit, batch,
     # compute generations one piece at a time
     num_correct, loss = 0, 0
 
+    start = time.time()
     # These will require gradients.
     outputs = Variable(outputs.data, requires_grad=(not eval), volatile=eval)
     batch_size = batch.batchSize
@@ -191,14 +192,21 @@ def memoryEfficientLoss(outputs, generator, crit, batch,
         
     for k in d:
         d[k] = torch.split(d[k], opt.max_generator_batches)
+
+    # print("prep", time.time() - start)
     for i, targ_t in enumerate(d["tgt"]):
+
         out_t = d["out"][i].view(-1, d["out"][i].size(2))
         
         
         # Depending on generator type.
         if attns is None:
+            start = time.time()
             scores_t = generator(out_t)
+            # print("gen", time.time() - start)
+            start = time.time()
             loss_t = crit(scores_t, targ_t.view(-1))
+            # print("crit", time.time() - start)
         else:
             # scores_t = generator(out_t)
             attn_t = d["attn"][i]
@@ -213,22 +221,26 @@ def memoryEfficientLoss(outputs, generator, crit, batch,
             
         if coverage is not None:
             loss_t += 0.1 * torch.min(d["coverage"][i], d["attn"][i]).sum()
-            
-        pred_t = scores_t.max(1)[1]
-        num_correct_t = pred_t.data.eq(targ_t.data) \
-                                   .masked_select(
-                                       targ_t.ne(onmt.Constants.PAD).data) \
-                                   .sum()
-        num_correct += num_correct_t
-        total_words = pred_t.data.ne(onmt.Constants.PAD).sum()
-        loss += loss_t.data[0]
-        if not eval:
-            loss_t.div(batch_size).backward(retain_variables=False)
+        start = time.time()
 
+        pred_t = scores_t.data.max(1)[1]
+        num_correct_t = pred_t.eq(targ_t.data) \
+                              .masked_select(
+                                  targ_t.ne(onmt.Constants.PAD).data) \
+                              .sum()
+        num_correct += num_correct_t
+        loss += loss_t.data[0]
+        # print("analysis", time.time() - start)
+        if not eval:
+            start = time.time()
+            loss_t.div(batch_size).backward()
+            # print("mid back", time.time() - start)
     # Return the gradients
+    start = time.time()
     grad_output = None if outputs.grad is None else outputs.grad.data
     grad_attns = None if not attns or attns.grad is None else attns.grad.data
     grad_coverage = None if not coverage or coverage.grad is None else coverage.grad.data
+    # print("return", time.time() - start)
     return loss, grad_output, grad_attns, grad_coverage, num_correct
 
 
@@ -311,11 +323,13 @@ def trainModel(model, trainData, validData, dataset, optim):
 
                 # Main training loop
                 model.zero_grad()
+                # start = time.time()
                 outputs, attn, dec_hidden \
                     = model(trunc_batch,
                             dec_hidden=(h.detach()for h in dec_hidden)
                             if dec_hidden else None)
-
+                # print("forward", time.time() - start)
+                # start = time.time()
                 # Exclude <s> from targets.
                 targets = trunc_batch.tgt[1:]
                 loss, gradOutput, gradAttn, gradCov, num_correct = memoryEfficientLoss(
@@ -327,9 +341,10 @@ def trainModel(model, trainData, validData, dataset, optim):
                 if gradCov is not None:
                     var.append(attn["coverage"])
                     grad.append(gradCov)
-
+                # print("mid", time.time() - start)
+                # start = time.time()
                 torch.autograd.backward(var, grad)
-
+                # print("backward", time.time() - start)
                 # Update the parameters.
                 optim.step()
                 
