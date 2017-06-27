@@ -74,10 +74,10 @@ The following OpenNMT features are implemented:
 - data preprocessing
 - saving and loading from checkpoints
 - inference (translation) with batching and beam search
+- multi-GPU
 
 Not yet implemented:
 
 - word features
-- multi-GPU
 - residual connections
 
