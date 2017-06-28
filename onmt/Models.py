@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
-import onmt.modules
+import onmt
+from onmt.modules.Gate import ContextGateFactory
 from torch.nn.utils.rnn import pad_packed_sequence as unpack
 from torch.nn.utils.rnn import pack_padded_sequence as pack
 
@@ -116,6 +117,12 @@ class Decoder(nn.Module):
         self.rnn = stackedCell(opt.layers, input_size,
                                opt.rnn_size, opt.dropout)
         self.attn = onmt.modules.GlobalAttention(opt.rnn_size)
+        self.context_gate = None
+        if opt.context_gate is not None:
+            self.context_gate = ContextGateFactory(
+                opt.context_gate, opt.word_vec_size,
+                opt.rnn_size, opt.rnn_size, opt.rnn_size
+            )
         self.dropout = nn.Dropout(opt.dropout)
 
         self.hidden_size = opt.rnn_size
@@ -134,13 +141,19 @@ class Decoder(nn.Module):
         outputs = []
         output = init_output
         for emb_t in emb.split(1):
-            emb_t = emb_t.squeeze(0)
+            emb_inp = emb_t.squeeze(0)
             if self.input_feed:
-                emb_t = torch.cat([emb_t, output], 1)
+                emb_inp = torch.cat([emb_inp, output], 1)
 
-            output, hidden = self.rnn(emb_t, hidden)
-            output, attn = self.attn(output, context.transpose(0, 1))
-            output = self.dropout(output)
+            rnn_output, hidden = self.rnn(emb_inp, hidden)
+            attn_output, attn = self.attn(rnn_output, context.transpose(0, 1))
+            if self.context_gate is not None:
+                output = self.context_gate(
+                    emb_t.squeeze(0), rnn_output, attn_output
+                )
+                output = self.dropout(output)
+            else:
+                output = self.dropout(attn_output)
             outputs += [output]
 
         outputs = torch.stack(outputs)

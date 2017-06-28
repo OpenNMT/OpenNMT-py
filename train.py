@@ -52,6 +52,10 @@ parser.add_argument('-brnn', action='store_true',
 parser.add_argument('-brnn_merge', default='concat',
                     help="""Merge action for the bidirectional hidden states:
                     [concat|sum]""")
+parser.add_argument('-context_gate', type=str, default=None,
+                    choices=['source', 'target', 'both'],
+                    help="""Type of context gate to use [source|target|both].
+                    Do not select for no context gate.""")
 
 # Optimization options
 parser.add_argument('-encoder_type', default='text',

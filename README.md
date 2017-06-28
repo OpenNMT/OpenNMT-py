@@ -75,6 +75,7 @@ The following OpenNMT features are implemented:
 - saving and loading from checkpoints
 - inference (translation) with batching and beam search
 - multi-GPU
+- Context gate
 
 Not yet implemented:
 
