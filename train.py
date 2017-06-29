@@ -284,6 +284,7 @@ def trainModel(model, trainData, validData, dataset, optim):
                                 else model.generator.state_dict())
         #  (4) drop a checkpoint
         checkpoint = {
+            'type': 'nmt',
             'model': model_state_dict,
             'generator': generator_state_dict,
             'dicts': dataset['dicts'],
@@ -300,11 +301,15 @@ def main():
     print("Loading data from '%s'" % opt.data)
 
     dataset = torch.load(opt.data)
+    assert dataset.get("type", "text") in ["bitext", "text"], \
+        "The provided dataset is not bilingual!"
     dict_checkpoint = (opt.train_from if opt.train_from
                        else opt.train_from_state_dict)
     if dict_checkpoint:
         print('Loading dicts from checkpoint at %s' % dict_checkpoint)
         checkpoint = torch.load(dict_checkpoint)
+        assert checkpoint.type is None or checkpoint.type == "nmt", \
+            "The loaded model is not a language model!"
         dataset['dicts'] = checkpoint['dicts']
 
     trainData = onmt.Dataset(dataset['train']['src'],
