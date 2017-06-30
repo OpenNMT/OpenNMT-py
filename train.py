@@ -2,6 +2,7 @@ from __future__ import division
 
 import onmt
 import onmt.Markdown
+import onmt.Models
 import onmt.modules
 import argparse
 import torch
@@ -41,6 +42,9 @@ parser.add_argument('-input_feed', type=int, default=1,
                     help="""Feed the context vector at each time step as
                     additional input (via concatenation with the word
                     embeddings) to the decoder.""")
+parser.add_argument('-rnn_type', type=str, default='LSTM',
+                    choices=['LSTM', 'GRU'],
+                    help="""The gate type to use in the RNNs""")
 # parser.add_argument('-residual',   action="store_true",
 #                     help="Add residual connections between RNN layers.")
 parser.add_argument('-brnn', action='store_true',
@@ -48,6 +52,10 @@ parser.add_argument('-brnn', action='store_true',
 parser.add_argument('-brnn_merge', default='concat',
                     help="""Merge action for the bidirectional hidden states:
                     [concat|sum]""")
+parser.add_argument('-context_gate', type=str, default=None,
+                    choices=['source', 'target', 'both'],
+                    help="""Type of context gate to use [source|target|both].
+                    Do not select for no context gate.""")
 
 # Optimization options
 parser.add_argument('-encoder_type', default='text',
@@ -113,15 +121,24 @@ parser.add_argument('-gpus', default=[], nargs='+', type=int,
 parser.add_argument('-log_interval', type=int, default=50,
                     help="Print stats at this interval.")
 
+parser.add_argument('-seed', type=int, default=-1,
+                    help="""Random seed used for the experiments
+                    reproducibility.""")
+
 opt = parser.parse_args()
 
 print(opt)
+
+if opt.seed > 0:
+    torch.manual_seed(opt.seed)
 
 if torch.cuda.is_available() and not opt.gpus:
     print("WARNING: You have a CUDA device, should run with -gpus 0")
 
 if opt.gpus:
     cuda.set_device(opt.gpus[0])
+    if opt.seed > 0:
+        torch.cuda.manual_seed(opt.seed)
 
 
 def NMTCriterion(vocabSize):
