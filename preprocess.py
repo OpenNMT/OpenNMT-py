@@ -230,7 +230,9 @@ def makeMonolingualData(srcFile, srcDicts):
                     srcWords = srcWords[:opt.src_seq_length_trunc]
 
                 src += [srcDicts.convertToIdx(srcWords,
-                                              onmt.Constants.UNK_WORD)]
+                                              onmt.Constants.UNK_WORD,
+                                              onmt.Constants.BOS_WORD,
+                                              onmt.Constants.EOS_WORD)]
                 sizes += [len(srcWords)]
             else:
                 ignored += 1
@@ -256,11 +258,12 @@ def makeMonolingualData(srcFile, srcDicts):
 
     return src
 
+
 def main():
 
     if opt.src_type in ['bitext', 'img']:
         assert None not in [opt.train_src, opt.train_tgt,
-                               opt.valid_src, opt.valid_tgt], \
+                            opt.valid_src, opt.valid_tgt], \
             "With source type %s the following parameters are" \
             "required: -train_src, -train_tgt, " \
             "-valid_src, -valid_tgt" % (opt.src_type)
@@ -276,7 +279,7 @@ def main():
         dicts['src'] = initVocabulary('source', opt.train_src, opt.src_vocab,
                                       opt.src_vocab_size)
         dicts['tgt'] = initVocabulary('target', opt.train_tgt, opt.tgt_vocab,
-                                  opt.tgt_vocab_size)
+                                      opt.tgt_vocab_size)
 
     elif opt.src_type == 'monotext':
         dicts['src'] = initVocabulary('source', opt.train, opt.src_vocab,
@@ -291,12 +294,16 @@ def main():
     valid = {}
 
     if opt.src_type in ['bitext', 'img']:
-        train['src'], train['tgt'] = makeBilingualData(opt.train_src, opt.train_tgt,
-                                          dicts['src'], dicts['tgt'])
+        train['src'], train['tgt'] = makeBilingualData(opt.train_src,
+                                                       opt.train_tgt,
+                                                       dicts['src'],
+                                                       dicts['tgt'])
 
         print('Preparing validation ...')
-        valid['src'], valid['tgt'] = makeBilingualData(opt.valid_src, opt.valid_tgt,
-                                              dicts['src'], dicts['tgt'])
+        valid['src'], valid['tgt'] = makeBilingualData(opt.valid_src,
+                                                       opt.valid_tgt,
+                                                       dicts['src'],
+                                                       dicts['tgt'])
 
     elif opt.src_type == 'monotext':
         train = makeMonolingualData(opt.train, dicts['src'])

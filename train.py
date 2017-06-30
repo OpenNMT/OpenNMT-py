@@ -284,13 +284,13 @@ def trainModel(model, trainData, validData, dataset, optim):
                                 else model.generator.state_dict())
         #  (4) drop a checkpoint
         checkpoint = {
-            'type': 'nmt',
             'model': model_state_dict,
             'generator': generator_state_dict,
             'dicts': dataset['dicts'],
             'opt': opt,
             'epoch': epoch,
-            'optim': optim
+            'optim': optim,
+            'type': 'nmt'
         }
         torch.save(checkpoint,
                    '%s_acc_%.2f_ppl_%.2f_e%d.pt'
@@ -308,8 +308,9 @@ def main():
     if dict_checkpoint:
         print('Loading dicts from checkpoint at %s' % dict_checkpoint)
         checkpoint = torch.load(dict_checkpoint)
-        assert checkpoint.type is None or checkpoint.type == "nmt", \
-            "The loaded model is not a language model!"
+        assert checkpoint.get('type', None) is None or \
+            checkpoint['type'] == "nmt", \
+            "The loaded model is not neural machine translation!"
         dataset['dicts'] = checkpoint['dicts']
 
     trainData = onmt.Dataset(dataset['train']['src'],
