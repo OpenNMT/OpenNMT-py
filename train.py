@@ -293,7 +293,8 @@ def trainModel(model, trainData, validData, dataset, optim):
             'dicts': dataset['dicts'],
             'opt': opt,
             'epoch': epoch,
-            'optim': optim
+            'optim': optim,
+            'type': 'nmt'
         }
         torch.save(checkpoint,
                    '%s_acc_%.2f_ppl_%.2f_e%d.pt'
@@ -304,11 +305,15 @@ def main():
     print("Loading data from '%s'" % opt.data)
 
     dataset = torch.load(opt.data)
+    assert dataset.get("type", "text") in ["bitext", "text"], \
+        "The provided dataset is not bilingual!"
     dict_checkpoint = (opt.train_from if opt.train_from
                        else opt.train_from_state_dict)
     if dict_checkpoint:
         print('Loading dicts from checkpoint at %s' % dict_checkpoint)
         checkpoint = torch.load(dict_checkpoint)
+        assert checkpoint.get('type', None) is None or checkpoint['type'] == "nmt", \
+            "The loaded model is not neural machine translation!"
         dataset['dicts'] = checkpoint['dicts']
 
     trainData = onmt.Dataset(dataset['train']['src'],
