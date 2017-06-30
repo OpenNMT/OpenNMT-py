@@ -230,7 +230,9 @@ def makeMonolingualData(srcFile, srcDicts):
                     srcWords = srcWords[:opt.src_seq_length_trunc]
 
                 src += [srcDicts.convertToIdx(srcWords,
-                                              onmt.Constants.UNK_WORD)]
+                                              onmt.Constants.UNK_WORD,
+                                              onmt.Constants.BOS_WORD,
+                                              onmt.Constants.EOS_WORD)]
                 sizes += [len(srcWords)]
             else:
                 ignored += 1
