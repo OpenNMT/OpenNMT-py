@@ -73,7 +73,7 @@ class Encoder(nn.Module):
             self.transformer = nn.ModuleList(
                 [onmt.modules.TransformerEncoder(self.hidden_size, opt)
                  for i in range(opt.layers)])
-        
+
         self.word_vec_size = opt.word_vec_size
 
         # Use positional encoding.
@@ -86,7 +86,6 @@ class Encoder(nn.Module):
              num_layers=opt.layers,
              dropout=opt.dropout,
              bidirectional=opt.brnn)
-
 
     def load_pretrained_vectors(self, opt):
         if opt.pre_word_vecs_enc is not None:
@@ -254,7 +253,7 @@ class Decoder(nn.Module):
             self.transformer = nn.ModuleList(
                 [onmt.modules.TransformerDecoder(self.hidden_size, opt)
                  for _ in range(opt.layers)])
-        
+
         stackedCell = StackedLSTM if opt.rnn_type == "LSTM" else StackedGRU
         self.rnn = stackedCell(opt.layers, input_size,
                                opt.rnn_size, opt.dropout)
@@ -267,7 +266,6 @@ class Decoder(nn.Module):
 
         self.dropout = nn.Dropout(opt.dropout)
         self.emb_dropout = nn.Dropout(opt.dropout)
-
 
         # Std attention layer.
         self.attn = onmt.modules.GlobalAttention(opt.rnn_size, self._coverage)
@@ -320,7 +318,6 @@ class Decoder(nn.Module):
         # self.input_feed=False
         outputs = []
 
-
         # Setup the different types of attention.
         attns = {"std": []}
         if self._copy:
@@ -349,15 +346,14 @@ class Decoder(nn.Module):
             hidden = (input.unsqueeze(2),)
         else:
 
-
-            
             for i, emb_t in enumerate(emb.split(1)):
                 emb_t = emb_t.squeeze(0)
                 if self.input_feed:
                     emb_t = torch.cat([emb_t, output], 1)
 
-                rnn_output, hidden = self.rnn(emb_inp, hidden)
-                attn_output, attn = self.attn(rnn_output, context.transpose(0, 1))
+                rnn_output, hidden = self.rnn(emb_t, hidden)
+                attn_output, attn = self.attn(rnn_output,
+                                              context.transpose(0, 1))
                 if self.context_gate is not None:
                     output = self.context_gate(
                         emb_t.squeeze(0), rnn_output, attn_output
@@ -367,7 +363,6 @@ class Decoder(nn.Module):
                     output = self.dropout(attn_output)
                 outputs += [output]
 
-                 
                 if self._coverage:
                     if coverage:
                         coverage = coverage + attn
@@ -385,7 +380,7 @@ class Decoder(nn.Module):
             for k in attns:
                 attns[k] = torch.stack(attns[k])
         return outputs, hidden, attns
-    
+
 
 class NMTModel(nn.Module):
     def __init__(self, encoder, decoder):
@@ -428,7 +423,7 @@ class NMTModel(nn.Module):
                           for i in range(len(enc_hidden))])
         else:
             return self._fix_enc_hidden(enc_hidden)
-        
+
     def forward(self, input, dec_hidden=None):
         """
         Args:
