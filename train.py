@@ -10,7 +10,7 @@ from torch import cuda
 from torch.autograd import Variable
 import math
 import time
-
+import sys
 parser = argparse.ArgumentParser(description='train.py')
 onmt.Markdown.add_md_help_argument(parser)
 
@@ -114,6 +114,9 @@ parser.add_argument('-start_decay_at', type=int, default=8,
                     epoch""")
 parser.add_argument('-warmup_steps', type=int, default=4000,
                     help="""""")
+parser.add_argument('-start_checkpoint_at', type=int, default=0,
+                    help="""Start checkpointing every epoch after and including this
+                    epoch""")
 
 
 # pretrained word vectors
@@ -133,6 +136,10 @@ parser.add_argument('-gpus', default=[], nargs='+', type=int,
 
 parser.add_argument('-log_interval', type=int, default=50,
                     help="Print stats at this interval.")
+parser.add_argument('-log_server', type=str, default="",
+                    help="Send logs to this crayon server.")
+parser.add_argument('-experiment_name', type=str, default="",
+                    help="Name of the experiment for logging.")
 
 opt = parser.parse_args()
 
@@ -143,8 +150,13 @@ if torch.cuda.is_available() and not opt.gpus:
 
 if opt.gpus:
     cuda.set_device(opt.gpus[0])
-
-
+    
+if opt.log_server != "":
+    from pycrayon import CrayonClient
+    cc = CrayonClient(hostname=opt.log_server)
+    cc.remove_experiment(opt.experiment_name)        
+    experiment = cc.create_experiment(opt.experiment_name)
+    
 def NMTCriterion(vocabSize):
     weight = torch.ones(vocabSize)
     weight[onmt.Constants.PAD] = 0
@@ -362,17 +374,26 @@ def trainModel(model, trainData, validData, dataset, optim):
             report_src_words += batch.lengths.data.sum()
 
             if i % opt.log_interval == -1 % opt.log_interval:
+                ppl = math.exp(report_loss / report_tgt_words)
+                acc = report_num_correct / report_tgt_words * 100
+                tgtper = report_tgt_words/(time.time()-start + 1e-5)
+                if opt.log_server:
+                    experiment.add_scalar_value("ppl", ppl)
+                    experiment.add_scalar_value("accuracy", acc)
+                    experiment.add_scalar_value("tgtper", tgtper)
+                    experiment.add_scalar_value("lr", optim.lr)
                 print(("Epoch %2d, %5d/%5d; acc: %6.2f; ppl: %6.2f;" +
                        "%3.0f src tok/s; %3.0f tgt tok/s; %6.0f s elapsed") %
                       (epoch, i+1, len(trainData),
-                       report_num_correct / report_tgt_words * 100,
-                       math.exp(report_loss / report_tgt_words) ,
+                       acc,
+                       ppl,
                        report_src_words/(time.time()-start + 1e-5),
-                       report_tgt_words/(time.time()-start + 1e-5),
+                       tgtper,
                        time.time()-start_time))
-
+                sys.stdout.flush()
                 report_loss, report_tgt_words = 0, 0
                 report_src_words, report_num_correct = 0, 0
+                
                 start = time.time()
 
         return total_loss / total_words, total_num_correct / total_words
@@ -385,7 +406,7 @@ def trainModel(model, trainData, validData, dataset, optim):
         train_ppl = math.exp(min(train_loss, 100))
         print('Train perplexity: %g' % train_ppl)
         print('Train accuracy: %g' % (train_acc*100))
-
+        
         #  (2) evaluate on the validation set
         # valid_loss, valid_acc = eval(model, criterion, trainData)
         # valid_ppl = math.exp(min(valid_loss, 100))
@@ -397,6 +418,13 @@ def trainModel(model, trainData, validData, dataset, optim):
         print('Validation perplexity: %g' % valid_ppl)
         print('Validation accuracy: %g' % (valid_acc*100))
 
+        if opt.log_server:
+            experiment.add_scalar_value("train_ppl", train_ppl)
+            experiment.add_scalar_value("train_acc", train_acc*100)
+            experiment.add_scalar_value("valid_ppl", valid_ppl)
+            experiment.add_scalar_value("valid_acc", valid_acc*100)
+
+        
         #  (3) update the learning rate
         optim.updateLearningRate(valid_ppl, epoch)
 
@@ -408,17 +436,18 @@ def trainModel(model, trainData, validData, dataset, optim):
                                 if len(opt.gpus) > 1
                                 else model.generator.state_dict())
         #  (4) drop a checkpoint
-        checkpoint = {
-            'model': model_state_dict,
-            'generator': generator_state_dict,
-            'dicts': dataset['dicts'],
-            'opt': opt,
-            'epoch': epoch,
-            'optim': optim
-        }
-        torch.save(checkpoint,
-                   '%s_acc_%.2f_ppl_%.2f_e%d.pt'
-                   % (opt.save_model, 100*valid_acc, valid_ppl, epoch))
+        if epoch >= opt.start_checkpoint_at:
+            checkpoint = {
+                'model': model_state_dict,
+                'generator': generator_state_dict,
+                'dicts': dataset['dicts'],
+                'opt': opt,
+                'epoch': epoch,
+                'optim': optim
+            }
+            torch.save(checkpoint,
+                       '%s_acc_%.2f_ppl_%.2f_e%d.pt'
+                       % (opt.save_model, 100*valid_acc, valid_ppl, epoch))
 
 
 def main():

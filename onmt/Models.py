@@ -379,7 +379,7 @@ class Decoder(nn.Module):
             attns (FloatTensor): Dictionary of (src_len x batch)
         """
         if False:
-            if self.decoder_layer == "transformer" and hidden:
+            if self.decoder_layer == "transformer" and hidden is not None:
                 input = torch.cat([hidden, input], 0)
             
         emb = self.word_lut(input)
@@ -410,7 +410,7 @@ class Decoder(nn.Module):
             outputs = output.transpose(0, 1).contiguous()
 
             if False:
-                if hidden:
+                if hidden is not None:
                     outputs = outputs[hidden.size(0):]
                     attn = attn[:, hidden.size(0):].squeeze()
                     attn = torch.stack([attn])
