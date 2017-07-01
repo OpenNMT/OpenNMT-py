@@ -7,7 +7,6 @@ from torch.nn.utils.rnn import pack_padded_sequence as pack
 import math
 
 
-
 def make_positional_encodings(dim, max_len):
     pe = torch.FloatTensor(max_len, 1, dim).fill_(0)
     print(pe.size())
@@ -16,6 +15,7 @@ def make_positional_encodings(dim, max_len):
             k = float(j) / (10000.0 ** (2.0*i / float(dim)))
             pe[j, 0, i] = math.cos(k) if i % 2 == 1 else math.sin(k)
     return pe
+
 
 class Encoder(nn.Module):
     """
@@ -68,19 +68,22 @@ class Encoder(nn.Module):
 
         # The Encoder RNN.
         self.encoder_layer = opt.__dict__.get("encoder_layer", "")
-        self.positional_encoding = opt.__dict__.get("position_encoding", "")
-        self.rnn = nn.LSTM(input_size, self.hidden_size,
-                           num_layers=opt.layers,
-                           dropout=opt.dropout,
-                           bidirectional=opt.brnn)
-        self.word_vec_size = opt.word_vec_size
 
-        if self.positional_encoding:
-            self.pe = make_positional_encodings(opt.word_vec_size, 5000).cuda()
         if self.encoder_layer == "transformer":
             self.transformer = nn.ModuleList(
                 [onmt.modules.TransformerEncoder(self.hidden_size, opt)
                  for i in range(opt.layers)])
+        else:
+            self.rnn = nn.LSTM(input_size, self.hidden_size,
+                               num_layers=opt.layers,
+                               dropout=opt.dropout,
+                               bidirectional=opt.brnn)
+        self.word_vec_size = opt.word_vec_size
+
+        # Use positional encoding.
+        self.positional_encoding = opt.__dict__.get("position_encoding", "")
+        if self.positional_encoding:
+            self.pe = make_positional_encodings(opt.word_vec_size, 5000).cuda()
 
     def load_pretrained_vectors(self, opt):
         if opt.pre_word_vecs_enc is not None:
@@ -138,12 +141,12 @@ class Encoder(nn.Module):
             pre_emb = emb
 
         if self.encoder_layer == "mean":
-            # Just take the mean of vectors.
+            # Take the mean of vectors.
             mean = pre_emb.mean(0).view(1, pre_emb.size(1), pre_emb.size(2)) \
                    .expand(self.layers, pre_emb.size(1), pre_emb.size(2))
             return (mean, mean), pre_emb
 
-        if self.encoder_layer == "transformer":
+        elif self.encoder_layer == "transformer":
             # Self-attention tranformer.
             mean = pre_emb.mean(0).view(1, pre_emb.size(1), pre_emb.size(2)) \
                    .expand(self.layers, pre_emb.size(1), pre_emb.size(2))
@@ -152,10 +155,12 @@ class Encoder(nn.Module):
                 out = self.transformer[i](out, input[:, :, 0])
             return (mean, mean), out.transpose(0, 1).contiguous()
 
-        outputs, hidden_t = self.rnn(emb, hidden)
-        if lengths:
-            outputs = unpack(outputs)[0]
-        return hidden_t, outputs
+        else:
+            # Standard RNN encoder.
+            outputs, hidden_t = self.rnn(emb, hidden)
+            if lengths:
+                outputs = unpack(outputs)[0]
+            return hidden_t, outputs
 
 
 class StackedLSTM(nn.Module):
@@ -189,6 +194,7 @@ class StackedLSTM(nn.Module):
 
         return input, (h_1, c_1)
 
+
 class Decoder(nn.Module):
     """
     Decoder + Attention recurrent neural network.
@@ -207,18 +213,25 @@ class Decoder(nn.Module):
             input_size += opt.rnn_size
         self.decoder_layer = opt.__dict__.get("decoder_layer", "")
         self.positional_encoding = opt.__dict__.get("position_encoding", "")
+        self._coverage = opt.__dict__.get("coverage_attn", False)
 
         super(Decoder, self).__init__()
         self.word_lut = nn.Embedding(dicts.size(),
                                      opt.word_vec_size,
                                      padding_idx=onmt.Constants.PAD)
-        self.rnn = StackedLSTM(opt.layers, input_size,
-                               opt.rnn_size, opt.dropout)
+
+        if self.decoder_layer == "transformer":
+            self.transformer = nn.ModuleList(
+                [onmt.modules.TransformerDecoder(self.hidden_size, opt)
+                 for _ in range(opt.layers)])
+        else:
+            self.rnn = StackedLSTM(opt.layers, input_size,
+                                   opt.rnn_size, opt.dropout)
+
         self.dropout = nn.Dropout(opt.dropout)
         self.emb_dropout = nn.Dropout(opt.dropout)
         self.hidden_size = opt.rnn_size
 
-        self._coverage = opt.__dict__.get("coverage_attn", False)
         # Std attention layer.
         self.attn = onmt.modules.GlobalAttention(opt.rnn_size, self._coverage)
 
@@ -228,13 +241,9 @@ class Decoder(nn.Module):
             self.copy_attn = onmt.modules.GlobalAttention(opt.rnn_size)
             self._copy = True
 
+        # Use positional encodings
         if self.positional_encoding:
             self.pe = make_positional_encodings(opt.word_vec_size, 5000).cuda()
-
-        if self.decoder_layer == "transformer":
-            self.transformer = nn.ModuleList(
-                [onmt.modules.TransformerDecoder(self.hidden_size, opt)
-                 for _ in range(opt.layers)])
 
     def load_pretrained_vectors(self, opt):
         if opt.pre_word_vecs_dec is not None:
@@ -256,9 +265,13 @@ class Decoder(nn.Module):
             hidden_t: Last hidden state tuple (1 x batch x rnn_size)
             attns: Dictionary of (src_len x batch)
         """
-        if False:
-            if self.decoder_layer == "transformer" and hidden is not None:
-                input = torch.cat([hidden, input], 0)
+
+        # For transformer layers, hidden is the actual words
+        has_transformer_hidden = (self.decoder_layer == "transformer"
+                                  and hidden is not None)
+
+        if has_transformer_hidden:
+            input = torch.cat([hidden, input], 0)
 
         emb = self.word_lut(input)
         if self.positional_encoding:
@@ -269,6 +282,8 @@ class Decoder(nn.Module):
         # iterations in parallel, but that's only possible if
         # self.input_feed=False
         outputs = []
+
+        # Setup the different types of attention.
         attns = {"std": []}
         if self._copy:
             attns["copy"] = []
@@ -279,27 +294,22 @@ class Decoder(nn.Module):
         coverage = None
 
         if self.decoder_layer == "transformer":
-            output = emb.transpose(0, 1).contiguous()
-            output = self.emb_dropout(output)
-
+            output = self.emb_dropout(emb.transpose(0, 1).contiguous())
             src_context = context.transpose(0, 1).contiguous()
             for i in range(self.layers):
                 output, attn = self.transformer[i](output, src_context,
                                                    src[:, :, 0], input)
             outputs = output.transpose(0, 1).contiguous()
-
-            if False:
-                if hidden is not None:
-                    outputs = outputs[hidden.size(0):]
-                    attn = attn[:, hidden.size(0):].squeeze()
-                    attn = torch.stack([attn])
+            if has_transformer_hidden:
+                outputs = outputs[hidden.size(0):]
+                attn = attn[:, hidden.size(0):].squeeze()
+                attn = torch.stack([attn])
 
             attns["std"] = attn
             if self._copy:
                 attns["copy"] = attn
-            hidden = input
+            hidden = (input.unsqueeze(2),)
         else:
-            src_context = context.transpose(0, 1).contiguous()
             for i, emb_t in enumerate(emb.split(1)):
                 emb_t = emb_t.squeeze(0)
                 if self.input_feed:
@@ -325,16 +335,13 @@ class Decoder(nn.Module):
                     _, copy_attn = self.copy_attn(output, context.t())
                     attns["copy"] += [copy_attn]
 
-                # elif self._copy:
-                #     attns["copy"] += [attn]
             outputs = torch.stack(outputs)
             for k in attns:
                 attns[k] = torch.stack(attns[k])
         return outputs, hidden, attns
-
+    
 
 class NMTModel(nn.Module):
-
     def __init__(self, encoder, decoder):
         super(NMTModel, self).__init__()
         self.encoder = encoder
@@ -367,6 +374,13 @@ class NMTModel(nn.Module):
         else:
             return h
 
+    def setup_decoder(self, enc_hidden):
+        if self.decoder.opt.encoder_layer == "transformer":
+            return None
+        else:
+            return (self._fix_enc_hidden(enc_hidden[0]),
+                    self._fix_enc_hidden(enc_hidden[1]))
+        
     def forward(self, input, dec_hidden=None):
         """
         Args:
@@ -385,8 +399,7 @@ class NMTModel(nn.Module):
         enc_hidden, context = self.encoder(src, input.lengths)
         init_output = self.make_init_decoder_output(context)
 
-        enc_hidden = (self._fix_enc_hidden(enc_hidden[0]),
-                      self._fix_enc_hidden(enc_hidden[1]))
+        enc_hidden = self.setup_decoder(enc_hidden)
         out, dec_hidden, attns = self.decoder(tgt, src,
                                               enc_hidden if dec_hidden is None
                                               else dec_hidden,

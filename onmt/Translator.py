@@ -107,8 +107,7 @@ class Translator(object):
         encStates, context = self.model.encoder(batch.src)
 
         rnnSize = context.size(2)
-        encStates = (self.model._fix_enc_hidden(encStates[0]),
-                     self.model._fix_enc_hidden(encStates[1]))
+        encStates = self.model.setup_decoder(encStates)
 
         decoder = self.model.decoder
         attentionLayer = decoder.attn
@@ -146,11 +145,9 @@ class Translator(object):
         # Each hypothesis in the beam uses the same context
         # and initial decoder state
         context = Variable(context.data.repeat(1, beamSize, 1))
-        decStates = (Variable(encStates[0].data.repeat(1, beamSize, 1)),
-                     Variable(encStates[1].data.repeat(1, beamSize, 1)))
-
-        if True:
-            decStates = None
+        decStates = tuple([Variable(e.data.repeat(1, beamSize, 1))
+                           for e in encStates]) \
+            if encStates else None
 
         beam = [onmt.Beam(beamSize, self.opt.cuda) for k in range(batchSize)]
         decOut = self.model.make_init_decoder_output(context)
@@ -211,21 +208,14 @@ class Translator(object):
                                        attn["std"].data[idx]):
                     active += [b]
 
-                if False:
-                    for decState in decStates:  # iterate over h, c
-                        # layers x beam*sent x dim
-                        sentStates = decState.view(-1, beamSize,
-                                                   remainingSents,
-                                                   decState.size(2))[:, :, idx]
-                        sentStates.data.copy_(
-                            sentStates.data.index_select(
-                                1, beam[b].getCurrentOrigin()))
-                else:
-                    sentStates = decStates.view(-1, beamSize,
-                                                remainingSents)[:, :, idx]
+                for decState in decStates:  # iterate over h, c
+                    # layers x beam*sent x dim
+                    sentStates = decState.view(-1, beamSize,
+                                               remainingSents,
+                                               decState.size(2))[:, :, idx]
                     sentStates.data.copy_(
-                            sentStates.data.index_select(
-                                1, beam[b].getCurrentOrigin()))
+                        sentStates.data.index_select(
+                            1, beam[b].getCurrentOrigin()))
 
             if not active:
                 break
@@ -244,11 +234,8 @@ class Translator(object):
                     len(activeIdx) // remainingSents
                 return Variable(view.index_select(1, activeIdx)
                                 .view(*newSize), volatile=True)
-            if False:
-                decStates = (updateActive(decStates[0]),
-                             updateActive(decStates[1]))
-            else:
-                decStates = updateActive(decStates, 1, -1)
+            decStates = tuple([updateActive(d) for d in decStates])
+            # #     decStates = updateActive(decStates, 1, -1)
 
             decOut = updateActive(decOut)
             context = updateActive(context)

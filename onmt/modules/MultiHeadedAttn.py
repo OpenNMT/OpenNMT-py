@@ -1,20 +1,14 @@
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
-from onmt.modules import MatrixTree
-from onmt.modules.Util import Bottle2, BottleLinear, BottleLayerNorm, \
-    BottleSoftmax
+from onmt.modules.Util import BottleLinear, BottleLayerNorm, BottleSoftmax
 import math
-
-
-class BottleStruct(Bottle2, MatrixTree):
-    pass
 
 
 class MultiHeadedAttention(nn.Module):
     ''' Multi-Head Attention module '''
 
-    def __init__(self, n_head, d_model, p=0.1, use_struct=False):
+    def __init__(self, n_head, d_model, p=0.1):
         self.d_k = d_model // n_head
 
         super(MultiHeadedAttention, self).__init__()
@@ -23,12 +17,7 @@ class MultiHeadedAttention(nn.Module):
         self.linear_values = BottleLinear(d_model, heads * self.d_k,
                                           bias=False)
         self.linear_query = BottleLinear(d_model, heads * self.d_k, bias=False)
-
-        if use_struct:
-            self.sm = BottleStruct()
-        else:
-            self.sm = BottleSoftmax()
-
+        self.sm = BottleSoftmax()
         self.activation = nn.ReLU()
         self.layer_norm = BottleLayerNorm(d_model)
         self.dropout = nn.Dropout(p)
@@ -74,22 +63,3 @@ class MultiHeadedAttention(nn.Module):
         # Residual and layer norm
         res = self.res_dropout(out) + residual
         return self.layer_norm(res), attn
-
-
-class PositionwiseFeedForward(nn.Module):
-    ''' A two-feed-forward-layer module '''
-
-    def __init__(self, d_hid, d_inner_hid, dropout=0.1):
-        super(PositionwiseFeedForward, self).__init__()
-        self.w_1 = BottleLinear(d_hid, d_inner_hid)
-        self.w_2 = BottleLinear(d_inner_hid, d_hid)
-        self.layer_norm = BottleLayerNorm(d_hid)
-        self.dropout = nn.Dropout(dropout)
-        self.relu = nn.ReLU()
-
-    def forward(self, x):
-        residual = x
-        output = self.relu(self.w_1(x))
-        output = self.w_2(output)
-        output = self.dropout(output)
-        return self.layer_norm(output + residual)

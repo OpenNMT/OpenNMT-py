@@ -1,3 +1,7 @@
+"""
+Implementation of "Attention is All You Need"
+"""
+
 import torch
 import torch.nn as nn
 import numpy as np
@@ -23,14 +27,30 @@ def get_attn_subsequent_mask(size):
     return subsequent_mask
 
 
+class PositionwiseFeedForward(nn.Module):
+    ''' A two-feed-forward-layer module '''
+    def __init__(self, d_hid, d_inner_hid, dropout=0.1):
+        super(PositionwiseFeedForward, self).__init__()
+        self.w_1 = onmt.modules.BottleLinear(d_hid, d_inner_hid)
+        self.w_2 = onmt.modules.BottleLinear(d_inner_hid, d_hid)
+        self.layer_norm = onmt.modules.BottleLayerNorm(d_hid)
+        self.dropout = nn.Dropout(dropout)
+        self.relu = nn.ReLU()
+
+    def forward(self, x):
+        residual = x
+        output = self.dropout(self.w_2(self.relu(self.w_1(x))))
+        return self.layer_norm(output + residual)
+
+
 class TransformerEncoder(nn.Module):
-    def __init__(self, hidden_size, opt, use_struct=False):
+    def __init__(self, hidden_size, opt, n_head=8, d_inner=2048):
         super(TransformerEncoder, self).__init__()
 
         self.self_attn = onmt.modules.MultiHeadedAttention(
-            8, hidden_size, p=opt.dropout, use_struct=use_struct)
+            n_head, hidden_size, p=opt.dropout)
         self.feed_forward = onmt.modules.PositionwiseFeedForward(hidden_size,
-                                                                 2048,
+                                                                 d_inner,
                                                                  opt.dropout)
 
     def forward(self, input, words):
@@ -45,14 +65,15 @@ class TransformerDecoder(nn.Module):
     """
     The Transformer Decoder from AIAYN
     """
-    def __init__(self, hidden_size, opt):
+    def __init__(self, hidden_size, opt, n_head=8, d_inner=2048):
         super(TransformerDecoder, self).__init__()
-        self.self_attn = onmt.modules.MultiHeadedAttention(8, hidden_size,
+        self.self_attn = onmt.modules.MultiHeadedAttention(n_head, hidden_size,
                                                            p=opt.dropout)
-        self.context_attn = onmt.modules.MultiHeadedAttention(8, hidden_size,
+        self.context_attn = onmt.modules.MultiHeadedAttention(n_head,
+                                                              hidden_size,
                                                               p=opt.dropout)
         self.feed_forward = onmt.modules.PositionwiseFeedForward(hidden_size,
-                                                                 2048,
+                                                                 d_inner,
                                                                  opt.dropout)
         self.dropout = opt.dropout
         self.mask = get_attn_subsequent_mask(5000).cuda()
