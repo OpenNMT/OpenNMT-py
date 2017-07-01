@@ -69,8 +69,7 @@ torch.manual_seed(opt.seed)
 def makeVocabulary(filename, size):
     "Construct the word and feature vocabs."
     vocab = onmt.Dict([onmt.Constants.PAD_WORD, onmt.Constants.UNK_WORD,
-                       onmt.Constants.BOS_WORD, onmt.Constants.EOS_WORD,
-                       onmt.Constants.COPY],
+                       onmt.Constants.BOS_WORD, onmt.Constants.EOS_WORD],
                       lower=opt.lower)
     featuresVocabs = []
     with codecs.open(filename, "r", "utf-8") as f:
@@ -83,8 +82,7 @@ def makeVocabulary(filename, size):
                     featuresVocabs.append(onmt.Dict([onmt.Constants.PAD_WORD,
                                                      onmt.Constants.UNK_WORD,
                                                      onmt.Constants.BOS_WORD,
-                                                     onmt.Constants.EOS_WORD,
-                                                     onmt.Constants.COPY]))
+                                                     onmt.Constants.EOS_WORD]))
             else:
                 assert len(featuresVocabs) == numFeatures, \
                     "all sentences must have the same number of features"
