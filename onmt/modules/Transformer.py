@@ -49,9 +49,9 @@ class TransformerEncoder(nn.Module):
 
         self.self_attn = onmt.modules.MultiHeadedAttention(
             n_head, hidden_size, p=opt.dropout)
-        self.feed_forward = onmt.modules.PositionwiseFeedForward(hidden_size,
-                                                                 d_inner,
-                                                                 opt.dropout)
+        self.feed_forward = PositionwiseFeedForward(hidden_size,
+                                                    d_inner,
+                                                    opt.dropout)
 
     def forward(self, input, words):
         mask = get_attn_padding_mask(words.transpose(0, 1),
@@ -72,9 +72,9 @@ class TransformerDecoder(nn.Module):
         self.context_attn = onmt.modules.MultiHeadedAttention(n_head,
                                                               hidden_size,
                                                               p=opt.dropout)
-        self.feed_forward = onmt.modules.PositionwiseFeedForward(hidden_size,
-                                                                 d_inner,
-                                                                 opt.dropout)
+        self.feed_forward = PositionwiseFeedForward(hidden_size,
+                                                    d_inner,
+                                                    opt.dropout)
         self.dropout = opt.dropout
         self.mask = get_attn_subsequent_mask(5000).cuda()
 

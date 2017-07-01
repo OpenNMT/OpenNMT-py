@@ -9,7 +9,6 @@ import math
 
 def make_positional_encodings(dim, max_len):
     pe = torch.FloatTensor(max_len, 1, dim).fill_(0)
-    print(pe.size())
     for i in range(dim):
         for j in range(max_len):
             k = float(j) / (10000.0 ** (2.0*i / float(dim)))
@@ -73,11 +72,11 @@ class Encoder(nn.Module):
             self.transformer = nn.ModuleList(
                 [onmt.modules.TransformerEncoder(self.hidden_size, opt)
                  for i in range(opt.layers)])
-        else:
-            self.rnn = nn.LSTM(input_size, self.hidden_size,
-                               num_layers=opt.layers,
-                               dropout=opt.dropout,
-                               bidirectional=opt.brnn)
+        
+        self.rnn = nn.LSTM(input_size, self.hidden_size,
+                           num_layers=opt.layers,
+                           dropout=opt.dropout,
+                           bidirectional=opt.brnn)
         self.word_vec_size = opt.word_vec_size
 
         # Use positional encoding.
@@ -114,8 +113,8 @@ class Encoder(nn.Module):
             emb = word
 
         if self.positional_encoding:
-            emb += Variable(self.pe[:emb.size(0), :1, :emb.size(2)]
-                            .expand_as(emb))
+            emb = emb + Variable(self.pe[:emb.size(0), :1, :emb.size(2)]
+                                 .expand_as(emb))
             emb = self.dropout(emb)
         return emb
 
@@ -214,6 +213,7 @@ class Decoder(nn.Module):
         self.decoder_layer = opt.__dict__.get("decoder_layer", "")
         self.positional_encoding = opt.__dict__.get("position_encoding", "")
         self._coverage = opt.__dict__.get("coverage_attn", False)
+        self.hidden_size = opt.rnn_size
 
         super(Decoder, self).__init__()
         self.word_lut = nn.Embedding(dicts.size(),
@@ -224,13 +224,13 @@ class Decoder(nn.Module):
             self.transformer = nn.ModuleList(
                 [onmt.modules.TransformerDecoder(self.hidden_size, opt)
                  for _ in range(opt.layers)])
-        else:
-            self.rnn = StackedLSTM(opt.layers, input_size,
-                                   opt.rnn_size, opt.dropout)
+        
+        self.rnn = StackedLSTM(opt.layers, input_size,
+                               opt.rnn_size, opt.dropout)
 
         self.dropout = nn.Dropout(opt.dropout)
         self.emb_dropout = nn.Dropout(opt.dropout)
-        self.hidden_size = opt.rnn_size
+
 
         # Std attention layer.
         self.attn = onmt.modules.GlobalAttention(opt.rnn_size, self._coverage)
@@ -271,12 +271,12 @@ class Decoder(nn.Module):
                                   and hidden is not None)
 
         if has_transformer_hidden:
-            input = torch.cat([hidden, input], 0)
+            input = torch.cat([hidden[0].squeeze(2), input], 0)
 
         emb = self.word_lut(input)
         if self.positional_encoding:
-            emb += Variable(self.pe[:emb.size(0), :1, :emb.size(2)]
-                            .expand_as(emb))
+            emb = emb + Variable(self.pe[:emb.size(0), :1, :emb.size(2)]
+                                 .expand_as(emb))
 
         # n.b. you can increase performance if you compute W_ih * x for all
         # iterations in parallel, but that's only possible if
@@ -301,8 +301,8 @@ class Decoder(nn.Module):
                                                    src[:, :, 0], input)
             outputs = output.transpose(0, 1).contiguous()
             if has_transformer_hidden:
-                outputs = outputs[hidden.size(0):]
-                attn = attn[:, hidden.size(0):].squeeze()
+                outputs = outputs[hidden[0].size(0):]
+                attn = attn[:, hidden[0].size(0):].squeeze()
                 attn = torch.stack([attn])
 
             attns["std"] = attn
@@ -375,7 +375,7 @@ class NMTModel(nn.Module):
             return h
 
     def setup_decoder(self, enc_hidden):
-        if self.decoder.opt.encoder_layer == "transformer":
+        if self.decoder.decoder_layer == "transformer":
             return None
         else:
             return (self._fix_enc_hidden(enc_hidden[0]),

@@ -220,14 +220,14 @@ class Translator(object):
             if not active:
                 break
 
-            # in this section, the sentences that are still active are
+            # In this section, the sentences that are still active are
             # compacted so that the decoder is not run on completed sentences
             activeIdx = self.tt.LongTensor([batchIdx[k] for k in active])
             batchIdx = {beam: idx for idx, beam in enumerate(active)}
 
             def updateActive(t, size=rnnSize, batchPos=-2):
-                # select only the remaining active sentences
-                view = t.data.view(-1, remainingSents, size)
+                # Select only the remaining active sentences
+                view = t.data.view(-1, remainingSents, t.size(-1))
                 newSize = list(t.size())
 
                 newSize[batchPos] = newSize[batchPos] * \
@@ -235,8 +235,6 @@ class Translator(object):
                 return Variable(view.index_select(1, activeIdx)
                                 .view(*newSize), volatile=True)
             decStates = tuple([updateActive(d) for d in decStates])
-            # #     decStates = updateActive(decStates, 1, -1)
-
             decOut = updateActive(decOut)
             context = updateActive(context)
             if useMasking:
