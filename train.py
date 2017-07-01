@@ -325,8 +325,6 @@ def trainModel(model, trainData, validData, dataset, optim):
             r = [0]
             if trunc_size:
                 r = range((batch.tgt.size(0) // trunc_size) + 1)
-
-            #fix me!
             for j in r:
                 if trunc_size:
                     if batch.tgt.size(0) - 1 <= j * trunc_size:
@@ -545,7 +543,6 @@ def main():
             lr_decay=opt.learning_rate_decay,
             start_decay_at=opt.start_decay_at,
             opt=opt
-
         )
     else:
         print('Loading optimizer from checkpoint:')
