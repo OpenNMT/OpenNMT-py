@@ -1,5 +1,6 @@
 import torch
 import codecs
+import onmt
 
 
 class Dict(object):
@@ -44,6 +45,14 @@ class Dict(object):
             return self.labelToIdx[key]
         except KeyError:
             return default
+
+    def align(self, other):
+        "Find the id of each label in other dict."
+        alignment = [onmt.Constants.PAD] * self.size()
+        for idx, label in self.idxToLabel.items():
+            if label in other.labelToIdx:
+                alignment[idx] = other.labelToIdx[label]
+        return alignment
 
     def getLabel(self, idx, default=None):
         try:

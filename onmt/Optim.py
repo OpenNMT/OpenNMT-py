@@ -13,12 +13,14 @@ class Optim(object):
         elif self.method == 'adadelta':
             self.optimizer = optim.Adadelta(self.params, lr=self.lr)
         elif self.method == 'adam':
-            self.optimizer = optim.Adam(self.params, lr=self.lr)
+            self.optimizer = optim.Adam(self.params, lr=self.lr,
+                                        betas=[0.9, 0.98], eps=1e-9)
         else:
             raise RuntimeError("Invalid optim method: " + self.method)
 
+
     def __init__(self, method, lr, max_grad_norm,
-                 lr_decay=1, start_decay_at=None):
+                 lr_decay=1, start_decay_at=None, opt=None):
         self.last_ppl = None
         self.lr = lr
         self.max_grad_norm = max_grad_norm
@@ -26,12 +28,21 @@ class Optim(object):
         self.lr_decay = lr_decay
         self.start_decay_at = start_decay_at
         self.start_decay = False
-
+        self._step = 0
+        self.opt = opt
+        
     def step(self):
         "Compute gradients norm."
+        self._step += 1
+        if self.method == 'adam':
+            def rate(a):
+                return self.opt.learning_rate*(self.opt.rnn_size**(-0.5) * min(a**(-0.5), a*self.opt.warmup_steps**(-1.5)))
+            self.lr = rate(1 + int(self._step))
+            self.optimizer.param_groups[0]['lr'] = self.lr
         if self.max_grad_norm:
             clip_grad_norm(self.params, self.max_grad_norm)
         self.optimizer.step()
+        
 
     def updateLearningRate(self, ppl, epoch):
         """

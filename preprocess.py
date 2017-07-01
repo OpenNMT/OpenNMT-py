@@ -2,17 +2,10 @@
 
 import onmt
 import onmt.Markdown
+import onmt.IO
 import argparse
 import torch
 import codecs
-
-
-def loadImageLibs():
-    "Conditional import of torch image libs."
-    global Image, transforms
-    from PIL import Image
-    from torchvision import transforms
-
 
 parser = argparse.ArgumentParser(description='preprocess.py')
 onmt.Markdown.add_md_help_argument(parser)
@@ -73,49 +66,25 @@ opt = parser.parse_args()
 torch.manual_seed(opt.seed)
 
 
-def extractFeatures(tokens):
-    "Given a list of token separate out words and features (if any)."
-    words = []
-    features = []
-    numFeatures = None
-
-    for t in range(len(tokens)):
-        field = tokens[t].split(u"￨")
-        word = field[0]
-        if len(word) > 0:
-            words.append(word)
-
-            if numFeatures is None:
-                numFeatures = len(field) - 1
-            else:
-                assert (len(field) - 1 == numFeatures), \
-                    "all words must have the same number of features"
-
-            if len(field) > 1:
-                for i in range(1, len(field)):
-                    if len(features) <= i-1:
-                        features.append([])
-                    features[i - 1].append(field[i])
-                    assert (len(features[i - 1]) == len(words))
-    return words, features, numFeatures if numFeatures else 0
-
-
 def makeVocabulary(filename, size):
     "Construct the word and feature vocabs."
     vocab = onmt.Dict([onmt.Constants.PAD_WORD, onmt.Constants.UNK_WORD,
-                       onmt.Constants.BOS_WORD, onmt.Constants.EOS_WORD],
+                       onmt.Constants.BOS_WORD, onmt.Constants.EOS_WORD,
+                       onmt.Constants.COPY],
                       lower=opt.lower)
     featuresVocabs = []
     with codecs.open(filename, "r", "utf-8") as f:
         for sent in f.readlines():
-            words, features, numFeatures = extractFeatures(sent.split())
+            words, features, numFeatures \
+                = onmt.IO.extractFeatures(sent.split())
 
             if len(featuresVocabs) == 0 and numFeatures > 0:
                 for j in range(numFeatures):
                     featuresVocabs.append(onmt.Dict([onmt.Constants.PAD_WORD,
-                                                   onmt.Constants.UNK_WORD,
-                                                   onmt.Constants.BOS_WORD,
-                                                   onmt.Constants.EOS_WORD]))
+                                                     onmt.Constants.UNK_WORD,
+                                                     onmt.Constants.BOS_WORD,
+                                                     onmt.Constants.EOS_WORD,
+                                                     onmt.Constants.COPY]))
             else:
                 assert len(featuresVocabs) == numFeatures, \
                     "all sentences must have the same number of features"
@@ -171,8 +140,9 @@ def saveFeaturesVocabularies(name, vocabs, prefix):
 def makeData(srcFile, tgtFile, srcDicts, tgtDicts,
              srcFeatureDicts, tgtFeatureDicts):
     src, tgt = [], []
-    srcFeats = [[] * len(srcFeatureDicts)]
-    tgtFeats = [[] * len(tgtFeatureDicts)]
+    srcFeats = [[] for i in range(len(srcFeatureDicts))]
+    tgtFeats = [[] for i in range(len(tgtFeatureDicts))]
+    alignments = []
     sizes = []
     count, ignored = 0, 0
 
@@ -201,43 +171,36 @@ def makeData(srcFile, tgtFile, srcDicts, tgtDicts,
             print('WARNING: ignoring an empty line ('+str(count+1)+')')
             continue
 
-        srcWords, srcFeatures, _ = extractFeatures(sline.split())
-        tgtWords, tgtFeatures, _ = extractFeatures(tline.split())
+        srcLine = sline.split()
+        tgtLine = tline.split()
 
-        if len(srcWords) <= opt.src_seq_length \
-           and len(tgtWords) <= opt.tgt_seq_length:
+        if len(srcLine) <= opt.src_seq_length \
+           and len(tgtLine) <= opt.tgt_seq_length:
 
             # Check truncation condition.
             if opt.src_seq_length_trunc != 0:
-                srcWords = srcWords[:opt.src_seq_length_trunc]
-                srcFeatures = srcFeatures[:opt.src_seq_length_trunc]
+                srcLine = srcLine[:opt.src_seq_length_trunc]
+
             if opt.tgt_seq_length_trunc != 0:
-                tgtWords = tgtWords[:opt.tgt_seq_length_trunc]
-                tgtFeatures = tgtFeatures[:opt.tgt_seq_length_trunc]
+                tgtLine = tgtLine[:opt.tgt_seq_length_trunc]
 
-            if opt.src_type == "text":
-                src += [srcDicts.convertToIdx(srcWords,
-                                              onmt.Constants.UNK_WORD)]
-                if srcFeatureDicts:
-                    for j in range(len(srcFeatureDicts)):
-                        srcFeats[j] += [srcFeatureDicts[j].
-                                        convertToIdx(srcFeatures[j],
-                                                     onmt.Constants.UNK_WORD)]
-            elif opt.src_type == "img":
-                loadImageLibs()
-                src += [transforms.ToTensor()(
-                    Image.open(opt.src_img_dir + "/" + srcWords[0]))]
+            srcWords, srcData, srcFeat \
+                = onmt.IO.readSrcLine(srcLine, srcDicts,
+                                      srcFeatureDicts,
+                                      _type=opt.src_type,
+                                      src_img_dir=opt.src_img_dir)
+            src += [srcData]
+            for i in range(len(srcFeats)):
+                srcFeats[i] += [srcFeat[i]]
 
-            sizes += [len(srcWords)]
-            tgt += [tgtDicts.convertToIdx(tgtWords,
-                                          onmt.Constants.UNK_WORD,
-                                          onmt.Constants.BOS_WORD,
-                                          onmt.Constants.EOS_WORD)]
-            if tgtFeatureDicts:
-                for j in range(len(tgtFeatureDicts)):
-                    tgtFeats[j] += [tgtFeatureDicts[j].
-                                    convertToIdx(tgtFeatures[j],
-                                                 onmt.Constants.UNK_WORD)]
+            tgtWords, tgtData, tgtFeat = onmt.IO.readTgtLine(tgtLine, tgtDicts,
+                                                             tgtFeatureDicts)
+            tgt += [tgtData]
+            for i in range(len(tgtFeats)):
+                tgtFeats[i] += [tgtFeat[i]]
+
+            alignments += [onmt.IO.align(srcWords, tgtWords)]
+            sizes += [len(srcData)]
         else:
             ignored += 1
 
@@ -254,6 +217,7 @@ def makeData(srcFile, tgtFile, srcDicts, tgtDicts,
         perm = torch.randperm(len(src))
         src = [src[idx] for idx in perm]
         tgt = [tgt[idx] for idx in perm]
+        alignments = [alignments[idx] for idx in perm]
         for j in range(len(srcFeatureDicts)):
             srcFeats[j] = [srcFeats[j][idx] for idx in perm]
         for j in range(len(tgtFeatureDicts)):
@@ -264,6 +228,7 @@ def makeData(srcFile, tgtFile, srcDicts, tgtDicts,
     _, perm = torch.sort(torch.Tensor(sizes))
     src = [src[idx] for idx in perm]
     tgt = [tgt[idx] for idx in perm]
+    alignments = [alignments[idx] for idx in perm]
     for j in range(len(srcFeatureDicts)):
         srcFeats[j] = [srcFeats[j][idx] for idx in perm]
     for j in range(len(tgtFeatureDicts)):
@@ -273,7 +238,7 @@ def makeData(srcFile, tgtFile, srcDicts, tgtDicts,
           '(%d ignored due to length == 0 or src len > %d or tgt len > %d)') %
           (len(src), ignored, opt.src_seq_length, opt.tgt_seq_length))
 
-    return src, tgt, srcFeats, tgtFeats
+    return src, tgt, srcFeats, tgtFeats, alignments
 
 
 def main():
@@ -293,13 +258,17 @@ def main():
 
     print('Preparing training ...')
     train = {}
-    train['src'], train['tgt'], train['src_features'], train['tgt_features'] \
+    train['src'], train['tgt'], \
+    train['src_features'], train['tgt_features'], \
+    train['alignments'] \
         = makeData(opt.train_src, opt.train_tgt,
                    dicts['src'], dicts['tgt'],
                    dicts['src_features'], dicts['tgt_features'])
     print('Preparing validation ...')
     valid = {}
-    valid['src'], valid['tgt'], valid['src_features'], valid['tgt_features'] \
+    valid['src'], valid['tgt'], \
+    valid['src_features'], valid['tgt_features'], \
+    valid['alignments'] \
         = makeData(opt.valid_src, opt.valid_tgt,
                    dicts['src'], dicts['tgt'],
                    dicts['src_features'], dicts['tgt_features'])
