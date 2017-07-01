@@ -111,8 +111,6 @@ class Dataset(object):
             tgtBatch = self._batchify(
                 self.tgt[index*self.batchSize:(index+1)*self.batchSize],
                 dtype="text")
-            tgt_lengths = [x.size(0)
-                           for x in self.tgt[index*self.batchSize:(index+1)*self.batchSize]]
         else:
             tgtBatch = None
 
@@ -125,7 +123,8 @@ class Dataset(object):
             alignment = torch.ByteTensor(tgt_len, batch, src_len).fill_(0)
             region = self.alignment[s:e]
             for i in range(len(region)):
-                alignment[1:region[i].size(1)+1, i, :region[i].size(0)] = region[i].t()
+                alignment[1:region[i].size(1)+1, i,
+                          :region[i].size(0)] = region[i].t()
             alignment = alignment.float()
 
             if self.cuda:
@@ -134,7 +133,8 @@ class Dataset(object):
         lengths = torch.LongTensor(lengths)
         indices = range(len(srcBatch))
         # within batch sorting by decreasing length for variable length rnns
-        lengths, perm = torch.sort(torch.LongTensor(lengths), 0, descending=True)
+        lengths, perm = torch.sort(torch.LongTensor(lengths), 0,
+                                   descending=True)
         indices = [indices[p] for p in perm]
         srcBatch = [srcBatch[p] for p in perm]
         if tgtBatch is not None:

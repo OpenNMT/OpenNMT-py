@@ -12,20 +12,20 @@ def loadImageLibs():
 
 def align(src_tokens, tgt_tokens):
     """
-    Given two sequences of tokens, return 
+    Given two sequences of tokens, return
     a mask of where there is overlap.
 
     Returns:
         mask: tgt_len x src_len
     """
     mask = torch.ByteTensor(len(src_tokens), len(tgt_tokens)).fill_(0)
-    
+
     for i in range(len(src_tokens)):
         for j in range(len(tgt_tokens)):
             if src_tokens[i] == tgt_tokens[j]:
                 mask[i][j] = 1
     return mask
-    
+
 
 def readSrcLine(src_line, src_dict, src_feature_dicts,
                 _type="text", src_img_dir=""):

@@ -76,7 +76,8 @@ parser.add_argument('-start_epoch', type=int, default=1,
                     help='The epoch from which to start')
 parser.add_argument('-param_init', type=float, default=0.1,
                     help="""Parameters are initialized over uniform distribution
-                    with support (-param_init, param_init)""")
+                    with support (-param_init, param_init).
+                    Use 0 to not use initialization""")
 parser.add_argument('-optim', default='sgd',
                     help="Optimization method. [sgd|adagrad|adadelta|adam]")
 parser.add_argument('-max_grad_norm', type=float, default=5,
@@ -86,6 +87,8 @@ parser.add_argument('-dropout', type=float, default=0.3,
                     help='Dropout probability; applied between LSTM stacks.')
 parser.add_argument('-position_encoding', action='store_true',
                     help='Use a sinusoid to mark relative words positions.')
+parser.add_argument('-share_decoder_embeddings', action='store_true',
+                    help='Share the word and softmax embeddings for decoder.')
 
 parser.add_argument('-curriculum', action="store_true",
                     help="""For this many epochs, order the minibatches based
@@ -111,11 +114,13 @@ parser.add_argument('-learning_rate_decay', type=float, default=0.5,
 parser.add_argument('-start_decay_at', type=int, default=8,
                     help="""Start decaying every epoch after and including this
                     epoch""")
-parser.add_argument('-warmup_steps', type=int, default=4000,
-                    help="""""")
 parser.add_argument('-start_checkpoint_at', type=int, default=0,
                     help="""Start checkpointing every epoch after and including this
                     epoch""")
+parser.add_argument('-decay_method', type=str, default="",
+                    help="""Use a custom learning rate decay [|noam] """)
+parser.add_argument('-warmup_steps', type=int, default=4000,
+                    help="""Number of warmup steps for custom decay.""")
 
 
 # pretrained word vectors
@@ -242,7 +247,7 @@ def memoryEfficientLoss(outputs, generator, crit, batch,
     grad_output = None if outputs.grad is None else outputs.grad.data
     grad_attns = None if not attns or attns.grad is None else attns.grad.data
     grad_coverage = None if not coverage or coverage.grad is None \
-                else coverage.grad.data
+        else coverage.grad.data
 
     return loss, grad_output, grad_attns, grad_coverage, num_correct
 
@@ -316,13 +321,11 @@ def trainModel(model, trainData, validData, dataset, optim):
 
                 # Main training loop
                 model.zero_grad()
-                # start = time.time()
                 outputs, attn, dec_hidden \
                     = model(trunc_batch,
                             dec_hidden=(h.detach()for h in dec_hidden)
                             if dec_hidden else None)
-                # print("forward", time.time() - start)
-                # start = time.time()
+
                 # Exclude <s> from targets.
                 targets = trunc_batch.tgt[1:]
                 loss, gradOutput, gradAttn, gradCov, num_correct \
@@ -335,10 +338,7 @@ def trainModel(model, trainData, validData, dataset, optim):
                 if gradCov is not None:
                     var.append(attn["coverage"])
                     grad.append(gradCov)
-                # print("mid", time.time() - start)
-                # start = time.time()
                 torch.autograd.backward(var, grad)
-                # print("backward", time.time() - start)
                 # Update the parameters.
                 optim.step()
 
@@ -386,11 +386,6 @@ def trainModel(model, trainData, validData, dataset, optim):
         print('Train accuracy: %g' % (train_acc*100))
 
         #  (2) evaluate on the validation set
-        # valid_loss, valid_acc = eval(model, criterion, trainData)
-        # valid_ppl = math.exp(min(valid_loss, 100))
-        # print('Train perplexity: %g' % valid_ppl)
-        # print('Train accuracy: %g' % (valid_acc*100))
-
         valid_loss, valid_acc = eval(model, criterion, validData)
         valid_ppl = math.exp(min(valid_loss, 100))
         print('Validation perplexity: %g' % valid_ppl)
@@ -484,8 +479,8 @@ def main():
         generator = nn.Sequential(
             nn.Linear(opt.rnn_size, dicts['tgt'].size()),
             nn.LogSoftmax())
-        # if True:
-        #     generator[0].weight = decoder.word_lut.weight
+        if opt.share_decoder_embeddings:
+            generator[0].weight = decoder.word_lut.weight
 
     model = onmt.Models.NMTModel(encoder, decoder)
 

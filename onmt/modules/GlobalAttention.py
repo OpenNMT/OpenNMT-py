@@ -52,9 +52,8 @@ class GlobalAttention(nn.Module):
         targetT = self.linear_in(input).unsqueeze(2)
 
         if coverage:
-            q = self.linear_cover(coverage.view(-1).unsqueeze(1))
-            context = context + self.linear_cover(coverage.view(-1).unsqueeze(1))\
-                                    .view_as(context)
+            context += self.linear_cover(coverage.view(-1).unsqueeze(1)) \
+                           .view_as(context)
             context = self.tanh(context)
 
         # Get attention
@@ -66,10 +65,8 @@ class GlobalAttention(nn.Module):
 
         attn = self.sm(attn)
 
-
         # Compute context.
         attn3 = attn.view(attn.size(0), 1, attn.size(1))  # batch x 1 x sourceL
-
         weightedContext = torch.bmm(attn3, context).squeeze(1)  # batch x dim
         contextCombined = torch.cat((weightedContext, input), 1)
 

@@ -5,8 +5,8 @@ import onmt.modules
 from torch.nn.utils.rnn import pad_packed_sequence as unpack
 from torch.nn.utils.rnn import pack_padded_sequence as pack
 import math
-import numpy as np
-import time
+
+
 
 def make_positional_encodings(dim, max_len):
     pe = torch.FloatTensor(max_len, 1, dim).fill_(0)
@@ -16,24 +16,6 @@ def make_positional_encodings(dim, max_len):
             k = float(j) / (10000.0 ** (2.0*i / float(dim)))
             pe[j, 0, i] = math.cos(k) if i % 2 == 1 else math.sin(k)
     return pe
-
-def get_attn_padding_mask(seq_q, seq_k):
-    ''' Indicate the padding-related part to mask '''
-    assert seq_q.dim() == 2 and seq_k.dim() == 2
-    mb_size, len_k = seq_k.size()
-    mb_size, len_q = seq_q.size()
-    pad_attn_mask = seq_k.data.eq(onmt.Constants.PAD).unsqueeze(1)   # bx1xsk
-    pad_attn_mask = pad_attn_mask.expand(mb_size, len_q, len_k) # bxsqxsk
-    return pad_attn_mask
-
-def get_attn_subsequent_mask(size):
-    ''' Get an attention mask to avoid using the subsequent info.'''
-    # assert seq.dim() == 2
-    attn_shape = (1, size, size)
-    subsequent_mask = np.triu(np.ones(attn_shape), k=1).astype('uint8')
-    subsequent_mask = torch.from_numpy(subsequent_mask)
-    return subsequent_mask
-
 
 class Encoder(nn.Module):
     """
@@ -57,7 +39,6 @@ class Encoder(nn.Module):
         # Size of the encoder RNN.
         self.hidden_size = opt.rnn_size // self.num_directions
         input_size = opt.word_vec_size
-
 
         super(Encoder, self).__init__()
         self.dropout = nn.Dropout(p=opt.dropout)
@@ -86,9 +67,8 @@ class Encoder(nn.Module):
             self.feature_luts = nn.ModuleList([])
 
         # The Encoder RNN.
-        self.encoder_layer = opt.encoder_layer if "encoder_layer" in opt else ""
-        self.positional_encoding = opt.position_encoding \
-                                   if "position_encoding" in opt else ""
+        self.encoder_layer = opt.__dict__.get("encoder_layer", "")
+        self.positional_encoding = opt.__dict__.get("position_encoding", "")
         self.rnn = nn.LSTM(input_size, self.hidden_size,
                            num_layers=opt.layers,
                            dropout=opt.dropout,
@@ -98,8 +78,9 @@ class Encoder(nn.Module):
         if self.positional_encoding:
             self.pe = make_positional_encodings(opt.word_vec_size, 5000).cuda()
         if self.encoder_layer == "transformer":
-            self.transformer = nn.ModuleList([TransformerEncoder(self.hidden_size, opt)
-                                               for i in range(opt.layers)])
+            self.transformer = nn.ModuleList(
+                [onmt.modules.TransformerEncoder(self.hidden_size, opt)
+                 for i in range(opt.layers)])
 
     def load_pretrained_vectors(self, opt):
         if opt.pre_word_vecs_enc is not None:
@@ -129,12 +110,9 @@ class Encoder(nn.Module):
         else:
             emb = word
 
-
         if self.positional_encoding:
-            # emb = emb * math.sqrt(emb.size(2))
-            # if self.encoder_layer == "transformer":
-            emb = emb + Variable(self.pe[:emb.size(0), :1, :emb.size(2)].expand_as(emb))
-            # emb = emb * math.sqrt(self.word_vec_size)
+            emb += Variable(self.pe[:emb.size(0), :1, :emb.size(2)]
+                            .expand_as(emb))
             emb = self.dropout(emb)
         return emb
 
@@ -146,7 +124,8 @@ class Encoder(nn.Module):
             hidden: Initial hidden state.
 
         Returns:
-            hidden_t (FloatTensor): Pair of layers x batch x rnn_size - final Encoder state
+            hidden_t (FloatTensor): Pair of layers x batch x rnn_size - final
+                                    Encoder state
             outputs (FloatTensor):  len x batch x rnn_size -  Memory bank
         """
         if lengths is not None:
@@ -172,7 +151,6 @@ class Encoder(nn.Module):
             for i in range(self.layers):
                 out = self.transformer[i](out, input[:, :, 0])
             return (mean, mean), out.transpose(0, 1).contiguous()
-
 
         outputs, hidden_t = self.rnn(emb, hidden)
         if lengths:
@@ -211,103 +189,6 @@ class StackedLSTM(nn.Module):
 
         return input, (h_1, c_1)
 
-
-class TransformerEncoder(nn.Module):
-    def __init__(self, hidden_size, opt, use_struct=False):
-        super(TransformerEncoder, self).__init__()
-
-        self.self_attn = onmt.modules.MultiHeadedAttention(8, hidden_size,
-                                                           p=opt.dropout,
-                                                           use_struct=use_struct)
-        self.feed_forward = onmt.modules.PositionwiseFeedForward(hidden_size, 2048,
-                                                                 opt.dropout)
-
-    def forward(self, input, words):
-        start = time.time()
-
-        mask = get_attn_padding_mask(words.transpose(0,1), words.transpose(0,1))
-        mid, _ = self.self_attn(input, input, input, mask=mask)
-        out = self.feed_forward(mid)
-        return out
-
-class TransformerDecoder(nn.Module):
-    """
-    The Transformer Decoder from AIAYN
-    """
-    def __init__(self, hidden_size, opt):
-        super(TransformerDecoder, self).__init__()
-        self.self_attn = onmt.modules.MultiHeadedAttention(8, hidden_size,
-                                                           p=opt.dropout)
-        self.context_attn = onmt.modules.MultiHeadedAttention(8, hidden_size,
-                                                              p=opt.dropout)
-        self.feed_forward = onmt.modules.PositionwiseFeedForward(hidden_size, 2048,
-                                                                 opt.dropout)
-        self.dropout = opt.dropout
-        self.mask = get_attn_subsequent_mask(5000).cuda()
-
-    def forward(self, input, context, src_words, tgt_words):
-        """
-        Args:
-            input : batch x len x hidden
-            context : batch x qlen x hidden
-        Returns:
-            output : batch x len x hidden
-            attn : batch x len x qlen
-        """
-        start = time.time()
-        attn_mask = get_attn_padding_mask(tgt_words.transpose(0,1), tgt_words.transpose(0,1))
-        # bxsqxsk
-        # sub_mask = get_attn_subsequent_mask(tgt_words.transpose(0,1))
-        # bxsqxsq
-        dec_mask = torch.gt(attn_mask + self.mask[:, :attn_mask.size(1), :attn_mask.size(1)].expand_as(attn_mask), 0)
-        # dec_mask = attn_mask
-
-        pad_mask = get_attn_padding_mask(tgt_words.transpose(0,1), src_words.transpose(0,1))
-        # bxsqxsk
-        start2 = time.time()
-        # def input_hook(grad):
-        #     print("input grad", grad[0].sum(1))
-        # input.register_hook(input_hook)
-        # input = input.fill(0)
-        # input[0, 7, :].fill(1)
-        # input = Variable(input.data, requires_grad=True)
-
-        query, attn = self.self_attn(input, input, input, mask=dec_mask)
-        # print("ATTN", " ".join(["%3f"%j for j in attn.data[0, 10]]))
-
-        # def attn_hook(grad):
-        #     print(grad.sum())
-        #     grad = grad.view(grad.size(0) // 8, 8, grad.size(1), grad.size(2))
-        #     for i in range(8):
-        #         print("GRAD",i, " ".join(["%3f"%j for j in grad.data[0, i, 10]]))
-        #         print(grad[0, i, 9].sum())
-        #     print()
-
-        # def query_hook(grad):
-        #     print("Out", "%3f" % grad.data[0, 10].sum())
-
-        # query.register_hook(query_hook)
-        # query[0, 10, 0].backward()
-        # exit()
-        # self.self_attn.register_backward_hook(
-        #     lambda _, grad_input, grad_output: print(len(grad_output)))
-        mid, attn = self.context_attn(context, context, query, mask=pad_mask)
-        # mid = query
-        output = self.feed_forward(mid)
-        # output[0, 10, 0].backward()
-        # exit()
-        # ff_out = self.layer2(F.relu(self.layer1(mid.contiguous())))
-        # output = self.norm(mid, ff_out)
-        # output[3, 7, 0].backward()
-        # print(input.grad[3, 1, 0])
-        # print(input.grad[3, 6, 0])
-        # print(input.grad[3, 7, 0])
-        # print(input.grad[3, 8, 0])
-        # exit()
-        # print("decoder2", time.time() - start2)
-        # print("decoder", time.time() - start)
-        return output, attn
-
 class Decoder(nn.Module):
     """
     Decoder + Attention recurrent neural network.
@@ -324,10 +205,8 @@ class Decoder(nn.Module):
         input_size = opt.word_vec_size
         if self.input_feed:
             input_size += opt.rnn_size
-        self.decoder_layer = opt.decoder_layer \
-                             if "decoder_layer" in opt else ""
-        self.positional_encoding = opt.position_encoding \
-                                   if "position_encoding" in opt else ""
+        self.decoder_layer = opt.__dict__.get("decoder_layer", "")
+        self.positional_encoding = opt.__dict__.get("position_encoding", "")
 
         super(Decoder, self).__init__()
         self.word_lut = nn.Embedding(dicts.size(),
@@ -339,23 +218,23 @@ class Decoder(nn.Module):
         self.emb_dropout = nn.Dropout(opt.dropout)
         self.hidden_size = opt.rnn_size
 
-        self._coverage = opt.coverage_attn if "coverage_attn" in opt else False
+        self._coverage = opt.__dict__.get("coverage_attn", False)
         # Std attention layer.
         self.attn = onmt.modules.GlobalAttention(opt.rnn_size, self._coverage)
 
         # Separate Copy Attention.
         self._copy = False
-        if opt.copy_attn if "copy_attn" in opt else False:
+        if opt.__dict__.get("copy_attn", False):
             self.copy_attn = onmt.modules.GlobalAttention(opt.rnn_size)
             self._copy = True
-
 
         if self.positional_encoding:
             self.pe = make_positional_encodings(opt.word_vec_size, 5000).cuda()
 
         if self.decoder_layer == "transformer":
-            self.transformer = nn.ModuleList([TransformerDecoder(self.hidden_size, opt)
-                                               for _ in range(opt.layers)])
+            self.transformer = nn.ModuleList(
+                [onmt.modules.TransformerDecoder(self.hidden_size, opt)
+                 for _ in range(opt.layers)])
 
     def load_pretrained_vectors(self, opt):
         if opt.pre_word_vecs_dec is not None:
@@ -368,14 +247,14 @@ class Decoder(nn.Module):
 
         Args:
             input (LongTensor):  (len x batch) -- Input tokens
-            hidden (FloatTensor): tuple (1 x batch x rnn_size) -- Init hidden state
-            context (FloatTensor):  (src_len x batch x rnn_size)  -- Memory bank
-            init_feed (FloatTensor): tuple(batch_size) (rnn_size) -- Init input feed
+            hidden: tuple (1 x batch x rnn_size) -- Init hidden state
+            context:  (src_len x batch x rnn_size)  -- Memory bank
+            init_feed: tuple(batch_size) (rnn_size) -- Init input feed
 
         Returns:
-            outputs (FloatTensor): (len x batch x rnn_size)
-            hidden_t (FloatTensor): Last hidden state tuple (1 x batch x rnn_size)
-            attns (FloatTensor): Dictionary of (src_len x batch)
+            outputs: (len x batch x rnn_size)
+            hidden_t: Last hidden state tuple (1 x batch x rnn_size)
+            attns: Dictionary of (src_len x batch)
         """
         if False:
             if self.decoder_layer == "transformer" and hidden is not None:
@@ -383,8 +262,8 @@ class Decoder(nn.Module):
 
         emb = self.word_lut(input)
         if self.positional_encoding:
-            emb = emb + Variable(self.pe[:emb.size(0), :1, :emb.size(2)].expand_as(emb))
-            # emb = emb * math.sqrt(emb.size(2))
+            emb += Variable(self.pe[:emb.size(0), :1, :emb.size(2)]
+                            .expand_as(emb))
 
         # n.b. you can increase performance if you compute W_ih * x for all
         # iterations in parallel, but that's only possible if
@@ -403,9 +282,10 @@ class Decoder(nn.Module):
             output = emb.transpose(0, 1).contiguous()
             output = self.emb_dropout(output)
 
-            src_context = context.transpose(0,1).contiguous()
+            src_context = context.transpose(0, 1).contiguous()
             for i in range(self.layers):
-                output, attn = self.transformer[i](output, src_context, src[:,:,0], input)
+                output, attn = self.transformer[i](output, src_context,
+                                                   src[:, :, 0], input)
             outputs = output.transpose(0, 1).contiguous()
 
             if False:
@@ -419,15 +299,15 @@ class Decoder(nn.Module):
                 attns["copy"] = attn
             hidden = input
         else:
-            src_context = context.transpose(0,1).contiguous()
+            src_context = context.transpose(0, 1).contiguous()
             for i, emb_t in enumerate(emb.split(1)):
                 emb_t = emb_t.squeeze(0)
                 if self.input_feed:
                     emb_t = torch.cat([emb_t, output], 1)
 
-
                 output, hidden = self.rnn(emb_t, hidden)
-                output, attn = self.attn(output, context.transpose(0, 1), coverage)
+                output, attn = self.attn(output, context.transpose(0, 1),
+                                         coverage)
 
                 if self._coverage:
                     if coverage:
@@ -439,7 +319,6 @@ class Decoder(nn.Module):
                 output = self.dropout(output)
                 outputs += [output]
                 attns["std"] += [attn]
-
 
                 # COPY
                 if self._copy:
@@ -492,14 +371,15 @@ class NMTModel(nn.Module):
         """
         Args:
             input: A `Batch` object.
-            dec_hidden (FloatTensor): tuple (1 x batch x rnn_size) -- Init hidden state
+            dec_hidden (FloatTensor): tuple (1 x batch x rnn_size)
+                                      Init hidden state
 
         Returns:
             outputs (FloatTensor): (len x batch x rnn_size) -- Decoder outputs.
             attns (FloatTensor): Dictionary of (src_len x batch)
-            dec_hidden (FloatTensor): tuple (1 x batch x rnn_size) -- Init hidden state
+            dec_hidden (FloatTensor): tuple (1 x batch x rnn_size)
+                                      Init hidden state
         """
-        start = time.time()
         src = input.src
         tgt = input.tgt[:-1]  # exclude last target from inputs
         enc_hidden, context = self.encoder(src, input.lengths)
@@ -512,5 +392,4 @@ class NMTModel(nn.Module):
                                               else dec_hidden,
                                               context,
                                               init_output)
-        # print(time.time() - start)
         return out, attns, dec_hidden

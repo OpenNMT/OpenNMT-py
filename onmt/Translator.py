@@ -184,11 +184,12 @@ class Translator(object):
                                      if not b.done]).contiguous()
 
                 attn_copy = attn["copy"].view(beamSize, remainingSents, -1) \
-                       .transpose(0, 1).contiguous()
+                                        .transpose(0, 1).contiguous()
 
                 out, c_attn_t \
-                    = self.model.generator.forward(decOut, words,
-                                                   attn_copy.view(-1, batch.src.size(0)))
+                    = self.model.generator.forward(
+                        decOut, words,
+                        attn_copy.view(-1, batch.src.size(0)))
 
                 for b in range(out.size(0)):
                     for c in range(c_attn_t.size(1)):
@@ -206,7 +207,8 @@ class Translator(object):
                     continue
 
                 idx = batchIdx[b]
-                if not beam[b].advance(wordLk.data[idx], attn["std"].data[idx]):
+                if not beam[b].advance(wordLk.data[idx],
+                                       attn["std"].data[idx]):
                     active += [b]
 
                 if False:
@@ -220,7 +222,7 @@ class Translator(object):
                                 1, beam[b].getCurrentOrigin()))
                 else:
                     sentStates = decStates.view(-1, beamSize,
-                                               remainingSents)[:, :, idx]
+                                                remainingSents)[:, :, idx]
                     sentStates.data.copy_(
                             sentStates.data.index_select(
                                 1, beam[b].getCurrentOrigin()))
@@ -239,7 +241,7 @@ class Translator(object):
                 newSize = list(t.size())
 
                 newSize[batchPos] = newSize[batchPos] * \
-                                    len(activeIdx) // remainingSents
+                    len(activeIdx) // remainingSents
                 return Variable(view.index_select(1, activeIdx)
                                 .view(*newSize), volatile=True)
             if False:
