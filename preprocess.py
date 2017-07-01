@@ -259,16 +259,16 @@ def main():
     print('Preparing training ...')
     train = {}
     train['src'], train['tgt'], \
-    train['src_features'], train['tgt_features'], \
-    train['alignments'] \
+        train['src_features'], train['tgt_features'], \
+        train['alignments'] \
         = makeData(opt.train_src, opt.train_tgt,
                    dicts['src'], dicts['tgt'],
                    dicts['src_features'], dicts['tgt_features'])
     print('Preparing validation ...')
     valid = {}
     valid['src'], valid['tgt'], \
-    valid['src_features'], valid['tgt_features'], \
-    valid['alignments'] \
+        valid['src_features'], valid['tgt_features'], \
+        valid['alignments'] \
         = makeData(opt.valid_src, opt.valid_tgt,
                    dicts['src'], dicts['tgt'],
                    dicts['src_features'], dicts['tgt_features'])

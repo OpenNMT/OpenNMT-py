@@ -56,11 +56,10 @@ parser.add_argument('-copy_attn', action="store_true",
 parser.add_argument('-coverage_attn', action="store_true",
                     help='Train a coverage attention layer.')
 parser.add_argument('-encoder_layer', type=str, default='rnn',
-                    help='Type of encoder layer to use. [rnn|mean|transformer]')
+                    help="""Type of encoder layer to use.
+                    Options: [rnn|mean|transformer]""")
 parser.add_argument('-decoder_layer', type=str, default='rnn',
                     help='Type of decoder layer to use. [rnn|transformer]')
-
-
 
 # Optimization options
 parser.add_argument('-encoder_type', default='text',
@@ -150,13 +149,14 @@ if torch.cuda.is_available() and not opt.gpus:
 
 if opt.gpus:
     cuda.set_device(opt.gpus[0])
-    
+
 if opt.log_server != "":
     from pycrayon import CrayonClient
     cc = CrayonClient(hostname=opt.log_server)
-    cc.remove_experiment(opt.experiment_name)        
+    cc.remove_experiment(opt.experiment_name)
     experiment = cc.create_experiment(opt.experiment_name)
-    
+
+
 def NMTCriterion(vocabSize):
     weight = torch.ones(vocabSize)
     weight[onmt.Constants.PAD] = 0
@@ -172,59 +172,50 @@ def memoryEfficientLoss(outputs, generator, crit, batch,
     """
     Args:
         outputs (FloatTensor): tgt_len x batch x rnn_size
-        generator (Function): ( any x rnn_size ) -> ( any x tgt_vocab ) 
-        crit (Criterion): ( any x tgt_vocab ) 
-        batch (`Batch`): Data object 
-        eval (bool): train or eval 
+        generator (Function): ( any x rnn_size ) -> ( any x tgt_vocab )
+        crit (Criterion): ( any x tgt_vocab )
+        batch (`Batch`): Data object
+        eval (bool): train or eval
         attns (FloatTensor): src_len x batch
 
     Returns:
-        loss (float): accumulated loss value 
+        loss (float): accumulated loss value
         grad_output: grad of loss wrt outputs
         grad_attns: grad of loss wrt attns
         num_correct (int): number of correct targets
-    
+
     """
     targets = batch.tgt[1:]
-    
+
     # compute generations one piece at a time
     num_correct, loss = 0, 0
 
-    start = time.time()
     # These will require gradients.
     outputs = Variable(outputs.data, requires_grad=(not eval), volatile=eval)
     batch_size = batch.batchSize
     d = {"out": outputs, "tgt": targets}
-    
+
     if attns is not None:
         attns = Variable(attns.data, requires_grad=(not eval), volatile=eval)
         d["attn"] = attns
         d["align"] = batch.alignment[1:]
-        
+
     if coverage is not None:
-        coverage = Variable(coverage.data, requires_grad=(not eval), volatile=eval)
+        coverage = Variable(coverage.data, requires_grad=(not eval),
+                            volatile=eval)
         d["coverage"] = coverage
-        
+
     for k in d:
         d[k] = torch.split(d[k], opt.max_generator_batches)
 
-    # print("prep", time.time() - start)
     for i, targ_t in enumerate(d["tgt"]):
-
         out_t = d["out"][i].view(-1, d["out"][i].size(2))
-        
-        
+
         # Depending on generator type.
         if attns is None:
-            # start = time.time()
-            # print(out_t.size())
             scores_t = generator(out_t)
-            # print("gen", time.time() - start)
-            # start = time.time()
             loss_t = crit(scores_t, targ_t.view(-1))
-            # print("crit", time.time() - start)
         else:
-            # scores_t = generator(out_t)
             attn_t = d["attn"][i]
             align_t = d["align"][i].view(-1, d["align"][i].size(2))
             words = batch.words().t().contiguous()
@@ -233,11 +224,9 @@ def memoryEfficientLoss(outputs, generator, crit, batch,
             # probability of words, probability of attn
             scores_t, c_attn_t = generator(out_t, words, attn_t)
             loss_t = crit(scores_t, c_attn_t, targ_t.view(-1), align_t)
-            # loss_t = crit(scores_t, targ_t.view(-1))
-            
+
         if coverage is not None:
             loss_t += 0.1 * torch.min(d["coverage"][i], d["attn"][i]).sum()
-        start = time.time()
 
         pred_t = scores_t.data.max(1)[1]
         num_correct_t = pred_t.eq(targ_t.data) \
@@ -246,17 +235,15 @@ def memoryEfficientLoss(outputs, generator, crit, batch,
                               .sum()
         num_correct += num_correct_t
         loss += loss_t.data[0]
-        # print("analysis", time.time() - start)
         if not eval:
-            start = time.time()
             loss_t.div(batch_size).backward()
-            # print("mid back", time.time() - start)
+
     # Return the gradients
-    start = time.time()
     grad_output = None if outputs.grad is None else outputs.grad.data
     grad_attns = None if not attns or attns.grad is None else attns.grad.data
-    grad_coverage = None if not coverage or coverage.grad is None else coverage.grad.data
-    # print("return", time.time() - start)
+    grad_coverage = None if not coverage or coverage.grad is None \
+                else coverage.grad.data
+
     return loss, grad_output, grad_attns, grad_coverage, num_correct
 
 
@@ -284,22 +271,12 @@ def eval(model, criterion, data):
 def trainModel(model, trainData, validData, dataset, optim):
     # print(model)
     model.train()
-    
-    
+
     # Define criterion of each GPU.
     if not opt.copy_attn:
         criterion = NMTCriterion(dataset['dicts']['tgt'].size())
     else:
         criterion = onmt.modules.copy_criterion
-    # valid_loss, valid_acc = eval(model, criterion, trainData)
-    # valid_ppl = math.exp(min(valid_loss, 100))
-    # print('Train perplexity: %g' % valid_ppl)
-    # print('Tarain accuracy: %g' % (valid_acc*100))
-
-    # valid_loss, valid_acc = eval(model, criterion, validData)
-    # valid_ppl = math.exp(min(valid_loss, 100))
-    # print('Validation perplexity: %g' % valid_ppl)
-    # print('Validation accuracy: %g' % (valid_acc*100))
 
     start_time = time.time()
 
@@ -348,9 +325,10 @@ def trainModel(model, trainData, validData, dataset, optim):
                 # start = time.time()
                 # Exclude <s> from targets.
                 targets = trunc_batch.tgt[1:]
-                loss, gradOutput, gradAttn, gradCov, num_correct = memoryEfficientLoss(
-                    outputs, model.generator, criterion, trunc_batch,
-                    attns=attn.get("copy"), coverage=attn.get("coverage"))
+                loss, gradOutput, gradAttn, gradCov, num_correct \
+                    = memoryEfficientLoss(
+                        outputs, model.generator, criterion, trunc_batch,
+                        attns=attn.get("copy"), coverage=attn.get("coverage"))
                 var, grad = [outputs], [gradOutput]
                 if gradAttn is not None:
                     var, grad = [outputs, attn["copy"]], [gradOutput, gradAttn]
@@ -363,7 +341,7 @@ def trainModel(model, trainData, validData, dataset, optim):
                 # print("backward", time.time() - start)
                 # Update the parameters.
                 optim.step()
-                
+
                 num_words = targets.data.ne(onmt.Constants.PAD).sum()
                 report_loss += loss
                 report_num_correct += num_correct
@@ -393,7 +371,7 @@ def trainModel(model, trainData, validData, dataset, optim):
                 sys.stdout.flush()
                 report_loss, report_tgt_words = 0, 0
                 report_src_words, report_num_correct = 0, 0
-                
+
                 start = time.time()
 
         return total_loss / total_words, total_num_correct / total_words
@@ -406,7 +384,7 @@ def trainModel(model, trainData, validData, dataset, optim):
         train_ppl = math.exp(min(train_loss, 100))
         print('Train perplexity: %g' % train_ppl)
         print('Train accuracy: %g' % (train_acc*100))
-        
+
         #  (2) evaluate on the validation set
         # valid_loss, valid_acc = eval(model, criterion, trainData)
         # valid_ppl = math.exp(min(valid_loss, 100))
@@ -424,7 +402,6 @@ def trainModel(model, trainData, validData, dataset, optim):
             experiment.add_scalar_value("valid_ppl", valid_ppl)
             experiment.add_scalar_value("valid_acc", valid_acc*100)
 
-        
         #  (3) update the learning rate
         optim.updateLearningRate(valid_ppl, epoch)
 
@@ -501,7 +478,6 @@ def main():
 
     decoder = onmt.Models.Decoder(opt, dicts['tgt'])
 
-    
     if opt.copy_attn:
         generator = onmt.modules.CopyGenerator(opt, dicts['src'], dicts['tgt'])
     else:
@@ -557,7 +533,7 @@ def main():
             lr_decay=opt.learning_rate_decay,
             start_decay_at=opt.start_decay_at,
             opt=opt
-            
+
         )
     else:
         print('Loading optimizer from checkpoint:')

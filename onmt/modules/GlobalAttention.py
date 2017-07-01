@@ -24,7 +24,7 @@ class GlobalAttention(nn.Module):
     Constructs a unit mapping.
     $$(H_1 + H_n, q) => (a)$$
     Where H is of `batch x n x dim` and q is of `batch x dim`.
-    
+
     The full def is  $$\tanh(W_2 [(softmax((W_1 q + b_1) H) H), q] + b_2)$$.:
 
     """
@@ -38,7 +38,7 @@ class GlobalAttention(nn.Module):
 
         if coverage:
             self.linear_cover = nn.Linear(1, dim, bias=False)
-        
+
     def applyMask(self, mask):
         self.mask = mask
 
@@ -49,17 +49,17 @@ class GlobalAttention(nn.Module):
         coverage (FloatTensor): batch x sourceL
         """
         # batch x dim x 1
-        targetT = self.linear_in(input).unsqueeze(2)  
+        targetT = self.linear_in(input).unsqueeze(2)
 
         if coverage:
             q = self.linear_cover(coverage.view(-1).unsqueeze(1))
             context = context + self.linear_cover(coverage.view(-1).unsqueeze(1))\
                                     .view_as(context)
             context = self.tanh(context)
-            
+
         # Get attention
         # batch x sourceL
-        attn = torch.bmm(context, targetT).squeeze(2)  
+        attn = torch.bmm(context, targetT).squeeze(2)
 
         if self.mask is not None:
             attn.data.masked_fill_(self.mask, -float('inf'))
@@ -72,7 +72,7 @@ class GlobalAttention(nn.Module):
 
         weightedContext = torch.bmm(attn3, context).squeeze(1)  # batch x dim
         contextCombined = torch.cat((weightedContext, input), 1)
-        
+
         final = self.linear_out(contextCombined)
         contextOutput = self.tanh(final)
 

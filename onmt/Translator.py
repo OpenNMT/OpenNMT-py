@@ -72,8 +72,8 @@ class Translator(object):
         tgtData = None
         for b in srcBatch:
             _, srcD, srcFeat = onmt.IO.readSrcLine(b, self.src_dict,
-                                                    self.src_feature_dicts,
-                                                    self._type)
+                                                   self.src_feature_dicts,
+                                                   self._type)
             srcData += [srcD]
             for i in range(len(srcFeats)):
                 srcFeats[i] += [srcFeat[i]]
@@ -81,7 +81,7 @@ class Translator(object):
         if goldBatch:
             for b in goldBatch:
                 _, tgtD, tgtFeat = onmt.IO.readTgtLine(b, self.src_dict,
-                                                        None, self._type)
+                                                       None, self._type)
                 tgtData += [tgtD]
 
         return onmt.Dataset(srcData, tgtData, self.opt.batch_size,
@@ -152,9 +152,7 @@ class Translator(object):
         if True:
             decStates = None
 
-
         beam = [onmt.Beam(beamSize, self.opt.cuda) for k in range(batchSize)]
-
         decOut = self.model.make_init_decoder_output(context)
         if useMasking:
             padMask = batch.src.data[:, :, 0].eq(
@@ -167,13 +165,12 @@ class Translator(object):
         for i in range(self.opt.max_sent_length):
             mask(padMask)
             # Prepare decoder input.
-            
             input = torch.stack([b.getCurrentState() for b in beam
                                  if not b.done]).t().contiguous().view(1, -1)
             decOut, decStates, attn = self.model.decoder(
-                Variable(input, volatile=True), batch.src, decStates, context, decOut)
+                Variable(input, volatile=True), batch.src,
+                decStates, context, decOut)
 
-            
             # decOut: 1 x (beam*batch) x numWords
             decOut = decOut.squeeze(0)
 
@@ -183,22 +180,23 @@ class Translator(object):
                 out = self.model.generator.forward(decOut)
             else:
                 words = batch.words().t()
-                words = torch.stack([words[i] for i, b in enumerate(beam) if not b.done]).contiguous() 
-                
+                words = torch.stack([words[i] for i, b in enumerate(beam)
+                                     if not b.done]).contiguous()
+
                 attn_copy = attn["copy"].view(beamSize, remainingSents, -1) \
                        .transpose(0, 1).contiguous()
-                            
+
                 out, c_attn_t \
                     = self.model.generator.forward(decOut, words,
                                                    attn_copy.view(-1, batch.src.size(0)))
-                
+
                 for b in range(out.size(0)):
                     for c in range(c_attn_t.size(1)):
                         v = self.align[words[0, c].data[0]]
                         if v != onmt.Constants.PAD:
                             out[b, v] += c_attn_t[b, c]
                 out = out.log()
-                
+
             # batch x beam x numWords
             wordLk = out.view(beamSize, remainingSents, -1) \
                         .transpose(0, 1).contiguous()
@@ -211,7 +209,7 @@ class Translator(object):
                 if not beam[b].advance(wordLk.data[idx], attn["std"].data[idx]):
                     active += [b]
 
-                if False: 
+                if False:
                     for decState in decStates:  # iterate over h, c
                         # layers x beam*sent x dim
                         sentStates = decState.view(-1, beamSize,
@@ -225,7 +223,7 @@ class Translator(object):
                                                remainingSents)[:, :, idx]
                     sentStates.data.copy_(
                             sentStates.data.index_select(
-                                1, beam[b].getCurrentOrigin()))                        
+                                1, beam[b].getCurrentOrigin()))
 
             if not active:
                 break
@@ -239,7 +237,9 @@ class Translator(object):
                 # select only the remaining active sentences
                 view = t.data.view(-1, remainingSents, size)
                 newSize = list(t.size())
-                newSize[batchPos] = newSize[batchPos] * len(activeIdx) // remainingSents
+
+                newSize[batchPos] = newSize[batchPos] * \
+                                    len(activeIdx) // remainingSents
                 return Variable(view.index_select(1, activeIdx)
                                 .view(*newSize), volatile=True)
             if False:
@@ -247,7 +247,7 @@ class Translator(object):
                              updateActive(decStates[1]))
             else:
                 decStates = updateActive(decStates, 1, -1)
-            
+
             decOut = updateActive(decOut)
             context = updateActive(context)
             if useMasking:

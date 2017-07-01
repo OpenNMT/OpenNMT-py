@@ -111,14 +111,12 @@ class Dataset(object):
             tgtBatch = self._batchify(
                 self.tgt[index*self.batchSize:(index+1)*self.batchSize],
                 dtype="text")
-            tgt_lengths = [x.size(0) for x in self.tgt[index*self.batchSize:(index+1)*self.batchSize]]
+            tgt_lengths = [x.size(0)
+                           for x in self.tgt[index*self.batchSize:(index+1)*self.batchSize]]
         else:
             tgtBatch = None
 
-
-
-        
-        # Create a copying alignment
+        # Create a copying alignment.
         alignment = None
         if self.alignment:
             src_len = srcBatch.size(1)
@@ -137,8 +135,6 @@ class Dataset(object):
         indices = range(len(srcBatch))
         # within batch sorting by decreasing length for variable length rnns
         lengths, perm = torch.sort(torch.LongTensor(lengths), 0, descending=True)
-
-
         indices = [indices[p] for p in perm]
         srcBatch = [srcBatch[p] for p in perm]
         if tgtBatch is not None:
@@ -146,6 +142,7 @@ class Dataset(object):
         if alignment is not None:
             alignment = alignment.transpose(0, 1)[perm.cuda()].transpose(0, 1)
             alignment = alignment.contiguous()
+
         def wrap(b, dtype="text"):
             if b is None:
                 return b
@@ -156,9 +153,8 @@ class Dataset(object):
                 b = b.cuda()
             b = Variable(b, volatile=self.volatile)
             return b
-        
 
-        # wrap lengths in a Variable to properly split it in DataParallel
+        # Wrap lengths in a Variable to properly split it in DataParallel
         lengths = lengths.view(1, -1)
         lengths = Variable(lengths, volatile=self.volatile)
 
@@ -188,7 +184,7 @@ class Batch(object):
         self.indices = indices
         self.batchSize = batchSize
         self.alignment = alignment
-            
+
     def words(self):
         return self.src[:, :, 0]
 

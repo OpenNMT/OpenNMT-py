@@ -1,11 +1,10 @@
 import torch
 import torch.nn as nn
 import torch.nn.init as init
-import onmt.modules
 import numpy as np
 from torch.autograd import Variable
-from onmt.modules import LayerNorm, DependencyTree
-from onmt.modules.Util import LayerNorm, Bottle, Bottle2, BottleLinear, BottleLayerNorm, BottleSoftmax
+from onmt.modules import DependencyTree
+from onmt.modules.Util import Bottle, Bottle2, BottleLinear, BottleLayerNorm, BottleSoftmax
 import math
 
 class BottleStruct(Bottle2, DependencyTree):
