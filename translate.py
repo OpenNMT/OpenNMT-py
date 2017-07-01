@@ -1,4 +1,5 @@
 from __future__ import division
+from builtins import bytes
 
 import onmt
 import onmt.Markdown
@@ -6,6 +7,8 @@ import onmt.IO
 import torch
 import argparse
 import math
+import codecs
+import os
 
 
 parser = argparse.ArgumentParser(description='translate.py')
@@ -74,7 +77,7 @@ def main():
 
     translator = onmt.Translator(opt)
 
-    outF = open(opt.output, 'w')
+    outF = codecs.open(opt.output, 'w', 'utf-8')
 
     predScoreTotal, predWordsTotal, goldScoreTotal, goldWordsTotal = 0, 0, 0, 0
 
@@ -82,13 +85,13 @@ def main():
 
     count = 0
 
-    tgtF = open(opt.tgt) if opt.tgt else None
+    tgtF = codecs.open(opt.tgt, 'r', 'utf-8') if opt.tgt else None
 
     if opt.dump_beam != "":
         import json
         translator.initBeamAccum()
 
-    for line in addone(open(opt.src)):
+    for line in addone(codecs.open(opt.src, 'r', 'utf-8')):
         if line is not None:
             srcTokens = line.split()
             srcBatch += [srcTokens]
@@ -121,22 +124,25 @@ def main():
                 srcSent = ' '.join(srcBatch[b])
                 if translator.tgt_dict.lower:
                     srcSent = srcSent.lower()
-                print('SENT %d: %s' % (count, srcSent))
-                print('PRED %d: %s' % (count, " ".join(predBatch[b][0])))
+                os.write(1, bytes('SENT %d: %s\n' % (count, srcSent), 'UTF-8'))
+                os.write(1, bytes('PRED %d: %s\n' %
+                                  (count, " ".join(predBatch[b][0])), 'UTF-8'))
                 print("PRED SCORE: %.4f" % predScore[b][0])
 
                 if tgtF is not None:
                     tgtSent = ' '.join(tgtBatch[b])
                     if translator.tgt_dict.lower:
                         tgtSent = tgtSent.lower()
-                    print('GOLD %d: %s ' % (count, tgtSent))
+                    os.write(1, bytes('GOLD %d: %s\n' %
+                             (count, tgtSent), 'UTF-8'))
                     print("GOLD SCORE: %.4f" % goldScore[b])
 
                 if opt.n_best > 1:
                     print('\nBEST HYP:')
                     for n in range(opt.n_best):
-                        print("[%.4f] %s" % (predScore[b][n],
-                                             " ".join(predBatch[b][n])))
+                        os.write(1, bytes("[%.4f] %s\n" % (predScore[b][n],
+                                 " ".join(predBatch[b][n])),
+                            'UTF-8'))
 
                 if opt.attn_debug:
                     print('')
@@ -157,7 +163,8 @@ def main():
         tgtF.close()
 
     if opt.dump_beam:
-        json.dump(translator.beam_accum, open(opt.dump_beam, 'w'))
+        json.dump(translator.beam_accum,
+                  codecs.open(opt.dump_beam, 'w', 'utf-8'))
 
 
 if __name__ == "__main__":
