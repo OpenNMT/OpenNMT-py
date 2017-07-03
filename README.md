@@ -24,7 +24,7 @@ The data consists of parallel source (`src`) and target (`tgt`) data containing 
 * `tgt-val.txt`
 
 Validation files are required and used to evaluate the convergence of the training. It usually contains no more than 5000 sentences.
-```
+
 
 After running the preprocessing, the following files are generated:
 
