@@ -306,9 +306,11 @@ def main():
                                                        dicts['tgt'])
 
     elif opt.src_type == 'monotext':
-        train = makeMonolingualData(opt.train, dicts['src'])
+        train['src'] = makeMonolingualData(opt.train, dicts['src'])
+        train['tgt'] = train['src']  # Keeps compatibility with bilingual code
         print('Preparing validation ...')
-        valid = makeMonolingualData(opt.valid, dicts['src'])
+        valid['src'] = makeMonolingualData(opt.valid, dicts['src'])
+        valid['tgt'] = valid['src']
 
     if opt.src_vocab is None:
         saveVocabulary('source', dicts['src'], opt.save_data + '.src.dict')

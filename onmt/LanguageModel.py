@@ -11,7 +11,42 @@ import torch.nn as nn
 import onmt
 from onmt.Models import StackedLSTM, StackedGRU
 from torch.autograd import Variable
-from train_lm import memoryEfficientLoss, MLECriterion
+
+
+def MLECriterion(vocabSize, cuda):
+    weight = torch.ones(vocabSize)
+    weight[onmt.Constants.PAD] = 0
+    crit = nn.NLLLoss(weight, size_average=False)
+    if cuda:
+        crit.cuda()
+    return crit
+
+
+def memoryEfficientLoss(outputs, targets, generator, crit,
+                        max_generator_batches=32, eval=False):
+    # compute generations one piece at a time
+    num_correct, loss = 0, 0
+    outputs = Variable(outputs.data, requires_grad=(not eval), volatile=eval)
+
+    batch_size = outputs.size(1)
+    outputs_split = torch.split(outputs, max_generator_batches)
+    targets_split = torch.split(targets, max_generator_batches)
+    for i, (out_t, targ_t) in enumerate(zip(outputs_split, targets_split)):
+        out_t = out_t.view(-1, out_t.size(2))
+        scores_t = generator(out_t)
+        loss_t = crit(scores_t, targ_t.view(-1))
+        pred_t = scores_t.max(1)[1]
+        num_correct_t = pred_t.data.eq(targ_t.data) \
+                                   .masked_select(
+                                       targ_t.ne(onmt.Constants.PAD).data) \
+                                   .sum()
+        num_correct += num_correct_t
+        loss += loss_t.data[0]
+        if not eval:
+            loss_t.div(batch_size).backward()
+
+    grad_output = None if outputs.grad is None else outputs.grad.data
+    return loss, grad_output, num_correct
 
 
 class LM(nn.Module):
@@ -56,6 +91,7 @@ class LM(nn.Module):
         return state
 
     def forward(self, input):
+        input = input[0][0][:-1]  # No EOS
         n_steps, batch_size = input.size()
         emb = self.word_lut(input)
         hidden = self.init_rnn_state(batch_size, emb.is_cuda)
@@ -113,7 +149,7 @@ class LMPredictor(object):
                                               )
                    for sent in data]
 
-        return onmt.Dataset(srcData, None, self.opt.batch_size,
+        return onmt.Dataset(srcData, srcData, self.opt.batch_size,
                             self.opt.cuda, volatile=True,
                             data_type='monotext')
 
@@ -140,12 +176,11 @@ class LMPredictor(object):
         total_loss, num_words = 0, 0
         dataset = self.buildData(data)
         for i in range(len(dataset)):
-            batch = dataset[i][:-1][0]
+            batch = dataset[i][:-1]
 
-            srcBatch = batch[0][:-1]
-            outputs = self.model(srcBatch)
+            outputs = self.model(batch)
             # Exclude <s> from targets.
-            targets = batch[0][1:]
+            targets = batch[1][1:]
 
             loss = self.eval(outputs, targets)
             total_loss += loss

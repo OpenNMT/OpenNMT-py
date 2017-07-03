@@ -172,6 +172,10 @@ class NMTModel(nn.Module):
         h_size = (batch_size, self.decoder.hidden_size)
         return Variable(context.data.new(*h_size).zero_(), requires_grad=False)
 
+    def load_pretrained_vectors(self, opt):
+        self.encoder.load_pretrained_vectors(opt)
+        self.decoder.load_pretrained_vectors(opt)
+
     def _fix_enc_hidden(self, h):
         #  the encoder hidden is  (layers*directions) x batch x dim
         #  we need to convert it to layers x batch x (directions*dim)
