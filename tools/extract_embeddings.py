@@ -4,6 +4,8 @@ import onmt
 import torch
 import argparse
 
+import onmt.Models
+
 parser = argparse.ArgumentParser(description='translate.py')
 
 parser.add_argument('-model', required=True,
