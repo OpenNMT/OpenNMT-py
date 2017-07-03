@@ -140,8 +140,9 @@ class Dataset(object):
         if tgtBatch is not None:
             tgtBatch = [tgtBatch[p] for p in perm]
         if alignment is not None:
-            alignment = alignment.transpose(0, 1)[perm.cuda()].transpose(0, 1)
-            alignment = alignment.contiguous()
+            alignment = alignment.transpose(0, 1)[
+                perm.type_as(alignment).long()]
+            alignment = alignment.transpose(0, 1).contiguous()
 
         def wrap(b, dtype="text"):
             if b is None:
