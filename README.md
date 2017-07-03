@@ -6,6 +6,21 @@ an open-source (MIT) neural machine translation system.
 
 <center style="padding: 40px"><img width="70%" src="http://opennmt.github.io/simple-attn.png" /></center>
 
+## Features
+
+The following OpenNMT features are implemented:
+
+- multi-layer bidirectional RNNs with attention and dropout
+- data preprocessing
+- saving and loading from checkpoints
+- inference (translation) with batching and beam search
+- multi-GPU
+- Context gate
+- Source word features
+- Source image processing
+- "Attention is all you need" (preliminary)
+
+
 ## Quickstart
 
 ## Step 1: Preprocess the data
@@ -118,19 +133,4 @@ The following pretrained models can be downloaded and used with translate.py (Th
 - [onmt_model_en_de_200k](https://s3.amazonaws.com/pytorch/examples/opennmt/models/onmt_model_en_de_200k-4783d9c3.pt): An English-German translation model based on the 200k sentence dataset at [OpenNMT/IntegrationTesting](https://github.com/OpenNMT/IntegrationTesting/tree/master/data). Perplexity: 21.
 - [onmt_model_en_fr_b1M](https://s3.amazonaws.com/pytorch/examples/opennmt/models/onmt_model_en_fr_b1M-261c69a7.pt): An English-French model trained on benchmark-1M. Perplexity: 4.85.
 
-## Release Notes
-
-The following OpenNMT features are implemented:
-
-- multi-layer bidirectional RNNs with attention and dropout
-- data preprocessing
-- saving and loading from checkpoints
-- inference (translation) with batching and beam search
-- multi-GPU
-- Context gate
-
-Not yet implemented:
-
-- word features
-- residual connections
 
