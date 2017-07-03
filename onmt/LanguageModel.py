@@ -56,6 +56,7 @@ class LM(nn.Module):
         return state
 
     def forward(self, input):
+        input = input[0][0][:-1]  # No EOS
         n_steps, batch_size = input.size()
         emb = self.word_lut(input)
         hidden = self.init_rnn_state(batch_size, emb.is_cuda)
@@ -113,7 +114,7 @@ class LMPredictor(object):
                                               )
                    for sent in data]
 
-        return onmt.Dataset(srcData, None, self.opt.batch_size,
+        return onmt.Dataset(srcData, srcData, self.opt.batch_size,
                             self.opt.cuda, volatile=True,
                             data_type='monotext')
 
@@ -140,12 +141,11 @@ class LMPredictor(object):
         total_loss, num_words = 0, 0
         dataset = self.buildData(data)
         for i in range(len(dataset)):
-            batch = dataset[i][:-1][0]
+            batch = dataset[i][:-1]
 
-            srcBatch = batch[0][:-1]
-            outputs = self.model(srcBatch)
+            outputs = self.model(batch)
             # Exclude <s> from targets.
-            targets = batch[0][1:]
+            targets = batch[1][1:]
 
             loss = self.eval(outputs, targets)
             total_loss += loss

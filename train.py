@@ -3,6 +3,7 @@ from __future__ import division
 import onmt
 import onmt.Markdown
 import onmt.Models
+import onmt.LanguageModel
 import onmt.modules
 import argparse
 import torch
@@ -32,6 +33,11 @@ parser.add_argument('-train_from', default='', type=str,
 
 # Model options
 
+parser.add_argument('-model_type', type=str, default='nmt',
+                    choices=['nmt', 'lm'],
+                    help="""Kind of model to train, it can be
+                     neural machine translation or language model
+                     [nmt|lm]""")
 parser.add_argument('-layers', type=int, default=2,
                     help='Number of layers in the LSTM encoder/decoder')
 parser.add_argument('-rnn_size', type=int, default=500,
@@ -113,6 +119,10 @@ parser.add_argument('-pre_word_vecs_dec',
                     help="""If a valid path is specified, then this will load
                     pretrained word embeddings on the decoder side.
                     See README for specific formatting instructions.""")
+parser.add_argument('-pre_word_vecs',
+                    help="""If a valid path is specified, then this will load
+                        pretrained word embeddings on the language model.
+                        See README for specific formatting instructions.""")
 
 # GPU
 parser.add_argument('-gpus', default=[], nargs='+', type=int,
@@ -246,7 +256,7 @@ def trainModel(model, trainData, validData, dataset, optim):
             total_num_correct += num_correct
             total_words += num_words
             if i % opt.log_interval == -1 % opt.log_interval:
-                print(("Epoch %2d, %5d/%5d; acc: %6.2f; ppl: %6.2f;" +
+                print(("Epoch %2d, %5d/%5d; acc: %6.2f; ppl: %6.2f; " +
                        "%3.0f src tok/s; %3.0f tgt tok/s; %6.0f s elapsed") %
                       (epoch, i+1, len(trainData),
                        report_num_correct / report_tgt_words * 100,
@@ -294,7 +304,7 @@ def trainModel(model, trainData, validData, dataset, optim):
             'opt': opt,
             'epoch': epoch,
             'optim': optim,
-            'type': 'nmt'
+            'type': opt.model_type
         }
         torch.save(checkpoint,
                    '%s_acc_%.2f_ppl_%.2f_e%d.pt'
@@ -305,16 +315,27 @@ def main():
     print("Loading data from '%s'" % opt.data)
 
     dataset = torch.load(opt.data)
-    assert dataset.get("type", "text") in ["bitext", "text"], \
-        "The provided dataset is not bilingual!"
+    if opt.model_type == 'nmt':
+        if dataset.get("type", "text") not in ["bitext", "text"]:
+            print("WARNING: The provided dataset is not bilingual!")
+    elif opt.model_type == 'lm':
+        if dataset.get("type", "text") != 'monotext':
+            print("WARNING: The provided dataset is not monolingual!")
+    else:
+        raise NotImplementedError('Not valid model type %s' % opt.model_type)
+
     dict_checkpoint = (opt.train_from if opt.train_from
                        else opt.train_from_state_dict)
     if dict_checkpoint:
         print('Loading dicts from checkpoint at %s' % dict_checkpoint)
         checkpoint = torch.load(dict_checkpoint)
-        assert checkpoint.get('type', None) is None or \
-            checkpoint['type'] == "nmt", \
-            "The loaded model is not neural machine translation!"
+        if opt.model_type == 'nmt':
+            assert checkpoint.get('type', None) is None or \
+                checkpoint['type'] == "nmt", \
+                "The loaded model is not neural machine translation!"
+        elif opt.model_type == 'lm':
+            assert checkpoint['type'] == "lm", \
+                "The loaded model is not a language model!"
         dataset['dicts'] = checkpoint['dicts']
 
     trainData = onmt.Dataset(dataset['train']['src'],
@@ -326,29 +347,40 @@ def main():
                              data_type=dataset.get("type", "text"))
 
     dicts = dataset['dicts']
-    print(' * vocabulary size. source = %d; target = %d' %
-          (dicts['src'].size(), dicts['tgt'].size()))
+    if dicts.get('tgt', None) is None:
+        # Makes the code compatible with the language model
+        dicts['tgt'] = dicts['src']
+    if opt.model_type == 'nmt':
+        print(' * vocabulary size. source = %d; target = %d' %
+              (dicts['src'].size(), dicts['tgt'].size()))
+    elif opt.model_type == 'lm':
+        print(' * vocabulary size = %d' %
+              (dicts['src'].size()))
     print(' * number of training sentences. %d' %
           len(dataset['train']['src']))
     print(' * maximum batch size. %d' % opt.batch_size)
 
     print('Building model...')
 
-    if opt.encoder_type == "text":
-        encoder = onmt.Models.Encoder(opt, dicts['src'])
-    elif opt.encoder_type == "img":
-        encoder = onmt.modules.ImageEncoder(opt)
-        assert("type" not in dataset or dataset["type"] == "img")
-    else:
-        print("Unsupported encoder type %s" % (opt.encoder_type))
+    if opt.model_type == 'nmt':
+        if opt.encoder_type == "text":
+            encoder = onmt.Models.Encoder(opt, dicts['src'])
+        elif opt.encoder_type == "img":
+            encoder = onmt.modules.ImageEncoder(opt)
+            assert("type" not in dataset or dataset["type"] == "img")
+        else:
+            print("Unsupported encoder type %s" % (opt.encoder_type))
 
-    decoder = onmt.Models.Decoder(opt, dicts['tgt'])
+        decoder = onmt.Models.Decoder(opt, dicts['tgt'])
+
+        model = onmt.Models.NMTModel(encoder, decoder)
+
+    elif opt.model_type == 'lm':
+        model = onmt.LanguageModel.LM(opt, dicts['src'])
 
     generator = nn.Sequential(
         nn.Linear(opt.rnn_size, dicts['tgt'].size()),
         nn.LogSoftmax())
-
-    model = onmt.Models.NMTModel(encoder, decoder)
 
     if opt.train_from:
         print('Loading model from checkpoint at %s' % opt.train_from)
@@ -384,8 +416,7 @@ def main():
         for p in model.parameters():
             p.data.uniform_(-opt.param_init, opt.param_init)
 
-        encoder.load_pretrained_vectors(opt)
-        decoder.load_pretrained_vectors(opt)
+        model.load_pretrained_vectors(opt)
 
         optim = onmt.Optim(
             opt.optim, opt.learning_rate, opt.max_grad_norm,
