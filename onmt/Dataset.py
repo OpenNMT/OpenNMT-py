@@ -25,7 +25,7 @@ class Dataset(object):
 
     def _batchify(self, data, align_right=False,
                   include_lengths=False, dtype="text"):
-        if dtype == "text":
+        if dtype in ["text", "bitext", "monotext"]:
             lengths = [x.size(0) for x in data]
             max_length = max(lengths)
             out = data[0].new(len(data), max_length).fill_(onmt.Constants.PAD)
@@ -80,7 +80,7 @@ class Dataset(object):
             if b is None:
                 return b
             b = torch.stack(b, 0)
-            if dtype == "text":
+            if dtype in ["text", "bitext", "monotext"]:
                 b = b.t().contiguous()
             if self.cuda:
                 b = b.cuda()

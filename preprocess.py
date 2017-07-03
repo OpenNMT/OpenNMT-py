@@ -18,19 +18,26 @@ onmt.Markdown.add_md_help_argument(parser)
 
 parser.add_argument('-config',    help="Read options from this file")
 
-parser.add_argument('-src_type', default="text",
-                    help="Type of the source input. Options are [text|img].")
+parser.add_argument('-src_type', default="bitext",
+                    choices=["bitext", "monotext", "img"],
+                    help="""Type of the source input.
+                         This affects all the subsequent operations
+                         Options are [bitext|monotext|img].""")
 parser.add_argument('-src_img_dir', default=".",
                     help="Location of source images")
 
 
-parser.add_argument('-train_src', required=True,
+parser.add_argument('-train',
+                    help="""Path to the monolingual training data""")
+parser.add_argument('-train_src', required=False,
                     help="Path to the training source data")
-parser.add_argument('-train_tgt', required=True,
+parser.add_argument('-train_tgt', required=False,
                     help="Path to the training target data")
-parser.add_argument('-valid_src', required=True,
+parser.add_argument('-valid',
+                    help="""Path to the monolingual validation data""")
+parser.add_argument('-valid_src', required=False,
                     help="Path to the validation source data")
-parser.add_argument('-valid_tgt', required=True,
+parser.add_argument('-valid_tgt', required=False,
                     help="Path to the validation target data")
 
 parser.add_argument('-save_data', required=True,
@@ -113,7 +120,7 @@ def saveVocabulary(name, vocab, file):
     vocab.writeFile(file)
 
 
-def makeData(srcFile, tgtFile, srcDicts, tgtDicts):
+def makeBilingualData(srcFile, tgtFile, srcDicts, tgtDicts):
     src, tgt = [], []
     sizes = []
     count, ignored = 0, 0
@@ -155,7 +162,7 @@ def makeData(srcFile, tgtFile, srcDicts, tgtDicts):
             if opt.tgt_seq_length_trunc != 0:
                 tgtWords = tgtWords[:opt.tgt_seq_length_trunc]
 
-            if opt.src_type == "text":
+            if opt.src_type == "bitext":
                 src += [srcDicts.convertToIdx(srcWords,
                                               onmt.Constants.UNK_WORD)]
             elif opt.src_type == "img":
@@ -198,30 +205,116 @@ def makeData(srcFile, tgtFile, srcDicts, tgtDicts):
     return src, tgt
 
 
+def makeMonolingualData(srcFile, srcDicts):
+    src = []
+    sizes = []
+    count, ignored = 0, 0
+
+    print('Processing %s ...' % (srcFile))
+
+    with open(srcFile) as srcF:
+        for sline in srcF:
+            sline = sline.strip()
+
+            # source and/or target are empty
+            if sline == "":
+                print('WARNING: ignoring an empty line ('+str(count+1)+')')
+                continue
+
+            srcWords = sline.split()
+
+            if len(srcWords) <= opt.src_seq_length:
+
+                # Check truncation condition.
+                if opt.src_seq_length_trunc != 0:
+                    srcWords = srcWords[:opt.src_seq_length_trunc]
+
+                src += [srcDicts.convertToIdx(srcWords,
+                                              onmt.Constants.UNK_WORD,
+                                              onmt.Constants.BOS_WORD,
+                                              onmt.Constants.EOS_WORD)]
+                sizes += [len(srcWords)]
+            else:
+                ignored += 1
+
+            count += 1
+
+            if count % opt.report_every == 0:
+                print('... %d sentences prepared' % count)
+
+    if opt.shuffle == 1:
+        print('... shuffling sentences')
+        perm = torch.randperm(len(src))
+        src = [src[idx] for idx in perm]
+        sizes = [sizes[idx] for idx in perm]
+
+    print('... sorting sentences by size')
+    _, perm = torch.sort(torch.Tensor(sizes))
+    src = [src[idx] for idx in perm]
+
+    print(('Prepared %d sentences ' +
+          '(%d ignored due to length == 0 or src len > %d)') %
+          (len(src), ignored, opt.src_seq_length))
+
+    return src
+
+
 def main():
+
+    if opt.src_type in ['bitext', 'img']:
+        assert None not in [opt.train_src, opt.train_tgt,
+                            opt.valid_src, opt.valid_tgt], \
+            "With source type %s the following parameters are" \
+            "required: -train_src, -train_tgt, " \
+            "-valid_src, -valid_tgt" % (opt.src_type)
+
+    elif opt.src_type == 'monotext':
+        assert None not in [opt.train, opt.valid], \
+            "With source type monotext the following " \
+            "parameters are required: -train, -valid"
 
     dicts = {}
     dicts['src'] = onmt.Dict()
-    if opt.src_type == "text":
+    if opt.src_type == 'bitext':
         dicts['src'] = initVocabulary('source', opt.train_src, opt.src_vocab,
                                       opt.src_vocab_size)
+        dicts['tgt'] = initVocabulary('target', opt.train_tgt, opt.tgt_vocab,
+                                      opt.tgt_vocab_size)
 
-    dicts['tgt'] = initVocabulary('target', opt.train_tgt, opt.tgt_vocab,
-                                  opt.tgt_vocab_size)
+    elif opt.src_type == 'monotext':
+        dicts['src'] = initVocabulary('source', opt.train, opt.src_vocab,
+                                      opt.src_vocab_size)
+
+    elif opt.src_type == 'img':
+        dicts['tgt'] = initVocabulary('target', opt.train_tgt, opt.tgt_vocab,
+                                      opt.tgt_vocab_size)
 
     print('Preparing training ...')
     train = {}
-    train['src'], train['tgt'] = makeData(opt.train_src, opt.train_tgt,
-                                          dicts['src'], dicts['tgt'])
-
-    print('Preparing validation ...')
     valid = {}
-    valid['src'], valid['tgt'] = makeData(opt.valid_src, opt.valid_tgt,
-                                          dicts['src'], dicts['tgt'])
+
+    if opt.src_type in ['bitext', 'img']:
+        train['src'], train['tgt'] = makeBilingualData(opt.train_src,
+                                                       opt.train_tgt,
+                                                       dicts['src'],
+                                                       dicts['tgt'])
+
+        print('Preparing validation ...')
+        valid['src'], valid['tgt'] = makeBilingualData(opt.valid_src,
+                                                       opt.valid_tgt,
+                                                       dicts['src'],
+                                                       dicts['tgt'])
+
+    elif opt.src_type == 'monotext':
+        train['src'] = makeMonolingualData(opt.train, dicts['src'])
+        train['tgt'] = train['src']  # Keeps compatibility with bilingual code
+        print('Preparing validation ...')
+        valid['src'] = makeMonolingualData(opt.valid, dicts['src'])
+        valid['tgt'] = valid['src']
 
     if opt.src_vocab is None:
         saveVocabulary('source', dicts['src'], opt.save_data + '.src.dict')
-    if opt.tgt_vocab is None:
+    if opt.src_type in ['bitext', 'img'] and opt.tgt_vocab is None:
         saveVocabulary('target', dicts['tgt'], opt.save_data + '.tgt.dict')
 
     print('Saving data to \'' + opt.save_data + '.train.pt\'...')
