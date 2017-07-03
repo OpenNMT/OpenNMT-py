@@ -1,4 +1,6 @@
 import torch
+import codecs
+import onmt
 
 
 class Dict(object):
@@ -22,7 +24,7 @@ class Dict(object):
 
     def loadFile(self, filename):
         "Load entries from a file."
-        for line in open(filename):
+        for line in codecs.open(filename, 'r', 'utf-8'):
             fields = line.split()
             label = fields[0]
             idx = int(fields[1])
@@ -30,7 +32,7 @@ class Dict(object):
 
     def writeFile(self, filename):
         "Write entries to a file."
-        with open(filename, 'w') as file:
+        with codecs.open(filename, 'w', 'utf-8') as file:
             for i in range(self.size()):
                 label = self.idxToLabel[i]
                 file.write('%s %d\n' % (label, i))
@@ -43,6 +45,14 @@ class Dict(object):
             return self.labelToIdx[key]
         except KeyError:
             return default
+
+    def align(self, other):
+        "Find the id of each label in other dict."
+        alignment = [onmt.Constants.PAD] * self.size()
+        for idx, label in self.idxToLabel.items():
+            if label in other.labelToIdx:
+                alignment[idx] = other.labelToIdx[label]
+        return alignment
 
     def getLabel(self, idx, default=None):
         try:
