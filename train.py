@@ -187,39 +187,41 @@ def eval(model, criterion, data):
     total_words = 0
     total_num_correct = 0
     model.eval()
+    mem_loss = onmt.Loss.MemoryEfficientLoss(model.generator, criterion, eval=True)
     for i in range(len(data)):
         batch = data[i]
         outputs, attn, dec_hidden = model(batch)
         # exclude <s> from targets
         targets = batch.tgt[1:]
-        loss, _, _, _, num_correct = memoryEfficientLoss(
-            outputs, model.generator, criterion, batch, eval=True,
-            attns=attn.get("copy"), coverage=attn.get("coverage"))
-        total_loss += loss
-        total_num_correct += num_correct
-        total_words += targets.data.ne(onmt.Constants.PAD).sum()
+        stats, _, _ = mem_loss.loss(batch,
+                                    outputs,
+                                    attns=attn.get("copy"),
+                                    coverage=attn.get("coverage"))
+        total_loss += stats["loss"]
+        total_num_correct += stats["num_correct"]
+        total_words += stats["num_words"] 
 
     model.train()
     return total_loss / total_words, total_num_correct / total_words
 
 
 def trainModel(model, trainData, validData, dataset, optim):
-    # print(model)
     model.train()
 
     # Define criterion of each GPU.
     if not opt.copy_attn:
-        criterion = NMTCriterion(dataset['dicts']['tgt'].size(), opt)
+        criterion = onmt.loss.NMTCriterion(dataset['dicts']['tgt'].size(), opt)
     else:
         criterion = onmt.modules.copy_criterion
 
     start_time = time.time()
 
     def trainEpoch(epoch):
-
         if opt.extra_shuffle and epoch > opt.curriculum:
             trainData.shuffle()
 
+        mem_loss = onmt.Loss.MemoryEfficientLoss(model.generator, criterion)
+            
         # Shuffle mini batch order.
         batchOrder = torch.randperm(len(trainData))
 
@@ -234,19 +236,12 @@ def trainModel(model, trainData, validData, dataset, optim):
 
             dec_hidden = None
 
-            trunc_size = opt.truncated_decoder
-            r = [0]
-            if trunc_size:
-                r = range((batch.tgt.size(0) // trunc_size) + 1)
+            trunc_size = opt.truncated_decoder if opt.truncated_decoder \
+                         else (batch.tgt.size(0) )
+            r = range(((batch.tgt.size(0) - 1e-5) // trunc_size) + 1)
             for j in r:
-                if trunc_size:
-                    if batch.tgt.size(0) - 1 <= j * trunc_size:
-                        continue
-                    trunc_batch = batch.truncate(j * trunc_size,
-                                                 (j+1) * trunc_size)
-                else:
-                    trunc_batch = batch
-
+                trunc_batch = batch.truncate(j * trunc_size,
+                                             (j+1) * trunc_size)
                 # Main training loop
                 model.zero_grad()
                 outputs, attn, dec_hidden \
@@ -255,39 +250,35 @@ def trainModel(model, trainData, validData, dataset, optim):
                             if dec_hidden else None)
 
                 # Exclude <s> from targets.
-                targets = trunc_batch.tgt[1:]
-                loss, gradOutput, gradAttn, gradCov, num_correct \
-                    = memoryEfficientLoss(
-                        outputs, model.generator, criterion, trunc_batch,
-                        attns=attn.get("copy"), coverage=attn.get("coverage"))
-                var, grad = [outputs], [gradOutput]
-                if gradAttn is not None:
-                    var, grad = [outputs, attn["copy"]], [gradOutput, gradAttn]
-                if gradCov is not None:
-                    var.append(attn["coverage"])
-                    grad.append(gradCov)
-                torch.autograd.backward(var, grad)
+                stats, inputs, grads = mem_loss.loss(trunc_batch,
+                                                     outputs, 
+                                                     attns=attn.get("copy"),
+                                                     coverage=attn.get("coverage"))
+                torch.autograd.backward(inputs, grads)
+
                 # Update the parameters.
                 optim.step()
-
-                num_words = targets.data.ne(onmt.Constants.PAD).sum()
-                report_loss += loss
-                report_num_correct += num_correct
-                report_tgt_words += num_words
-                total_loss += loss
-                total_num_correct += num_correct
-                total_words += num_words
+                report_loss += stats["loss"]
+                report_num_correct += stats["num_correct"]
+                report_tgt_words += stats["num_words"]
+                total_loss += stats["loss"]
+                total_num_correct += stats["num_correct"]
+                total_words += stats["num_words"]
             report_src_words += batch.lengths.data.sum()
 
             if i % opt.log_interval == -1 % opt.log_interval:
                 ppl = math.exp(report_loss / report_tgt_words)
                 acc = report_num_correct / report_tgt_words * 100
                 tgtper = report_tgt_words/(time.time()-start + 1e-5)
+
+                # Log to remote server.
                 if opt.log_server:
                     experiment.add_scalar_value("ppl", ppl)
                     experiment.add_scalar_value("accuracy", acc)
                     experiment.add_scalar_value("tgtper", tgtper)
                     experiment.add_scalar_value("lr", optim.lr)
+
+                    
                 print(("Epoch %2d, %5d/%5d; acc: %6.2f; ppl: %6.2f;" +
                        "%3.0f src tok/s; %3.0f tgt tok/s; %6.0f s elapsed") %
                       (epoch, i+1, len(trainData),
@@ -319,6 +310,7 @@ def trainModel(model, trainData, validData, dataset, optim):
         print('Validation perplexity: %g' % valid_ppl)
         print('Validation accuracy: %g' % (valid_acc*100))
 
+        # Log to remote server.
         if opt.log_server:
             experiment.add_scalar_value("train_ppl", train_ppl)
             experiment.add_scalar_value("train_acc", train_acc*100)
