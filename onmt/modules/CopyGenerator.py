@@ -19,7 +19,7 @@ class CopyGenerator(nn.Module):
         self.src_dict = src_dict
         self.tgt_dict = tgt_dict
 
-    def forward(self, hidden, src, attn, verbose=False):
+    def forward(self, hidden, attn, verbose=False):
         """
         Computes p(w) = p(z=1) p_{copy}(w|z=0)  +  p(z=0) * p_{softmax}(w|z=0)
 

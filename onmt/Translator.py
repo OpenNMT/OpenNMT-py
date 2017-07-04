@@ -109,7 +109,7 @@ class Translator(object):
         encStates, context = self.model.encoder(batch.src)
 
         rnnSize = context.size(2)
-        encStates = self.model.setup_decoder(encStates)
+        encStates = self.model.init_decoder_state(context, encStates)
 
         decoder = self.model.decoder
         attentionLayer = decoder.attn
@@ -130,11 +130,9 @@ class Translator(object):
         goldScores = context.data.new(batchSize).zero_()
         if batch.tgt is not None:
             decStates = encStates
-            decOut = self.model.make_init_decoder_output(context)
             mask(padMask)
-            initOutput = self.model.make_init_decoder_output(context)
             decOut, decStates, attn = self.model.decoder(
-                batch.tgt[:-1], decStates, context, initOutput)
+                batch.tgt[:-1], context, decStates)
             for dec_t, tgt_t in zip(decOut, batch.tgt[1:].data):
                 gen_t = self.model.generator.forward(dec_t)
                 tgt_t = tgt_t.unsqueeze(1)
@@ -147,12 +145,10 @@ class Translator(object):
         # Each hypothesis in the beam uses the same context
         # and initial decoder state
         context = Variable(context.data.repeat(1, beamSize, 1))
-        decStates = tuple([Variable(e.data.repeat(1, beamSize, 1))
-                           for e in encStates]) \
-            if encStates else None
-
+        decStates = encStates
+        decStates.repeatBeam_(beamSize)
         beam = [onmt.Beam(beamSize, self.opt.cuda) for k in range(batchSize)]
-        decOut = self.model.make_init_decoder_output(context)
+
         if useMasking:
             padMask = batch.src.data[:, :, 0].eq(
                 onmt.Constants.PAD).t() \
@@ -166,9 +162,9 @@ class Translator(object):
             # Prepare decoder input.
             input = torch.stack([b.getCurrentState() for b in beam
                                  if not b.done]).t().contiguous().view(1, -1)
+            print(i, input.size(), decStates.input_feed.size())
             decOut, decStates, attn = self.model.decoder(
-                Variable(input, volatile=True), batch.src,
-                decStates, context, decOut)
+                Variable(input, volatile=True), batch.src, context, decStates)
 
             # decOut: 1 x (beam*batch) x numWords
             decOut = decOut.squeeze(0)
@@ -178,6 +174,7 @@ class Translator(object):
             if not self.copy_attn or self.copy_attn == "std":
                 out = self.model.generator.forward(decOut)
             else:
+                # Copy Attention Case
                 words = batch.words().t()
                 words = torch.stack([words[i] for i, b in enumerate(beam)
                                      if not b.done]).contiguous()
@@ -187,8 +184,7 @@ class Translator(object):
 
                 out, c_attn_t \
                     = self.model.generator.forward(
-                        decOut, words,
-                        attn_copy.view(-1, batch.src.size(0)))
+                        decOut, attn_copy.view(-1, batch.src.size(0)))
 
                 for b in range(out.size(0)):
                     for c in range(c_attn_t.size(1)):
@@ -210,15 +206,9 @@ class Translator(object):
                                        attn["std"].data[idx]):
                     active += [b]
 
-                for decState in decStates:  # iterate over h, c
-                    # layers x beam*sent x dim
-                    sentStates = decState.view(-1, beamSize,
-                                               remainingSents,
-                                               decState.size(2))[:, :, idx]
-                    sentStates.data.copy_(
-                        sentStates.data.index_select(
-                            1, beam[b].getCurrentOrigin()))
-
+                # Update the RNN states.
+                decStates.beamUpdate_(idx, beam[b].getCurrentOrigin(),
+                                      beamSize)
             if not active:
                 break
 
@@ -227,17 +217,16 @@ class Translator(object):
             activeIdx = self.tt.LongTensor([batchIdx[k] for k in active])
             batchIdx = {beam: idx for idx, beam in enumerate(active)}
 
-            def updateActive(t, size=rnnSize, batchPos=-2):
+            def updateActive(t, batchPos=-2):
                 # Select only the remaining active sentences
                 view = t.data.view(-1, remainingSents, t.size(-1))
                 newSize = list(t.size())
-
                 newSize[batchPos] = newSize[batchPos] * \
                     len(activeIdx) // remainingSents
                 return Variable(view.index_select(1, activeIdx)
                                 .view(*newSize), volatile=True)
-            decStates = tuple([updateActive(d) for d in decStates])
-            decOut = updateActive(decOut)
+
+            decStates.updateActive_(activeIdx, remainingSents)
             context = updateActive(context)
             if useMasking:
                 padMask = padMask.index_select(1, activeIdx)

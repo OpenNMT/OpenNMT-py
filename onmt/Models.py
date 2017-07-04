@@ -16,7 +16,7 @@ class Embeddings(nn.Module):
             self.pe = self.make_positional_encodings(opt.word_vec_size, 5000).cuda()
 
         self.word_vec_size = opt.word_vec_size
-        
+
         super(Embeddings, self).__init__()
         self.word_lut = nn.Embedding(dicts.size(),
                                      opt.word_vec_size,
@@ -82,7 +82,7 @@ class Embeddings(nn.Module):
             emb = self.dropout(emb)
         return emb
 
-    
+
 class Encoder(nn.Module):
     """
     Encoder recurrent neural network.
@@ -107,7 +107,7 @@ class Encoder(nn.Module):
 
         super(Encoder, self).__init__()
         self.embeddings = Embeddings(opt, dicts, feature_dicts)
-        
+
         # The Encoder RNN.
         self.encoder_layer = opt.__dict__.get("encoder_layer", "")
 
@@ -134,33 +134,31 @@ class Encoder(nn.Module):
                                     Encoder state
             outputs (FloatTensor):  len x batch x rnn_size -  Memory bank
         """
-        if lengths is not None:
-            # Lengths data is wrapped inside a Variable.
-            lengths = lengths.data.view(-1).tolist()
-            pre_emb = self.embeddings(input)
-            emb = pack(pre_emb, lengths)
-        else:
-            emb = self.embeddings(input)
-            pre_emb = emb
+
+        emb = self.embeddings(input)
+        seq_len, n_batch, vec_size = emb.size()
 
         if self.encoder_layer == "mean":
-            # Take the mean of vectors.
-            mean = pre_emb.mean(0).view(1, pre_emb.size(1), pre_emb.size(2)) \
-                   .expand(self.layers, pre_emb.size(1), pre_emb.size(2))
-            return (mean, mean), pre_emb
+            # No RNN, just take mean as final state.
+            mean = emb.mean(0).unsqueeze(0) \
+                   .expand(self.layers, n_batch, vec_size)
+            return (mean, mean), emb
 
         elif self.encoder_layer == "transformer":
             # Self-attention tranformer.
-            mean = pre_emb.mean(0).view(1, pre_emb.size(1), pre_emb.size(2)) \
-                   .expand(self.layers, pre_emb.size(1), pre_emb.size(2))
-            out = pre_emb.transpose(0, 1).contiguous()
+            out = emb.transpose(0, 1).contiguous()
             for i in range(self.layers):
                 out = self.transformer[i](out, input[:, :, 0])
-            return (mean, mean), out.transpose(0, 1).contiguous()
+            return Variable(emb.data), out.transpose(0, 1).contiguous()
 
         else:
             # Standard RNN encoder.
-            outputs, hidden_t = self.rnn(emb, hidden)
+            packed_emb = emb
+            if lengths is not None:
+                # Lengths data is wrapped inside a Variable.
+                lengths = lengths.data.view(-1).tolist()
+                packed_emb = pack(emb, lengths)
+            outputs, hidden_t = self.rnn(packed_emb, hidden)
             if lengths:
                 outputs = unpack(outputs)[0]
             return hidden_t, outputs
@@ -170,7 +168,7 @@ class Decoder(nn.Module):
     """
     Decoder + Attention recurrent neural network.
     """
-    
+
     def __init__(self, opt, dicts):
         """
         Args:
@@ -178,11 +176,10 @@ class Decoder(nn.Module):
             dicts: Target `Dict` object
         """
         self.layers = opt.layers
-        self.input_feed = opt.input_feed
         self.decoder_layer = opt.__dict__.get("decoder_layer", "")
         self._coverage = opt.__dict__.get("coverage_attn", False)
         self.hidden_size = opt.rnn_size
-        
+        self.input_feed = opt.input_feed
         input_size = opt.word_vec_size
         if self.input_feed:
             input_size += opt.rnn_size
@@ -218,30 +215,26 @@ class Decoder(nn.Module):
         if opt.__dict__.get("copy_attn", False):
             self.copy_attn = onmt.modules.GlobalAttention(opt.rnn_size)
             self._copy = True
-            
-    def forward(self, input, src, hidden, context, init_feed):
+
+
+    def forward(self, input, src, context, state):
         """
         Forward through the decoder.
 
         Args:
             input (LongTensor):  (len x batch) -- Input tokens
             src (LongTensor)
-            hidden: tuple (1 x batch x rnn_size) -- Init hidden state
             context:  (src_len x batch x rnn_size)  -- Memory bank
-            init_feed: tuple(batch_size) (rnn_size) -- Init input feed
+            state: an object initializing the decoder.
 
         Returns:
             outputs: (len x batch x rnn_size)
-            hidden_t: Last hidden state tuple (1 x batch x rnn_size)
+            final_states: an object of the same form as above
             attns: Dictionary of (src_len x batch)
         """
-
-        # For transformer layers, hidden is the actual words
-        has_transformer_hidden = (self.decoder_layer == "transformer"
-                                  and hidden is not None)
-
-        if has_transformer_hidden:
-            input = torch.cat([hidden[0].squeeze(2), input], 0)
+        if self.decoder_layer == "transformer":
+            if state.previous_input:
+                input = torch.cat([state.previous_input.squeeze(2), input], 0)
 
         emb = self.embeddings(input.unsqueeze(2))
 
@@ -249,7 +242,7 @@ class Decoder(nn.Module):
         # iterations in parallel, but that's only possible if
         # self.input_feed=False
         outputs = []
-        
+
         # Setup the different types of attention.
         attns = {"std": []}
         if self._copy:
@@ -257,32 +250,32 @@ class Decoder(nn.Module):
         if self._coverage:
             attns["coverage"] = []
 
-        output = init_feed
         coverage = None
-
         if self.decoder_layer == "transformer":
-            # Tranformer Decoder. 
+            # Tranformer Decoder.
+            output = emb.transpose(0, 1).contiguous()
             src_context = context.transpose(0, 1).contiguous()
             for i in range(self.layers):
                 output, attn = self.transformer[i](output, src_context,
                                                    src[:, :, 0], input)
             outputs = output.transpose(0, 1).contiguous()
-            if has_transformer_hidden:
-                outputs = outputs[hidden[0].size(0):]
-                attn = attn[:, hidden[0].size(0):].squeeze()
+            if state.previous_input:
+                outputs = outputs[state.previous_input.size(0):]
+                attn = attn[:, state.previous_input.size(0):].squeeze()
                 attn = torch.stack([attn])
             attns["std"] = attn
             if self._copy:
                 attns["copy"] = attn
-            hidden = (input.unsqueeze(2),)
+            state = TransformerDecoderState(input.unsqueeze(2))
         else:
+            output = state.input_feed.squeeze(0)
             # Standard RNN decoder.
             for i, emb_t in enumerate(emb.split(1)):
                 emb_t = emb_t.squeeze(0)
                 if self.input_feed:
                     emb_t = torch.cat([emb_t, output], 1)
 
-                rnn_output, hidden = self.rnn(emb_t, hidden)
+                rnn_output, hidden = self.rnn(emb_t, state.hidden)
                 attn_output, attn = self.attn(rnn_output,
                                               context.transpose(0, 1))
                 if self.context_gate is not None:
@@ -306,11 +299,11 @@ class Decoder(nn.Module):
                 if self._copy:
                     _, copy_attn = self.copy_attn(output, context.t())
                     attns["copy"] += [copy_attn]
-
+            state = RNNDecoderState(hidden, output.unsqueeze(0))
             outputs = torch.stack(outputs)
             for k in attns:
                 attns[k] = torch.stack(attns[k])
-        return outputs, hidden, attns
+        return outputs, state, attns
 
 
 class NMTModel(nn.Module):
@@ -319,20 +312,20 @@ class NMTModel(nn.Module):
         self.encoder = encoder
         self.decoder = decoder
 
-    def make_init_decoder_output(self, context):
-        """
-        Constructs a vector that can be used to initialize the
-        decoder context.
+    # def make_init_decoder_output(self, context):
+    #     """
+    #     Constructs a vector that can be used to initialize the
+    #     decoder context.
 
-        Args:
-            context: FloatTensor (batch x src_len x renn_size)
+    #     Args:
+    #         context: FloatTensor (batch x src_len x renn_size)
 
-        Returns:
-            decoder_output: FloatTensor variable (batch x hidden)
-        """
-        batch_size = context.size(1)
-        h_size = (batch_size, self.decoder.hidden_size)
-        return Variable(context.data.new(*h_size).zero_(), requires_grad=False)
+    #     Returns:
+    #         decoder_output: FloatTensor variable (batch x hidden)
+    #     """
+    #     batch_size = context.size(1)
+    #     h_size = (batch_size, self.decoder.hidden_size)
+    #     return Variable(context.data.new(*h_size).zero_(), requires_grad=False)
 
     def _fix_enc_hidden(self, h):
         """
@@ -346,21 +339,22 @@ class NMTModel(nn.Module):
         else:
             return h
 
-    def setup_decoder(self, enc_hidden):
+    def init_decoder_state(self, context, enc_hidden):
         if self.decoder.decoder_layer == "transformer":
-            return None
+            return TransformerDecoderState()
         elif isinstance(enc_hidden, tuple):
-            return tuple([self._fix_enc_hidden(enc_hidden[i])
-                          for i in range(len(enc_hidden))])
+            dec = RNNDecoderState(tuple([self._fix_enc_hidden(enc_hidden[i])
+                                         for i in range(len(enc_hidden))]))
         else:
-            return self._fix_enc_hidden(enc_hidden)
+            dec = RNNDecoderState(self._fix_enc_hidden(enc_hidden))
+        dec.init_input_feed(context, self.decoder.hidden_size)
+        return dec
 
-    def forward(self, input, dec_hidden=None):
+    def forward(self, input, dec_state=None):
         """
         Args:
             input: A `Batch` object.
-            dec_hidden (FloatTensor): tuple (1 x batch x rnn_size)
-                                      Init hidden state
+            dec_state: A decoder state object
 
         Returns:
             outputs (FloatTensor): (len x batch x rnn_size) -- Decoder outputs.
@@ -371,12 +365,78 @@ class NMTModel(nn.Module):
         src = input.src
         tgt = input.tgt[:-1]  # exclude last target from inputs
         enc_hidden, context = self.encoder(src, input.lengths)
-        init_output = self.make_init_decoder_output(context)
+        enc_state = self.init_decoder_state(context, enc_hidden)
+        out, dec_state, attns = self.decoder(tgt, src, context,
+                                             enc_state if dec_state is None
+                                             else dec_state)
+        return out, attns, dec_state
 
-        enc_hidden = self.setup_decoder(enc_hidden)
-        out, dec_hidden, attns = self.decoder(tgt, src,
-                                              enc_hidden if dec_hidden is None
-                                              else dec_hidden,
-                                              context,
-                                              init_output)
-        return out, attns, dec_hidden
+
+
+class DecoderState(object):
+    def detach(self):
+        for h in self.all:
+            h.detach()
+
+    def repeatBeam_(self, beamSize):
+        self._resetAll([Variable(e.data.repeat(1, beamSize, 1))
+                        for e in self.all])
+        
+    def beamUpdate_(self, idx, positions, beamSize):        
+        for e in self.all:
+            a, br, d = e.size()
+            sentStates = e.view(a, beamSize, br // beamSize, d)[:, :, idx]
+            sentStates.data.copy_(
+                sentStates.data.index_select(1, positions))
+
+    def updateActive_(self, activeIdx, remainingSents):
+        out = []
+        for e in self.all:
+            view = e.data.view(-1, remainingSents, e.size(-1))
+            newSize = list(e.size())
+            newSize[-2] = newSize[-2] * len(activeIdx) // remainingSents
+            out.append(view.index_select(1, activeIdx).view(*newSize))
+        self._resetAll(out)
+
+
+class RNNDecoderState(DecoderState):
+    def __init__(self, rnnstate, input_feed=None):
+        # all objects are X x batch x dim
+        # or X x (beam * sent) for beam search
+        
+        if not isinstance(rnnstate, tuple):
+            self.hidden = (rnnstate,)
+        else:
+            self.hidden = rnnstate
+        self.input_feed = input_feed
+        self.all = self.hidden + (self.input_feed,)
+        
+    def init_input_feed(self, context, rnn_size):
+        batch_size = context.size(1)
+        h_size = (batch_size, rnn_size)
+        self.input_feed = Variable(context.data.new(*h_size).zero_(),
+                                   requires_grad=False).unsqueeze(0)
+
+        self.all = self.hidden + (self.input_feed,)
+        
+    def _resetAll(self, all):
+        vars = [Variable(a.data, volatile=True) for a in all]
+        self.hidden = tuple(vars[:-1])
+        self.input_feed = vars[-1]
+        self.all = self.hidden + (self.input_feed,)
+
+
+
+        
+class TransformerDecoderState(DecoderState):
+    def __init__(self, input=None):
+        # all objects are X x batch x dim
+        # or X x (beam * sent) for beam search
+
+        self.previous_input = input
+        self.all = (self.previous_input,)
+        
+    def _resetAll(self, all):
+        vars = [Variable(a.data, volatile=True) for a in all]
+        self.previous_input = vars[0]
+        self.all = (self.previous_input,)

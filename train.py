@@ -9,9 +9,6 @@ import torch
 import torch.nn as nn
 from torch import cuda
 
-import math
-import time
-import sys
 parser = argparse.ArgumentParser(description='train.py')
 onmt.Markdown.add_md_help_argument(parser)
 
@@ -188,7 +185,7 @@ def eval(model, criterion, data):
     stats = onmt.Loss.Statistics()
     model.eval()
     loss = onmt.Loss.MemoryEfficientLoss(opt, model.generator, criterion,
-                                         eval=True)
+                                         eval=True, copy_loss=opt.copy_attn)
     for i in range(len(data)):
         batch = data[i]
         outputs, attn, dec_hidden = model(batch)
@@ -206,12 +203,14 @@ def trainModel(model, trainData, validData, dataset, optim):
         criterion = onmt.Loss.NMTCriterion(dataset['dicts']['tgt'].size(), opt)
     else:
         criterion = onmt.modules.CopyCriterion
-
+        
     def trainEpoch(epoch):
         if opt.extra_shuffle and epoch > opt.curriculum:
             trainData.shuffle()
 
-        mem_loss = onmt.Loss.MemoryEfficientLoss(opt, model.generator, criterion)
+        mem_loss = onmt.Loss.MemoryEfficientLoss(opt, model.generator,
+                                                 criterion,
+                                                 copy_loss=opt.copy_attn)
             
         # Shuffle mini batch order.
         batchOrder = torch.randperm(len(trainData))
@@ -233,22 +232,22 @@ def trainModel(model, trainData, validData, dataset, optim):
                 
                 # Main training loop
                 model.zero_grad()
-                outputs, attn, dec_hidden = model(trunc_batch, dec_hidden)
-                if dec_hidden is not None:
-                    dec_hidden = (h.detach() for h in dec_hidden)
-                
+                outputs, attn, dec_state = model(trunc_batch, dec_hidden)
                 batch_stats, inputs, grads \
                     = mem_loss.loss(trunc_batch, outputs, attn)
+                
                 torch.autograd.backward(inputs, grads)
 
                 # Update the parameters.
                 optim.step()
                 total_stats.update(batch_stats)
                 report_stats.update(batch_stats)
+                dec_state.detach()
+                
             report_stats.n_src_words += batch.lengths.data.sum()
             
             if i % opt.log_interval == -1 % opt.log_interval:
-                report_stats.output(epoch, i+1, len(train_data))
+                report_stats.output(epoch, i+1, len(trainData))
                 if opt.log_server:
                     report_stats.log("progress", experiment, optim)
                 report_stats = onmt.Loss.Statistics()

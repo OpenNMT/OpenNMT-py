@@ -35,10 +35,14 @@ class LayerNorm(nn.Module):
     def forward(self, z):
         if z.size(1) == 1:
             return z
-        mu = torch.mean(z, dim=1).unsqueeze(1)
-        sigma = torch.std(z, dim=1).unsqueeze(1)
+        mu = torch.mean(z, dim=1)
+        sigma = torch.std(z, dim=1)
+        # HACK. PyTorch is changing behavior 
+        if mu.dim() == 1:
+            mu = mu.unsqueeze(1)
+            sigma = sigma.unsqueeze(1)
         ln_out = (z - mu.expand_as(z)) / (sigma.expand_as(z) + self.eps)
-        ln_out = ln_out * self.a_2.expand_as(ln_out) \
+        ln_out = ln_out.mul(self.a_2.expand_as(ln_out)) \
             + self.b_2.expand_as(ln_out)
         return ln_out
 
