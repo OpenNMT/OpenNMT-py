@@ -13,7 +13,8 @@ class Embeddings(nn.Module):
     def __init__(self, opt, dicts, feature_dicts=None):
         self.positional_encoding = opt.__dict__.get("position_encoding", "")
         if self.positional_encoding:
-            self.pe = self.make_positional_encodings(opt.word_vec_size, 5000).cuda()
+            self.pe = self.make_positional_encodings(opt.word_vec_size, 5000) \
+                          .cuda()
 
         self.word_vec_size = opt.word_vec_size
 
@@ -208,14 +209,14 @@ class Decoder(nn.Module):
         self.dropout = nn.Dropout(opt.dropout)
 
         # Std attention layer.
-        self.attn = onmt.modules.GlobalAttention(opt.rnn_size, self._coverage)
+        self.attn = onmt.modules.GlobalAttention(opt.rnn_size,
+                                                 self._coverage)
 
         # Separate Copy Attention.
         self._copy = False
         if opt.__dict__.get("copy_attn", False):
             self.copy_attn = onmt.modules.GlobalAttention(opt.rnn_size)
             self._copy = True
-
 
     def forward(self, input, src, context, state):
         """
@@ -312,21 +313,6 @@ class NMTModel(nn.Module):
         self.encoder = encoder
         self.decoder = decoder
 
-    # def make_init_decoder_output(self, context):
-    #     """
-    #     Constructs a vector that can be used to initialize the
-    #     decoder context.
-
-    #     Args:
-    #         context: FloatTensor (batch x src_len x renn_size)
-
-    #     Returns:
-    #         decoder_output: FloatTensor variable (batch x hidden)
-    #     """
-    #     batch_size = context.size(1)
-    #     h_size = (batch_size, self.decoder.hidden_size)
-    #     return Variable(context.data.new(*h_size).zero_(), requires_grad=False)
-
     def _fix_enc_hidden(self, h):
         """
         The encoder hidden is  (layers*directions) x batch x dim
@@ -389,16 +375,7 @@ class DecoderState(object):
             sentStates.data.copy_(
                 sentStates.data.index_select(1, positions))
 
-    def updateActive_(self, activeIdx, remainingSents):
-        out = []
-        for e in self.all:
-            view = e.data.view(-1, remainingSents, e.size(-1))
-            newSize = list(e.size())
-            newSize[-2] = newSize[-2] * len(activeIdx) // remainingSents
-            out.append(view.index_select(1, activeIdx).view(*newSize))
-        self._resetAll(out)
-
-
+            
 class RNNDecoderState(DecoderState):
     def __init__(self, rnnstate, input_feed=None):
         # all objects are X x batch x dim
@@ -420,12 +397,11 @@ class RNNDecoderState(DecoderState):
         self.all = self.hidden + (self.input_feed,)
         
     def _resetAll(self, all):
-        vars = [Variable(a.data if isinstance(a, Variable) else a, volatile=True) for a in all]
+        vars = [Variable(a.data if isinstance(a, Variable) else a,
+                         volatile=True) for a in all]
         self.hidden = tuple(vars[:-1])
         self.input_feed = vars[-1]
         self.all = self.hidden + (self.input_feed,)
-
-
 
         
 class TransformerDecoderState(DecoderState):
@@ -437,7 +413,8 @@ class TransformerDecoderState(DecoderState):
         self.all = (self.previous_input,)
         
     def _resetAll(self, all):
-        vars = [(Variable(a.data if isinstance(a, Variable) else a, volatile=True)) 
+        vars = [(Variable(a.data if isinstance(a, Variable) else a,
+                          volatile=True)) 
                 for a in all]
         self.previous_input = vars[0]
         self.all = (self.previous_input,)
