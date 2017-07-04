@@ -170,11 +170,11 @@ if opt.gpus:
         torch.cuda.manual_seed(opt.seed)
 
 
-# Set up the Crayon logging server. 
+# Set up the Crayon logging server.
 if opt.log_server != "":
     from pycrayon import CrayonClient
     cc = CrayonClient(hostname=opt.log_server)
-    
+
     experiments = cc.get_experiment_names()
     print(experiments)
     if opt.experiment_name in experiments:
@@ -204,7 +204,7 @@ def trainModel(model, trainData, validData, dataset, optim):
         criterion = onmt.Loss.NMTCriterion(dataset['dicts']['tgt'].size(), opt)
     else:
         criterion = onmt.modules.CopyCriterion
-        
+
     def trainEpoch(epoch):
         if opt.extra_shuffle and epoch > opt.curriculum:
             trainData.shuffle()
@@ -212,31 +212,31 @@ def trainModel(model, trainData, validData, dataset, optim):
         mem_loss = onmt.Loss.MemoryEfficientLoss(opt, model.generator,
                                                  criterion,
                                                  copy_loss=opt.copy_attn)
-            
+
         # Shuffle mini batch order.
         batchOrder = torch.randperm(len(trainData))
 
         total_stats = onmt.Loss.Statistics()
         report_stats = onmt.Loss.Statistics()
-        
+
         for i in range(len(trainData)):
             batchIdx = batchOrder[i] if epoch > opt.curriculum else i
             batch = trainData[batchIdx]
             target_size = batch.tgt.size(0)
-            
+
             dec_hidden = None
             trunc_size = opt.truncated_decoder if opt.truncated_decoder \
                 else target_size
 
             for j in range(0, target_size, trunc_size):
                 trunc_batch = batch.truncate(j, j + trunc_size)
-                
+
                 # Main training loop
                 model.zero_grad()
                 outputs, attn, dec_state = model(trunc_batch, dec_hidden)
                 batch_stats, inputs, grads \
                     = mem_loss.loss(trunc_batch, outputs, attn)
-                
+
                 torch.autograd.backward(inputs, grads)
 
                 # Update the parameters.
@@ -244,9 +244,9 @@ def trainModel(model, trainData, validData, dataset, optim):
                 total_stats.update(batch_stats)
                 report_stats.update(batch_stats)
                 dec_state.detach()
-                
+
             report_stats.n_src_words += batch.lengths.data.sum()
-            
+
             if i % opt.log_interval == -1 % opt.log_interval:
                 report_stats.output(epoch, i+1, len(trainData))
                 if opt.log_server:
@@ -269,7 +269,7 @@ def trainModel(model, trainData, validData, dataset, optim):
         print('Validation accuracy: %g' % valid_stats.accuracy())
 
         # Log to remote server.
-        if opt.log_server:            
+        if opt.log_server:
             train_stats.log("train", optim, experiment)
             valid_stats.log("valid", optim, experiment)
 

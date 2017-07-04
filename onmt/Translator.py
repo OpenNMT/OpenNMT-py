@@ -118,6 +118,7 @@ class Translator(object):
         padMask = None
         if useMasking:
             padMask = batch.words().data.eq(onmt.Constants.PAD).t()
+
         def mask(padMask):
             if useMasking:
                 attentionLayer.applyMask(padMask)
@@ -151,7 +152,7 @@ class Translator(object):
                                    .unsqueeze(0) \
                                    .repeat(beamSize, 1, 1)
 
-        #  (3b) The main loop        
+        #  (3b) The main loop
         for i in range(self.opt.max_sent_length):
             # (a) Run RNN decoder forward one step.
             mask(padMask)
@@ -179,7 +180,7 @@ class Translator(object):
                 out, c_attn_t \
                     = self.model.generator.forward(
                         decOut, attn_copy.view(-1, batch.src.size(0)))
-                
+
                 for b in range(out.size(0)):
                     for c in range(c_attn_t.size(1)):
                         v = self.align[words[0, c].data[0]]

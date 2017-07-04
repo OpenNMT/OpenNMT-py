@@ -11,7 +11,7 @@ import math
 
 class Embeddings(nn.Module):
     def __init__(self, opt, dicts, feature_dicts=None):
-        self.positional_encoding = opt.__dict__.get("position_encoding", "")
+        self.positional_encoding = opt.position_encoding
         if self.positional_encoding:
             self.pe = self.make_positional_encodings(opt.word_vec_size, 5000) \
                           .cuda()
@@ -110,7 +110,7 @@ class Encoder(nn.Module):
         self.embeddings = Embeddings(opt, dicts, feature_dicts)
 
         # The Encoder RNN.
-        self.encoder_layer = opt.__dict__.get("encoder_layer", "")
+        self.encoder_layer = opt.encoder_layer
 
         if self.encoder_layer == "transformer":
             self.transformer = nn.ModuleList(
@@ -151,7 +151,6 @@ class Encoder(nn.Module):
             for i in range(self.layers):
                 out = self.transformer[i](out, input[:, :, 0])
             return Variable(emb.data), out.transpose(0, 1).contiguous()
-
         else:
             # Standard RNN encoder.
             packed_emb = emb
@@ -177,8 +176,8 @@ class Decoder(nn.Module):
             dicts: Target `Dict` object
         """
         self.layers = opt.layers
-        self.decoder_layer = opt.__dict__.get("decoder_layer", "")
-        self._coverage = opt.__dict__.get("coverage_attn", False)
+        self.decoder_layer = opt.decoder_layer
+        self._coverage = opt.coverage_attn
         self.hidden_size = opt.rnn_size
         self.input_feed = opt.input_feed
         input_size = opt.word_vec_size
@@ -214,7 +213,7 @@ class Decoder(nn.Module):
 
         # Separate Copy Attention.
         self._copy = False
-        if opt.__dict__.get("copy_attn", False):
+        if opt.copy_attn:
             self.copy_attn = onmt.modules.GlobalAttention(opt.rnn_size)
             self._copy = True
 
@@ -251,7 +250,6 @@ class Decoder(nn.Module):
         if self._coverage:
             attns["coverage"] = []
 
-        coverage = None
         if self.decoder_layer == "transformer":
             # Tranformer Decoder.
             output = emb.transpose(0, 1).contiguous()
@@ -270,6 +268,8 @@ class Decoder(nn.Module):
             state = TransformerDecoderState(input.unsqueeze(2))
         else:
             output = state.input_feed.squeeze(0)
+            coverage = state.coverage.squeeze(0) \
+                if state.coverage is not None else None
             # Standard RNN decoder.
             for i, emb_t in enumerate(emb.split(1)):
                 emb_t = emb_t.squeeze(0)
@@ -287,20 +287,19 @@ class Decoder(nn.Module):
                 else:
                     output = self.dropout(attn_output)
                 outputs += [output]
-
-                if self._coverage:
-                    if coverage:
-                        coverage = coverage + attn
-                    else:
-                        coverage = attn
-                    attns["coverage"] += [coverage]
                 attns["std"] += [attn]
+
+                # COVERAGE
+                if self._coverage:
+                    coverage = (coverage + attn) if coverage else attn
+                    attns["coverage"] += [coverage]
 
                 # COPY
                 if self._copy:
                     _, copy_attn = self.copy_attn(output, context.t())
                     attns["copy"] += [copy_attn]
-            state = RNNDecoderState(hidden, output.unsqueeze(0))
+            state = RNNDecoderState(hidden, output.unsqueeze(0),
+                                    coverage.unsqueeze(0))
             outputs = torch.stack(outputs)
             for k in attns:
                 attns[k] = torch.stack(attns[k])
@@ -358,7 +357,6 @@ class NMTModel(nn.Module):
         return out, attns, dec_state
 
 
-
 class DecoderState(object):
     def detach(self):
         for h in self.all:
@@ -367,27 +365,28 @@ class DecoderState(object):
     def repeatBeam_(self, beamSize):
         self._resetAll([Variable(e.data.repeat(1, beamSize, 1))
                         for e in self.all])
-        
-    def beamUpdate_(self, idx, positions, beamSize):        
+
+    def beamUpdate_(self, idx, positions, beamSize):
         for e in self.all:
             a, br, d = e.size()
             sentStates = e.view(a, beamSize, br // beamSize, d)[:, :, idx]
             sentStates.data.copy_(
                 sentStates.data.index_select(1, positions))
 
-            
+
 class RNNDecoderState(DecoderState):
-    def __init__(self, rnnstate, input_feed=None):
+    def __init__(self, rnnstate, input_feed=None, coverage=None):
         # all objects are X x batch x dim
         # or X x (beam * sent) for beam search
-        
+
         if not isinstance(rnnstate, tuple):
             self.hidden = (rnnstate,)
         else:
             self.hidden = rnnstate
         self.input_feed = input_feed
+        self.coverage = coverage
         self.all = self.hidden + (self.input_feed,)
-        
+
     def init_input_feed(self, context, rnn_size):
         batch_size = context.size(1)
         h_size = (batch_size, rnn_size)
@@ -395,7 +394,7 @@ class RNNDecoderState(DecoderState):
                                    requires_grad=False).unsqueeze(0)
 
         self.all = self.hidden + (self.input_feed,)
-        
+
     def _resetAll(self, all):
         vars = [Variable(a.data if isinstance(a, Variable) else a,
                          volatile=True) for a in all]
@@ -403,7 +402,7 @@ class RNNDecoderState(DecoderState):
         self.input_feed = vars[-1]
         self.all = self.hidden + (self.input_feed,)
 
-        
+
 class TransformerDecoderState(DecoderState):
     def __init__(self, input=None):
         # all objects are X x batch x dim
@@ -411,10 +410,10 @@ class TransformerDecoderState(DecoderState):
 
         self.previous_input = input
         self.all = (self.previous_input,)
-        
+
     def _resetAll(self, all):
         vars = [(Variable(a.data if isinstance(a, Variable) else a,
-                          volatile=True)) 
+                          volatile=True))
                 for a in all]
         self.previous_input = vars[0]
         self.all = (self.previous_input,)

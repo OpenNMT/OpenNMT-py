@@ -11,7 +11,7 @@ class MultiHeadedAttention(nn.Module):
     def __init__(self, n_head, d_model, p=0.1):
         self.d_k = d_model // n_head
         self.d_model = d_model
-        
+
         super(MultiHeadedAttention, self).__init__()
         heads = self.heads = n_head
 
@@ -34,7 +34,7 @@ class MultiHeadedAttention(nn.Module):
         assert batch == batch3
         assert t_len == t_len2
         assert d == self.d_model
-        
+
         def shape_projection(x):
             b, l, d = x.size()
             return x.view(b, l, self.heads, self.d_k).transpose(1, 2) \
@@ -45,7 +45,7 @@ class MultiHeadedAttention(nn.Module):
             return x.view(b, self.heads, l, self.d_k) \
                     .transpose(1, 2).contiguous() \
                     .view(b, l, self.heads * self.d_k)
-            
+
         residual = query
         key_up = shape_projection(self.linear_keys(key))
         value_up = shape_projection(self.linear_values(value))
@@ -56,13 +56,13 @@ class MultiHeadedAttention(nn.Module):
 
         if mask is not None:
             bh, l, d_k = scaled.size()
-            b = bh // self.heads            
+            b = bh // self.heads
             scaled = scaled.view(b, self.heads, l, d_k)
             mask = mask.unsqueeze(1).expand_as(scaled)
             scaled = scaled.masked_fill(Variable(mask), -float('inf')) \
                            .view(bh, l, d_k)
         attn = self.dropout(self.sm(scaled))
-        
+
         # values : (batch * 8) x qlen x dim
         out = unshape_projection(torch.bmm(attn, value_up), residual)
 

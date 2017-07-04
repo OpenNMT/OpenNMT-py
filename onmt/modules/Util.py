@@ -37,7 +37,7 @@ class LayerNorm(nn.Module):
             return z
         mu = torch.mean(z, dim=1)
         sigma = torch.std(z, dim=1)
-        # HACK. PyTorch is changing behavior 
+        # HACK. PyTorch is changing behavior
         if mu.dim() == 1:
             mu = mu.unsqueeze(1)
             sigma = sigma.unsqueeze(1)
