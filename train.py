@@ -8,7 +8,7 @@ import argparse
 import torch
 import torch.nn as nn
 from torch import cuda
-from torch.autograd import Variable
+
 import math
 import time
 import sys
@@ -172,6 +172,8 @@ if opt.gpus:
     if opt.seed > 0:
         torch.cuda.manual_seed(opt.seed)
 
+
+# Set up the Crayon logging server. 
 if opt.log_server != "":
     from pycrayon import CrayonClient
     cc = CrayonClient(hostname=opt.log_server)
@@ -183,26 +185,17 @@ if opt.log_server != "":
 
 
 def eval(model, criterion, data):
-    total_loss = 0
-    total_words = 0
-    total_num_correct = 0
+    stats = onmt.Loss.Statistics()
     model.eval()
-    mem_loss = onmt.Loss.MemoryEfficientLoss(model.generator, criterion, eval=True)
+    loss = onmt.Loss.MemoryEfficientLoss(opt, model.generator, criterion,
+                                         eval=True)
     for i in range(len(data)):
         batch = data[i]
         outputs, attn, dec_hidden = model(batch)
-        # exclude <s> from targets
-        targets = batch.tgt[1:]
-        stats, _, _ = mem_loss.loss(batch,
-                                    outputs,
-                                    attns=attn.get("copy"),
-                                    coverage=attn.get("coverage"))
-        total_loss += stats["loss"]
-        total_num_correct += stats["num_correct"]
-        total_words += stats["num_words"] 
-
+        batch_stats, _, _ = loss.loss(batch, outputs, attn)
+        stats.update(batch_stats)
     model.train()
-    return total_loss / total_words, total_num_correct / total_words
+    return stats
 
 
 def trainModel(model, trainData, validData, dataset, optim):
@@ -210,115 +203,78 @@ def trainModel(model, trainData, validData, dataset, optim):
 
     # Define criterion of each GPU.
     if not opt.copy_attn:
-        criterion = onmt.loss.NMTCriterion(dataset['dicts']['tgt'].size(), opt)
+        criterion = onmt.Loss.NMTCriterion(dataset['dicts']['tgt'].size(), opt)
     else:
-        criterion = onmt.modules.copy_criterion
-
-    start_time = time.time()
+        criterion = onmt.modules.CopyCriterion
 
     def trainEpoch(epoch):
         if opt.extra_shuffle and epoch > opt.curriculum:
             trainData.shuffle()
 
-        mem_loss = onmt.Loss.MemoryEfficientLoss(model.generator, criterion)
+        mem_loss = onmt.Loss.MemoryEfficientLoss(opt, model.generator, criterion)
             
         # Shuffle mini batch order.
         batchOrder = torch.randperm(len(trainData))
 
-        total_loss, total_words, total_num_correct = 0, 0, 0
-        report_loss, report_tgt_words = 0, 0
-        report_src_words, report_num_correct = 0, 0
-        start = time.time()
+        total_stats = onmt.Loss.Statistics()
+        report_stats = onmt.Loss.Statistics()
+        
         for i in range(len(trainData)):
-
             batchIdx = batchOrder[i] if epoch > opt.curriculum else i
             batch = trainData[batchIdx]
-
+            target_size = batch.tgt.size(0)
+            
             dec_hidden = None
-
             trunc_size = opt.truncated_decoder if opt.truncated_decoder \
-                         else (batch.tgt.size(0) )
-            r = range(((batch.tgt.size(0) - 1e-5) // trunc_size) + 1)
-            for j in r:
-                trunc_batch = batch.truncate(j * trunc_size,
-                                             (j+1) * trunc_size)
+                else target_size
+
+            for j in range(0, target_size, trunc_size):
+                trunc_batch = batch.truncate(j, j + trunc_size)
+                
                 # Main training loop
                 model.zero_grad()
-                outputs, attn, dec_hidden \
-                    = model(trunc_batch,
-                            dec_hidden=(h.detach()for h in dec_hidden)
-                            if dec_hidden else None)
-
-                # Exclude <s> from targets.
-                stats, inputs, grads = mem_loss.loss(trunc_batch,
-                                                     outputs, 
-                                                     attns=attn.get("copy"),
-                                                     coverage=attn.get("coverage"))
+                outputs, attn, dec_hidden = model(trunc_batch, dec_hidden)
+                if dec_hidden is not None:
+                    dec_hidden = (h.detach() for h in dec_hidden)
+                
+                batch_stats, inputs, grads \
+                    = mem_loss.loss(trunc_batch, outputs, attn)
                 torch.autograd.backward(inputs, grads)
 
                 # Update the parameters.
                 optim.step()
-                report_loss += stats["loss"]
-                report_num_correct += stats["num_correct"]
-                report_tgt_words += stats["num_words"]
-                total_loss += stats["loss"]
-                total_num_correct += stats["num_correct"]
-                total_words += stats["num_words"]
-            report_src_words += batch.lengths.data.sum()
-
+                total_stats.update(batch_stats)
+                report_stats.update(batch_stats)
+            report_stats.n_src_words += batch.lengths.data.sum()
+            
             if i % opt.log_interval == -1 % opt.log_interval:
-                ppl = math.exp(report_loss / report_tgt_words)
-                acc = report_num_correct / report_tgt_words * 100
-                tgtper = report_tgt_words/(time.time()-start + 1e-5)
-
-                # Log to remote server.
+                report_stats.output(epoch, i+1, len(train_data))
                 if opt.log_server:
-                    experiment.add_scalar_value("ppl", ppl)
-                    experiment.add_scalar_value("accuracy", acc)
-                    experiment.add_scalar_value("tgtper", tgtper)
-                    experiment.add_scalar_value("lr", optim.lr)
+                    report_stats.log("progress", experiment, optim)
+                report_stats = onmt.Loss.Statistics()
 
-                    
-                print(("Epoch %2d, %5d/%5d; acc: %6.2f; ppl: %6.2f;" +
-                       "%3.0f src tok/s; %3.0f tgt tok/s; %6.0f s elapsed") %
-                      (epoch, i+1, len(trainData),
-                       acc,
-                       ppl,
-                       report_src_words/(time.time()-start + 1e-5),
-                       tgtper,
-                       time.time()-start_time))
-                sys.stdout.flush()
-                report_loss, report_tgt_words = 0, 0
-                report_src_words, report_num_correct = 0, 0
-
-                start = time.time()
-
-        return total_loss / total_words, total_num_correct / total_words
+        return total_stats
 
     for epoch in range(opt.start_epoch, opt.epochs + 1):
         print('')
 
         #  (1) train for one epoch on the training set
-        train_loss, train_acc = trainEpoch(epoch)
-        train_ppl = math.exp(min(train_loss, 100))
-        print('Train perplexity: %g' % train_ppl)
-        print('Train accuracy: %g' % (train_acc*100))
+        train_stats = trainEpoch(epoch)
+        print('Train perplexity: %g' % train_stats.ppl())
+        print('Train accuracy: %g' % train_stats.accuracy())
 
         #  (2) evaluate on the validation set
-        valid_loss, valid_acc = eval(model, criterion, validData)
-        valid_ppl = math.exp(min(valid_loss, 100))
-        print('Validation perplexity: %g' % valid_ppl)
-        print('Validation accuracy: %g' % (valid_acc*100))
+        valid_stats = eval(model, criterion, validData)
+        print('Validation perplexity: %g' % valid_stats.ppl())
+        print('Validation accuracy: %g' % valid_stats.accuracy())
 
         # Log to remote server.
-        if opt.log_server:
-            experiment.add_scalar_value("train_ppl", train_ppl)
-            experiment.add_scalar_value("train_acc", train_acc*100)
-            experiment.add_scalar_value("valid_ppl", valid_ppl)
-            experiment.add_scalar_value("valid_acc", valid_acc*100)
+        if opt.log_server:            
+            train_stats.log("train", optim, experiment)
+            valid_stats.log("valid", optim, experiment)
 
         #  (3) update the learning rate
-        optim.updateLearningRate(valid_ppl, epoch)
+        optim.updateLearningRate(valid_stats.ppl(), epoch)
 
         model_state_dict = (model.module.state_dict() if len(opt.gpus) > 1
                             else model.state_dict())
@@ -339,7 +295,8 @@ def trainModel(model, trainData, validData, dataset, optim):
             }
             torch.save(checkpoint,
                        '%s_acc_%.2f_ppl_%.2f_e%d.pt'
-                       % (opt.save_model, 100*valid_acc, valid_ppl, epoch))
+                       % (opt.save_model, valid_stats.accuracy(),
+                          valid_stats.ppl(), epoch))
 
 
 def main():
@@ -440,8 +397,8 @@ def main():
             for p in model.parameters():
                 p.data.uniform_(-opt.param_init, opt.param_init)
 
-        encoder.load_pretrained_vectors(opt)
-        decoder.load_pretrained_vectors(opt)
+        encoder.embeddings.load_pretrained_vectors(opt.pre_word_vecs_enc)
+        decoder.embeddings.load_pretrained_vectors(opt.pre_word_vecs_dec)
 
         optim = onmt.Optim(
             opt.optim, opt.learning_rate, opt.max_grad_norm,

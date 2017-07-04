@@ -2,10 +2,16 @@ import onmt
 import onmt.Constants
 import torch
 import torch.nn as nn
-from torch import cuda
 from torch.autograd import Variable
+import time
+import sys
+import math
+
 
 def NMTCriterion(vocabSize, opt):
+    """
+    Construct the standard NMT Criterion
+    """
     weight = torch.ones(vocabSize)
     weight[onmt.Constants.PAD] = 0
     crit = nn.NLLLoss(weight, size_average=False)
@@ -13,92 +19,134 @@ def NMTCriterion(vocabSize, opt):
         crit.cuda()
     return crit
 
+
+class Statistics:
+    """
+    Training loss function statistics.
+    """
+    def __init__(self, loss=0, n_words=0, n_correct=0):
+        self.loss = 0
+        self.n_words = 0
+        self.n_correct = 0
+        self.n_src_words = 0
+        self.start_time = time.time()
+        
+    def update(self, stat):
+        self.loss += stat.loss
+        self.n_words += stat.n_words
+        self.n_correct += stat.n_correct
+
+    def accuracy(self):
+        return 100 * (self.n_correct / float(self.n_words))
+    
+    def ppl(self):
+        return math.exp(min(self.loss / self.n_words, 100))
+
+    def elapsed_time(self):
+        return time.time() - self.start_time
+    
+    def output(self, epoch, batch, n_batches):
+        t = self.elapsed_time()
+        print(("Epoch %2d, %5d/%5d; acc: %6.2f; ppl: %6.2f;" +
+               "%3.0f src tok/s; %3.0f tgt tok/s; %6.0f s elapsed") %
+              (epoch, batch,  n_batches,
+               self.accuracy(),
+               self.ppl(),
+               self.n_src_words / (t + 1e-5), 
+               self.n_words / (t + 1e-5),
+               t))
+        sys.stdout.flush()
+
+    def log(self, prefix, experiment, optim):
+        t = self.elapsed_time()
+        experiment.add_scalar_value(prefix + "_ppl", self.ppl())
+        experiment.add_scalar_value(prefix + "_accuracy", self.accuracy())
+        experiment.add_scalar_value(prefix + "_tgtper",  self.n_words / t)
+        experiment.add_scalar_value(prefix + "_lr", optim.lr)
+    
+
+def chunkVars(max_len, ls):
+    ls_var = Variable(ls.data, requires_grad=(not self.eval),
+                     volatile=self.eval)
+    return torch.split(ls_var, self.max_batches)
+    
+
+
+    def loss(self, batch, outputs, attns):
+
 class MemoryEfficientLoss:
-    def __init__(self, generator, crit, eval=False):
+    """
+    Class for best batchin the loss for NMT.
+    """
+    def __init__(self, opt, generator, crit, eval=False):
+        """
+        Args:
+            generator (Function): ( any x rnn_size ) -> ( any x tgt_vocab )
+            crit (Criterion): ( any x tgt_vocab )
+            eval (bool): train or eval
+        """
         self.generator = generator
         self.crit = crit
         self.eval = eval
-        
-    def loss(batch, outputs, attns=None, coverage=None, copy=None):
+        self.max_batches = opt.max_generator_batches
+
+    def score(self, loss_t, scores_t, targ_t):
+        pred_t = scores_t.data.max(1)[1]
+        non_padding = targ_t.ne(onmt.Constants.PAD).data
+        num_correct_t = pred_t.eq(targ_t.data) \
+                              .masked_select(non_padding) \
+                              .sum()
+        return Statistics(loss_t.data[0], non_padding.sum(),
+                          num_correct_t)
+
+
+    def compute_loss(shard):
+        if :
+            scores_t = self.generator(out_t)
+            loss_t = self.crit(scores_t, targ_t)
+        else:
+            
+    
+    def loss(self, batch, outputs, attns):
         """
         Args:
-            outputs (FloatTensor): tgt_len x batch x rnn_size
-            generator (Function): ( any x rnn_size ) -> ( any x tgt_vocab )
-            crit (Criterion): ( any x tgt_vocab )
             batch (Batch): Data object
-            eval (bool): train or eval
+            outputs (FloatTensor): tgt_len x batch x rnn_size
             attns (FloatTensor): src_len x batch
-
         Returns:
-            loss (float): accumulated loss value
-            grad_output: grad of loss wrt outputs
-            grad_attns: grad of loss wrt attns
-            num_correct (int): number of correct targets
-
+            stats (dict): Statistics about loss
+            inputs: list of variables with grads
+            grads: list of grads corresponding to inputs
         """
-        targets = batch.tgt[1:]
-
-        # compute generations one piece at a time
-        num_correct, loss = 0, 0
-
-        # These will require gradients.
-        outputs = Variable(outputs.data, requires_grad=(not eval), volatile=eval)
-        batch_size = batch.batchSize
-        d = {"out": outputs, "tgt": targets}
-
-        if attns is not None:
-            attns = Variable(attns.data, requires_grad=(not eval), volatile=eval)
-            d["attn"] = attns
-            d["align"] = batch.alignment[1:]
-
-        if coverage is not None:
-            coverage = Variable(coverage.data, requires_grad=(not eval),
-                                volatile=eval)
-            d["coverage"] = coverage
-
+        stats = Statistics()
+        def bottle(v):
+            return v.view(-1, v.size(2))
+        d = {"out": outputs, "tgt": batch.tgt[1:], "attn": attns,
+             "align" batch.alignment[1:]}
+        v = {}
+        n_shards = outputs.size(0) // self.max_batches
+        shards = [{} for _ in range(n_shards)]
         for k in d:
-            d[k] = torch.split(d[k], opt.max_generator_batches)
+            v[k] = Variable(v[k].data, requires_grad=(not self.eval),
+                            volatile=self.eval) \
+                            if v[k] is Variable else v[k]
+            splits = torch.split(v[k], self.max_batches)
+            for i, v in enumerate(splits):
+                shards[i][k] = bottle(v)
 
-        for i, targ_t in enumerate(d["tgt"]):
-            out_t = d["out"][i].view(-1, d["out"][i].size(2))
-
-            # Depending on generator type.
-            if attns is None:
-                scores_t = generator(out_t)
-                loss_t = crit(scores_t, targ_t.view(-1))
-            else:
-                attn_t = d["attn"][i]
-                align_t = d["align"][i].view(-1, d["align"][i].size(2))
-                words = batch.words().t().contiguous()
-                attn_t = attn_t.view(-1, d["attn"][i].size(2))
-
-                # probability of words, probability of attn
-                scores_t, c_attn_t = generator(out_t, words, attn_t)
-                loss_t = crit(scores_t, c_attn_t, targ_t.view(-1), align_t)
-
-            if coverage is not None:
-                loss_t += 0.1 * torch.min(d["coverage"][i], d["attn"][i]).sum()
-
-            pred_t = scores_t.data.max(1)[1]
-            num_correct_t = pred_t.eq(targ_t.data) \
-                                  .masked_select(
-                                      targ_t.ne(onmt.Constants.PAD).data) \
-                                  .sum()
-            num_correct += num_correct_t
-            loss += loss_t.data[0]
+        for s in shards:    
+            loss_t, scores_t = self.compute_loss(s) 
+            stats.update(self.score(loss_t, scores_t, target_t))
             if not eval:
-                loss_t.div(batch_size).backward()
+                loss_t.div(batch.batchSize).backward()
 
         # Return the gradients
         inputs = []
         grads = []
-        def add(v):
-            if v and v.grad is not None:
-                inputs.append(v)
-                grads.append(v.grad.data)
-        add(outputs, attns, coverage)
-                
-        return {"loss" : loss,
-                "num_correct": num_correct,
-                "num_words" : targets.data.ne(onmt.Constants.PAD).sum()}, inputs, grads
+        if not eval:
+            for k in v:
+                if v[k] and v[k].grad is not None:
+                    inputs.append(v[k])
+                    grads.append(v[k].grad.data)
+        return stats, inputs, grads
     

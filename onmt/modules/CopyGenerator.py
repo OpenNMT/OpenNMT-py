@@ -60,7 +60,7 @@ class CopyGenerator(nn.Module):
                 mul_attn[0, j].data[0]))
 
 
-def copy_criterion(probs, attn, targ, align, eps=1e-12):
+def CopyCriterion(probs, attn, targ, align, eps=1e-12):
     copies = attn.mul(Variable(align)).sum(-1).add(eps)
     # Can't use UNK, must copy.
     out = torch.log(probs.gather(1, targ.view(-1, 1)).view(-1) + copies + eps)
