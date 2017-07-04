@@ -162,7 +162,6 @@ class Translator(object):
             # Prepare decoder input.
             input = torch.stack([b.getCurrentState() for b in beam
                                  if not b.done]).t().contiguous().view(1, -1)
-            print(i, input.size(), decStates.input_feed.size())
             decOut, decStates, attn = self.model.decoder(
                 Variable(input, volatile=True), batch.src, context, decStates)
 

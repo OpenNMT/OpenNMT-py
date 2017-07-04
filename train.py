@@ -176,6 +176,7 @@ if opt.log_server != "":
     cc = CrayonClient(hostname=opt.log_server)
     
     experiments = cc.get_experiment_names()
+    print(experiments)
     if opt.experiment_name in experiments:
         cc.remove_experiment(opt.experiment_name)
     experiment = cc.create_experiment(opt.experiment_name)

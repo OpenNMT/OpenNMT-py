@@ -26,7 +26,7 @@ def shardVariables(variables, batches, eval):
     variables.
     """
     dummies = {}
-    n_shards = ((variables.values()[0].size(0) -1) // batches) + 1
+    n_shards = ((list(variables.values())[0].size(0) -1) // batches) + 1
     shards = [{} for _ in range(n_shards)]
     for k in variables:
         if isinstance(variables[k], Variable) and variables[k].requires_grad:

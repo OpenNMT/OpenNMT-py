@@ -420,7 +420,7 @@ class RNNDecoderState(DecoderState):
         self.all = self.hidden + (self.input_feed,)
         
     def _resetAll(self, all):
-        vars = [Variable(a.data, volatile=True) for a in all]
+        vars = [Variable(a.data if isinstance(a, Variable) else a, volatile=True) for a in all]
         self.hidden = tuple(vars[:-1])
         self.input_feed = vars[-1]
         self.all = self.hidden + (self.input_feed,)
@@ -437,6 +437,7 @@ class TransformerDecoderState(DecoderState):
         self.all = (self.previous_input,)
         
     def _resetAll(self, all):
-        vars = [Variable(a.data, volatile=True) for a in all]
+        vars = [(Variable(a.data if isinstance(a, Variable) else a, volatile=True)) 
+                for a in all]
         self.previous_input = vars[0]
         self.all = (self.previous_input,)
