@@ -17,9 +17,10 @@ The following OpenNMT features are implemented:
 - saving and loading from checkpoints
 - inference (translation) with batching and beam search
 - multi-GPU
-- Context gate
 
 Beta Features:
+- Context gate
+- Multiple source and target RNN types
 - Image-to-text processing
 - Source word features
 - "Attention is all you need" 
