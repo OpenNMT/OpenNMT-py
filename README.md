@@ -20,13 +20,13 @@ The following OpenNMT features are implemented:
 
 Beta Features:
 - Context gate
-- Multiple source and target RNN types
+- Multiple source and target RNN (lstm/gru) types and attention (dotprod/mlp) types 
 - Image-to-text processing
 - Source word features
 - "Attention is all you need" 
 - TensorBoard/Crayon logging
-- Copy Attention
-- Coverage Attention
+- Copy, coverage, and structured attention
+
 
 ## Quickstart
 
