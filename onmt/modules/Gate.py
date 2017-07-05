@@ -36,11 +36,11 @@ class ContextGate(nn.Module):
                                      output_size)
 
     def forward(self, prev_emb, dec_state, attn_state):
-        input_tensor = torch.cat((prev_emb, dec_state, attn_state), dim=2)
+        input_tensor = torch.cat((prev_emb, dec_state, attn_state), dim=1)
         z = self.sig(self.gate(input_tensor))
         proj_source = self.source_proj(attn_state)
         proj_target = self.target_proj(
-            torch.cat((prev_emb, dec_state), dim=2))
+            torch.cat((prev_emb, dec_state), dim=1))
         return z, proj_source, proj_target
 
 
