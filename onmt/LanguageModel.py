@@ -114,7 +114,7 @@ class LMPredictor(object):
                                 map_location=lambda storage, loc: storage)
         model_opt = checkpoint['opt']
         self.src_dict = checkpoint['dicts']['src']
-        model = LM(opt, self.src_dict)
+        model = LM(model_opt, self.src_dict)
         generator = nn.Sequential(
             nn.Linear(model_opt.rnn_size, self.src_dict.size()),
             nn.LogSoftmax())
