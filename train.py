@@ -227,7 +227,7 @@ def trainModel(model, trainData, validData, dataset, optim):
             batch = trainData[batchIdx]
             target_size = batch.tgt.size(0)
 
-            dec_hidden = None
+            dec_state = None
             trunc_size = opt.truncated_decoder if opt.truncated_decoder \
                 else target_size
 
@@ -239,7 +239,7 @@ def trainModel(model, trainData, validData, dataset, optim):
                 outputs, attn, dec_state = model(trunc_batch.src,
                                                  trunc_batch.tgt,
                                                  trunc_batch.lengths,
-                                                 dec_hidden)
+                                                 dec_state)
                 batch_stats, inputs, grads \
                     = mem_loss.loss(trunc_batch, outputs, attn)
 

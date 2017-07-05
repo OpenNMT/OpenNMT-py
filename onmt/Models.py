@@ -25,7 +25,7 @@ class Embeddings(nn.Module):
                                      padding_idx=onmt.Constants.PAD)
         # Word embeddings.
         self.dropout = nn.Dropout(p=opt.dropout)
-
+        self.feature_dicts = feature_dicts
         # Feature embeddings.
         if feature_dicts:
             self.feature_luts = nn.ModuleList([
@@ -68,13 +68,14 @@ class Embeddings(nn.Module):
         """
         word = self.word_lut(src_input[:, :, 0])
         emb = word
-        if self.feature_luts:
+        if self.feature_dicts is not None:
             features = [feature_lut(src_input[:, :, j+1])
                         for j, feature_lut in enumerate(self.feature_luts)]
 
             # Apply one MLP layer.
             emb = self.activation(
                 self.linear(torch.cat([word] + features, -1)))
+            
         if self.positional_encoding:
             emb = emb + Variable(self.pe[:emb.size(0), :1, :emb.size(2)]
                                  .expand_as(emb))
@@ -388,7 +389,8 @@ class NMTModel(nn.Module):
 class DecoderState(object):
     def detach(self):
         for h in self.all:
-            h.detach()
+            if h is not None:
+                h.detach_()
 
     def repeatBeam_(self, beamSize):
         self._resetAll([Variable(e.data.repeat(1, beamSize, 1))
