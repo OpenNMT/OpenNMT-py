@@ -2,6 +2,8 @@
 
 import torch
 import torch.nn as nn
+from onmt.modules.Util import BottleLinear
+
 
 
 class GlobalAttention(nn.Module):
@@ -19,20 +21,37 @@ class GlobalAttention(nn.Module):
               \ |   |      /
                       .....
                   \   |  /
-                          a
+                      a
 
     Constructs a unit mapping.
     $$(H_1 + H_n, q) => (a)$$
     Where H is of `batch x n x dim` and q is of `batch x dim`.
+    
+    Loung Attention: 
+    $$\tanh(W_2 [(softmax((W_1 q + b_1) H) H), q] + b_2)$$.:
 
-    The full def is  $$\tanh(W_2 [(softmax((W_1 q + b_1) H) H), q] + b_2)$$.:
+    Bahdanau Attention:
+    $$c = \sum_{j=1}^{SeqLength}\a_jh_j$$.
+    The Alignment-function $$a$$ computes an alignment as: 
+    $$a_j = softmax(v_a^T \tanh(W_a q + U_a h_j) )$$.
 
     """
-    def __init__(self, dim, coverage=False):
+    def __init__(self, dim, coverage=False, attn_type="Luong"):
         super(GlobalAttention, self).__init__()
-        self.linear_in = nn.Linear(dim, dim, bias=False)
+
+        self.attn_type = attn_type
+        assert (self.attn_type in ["Luong", "Bahdanau"]), \
+                    "Please select a valid attention type."
+
+        if self.attn_type == "Luong":
+            self.linear_in = nn.Linear(dim, dim, bias=False)
+            self.linear_out = nn.Linear(dim*2, dim, bias=False)
+        elif self.attn_type == "Bahdanau":
+            self.linear_context = BottleLinear(dim, dim, bias=False)
+            self.linear_query = nn.Linear(dim, dim, bias=False)
+            self.v = BottleLinear(dim, 1, bias=False)
+
         self.sm = nn.Softmax()
-        self.linear_out = nn.Linear(dim*2, dim, bias=False)
         self.tanh = nn.Tanh()
         self.mask = None
 
@@ -48,29 +67,45 @@ class GlobalAttention(nn.Module):
         context (FloatTensor): batch x sourceL x dim
         coverage (FloatTensor): batch x sourceL
         """
-        # batch x dim x 1
-        targetT = self.linear_in(input).unsqueeze(2)
 
         if coverage:
             context += self.linear_cover(coverage.view(-1).unsqueeze(1)) \
                            .view_as(context)
             context = self.tanh(context)
 
-        # Get attention
-        # batch x sourceL
-        attn = torch.bmm(context, targetT).squeeze(2)
+        # Alignment/Attention Function
+        if self.attn_type == "Luong":
+            # batch x dim x 1
+            targetT = self.linear_in(input).unsqueeze(2)
+            # batch x sourceL
+            attn = torch.bmm(context, targetT).squeeze(2)
+        elif self.attn_type == "Bahdanau":
+            # batch x dim x 1
+            wq = self.linear_query(input).unsqueeze(1) 
+            # batch x sourceL x dim 
+            uh = self.linear_context(context.contiguous()) 
+            # batch x sourceL x dim
+            wquh = uh + wq.expand_as(uh) 
+            # batch x sourceL x dim
+            wquh = self.tanh(wquh) 
+            # batch x sourceL
+            attn = self.v(wquh.contiguous()).squeeze() 
 
         if self.mask is not None:
             attn.data.masked_fill_(self.mask, -float('inf'))
 
         attn = self.sm(attn)
 
-        # Compute context.
-        attn3 = attn.view(attn.size(0), 1, attn.size(1))  # batch x 1 x sourceL
-        weightedContext = torch.bmm(attn3, context).squeeze(1)  # batch x dim
-        contextCombined = torch.cat((weightedContext, input), 1)
+        # Compute context weighted by attention.
+        # batch x 1 x sourceL
+        attn3 = attn.view(attn.size(0), 1, attn.size(1))  
+        # batch x dim
+        weightedContext = torch.bmm(attn3, context).squeeze(1)  
 
-        final = self.linear_out(contextCombined)
-        contextOutput = self.tanh(final)
+        # Concatenate the input to context (Luong only)
+        if self.attn_type == "Luong":
+            weightedContext = torch.cat((weightedContext, input), 1)
+            weightedContext = self.linear_out(weightedContext)
+            weightedContext = self.tanh(weightedContext)
 
-        return contextOutput, attn
+        return weightedContext, attn

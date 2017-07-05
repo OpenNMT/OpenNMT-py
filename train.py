@@ -68,6 +68,9 @@ parser.add_argument('-context_gate', type=str, default=None,
                     choices=['source', 'target', 'both'],
                     help="""Type of context gate to use [source|target|both].
                     Do not select for no context gate.""")
+parser.add_argument('-attention_type', type=str, default='Luong',
+                    choices=['Luong', 'Bahdanau'],
+                    help="""The attention type to use""")
 
 # Optimization options
 parser.add_argument('-encoder_type', default='text',
@@ -388,6 +391,7 @@ def trainModel(model, trainData, validData, dataset, optim):
                 report_src_words, report_num_correct = 0, 0
 
                 start = time.time()
+
 
         return total_loss / total_words, total_num_correct / total_words
 
