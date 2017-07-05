@@ -284,6 +284,7 @@ class Decoder(nn.Module):
         else:
             assert isinstance(state, RNNDecoderState)
             output = state.input_feed.squeeze(0)
+            hidden = state.hidden
             # CHECKS
             n_batch_, _ = output.size()
             aeq(n_batch, n_batch_)
@@ -298,7 +299,7 @@ class Decoder(nn.Module):
                 if self.input_feed:
                     emb_t = torch.cat([emb_t, output], 1)
 
-                rnn_output, hidden = self.rnn(emb_t, state.hidden)
+                rnn_output, hidden = self.rnn(emb_t, hidden)
                 attn_output, attn = self.attn(rnn_output,
                                               context.transpose(0, 1))
                 if self.context_gate is not None:
