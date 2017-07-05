@@ -4,3 +4,4 @@ multi-bleu.perl
 *.pyc
 #.*
 .idea
+*.sublime-*

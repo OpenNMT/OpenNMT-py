@@ -392,7 +392,6 @@ def trainModel(model, trainData, validData, dataset, optim):
 
                 start = time.time()
 
-
         return total_loss / total_words, total_num_correct / total_words
 
     for epoch in range(opt.start_epoch, opt.epochs + 1):

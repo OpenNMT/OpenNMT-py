@@ -1,9 +1,6 @@
-
-
 import torch
 import torch.nn as nn
 from onmt.modules.Util import BottleLinear
-
 
 
 class GlobalAttention(nn.Module):
@@ -26,13 +23,13 @@ class GlobalAttention(nn.Module):
     Constructs a unit mapping.
     $$(H_1 + H_n, q) => (a)$$
     Where H is of `batch x n x dim` and q is of `batch x dim`.
-    
-    Loung Attention: 
+
+    Loung Attention:
     $$\tanh(W_2 [(softmax((W_1 q + b_1) H) H), q] + b_2)$$.:
 
     Bahdanau Attention:
     $$c = \sum_{j=1}^{SeqLength}\a_jh_j$$.
-    The Alignment-function $$a$$ computes an alignment as: 
+    The Alignment-function $$a$$ computes an alignment as:
     $$a_j = softmax(v_a^T \tanh(W_a q + U_a h_j) )$$.
 
     """
@@ -40,8 +37,8 @@ class GlobalAttention(nn.Module):
         super(GlobalAttention, self).__init__()
 
         self.attn_type = attn_type
-        assert (self.attn_type in ["Luong", "Bahdanau"]), \
-                    "Please select a valid attention type."
+        assert (self.attn_type in ["Luong", "Bahdanau"]), (
+                "Please select a valid attention type.")
 
         if self.attn_type == "Luong":
             self.linear_in = nn.Linear(dim, dim, bias=False)
@@ -81,15 +78,15 @@ class GlobalAttention(nn.Module):
             attn = torch.bmm(context, targetT).squeeze(2)
         elif self.attn_type == "Bahdanau":
             # batch x dim x 1
-            wq = self.linear_query(input).unsqueeze(1) 
-            # batch x sourceL x dim 
-            uh = self.linear_context(context.contiguous()) 
+            wq = self.linear_query(input).unsqueeze(1)
             # batch x sourceL x dim
-            wquh = uh + wq.expand_as(uh) 
+            uh = self.linear_context(context.contiguous())
             # batch x sourceL x dim
-            wquh = self.tanh(wquh) 
+            wquh = uh + wq.expand_as(uh)
+            # batch x sourceL x dim
+            wquh = self.tanh(wquh)
             # batch x sourceL
-            attn = self.v(wquh.contiguous()).squeeze() 
+            attn = self.v(wquh.contiguous()).squeeze()
 
         if self.mask is not None:
             attn.data.masked_fill_(self.mask, -float('inf'))
@@ -98,9 +95,9 @@ class GlobalAttention(nn.Module):
 
         # Compute context weighted by attention.
         # batch x 1 x sourceL
-        attn3 = attn.view(attn.size(0), 1, attn.size(1))  
+        attn3 = attn.view(attn.size(0), 1, attn.size(1))
         # batch x dim
-        weightedContext = torch.bmm(attn3, context).squeeze(1)  
+        weightedContext = torch.bmm(attn3, context).squeeze(1)
 
         # Concatenate the input to context (Luong only)
         if self.attn_type == "Luong":
