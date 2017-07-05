@@ -409,11 +409,8 @@ class NMTModel(nn.Module):
         We need to convert it to layers x batch x (directions*dim)
         """
         if self.encoder.num_directions == 2:
-            return h.view(h.size(0) // 2, 2, h.size(1), h.size(2)) \
-                    .transpose(1, 2).contiguous() \
-                    .view(h.size(0) // 2, h.size(1), h.size(2) * 2)
-        else:
-            return h
+            h = torch.cat([h[0:h.size(0):2], h[1:h.size(0):2]], 2)
+        return h
 
     def setup_decoder(self, enc_hidden):
         if self.decoder.decoder_layer == "transformer":
