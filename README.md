@@ -4,6 +4,8 @@ This is a [Pytorch](https://github.com/pytorch/pytorch)
 port of [OpenNMT](https://github.com/OpenNMT/OpenNMT),
 an open-source (MIT) neural machine translation system. Full documentation is available [here](http://opennmt.net/OpenNMT-py).
 
+This code is still is heavy development is pre-version 0.1. We recommend forking if you want a stable version. 
+
 <center style="padding: 40px"><img width="70%" src="http://opennmt.github.io/simple-attn.png" /></center>
 
 ## Features
@@ -16,10 +18,14 @@ The following OpenNMT features are implemented:
 - inference (translation) with batching and beam search
 - multi-GPU
 - Context gate
-- Source word features
-- Source image processing
-- "Attention is all you need" (preliminary)
 
+Beta Features:
+- Image-to-text processing
+- Source word features
+- "Attention is all you need" 
+- TensorBoard/Crayon logging
+- Copy Attention
+- Coverage Attention
 
 ## Quickstart
 
