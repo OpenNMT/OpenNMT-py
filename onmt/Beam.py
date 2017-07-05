@@ -109,7 +109,6 @@ class Beam(object):
             2. The attention at each time step.
         """
         hyp, attn = [], []
-        # print(len(self.prevKs), len(self.nextYs), len(self.attn))
         for j in range(len(self.prevKs) - 1, -1, -1):
             hyp.append(self.nextYs[j+1][k])
             attn.append(self.attn[j][k])
