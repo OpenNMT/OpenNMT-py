@@ -27,7 +27,7 @@ class Embeddings(nn.Module):
         self.dropout = nn.Dropout(p=opt.dropout)
         self.feature_dicts = feature_dicts
         # Feature embeddings.
-        if feature_dicts:
+        if self.feature_dicts is not None:
             self.feature_luts = nn.ModuleList([
                 nn.Embedding(feature_dict.size(),
                              opt.feature_vec_size,
@@ -207,7 +207,7 @@ class Decoder(nn.Module):
             if opt.context_gate is not None:
                 self.context_gate = ContextGateFactory(
                     opt.context_gate, opt.word_vec_size,
-                    opt.rnn_size, opt.rnn_size, opt.rnn_size
+                    input_size, opt.rnn_size, opt.rnn_size
                 )
 
         self.dropout = nn.Dropout(opt.dropout)
@@ -303,7 +303,7 @@ class Decoder(nn.Module):
                                               context.transpose(0, 1))
                 if self.context_gate is not None:
                     output = self.context_gate(
-                        emb_t.squeeze(0), rnn_output, attn_output
+                        emb_t, rnn_output, attn_output
                     )
                     output = self.dropout(output)
                 else:
