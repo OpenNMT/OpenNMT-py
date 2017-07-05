@@ -192,7 +192,7 @@ def eval(model, criterion, data):
                                          eval=True, copy_loss=opt.copy_attn)
     for i in range(len(data)):
         batch = data[i]
-        outputs, attn, dec_hidden = model(batch)
+        outputs, attn, dec_hidden = model(batch.src, batch.tgt, batch.lengths)
         batch_stats, _, _ = loss.loss(batch, outputs, attn)
         stats.update(batch_stats)
     model.train()
@@ -236,7 +236,10 @@ def trainModel(model, trainData, validData, dataset, optim):
 
                 # Main training loop
                 model.zero_grad()
-                outputs, attn, dec_state = model(trunc_batch, dec_hidden)
+                outputs, attn, dec_state = model(trunc_batch.src,
+                                                 trunc_batch.tgt,
+                                                 trunc_batch.lengths,
+                                                 dec_hidden)
                 batch_stats, inputs, grads \
                     = mem_loss.loss(trunc_batch, outputs, attn)
 
@@ -246,7 +249,8 @@ def trainModel(model, trainData, validData, dataset, optim):
                 optim.step()
                 total_stats.update(batch_stats)
                 report_stats.update(batch_stats)
-                dec_state.detach()
+                if dec_state is not None:
+                    dec_state.detach()
 
             report_stats.n_src_words += batch.lengths.data.sum()
 
@@ -363,7 +367,7 @@ def main():
         if opt.share_decoder_embeddings:
             generator[0].weight = decoder.word_lut.weight
 
-    model = onmt.Models.NMTModel(encoder, decoder)
+    model = onmt.Models.NMTModel(encoder, decoder, len(opt.gpus) > 1)
 
     if opt.train_from:
         print('Loading model from checkpoint at %s' % opt.train_from)
@@ -388,8 +392,9 @@ def main():
     else:
         model.cpu()
         generator.cpu()
-
+    
     if len(opt.gpus) > 1:
+        print('Multi gpu training ', opt.gpus)
         model = nn.DataParallel(model, device_ids=opt.gpus, dim=1)
         generator = nn.DataParallel(generator, device_ids=opt.gpus, dim=0)
 

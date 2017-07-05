@@ -136,7 +136,7 @@ class Encoder(nn.Module):
         # CHECKS
         s_len, n_batch, n_feats = input.size()
         if lengths is not None:
-            n_batch_ = lengths.size()
+            _, n_batch_ = lengths.size()
             aeq(n_batch, n_batch_)
         # END CHECKS
 
@@ -165,6 +165,7 @@ class Encoder(nn.Module):
             outputs, hidden_t = self.rnn(packed_emb, hidden)
             if lengths:
                 outputs = unpack(outputs)[0]
+                
             return hidden_t, outputs
 
 
@@ -241,7 +242,7 @@ class Decoder(nn.Module):
         s_len, n_batch_, _ = src.size()
         s_len_, n_batch__, _ = context.size()
         aeq(n_batch, n_batch_, n_batch__)
-        aeq(s_len, s_len_)
+        # aeq(s_len, s_len_)
         # END CHECKS
         if self.decoder_layer == "transformer":
             if state.previous_input:
@@ -330,10 +331,12 @@ class Decoder(nn.Module):
 
 
 class NMTModel(nn.Module):
-    def __init__(self, encoder, decoder):
+    def __init__(self, encoder, decoder, multigpu=False):
+        self.multigpu = multigpu
         super(NMTModel, self).__init__()
         self.encoder = encoder
         self.decoder = decoder
+
 
     def _fix_enc_hidden(self, h):
         """
@@ -358,10 +361,10 @@ class NMTModel(nn.Module):
         dec.init_input_feed(context, self.decoder.hidden_size)
         return dec
 
-    def forward(self, input, dec_state=None):
+    def forward(self, src, tgt, lengths, dec_state=None):
         """
         Args:
-            input: A `Batch` object.
+            src, tgt, lengths
             dec_state: A decoder state object
 
         Returns:
@@ -370,13 +373,17 @@ class NMTModel(nn.Module):
             dec_hidden (FloatTensor): tuple (1 x batch x rnn_size)
                                       Init hidden state
         """
-        src = input.src
-        tgt = input.tgt[:-1]  # exclude last target from inputs
-        enc_hidden, context = self.encoder(src, input.lengths)
+        src = src
+        tgt = tgt[:-1]  # exclude last target from inputs
+        enc_hidden, context = self.encoder(src, lengths)
         enc_state = self.init_decoder_state(context, enc_hidden)
         out, dec_state, attns = self.decoder(tgt, src, context,
                                              enc_state if dec_state is None
                                              else dec_state)
+        if self.multigpu:
+            # Not yet supported on multi-gpu
+            dec_state = None
+            attns = None
         return out, attns, dec_state
 
 
@@ -401,7 +408,6 @@ class RNNDecoderState(DecoderState):
     def __init__(self, rnnstate, input_feed=None, coverage=None):
         # all objects are X x batch x dim
         # or X x (beam * sent) for beam search
-
         if not isinstance(rnnstate, tuple):
             self.hidden = (rnnstate,)
         else:
@@ -422,8 +428,7 @@ class RNNDecoderState(DecoderState):
                          volatile=True) for a in all]
         self.hidden = tuple(vars[:-1])
         self.input_feed = vars[-1]
-        self.all = self.hidden + (self.input_feed,)
-
+        self.all = self.hidden + (self.input_feed,)        
 
 class TransformerDecoderState(DecoderState):
     def __init__(self, input=None):
