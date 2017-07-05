@@ -47,14 +47,18 @@ class StackedGRU(nn.Module):
             input_size = rnn_size
 
     def forward(self, input, hidden):
+        h_0 = hidden[0]
         h_1 = []
         for i, layer in enumerate(self.layers):
-            h_1_i = layer(input, hidden[i])
+            if len(h_0.size()) == 3:
+                h_0_i = h_0[i]
+            else:
+                h_0_i = h_0
+            h_1_i = layer(input, h_0_i)
             input = h_1_i
             if i + 1 != self.num_layers:
                 input = self.dropout(input)
             h_1 += [h_1_i]
 
         h_1 = torch.stack(h_1)
-
         return input, h_1
