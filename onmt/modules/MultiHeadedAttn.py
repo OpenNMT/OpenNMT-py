@@ -5,6 +5,7 @@ from onmt.modules.Util import BottleLinear, BottleLayerNorm, BottleSoftmax
 import math
 from onmt.modules import aeq
 
+
 class MultiHeadedAttention(nn.Module):
     ''' Multi-Head Attention module '''
 

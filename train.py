@@ -251,7 +251,8 @@ def trainModel(model, trainData, validData, dataset, optim):
             report_stats.n_src_words += batch.lengths.data.sum()
 
             if i % opt.log_interval == -1 % opt.log_interval:
-                report_stats.output(epoch, i+1, len(trainData), total_stats.start_time)
+                report_stats.output(epoch, i+1, len(trainData),
+                                    total_stats.start_time)
                 if opt.log_server:
                     report_stats.log("progress", experiment, optim)
                 report_stats = onmt.Loss.Statistics()

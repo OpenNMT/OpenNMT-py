@@ -140,8 +140,6 @@ class Encoder(nn.Module):
             aeq(n_batch, n_batch_)
         # END CHECKS
 
-
-        
         emb = self.embeddings(input)
         s_len, n_batch, vec_size = emb.size()
 
@@ -229,7 +227,7 @@ class Decoder(nn.Module):
 
         Args:
             input (LongTensor):  (len x batch) -- Input tokens
-            src (LongTensor): 
+            src (LongTensor)
             context:  (src_len x batch x rnn_size)  -- Memory bank
             state: an object initializing the decoder.
 
@@ -239,13 +237,12 @@ class Decoder(nn.Module):
             attns: Dictionary of (src_len x batch)
         """
         # CHECKS
-        t_len, n_batch  = input.size()
+        t_len, n_batch = input.size()
         s_len, n_batch_, _ = src.size()
         s_len_, n_batch__, _ = context.size()
         aeq(n_batch, n_batch_, n_batch__)
         aeq(s_len, s_len_)
         # END CHECKS
-        
         if self.decoder_layer == "transformer":
             if state.previous_input:
                 input = torch.cat([state.previous_input.squeeze(2), input], 0)
@@ -270,9 +267,10 @@ class Decoder(nn.Module):
             output = emb.transpose(0, 1).contiguous()
             src_context = context.transpose(0, 1).contiguous()
             for i in range(self.layers):
-                output, attn = self.transformer[i](output, src_context,
-                                                   src[:, :, 0].transpose(0, 1),
-                                                   input.transpose(0, 1))
+                output, attn \
+                    = self.transformer[i](output, src_context,
+                                          src[:, :, 0].transpose(0, 1),
+                                          input.transpose(0, 1))
             outputs = output.transpose(0, 1).contiguous()
             if state.previous_input:
                 outputs = outputs[state.previous_input.size(0):]
@@ -289,10 +287,10 @@ class Decoder(nn.Module):
             n_batch_, _ = output.size()
             aeq(n_batch, n_batch_)
             # END CHECKS
-            
+
             coverage = state.coverage.squeeze(0) \
                 if state.coverage is not None else None
-                
+
             # Standard RNN decoder.
             for i, emb_t in enumerate(emb.split(1)):
                 emb_t = emb_t.squeeze(0)
@@ -319,7 +317,8 @@ class Decoder(nn.Module):
 
                 # COPY
                 if self._copy:
-                    _, copy_attn = self.copy_attn(output, context.transpose(0, 1))
+                    _, copy_attn = self.copy_attn(output,
+                                                  context.transpose(0, 1))
                     attns["copy"] += [copy_attn]
             state = RNNDecoderState(hidden, output.unsqueeze(0),
                                     coverage.unsqueeze(0)

@@ -7,7 +7,8 @@ import torch.nn as nn
 import numpy as np
 import onmt.modules
 from onmt.modules import aeq
-        
+
+
 def get_attn_padding_mask(seq_q, seq_k):
     ''' Indicate the padding-related part to mask '''
     assert seq_q.dim() == 2 and seq_k.dim() == 2
@@ -61,7 +62,7 @@ class TransformerEncoder(nn.Module):
         aeq(n_batch, n_batch_)
         aeq(s_len, s_len_)
         # END CHECKS
-        
+
         mask = get_attn_padding_mask(words, words)
         mid, _ = self.self_attn(input, input, input, mask=mask)
         out = self.feed_forward(mid)

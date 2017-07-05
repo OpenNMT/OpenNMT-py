@@ -3,6 +3,12 @@ import torch
 import torch.nn as nn
 
 
+def aeq(*args):
+    base = args[0]
+    for a in args[1:]:
+        assert a == base, str(args)
+
+
 class Bottle(nn.Module):
         def forward(self, input):
             if len(input.size()) <= 2:

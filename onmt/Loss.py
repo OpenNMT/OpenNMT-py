@@ -183,5 +183,4 @@ class MemoryEfficientLoss:
 
         # Return the gradients
         inputs, grads = collectGrads(original, dummies)
-        # assert stats.n_words == batch.tgt[1:].ne(onmt.Constants.PAD).data.sum()
         return stats, inputs, grads
