@@ -68,6 +68,10 @@ parser.add_argument('-context_gate', type=str, default=None,
                     choices=['source', 'target', 'both'],
                     help="""Type of context gate to use [source|target|both].
                     Do not select for no context gate.""")
+parser.add_argument('-attention_type', type=str, default='dotprod',
+                    choices=['dotprod', 'mlp'],
+                    help="""The attention type to use:
+                    dotprot (Luong) or MLP (Bahdanau)""")
 
 # Optimization options
 parser.add_argument('-encoder_type', default='text',
