@@ -3,6 +3,7 @@ import torch.nn as nn
 from torch.autograd import Variable
 import onmt
 import onmt.modules
+from onmt.modules import aeq
 from onmt.modules.Gate import ContextGateFactory
 from torch.nn.utils.rnn import pad_packed_sequence as unpack
 from torch.nn.utils.rnn import pack_padded_sequence as pack
@@ -35,9 +36,10 @@ class Embeddings(nn.Module):
 
             # MLP on features and words.
             self.activation = nn.ReLU()
-            self.linear = nn.Linear(opt.word_vec_size +
-                                    len(feature_dicts) * opt.feature_vec_size,
-                                    opt.word_vec_size)
+            self.linear = onmt.modules.BottleLinear(
+                opt.word_vec_size +
+                len(feature_dicts) * opt.feature_vec_size,
+                opt.word_vec_size)
         else:
             self.feature_luts = nn.ModuleList([])
 
@@ -65,18 +67,14 @@ class Embeddings(nn.Module):
             emb (FloatTensor): len x batch x input_size
         """
         word = self.word_lut(src_input[:, :, 0])
+        emb = word
         if self.feature_luts:
             features = [feature_lut(src_input[:, :, j+1])
                         for j, feature_lut in enumerate(self.feature_luts)]
-            # Concat feature and word embeddings.
-            emb = torch.cat([word] + features, -1)
 
             # Apply one MLP layer.
-            emb2 = self.activation(self.linear(emb.view(-1, emb.size(-1))))
-            emb = emb2.view(emb.size(0), emb.size(1), -1)
-        else:
-            emb = word
-
+            emb = self.activation(
+                self.linear(torch.cat([word] + features, -1)))
         if self.positional_encoding:
             emb = emb + Variable(self.pe[:emb.size(0), :1, :emb.size(2)]
                                  .expand_as(emb))
@@ -135,13 +133,21 @@ class Encoder(nn.Module):
                                     Encoder state
             outputs (FloatTensor):  len x batch x rnn_size -  Memory bank
         """
+        # CHECKS
+        s_len, n_batch, n_feats = input.size()
+        if lengths is not None:
+            n_batch_ = lengths.size()
+            aeq(n_batch, n_batch_)
+        # END CHECKS
 
+
+        
         emb = self.embeddings(input)
-        seq_len, n_batch, vec_size = emb.size()
+        s_len, n_batch, vec_size = emb.size()
 
         if self.encoder_layer == "mean":
             # No RNN, just take mean as final state.
-            mean = emb.mean(0).unsqueeze(0) \
+            mean = emb.mean(0) \
                    .expand(self.layers, n_batch, vec_size)
             return (mean, mean), emb
 
@@ -149,7 +155,7 @@ class Encoder(nn.Module):
             # Self-attention tranformer.
             out = emb.transpose(0, 1).contiguous()
             for i in range(self.layers):
-                out = self.transformer[i](out, input[:, :, 0])
+                out = self.transformer[i](out, input[:, :, 0].transpose(0, 1))
             return Variable(emb.data), out.transpose(0, 1).contiguous()
         else:
             # Standard RNN encoder.
@@ -223,7 +229,7 @@ class Decoder(nn.Module):
 
         Args:
             input (LongTensor):  (len x batch) -- Input tokens
-            src (LongTensor)
+            src (LongTensor): 
             context:  (src_len x batch x rnn_size)  -- Memory bank
             state: an object initializing the decoder.
 
@@ -232,6 +238,14 @@ class Decoder(nn.Module):
             final_states: an object of the same form as above
             attns: Dictionary of (src_len x batch)
         """
+        # CHECKS
+        t_len, n_batch  = input.size()
+        s_len, n_batch_, _ = src.size()
+        s_len_, n_batch__, _ = context.size()
+        aeq(n_batch, n_batch_, n_batch__)
+        aeq(s_len, s_len_)
+        # END CHECKS
+        
         if self.decoder_layer == "transformer":
             if state.previous_input:
                 input = torch.cat([state.previous_input.squeeze(2), input], 0)
@@ -252,11 +266,13 @@ class Decoder(nn.Module):
 
         if self.decoder_layer == "transformer":
             # Tranformer Decoder.
+            assert isinstance(state, TransformerDecoderState)
             output = emb.transpose(0, 1).contiguous()
             src_context = context.transpose(0, 1).contiguous()
             for i in range(self.layers):
                 output, attn = self.transformer[i](output, src_context,
-                                                   src[:, :, 0], input)
+                                                   src[:, :, 0].transpose(0, 1),
+                                                   input.transpose(0, 1))
             outputs = output.transpose(0, 1).contiguous()
             if state.previous_input:
                 outputs = outputs[state.previous_input.size(0):]
@@ -267,9 +283,16 @@ class Decoder(nn.Module):
                 attns["copy"] = attn
             state = TransformerDecoderState(input.unsqueeze(2))
         else:
+            assert isinstance(state, RNNDecoderState)
             output = state.input_feed.squeeze(0)
+            # CHECKS
+            n_batch_, _ = output.size()
+            aeq(n_batch, n_batch_)
+            # END CHECKS
+            
             coverage = state.coverage.squeeze(0) \
                 if state.coverage is not None else None
+                
             # Standard RNN decoder.
             for i, emb_t in enumerate(emb.split(1)):
                 emb_t = emb_t.squeeze(0)
@@ -296,10 +319,11 @@ class Decoder(nn.Module):
 
                 # COPY
                 if self._copy:
-                    _, copy_attn = self.copy_attn(output, context.t())
+                    _, copy_attn = self.copy_attn(output, context.transpose(0, 1))
                     attns["copy"] += [copy_attn]
             state = RNNDecoderState(hidden, output.unsqueeze(0),
-                                    coverage.unsqueeze(0))
+                                    coverage.unsqueeze(0)
+                                    if coverage is not None else None)
             outputs = torch.stack(outputs)
             for k in attns:
                 attns[k] = torch.stack(attns[k])
@@ -392,7 +416,6 @@ class RNNDecoderState(DecoderState):
         h_size = (batch_size, rnn_size)
         self.input_feed = Variable(context.data.new(*h_size).zero_(),
                                    requires_grad=False).unsqueeze(0)
-
         self.all = self.hidden + (self.input_feed,)
 
     def _resetAll(self, all):
@@ -407,7 +430,6 @@ class TransformerDecoderState(DecoderState):
     def __init__(self, input=None):
         # all objects are X x batch x dim
         # or X x (beam * sent) for beam search
-
         self.previous_input = input
         self.all = (self.previous_input,)
 
@@ -417,3 +439,6 @@ class TransformerDecoderState(DecoderState):
                 for a in all]
         self.previous_input = vars[0]
         self.all = (self.previous_input,)
+
+    def repeatBeam_(self, beamSize):
+        pass

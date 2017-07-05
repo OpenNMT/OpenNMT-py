@@ -76,7 +76,7 @@ class Statistics:
     def elapsed_time(self):
         return time.time() - self.start_time
 
-    def output(self, epoch, batch, n_batches):
+    def output(self, epoch, batch, n_batches, start):
         t = self.elapsed_time()
         print(("Epoch %2d, %5d/%5d; acc: %6.2f; ppl: %6.2f;" +
                "%3.0f src tok/s; %3.0f tgt tok/s; %6.0f s elapsed") %
@@ -85,7 +85,7 @@ class Statistics:
                self.ppl(),
                self.n_src_words / (t + 1e-5),
                self.n_words / (t + 1e-5),
-               t))
+               time.time() - start))
         sys.stdout.flush()
 
     def log(self, prefix, experiment, optim):
@@ -183,4 +183,5 @@ class MemoryEfficientLoss:
 
         # Return the gradients
         inputs, grads = collectGrads(original, dummies)
+        # assert stats.n_words == batch.tgt[1:].ne(onmt.Constants.PAD).data.sum()
         return stats, inputs, grads

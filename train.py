@@ -56,6 +56,9 @@ parser.add_argument('-copy_attn', action="store_true",
                     help='Train copy attention layer.')
 parser.add_argument('-coverage_attn', action="store_true",
                     help='Train a coverage attention layer.')
+parser.add_argument('-lambda_coverage', type=float, default=1,
+                    help='Lambda value for coverage.')
+
 parser.add_argument('-encoder_layer', type=str, default='rnn',
                     help="""Type of encoder layer to use.
                     Options: [rnn|mean|transformer]""")
@@ -228,7 +231,7 @@ def trainModel(model, trainData, validData, dataset, optim):
             trunc_size = opt.truncated_decoder if opt.truncated_decoder \
                 else target_size
 
-            for j in range(0, target_size, trunc_size):
+            for j in range(0, target_size-1, trunc_size):
                 trunc_batch = batch.truncate(j, j + trunc_size)
 
                 # Main training loop
@@ -248,7 +251,7 @@ def trainModel(model, trainData, validData, dataset, optim):
             report_stats.n_src_words += batch.lengths.data.sum()
 
             if i % opt.log_interval == -1 % opt.log_interval:
-                report_stats.output(epoch, i+1, len(trainData))
+                report_stats.output(epoch, i+1, len(trainData), total_stats.start_time)
                 if opt.log_server:
                     report_stats.log("progress", experiment, optim)
                 report_stats = onmt.Loss.Statistics()

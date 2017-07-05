@@ -142,6 +142,7 @@ class Translator(object):
         # Each hypothesis in the beam uses the same context
         # and initial decoder state
         context = Variable(context.data.repeat(1, beamSize, 1))
+        batch_src = Variable(batch.src.data.repeat(1, beamSize, 1))
         decStates = encStates
         decStates.repeatBeam_(beamSize)
         beam = [onmt.Beam(beamSize, self.opt.cuda)
@@ -159,7 +160,7 @@ class Translator(object):
             input = torch.stack([b.getCurrentState() for b in beam])\
                          .t().contiguous().view(1, -1)
             input = Variable(input, volatile=True)
-            decOut, decStates, attn = self.model.decoder(input, batch.src,
+            decOut, decStates, attn = self.model.decoder(input, batch_src,
                                                          context, decStates)
             decOut = decOut.squeeze(0)
             # decOut: (beam*batch) x numWords
@@ -179,7 +180,7 @@ class Translator(object):
 
                 out, c_attn_t \
                     = self.model.generator.forward(
-                        decOut, attn_copy.view(-1, batch.src.size(0)))
+                        decOut, attn_copy.view(-1, batch_src.size(0)))
 
                 for b in range(out.size(0)):
                     for c in range(c_attn_t.size(1)):

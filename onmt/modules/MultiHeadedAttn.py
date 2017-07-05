@@ -3,7 +3,7 @@ import torch.nn as nn
 from torch.autograd import Variable
 from onmt.modules.Util import BottleLinear, BottleLayerNorm, BottleSoftmax
 import math
-
+from onmt.modules import aeq
 
 class MultiHeadedAttention(nn.Module):
     ''' Multi-Head Attention module '''
@@ -26,14 +26,22 @@ class MultiHeadedAttention(nn.Module):
         self.res_dropout = nn.Dropout(p)
 
     def forward(self, key, value, query, mask=None):
-        # Check Sizes
-        batch, t_len, d = key.size()
-        batch2, t_len2, d2 = value.size()
-        batch3, q_len, d3 = query.size()
-        assert batch == batch2
-        assert batch == batch3
-        assert t_len == t_len2
-        assert d == self.d_model
+        # CHECKS
+        batch, k_len, d = key.size()
+        batch_, k_len_, d_ = value.size()
+        aeq(batch, batch_)
+        aeq(k_len, k_len_)
+        aeq(d, d_)
+        batch_, q_len, d_ = query.size()
+        aeq(batch, batch_)
+        aeq(d, d_)
+        aeq(self.d_model % 8, 0)
+        if mask is not None:
+            batch_, q_len_, k_len_ = mask.size()
+            aeq(batch_, batch)
+            aeq(k_len_, k_len)
+            aeq(q_len_ == q_len)
+        # END CHECKS
 
         def shape_projection(x):
             b, l, d = x.size()
@@ -68,4 +76,12 @@ class MultiHeadedAttention(nn.Module):
 
         # Residual and layer norm
         res = self.res_dropout(out) + residual
-        return self.layer_norm(res), attn
+        ret = self.layer_norm(res)
+
+        # CHECK
+        batch_, q_len_, d_ = ret.size()
+        aeq(q_len, q_len_)
+        aeq(batch, batch_)
+        aeq(d, d_)
+        # END CHECK
+        return ret, attn
