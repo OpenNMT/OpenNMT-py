@@ -392,7 +392,7 @@ def main():
     else:
         model.cpu()
         generator.cpu()
-    
+
     if len(opt.gpus) > 1:
         print('Multi gpu training ', opt.gpus)
         model = nn.DataParallel(model, device_ids=opt.gpus, dim=1)

@@ -165,7 +165,6 @@ class Encoder(nn.Module):
             outputs, hidden_t = self.rnn(packed_emb, hidden)
             if lengths:
                 outputs = unpack(outputs)[0]
-                
             return hidden_t, outputs
 
 
@@ -337,7 +336,6 @@ class NMTModel(nn.Module):
         self.encoder = encoder
         self.decoder = decoder
 
-
     def _fix_enc_hidden(self, h):
         """
         The encoder hidden is  (layers*directions) x batch x dim
@@ -428,7 +426,8 @@ class RNNDecoderState(DecoderState):
                          volatile=True) for a in all]
         self.hidden = tuple(vars[:-1])
         self.input_feed = vars[-1]
-        self.all = self.hidden + (self.input_feed,)        
+        self.all = self.hidden + (self.input_feed,)
+
 
 class TransformerDecoderState(DecoderState):
     def __init__(self, input=None):
