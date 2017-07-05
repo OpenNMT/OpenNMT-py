@@ -214,12 +214,14 @@ class Decoder(nn.Module):
 
         # Std attention layer.
         self.attn = onmt.modules.GlobalAttention(opt.rnn_size,
-                                                 self._coverage)
+                                                 coverage=self._coverage,
+                                                 attn_type=opt.attention_type)
 
         # Separate Copy Attention.
         self._copy = False
         if opt.copy_attn:
-            self.copy_attn = onmt.modules.GlobalAttention(opt.rnn_size)
+            self.copy_attn = onmt.modules.GlobalAttention(
+                opt.rnn_size, attn_type=opt.attention_type)
             self._copy = True
 
     def forward(self, input, src, context, state):
