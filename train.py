@@ -282,8 +282,8 @@ def trainModel(model, trainData, validData, dataset, optim):
 
         # Log to remote server.
         if opt.log_server:
-            train_stats.log("train", optim, experiment)
-            valid_stats.log("valid", optim, experiment)
+            train_stats.log("train", experiment, optim)
+            valid_stats.log("valid", experiment, optim)
 
         #  (3) update the learning rate
         optim.updateLearningRate(valid_stats.ppl(), epoch)
