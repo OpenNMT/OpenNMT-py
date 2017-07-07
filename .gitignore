@@ -4,7 +4,12 @@ multi-bleu.perl
 *.pyc
 #.*
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 .idea
 *.sublime-*
 >>>>>>> ecbce3330acbe97c2319e3cb13ce38a5a399b876
+=======
+.idea
+*.sublime-*
+>>>>>>> f3c64baa06578eada0662e397dee94a89c1dee6a
