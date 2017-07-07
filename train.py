@@ -314,12 +314,18 @@ def trainModel(model, trainData, validData, dataset, optim):
 def main():
     print("Loading data from '%s'" % opt.data)
 
-    dataset = torch.load(opt.data)
+    # if we are using gpu, data should be loaded to gpu directly
+    if len(opt.gpus) >= 1:
+      device = "cuda:{0}".format(opt.gpus[0])
+    else:
+      device = 'cpu'
+
+    dataset = torch.load(opt.data, map_location={'cpu': device})
     dict_checkpoint = (opt.train_from if opt.train_from
                        else opt.train_from_state_dict)
     if dict_checkpoint:
         print('Loading dicts from checkpoint at %s' % dict_checkpoint)
-        checkpoint = torch.load(dict_checkpoint)
+        checkpoint = torch.load(dict_checkpoint, map_location={'cpu': device})
         dataset['dicts'] = checkpoint['dicts']
 
     trainData = onmt.Dataset(dataset['train']['src'],
