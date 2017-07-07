@@ -3,3 +3,8 @@ multi-bleu.perl
 *.pt
 *.pyc
 #.*
+<<<<<<< HEAD
+=======
+.idea
+*.sublime-*
+>>>>>>> ecbce3330acbe97c2319e3cb13ce38a5a399b876

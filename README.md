@@ -4,6 +4,8 @@ This is a [Pytorch](https://github.com/pytorch/pytorch)
 port of [OpenNMT](https://github.com/OpenNMT/OpenNMT),
 an open-source (MIT) neural machine translation system. Full documentation is available [here](http://opennmt.net/OpenNMT-py).
 
+This code is still in heavy development (pre-version 0.1). We recommend forking if you want a stable version. 
+
 <center style="padding: 40px"><img width="70%" src="http://opennmt.github.io/simple-attn.png" /></center>
 
 ## Features
@@ -15,10 +17,15 @@ The following OpenNMT features are implemented:
 - saving and loading from checkpoints
 - inference (translation) with batching and beam search
 - multi-GPU
+
+Beta Features:
 - Context gate
+- Multiple source and target RNN (lstm/gru) types and attention (dotprod/mlp) types 
+- Image-to-text processing
 - Source word features
-- Source image processing
-- "Attention is all you need" (preliminary)
+- "Attention is all you need" 
+- TensorBoard/Crayon logging
+- Copy, coverage, and structured attention
 
 
 ## Quickstart
@@ -103,6 +110,7 @@ wget https://staff.fnwi.uva.nl/d.elliott/wmt16/mmt16_task1_test.tgz && tar -xf m
 ### 1) Preprocess the data.
 
 ```bash
+# Delete the last line of val and training files.
 for l in en de; do for f in data/multi30k/*.$l; do if [[ "$f" != *"test"* ]]; then sed -i "$ d" $f; fi;  done; done
 for l in en de; do for f in data/multi30k/*.$l; do perl tokenizer.perl -a -no-escape -l $l -q  < $f > $f.atok; done; done
 python preprocess.py -train_src data/multi30k/train.en.atok -train_tgt data/multi30k/train.de.atok -valid_src data/multi30k/val.en.atok -valid_tgt data/multi30k/val.de.atok -save_data data/multi30k.atok.low -lower

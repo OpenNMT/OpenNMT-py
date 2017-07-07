@@ -6,18 +6,28 @@
 usage: train.py [-h] [-md] -data DATA [-save_model SAVE_MODEL]
                 [-train_from_state_dict TRAIN_FROM_STATE_DICT]
                 [-train_from TRAIN_FROM] [-layers LAYERS] [-rnn_size RNN_SIZE]
-                [-word_vec_size WORD_VEC_SIZE] [-input_feed INPUT_FEED]
-                [-brnn] [-brnn_merge BRNN_MERGE] [-batch_size BATCH_SIZE]
+                [-word_vec_size WORD_VEC_SIZE]
+                [-feature_vec_size FEATURE_VEC_SIZE] [-input_feed INPUT_FEED]
+                [-rnn_type {LSTM,GRU}] [-brnn] [-brnn_merge BRNN_MERGE]
+                [-copy_attn] [-coverage_attn] [-encoder_layer ENCODER_LAYER]
+                [-decoder_layer DECODER_LAYER]
+                [-context_gate {source,target,both}]
+                [-encoder_type ENCODER_TYPE] [-batch_size BATCH_SIZE]
                 [-max_generator_batches MAX_GENERATOR_BATCHES]
                 [-epochs EPOCHS] [-start_epoch START_EPOCH]
                 [-param_init PARAM_INIT] [-optim OPTIM]
                 [-max_grad_norm MAX_GRAD_NORM] [-dropout DROPOUT]
-                [-curriculum] [-extra_shuffle] [-learning_rate LEARNING_RATE]
+                [-position_encoding] [-share_decoder_embeddings] [-curriculum]
+                [-extra_shuffle] [-truncated_decoder TRUNCATED_DECODER]
+                [-learning_rate LEARNING_RATE]
                 [-learning_rate_decay LEARNING_RATE_DECAY]
                 [-start_decay_at START_DECAY_AT]
+                [-start_checkpoint_at START_CHECKPOINT_AT]
+                [-decay_method DECAY_METHOD] [-warmup_steps WARMUP_STEPS]
                 [-pre_word_vecs_enc PRE_WORD_VECS_ENC]
                 [-pre_word_vecs_dec PRE_WORD_VECS_DEC] [-gpus GPUS [GPUS ...]]
-                [-log_interval LOG_INTERVAL]
+                [-log_interval LOG_INTERVAL] [-log_server LOG_SERVER]
+                [-experiment_name EXPERIMENT_NAME] [-seed SEED]
 
 ```
 
@@ -80,11 +90,23 @@ Size of LSTM hidden states
 Word embedding sizes
 ```
 
+### **-feature_vec_size FEATURE_VEC_SIZE** 
+
+```
+Feature vec sizes
+```
+
 ### **-input_feed INPUT_FEED** 
 
 ```
 Feed the context vector at each time step as additional input (via concatenation
 with the word embeddings) to the decoder.
+```
+
+### **-rnn_type {LSTM,GRU}** 
+
+```
+The gate type to use in the RNNs
 ```
 
 ### **-brnn** 
@@ -97,6 +119,43 @@ Use a bidirectional encoder
 
 ```
 Merge action for the bidirectional hidden states: [concat|sum]
+```
+
+### **-copy_attn** 
+
+```
+Train copy attention layer.
+```
+
+### **-coverage_attn** 
+
+```
+Train a coverage attention layer.
+```
+
+### **-encoder_layer ENCODER_LAYER** 
+
+```
+Type of encoder layer to use. Options: [rnn|mean|transformer]
+```
+
+### **-decoder_layer DECODER_LAYER** 
+
+```
+Type of decoder layer to use. [rnn|transformer]
+```
+
+### **-context_gate {source,target,both}** 
+
+```
+Type of context gate to use [source|target|both]. Do not select for no context
+gate.
+```
+
+### **-encoder_type ENCODER_TYPE** 
+
+```
+Type of encoder to use. Options are [text|img].
 ```
 
 ### **-batch_size BATCH_SIZE** 
@@ -128,7 +187,7 @@ The epoch from which to start
 
 ```
 Parameters are initialized over uniform distribution with support (-param_init,
-param_init)
+param_init). Use 0 to not use initialization
 ```
 
 ### **-optim OPTIM** 
@@ -150,6 +209,18 @@ equal to max_grad_norm
 Dropout probability; applied between LSTM stacks.
 ```
 
+### **-position_encoding** 
+
+```
+Use a sinusoid to mark relative words positions.
+```
+
+### **-share_decoder_embeddings** 
+
+```
+Share the word and softmax embeddings for decoder.
+```
+
 ### **-curriculum** 
 
 ```
@@ -162,6 +233,12 @@ Sometimes setting this to 1 will increase convergence speed.
 ```
 By default only shuffle mini-batch order; when true, shuffle and re-assign mini-
 batches
+```
+
+### **-truncated_decoder TRUNCATED_DECODER** 
+
+```
+Truncated bptt.
 ```
 
 ### **-learning_rate LEARNING_RATE** 
@@ -183,6 +260,24 @@ not decrease on the validation set or (ii) epoch has gone past start_decay_at
 
 ```
 Start decaying every epoch after and including this epoch
+```
+
+### **-start_checkpoint_at START_CHECKPOINT_AT** 
+
+```
+Start checkpointing every epoch after and including this epoch
+```
+
+### **-decay_method DECAY_METHOD** 
+
+```
+Use a custom learning rate decay [|noam]
+```
+
+### **-warmup_steps WARMUP_STEPS** 
+
+```
+Number of warmup steps for custom decay.
 ```
 
 ### **-pre_word_vecs_enc PRE_WORD_VECS_ENC** 
@@ -209,4 +304,22 @@ Use CUDA on the listed devices.
 
 ```
 Print stats at this interval.
+```
+
+### **-log_server LOG_SERVER** 
+
+```
+Send logs to this crayon server.
+```
+
+### **-experiment_name EXPERIMENT_NAME** 
+
+```
+Name of the experiment for logging.
+```
+
+### **-seed SEED** 
+
+```
+Random seed used for the experiments reproducibility.
 ```

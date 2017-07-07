@@ -107,16 +107,14 @@ class Translator(object):
 
         #  (1) run the encoder on the src
         encStates, context = self.model.encoder(batch.src)
-
-        rnnSize = context.size(2)
-        encStates = self.model.setup_decoder(encStates)
+        encStates = self.model.init_decoder_state(context, encStates)
 
         decoder = self.model.decoder
         attentionLayer = decoder.attn
         useMasking = (self._type == "text")
 
         #  This mask is applied to the attention model inside the decoder
-        #  so that the attention ignores source (padding
+        #  so that the attention ignores source padding
         padMask = None
         if useMasking:
             padMask = batch.words().data.eq(onmt.Constants.PAD).t()
@@ -130,11 +128,15 @@ class Translator(object):
         goldScores = context.data.new(batchSize).zero_()
         if batch.tgt is not None:
             decStates = encStates
-            decOut = self.model.make_init_decoder_output(context)
             mask(padMask)
+<<<<<<< HEAD
             initOutput = self.model.make_init_decoder_output(context)
             decOut, decStates, attn = self.model.decoder(
                 batch.tgt[:-1], batch.src, decStates, context, initOutput)
+=======
+            decOut, decStates, attn = decoder(batch.tgt[:-1],
+                                              context, decStates)
+>>>>>>> ecbce3330acbe97c2319e3cb13ce38a5a399b876
             for dec_t, tgt_t in zip(decOut, batch.tgt[1:].data):
                 gen_t = self.model.generator.forward(dec_t)
                 tgt_t = tgt_t.unsqueeze(1)
@@ -143,52 +145,48 @@ class Translator(object):
                 goldScores += scores
 
         #  (3) run the decoder to generate sentences, using beam search
-
         # Each hypothesis in the beam uses the same context
         # and initial decoder state
         context = Variable(context.data.repeat(1, beamSize, 1))
-        decStates = tuple([Variable(e.data.repeat(1, beamSize, 1))
-                           for e in encStates]) \
-            if encStates else None
-
-        beam = [onmt.Beam(beamSize, self.opt.cuda) for k in range(batchSize)]
-        decOut = self.model.make_init_decoder_output(context)
+        batch_src = Variable(batch.src.data.repeat(1, beamSize, 1))
+        decStates = encStates
+        decStates.repeatBeam_(beamSize)
+        beam = [onmt.Beam(beamSize, self.opt.cuda)
+                for _ in range(batchSize)]
         if useMasking:
             padMask = batch.src.data[:, :, 0].eq(
                 onmt.Constants.PAD).t() \
                                    .unsqueeze(0) \
                                    .repeat(beamSize, 1, 1)
 
-        batchIdx = list(range(batchSize))
-        remainingSents = batchSize
+        #  (3b) The main loop
         for i in range(self.opt.max_sent_length):
+            # (a) Run RNN decoder forward one step.
             mask(padMask)
-            # Prepare decoder input.
-            input = torch.stack([b.getCurrentState() for b in beam
-                                 if not b.done]).t().contiguous().view(1, -1)
-            decOut, decStates, attn = self.model.decoder(
-                Variable(input, volatile=True), batch.src,
-                decStates, context, decOut)
-
-            # decOut: 1 x (beam*batch) x numWords
+            input = torch.stack([b.getCurrentState() for b in beam])\
+                         .t().contiguous().view(1, -1)
+            input = Variable(input, volatile=True)
+            decOut, decStates, attn = self.model.decoder(input, batch_src,
+                                                         context, decStates)
             decOut = decOut.squeeze(0)
-
-            attn["std"] = attn["std"].view(beamSize, remainingSents, -1) \
+            # decOut: (beam*batch) x numWords
+            attn["std"] = attn["std"].view(beamSize, batchSize, -1) \
                                      .transpose(0, 1).contiguous()
-            if not self.copy_attn or self.copy_attn == "std":
+
+            # (b) Compute a vector of batch*beam word scores.
+            if not self.copy_attn:
                 out = self.model.generator.forward(decOut)
             else:
+                # Copy Attention Case
                 words = batch.words().t()
-                words = torch.stack([words[i] for i, b in enumerate(beam)
-                                     if not b.done]).contiguous()
-
-                attn_copy = attn["copy"].view(beamSize, remainingSents, -1) \
+                words = torch.stack([words[i] for i, b in enumerate(beam)])\
+                             .contiguous()
+                attn_copy = attn["copy"].view(beamSize, batchSize, -1) \
                                         .transpose(0, 1).contiguous()
 
                 out, c_attn_t \
                     = self.model.generator.forward(
-                        decOut, words,
-                        attn_copy.view(-1, batch.src.size(0)))
+                        decOut, attn_copy.view(-1, batch_src.size(0)))
 
                 for b in range(out.size(0)):
                     for c in range(c_attn_t.size(1)):
@@ -197,52 +195,21 @@ class Translator(object):
                             out[b, v] += c_attn_t[b, c]
                 out = out.log()
 
+            word_scores = out.view(beamSize, batchSize, -1) \
+                .transpose(0, 1).contiguous()
             # batch x beam x numWords
-            wordLk = out.view(beamSize, remainingSents, -1) \
-                        .transpose(0, 1).contiguous()
+
+            # (c) Advance each beam.
             active = []
             for b in range(batchSize):
-                if beam[b].done:
-                    continue
-
-                idx = batchIdx[b]
-                if not beam[b].advance(wordLk.data[idx],
-                                       attn["std"].data[idx]):
+                is_done = beam[b].advance(word_scores.data[b],
+                                          attn["std"].data[b])
+                if not is_done:
                     active += [b]
-
-                for decState in decStates:  # iterate over h, c
-                    # layers x beam*sent x dim
-                    sentStates = decState.view(-1, beamSize,
-                                               remainingSents,
-                                               decState.size(2))[:, :, idx]
-                    sentStates.data.copy_(
-                        sentStates.data.index_select(
-                            1, beam[b].getCurrentOrigin()))
-
+                decStates.beamUpdate_(b, beam[b].getCurrentOrigin(),
+                                      beamSize)
             if not active:
                 break
-
-            # In this section, the sentences that are still active are
-            # compacted so that the decoder is not run on completed sentences
-            activeIdx = self.tt.LongTensor([batchIdx[k] for k in active])
-            batchIdx = {beam: idx for idx, beam in enumerate(active)}
-
-            def updateActive(t, size=rnnSize, batchPos=-2):
-                # Select only the remaining active sentences
-                view = t.data.view(-1, remainingSents, t.size(-1))
-                newSize = list(t.size())
-
-                newSize[batchPos] = newSize[batchPos] * \
-                    len(activeIdx) // remainingSents
-                return Variable(view.index_select(1, activeIdx)
-                                .view(*newSize), volatile=True)
-            decStates = tuple([updateActive(d) for d in decStates])
-            decOut = updateActive(decOut)
-            context = updateActive(context)
-            if useMasking:
-                padMask = padMask.index_select(1, activeIdx)
-
-            remainingSents = len(active)
 
         #  (4) package everything up
         allHyp, allScores, allAttn = [], [], []
@@ -252,7 +219,11 @@ class Translator(object):
             scores, ks = beam[b].sortBest()
 
             allScores += [scores[:n_best]]
-            hyps, attn = zip(*[beam[b].getHyp(k) for k in ks[:n_best]])
+            hyps, attn = [], []
+            for k in ks[:n_best]:
+                hyp, att = beam[b].getHyp(k)
+                hyps.append(hyp)
+                attn.append(att)
             allHyp += [hyps]
             if useMasking:
                 valid_attn = batch.src.data[:, b, 0].ne(onmt.Constants.PAD) \
@@ -260,6 +231,7 @@ class Translator(object):
                 attn = [a.index_select(1, valid_attn) for a in attn]
             allAttn += [attn]
 
+            # For debugging visualization.
             if self.beam_accum:
                 self.beam_accum["beam_parent_ids"].append(
                     [t.tolist()
