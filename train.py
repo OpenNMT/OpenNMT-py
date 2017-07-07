@@ -316,9 +316,9 @@ def main():
 
     # if we are using gpu, data should be loaded to gpu directly
     if len(opt.gpus) >= 1:
-      device = "cuda:{0}".format(opt.gpus[0])
+        device = "cuda:{0}".format(opt.gpus[0])
     else:
-      device = 'cpu'
+        device = 'cpu'
 
     dataset = torch.load(opt.data, map_location={'cpu': device})
     dict_checkpoint = (opt.train_from if opt.train_from
