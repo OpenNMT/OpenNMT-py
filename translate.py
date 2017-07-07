@@ -116,8 +116,13 @@ def main():
 
         for b in range(len(predBatch)):
             count += 1
-            outF.write(" ".join([i.decode('utf-8')
-                                 for i in predBatch[b][0]]) + '\n')
+            import sys
+            if sys.version_info[0] < 3:
+                outF.write(" ".join([i.decode('utf-8')
+                                    for i in predBatch[b][0]]) + '\n')
+            else:
+                outF.write(" ".join(predBatch[b][0]) + '\n')
+
             outF.flush()
 
             if opt.verbose:
