@@ -8,7 +8,7 @@ from torch.autograd import Variable
 
 
 class Translator(object):
-    def __init__(self, opt):
+    def __init__(self, opt, dummy_opt={}):
         self.opt = opt
         self.tt = torch.cuda if opt.cuda else torch
         self.beam_accum = None
@@ -21,6 +21,13 @@ class Translator(object):
         self.tgt_dict = checkpoint['dicts']['tgt']
         self.align = self.src_dict.align(self.tgt_dict)
         self.src_feature_dicts = checkpoint['dicts'].get('src_features', None)
+
+
+        # Add in default model arguments, possibly added since training.
+        for arg in dummy_opt.__dict__:
+            if arg not in model_opt.__dict__:
+                model_opt.__dict__[arg] = dummy_opt.__dict__[arg]
+
         self._type = model_opt.encoder_type \
             if "encoder_type" in model_opt else "text"
 

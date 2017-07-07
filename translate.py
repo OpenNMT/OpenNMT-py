@@ -1,6 +1,7 @@
 from __future__ import division
 from builtins import bytes
 
+from train_opts import add_model_arguments
 import onmt
 import onmt.Markdown
 import onmt.IO
@@ -57,6 +58,7 @@ parser.add_argument('-gpu', type=int, default=-1,
                     help="Device to run on")
 
 
+
 def reportScore(name, scoreTotal, wordsTotal):
     print("%s AVG SCORE: %.4f, %s PPL: %.4f" % (
         name, scoreTotal / wordsTotal,
@@ -71,11 +73,15 @@ def addone(f):
 
 def main():
     opt = parser.parse_args()
+    dummy_parser = argparse.ArgumentParser(description='train.py')
+    add_model_arguments(dummy_parser)
+    dummy_opt = dummy_parser.parse_args()
+
     opt.cuda = opt.gpu > -1
     if opt.cuda:
         torch.cuda.set_device(opt.gpu)
 
-    translator = onmt.Translator(opt)
+    translator = onmt.Translator(opt, dummy_opt)
 
     outF = codecs.open(opt.output, 'w', 'utf-8')
 
