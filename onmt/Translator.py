@@ -71,7 +71,7 @@ class Translator(object):
         if self.src_feature_dicts:
             srcFeats = [[] for i in range(len(self.src_feature_dicts))]
         srcData = []
-        tgtData = None
+        tgtData = []
         for b in srcBatch:
             _, srcD, srcFeat = onmt.IO.readSrcLine(b, self.src_dict,
                                                    self.src_feature_dicts,
@@ -134,7 +134,7 @@ class Translator(object):
             mask(padMask)
             initOutput = self.model.make_init_decoder_output(context)
             decOut, decStates, attn = self.model.decoder(
-                batch.tgt[:-1], decStates, context, initOutput)
+                batch.tgt[:-1], batch.src, decStates, context, initOutput)
             for dec_t, tgt_t in zip(decOut, batch.tgt[1:].data):
                 gen_t = self.model.generator.forward(dec_t)
                 tgt_t = tgt_t.unsqueeze(1)
