@@ -49,6 +49,7 @@ class GlobalAttention(nn.Module):
             self.linear_context = BottleLinear(dim, dim, bias=False)
             self.linear_query = nn.Linear(dim, dim, bias=False)
             self.v = BottleLinear(dim, 1, bias=False)
+            self.linear_out = nn.Linear(dim*2, dim, bias=False)
 
         self.sm = nn.Softmax()
         self.tanh = nn.Tanh()
@@ -103,7 +104,7 @@ class GlobalAttention(nn.Module):
             # batch x sourceL x dim
             wquh = self.tanh(wquh)
             # batch x sourceL
-            attn = self.v(wquh.contiguous()).squeeze()
+            attn = self.v(wquh.contiguous()).squeeze(2)
 
         if self.mask is not None:
             attn.data.masked_fill_(self.mask, -float('inf'))
@@ -117,7 +118,7 @@ class GlobalAttention(nn.Module):
         weightedContext = torch.bmm(attn3, context).squeeze(1)
 
         # Concatenate the input to context (Luong only)
-        if self.attn_type == "dotprod":
+        if self.attn_type == "dotprod" or self.attn_type == "mlp":
             weightedContext = torch.cat((weightedContext, input), 1)
             weightedContext = self.linear_out(weightedContext)
             weightedContext = self.tanh(weightedContext)
