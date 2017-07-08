@@ -52,7 +52,6 @@ class GlobalAttention(nn.Module):
             self.v = BottleLinear(dim, 1, bias=False)
             self.linear_out = nn.Linear(dim*2, dim, bias=True)
 
-
         self.sm = nn.Softmax()
         self.tanh = nn.Tanh()
         self.mask = None
@@ -97,7 +96,7 @@ class GlobalAttention(nn.Module):
             # batch x sourceL
             attn = torch.bmm(context, targetT).squeeze(2)
         elif self.attn_type == "mlp":
-            # batch x dim x 1
+            # batch x 1 x dim
             wq = self.linear_query(input).unsqueeze(1)
             # batch x sourceL x dim
             uh = self.linear_context(context.contiguous())
@@ -123,8 +122,8 @@ class GlobalAttention(nn.Module):
         # Concatenate the input to context (Luong only)
         weightedContext = torch.cat((weightedContext, input), 1)
         weightedContext = self.linear_out(weightedContext)
-        #if self.attn_type == "dotprod": <- See paper does not include this step!
-        weightedContext = self.tanh(weightedContext)
+        if self.attn_type == "dotprod":
+            weightedContext = self.tanh(weightedContext)
 
         # Check output sizes
         batch_, sourceL_ = attn.size()
