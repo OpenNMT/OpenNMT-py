@@ -47,10 +47,10 @@ class GlobalAttention(nn.Module):
             self.linear_out = nn.Linear(dim*2, dim, bias=False)
         elif self.attn_type == "mlp":
             self.linear_context = BottleLinear(dim, dim, bias=False)
-            self.linear_query = nn.Linear(dim, dim, bias=False)
+            self.linear_query = nn.Linear(dim, dim, bias=True)
             self.mlp_tanh = nn.Tanh()
             self.v = BottleLinear(dim, 1, bias=False)
-            self.linear_out = nn.Linear(dim*2, dim)
+            self.linear_out = nn.Linear(dim*2, dim, bias=True)
 
 
         self.sm = nn.Softmax()
@@ -75,12 +75,12 @@ class GlobalAttention(nn.Module):
         aeq(batch, batch_)
         aeq(dim, dim_)
         aeq(self.dim, dim)
-        if coverage is not None:
+        if coverage:
             batch_, sourceL_ = coverage.size()
             aeq(batch, batch_)
             aeq(sourceL, sourceL_)
 
-        if self.mask is not None:
+        if self.mask:
             beam_, batch_, sourceL_ = self.mask.size()
             aeq(batch, batch_*beam_)
             aeq(sourceL, sourceL_)
@@ -111,6 +111,7 @@ class GlobalAttention(nn.Module):
         if self.mask is not None:
             attn.data.masked_fill_(self.mask, -float('inf'))
 
+        # SoftMax
         attn = self.sm(attn)
 
         # Compute context weighted by attention.
@@ -122,8 +123,8 @@ class GlobalAttention(nn.Module):
         # Concatenate the input to context (Luong only)
         weightedContext = torch.cat((weightedContext, input), 1)
         weightedContext = self.linear_out(weightedContext)
-        if self.attn_type == "dotprod":
-            weightedContext = self.tanh(weightedContext)
+        #if self.attn_type == "dotprod": <- See paper does not include this step!
+        weightedContext = self.tanh(weightedContext)
 
         # Check output sizes
         batch_, sourceL_ = attn.size()
