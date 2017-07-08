@@ -44,14 +44,15 @@ class GlobalAttention(nn.Module):
 
         if self.attn_type == "dotprod":
             self.linear_in = nn.Linear(dim, dim, bias=False)
+            self.linear_out = nn.Linear(dim*2, dim, bias=False)
         elif self.attn_type == "mlp":
             self.linear_context = BottleLinear(dim, dim, bias=False)
             self.linear_query = nn.Linear(dim, dim, bias=False)
             self.mlp_tanh = nn.Tanh()
             self.v = BottleLinear(dim, 1, bias=False)
+            self.linear_out = nn.Linear(dim*2, dim)
 
 
-        self.linear_out = nn.Linear(dim*2, dim, bias=False)
         self.sm = nn.Softmax()
         self.tanh = nn.Tanh()
         self.mask = None
@@ -121,7 +122,8 @@ class GlobalAttention(nn.Module):
         # Concatenate the input to context (Luong only)
         weightedContext = torch.cat((weightedContext, input), 1)
         weightedContext = self.linear_out(weightedContext)
-        weightedContext = self.tanh(weightedContext)
+        if self.attn_type == "dotprod":
+            weightedContext = self.tanh(weightedContext)
 
         # Check output sizes
         batch_, sourceL_ = attn.size()
