@@ -122,7 +122,7 @@ class GlobalAttention(nn.Module):
         # Concatenate the input to context (Luong only)
         weightedContext = torch.cat((weightedContext, input), 1)
         weightedContext = self.linear_out(weightedContext)
-        #if self.attn_type == "dotprod":
+        # if self.attn_type == "dotprod":
         weightedContext = self.tanh(weightedContext)
 
         # Check output sizes
