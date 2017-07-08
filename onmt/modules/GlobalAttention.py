@@ -44,13 +44,14 @@ class GlobalAttention(nn.Module):
 
         if self.attn_type == "dotprod":
             self.linear_in = nn.Linear(dim, dim, bias=False)
-            self.linear_out = nn.Linear(dim*2, dim, bias=False)
         elif self.attn_type == "mlp":
             self.linear_context = BottleLinear(dim, dim, bias=False)
             self.linear_query = nn.Linear(dim, dim, bias=False)
+            self.mlp_tanh = nn.Tanh()
             self.v = BottleLinear(dim, 1, bias=False)
-            self.linear_out = nn.Linear(dim*2, dim, bias=False)
 
+
+        self.linear_out = nn.Linear(dim*2, dim, bias=False)
         self.sm = nn.Softmax()
         self.tanh = nn.Tanh()
         self.mask = None
@@ -102,7 +103,7 @@ class GlobalAttention(nn.Module):
             # batch x sourceL x dim
             wquh = uh + wq.expand_as(uh)
             # batch x sourceL x dim
-            wquh = self.tanh(wquh)
+            wquh = self.mlp_tanh(wquh)
             # batch x sourceL
             attn = self.v(wquh.contiguous()).squeeze(2)
 
