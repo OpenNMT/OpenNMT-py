@@ -119,10 +119,9 @@ class GlobalAttention(nn.Module):
         weightedContext = torch.bmm(attn3, context).squeeze(1)
 
         # Concatenate the input to context (Luong only)
-        if self.attn_type == "dotprod" or self.attn_type == "mlp":
-            weightedContext = torch.cat((weightedContext, input), 1)
-            weightedContext = self.linear_out(weightedContext)
-            weightedContext = self.tanh(weightedContext)
+        weightedContext = torch.cat((weightedContext, input), 1)
+        weightedContext = self.linear_out(weightedContext)
+        weightedContext = self.tanh(weightedContext)
 
         # Check output sizes
         batch_, sourceL_ = attn.size()
