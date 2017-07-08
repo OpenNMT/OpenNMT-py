@@ -66,6 +66,7 @@ class GlobalAttention(nn.Module):
         context (FloatTensor): batch x sourceL x dim
         coverage (FloatTensor): batch x sourceL
         """
+        
         # Check input sizes
         batch, sourceL, dim = context.size()
         batch_, dim_ = input.size()
@@ -95,6 +96,8 @@ class GlobalAttention(nn.Module):
             attn = torch.bmm(context, targetT).squeeze(2)
         elif self.attn_type == "mlp":
             # batch x dim x 1
+            # in practice, actually batch x 1 x dim; parameter of unsqueeze
+            # determines where 1-length dimension is added
             wq = self.linear_query(input).unsqueeze(1)
             # batch x sourceL x dim
             uh = self.linear_context(context.contiguous())
@@ -103,7 +106,11 @@ class GlobalAttention(nn.Module):
             # batch x sourceL x dim
             wquh = self.tanh(wquh)
             # batch x sourceL
-            attn = self.v(wquh.contiguous()).squeeze()
+            # the (Bottle)Linear transformation adds an extra singleton
+            # dimension; therefore some squeezing is necessary to remove
+            # it. However, squeeze with dim=None will also remove the
+            # sourceL dimension if sourceL == 1.
+            attn = self.v(wquh.contiguous()).squeeze(2)
 
         if self.mask is not None:
             attn.data.masked_fill_(self.mask, -float('inf'))
