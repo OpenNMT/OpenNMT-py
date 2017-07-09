@@ -68,6 +68,7 @@ class GlobalAttention(nn.Module):
         context (FloatTensor): batch x sourceL x dim
         coverage (FloatTensor): batch x sourceL
         """
+        
         # Check input sizes
         batch, sourceL, dim = context.size()
         batch_, dim_ = input.size()
