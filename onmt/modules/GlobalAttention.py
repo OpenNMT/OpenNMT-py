@@ -47,8 +47,10 @@ class GlobalAttention(nn.Module):
             self.linear_out = nn.Linear(dim*2, dim, bias=False)
         elif self.attn_type == "mlp":
             self.linear_context = BottleLinear(dim, dim, bias=False)
-            self.linear_query = nn.Linear(dim, dim, bias=False)
+            self.linear_query = nn.Linear(dim, dim, bias=True)
+            self.mlp_tanh = nn.Tanh()
             self.v = BottleLinear(dim, 1, bias=False)
+            self.linear_out = nn.Linear(dim*2, dim, bias=True)
 
         self.sm = nn.Softmax()
         self.tanh = nn.Tanh()
@@ -73,12 +75,12 @@ class GlobalAttention(nn.Module):
         aeq(batch, batch_)
         aeq(dim, dim_)
         aeq(self.dim, dim)
-        if coverage is not None:
+        if coverage:
             batch_, sourceL_ = coverage.size()
             aeq(batch, batch_)
             aeq(sourceL, sourceL_)
 
-        if self.mask is not None:
+        if self.mask:
             beam_, batch_, sourceL_ = self.mask.size()
             aeq(batch, batch_*beam_)
             aeq(sourceL, sourceL_)
@@ -95,26 +97,21 @@ class GlobalAttention(nn.Module):
             # batch x sourceL
             attn = torch.bmm(context, targetT).squeeze(2)
         elif self.attn_type == "mlp":
-            # batch x dim x 1
-            # in practice, actually batch x 1 x dim; parameter of unsqueeze
-            # determines where 1-length dimension is added
+            # batch x 1 x dim
             wq = self.linear_query(input).unsqueeze(1)
             # batch x sourceL x dim
             uh = self.linear_context(context.contiguous())
             # batch x sourceL x dim
             wquh = uh + wq.expand_as(uh)
             # batch x sourceL x dim
-            wquh = self.tanh(wquh)
+            wquh = self.mlp_tanh(wquh)
             # batch x sourceL
-            # the (Bottle)Linear transformation adds an extra singleton
-            # dimension; therefore some squeezing is necessary to remove
-            # it. However, squeeze with dim=None will also remove the
-            # sourceL dimension if sourceL == 1.
             attn = self.v(wquh.contiguous()).squeeze(2)
 
         if self.mask is not None:
             attn.data.masked_fill_(self.mask, -float('inf'))
 
+        # SoftMax
         attn = self.sm(attn)
 
         # Compute context weighted by attention.
@@ -124,10 +121,10 @@ class GlobalAttention(nn.Module):
         weightedContext = torch.bmm(attn3, context).squeeze(1)
 
         # Concatenate the input to context (Luong only)
-        if self.attn_type == "dotprod":
-            weightedContext = torch.cat((weightedContext, input), 1)
-            weightedContext = self.linear_out(weightedContext)
-            weightedContext = self.tanh(weightedContext)
+        weightedContext = torch.cat((weightedContext, input), 1)
+        weightedContext = self.linear_out(weightedContext)
+        # if self.attn_type == "dotprod":
+        weightedContext = self.tanh(weightedContext)
 
         # Check output sizes
         batch_, sourceL_ = attn.size()
