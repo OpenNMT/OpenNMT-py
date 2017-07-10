@@ -161,8 +161,6 @@ parser.add_argument('-seed', type=int, default=-1,
                     help="""Random seed used for the experiments
                     reproducibility.""")
 
-parser.add_argument('-force_cpu', action='store_true',
-                    help="Use the CPU")
 opt = parser.parse_args()
 
 print(opt)
@@ -322,11 +320,7 @@ def main():
     if dict_checkpoint:
         print('Loading dicts from checkpoint at %s' % dict_checkpoint)
 
-        if opt.force_cpu:
-          print("Using CPU (forced)")
-          checkpoint = torch.load(dict_checkpoint, map_location=lambda storage, loc: storage)
-        else:
-          checkpoint = torch.load(dict_checkpoint)
+        checkpoint = torch.load(dict_checkpoint, map_location=lambda storage, loc: storage)
         dataset['dicts'] = checkpoint['dicts']
 
     trainData = onmt.Dataset(dataset['train']['src'],
