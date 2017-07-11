@@ -80,7 +80,7 @@ class GlobalAttention(nn.Module):
             aeq(batch, batch_)
             aeq(sourceL, sourceL_)
 
-        if self.mask:
+        if self.mask is not None:
             beam_, batch_, sourceL_ = self.mask.size()
             aeq(batch, batch_*beam_)
             aeq(sourceL, sourceL_)
