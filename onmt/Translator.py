@@ -129,8 +129,10 @@ class Translator(object):
         if batch.tgt is not None:
             decStates = encStates
             mask(padMask.unsqueeze(0))
-            decOut, decStates, attn = self.model.decoder(batch.tgt[:-1], batch.src, 
-                                              context, decStates)
+            decOut, decStates, attn = self.model.decoder(batch.tgt[:-1],
+                                                         batch.src,
+                                                         context,
+                                                         decStates)
             for dec_t, tgt_t in zip(decOut, batch.tgt[1:].data):
                 gen_t = self.model.generator.forward(dec_t)
                 tgt_t = tgt_t.unsqueeze(1)
