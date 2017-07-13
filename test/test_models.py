@@ -6,7 +6,6 @@ import torch
 
 from torch.autograd import Variable
 
-
 # This will be redundant with #104 pull. Can simply include the parameter file
 
 parser = argparse.ArgumentParser(description='train.py')
@@ -164,7 +163,8 @@ class TestModelInitializing(unittest.TestCase):
             outputsize = torch.zeros(sourceL-1, bsize, opt.rnn_size)
             # Make sure that output has the correct size
             self.assertEqual(outputs.size(), outputsize.size())
-        except:
+        except Exception as e:
+            print(e.trace())
             self.fail("NMT model forward failed.")
 
     def test_41_nmtmodel_forward(self):
@@ -246,7 +246,7 @@ class TestModelInitializing(unittest.TestCase):
         opt.coverage_attn = True
         self.ntmmodel_forward(opt)
 
-    # NO TRANSFORMER FOR NOW
+    # NO TRANSFORMER FOR NOW - DOES NOT WORK
     # def test_47_nmtmodel_forward_decoder_transformer(self):
     #     """
     #     Test to check whether the model forward yields the correct size
@@ -256,6 +256,25 @@ class TestModelInitializing(unittest.TestCase):
     #     opt.decoder_layer = 'transformer'
     #     self.ntmmodel_forward(opt)
 
+    # def test_47_1_nmtmodel_forward_encoder_transformer(self):
+    #     """
+    #     Test to check whether the model forward yields the correct size
+    #     with coverage attention
+    #     """
+    #     opt = copy.deepcopy(self.opt)
+    #     opt.encoder_layer = 'transformer'
+    #     self.ntmmodel_forward(opt)
+
+    # def test_47_2_nmtmodel_forward_both_transformer(self):
+    #     """
+    #     Test to check whether the model forward yields the correct size
+    #     with coverage attention
+    #     """
+    #     opt = copy.deepcopy(self.opt)
+    #     opt.decoder_layer = 'transformer'
+    #     opt.encoder_layer = 'transformer'
+    #     self.ntmmodel_forward(opt)
+
     def test_48_nmtmodel_forward_no_input_feed(self):
         """
         Test to check whether the model forward yields the correct size
@@ -263,6 +282,24 @@ class TestModelInitializing(unittest.TestCase):
         """
         opt = copy.deepcopy(self.opt)
         opt.input_feed = 0
+        self.ntmmodel_forward(opt)
+
+    def test_49_nmtmodel_forward_layers(self):
+        """
+        Test to check whether the model forward yields the correct size
+        with coverage attention
+        """
+        opt = copy.deepcopy(self.opt)
+        opt.layers = 10
+        self.ntmmodel_forward(opt)
+
+    def test_50_nmtmodel_forward_gru(self):
+        """
+        Test to check whether the model forward yields the correct size
+        with coverage attention
+        """
+        opt = copy.deepcopy(self.opt)
+        opt.rnn_type = 'GRU'
         self.ntmmodel_forward(opt)
 
 
