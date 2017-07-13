@@ -47,8 +47,6 @@ class StackedGRU(nn.Module):
             input_size = rnn_size
 
     def forward(self, input, hidden):
-
-
         print(input.size())
         print(hidden[0].size())
         h_1 = []
@@ -59,5 +57,5 @@ class StackedGRU(nn.Module):
                 input = self.dropout(input)
             h_1 += [h_1_i]
 
-        h_1 = torch.stack(h_1)        
+        h_1 = torch.stack(h_1)
         return input, (h_1,)
