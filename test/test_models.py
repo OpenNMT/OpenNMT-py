@@ -1,4 +1,5 @@
 import argparse
+import copy
 import unittest
 import onmt
 import torch
@@ -78,15 +79,28 @@ parser.add_argument('-position_encoding', action='store_true',
                     help='Use a sinusoid to mark relative words positions.')
 parser.add_argument('-share_decoder_embeddings', action='store_true',
                     help='Share the word and softmax embeddings for decoder.')
+parser.add_argument('-gpus', default=[], nargs='+', type=int,
+                    help="Use CUDA on the listed devices.")
 
 opt = parser.parse_known_args()[0]
-# print(opt)
+print(opt)
 
 class TestModelInitializing(unittest.TestCase):
+
+    def __init__(self, *args, **kwargs):
+        super(TestModelInitializing, self).__init__(*args, **kwargs)
+        self.opt = opt
     # Helper to generate a vocabulary
     def get_vocab(self):
         return onmt.Dict([onmt.Constants.PAD_WORD, onmt.Constants.UNK_WORD,
                            onmt.Constants.BOS_WORD, onmt.Constants.EOS_WORD])
+
+    def get_batch(self, sourceL=3, bsize=1):
+        # len x batch x nfeat
+        test_src = torch.autograd.Variable(torch.ones(sourceL,bsize,1)).long()
+        test_tgt = torch.autograd.Variable(torch.ones(sourceL,bsize)).long()
+        test_length = torch.autograd.Variable(torch.ones(1, bsize))
+        return test_src, test_tgt, test_length
 
     def test_10_embeddings_init(self):
         try:
@@ -119,23 +133,136 @@ class TestModelInitializing(unittest.TestCase):
         except: 
             self.fail("NMT model Initialization Failed.")
 
-    def test_40_nmtmodel_init(self):
-        
-        vocab = self.get_vocab()
-        enc = onmt.Models.Encoder(opt, vocab)
-        dec = onmt.Models.Decoder(opt, vocab)
-        model = onmt.Models.NMTModel(enc, dec)
-        
-        dec_state = None
-        # len x batch x nfeat
-        test_input = torch.autograd.Variable(torch.ones(3,1,1))
-        test_length = torch.autograd.Variable(torch.ones(1, 1))
+    def ntmmodel_forward(self, opt):
+        """
+        Creates a ntmmodel with a custom opt function.
+        Forwards a testbatch anc checks output size. 
 
-        test_input = test_input.long()
-        outputs, attn, dec_state = model(test_input,
-                                         test_input,
-                                         test_length,
-                                         dec_state)
+        Args:
+            opt: Namespace with options
+        """
+        try:
+            vocab = self.get_vocab()
+            enc = onmt.Models.Encoder(opt, vocab)
+            dec = onmt.Models.Decoder(opt, vocab)
+            model = onmt.Models.NMTModel(enc, dec)
+            
+
+            # Test batchsize 1
+            sourceL = 3
+            bsize = 1
+
+            test_src, test_tgt, test_length = self.get_batch(sourceL=sourceL,
+                                                             bsize=bsize)
+            outputs, attn, _ = model(test_src,
+                                     test_tgt,
+                                     test_length)
+            
+            outputsize = torch.zeros(sourceL-1, bsize, opt.rnn_size)
+            # Make sure that output has the correct size
+            self.assertEqual(outputs.size(), outputsize.size())
+        except:
+            self.fail("NMT model forward failed.")
+
+    def test_41_nmtmodel_forward(self):
+        """
+        Test to check whether the model forward yields the correct size
+        """
+        self.ntmmodel_forward(self.opt)
+        
+
+    def test_42_nmtmodel_forward_mlp(self):
+        """
+        Test to check whether the model forward yields the correct size
+        with mlp attention
+        """
+        opt = copy.deepcopy(self.opt)
+        opt.attention_type = 'mlp'
+        self.ntmmodel_forward(opt)
+
+    def test_43_nmtmodel_forward_brnn(self):
+        """
+        Test to check whether the model forward yields the correct size
+        with bidirectional encoder
+        """
+        opt = copy.deepcopy(self.opt)
+        opt.brnn = True
+        self.ntmmodel_forward(opt)
+
+    def test_43_1_nmtmodel_forward_brnn_sum(self):
+        """
+        Test to check whether the model forward yields the correct size
+        with bidirectional encoder and merging by sum
+        """
+        opt = copy.deepcopy(self.opt)
+        opt.brnn = True
+        opt.brnn_merge = 'sum'
+        self.ntmmodel_forward(opt)
+
+    def test_44_nmtmodel_forward_context_source(self):
+        """
+        Test to check whether the model forward yields the correct size
+        with source context gate
+        """
+        opt = copy.deepcopy(self.opt)
+        opt.context_gate = 'source'
+        self.ntmmodel_forward(opt)
+
+    def test_44_1_nmtmodel_forward_context_target(self):
+        """
+        Test to check whether the model forward yields the correct size
+        with target context gate
+        """
+        opt = copy.deepcopy(self.opt)
+        opt.context_gate = 'target'
+        self.ntmmodel_forward(opt)
+
+    def test_44_2_nmtmodel_forward_context_both(self):
+        """
+        Test to check whether the model forward yields the correct size
+        with both context gates
+        """
+        opt = copy.deepcopy(self.opt)
+        opt.context_gate = 'both'
+        self.ntmmodel_forward(opt)
+
+    def test_45_nmtmodel_forward_copy(self):
+        """
+        Test to check whether the model forward yields the correct size
+        with copy attn
+        """
+        opt = copy.deepcopy(self.opt)
+        opt.copy_attn = True
+        self.ntmmodel_forward(opt)
+
+    def test_46_nmtmodel_forward_coverage(self):
+        """
+        Test to check whether the model forward yields the correct size
+        with coverage attention
+        """
+        opt = copy.deepcopy(self.opt)
+        opt.coverage_attn = True
+        self.ntmmodel_forward(opt)
+
+    # NO TRANSFORMER FOR NOW
+    # def test_47_nmtmodel_forward_decoder_transformer(self):
+    #     """
+    #     Test to check whether the model forward yields the correct size
+    #     with coverage attention
+    #     """
+    #     opt = copy.deepcopy(self.opt)
+    #     opt.decoder_layer = 'transformer'
+    #     self.ntmmodel_forward(opt)
+
+    def test_48_nmtmodel_forward_no_input_feed(self):
+        """
+        Test to check whether the model forward yields the correct size
+        with coverage attention
+        """
+        opt = copy.deepcopy(self.opt)
+        opt.input_feed = 0
+        self.ntmmodel_forward(opt)
+
 
 
 
