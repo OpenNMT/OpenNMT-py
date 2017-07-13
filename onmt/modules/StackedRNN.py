@@ -47,8 +47,6 @@ class StackedGRU(nn.Module):
             input_size = rnn_size
 
     def forward(self, input, hidden):
-        print(input.size())
-        print(hidden[0].size())
         h_1 = []
         for i, layer in enumerate(self.layers):
             h_1_i = layer(input, hidden[0][i])
