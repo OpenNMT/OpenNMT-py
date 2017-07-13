@@ -207,8 +207,9 @@ class Decoder(nn.Module):
             self.context_gate = None
             if opt.context_gate is not None:
                 self.context_gate = ContextGateFactory(
-                    opt.context_gate, opt.word_vec_size,
-                    input_size, opt.rnn_size, opt.rnn_size
+                    opt.context_gate, input_size,
+                    opt.rnn_size, opt.rnn_size,
+                    opt.rnn_size
                 )
 
         self.dropout = nn.Dropout(opt.dropout)
