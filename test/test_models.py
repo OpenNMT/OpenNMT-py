@@ -4,6 +4,8 @@ import unittest
 import onmt
 import torch
 
+from torch.autograd import Variable
+
 
 # This will be redundant with #104 pull. Can simply include the parameter file
 
@@ -85,20 +87,23 @@ parser.add_argument('-gpus', default=[], nargs='+', type=int,
 opt = parser.parse_known_args()[0]
 print(opt)
 
+
 class TestModelInitializing(unittest.TestCase):
 
     def __init__(self, *args, **kwargs):
         super(TestModelInitializing, self).__init__(*args, **kwargs)
         self.opt = opt
+
     # Helper to generate a vocabulary
+
     def get_vocab(self):
         return onmt.Dict([onmt.Constants.PAD_WORD, onmt.Constants.UNK_WORD,
-                           onmt.Constants.BOS_WORD, onmt.Constants.EOS_WORD])
+                          onmt.Constants.BOS_WORD, onmt.Constants.EOS_WORD])
 
     def get_batch(self, sourceL=3, bsize=1):
         # len x batch x nfeat
-        test_src = torch.autograd.Variable(torch.ones(sourceL,bsize,1)).long()
-        test_tgt = torch.autograd.Variable(torch.ones(sourceL,bsize)).long()
+        test_src = Variable(torch.ones(sourceL, bsize, 1)).long()
+        test_tgt = Variable(torch.ones(sourceL, bsize)).long()
         test_length = torch.autograd.Variable(torch.ones(1, bsize))
         return test_src, test_tgt, test_length
 
@@ -106,22 +111,22 @@ class TestModelInitializing(unittest.TestCase):
         try:
             # Initialize Dictionary
             vocab = self.get_vocab()
-            emb = onmt.Models.Embeddings(opt, vocab)
+            onmt.Models.Embeddings(opt, vocab)
         except:
             self.fail("Embedding Initialization Failed.")
 
     def test_20_encoder_init(self):
         try:
             vocab = self.get_vocab()
-            enc = onmt.Models.Encoder(opt, vocab)
-        except: 
+            onmt.Models.Encoder(opt, vocab)
+        except:
             self.fail("Encoder Initialization Failed.")
 
     def test_30_decoder_init(self):
         try:
             vocab = self.get_vocab()
-            dec = onmt.Models.Decoder(opt, vocab)
-        except: 
+            onmt.Models.Decoder(opt, vocab)
+        except:
             self.fail("Decoder Initialization Failed.")
 
     def test_40_nmtmodel_init(self):
@@ -129,14 +134,14 @@ class TestModelInitializing(unittest.TestCase):
             vocab = self.get_vocab()
             enc = onmt.Models.Encoder(opt, vocab)
             dec = onmt.Models.Decoder(opt, vocab)
-            nmt = onmt.Models.NMTModel(enc, dec)
-        except: 
+            onmt.Models.NMTModel(enc, dec)
+        except:
             self.fail("NMT model Initialization Failed.")
 
     def ntmmodel_forward(self, opt):
         """
         Creates a ntmmodel with a custom opt function.
-        Forwards a testbatch anc checks output size. 
+        Forwards a testbatch anc checks output size.
 
         Args:
             opt: Namespace with options
@@ -146,7 +151,6 @@ class TestModelInitializing(unittest.TestCase):
             enc = onmt.Models.Encoder(opt, vocab)
             dec = onmt.Models.Decoder(opt, vocab)
             model = onmt.Models.NMTModel(enc, dec)
-            
 
             # Test batchsize 1
             sourceL = 3
@@ -157,7 +161,6 @@ class TestModelInitializing(unittest.TestCase):
             outputs, attn, _ = model(test_src,
                                      test_tgt,
                                      test_length)
-            
             outputsize = torch.zeros(sourceL-1, bsize, opt.rnn_size)
             # Make sure that output has the correct size
             self.assertEqual(outputs.size(), outputsize.size())
@@ -169,7 +172,6 @@ class TestModelInitializing(unittest.TestCase):
         Test to check whether the model forward yields the correct size
         """
         self.ntmmodel_forward(self.opt)
-        
 
     def test_42_nmtmodel_forward_mlp(self):
         """
@@ -264,16 +266,12 @@ class TestModelInitializing(unittest.TestCase):
         self.ntmmodel_forward(opt)
 
 
-
-
-
-
-
 def suite():
     # Initialize Testsuite
     suite = unittest.TestLoader().loadTestsFromTestCase(TestModelInitializing)
 
     return suite
+
 
 if __name__ == '__main__':
     # Run Test
