@@ -247,33 +247,39 @@ class TestModelInitializing(unittest.TestCase):
         self.ntmmodel_forward(opt)
 
     # NO TRANSFORMER FOR NOW - DOES NOT WORK
-    # def test_47_nmtmodel_forward_decoder_transformer(self):
-    #     """
-    #     Test to check whether the model forward yields the correct size
-    #     with coverage attention
-    #     """
-    #     opt = copy.deepcopy(self.opt)
-    #     opt.decoder_layer = 'transformer'
-    #     self.ntmmodel_forward(opt)
+    def test_47_nmtmodel_forward_decoder_transformer(self):
+        """
+        Test to check whether the model forward yields the correct size
+        with coverage attention
+        """
+        opt = copy.deepcopy(self.opt)
+        opt.decoder_layer = 'transformer'
+        opt.word_vec_size = 64
+        opt.rnn_size = 64
+        self.ntmmodel_forward(opt)
 
-    # def test_47_1_nmtmodel_forward_encoder_transformer(self):
-    #     """
-    #     Test to check whether the model forward yields the correct size
-    #     with coverage attention
-    #     """
-    #     opt = copy.deepcopy(self.opt)
-    #     opt.encoder_layer = 'transformer'
-    #     self.ntmmodel_forward(opt)
+    def test_47_1_nmtmodel_forward_encoder_transformer(self):
+        """
+        Test to check whether the model forward yields the correct size
+        with coverage attention
+        """
+        opt = copy.deepcopy(self.opt)
+        opt.encoder_layer = 'transformer'
+        opt.word_vec_size = 64
+        opt.rnn_size = 64
+        self.ntmmodel_forward(opt)
 
-    # def test_47_2_nmtmodel_forward_both_transformer(self):
-    #     """
-    #     Test to check whether the model forward yields the correct size
-    #     with coverage attention
-    #     """
-    #     opt = copy.deepcopy(self.opt)
-    #     opt.decoder_layer = 'transformer'
-    #     opt.encoder_layer = 'transformer'
-    #     self.ntmmodel_forward(opt)
+    def test_47_2_nmtmodel_forward_both_transformer(self):
+        """
+        Test to check whether the model forward yields the correct size
+        with coverage attention
+        """
+        opt = copy.deepcopy(self.opt)
+        opt.decoder_layer = 'transformer'
+        opt.encoder_layer = 'transformer'
+        opt.word_vec_size = 64
+        opt.rnn_size = 64
+        self.ntmmodel_forward(opt)
 
     def test_48_nmtmodel_forward_no_input_feed(self):
         """
