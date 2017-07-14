@@ -103,39 +103,77 @@ class TestModelInitializing(unittest.TestCase):
         # len x batch x nfeat
         test_src = Variable(torch.ones(sourceL, bsize, 1)).long()
         test_tgt = Variable(torch.ones(sourceL, bsize)).long()
-        test_length = torch.autograd.Variable(torch.ones(1, bsize))
+        test_length = Variable(torch.ones(1, bsize).fill_(sourceL))
         return test_src, test_tgt, test_length
 
     def test_10_embeddings_init(self):
         try:
             # Initialize Dictionary
             vocab = self.get_vocab()
-            onmt.Models.Embeddings(opt, vocab)
+            onmt.Models.Embeddings(self.opt, vocab)
         except:
-            self.fail("Embedding Initialization Failed.")
+            self.fail("Embedding initialization failed.")
+
+    def test_11_embeddings_forward(self):
+        vocab = self.get_vocab()
+        emb = onmt.Models.Embeddings(self.opt, vocab)
+
+        sourceL = 3
+        bsize = 1
+        test_src, _, __ = self.get_batch(sourceL=sourceL,
+                                         bsize=bsize)
+        res = emb(test_src)
+        compare_to = torch.zeros(sourceL, bsize, self.opt.word_vec_size)
+        self.assertEqual(res.size(), compare_to.size())
+
+    def test_11_embeddings_forward_transformer_decoder(self):
+        vocab = self.get_vocab()
+        emb = onmt.Models.Embeddings(self.opt, vocab)
+
+        sourceL = 3
+        bsize = 1
+        test_src, _, __ = self.get_batch(sourceL=sourceL,
+                                         bsize=bsize)
+        input = torch.cat([test_src, test_src], 0)
+        res = emb(input)
+        compare_to = torch.zeros(sourceL*2, bsize, self.opt.word_vec_size)
+
+        self.assertEqual(res.size(), compare_to.size())
 
     def test_20_encoder_init(self):
-        try:
-            vocab = self.get_vocab()
-            onmt.Models.Encoder(opt, vocab)
-        except:
-            self.fail("Encoder Initialization Failed.")
+        vocab = self.get_vocab()
+        onmt.Models.Encoder(self.opt, vocab)
+
+    def test_21_encoder_forward(self):
+        vocab = self.get_vocab()
+        enc = onmt.Models.Encoder(self.opt, vocab)
+
+        sourceL = 3
+        bsize = 1
+        test_src, test_tgt, test_length = self.get_batch(sourceL=sourceL,
+                                                         bsize=bsize)
+
+        hidden_t, outputs = enc(test_src, test_length)
+
+        test_hid = torch.zeros(self.opt.layers, bsize, self.opt.rnn_size)
+        test_out = torch.zeros(sourceL, bsize, self.opt.rnn_size)
+
+        self.assertEqual(test_hid.size(),
+                         hidden_t[0].size(),
+                         hidden_t[1].size())
+        self.assertEqual(test_out.size(), outputs.size())
+        self.assertEqual(type(outputs), torch.autograd.Variable)
+        self.assertEqual(type(outputs.data), torch.FloatTensor)
 
     def test_30_decoder_init(self):
-        try:
-            vocab = self.get_vocab()
-            onmt.Models.Decoder(opt, vocab)
-        except:
-            self.fail("Decoder Initialization Failed.")
+        vocab = self.get_vocab()
+        onmt.Models.Decoder(self.opt, vocab)
 
     def test_40_nmtmodel_init(self):
-        try:
-            vocab = self.get_vocab()
-            enc = onmt.Models.Encoder(opt, vocab)
-            dec = onmt.Models.Decoder(opt, vocab)
-            onmt.Models.NMTModel(enc, dec)
-        except:
-            self.fail("NMT model Initialization Failed.")
+        vocab = self.get_vocab()
+        enc = onmt.Models.Encoder(self.opt, vocab)
+        dec = onmt.Models.Decoder(self.opt, vocab)
+        onmt.Models.NMTModel(enc, dec)
 
     def ntmmodel_forward(self, opt, sourceL=3, bsize=1):
         """
@@ -145,22 +183,19 @@ class TestModelInitializing(unittest.TestCase):
         Args:
             opt: Namespace with options
         """
-        try:
-            vocab = self.get_vocab()
-            enc = onmt.Models.Encoder(opt, vocab)
-            dec = onmt.Models.Decoder(opt, vocab)
-            model = onmt.Models.NMTModel(enc, dec)
+        vocab = self.get_vocab()
+        enc = onmt.Models.Encoder(opt, vocab)
+        dec = onmt.Models.Decoder(opt, vocab)
+        model = onmt.Models.NMTModel(enc, dec)
 
-            test_src, test_tgt, test_length = self.get_batch(sourceL=sourceL,
-                                                             bsize=bsize)
-            outputs, attn, _ = model(test_src,
-                                     test_tgt,
-                                     test_length)
-            outputsize = torch.zeros(sourceL-1, bsize, opt.rnn_size)
-            # Make sure that output has the correct size
-            self.assertEqual(outputs.size(), outputsize.size())
-        except Exception as e:
-            self.fail("NMT model forward failed.")
+        test_src, test_tgt, test_length = self.get_batch(sourceL=sourceL,
+                                                         bsize=bsize)
+        outputs, attn, _ = model(test_src,
+                                 test_tgt,
+                                 test_length)
+        outputsize = torch.zeros(sourceL-1, bsize, opt.rnn_size)
+        # Make sure that output has the correct size
+        self.assertEqual(outputs.size(), outputsize.size())
 
     def test_41_nmtmodel_forward(self):
         """
