@@ -22,17 +22,17 @@ class Dict(object):
     def size(self):
         return len(self.idxToLabel)
 
-    def loadFile(self, filename):
+    def loadFile(self, filename, encoding='utf-8'):
         "Load entries from a file."
-        for line in codecs.open(filename, 'r', 'utf-8'):
+        for line in codecs.open(filename, 'r', encoding):
             fields = line.split()
             label = fields[0]
             idx = int(fields[1])
             self.add(label, idx)
 
-    def writeFile(self, filename):
+    def writeFile(self, filename, encoding='utf-8'):
         "Write entries to a file."
-        with codecs.open(filename, 'w', 'utf-8') as file:
+        with codecs.open(filename, 'w', encoding) as file:
             for i in range(self.size()):
                 label = self.idxToLabel[i]
                 file.write('%s %d\n' % (label, i))
