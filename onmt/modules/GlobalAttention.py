@@ -68,14 +68,14 @@ class GlobalAttention(nn.Module):
         context (FloatTensor): batch x sourceL x dim
         coverage (FloatTensor): batch x sourceL
         """
-        
+
         # Check input sizes
         batch, sourceL, dim = context.size()
         batch_, dim_ = input.size()
         aeq(batch, batch_)
         aeq(dim, dim_)
         aeq(self.dim, dim)
-        if coverage:
+        if coverage is not None:
             batch_, sourceL_ = coverage.size()
             aeq(batch, batch_)
             aeq(sourceL, sourceL_)
@@ -85,7 +85,7 @@ class GlobalAttention(nn.Module):
             aeq(batch, batch_*beam_)
             aeq(sourceL, sourceL_)
 
-        if coverage:
+        if coverage is not None:
             context += self.linear_cover(coverage.view(-1).unsqueeze(1)) \
                            .view_as(context)
             context = self.tanh(context)
@@ -123,8 +123,8 @@ class GlobalAttention(nn.Module):
         # Concatenate the input to context (Luong only)
         weightedContext = torch.cat((weightedContext, input), 1)
         weightedContext = self.linear_out(weightedContext)
-        # if self.attn_type == "dotprod":
-        weightedContext = self.tanh(weightedContext)
+        if self.attn_type == "dotprod":
+            weightedContext = self.tanh(weightedContext)
 
         # Check output sizes
         batch_, sourceL_ = attn.size()
