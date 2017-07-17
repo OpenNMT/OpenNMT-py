@@ -71,7 +71,7 @@ class Translator(object):
         if self.src_feature_dicts:
             srcFeats = [[] for i in range(len(self.src_feature_dicts))]
         srcData = []
-        tgtData = None
+        tgtData = []
         for b in srcBatch:
             _, srcD, srcFeat = onmt.IO.readSrcLine(b, self.src_dict,
                                                    self.src_feature_dicts,
@@ -82,7 +82,7 @@ class Translator(object):
 
         if goldBatch:
             for b in goldBatch:
-                _, tgtD, tgtFeat = onmt.IO.readTgtLine(b, self.src_dict,
+                _, tgtD, tgtFeat = onmt.IO.readTgtLine(b, self.tgt_dict,
                                                        None, self._type)
                 tgtData += [tgtD]
 
@@ -128,9 +128,11 @@ class Translator(object):
         goldScores = context.data.new(batchSize).zero_()
         if batch.tgt is not None:
             decStates = encStates
-            mask(padMask)
-            decOut, decStates, attn = decoder(batch.tgt[:-1],
-                                              context, decStates)
+            mask(padMask.unsqueeze(0))
+            decOut, decStates, attn = self.model.decoder(batch.tgt[:-1],
+                                                         batch.src,
+                                                         context,
+                                                         decStates)
             for dec_t, tgt_t in zip(decOut, batch.tgt[1:].data):
                 gen_t = self.model.generator.forward(dec_t)
                 tgt_t = tgt_t.unsqueeze(1)
