@@ -87,10 +87,10 @@ opt = parser.parse_known_args()[0]
 print(opt)
 
 
-class TestModelInitializing(unittest.TestCase):
+class TestModel(unittest.TestCase):
 
     def __init__(self, *args, **kwargs):
-        super(TestModelInitializing, self).__init__(*args, **kwargs)
+        super(TestModel, self).__init__(*args, **kwargs)
         self.opt = opt
 
     # Helper to generate a vocabulary
@@ -126,7 +126,7 @@ class TestModelInitializing(unittest.TestCase):
         compare_to = torch.zeros(sourceL, bsize, self.opt.word_vec_size)
         self.assertEqual(res.size(), compare_to.size())
 
-    def test_11_embeddings_forward_transformer_decoder(self):
+    def test_12_embeddings_forward_transformer_decoder(self):
         vocab = self.get_vocab()
         emb = onmt.Models.Embeddings(self.opt, vocab)
 
@@ -144,26 +144,41 @@ class TestModelInitializing(unittest.TestCase):
         vocab = self.get_vocab()
         onmt.Models.Encoder(self.opt, vocab)
 
-    def test_21_encoder_forward(self):
+    def encoder_forward(self, opt, sourceL=3, bsize=1):
         vocab = self.get_vocab()
-        enc = onmt.Models.Encoder(self.opt, vocab)
+        enc = onmt.Models.Encoder(opt, vocab)
 
-        sourceL = 3
-        bsize = 1
         test_src, test_tgt, test_length = self.get_batch(sourceL=sourceL,
                                                          bsize=bsize)
 
         hidden_t, outputs = enc(test_src, test_length)
 
-        test_hid = torch.zeros(self.opt.layers, bsize, self.opt.rnn_size)
-        test_out = torch.zeros(sourceL, bsize, self.opt.rnn_size)
+        # Initialize vectors to compare size with
+        test_hid = torch.zeros(self.opt.layers, bsize, opt.rnn_size)
+        test_out = torch.zeros(sourceL, bsize, opt.rnn_size)
 
+        # Ensure correct sizes and types
         self.assertEqual(test_hid.size(),
                          hidden_t[0].size(),
                          hidden_t[1].size())
         self.assertEqual(test_out.size(), outputs.size())
         self.assertEqual(type(outputs), torch.autograd.Variable)
         self.assertEqual(type(outputs.data), torch.FloatTensor)
+
+    def test_21_encoder_forward(self):
+        self.encoder_forward(self.opt)
+
+    def test_22_encoder_forward_mean(self):
+        opt = copy.deepcopy(self.opt)
+        opt.encoder_layer = 'mean'
+        self.encoder_forward(opt)
+
+    # def test_23_encoder_forward_transformer(self):
+    #     opt = copy.deepcopy(self.opt)
+    #     opt.encoder_layer = 'transformer'
+    #     opt.word_vec_size = 64
+    #     opt.rnn_size = 64
+    #     self.encoder_forward(opt)
 
     def test_30_decoder_init(self):
         vocab = self.get_vocab()
@@ -182,6 +197,8 @@ class TestModelInitializing(unittest.TestCase):
 
         Args:
             opt: Namespace with options
+            sourceL: length of input sequence
+            bsize: batchsize
         """
         vocab = self.get_vocab()
         enc = onmt.Models.Encoder(opt, vocab)
@@ -194,8 +211,10 @@ class TestModelInitializing(unittest.TestCase):
                                  test_tgt,
                                  test_length)
         outputsize = torch.zeros(sourceL-1, bsize, opt.rnn_size)
-        # Make sure that output has the correct size
+        # Make sure that output has the correct size and type
         self.assertEqual(outputs.size(), outputsize.size())
+        self.assertEqual(type(outputs), torch.autograd.Variable)
+        self.assertEqual(type(outputs.data), torch.FloatTensor)
 
     def test_41_nmtmodel_forward(self):
         """
@@ -340,7 +359,7 @@ class TestModelInitializing(unittest.TestCase):
 
 def suite():
     # Initialize Testsuite
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestModelInitializing)
+    suite = unittest.TestLoader().loadTestsFromTestCase(TestModel)
 
     return suite
 
