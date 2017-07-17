@@ -53,6 +53,46 @@ class LayerNorm(nn.Module):
         return ln_out
 
 
+class Splitter:
+    def __init__(self, shard_max, eval):
+        self.shard_max = shard_max
+        self.eval = eval
+
+    def split(self, d):
+        # If eval mode, don't need to split at all
+        if self.eval:
+            yield d
+            return
+
+        # Split each element and make dummy variable.
+        dummies = {}
+        n_shards = ((list(variables.values())[0].size(0) - 1) // self.shard_max) + 1
+        shards = [{} for _ in range(n_shards)]
+        for k, v in d:
+            if isinstance(v, Variable) and v.requires_grad:
+                dummies[k] = Variable(v.data, requires_grad=True,
+                                      volatile=False)
+            else:
+                dummies[k] = v
+            splits = torch.split(dummies[k], self.shard_max)
+            for i, val in enumerate(splits):
+                shards[i][k] = val
+
+        for shard in shards:
+            yield shard
+
+        # Assumed backproped
+        inputs = []
+        grads = []
+        for k, v in dummy:
+            if isinstance(v, Variable) and (dummy[k].grad is not None):
+                inputs.append(v)
+                grads.append(dummy[k].grad.data)
+        torch.autograd.backward(inputs, grads)
+        return
+
+
+
 class BottleLinear(Bottle, nn.Linear):
     pass
 

@@ -196,11 +196,58 @@ def eval(model, criterion, data):
                                          eval=True, copy_loss=opt.copy_attn)
     for i in range(len(data)):
         batch = data[i]
-        outputs, attn, dec_hidden = model(batch.src, batch.tgt, batch.lengths)
-        batch_stats, _, _ = loss.loss(batch, outputs, attn)
+        outputs, attn, _ = model(batch.src, batch.tgt, batch.lengths)
+        gen_state = loss_compute.makeLossBatch(outputs, batch, attn)
+        batch_stats, _ = loss_compute.computeLoss(**gen_state)
         stats.update(batch_stats)
     model.train()
     return stats
+
+def NMTCriterion(vocabSize, opt):
+    """
+    Construct the standard NMT Criterion
+    """
+    weight = torch.ones(vocabSize)
+    weight[onmt.Constants.PAD] = 0
+    crit = nn.NLLLoss(weight, size_average=False)
+    if opt.gpus:
+        crit.cuda()
+    return crit
+
+
+
+class LossCompute:
+    def __init__(self, generator, crit):
+        self.generator = generator
+        self.crit = crit
+
+    def makeLossBatch(outputs, batch, attn):
+        return {"out": outputs,
+                "targ": batch.tgt[1:],
+                "align": batch.alignment[1:],
+                "coverage": attns.get("coverage"),
+                "attn": attns.get("copy")}
+
+    def computeLoss(self, out, target, attn, align, coverage):
+        def bottle(v):
+            return v.view(-1, v.size(2))
+
+        if not opt.copy_loss:
+            # Standard loss.
+            scores = self.generator(bottle(out))
+            loss = self.crit(scores, target.view(-1))
+        else:
+            # Need extra args for copy.
+            scores, c_attn = self.generator(bottle(out), bottle(attn))
+            loss = self.crit(scores, c_attn, target, bottle(align))
+
+        # Coverage can be applied for either.
+        if self.coverage_loss:
+            loss += opt.lambda_coverage * \
+                    torch.min(coverage, attn).sum()
+
+        stats = Statistics.score(loss, scores, target)
+        return loss, stats
 
 
 def trainModel(model, trainData, validData, dataset, optim):
@@ -211,6 +258,8 @@ def trainModel(model, trainData, validData, dataset, optim):
         criterion = onmt.Loss.NMTCriterion(dataset['dicts']['tgt'].size(), opt)
     else:
         criterion = onmt.modules.CopyCriterion
+
+    loss_compute = LossCompute(model.generator, criterion)
 
     def trainEpoch(epoch):
         if opt.extra_shuffle and epoch > opt.curriculum:
@@ -228,7 +277,7 @@ def trainModel(model, trainData, validData, dataset, optim):
 
         for i in range(len(trainData)):
             batchIdx = batchOrder[i] if epoch > opt.curriculum else i
-            batch = trainData[batchIdx]
+            full_batch = trainData[batchIdx]
             target_size = batch.tgt.size(0)
 
             dec_state = None
@@ -236,18 +285,21 @@ def trainModel(model, trainData, validData, dataset, optim):
                 else target_size
 
             for j in range(0, target_size-1, trunc_size):
-                trunc_batch = batch.truncate(j, j + trunc_size)
+                batch = full_batch.truncate(j, j + trunc_size)
 
                 # Main training loop
                 model.zero_grad()
-                outputs, attn, dec_state = model(trunc_batch.src,
-                                                 trunc_batch.tgt,
-                                                 trunc_batch.lengths,
-                                                 dec_state)
-                batch_stats, inputs, grads \
-                    = mem_loss.loss(trunc_batch, outputs, attn)
+                outputs, attn, dec_state = \
+                    model(batch.src, batch.tgt, batch.lengths, dec_state)
 
-                torch.autograd.backward(inputs, grads)
+                gen_state = loss_compute.makeLossBatch(outputs, batch, attn)
+                batch_stats = Statistics()
+                for shard in splitter.split(gen_state):
+                    stats, loss = loss_compute.computeLoss(**shard)
+
+                    # Compute statistics.
+                    batch_stats.update(stats)
+                    loss.div(batch.batchSize).backward()
 
                 # Update the parameters.
                 optim.step()
@@ -256,7 +308,7 @@ def trainModel(model, trainData, validData, dataset, optim):
                 if dec_state is not None:
                     dec_state.detach()
 
-            report_stats.n_src_words += batch.lengths.data.sum()
+            report_stats.n_src_words += full_batch.lengths.data.sum()
 
             if i % opt.log_interval == -1 % opt.log_interval:
                 report_stats.output(epoch, i+1, len(trainData),
