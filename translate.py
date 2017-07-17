@@ -17,16 +17,16 @@ onmt.Markdown.add_md_help_argument(parser)
 
 parser.add_argument('-model', required=True,
                     help='Path to model .pt file')
-parser.add_argument('-src',   required=True,
+parser.add_argument('-src', required=True,
                     help='Source sequence to decode (one line per sequence)')
-parser.add_argument('-src_img_dir',   default="",
+parser.add_argument('-src_img_dir', default="",
                     help='Source image directory')
 parser.add_argument('-tgt',
                     help='True target sequence (optional)')
 parser.add_argument('-output', default='pred.txt',
                     help="""Path to output the predictions (each line will
                     be the decoded sequence""")
-parser.add_argument('-beam_size',  type=int, default=5,
+parser.add_argument('-beam_size', type=int, default=5,
                     help='Beam size')
 parser.add_argument('-batch_size', type=int, default=30,
                     help='Batch size')
@@ -58,11 +58,10 @@ parser.add_argument('-gpu', type=int, default=-1,
                     help="Device to run on")
 
 
-
 def reportScore(name, scoreTotal, wordsTotal):
     print("%s AVG SCORE: %.4f, %s PPL: %.4f" % (
         name, scoreTotal / wordsTotal,
-        name, math.exp(-scoreTotal/wordsTotal)))
+        name, math.exp(-scoreTotal / wordsTotal)))
 
 
 def addone(f):
@@ -75,7 +74,7 @@ def main():
     opt = parser.parse_args()
     dummy_parser = argparse.ArgumentParser(description='train.py')
     add_model_arguments(dummy_parser)
-    dummy_opt = dummy_parser.parse_args()
+    dummy_opt = dummy_parser.parse_known_args()[0]
 
     opt.cuda = opt.gpu > -1
     if opt.cuda:

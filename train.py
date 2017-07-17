@@ -28,8 +28,8 @@ parser.add_argument('-train_from', default='', type=str,
                     help="""If training from a checkpoint then this is the
                     path to the pretrained model.""")
 
-add_train_arguments(opt)
-add_optim_arguments(opt)
+add_model_arguments(parser)
+add_optim_arguments(parser)
 opt = parser.parse_args()
 
 print(opt)
