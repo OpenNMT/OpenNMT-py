@@ -151,8 +151,8 @@ def trainModel(model, trainData, validData, dataset, optim):
 
         # Log to remote server.
         if opt.log_server:
-            train_stats.log("train", optim, experiment)
-            valid_stats.log("valid", optim, experiment)
+            train_stats.log("train", experiment, optim)
+            valid_stats.log("valid", experiment, optim)
 
         #  (3) update the learning rate
         optim.updateLearningRate(valid_stats.ppl(), epoch)
@@ -238,7 +238,7 @@ def main():
             nn.Linear(opt.rnn_size, dicts['tgt'].size()),
             nn.LogSoftmax())
         if opt.share_decoder_embeddings:
-            generator[0].weight = decoder.word_lut.weight
+            generator[0].weight = decoder.embeddings.word_lut.weight
 
     model = onmt.Models.NMTModel(encoder, decoder, len(opt.gpus) > 1)
 

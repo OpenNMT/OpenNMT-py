@@ -14,8 +14,9 @@ class Embeddings(nn.Module):
     def __init__(self, opt, dicts, feature_dicts=None):
         self.positional_encoding = opt.position_encoding
         if self.positional_encoding:
-            self.pe = self.make_positional_encodings(opt.word_vec_size, 5000) \
-                          .cuda()
+            self.pe = self.make_positional_encodings(opt.word_vec_size, 5000)
+            if len(opt.gpus) > 0:
+                self.pe.cuda()
 
         self.word_vec_size = opt.word_vec_size
 
@@ -206,8 +207,9 @@ class Decoder(nn.Module):
             self.context_gate = None
             if opt.context_gate is not None:
                 self.context_gate = ContextGateFactory(
-                    opt.context_gate, opt.word_vec_size,
-                    input_size, opt.rnn_size, opt.rnn_size
+                    opt.context_gate, input_size,
+                    opt.rnn_size, opt.rnn_size,
+                    opt.rnn_size
                 )
 
         self.dropout = nn.Dropout(opt.dropout)

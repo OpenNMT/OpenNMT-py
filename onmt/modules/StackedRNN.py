@@ -49,12 +49,11 @@ class StackedGRU(nn.Module):
     def forward(self, input, hidden):
         h_1 = []
         for i, layer in enumerate(self.layers):
-            h_1_i = layer(input, hidden[i])
+            h_1_i = layer(input, hidden[0][i])
             input = h_1_i
             if i + 1 != self.num_layers:
                 input = self.dropout(input)
             h_1 += [h_1_i]
 
         h_1 = torch.stack(h_1)
-
-        return input, h_1
+        return input, (h_1,)
