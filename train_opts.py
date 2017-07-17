@@ -50,11 +50,14 @@ def add_model_arguments(parser):
                         help="""The attention type to use:
                         dotprot (Luong) or MLP (Bahdanau)""")
     parser.add_argument('-position_encoding', action='store_true',
-                        help='Use a sinusoid to mark relative words positions.')
+                        help="""Use a sinusoid to mark relative
+                        words positions.""")
     parser.add_argument('-share_decoder_embeddings', action='store_true',
-                        help='Share the word and softmax embeddings for decoder.')
+                        help="""Share the word and softmax embeddings
+                        for decoder.""")
     parser.add_argument('-encoder_type', default='text',
                         help="Type of encoder to use. Options are [text|img].")
+
 
 def add_optim_arguments(parser):
     # Optimization options
@@ -62,8 +65,8 @@ def add_optim_arguments(parser):
                         help='Maximum batch size')
     parser.add_argument('-max_generator_batches', type=int, default=32,
                         help="""Maximum batches of words in a sequence to run
-                        the generator on in parallel. Higher is faster, but uses
-                        more memory.""")
+                        the generator on in parallel. Higher is faster, but
+                        uses more memory.""")
     parser.add_argument('-epochs', type=int, default=13,
                         help='Number of training epochs')
     parser.add_argument('-start_epoch', type=int, default=1,
@@ -73,17 +76,19 @@ def add_optim_arguments(parser):
                         with support (-param_init, param_init).
                         Use 0 to not use initialization""")
     parser.add_argument('-optim', default='sgd',
-                        help="Optimization method. [sgd|adagrad|adadelta|adam]")
+                        help="""Optimization method.
+                        [sgd|adagrad|adadelta|adam]""")
     parser.add_argument('-max_grad_norm', type=float, default=5,
                         help="""If the norm of the gradient vector exceeds this,
-                        renormalize it to have the norm equal to max_grad_norm""")
+                        renormalize it to have the norm equal to
+                        max_grad_norm""")
     parser.add_argument('-dropout', type=float, default=0.3,
-                        help='Dropout probability; applied between LSTM stacks.')
-
+                        help="""Dropout probability;
+                        applied between LSTM stacks.""")
     parser.add_argument('-curriculum', action="store_true",
                         help="""For this many epochs, order the minibatches based
-                        on source sequence length. Sometimes setting this to 1 will
-                        increase convergence speed.""")
+                        on source sequence length. Sometimes setting this to 1
+                        will increase convergence speed.""")
     parser.add_argument('-extra_shuffle', action="store_true",
                         help="""By default only shuffle mini-batch order; when true,
                         shuffle and re-assign mini-batches""")
@@ -93,8 +98,8 @@ def add_optim_arguments(parser):
     # learning rate
     parser.add_argument('-learning_rate', type=float, default=1.0,
                         help="""Starting learning rate. If adagrad/adadelta/adam is
-                        used, then this is the global learning rate. Recommended
-                        settings: sgd = 1, adagrad = 0.1,
+                        used, then this is the global learning rate.
+                        Recommended settings: sgd = 1, adagrad = 0.1,
                         adadelta = 1, adam = 0.001""")
     parser.add_argument('-learning_rate_decay', type=float, default=0.5,
                         help="""If update_learning_rate, decay learning rate by
@@ -111,7 +116,6 @@ def add_optim_arguments(parser):
                         help="""Use a custom learning rate decay [|noam] """)
     parser.add_argument('-warmup_steps', type=int, default=4000,
                         help="""Number of warmup steps for custom decay.""")
-
 
     # pretrained word vectors
     parser.add_argument('-pre_word_vecs_enc',
