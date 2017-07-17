@@ -28,7 +28,7 @@ class Embeddings(nn.Module):
         self.dropout = nn.Dropout(p=opt.dropout)
         self.feature_dicts = feature_dicts
         # Feature embeddings.
-        if self.feature_dicts is not None:
+        if self.feature_dicts:
             self.feature_luts = nn.ModuleList([
                 nn.Embedding(feature_dict.size(),
                              opt.feature_vec_size,
@@ -69,7 +69,7 @@ class Embeddings(nn.Module):
         """
         word = self.word_lut(src_input[:, :, 0])
         emb = word
-        if self.feature_dicts is not None:
+        if self.feature_dicts:
             features = [feature_lut(src_input[:, :, j+1])
                         for j, feature_lut in enumerate(self.feature_luts)]
 
