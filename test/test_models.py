@@ -106,45 +106,38 @@ class TestModel(unittest.TestCase):
         test_length = Variable(torch.ones(1, bsize).fill_(sourceL))
         return test_src, test_tgt, test_length
 
-    def test_10_embeddings_init(self):
-        try:
-            # Initialize Dictionary
-            vocab = self.get_vocab()
-            onmt.Models.Embeddings(self.opt, vocab)
-        except:
-            self.fail("Embedding initialization failed.")
+    def embeddings_forward(self, opt, sourceL=3, bsize=1):
+        '''
+        Tests if the embeddings works as expected
 
-    def test_11_embeddings_forward(self):
+        args:
+            opt: set of options
+            sourceL: Length of generated input sentence
+            bsize: Batchsize of generated input
+        '''
         vocab = self.get_vocab()
-        emb = onmt.Models.Embeddings(self.opt, vocab)
-
-        sourceL = 3
-        bsize = 1
+        emb = onmt.Models.Embeddings(opt, vocab)
         test_src, _, __ = self.get_batch(sourceL=sourceL,
                                          bsize=bsize)
-        res = emb(test_src)
-        compare_to = torch.zeros(sourceL, bsize, self.opt.word_vec_size)
-        self.assertEqual(res.size(), compare_to.size())
-
-    def test_12_embeddings_forward_transformer_decoder(self):
-        vocab = self.get_vocab()
-        emb = onmt.Models.Embeddings(self.opt, vocab)
-
-        sourceL = 3
-        bsize = 1
-        test_src, _, __ = self.get_batch(sourceL=sourceL,
-                                         bsize=bsize)
-        input = torch.cat([test_src, test_src], 0)
-        res = emb(input)
-        compare_to = torch.zeros(sourceL*2, bsize, self.opt.word_vec_size)
+        if opt.decoder_layer == 'transformer':
+            input = torch.cat([test_src, test_src], 0)
+            res = emb(input)
+            compare_to = torch.zeros(sourceL*2, bsize, opt.word_vec_size)
+        else:
+            res = emb(test_src)
+            compare_to = torch.zeros(sourceL, bsize, opt.word_vec_size)
 
         self.assertEqual(res.size(), compare_to.size())
-
-    def test_20_encoder_init(self):
-        vocab = self.get_vocab()
-        onmt.Models.Encoder(self.opt, vocab)
 
     def encoder_forward(self, opt, sourceL=3, bsize=1):
+        '''
+        Tests if the encoder works as expected
+
+        args:
+            opt: set of options
+            sourceL: Length of generated input sentence
+            bsize: Batchsize of generated input
+        '''
         vocab = self.get_vocab()
         enc = onmt.Models.Encoder(opt, vocab)
 
@@ -164,31 +157,6 @@ class TestModel(unittest.TestCase):
         self.assertEqual(test_out.size(), outputs.size())
         self.assertEqual(type(outputs), torch.autograd.Variable)
         self.assertEqual(type(outputs.data), torch.FloatTensor)
-
-    def test_21_encoder_forward(self):
-        self.encoder_forward(self.opt)
-
-    def test_22_encoder_forward_mean(self):
-        opt = copy.deepcopy(self.opt)
-        opt.encoder_layer = 'mean'
-        self.encoder_forward(opt)
-
-    # def test_23_encoder_forward_transformer(self):
-    #     opt = copy.deepcopy(self.opt)
-    #     opt.encoder_layer = 'transformer'
-    #     opt.word_vec_size = 64
-    #     opt.rnn_size = 64
-    #     self.encoder_forward(opt)
-
-    def test_30_decoder_init(self):
-        vocab = self.get_vocab()
-        onmt.Models.Decoder(self.opt, vocab)
-
-    def test_40_nmtmodel_init(self):
-        vocab = self.get_vocab()
-        enc = onmt.Models.Encoder(self.opt, vocab)
-        dec = onmt.Models.Decoder(self.opt, vocab)
-        onmt.Models.NMTModel(enc, dec)
 
     def ntmmodel_forward(self, opt, sourceL=3, bsize=1):
         """
@@ -216,145 +184,73 @@ class TestModel(unittest.TestCase):
         self.assertEqual(type(outputs), torch.autograd.Variable)
         self.assertEqual(type(outputs.data), torch.FloatTensor)
 
-    def test_41_nmtmodel_forward(self):
-        """
-        Test to check whether the model forward yields the correct size
-        """
-        self.ntmmodel_forward(self.opt)
 
-    def test_42_nmtmodel_forward_mlp(self):
-        """
-        Test to check whether the model forward yields the correct size
-        with mlp attention
-        """
-        opt = copy.deepcopy(self.opt)
-        opt.attention_type = 'mlp'
-        self.ntmmodel_forward(opt)
+def _add_test(paramSetting, methodname):
+    """
+    Adds a Test to TestModel according to settings
 
-    def test_43_nmtmodel_forward_brnn(self):
-        """
-        Test to check whether the model forward yields the correct size
-        with bidirectional encoder
-        """
-        opt = copy.deepcopy(self.opt)
-        opt.brnn = True
-        self.ntmmodel_forward(opt)
+    Args:
+        paramSetting: list of tuples of (param, setting)
+        methodname: name of the method that gets called
+    """
 
-    def test_43_1_nmtmodel_forward_brnn_sum(self):
-        """
-        Test to check whether the model forward yields the correct size
-        with bidirectional encoder and merging by sum
-        """
-        opt = copy.deepcopy(self.opt)
-        opt.brnn = True
-        opt.brnn_merge = 'sum'
-        self.ntmmodel_forward(opt)
+    def test_method(self):
+        if paramSetting:
+            opt = copy.deepcopy(self.opt)
+            for param, setting in paramSetting:
+                setattr(opt, param, setting)
+        else:
+            opt = self.opt
+        getattr(self, methodname)(opt)
+    name = 'test_' + methodname + "_" + "_".join(str(paramSetting).split()) \
+                                 if paramSetting else 'test_'+ methodname +'_standard'
+    setattr(TestModel, name, test_method)
+    test_method.__name__ = name
 
-    def test_44_nmtmodel_forward_context_source(self):
-        """
-        Test to check whether the model forward yields the correct size
-        with source context gate
-        """
-        opt = copy.deepcopy(self.opt)
-        opt.context_gate = 'source'
-        self.ntmmodel_forward(opt)
+'''
+TEST PARAMETERS
+'''
 
-    def test_44_1_nmtmodel_forward_context_target(self):
-        """
-        Test to check whether the model forward yields the correct size
-        with target context gate
-        """
-        opt = copy.deepcopy(self.opt)
-        opt.context_gate = 'target'
-        self.ntmmodel_forward(opt)
+test_embeddings = [[],
+                   [('decoder_layer', 'transformer')]]
 
-    def test_44_2_nmtmodel_forward_context_both(self):
-        """
-        Test to check whether the model forward yields the correct size
-        with both context gates
-        """
-        opt = copy.deepcopy(self.opt)
-        opt.context_gate = 'both'
-        self.ntmmodel_forward(opt)
+for p in test_embeddings:
+    _add_test(p, 'embeddings_forward')
 
-    def test_45_nmtmodel_forward_copy(self):
-        """
-        Test to check whether the model forward yields the correct size
-        with copy attn
-        """
-        opt = copy.deepcopy(self.opt)
-        opt.copy_attn = True
-        self.ntmmodel_forward(opt)
+tests_encoder = [[],
+                 [('encoder_layer', 'mean')],
+                # [('encoder_layer', 'transformer'), ('word_vec_size', 16), ('rnn_size', 16)],
+                 []]
 
-    def test_46_nmtmodel_forward_coverage(self):
-        """
-        Test to check whether the model forward yields the correct size
-        with coverage attention
-        """
-        opt = copy.deepcopy(self.opt)
-        opt.coverage_attn = True
-        self.ntmmodel_forward(opt)
+for p in tests_encoder:
+    _add_test(p, 'encoder_forward')
 
-    # def test_47_nmtmodel_forward_decoder_transformer(self):
-    #     """
-    #     Test to check whether the model forward yields the correct size
-    #     with coverage attention
-    #     """
-    #     opt = copy.deepcopy(self.opt)
-    #     opt.decoder_layer = 'transformer'
-    #     opt.word_vec_size = 64
-    #     opt.rnn_size = 64
-    #     self.ntmmodel_forward(opt, sourceL=15, bsize=10)
+tests_ntmodel = [[('rnn_type', 'GRU')],
+                [('layers', 10)],
+                [('input_feed', 0)],
+                [('decoder_layer', 'transformer'),
+                 ('encoder_layer', 'transformer'),
+                 ('word_vec_size', 16),
+                 ('rnn_size', 16)],
+                # [('encoder_layer', 'transformer'),
+                #  ('word_vec_size', 16),
+                #  ('rnn_size', 16)],
+                [('decoder_layer', 'transformer'),
+                 ('word_vec_size', 16),
+                 ('rnn_size', 16)],
+                [('coverage_attn', True)],
+                [('copy_attn', True)],
+                [('attention_type', 'mlp')],
+                [('context_gate', 'both')],
+                [('context_gate', 'target')],
+                [('context_gate', 'source')],
+                [('brnn', True), 
+                 ('brnn_merge', 'sum')],
+                [('brnn', True)],
+                []]
 
-    # def test_47_1_nmtmodel_forward_encoder_transformer(self):
-    #     """
-    #     Test to check whether the model forward yields the correct size
-    #     with coverage attention
-    #     """
-    #     opt = copy.deepcopy(self.opt)
-    #     opt.encoder_layer = 'transformer'
-    #     opt.word_vec_size = 64
-    #     opt.rnn_size = 64
-    #     self.ntmmodel_forward(opt, sourceL=15, bsize=10)
-
-    def test_47_2_nmtmodel_forward_both_transformer(self):
-        """
-        Test to check whether the model forward yields the correct size
-        with coverage attention
-        """
-        opt = copy.deepcopy(self.opt)
-        opt.decoder_layer = 'transformer'
-        opt.encoder_layer = 'transformer'
-        opt.word_vec_size = 64
-        opt.rnn_size = 64
-        self.ntmmodel_forward(opt)
-
-    def test_48_nmtmodel_forward_no_input_feed(self):
-        """
-        Test to check whether the model forward yields the correct size
-        with coverage attention
-        """
-        opt = copy.deepcopy(self.opt)
-        opt.input_feed = 0
-        self.ntmmodel_forward(opt)
-
-    def test_49_nmtmodel_forward_layers(self):
-        """
-        Test to check whether the model forward yields the correct size
-        with coverage attention
-        """
-        opt = copy.deepcopy(self.opt)
-        opt.layers = 10
-        self.ntmmodel_forward(opt)
-
-    def test_50_nmtmodel_forward_gru(self):
-        """
-        Test to check whether the model forward yields the correct size
-        with coverage attention
-        """
-        opt = copy.deepcopy(self.opt)
-        opt.rnn_type = 'GRU'
-        self.ntmmodel_forward(opt)
+for p in tests_ntmodel:
+    _add_test(p, 'ntmmodel_forward')
 
 
 def suite():
