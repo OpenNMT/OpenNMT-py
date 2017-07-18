@@ -202,52 +202,59 @@ def _add_test(paramSetting, methodname):
         else:
             opt = self.opt
         getattr(self, methodname)(opt)
-    name = 'test_' + methodname + "_" + "_".join(str(paramSetting).split()) \
-                                 if paramSetting else 'test_'+ methodname +'_standard'
+    if paramSetting:
+        name = 'test_' + methodname + "_" + "_".join(str(paramSetting).split())
+    else:
+        name = 'test_' + methodname + '_standard'
     setattr(TestModel, name, test_method)
     test_method.__name__ = name
+
 
 '''
 TEST PARAMETERS
 '''
 
 test_embeddings = [[],
-                   [('decoder_layer', 'transformer')]]
+                   [('decoder_layer', 'transformer')]
+                   ]
 
 for p in test_embeddings:
     _add_test(p, 'embeddings_forward')
 
 tests_encoder = [[],
                  [('encoder_layer', 'mean')],
-                # [('encoder_layer', 'transformer'), ('word_vec_size', 16), ('rnn_size', 16)],
-                 []]
+                 # [('encoder_layer', 'transformer'),
+                 # ('word_vec_size', 16), ('rnn_size', 16)],
+                 []
+                 ]
 
 for p in tests_encoder:
     _add_test(p, 'encoder_forward')
 
 tests_ntmodel = [[('rnn_type', 'GRU')],
-                [('layers', 10)],
-                [('input_feed', 0)],
-                [('decoder_layer', 'transformer'),
-                 ('encoder_layer', 'transformer'),
-                 ('word_vec_size', 16),
-                 ('rnn_size', 16)],
-                # [('encoder_layer', 'transformer'),
-                #  ('word_vec_size', 16),
-                #  ('rnn_size', 16)],
-                [('decoder_layer', 'transformer'),
-                 ('word_vec_size', 16),
-                 ('rnn_size', 16)],
-                [('coverage_attn', True)],
-                [('copy_attn', True)],
-                [('attention_type', 'mlp')],
-                [('context_gate', 'both')],
-                [('context_gate', 'target')],
-                [('context_gate', 'source')],
-                [('brnn', True), 
-                 ('brnn_merge', 'sum')],
-                [('brnn', True)],
-                []]
+                 [('layers', 10)],
+                 [('input_feed', 0)],
+                 [('decoder_layer', 'transformer'),
+                  ('encoder_layer', 'transformer'),
+                  ('word_vec_size', 16),
+                  ('rnn_size', 16)],
+                 # [('encoder_layer', 'transformer'),
+                 #  ('word_vec_size', 16),
+                 #  ('rnn_size', 16)],
+                 [('decoder_layer', 'transformer'),
+                  ('word_vec_size', 16),
+                  ('rnn_size', 16)],
+                 [('coverage_attn', True)],
+                 [('copy_attn', True)],
+                 [('attention_type', 'mlp')],
+                 [('context_gate', 'both')],
+                 [('context_gate', 'target')],
+                 [('context_gate', 'source')],
+                 [('brnn', True),
+                  ('brnn_merge', 'sum')],
+                 [('brnn', True)],
+                 []
+                 ]
 
 for p in tests_ntmodel:
     _add_test(p, 'ntmmodel_forward')
