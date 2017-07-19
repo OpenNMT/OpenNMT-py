@@ -19,7 +19,7 @@ install:
   - pip install --upgrade pytest
   
 script:
-  - pytest test/
+  - python -m unittest discover
   
 matrix:
   include:
