@@ -204,18 +204,6 @@ def eval(model, criterion, data):
     return stats
 
 
-def makeCriterion(vocabSize):
-    """
-    Construct the standard NMT Criterion
-    """
-    weight = torch.ones(vocabSize)
-    weight[onmt.Constants.PAD] = 0
-    crit = nn.NLLLoss(weight, size_average=False)
-    if opt.gpus:
-        crit.cuda()
-    return crit
-
-
 class LossCompute:
     def __init__(self, generator, crit):
         self.generator = generator
@@ -250,15 +238,8 @@ class LossCompute:
         return loss, stats
 
 
-def trainModel(model, trainData, validData, dataset, optim):
+def trainModel(model, criterion, trainData, validData, dataset, optim):
     model.train()
-
-    # Define criterion of each GPU.
-    if not opt.copy_attn:
-        criterion = makeCriterion(dataset['dicts']['tgt'].size())
-    else:
-        criterion = onmt.modules.CopyCriterion
-
     loss_compute = LossCompute(model.generator, criterion)
     splitter = onmt.modules.Splitter(opt.max_generator_batches)
 
@@ -290,7 +271,7 @@ def trainModel(model, trainData, validData, dataset, optim):
 
                 gen_state = loss_compute.makeLossBatch(outputs, batch, attn)
                 batch_stats = onmt.Statistics()
-                for shard in splitter.split(gen_state):
+                for shard in splitter.splitIter(gen_state):
                     stats, loss = loss_compute.computeLoss(**shard)
 
                     # Compute statistics.
@@ -301,6 +282,8 @@ def trainModel(model, trainData, validData, dataset, optim):
                 optim.step()
                 total_stats.update(batch_stats)
                 report_stats.update(batch_stats)
+
+                # If truncated, don't backprop fully.
                 if dec_state is not None:
                     dec_state.detach()
 
@@ -428,12 +411,23 @@ def main():
         generator.load_state_dict(checkpoint['generator'])
         opt.start_epoch = checkpoint['epoch'] + 1
 
+    # Define criterion of each GPU.
+    vocabSize = dataset['dicts']['tgt'].size()
+    if not opt.copy_attn:
+        weight = torch.ones(vocabSize)
+        weight[onmt.Constants.PAD] = 0
+        criterion = nn.NLLLoss(weight, size_average=False)
+    else:
+        criterion = onmt.modules.CopyCriterion
+
     if len(opt.gpus) >= 1:
         model.cuda()
         generator.cuda()
+        criterion.cuda()
     else:
         model.cpu()
         generator.cpu()
+        criterion.cpu()
 
     if len(opt.gpus) > 1:
         print('Multi gpu training ', opt.gpus)
@@ -471,7 +465,7 @@ def main():
     nParams = sum([p.nelement() for p in model.parameters()])
     print('* number of parameters: %d' % nParams)
 
-    trainModel(model, trainData, validData, dataset, optim)
+    trainModel(model, criterion, trainData, validData, dataset, optim)
 
 
 if __name__ == "__main__":

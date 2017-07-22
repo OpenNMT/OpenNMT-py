@@ -54,11 +54,18 @@ class LayerNorm(nn.Module):
 
 
 class Splitter:
+    """
+    Spliter is a utilty that splits a dictionary of
+    data up into shards and waits for them to be backprop'd.
+    It blocks until all gradients have been computed and then
+    call backward on its inputs.
+    """
+
     def __init__(self, shard_max, eval=False):
         self.shard_max = shard_max
         self.eval = eval
 
-    def split(self, d):
+    def splitIter(self, d):
         # If eval mode, don't need to split at all
         if self.eval:
             yield d
