@@ -103,7 +103,7 @@ class TestModel(unittest.TestCase):
         # len x batch x nfeat
         test_src = Variable(torch.ones(sourceL, bsize, 1)).long()
         test_tgt = Variable(torch.ones(sourceL, bsize)).long()
-        test_length = Variable(torch.ones(1, bsize).fill_(sourceL))
+        test_length = Variable(torch.ones(bsize).fill_(sourceL))
         return test_src, test_tgt, test_length
 
     def embeddings_forward(self, opt, sourceL=3, bsize=1):
