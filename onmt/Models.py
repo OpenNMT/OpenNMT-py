@@ -16,7 +16,7 @@ class Embeddings(nn.Module):
         if self.positional_encoding:
             self.pe = self.make_positional_encodings(opt.word_vec_size, 5000)
             if len(opt.gpus) > 0:
-                self.pe.cuda()
+                self.pe = self.pe.cuda()
 
         self.word_vec_size = opt.word_vec_size
 
@@ -70,6 +70,7 @@ class Embeddings(nn.Module):
         word = self.word_lut(src_input[:, :, 0])
         emb = word
         if self.feature_dicts is not None:
+            
             features = [feature_lut(src_input[:, :, j+1])
                         for j, feature_lut in enumerate(self.feature_luts)]
 

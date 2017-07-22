@@ -223,8 +223,10 @@ for p in test_embeddings:
 
 tests_encoder = [[],
                  [('encoder_layer', 'mean')],
-                 # [('encoder_layer', 'transformer'),
-                 # ('word_vec_size', 16), ('rnn_size', 16)],
+                 [('encoder_layer', 'transformer'),
+                  ('decoder_layer', 'transformer'),
+                  ('position_encoding', True),
+                  ('word_vec_size', 16), ('rnn_size', 16)],
                  []
                  ]
 
