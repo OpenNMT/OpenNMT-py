@@ -67,29 +67,30 @@ class Translator(object):
             "log_probs": []}
 
     def buildData(self, srcBatch, goldBatch):
-        srcFeats = []
+        data = {"srcFeats": [],
+                "srcData": [],
+                "tgtData": [],
+                "type": self._type}
+
         if self.src_feature_dicts:
-            srcFeats = [[] for i in range(len(self.src_feature_dicts))]
-        srcData = []
-        tgtData = []
+            data["srcFeats"] = [[] for i in range(len(self.src_feature_dicts))]
+
         for b in srcBatch:
             _, srcD, srcFeat = onmt.IO.readSrcLine(b, self.src_dict,
                                                    self.src_feature_dicts,
                                                    self._type)
-            srcData += [srcD]
-            for i in range(len(srcFeats)):
-                srcFeats[i] += [srcFeat[i]]
+            data["srcData"] += [srcD]
+            for i in range(len(srcFeat)):
+                data["srcFeats"][i] += [srcFeat[i]]
 
         if goldBatch:
             for b in goldBatch:
                 _, tgtD, tgtFeat = onmt.IO.readTgtLine(b, self.tgt_dict,
                                                        None, self._type)
-                tgtData += [tgtD]
+                data["tgtData"] += [tgtD]
 
-        return onmt.Dataset(srcData, tgtData, self.opt.batch_size,
-                            self.opt.cuda, volatile=True,
-                            data_type=self._type,
-                            srcFeatures=srcFeats)
+        return onmt.Dataset(data, self.opt.batch_size,
+                            self.opt.cuda, volatile=True)
 
     def buildTargetTokens(self, pred, src, attn):
         tokens = self.tgt_dict.convertToLabels(pred, onmt.Constants.EOS)

@@ -16,158 +16,114 @@ class Dataset(object):
         `batch = data[batchnum]`
     """
 
-    def __init__(self, srcData, tgtData, batchSize, cuda,
-                 volatile=False, data_type="text",
-                 srcFeatures=None, tgtFeatures=None, alignment=None):
+    def __init__(self, data, batchSize, cuda,
+                 volatile=False, data_type="text"):
         """
         Construct a data set
 
         Args:
-            srcData, tgtData: The first parameter.
+            data: dictionary from preprocess.py
             batchSize: Training batchSize to use.
             cuda: Return batches on gpu.
-            volitile:
-            data_type: Format of the source arguments
-                       Options ["text", "img"].
-            srcFeatures: Source features aligned with srcData.
-            tgtFeatures: (Currently not supported.)
-            alignment: Alignment masks between src and tgt for copying.
+            volatile: use at test time
         """
-        self.src = srcData
-        self.srcFeatures = srcFeatures
-        self._type = data_type
-        if tgtData:
-            self.tgt = tgtData
-            assert(len(self.src) == len(self.tgt))
-            self.tgtFeatures = tgtFeatures
-        else:
-            self.tgt = None
-            self.tgtFeatures = None
         self.cuda = cuda
-        self.alignment = alignment
         self.batchSize = batchSize
         self.numBatches = math.ceil(len(self.src)/batchSize)
         self.volatile = volatile
 
-    def _batchify(self, data, align_right=False,
-                  include_lengths=False, dtype="text", features=None):
-        if dtype == "text":
-            lengths = [x.size(0) for x in data]
-            max_length = max(lengths)
+        # Upack data.
+        self.src = data["srcData"]
+        self.srcFeatures = data.get("srcFeatures")
+        self._type = data.get("type", "text")
+        if data["tgtData"]:
+            self.tgt = data["tgtData"]
+            assert(len(self.src) == len(self.tgt))
+            self.tgtFeatures = data.get("tgtFeatures")
+        else:
+            self.tgt = None
+            self.tgtFeatures = None
+        self.alignment = data.get("alignment")
+
+    def __len__(self):
+        return self.numBatches
+
+    def _batchifyImages(self, data):
+        max_height = max([x.size(1) for x in data])
+        widths = [x.size(2) for x in data]
+        max_width = max(widths)
+        out = data[0].new(len(data), 3, max_height, max_width).fill_(0)
+        for i in range(len(data)):
+            out[i, :, :data[i].size(1), :data[i].size(2)].copy_(data[i])
+        return out, widths
+
+    def _batchifyAlignment(self, data, srcBatch, tgtBatch):
+        src_len = srcBatch.size(1)
+        tgt_len = tgtBatch.size(1)
+        batch = tgtBatch.size(0)
+        alignment = torch.ByteTensor(tgt_len, batch, src_len).fill_(0)
+
+        for i in range(len(data)):
+            alignment[1:data[i].size(1)+1, i, :data[i].size(0)] \
+                = data[i].t()
+        alignment = alignment.float()
+        if self.cuda:
+            alignment = alignment.cuda()
+        return alignment
+
+    def _batchify(self, data, features=None):
+        # Create batches.
+        lengths = [x.size(0) for x in data]
+        max_length = max(lengths)
+        if features:
+            num_features = len(features)
+            out = data[0].new(len(data), max_length, num_features + 1)
+            assert (len(data) == len(features[0])), \
+                ("%s %s" % (data[0].size(), len(features[0])))
+        else:
+            out = data[0].new(len(data), max_length, 1)
+
+        out.fill_(onmt.Constants.PAD)
+        for i in range(len(data)):
+            data_length = data[i].size(0)
+            out[i, :data_length, 0].copy_(data[i])
             if features:
-                num_features = len(features)
-                out = data[0].new(len(data), max_length, num_features + 1) \
-                             .fill_(onmt.Constants.PAD)
-                assert (len(data) == len(features[0])), \
-                    ("%s %s" % (data[0].size(), len(features[0])))
-            else:
-                out = data[0].new(len(data), max_length) \
-                             .fill_(onmt.Constants.PAD)
-            for i in range(len(data)):
-                data_length = data[i].size(0)
-                offset = max_length - data_length if align_right else 0
-                if features:
-                    out[i].narrow(0, offset, data_length)[:, 0].copy_(data[i])
-                    for j in range(num_features):
-                        out[i].narrow(0, offset, data_length)[:, j+1] \
-                              .copy_(features[j][i])
-                else:
-                    out[i].narrow(0, offset, data_length).copy_(data[i])
+                for j in range(num_features):
+                    out[i, :data_length, j+1].copy_(features[j][i])
 
-            if include_lengths:
-                return out, lengths
-            else:
-                return out
-        elif dtype == "img":
-            heights = [x.size(1) for x in data]
-            max_height = max(heights)
-            widths = [x.size(2) for x in data]
-            max_width = max(widths)
-
-            out = data[0].new(len(data), 3, max_height, max_width).fill_(0)
-            for i in range(len(data)):
-                data_height = data[i].size(1)
-                data_width = data[i].size(2)
-                height_offset = max_height - data_height if align_right else 0
-                width_offset = max_width - data_width if align_right else 0
-                out[i].narrow(1, height_offset, data_height) \
-                      .narrow(2, width_offset, data_width).copy_(data[i])
-            return out, widths
+        return out, lengths
 
     def __getitem__(self, index):
         assert index < self.numBatches, "%d > %d" % (index, self.numBatches)
         s = index*self.batchSize
-        e = (index+1)*self.batchSize
-        batch_size = len(self.src[s:e])
-        srcBatch, lengths = self._batchify(
-            self.src[s:e],
-            align_right=False, include_lengths=True,
-            features=[f[s:e] for f in self.srcFeatures]
-            if self.srcFeatures else None,
-            dtype=self._type)
-        if srcBatch.dim() == 2:
-            srcBatch = srcBatch.unsqueeze(2)
-        if self.tgt:
-            tgtBatch = self._batchify(
-                self.tgt[index*self.batchSize:(index+1)*self.batchSize],
-                dtype="text")
-        else:
-            tgtBatch = None
+        e = s + self.batchSize
+        src = self.src[s:e]
 
-        # Create a copying alignment.
+        features = None
+        if self.srcFeatures:
+            features = [f[s:e] for f in self.srcFeatures]
+
+        if self._type == "text":
+            srcBatch, lengths = self._batchify(src, features=features)
+            srcBatch = srcBatch.transpose(0, 1).contiguous()
+        else:
+            srcBatch, lengths = self._batchifyImage(src)
+
+        tgtBatch = None
+        if self.tgt:
+            tgtBatch, _ = self._batchify(self.tgt[s:e])
+
+        # Create an alignment object.
         alignment = None
         if self.alignment:
-            src_len = srcBatch.size(1)
-            tgt_len = tgtBatch.size(1)
-            batch = tgtBatch.size(0)
-            alignment = torch.ByteTensor(tgt_len, batch, src_len).fill_(0)
-            region = self.alignment[s:e]
-            for i in range(len(region)):
-                alignment[1:region[i].size(1)+1, i,
-                          :region[i].size(0)] = region[i].t()
-            alignment = alignment.float()
+            alignment = self._batchifyAlignment(self.alignment[s:e],
+                                                srcBatch, tgtBatch)
 
-            if self.cuda:
-                alignment = alignment.cuda()
-        # tgt_len x batch x src_len
-        lengths = torch.LongTensor(lengths)
-        indices = range(len(srcBatch))
-        # within batch sorting by decreasing length for variable length rnns
-        lengths, perm = torch.sort(torch.LongTensor(lengths), 0,
-                                   descending=True)
-        indices = [indices[p] for p in perm]
-        srcBatch = [srcBatch[p] for p in perm]
-        if tgtBatch is not None:
-            tgtBatch = [tgtBatch[p] for p in perm]
-        if alignment is not None:
-            alignment = alignment.transpose(0, 1)[
-                perm.type_as(alignment).long()]
-            alignment = alignment.transpose(0, 1).contiguous()
-
-        def wrap(b, dtype="text"):
-            if b is None:
-                return b
-            b = torch.stack(b, 0)
-            if dtype == "text":
-                b = b.transpose(0, 1).contiguous()
-            if self.cuda:
-                b = b.cuda()
-            b = Variable(b, volatile=self.volatile)
-            return b
-
-        # Wrap lengths in a Variable to properly split it in DataParallel
-        lengths = lengths.view(1, -1)
-        lengths = Variable(lengths, volatile=self.volatile)
-
-        return Batch(wrap(srcBatch, self._type),
-                     wrap(tgtBatch, "text"),
-                     lengths,
-                     indices,
-                     batch_size,
-                     alignment=alignment)
-
-    def __len__(self):
-        return self.numBatches
+        # Make a `Batch` object.
+        batch = Batch(srcBatch, tgtBatch, lengths, None, len(src), alignment)
+        batch.wrap(self.volatile, self.cuda)
+        batch.reorderByLength()
+        return batch
 
     def shuffle(self):
         data = list(zip(self.src, self.tgt))
@@ -185,6 +141,31 @@ class Batch(object):
         self.indices = indices
         self.batchSize = batchSize
         self.alignment = alignment
+
+    def wrap(self, volatile, cuda):
+        def _wrap(v):
+            if self.cuda:
+                v = v.cuda()
+            v = Variable(v, volatile=self.volatile)
+            return v
+        self.length = _wrap(self.lengths)
+        self.src = _wrap(self.src)
+        self.tgt = _wrap(self.tgt)
+
+    def reorderByLength(self):
+        # tgt_len x batch x src_len
+        # within batch sorting by decreasing length for variable length rnns
+        self.indices = range(len(self.src.size(1)))
+        self.lengths[0], perm = torch.sort(self.lengths[0], 0,
+                                           descending=True)
+
+        # Reorder all.
+        self.indices = self.indices[:, perm].contiguous()
+        self.src = self.src[:, perm].contiguous()
+        if self.tgt is not None:
+            self.tgt = self.tgt[:, perm].contiguous()
+        if self.alignment is not None:
+            self.alignment = self.alignment[:, perm].contiguous()
 
     def words(self):
         return self.src[:, :, 0]

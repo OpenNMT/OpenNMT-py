@@ -190,10 +190,10 @@ if opt.log_server != "":
 
 
 def eval(model, criterion, data):
-    stats = onmt.Loss.Statistics()
+    stats = onmt.Statistics()
     model.eval()
-    loss = onmt.Loss.MemoryEfficientLoss(opt, model.generator, criterion,
-                                         eval=True, copy_loss=opt.copy_attn)
+    loss_compute = LossCompute(model.generator, criterion)
+
     for i in range(len(data)):
         batch = data[i]
         outputs, attn, _ = model(batch.src, batch.tgt, batch.lengths)
@@ -203,7 +203,8 @@ def eval(model, criterion, data):
     model.train()
     return stats
 
-def NMTCriterion(vocabSize, opt):
+
+def makeCriterion(vocabSize):
     """
     Construct the standard NMT Criterion
     """
@@ -215,13 +216,12 @@ def NMTCriterion(vocabSize, opt):
     return crit
 
 
-
 class LossCompute:
     def __init__(self, generator, crit):
         self.generator = generator
         self.crit = crit
 
-    def makeLossBatch(outputs, batch, attn):
+    def makeLossBatch(outputs, batch, attns):
         return {"out": outputs,
                 "targ": batch.tgt[1:],
                 "align": batch.alignment[1:],
@@ -246,7 +246,7 @@ class LossCompute:
             loss += opt.lambda_coverage * \
                     torch.min(coverage, attn).sum()
 
-        stats = Statistics.score(loss, scores, target)
+        stats = onmt.Statistics.score(loss, scores, target)
         return loss, stats
 
 
@@ -255,19 +255,16 @@ def trainModel(model, trainData, validData, dataset, optim):
 
     # Define criterion of each GPU.
     if not opt.copy_attn:
-        criterion = onmt.Loss.NMTCriterion(dataset['dicts']['tgt'].size(), opt)
+        criterion = makeCriterion(dataset['dicts']['tgt'].size())
     else:
         criterion = onmt.modules.CopyCriterion
 
     loss_compute = LossCompute(model.generator, criterion)
+    splitter = onmt.modules.Splitter(opt.max_generator_batches)
 
     def trainEpoch(epoch):
         if opt.extra_shuffle and epoch > opt.curriculum:
             trainData.shuffle()
-
-        mem_loss = onmt.Loss.MemoryEfficientLoss(opt, model.generator,
-                                                 criterion,
-                                                 copy_loss=opt.copy_attn)
 
         # Shuffle mini batch order.
         batchOrder = torch.randperm(len(trainData))
@@ -278,8 +275,7 @@ def trainModel(model, trainData, validData, dataset, optim):
         for i in range(len(trainData)):
             batchIdx = batchOrder[i] if epoch > opt.curriculum else i
             full_batch = trainData[batchIdx]
-            target_size = batch.tgt.size(0)
-
+            target_size = full_batch.tgt.size(0)
             dec_state = None
             trunc_size = opt.truncated_decoder if opt.truncated_decoder \
                 else target_size
@@ -293,7 +289,7 @@ def trainModel(model, trainData, validData, dataset, optim):
                     model(batch.src, batch.tgt, batch.lengths, dec_state)
 
                 gen_state = loss_compute.makeLossBatch(outputs, batch, attn)
-                batch_stats = Statistics()
+                batch_stats = onmt.Statistics()
                 for shard in splitter.split(gen_state):
                     stats, loss = loss_compute.computeLoss(**shard)
 
@@ -374,19 +370,9 @@ def main():
         checkpoint = torch.load(dict_checkpoint)
         dataset['dicts'] = checkpoint['dicts']
 
-    trainData = onmt.Dataset(dataset['train']['src'],
-                             dataset['train']['tgt'], opt.batch_size, opt.gpus,
-                             data_type=dataset.get("type", "text"),
-                             srcFeatures=dataset['train'].get('src_features'),
-                             tgtFeatures=dataset['train'].get('tgt_features'),
-                             alignment=dataset['train'].get('alignments'))
-    validData = onmt.Dataset(dataset['valid']['src'],
-                             dataset['valid']['tgt'], opt.batch_size, opt.gpus,
-                             volatile=True,
-                             data_type=dataset.get("type", "text"),
-                             srcFeatures=dataset['valid'].get('src_features'),
-                             tgtFeatures=dataset['valid'].get('tgt_features'),
-                             alignment=dataset['valid'].get('alignments'))
+    trainData = onmt.Dataset(dataset['train'], opt.batch_size, opt.gpus)
+    validData = onmt.Dataset(dataset['valid'], opt.batch_size, opt.gpus,
+                             volatile=True)
 
     dicts = dataset['dicts']
     print(' * vocabulary size. source = %d; target = %d' %

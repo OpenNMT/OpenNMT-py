@@ -1,6 +1,6 @@
-
 import torch
 import torch.nn as nn
+from torch.autograd import Variable
 
 
 def aeq(*args):
@@ -54,7 +54,7 @@ class LayerNorm(nn.Module):
 
 
 class Splitter:
-    def __init__(self, shard_max, eval):
+    def __init__(self, shard_max, eval=False):
         self.shard_max = shard_max
         self.eval = eval
 
@@ -66,7 +66,7 @@ class Splitter:
 
         # Split each element and make dummy variable.
         dummies = {}
-        n_shards = ((list(variables.values())[0].size(0) - 1) // self.shard_max) + 1
+        n_shards = ((list(d.values())[0].size(0) - 1) // self.shard_max) + 1
         shards = [{} for _ in range(n_shards)]
         for k, v in d:
             if isinstance(v, Variable) and v.requires_grad:
@@ -84,13 +84,12 @@ class Splitter:
         # Assumed backproped
         inputs = []
         grads = []
-        for k, v in dummy:
-            if isinstance(v, Variable) and (dummy[k].grad is not None):
+        for k, v in dummies:
+            if isinstance(v, Variable) and (dummies[k].grad is not None):
                 inputs.append(v)
-                grads.append(dummy[k].grad.data)
+                grads.append(dummies[k].grad.data)
         torch.autograd.backward(inputs, grads)
         return
-
 
 
 class BottleLinear(Bottle, nn.Linear):
