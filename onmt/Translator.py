@@ -106,7 +106,7 @@ class Translator(object):
         batchSize = batch.batchSize
 
         #  (1) run the encoder on the src
-        encStates, context = self.model.encoder(batch.src)
+        encStates, context = self.model.encoder(batch.src, lengths=batch.lengths)
         encStates = self.model.init_decoder_state(context, encStates)
 
         decoder = self.model.decoder
