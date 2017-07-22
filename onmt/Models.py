@@ -138,7 +138,7 @@ class Encoder(nn.Module):
         # CHECKS
         s_len, n_batch, n_feats = input.size()
         if lengths is not None:
-            _, n_batch_ = lengths.size()
+            n_batch_, = lengths.size()
             aeq(n_batch, n_batch_)
         # END CHECKS
 
@@ -161,11 +161,10 @@ class Encoder(nn.Module):
             # Standard RNN encoder.
             packed_emb = emb
             if lengths is not None:
-                # Lengths data is wrapped inside a Variable.
-                lengths = lengths.data.view(-1).tolist()
-                packed_emb = pack(emb, lengths)
+                packed_emb = pack(emb, lengths.data.tolist())
+
             outputs, hidden_t = self.rnn(packed_emb, hidden)
-            if lengths:
+            if lengths is not None:
                 outputs = unpack(outputs)[0]
             return hidden_t, outputs
 

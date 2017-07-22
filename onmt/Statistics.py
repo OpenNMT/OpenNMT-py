@@ -55,5 +55,4 @@ class Statistics:
         num_correct = pred.eq(targ) \
                           .masked_select(non_padding) \
                           .sum()
-        return Statistics(loss[0], non_padding.sum(),
-                          num_correct)
+        return Statistics(loss[0], non_padding.sum(), num_correct)

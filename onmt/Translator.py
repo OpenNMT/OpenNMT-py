@@ -67,27 +67,28 @@ class Translator(object):
             "log_probs": []}
 
     def buildData(self, srcBatch, goldBatch):
-        data = {"srcFeats": [],
-                "srcData": [],
-                "tgtData": [],
+        data = {"src_features": [],
+                "src": [],
+                "tgt": [],
                 "type": self._type}
 
         if self.src_feature_dicts:
-            data["srcFeats"] = [[] for i in range(len(self.src_feature_dicts))]
+            data["src_features"] = \
+                [[] for i in range(len(self.src_feature_dicts))]
 
         for b in srcBatch:
             _, srcD, srcFeat = onmt.IO.readSrcLine(b, self.src_dict,
                                                    self.src_feature_dicts,
                                                    self._type)
-            data["srcData"] += [srcD]
+            data["src"] += [srcD]
             for i in range(len(srcFeat)):
-                data["srcFeats"][i] += [srcFeat[i]]
+                data["src_features"][i] += [srcFeat[i]]
 
         if goldBatch:
             for b in goldBatch:
                 _, tgtD, tgtFeat = onmt.IO.readTgtLine(b, self.tgt_dict,
                                                        None, self._type)
-                data["tgtData"] += [tgtD]
+                data["tgt"] += [tgtD]
 
         return onmt.Dataset(data, self.opt.batch_size,
                             self.opt.cuda, volatile=True)

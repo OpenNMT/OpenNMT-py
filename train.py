@@ -198,7 +198,7 @@ def eval(model, criterion, data):
         batch = data[i]
         outputs, attn, _ = model(batch.src, batch.tgt, batch.lengths)
         gen_state = loss_compute.makeLossBatch(outputs, batch, attn)
-        batch_stats, _ = loss_compute.computeLoss(**gen_state)
+        _, batch_stats = loss_compute.computeLoss(**gen_state)
         stats.update(batch_stats)
     model.train()
     return stats
@@ -209,18 +209,19 @@ class LossCompute:
         self.generator = generator
         self.crit = crit
 
+    @staticmethod
     def makeLossBatch(outputs, batch, attns):
         return {"out": outputs,
-                "targ": batch.tgt[1:],
+                "target": batch.tgt[1:],
                 "align": batch.alignment[1:],
                 "coverage": attns.get("coverage"),
                 "attn": attns.get("copy")}
 
-    def computeLoss(self, out, target, attn, align, coverage):
+    def computeLoss(self, out, target, attn=None, align=None, coverage=None):
         def bottle(v):
             return v.view(-1, v.size(2))
 
-        if not opt.copy_loss:
+        if not opt.copy_attn:
             # Standard loss.
             scores = self.generator(bottle(out))
             loss = self.crit(scores, target.view(-1))
@@ -230,11 +231,11 @@ class LossCompute:
             loss = self.crit(scores, c_attn, target, bottle(align))
 
         # Coverage can be applied for either.
-        if self.coverage_loss:
+        if opt.coverage_attn:
             loss += opt.lambda_coverage * \
                     torch.min(coverage, attn).sum()
 
-        stats = onmt.Statistics.score(loss, scores, target)
+        stats = onmt.Statistics.score(loss, scores.data, target.data)
         return loss, stats
 
 
@@ -250,8 +251,8 @@ def trainModel(model, criterion, trainData, validData, dataset, optim):
         # Shuffle mini batch order.
         batchOrder = torch.randperm(len(trainData))
 
-        total_stats = onmt.Loss.Statistics()
-        report_stats = onmt.Loss.Statistics()
+        total_stats = onmt.Statistics()
+        report_stats = onmt.Statistics()
 
         for i in range(len(trainData)):
             batchIdx = batchOrder[i] if epoch > opt.curriculum else i
@@ -272,7 +273,7 @@ def trainModel(model, criterion, trainData, validData, dataset, optim):
                 gen_state = loss_compute.makeLossBatch(outputs, batch, attn)
                 batch_stats = onmt.Statistics()
                 for shard in splitter.splitIter(gen_state):
-                    stats, loss = loss_compute.computeLoss(**shard)
+                    loss, stats = loss_compute.computeLoss(**shard)
 
                     # Compute statistics.
                     batch_stats.update(stats)
@@ -294,7 +295,7 @@ def trainModel(model, criterion, trainData, validData, dataset, optim):
                                     total_stats.start_time)
                 if opt.log_server:
                     report_stats.log("progress", experiment, optim)
-                report_stats = onmt.Loss.Statistics()
+                report_stats = onmt.Statistics()
 
         return total_stats
 

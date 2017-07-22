@@ -73,25 +73,29 @@ class Splitter:
 
         # Split each element and make dummy variable.
         dummies = {}
-        n_shards = ((list(d.values())[0].size(0) - 1) // self.shard_max) + 1
-        shards = [{} for _ in range(n_shards)]
-        for k, v in d:
+        shards = []
+        for k, v in d.items():
+            if v is None:
+                continue
             if isinstance(v, Variable) and v.requires_grad:
                 dummies[k] = Variable(v.data, requires_grad=True,
                                       volatile=False)
             else:
                 dummies[k] = v
             splits = torch.split(dummies[k], self.shard_max)
+
             for i, val in enumerate(splits):
+                if i >= len(shards):
+                    shards.append({})
                 shards[i][k] = val
 
-        for shard in shards:
+        for i, shard in enumerate(shards):
             yield shard
 
         # Assumed backproped
         inputs = []
         grads = []
-        for k, v in dummies:
+        for k, v in dummies.items():
             if isinstance(v, Variable) and (dummies[k].grad is not None):
                 inputs.append(v)
                 grads.append(dummies[k].grad.data)
