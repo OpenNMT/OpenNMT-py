@@ -223,10 +223,10 @@ for p in test_embeddings:
 
 tests_encoder = [[],
                  [('encoder_layer', 'mean')],
-                 [('encoder_layer', 'transformer'),
-                  ('decoder_layer', 'transformer'),
-                  ('position_encoding', True),
-                  ('word_vec_size', 16), ('rnn_size', 16)],
+                 # [('encoder_layer', 'transformer'),
+                 #  ('decoder_layer', 'transformer'),
+                 #  ('position_encoding', True),
+                 #  ('word_vec_size', 16), ('rnn_size', 16)],
                  []
                  ]
 
@@ -240,6 +240,12 @@ tests_ntmodel = [[('rnn_type', 'GRU')],
                   ('encoder_layer', 'transformer'),
                   ('word_vec_size', 16),
                   ('rnn_size', 16)],
+                 [('decoder_layer', 'transformer'),
+                  ('encoder_layer', 'transformer'),
+                  ('word_vec_size', 16),
+                  ('rnn_size', 16),
+                  ('position_encoding', True),
+                 ],
                  # [('encoder_layer', 'transformer'),
                  #  ('word_vec_size', 16),
                  #  ('rnn_size', 16)],
