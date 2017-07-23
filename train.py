@@ -88,10 +88,12 @@ def make_features(batch, fields):
     feats = []
     for j in range(100):
         key = "src_feats_" + str(j)
-        if key not in fields.__dict__:
-            break:
+        if key not in fields:
+            break
         feats.append(batch.__dict__[key])
-    return torch.cat([batch.src[0]] + feats, 2)
+    cat = [batch.src[0]] + feats
+    cat = [c.unsqueeze(2) for c in cat]
+    return torch.cat(cat, 2)
 
 
 def eval(model, criterion, data, fields):
@@ -288,7 +290,7 @@ def main():
     print('Building model...')
 
     cuda = (len(opt.gpus) >= 1)
-    model = onmt.Models.make_base_model(opt, opt, fields, checkpoint, cuda)
+    model = onmt.Models.make_base_model(opt, opt, fields, cuda, checkpoint)
 
     # Define criterion of each GPU.
     vocabSize = len(fields['tgt'].vocab)
@@ -309,14 +311,14 @@ def main():
         model = nn.DataParallel(model, device_ids=opt.gpus, dim=1)
         model.generator = nn.DataParallel(model.generator, device_ids=opt.gpus, dim=0)
 
-    if not opt.train_from_state_dict and not opt.train_from:
+    if not opt.train_from_state_dict:
         if opt.param_init != 0.0:
             print('Intializing params')
             for p in model.parameters():
                 p.data.uniform_(-opt.param_init, opt.param_init)
 
-        encoder.embeddings.load_pretrained_vectors(opt.pre_word_vecs_enc)
-        decoder.embeddings.load_pretrained_vectors(opt.pre_word_vecs_dec)
+        model.encoder.embeddings.load_pretrained_vectors(opt.pre_word_vecs_enc)
+        model.decoder.embeddings.load_pretrained_vectors(opt.pre_word_vecs_dec)
 
         optim = onmt.Optim(
             opt.optim, opt.learning_rate, opt.max_grad_norm,
@@ -331,7 +333,7 @@ def main():
 
     optim.set_parameters(model.parameters())
 
-    if opt.train_from or opt.train_from_state_dict:
+    if opt.train_from_state_dict:
         optim.optimizer.load_state_dict(
             checkpoint['optim'].optimizer.state_dict())
 
