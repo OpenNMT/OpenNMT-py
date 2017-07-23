@@ -9,7 +9,7 @@ import torch
 import torch.nn as nn
 from torch import cuda
 import dill
-from train_opts import add_model_argumets, add_optim_arguments
+from train_opts import add_model_arguments, add_optim_arguments
 
 parser = argparse.ArgumentParser(description='train.py')
 onmt.Markdown.add_md_help_argument(parser)
@@ -25,9 +25,9 @@ parser.add_argument('-save_model', default='model',
 parser.add_argument('-train_from_state_dict', default='', type=str,
                     help="""If training from a checkpoint then this is the
                     path to the pretrained model's state_dict.""")
-parser.add_argument('-train_from', default='', type=str,
-                    help="""If training from a checkpoint then this is the
-                    path to the pretrained model.""")
+# parser.add_argument('-train_from', default='', type=str,
+#                     help="""If training from a checkpoint then this is the
+#                     path to the pretrained model.""")
 
 # pretrained word vectors
 parser.add_argument('-pre_word_vecs_enc',
@@ -84,6 +84,16 @@ if opt.log_server != "":
     experiment = cc.create_experiment(opt.experiment_name)
 
 
+def make_features(batch, fields):
+    feats = []
+    for j in range(100):
+        key = "src_feats_" + str(j)
+        if key not in fields.__dict__:
+            break:
+        feats.append(batch.__dict__[key])
+    return torch.cat([batch.src[0]] + feats, 2)
+
+
 def eval(model, criterion, data, fields):
     validData = onmt.IO.OrderedIterator(
         dataset=data, device=opt.gpus if opt.gpus else -1,
@@ -95,8 +105,8 @@ def eval(model, criterion, data, fields):
                                fields["tgt"].vocab)
 
     for batch in validData:
-        src, src_lengths = batch.src
-        src = src.unsqueeze(2)
+        _, src_lengths = batch.src
+        src = make_features(batch, fields)
         outputs, attn, _ = model(src, batch.tgt, src_lengths)
         gen_state = loss_compute.makeLossBatch(outputs, batch, attn,
                                                (0, batch.tgt.size(0)))
@@ -170,8 +180,8 @@ def trainModel(model, criterion, trainData, validData, fields, optim):
 
             for j in range(0, target_size-1, trunc_size):
                 # Main training loop
-                src, src_lengths = batch.src
-                src = src.unsqueeze(2)
+                _, src_lengths = batch.src
+                src = make_features(batch, fields)
                 tgt_r = (j, j + trunc_size)
 
                 model.zero_grad()
@@ -260,8 +270,8 @@ def main():
     src_features = [fields["src_feats_"+str(j)]
                     for j in range(train.nfeatures)]
 
-    dict_checkpoint = (opt.train_from if opt.train_from
-                       else opt.train_from_state_dict)
+    checkpoint = None
+    dict_checkpoint = opt.train_from_state_dict
     if dict_checkpoint:
         print('Loading dicts from checkpoint at %s' % dict_checkpoint)
         checkpoint = torch.load(dict_checkpoint)
@@ -272,52 +282,13 @@ def main():
     for j, feat in enumerate(src_features):
         print(' * src feature %d size = %d' %
               (j, len(feat.vocab)))
-
     print(' * number of training sentences. %d' %
           len(train))
     print(' * maximum batch size. %d' % opt.batch_size)
-
     print('Building model...')
 
-    if opt.encoder_type == "text":
-        encoder = onmt.Models.Encoder(opt, fields['src'].vocab,
-                                      fields.get('src_features', None))
-    elif opt.encoder_type == "img":
-        encoder = onmt.modules.ImageEncoder(opt)
-        assert(train.type_ == "img")
-    else:
-        print("Unsupported encoder type %s" % (opt.encoder_type))
-
-    decoder = onmt.Models.Decoder(opt, fields['tgt'].vocab)
-
-    if opt.copy_attn:
-        generator = onmt.modules.CopyGenerator(opt, fields['src'].vocab,
-                                               fields['tgt'].vocab)
-    else:
-        generator = nn.Sequential(
-            nn.Linear(opt.rnn_size, len(fields['tgt'].vocab)),
-            nn.LogSoftmax())
-        if opt.share_decoder_embeddings:
-            generator[0].weight = decoder.embeddings.word_lut.weight
-
-    model = onmt.Models.NMTModel(encoder, decoder, len(opt.gpus) > 1)
-
-    if opt.train_from:
-        print('Loading model from checkpoint at %s' % opt.train_from)
-        chk_model = checkpoint['model']
-        generator_state_dict = chk_model.generator.state_dict()
-        model_state_dict = {k: v for k, v in chk_model.state_dict().items()
-                            if 'generator' not in k}
-        model.load_state_dict(model_state_dict)
-        generator.load_state_dict(generator_state_dict)
-        opt.start_epoch = checkpoint['epoch'] + 1
-
-    if opt.train_from_state_dict:
-        print('Loading model from checkpoint at %s'
-              % opt.train_from_state_dict)
-        model.load_state_dict(checkpoint['model'])
-        generator.load_state_dict(checkpoint['generator'])
-        opt.start_epoch = checkpoint['epoch'] + 1
+    cuda = (len(opt.gpus) >= 1)
+    model = onmt.Models.make_base_model(opt, opt, fields, checkpoint, cuda)
 
     # Define criterion of each GPU.
     vocabSize = len(fields['tgt'].vocab)
@@ -327,22 +298,16 @@ def main():
         criterion = nn.NLLLoss(weight, size_average=False)
     else:
         criterion = onmt.modules.CopyCriterion
-
-    if len(opt.gpus) >= 1:
-        model.cuda()
-        generator.cuda()
+    if cuda:
         criterion.cuda()
     else:
-        model.cpu()
-        generator.cpu()
         criterion.cpu()
 
+    # Multi-gpu
     if len(opt.gpus) > 1:
         print('Multi gpu training ', opt.gpus)
         model = nn.DataParallel(model, device_ids=opt.gpus, dim=1)
-        generator = nn.DataParallel(generator, device_ids=opt.gpus, dim=0)
-
-    model.generator = generator
+        model.generator = nn.DataParallel(model.generator, device_ids=opt.gpus, dim=0)
 
     if not opt.train_from_state_dict and not opt.train_from:
         if opt.param_init != 0.0:
@@ -373,7 +338,6 @@ def main():
     nParams = sum([p.nelement() for p in model.parameters()])
     print('* number of parameters: %d' % nParams)
 
-    # trainModel(model, criterion, trainData, validData, dataset, optim)
     trainModel(model, criterion, train, valid, fields, optim)
 
 

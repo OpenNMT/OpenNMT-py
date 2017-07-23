@@ -360,3 +360,41 @@ class TransformerDecoderState(DecoderState):
 
     def repeatBeam_(self, beamSize):
         pass
+
+
+def make_base_model(opt, model_opt, fields, cuda, checkpoint=None):
+    if model_opt.encoder_type == "text":
+        encoder = Encoder(model_opt, fields["src"].vocab, None)# self.src_feature_dicts)
+    elif model_opt.encoder_type == "img":
+        encoder = onmt.modules.ImageEncoder(model_opt)
+    else:
+        assert False, ("Unsupported encoder type %s" % (model_opt.encoder_type))
+
+
+    decoder = onmt.Models.Decoder(model_opt, fields["tgt"].vocab)
+    model = onmt.Models.NMTModel(encoder, decoder)
+
+    if not model_opt.copy_attn:
+        generator = nn.Sequential(
+            nn.Linear(model_opt.rnn_size, len(fields["tgt"].vocab)),
+            nn.LogSoftmax())
+    else:
+        generator = onmt.modules.CopyGenerator(model_opt, fields["src"].vocab,
+                                               fields["tgt"].vocab)
+        if opt.share_decoder_embeddings:
+            generator[0].weight = decoder.embeddings.word_lut.weight
+
+
+    if checkpoint is not None:
+        print('Loading model')
+        model.load_state_dict(checkpoint['model'])
+        generator.load_state_dict(checkpoint['generator'])
+
+    if cuda:
+        model.cuda()
+        generator.cuda()
+    else:
+        model.cpu()
+        generator.cpu()
+    model.generator = generator
+    return model

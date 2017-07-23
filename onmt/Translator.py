@@ -7,66 +7,33 @@ import torch
 from torch.autograd import Variable
 import dill
 
+
 class Translator(object):
     def __init__(self, opt, dummy_opt={}):
-        self.opt = opt
-
         # Add in default model arguments, possibly added since training.
-        for arg in dummy_opt:
-            if arg not in model_opt:
-                model_opt.__dict__[arg] = dummy_opt[arg]
-
-        self.tt = torch.cuda if opt.cuda else torch
-        self.beam_accum = None
-
-
-
+        self.opt = opt
         checkpoint = torch.load(opt.model,
                                 map_location=lambda storage, loc: storage,
                                 pickle_module=dill)
         self.fields = checkpoint['fields']
         model_opt = checkpoint['opt']
-        self.src_dict = checkpoint['fields']['src'].vocab
-        self.tgt_dict = checkpoint['fields']['tgt'].vocab
+        for arg in dummy_opt:
+            if arg not in model_opt:
+                model_opt.__dict__[arg] = dummy_opt[arg]
+
+        # self.src_dict = checkpoint['fields']['src'].vocab
+        # self.tgt_dict = checkpoint['fields']['tgt'].vocab
         # self.align = self.src_dict.align(self.tgt_dict)
         # self.src_feature_dicts = checkpoint['dicts'].get('src_features', None)
-        self._type = model_opt.encoder_type \
-            if "encoder_type" in model_opt else "text"
 
-        self.copy_attn = model_opt.copy_attn \
-            if "copy_attn" in model_opt else "std"
+        self._type = model_opt.encoder_type
+        self.copy_attn = model_opt.copy_attn
 
-        if self._type == "text":
-            encoder = onmt.Models.Encoder(model_opt, self.src_dict, None)
-                                          # self.src_feature_dicts)
-        elif self._type == "img":
-            encoder = onmt.modules.ImageEncoder(model_opt)
-
-        decoder = onmt.Models.Decoder(model_opt, self.tgt_dict)
-        model = onmt.Models.NMTModel(encoder, decoder)
-
-        if not self.copy_attn or self.copy_attn == "std":
-            generator = nn.Sequential(
-                nn.Linear(model_opt.rnn_size, len(self.tgt_dict)),
-                nn.LogSoftmax())
-        elif self.copy_attn:
-            generator = onmt.modules.CopyGenerator(model_opt, self.src_dict,
-                                                   self.tgt_dict)
-
-        model.load_state_dict(checkpoint['model'])
-        generator.load_state_dict(checkpoint['generator'])
-
-        if opt.cuda:
-            model.cuda()
-            generator.cuda()
-        else:
-            model.cpu()
-            generator.cpu()
-
-        model.generator = generator
-
-        self.model = model
+        self.model = onmt.Models.make_base_model(opt, model_opt, self.fields, checkpoint)
         self.model.eval()
+
+        # for debugging
+        self.beam_accum = None
 
     def initBeamAccum(self):
         self.beam_accum = {

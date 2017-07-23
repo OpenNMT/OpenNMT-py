@@ -9,7 +9,7 @@ import argparse
 import math
 import codecs
 import os
-
+from train_opts import add_model_arguments
 
 parser = argparse.ArgumentParser(description='translate.py')
 onmt.Markdown.add_md_help_argument(parser)
