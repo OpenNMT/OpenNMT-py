@@ -23,7 +23,7 @@ class Embeddings(nn.Module):
         super(Embeddings, self).__init__()
         self.word_lut = nn.Embedding(len(dicts),
                                      opt.word_vec_size,
-                                     padding_idx=onmt.Constants.PAD)
+                                     padding_idx=dicts.stoi[onmt.IO.PAD_WORD])
         # Word embeddings.
         self.dropout = nn.Dropout(p=opt.dropout)
         self.feature_dicts = feature_dicts

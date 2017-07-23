@@ -74,40 +74,25 @@ def main():
     opt.cuda = opt.gpu > -1
     if opt.cuda:
         torch.cuda.set_device(opt.gpu)
-
     translator = onmt.Translator(opt)
-
     outF = codecs.open(opt.output, 'w', 'utf-8')
-
     predScoreTotal, predWordsTotal, goldScoreTotal, goldWordsTotal = 0, 0, 0, 0
-
     srcBatch, tgtBatch = [], []
-
     count = 0
-
-    tgtF = codecs.open(opt.tgt, 'r', 'utf-8') if opt.tgt else None
-
     if opt.dump_beam != "":
         import json
         translator.initBeamAccum()
 
-    for line in addone(codecs.open(opt.src, 'r', 'utf-8')):
-        if line is not None:
-            srcTokens = line.split()
-            srcBatch += [srcTokens]
-            if tgtF:
-                tgtTokens = tgtF.readline().split() if tgtF else None
-                tgtBatch += [tgtTokens]
+    data = onmt.IO.ONMTDataset(opt.src, opt.tgt, translator.fields, None)
 
-            if len(srcBatch) < opt.batch_size:
-                continue
-        else:
-            # at the end of file, check last batch
-            if len(srcBatch) == 0:
-                break
+    testData = onmt.IO.OrderedIterator(
+        dataset=data, device=opt.gpu if opt.gpu else -1,
+        batch_size=opt.batch_size, train=False, sort=False,
+        shuffle=False)
 
+    for batch in testData:
         predBatch, predScore, goldScore, attn, src \
-            = translator.translate(srcBatch, tgtBatch)
+            = translator.translate(batch)
         predScoreTotal += sum(score[0] for score in predScore)
         predWordsTotal += sum(len(x[0]) for x in predBatch)
         if tgtF is not None:

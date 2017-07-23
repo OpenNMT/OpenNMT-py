@@ -8,15 +8,15 @@ import argparse
 import torch
 import torch.nn as nn
 from torch import cuda
-import torchtext.data
+import dill
 
 parser = argparse.ArgumentParser(description='train.py')
 onmt.Markdown.add_md_help_argument(parser)
 
 # Data options
 
-# parser.add_argument('-data', required=True,
-#                     help='Path to the *-train.pt file from preprocess.py')
+parser.add_argument('-data', required=True,
+                    help='Path to the *-train.pt file from preprocess.py')
 parser.add_argument('-save_model', default='model',
                     help="""Model filename (the model will be saved as
                     <save_model>_epochN_PPL.pt where PPL is the
@@ -162,50 +162,6 @@ parser.add_argument('-seed', type=int, default=-1,
                     help="""Random seed used for the experiments
                     reproducibility.""")
 
-
-parser.add_argument('-src_type', default="text",
-                    help="Type of the source input. Options are [text|img].")
-parser.add_argument('-src_img_dir', default=".",
-                    help="Location of source images")
-
-parser.add_argument('-train_src', required=True,
-                    help="Path to the training source data")
-parser.add_argument('-train_tgt', required=True,
-                    help="Path to the training target data")
-parser.add_argument('-valid_src', required=True,
-                    help="Path to the validation source data")
-parser.add_argument('-valid_tgt', required=True,
-                    help="Path to the validation target data")
-
-parser.add_argument('-save_data', required=True,
-                    help="Output file for the prepared data")
-
-parser.add_argument('-src_vocab_size', type=int, default=50000,
-                    help="Size of the source vocabulary")
-parser.add_argument('-tgt_vocab_size', type=int, default=50000,
-                    help="Size of the target vocabulary")
-parser.add_argument('-src_vocab',
-                    help="Path to an existing source vocabulary")
-parser.add_argument('-tgt_vocab',
-                    help="Path to an existing target vocabulary")
-parser.add_argument('-features_vocabs_prefix', type=str, default='',
-                    help="Path prefix to existing features vocabularies")
-parser.add_argument('-src_seq_length', type=int, default=50,
-                    help="Maximum source sequence length")
-parser.add_argument('-src_seq_length_trunc', type=int, default=0,
-                    help="Truncate source sequence length.")
-parser.add_argument('-tgt_seq_length', type=int, default=50,
-                    help="Maximum target sequence length to keep.")
-parser.add_argument('-tgt_seq_length_trunc', type=int, default=0,
-                    help="Truncate target sequence length.")
-
-parser.add_argument('-shuffle',    type=int, default=1,
-                    help="Shuffle data")
-# parser.add_argument('-seed',       type=int, default=3435,
-#                     help="Random seed")
-
-
-
 opt = parser.parse_args()
 
 print(opt)
@@ -234,25 +190,34 @@ if opt.log_server != "":
     experiment = cc.create_experiment(opt.experiment_name)
 
 
-def eval(model, criterion, data):
+def eval(model, criterion, data, fields):
+    validData = onmt.IO.OrderedIterator(
+        dataset=data, device=opt.gpus if opt.gpus else -1,
+        batch_size=opt.batch_size, train=False, sort=True)
+
     stats = onmt.Statistics()
     model.eval()
-    loss_compute = LossCompute(model.generator, criterion)
+    loss_compute = LossCompute(model.generator, criterion,
+                               fields["tgt"].vocab)
 
-    for i in range(len(data)):
-        batch = data[i]
-        outputs, attn, _ = model(batch.src[0], batch.tgt, batch.src[1])
-        gen_state = loss_compute.makeLossBatch(outputs, batch, attn)
+    for batch in validData:
+        src, src_lengths = batch.src
+        src = src.unsqueeze(2)
+        outputs, attn, _ = model(src, batch.tgt, src_lengths)
+        gen_state = loss_compute.makeLossBatch(outputs, batch, attn,
+                                               (0, batch.tgt.size(0)))
         _, batch_stats = loss_compute.computeLoss(**gen_state)
         stats.update(batch_stats)
+        break
     model.train()
     return stats
 
 
 class LossCompute:
-    def __init__(self, generator, crit):
+    def __init__(self, generator, crit, tgt_vocab):
         self.generator = generator
         self.crit = crit
+        self.tgt_vocab = tgt_vocab
 
     @staticmethod
     def makeLossBatch(outputs, batch, attns, range_):
@@ -280,27 +245,30 @@ class LossCompute:
             loss += opt.lambda_coverage * \
                     torch.min(coverage, attn).sum()
 
-        stats = onmt.Statistics.score(loss.data, scores.data, target.data)
+        stats = onmt.Statistics.score(loss.data, scores.data, target.data,
+                                      self.tgt_vocab.stoi[onmt.IO.PAD_WORD])
         return loss, stats
 
 
-def trainModel(model, criterion, trainData, validData, dataset, optim):
-    model.train()
-    loss_compute = LossCompute(model.generator, criterion)
-    splitter = onmt.modules.Splitter(opt.max_generator_batches)
-
+def trainModel(model, criterion, trainData, validData, fields, optim):
     def trainEpoch(epoch):
         # if opt.extra_shuffle and epoch > opt.curriculum:
         #     trainData.shuffle()
 
-        # # Shuffle mini batch order.
-        # batchOrder = torch.randperm(len(trainData))
-        # for i in range(len(trainData)):
+        model.train()
+        loss_compute = LossCompute(model.generator, criterion,
+                                   fields["tgt"].vocab)
+        splitter = onmt.modules.Splitter(opt.max_generator_batches)
+
+        train = onmt.IO.OrderedIterator(
+            dataset=trainData, batch_size=opt.batch_size,
+            sort=True,
+            device=opt.gpus if opt.gpus else -1)
 
         total_stats = onmt.Statistics()
         report_stats = onmt.Statistics()
 
-        for i, batch in enumerate(trainData):
+        for i, batch in enumerate(train):
             target_size = batch.tgt.size(0)
             dec_state = None
             trunc_size = opt.truncated_decoder if opt.truncated_decoder \
@@ -310,13 +278,15 @@ def trainModel(model, criterion, trainData, validData, dataset, optim):
                 # Main training loop
                 src, src_lengths = batch.src
                 src = src.unsqueeze(2)
+                tgt_r = (j, j + trunc_size)
 
                 model.zero_grad()
                 outputs, attn, dec_state = \
-                    model(src, batch.tgt[j: j + trunc_size], src_lengths, dec_state)
+                    model(src, batch.tgt[tgt_r[0]: tgt_r[1]],
+                          src_lengths, dec_state)
 
                 gen_state = loss_compute.makeLossBatch(outputs, batch, attn,
-                                                       (j, j + trunc_size))
+                                                       tgt_r)
                 batch_stats = onmt.Statistics()
                 for shard in splitter.splitIter(gen_state):
                     loss, stats = loss_compute.computeLoss(**shard)
@@ -342,7 +312,7 @@ def trainModel(model, criterion, trainData, validData, dataset, optim):
                 if opt.log_server:
                     report_stats.log("progress", experiment, optim)
                 report_stats = onmt.Statistics()
-
+                break
         return total_stats
 
     for epoch in range(opt.start_epoch, opt.epochs + 1):
@@ -354,7 +324,7 @@ def trainModel(model, criterion, trainData, validData, dataset, optim):
         print('Train accuracy: %g' % train_stats.accuracy())
 
         #  (2) evaluate on the validation set
-        valid_stats = eval(model, criterion, validData)
+        valid_stats = eval(model, criterion, validData, fields)
         print('Validation perplexity: %g' % valid_stats.ppl())
         print('Validation accuracy: %g' % valid_stats.accuracy())
 
@@ -378,7 +348,7 @@ def trainModel(model, criterion, trainData, validData, dataset, optim):
             checkpoint = {
                 'model': model_state_dict,
                 'generator': generator_state_dict,
-                'dicts': dataset['dicts'],
+                'fields': fields,
                 'opt': opt,
                 'epoch': epoch,
                 'optim': optim
@@ -386,37 +356,29 @@ def trainModel(model, criterion, trainData, validData, dataset, optim):
             torch.save(checkpoint,
                        '%s_acc_%.2f_ppl_%.2f_e%d.pt'
                        % (opt.save_model, valid_stats.accuracy(),
-                          valid_stats.ppl(), epoch))
+                          valid_stats.ppl(), epoch), pickle_module=dill)
 
 
 def main():
-    fields = onmt.IO.ONMTDataset.get_fields(opt.train_src, opt.train_tgt)
-    train = onmt.IO.ONMTDataset(opt.train_src, opt.train_tgt, fields, opt)
-    vocabs = onmt.IO.ONMTDataset.build_vocab(train, fields, opt)
-    valid = onmt.IO.ONMTDataset(opt.valid_src, opt.valid_tgt, fields, opt)
+    train = torch.load(opt.data + '.train.pt', pickle_module=dill)
+    fields = torch.load(opt.data + '.fields.pt', pickle_module=dill)
+    valid = torch.load(opt.data + '.valid.pt', pickle_module=dill)
     fields = dict(fields)
+    src_features = [fields["src_feats_"+str(j)]
+                    for j in range(train.nfeatures)]
 
     dict_checkpoint = (opt.train_from if opt.train_from
                        else opt.train_from_state_dict)
     if dict_checkpoint:
         print('Loading dicts from checkpoint at %s' % dict_checkpoint)
         checkpoint = torch.load(dict_checkpoint)
-        dataset['dicts'] = checkpoint['dicts']
-
-    trainData = onmt.IO.OrderedIterator(
-        dataset=train, batch_size=opt.batch_size, sort=True,
-        device=opt.gpus if opt.gpus else -1)
-
-    validData = onmt.IO.OrderedIterator(
-        dataset=valid, device=opt.gpus if opt.gpus else -1,
-        batch_size=opt.batch_size, train=False, sort=True)
+        fields = checkpoint['fields']
 
     print(' * vocabulary size. source = %d; target = %d' %
           (len(fields['src'].vocab), len(fields['tgt'].vocab)))
-    # if 'src_features' in dicts:
-    #     for j in range(len(dicts['src_features'])):
-    #         print(' * src feature %d size = %d' %
-    #               (j, ['src_features'][j].size()))
+    for j, feat in enumerate(src_features):
+        print(' * src feature %d size = %d' %
+              (j, len(feat.vocab)))
 
     print(' * number of training sentences. %d' %
           len(train))
@@ -429,14 +391,15 @@ def main():
                                       fields.get('src_features', None))
     elif opt.encoder_type == "img":
         encoder = onmt.modules.ImageEncoder(opt)
-        assert("type" not in dataset or dataset["type"] == "img")
+        assert(train.type_ == "img")
     else:
         print("Unsupported encoder type %s" % (opt.encoder_type))
 
     decoder = onmt.Models.Decoder(opt, fields['tgt'].vocab)
 
     if opt.copy_attn:
-        generator = onmt.modules.CopyGenerator(opt, dicts['src'], dicts['tgt'])
+        generator = onmt.modules.CopyGenerator(opt, fields['src'].vocab,
+                                               fields['tgt'].vocab)
     else:
         generator = nn.Sequential(
             nn.Linear(opt.rnn_size, len(fields['tgt'].vocab)),
@@ -467,7 +430,7 @@ def main():
     vocabSize = len(fields['tgt'].vocab)
     if not opt.copy_attn:
         weight = torch.ones(vocabSize)
-        weight[onmt.Constants.PAD] = 0
+        weight[fields['tgt'].vocab.stoi[onmt.IO.PAD_WORD]] = 0
         criterion = nn.NLLLoss(weight, size_average=False)
     else:
         criterion = onmt.modules.CopyCriterion
@@ -518,7 +481,8 @@ def main():
     print('* number of parameters: %d' % nParams)
 
     # trainModel(model, criterion, trainData, validData, dataset, optim)
-    trainModel(model, criterion, trainData, validData, None, optim)
+    trainModel(model, criterion, train, valid, fields, optim)
+
 
 if __name__ == "__main__":
     main()

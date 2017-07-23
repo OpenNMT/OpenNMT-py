@@ -1,7 +1,6 @@
 import time
 import math
 import sys
-import onmt
 
 
 class Statistics:
@@ -49,9 +48,9 @@ class Statistics:
         experiment.add_scalar_value(prefix + "_lr", optim.lr)
 
     @staticmethod
-    def score(loss, scores, targ):
+    def score(loss, scores, targ, pad):
         pred = scores.max(1)[1]
-        non_padding = targ.ne(onmt.Constants.PAD)
+        non_padding = targ.ne(pad)
         num_correct = pred.eq(targ) \
                           .masked_select(non_padding) \
                           .sum()

@@ -5,7 +5,7 @@ import onmt.IO
 import torch.nn as nn
 import torch
 from torch.autograd import Variable
-
+import dill
 
 class Translator(object):
     def __init__(self, opt):
@@ -14,13 +14,14 @@ class Translator(object):
         self.beam_accum = None
 
         checkpoint = torch.load(opt.model,
-                                map_location=lambda storage, loc: storage)
-
+                                map_location=lambda storage, loc: storage,
+                                pickle_module=dill)
+        self.fields = checkpoint['fields']
         model_opt = checkpoint['opt']
-        self.src_dict = checkpoint['dicts']['src']
-        self.tgt_dict = checkpoint['dicts']['tgt']
-        self.align = self.src_dict.align(self.tgt_dict)
-        self.src_feature_dicts = checkpoint['dicts'].get('src_features', None)
+        self.src_dict = checkpoint['fields']['src'].vocab
+        self.tgt_dict = checkpoint['fields']['tgt'].vocab
+        # self.align = self.src_dict.align(self.tgt_dict)
+        # self.src_feature_dicts = checkpoint['dicts'].get('src_features', None)
         self._type = model_opt.encoder_type \
             if "encoder_type" in model_opt else "text"
 
@@ -28,8 +29,8 @@ class Translator(object):
             if "copy_attn" in model_opt else "std"
 
         if self._type == "text":
-            encoder = onmt.Models.Encoder(model_opt, self.src_dict,
-                                          self.src_feature_dicts)
+            encoder = onmt.Models.Encoder(model_opt, self.src_dict, None)
+                                          # self.src_feature_dicts)
         elif self._type == "img":
             encoder = onmt.modules.ImageEncoder(model_opt)
 
@@ -38,7 +39,7 @@ class Translator(object):
 
         if not self.copy_attn or self.copy_attn == "std":
             generator = nn.Sequential(
-                nn.Linear(model_opt.rnn_size, self.tgt_dict.size()),
+                nn.Linear(model_opt.rnn_size, len(self.tgt_dict)),
                 nn.LogSoftmax())
         elif self.copy_attn:
             generator = onmt.modules.CopyGenerator(model_opt, self.src_dict,
@@ -66,32 +67,6 @@ class Translator(object):
             "scores": [],
             "log_probs": []}
 
-    def buildData(self, srcBatch, goldBatch):
-        data = {"srcFeats": [],
-                "srcData": [],
-                "tgtData": [],
-                "type": self._type}
-
-        if self.src_feature_dicts:
-            data["srcFeats"] = [[] for i in range(len(self.src_feature_dicts))]
-
-        for b in srcBatch:
-            _, srcD, srcFeat = onmt.IO.readSrcLine(b, self.src_dict,
-                                                   self.src_feature_dicts,
-                                                   self._type)
-            data["srcData"] += [srcD]
-            for i in range(len(srcFeat)):
-                data["srcFeats"][i] += [srcFeat[i]]
-
-        if goldBatch:
-            for b in goldBatch:
-                _, tgtD, tgtFeat = onmt.IO.readTgtLine(b, self.tgt_dict,
-                                                       None, self._type)
-                data["tgtData"] += [tgtD]
-
-        return onmt.Dataset(data, self.opt.batch_size,
-                            self.opt.cuda, volatile=True)
-
     def buildTargetTokens(self, pred, src, attn):
         tokens = self.tgt_dict.convertToLabels(pred, onmt.Constants.EOS)
         tokens = tokens[:-1]  # EOS
@@ -104,7 +79,7 @@ class Translator(object):
 
     def translateBatch(self, batch):
         beamSize = self.opt.beam_size
-        batchSize = batch.batchSize
+        batchSize = batch.batch_size
 
         #  (1) run the encoder on the src
         encStates, context = self.model.encoder(batch.src)
@@ -243,11 +218,9 @@ class Translator(object):
 
         return allHyp, allScores, allAttn, goldScores
 
-    def translate(self, srcBatch, goldBatch):
+    def translate(self, batch):
         #  (1) convert words to indexes
-        dataset = self.buildData(srcBatch, goldBatch)
-        batch = dataset[0]
-        batchSize = batch.batchSize
+        batchSize = batch.batch_size
 
         #  (2) translate
         pred, predScore, attn, goldScore = self.translateBatch(batch)
