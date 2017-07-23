@@ -21,15 +21,10 @@ class Translator(object):
             if arg not in model_opt:
                 model_opt.__dict__[arg] = dummy_opt[arg]
 
-        # self.src_dict = checkpoint['fields']['src'].vocab
-        # self.tgt_dict = checkpoint['fields']['tgt'].vocab
-        # self.align = self.src_dict.align(self.tgt_dict)
-        # self.src_feature_dicts = checkpoint['dicts'].get('src_features', None)
-
         self._type = model_opt.encoder_type
         self.copy_attn = model_opt.copy_attn
 
-        self.model = onmt.Models.make_base_model(opt, model_opt, self.fields, checkpoint)
+        self.model = onmt.Models.make_base_model(opt, model_opt, self.fields, opt.cuda, checkpoint)
         self.model.eval()
 
         # for debugging
@@ -66,7 +61,6 @@ class Translator(object):
         encStates = self.model.init_decoder_state(context, encStates)
 
         decoder = self.model.decoder
-        attentionLayer = decoder.attn
         useMasking = (self._type == "text")
 
         #  This mask is applied to the attention model inside the decoder
@@ -79,7 +73,7 @@ class Translator(object):
 
         def mask(padMask):
             if useMasking:
-                attentionLayer.applyMask(padMask)
+                decoder.attn.applyMask(padMask)
 
         #  (2) if a target is specified, compute the 'goldScore'
         #  (i.e. log likelihood) of the target under the model
