@@ -80,7 +80,8 @@ class ONMTDataset(torchtext.data.Dataset):
                     if opt.src_seq_length_trunc != 0:
                         src_line = srcLine[:opt.src_seq_length_trunc]
                     src, srcFeats, _  = extractFeatures(src_line)
-                    examples.append([src] + srcFeats)
+                    examples.append({"src": src,
+                                     "src_feats": srcFeats})
                     src_words.append(src)
                 else:
                     if not transforms:
@@ -97,10 +98,10 @@ class ONMTDataset(torchtext.data.Dataset):
                     tgt_line = tgt_line[:opt.tgt_seq_length_trunc]
 
                 tgt, _, _  = extractFeatures(tgt_line)
-                examples[i].append(tgt)
-                examples[i].append(align(src_words[i], tgt))
+                examples[i]["tgt"] =  tgt
+                examples[i]["alignment"] = align(src_words[i], tgt)
 
-        examples = list([torchtext.data.Example.fromlist(ex, fields)
+        examples = list([torchtext.data.Example.fromdict(ex, fields)
                          for ex in examples])
 
         def filter_pred(example):
@@ -111,9 +112,10 @@ class ONMTDataset(torchtext.data.Dataset):
 
     @staticmethod
     def get_fields(src_path, tgt_path):
-        fields = [("src", torchtext.data.Field(
+        fields = {}
+        fields["src"] = torchtext.data.Field(
             pad_token=onmt.Constants.PAD_WORD,
-            include_lengths=True))]
+            include_lengths=True)
 
         # fields = [("src_img", torchtext.data.Field(
         #     include_lengths=True))]
@@ -121,13 +123,14 @@ class ONMTDataset(torchtext.data.Dataset):
         with codecs.open(src_path, "r", "utf-8") as src_file:
             src_line = src_file.readline().strip().split()
             _, _, nFeatures  = extractFeatures(src_line)
-            for j in range(nFeatures):
-                fields.append(("src_feat_" + str(j),
-                               torchtext.data.Field(pad_token=onmt.Constants.PAD_WORD)))
-        fields.append(("tgt", torchtext.data.Field(
+            fields["src_feats"] = [
+                torchtext.data.Field(pad_token=onmt.Constants.PAD_WORD)
+                for j in range(nFeatures)]
+
+        fields["tgt"] = torchtext.data.Field(
             init_token=onmt.Constants.BOS_WORD,
             eos_token=onmt.Constants.EOS_WORD,
-            pad_token=onmt.Constants.PAD_WORD)))
+            pad_token=onmt.Constants.PAD_WORD)
 
         def make_alignment(data):
             src_len = max([t.size(0) for t in data])
@@ -138,14 +141,13 @@ class ONMTDataset(torchtext.data.Dataset):
                     = data[i].t()
             return alignment
 
-        fields.append(("alignment", torchtext.data.Field(
+        fields["alignment"] = torchtext.data.Field(
             use_vocab=False, tensor_type=make_alignment,
-            sequential=False)))
+            sequential=False)
         return fields
 
     @staticmethod
     def build_vocab(train, fields, opt):
-        fields = dict(fields)
         fields["src"].build_vocab(train, max_size=opt.src_vocab_size)
         for j in range(len(fields) - 3):
             fields["src_feat_" + str(j)].build_vocab(self)
