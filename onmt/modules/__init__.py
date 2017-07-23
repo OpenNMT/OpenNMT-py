@@ -1,5 +1,6 @@
 from onmt.modules.Util import LayerNorm, Bottle, BottleLinear, \
     BottleLayerNorm, BottleSoftmax, aeq, Splitter
+from onmt.modules.Embeddings import Embeddings
 from onmt.modules.GlobalAttention import GlobalAttention
 from onmt.modules.ImageEncoder import ImageEncoder
 from onmt.modules.CopyGenerator import CopyGenerator, CopyCriterion
@@ -13,4 +14,6 @@ from onmt.modules.StackedRNN import StackedLSTM, StackedGRU
 __all__ = [GlobalAttention, ImageEncoder, CopyGenerator, MultiHeadedAttention,
            LayerNorm, Bottle, BottleLinear, BottleLayerNorm, BottleSoftmax,
            TransformerEncoder, TransformerDecoder,
-           CopyCriterion, MatrixTree, StackedLSTM, StackedGRU, aeq, Splitter]
+           CopyCriterion, MatrixTree, StackedLSTM, StackedGRU, aeq,
+           Embeddings,
+           Splitter]

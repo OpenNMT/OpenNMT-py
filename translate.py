@@ -71,10 +71,15 @@ def addone(f):
 
 def main():
     opt = parser.parse_args()
+    dummy_parser = argparse.ArgumentParser(description='train.py')
+    add_model_arguments(dummy_parser)
+    dummy_opt = dummy_parser.parse_known_args()[0]
+
+
     opt.cuda = opt.gpu > -1
     if opt.cuda:
         torch.cuda.set_device(opt.gpu)
-    translator = onmt.Translator(opt)
+    translator = onmt.Translator(opt, dummy_opt.__dict__)
     outF = codecs.open(opt.output, 'w', 'utf-8')
     predScoreTotal, predWordsTotal, goldScoreTotal, goldWordsTotal = 0, 0, 0, 0
     srcBatch, tgtBatch = [], []

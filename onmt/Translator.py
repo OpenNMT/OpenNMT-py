@@ -8,10 +8,18 @@ from torch.autograd import Variable
 import dill
 
 class Translator(object):
-    def __init__(self, opt):
+    def __init__(self, opt, dummy_opt={}):
         self.opt = opt
+
+        # Add in default model arguments, possibly added since training.
+        for arg in dummy_opt:
+            if arg not in model_opt:
+                model_opt.__dict__[arg] = dummy_opt[arg]
+
         self.tt = torch.cuda if opt.cuda else torch
         self.beam_accum = None
+
+
 
         checkpoint = torch.load(opt.model,
                                 map_location=lambda storage, loc: storage,
@@ -68,11 +76,13 @@ class Translator(object):
             "log_probs": []}
 
     def buildTargetTokens(self, pred, src, attn):
-        tokens = self.tgt_dict.convertToLabels(pred, onmt.Constants.EOS)
+        tgt_eos = self.fields["tgt"].vocab.stoi[onmt.IO.EOS]
+        unk_word = 0
+        tokens = self.tgt_dict.convertToLabels(tgt_eos)
         tokens = tokens[:-1]  # EOS
         if self.opt.replace_unk:
             for i in range(len(tokens)):
-                if tokens[i] == onmt.Constants.UNK_WORD:
+                if tokens[i] == unk_word:
                     _, maxIndex = attn[i].max(0)
                     tokens[i] = src[maxIndex[0]]
         return tokens
@@ -80,10 +90,12 @@ class Translator(object):
     def translateBatch(self, batch):
         beamSize = self.opt.beam_size
         batchSize = batch.batch_size
+        src, src_lengths = batch.src
+        src = src.unsqueeze(2)
+
 
         #  (1) run the encoder on the src
-        encStates, context = self.model.encoder(
-            batch.src, lengths=batch.lengths)
+        encStates, context = self.model.encoder(src, lengths=src_lengths)
         encStates = self.model.init_decoder_state(context, encStates)
 
         decoder = self.model.decoder
@@ -93,8 +105,10 @@ class Translator(object):
         #  This mask is applied to the attention model inside the decoder
         #  so that the attention ignores source padding
         padMask = None
+        tgt_pad = self.fields["tgt"].vocab.stoi[onmt.IO.PAD_WORD]
         if useMasking:
-            padMask = batch.words().data.eq(onmt.Constants.PAD).t()
+            pad = self.fields["src"].vocab.stoi[onmt.IO.PAD_WORD]
+            padMask = src[:, :, 0].data.eq(pad).t()
 
         def mask(padMask):
             if useMasking:
@@ -103,7 +117,8 @@ class Translator(object):
         #  (2) if a target is specified, compute the 'goldScore'
         #  (i.e. log likelihood) of the target under the model
         goldScores = context.data.new(batchSize).zero_()
-        if batch.tgt is not None:
+        if "tgt" in batch.__dict__:
+
             decStates = encStates
             mask(padMask.unsqueeze(0))
             decOut, decStates, attn = self.model.decoder(batch.tgt[:-1],
@@ -114,23 +129,22 @@ class Translator(object):
                 gen_t = self.model.generator.forward(dec_t)
                 tgt_t = tgt_t.unsqueeze(1)
                 scores = gen_t.data.gather(1, tgt_t)
-                scores.masked_fill_(tgt_t.eq(onmt.Constants.PAD), 0)
+                scores.masked_fill_(tgt_t.eq(tgt_pad), 0)
                 goldScores += scores
 
         #  (3) run the decoder to generate sentences, using beam search
         # Each hypothesis in the beam uses the same context
         # and initial decoder state
         context = Variable(context.data.repeat(1, beamSize, 1))
-        batch_src = Variable(batch.src.data.repeat(1, beamSize, 1))
+        batch_src = Variable(src.data.repeat(1, beamSize, 1))
         decStates = encStates
         decStates.repeatBeam_(beamSize)
-        beam = [onmt.Beam(beamSize, self.opt.cuda)
+        beam = [onmt.Beam(beamSize, cuda=self.opt.cuda, vocab=self.fields["tgt"].vocab)
                 for _ in range(batchSize)]
         if useMasking:
-            padMask = batch.src.data[:, :, 0].eq(
-                onmt.Constants.PAD).t() \
-                                   .unsqueeze(0) \
-                                   .repeat(beamSize, 1, 1)
+            padMask = src.data[:, :, 0].eq(pad).t() \
+                                               .unsqueeze(0) \
+                                               .repeat(beamSize, 1, 1)
 
         #  (3b) The main loop
         for i in range(self.opt.max_sent_length):
@@ -164,7 +178,7 @@ class Translator(object):
                 for b in range(out.size(0)):
                     for c in range(c_attn_t.size(1)):
                         v = self.align[words[0, c].data[0]]
-                        if v != onmt.Constants.PAD:
+                        if v != tgt_pad:
                             out[b, v] += c_attn_t[b, c]
                 out = out.log()
 
@@ -199,8 +213,8 @@ class Translator(object):
                 attn.append(att)
             allHyp += [hyps]
             if useMasking:
-                valid_attn = batch.src.data[:, b, 0].ne(onmt.Constants.PAD) \
-                                                .nonzero().squeeze(1)
+                valid_attn = src.data[:, b, 0].ne(pad) \
+                                              .nonzero().squeeze(1)
                 attn = [a.index_select(1, valid_attn) for a in attn]
             allAttn += [attn]
 
