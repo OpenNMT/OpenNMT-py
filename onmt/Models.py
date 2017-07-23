@@ -21,7 +21,7 @@ class Embeddings(nn.Module):
         self.word_vec_size = opt.word_vec_size
 
         super(Embeddings, self).__init__()
-        self.word_lut = nn.Embedding(dicts.size(),
+        self.word_lut = nn.Embedding(len(dicts),
                                      opt.word_vec_size,
                                      padding_idx=onmt.Constants.PAD)
         # Word embeddings.
@@ -123,7 +123,7 @@ class Encoder(nn.Module):
                  dropout=opt.dropout,
                  bidirectional=opt.brnn)
 
-    def forward(self, input, lengths=None, hidden=None):
+    def forward(self, input, lengths, hidden=None):
         """
         Args:
             input (LongTensor): len x batch x nfeat
@@ -137,9 +137,8 @@ class Encoder(nn.Module):
         """
         # CHECKS
         s_len, n_batch, n_feats = input.size()
-        if lengths is not None:
-            _, n_batch_ = lengths.size()
-            aeq(n_batch, n_batch_)
+        n_batch_, = lengths.size()
+        aeq(n_batch, n_batch_)
         # END CHECKS
 
         emb = self.embeddings(input)
@@ -161,11 +160,9 @@ class Encoder(nn.Module):
             # Standard RNN encoder.
             packed_emb = emb
             if lengths is not None:
-                # Lengths data is wrapped inside a Variable.
-                lengths = lengths.data.view(-1).tolist()
-                packed_emb = pack(emb, lengths)
+                packed_emb = pack(emb, lengths.tolist())
             outputs, hidden_t = self.rnn(packed_emb, hidden)
-            if lengths:
+            if lengths is not None:
                 outputs = unpack(outputs)[0]
             return hidden_t, outputs
 
