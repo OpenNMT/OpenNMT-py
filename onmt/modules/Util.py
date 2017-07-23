@@ -83,12 +83,13 @@ class Splitter:
             else:
                 dummies[k] = v
             splits = torch.split(dummies[k], self.shard_max)
+
             for i, val in enumerate(splits):
                 if i >= len(shards):
                     shards.append({})
                 shards[i][k] = val
 
-        for shard in shards:
+        for i, shard in enumerate(shards):
             yield shard
 
         # Assumed backproped

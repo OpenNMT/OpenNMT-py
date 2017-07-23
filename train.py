@@ -245,7 +245,7 @@ class LossCompute:
             loss += opt.lambda_coverage * \
                     torch.min(coverage, attn).sum()
 
-        stats = onmt.Statistics.score(loss.data, scores.data, target.data,
+        stats = onmt.Statistics.score(loss, scores.data, target.data,
                                       self.tgt_vocab.stoi[onmt.IO.PAD_WORD])
         return loss, stats
 
@@ -312,7 +312,6 @@ def trainModel(model, criterion, trainData, validData, fields, optim):
                 if opt.log_server:
                     report_stats.log("progress", experiment, optim)
                 report_stats = onmt.Statistics()
-                break
         return total_stats
 
     for epoch in range(opt.start_epoch, opt.epochs + 1):
@@ -405,7 +404,7 @@ def main():
             nn.Linear(opt.rnn_size, len(fields['tgt'].vocab)),
             nn.LogSoftmax())
         if opt.share_decoder_embeddings:
-            generator[0].weight = decoder.word_lut.weight
+            generator[0].weight = decoder.embeddings.word_lut.weight
 
     model = onmt.Models.NMTModel(encoder, decoder, len(opt.gpus) > 1)
 
