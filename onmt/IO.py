@@ -124,7 +124,7 @@ class ONMTDataset(torchtext.data.Dataset):
         self.__dict__.update(d)
 
     @staticmethod
-    def get_fields(src_path, tgt_path):
+    def get_fields(src_path=None, tgt_path=None):
         fields = {}
         fields["src"] = torchtext.data.Field(
             pad_token=PAD_WORD,
@@ -133,12 +133,13 @@ class ONMTDataset(torchtext.data.Dataset):
         # fields = [("src_img", torchtext.data.Field(
         #     include_lengths=True))]
 
-        with codecs.open(src_path, "r", "utf-8") as src_file:
-            src_line = src_file.readline().strip().split()
-            _, _, nFeatures = extractFeatures(src_line)
-            for j, v in range(nFeatures):
-                fields["src_feats_"+str(j)] = \
-                    torchtext.data.Field(pad_token=PAD_WORD)
+        if src_path is not None:
+            with codecs.open(src_path, "r", "utf-8") as src_file:
+                src_line = src_file.readline().strip().split()
+                _, _, nFeatures = extractFeatures(src_line)
+                for j, v in range(nFeatures):
+                    fields["src_feats_"+str(j)] = \
+                        torchtext.data.Field(pad_token=PAD_WORD)
 
         fields["tgt"] = torchtext.data.Field(
             init_token=BOS_WORD, eos_token=EOS_WORD,

@@ -36,10 +36,11 @@ class Encoder(nn.Module):
 
         # The Encoder RNN.
         self.encoder_layer = opt.encoder_layer
-
+        pad = dicts.stoi[onmt.IO.PAD_WORD]
         if self.encoder_layer == "transformer":
             self.transformer = nn.ModuleList(
-                [onmt.modules.TransformerEncoder(self.hidden_size, opt)
+                [onmt.modules.TransformerEncoder(self.hidden_size, opt,
+                                                 pad=pad)
                  for i in range(opt.layers)])
         else:
             self.rnn = getattr(nn, opt.rnn_type)(
@@ -103,10 +104,11 @@ class Decoder(nn.Module):
 
         super(Decoder, self).__init__()
         self.embeddings = onmt.modules.Embeddings(opt, dicts, None)
-
+        pad = dicts.stoi[onmt.IO.PAD_WORD]
         if self.decoder_layer == "transformer":
             self.transformer = nn.ModuleList(
-                [onmt.modules.TransformerDecoder(self.hidden_size, opt)
+                [onmt.modules.TransformerDecoder(self.hidden_size, opt,
+                                                 pad=pad)
                  for _ in range(opt.layers)])
         else:
             if opt.rnn_type == "LSTM":
