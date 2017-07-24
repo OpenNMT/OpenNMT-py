@@ -41,26 +41,26 @@ class GlobalAttention(nn.Module):
         self.attn_type = attn_type
         assert (self.attn_type in ["dotprod", "general", "mlp"]), (
                 "Please select a valid attention type.")
-                
+
         if self.attn_type == "general":
             self.linear_in = nn.Linear(dim, dim, bias=False)
         elif self.attn_type == 'mlp':
             self.linear_context = BottleLinear(dim, dim, bias=False)
             self.linear_query = nn.Linear(dim, dim, bias=True)
             self.v = BottleLinear(dim, 1, bias=False)
-        out_bias = self.attn_type == 'mlp' # mlp wants it with bias
+        out_bias = self.attn_type == 'mlp'  # mlp wants it with bias
         self.linear_out = nn.Linear(dim*2, dim, bias=out_bias)
 
         self.sm = nn.Softmax()
         self.tanh = nn.Tanh()
         self.mask = None
-                                
+
         if coverage:
             self.linear_cover = nn.Linear(1, dim, bias=False)
 
     def applyMask(self, mask):
         self.mask = mask
-        
+
     def score(self, h_t, h_s):
         """
         h_t (FloatTensor): batch x dim
@@ -68,7 +68,7 @@ class GlobalAttention(nn.Module):
         returns scores (FloatTensor): batch x src_len:
             raw attention scores for each src index
         """
-        
+
         if self.attn_type in ["general", "dotprod"]:
             if self.attn_type == "general":
                 h_t = self.linear_in(h_t)
@@ -92,7 +92,7 @@ class GlobalAttention(nn.Module):
         context (FloatTensor): batch x src_len x dim: src hidden states
         coverage (FloatTensor): batch x src_len
         """
-        
+
         # Check input sizes
         batch, sourceL, dim = context.size()
         batch_, dim_ = input.size()
@@ -108,26 +108,26 @@ class GlobalAttention(nn.Module):
             beam_, batch_, sourceL_ = self.mask.size()
             aeq(batch, batch_*beam_)
             aeq(sourceL, sourceL_)
-            
+
         if coverage is not None:
             cover = coverage.view(-1).unsqueeze(1)
             context += self.linear_cover(cover).view_as(context)
             context = self.tanh(context)
-        
+
         # compute attention scores, as in Luong et al.
         a_t = self.score(input, context)
-        
+
         if self.mask is not None:
             a_t.data.masked_fill_(self.mask, -float('inf'))
-            
-        # Softmax to normalize attention weights 
+
+        # Softmax to normalize attention weights
         align_vector = self.sm(a_t)
-        
+
         # the context vector c_t is the weighted average
         # over all the source hidden states
         c_t = torch.bmm(align_vector.unsqueeze(1), context).squeeze(1)
-        
-        # concatenate 
+
+        # concatenate
         attn_h_t = self.linear_out(torch.cat([c_t, input], 1))
         if self.attn_type in ["general", "dotprod"]:
             attn_h_t = self.tanh(attn_h_t)
