@@ -7,7 +7,7 @@ from onmt.modules import aeq
 from onmt.modules.Gate import ContextGateFactory
 from torch.nn.utils.rnn import pad_packed_sequence as unpack
 from torch.nn.utils.rnn import pack_padded_sequence as pack
-import math
+
 
 class Encoder(nn.Module):
     """
@@ -364,12 +364,13 @@ class TransformerDecoderState(DecoderState):
 
 def make_base_model(opt, model_opt, fields, cuda, checkpoint=None):
     if model_opt.encoder_type == "text":
-        encoder = Encoder(model_opt, fields["src"].vocab, None)# self.src_feature_dicts)
+        encoder = Encoder(model_opt, fields["src"].vocab,
+                          fields["src_feats"].src_feature_dicts)
     elif model_opt.encoder_type == "img":
         encoder = onmt.modules.ImageEncoder(model_opt)
     else:
-        assert False, ("Unsupported encoder type %s" % (model_opt.encoder_type))
-
+        assert False, ("Unsupported encoder type %s"
+                       % (model_opt.encoder_type))
 
     decoder = onmt.Models.Decoder(model_opt, fields["tgt"].vocab)
     model = onmt.Models.NMTModel(encoder, decoder)
@@ -383,7 +384,6 @@ def make_base_model(opt, model_opt, fields, cuda, checkpoint=None):
                                                fields["tgt"].vocab)
         if opt.share_decoder_embeddings:
             generator[0].weight = decoder.embeddings.word_lut.weight
-
 
     if checkpoint is not None:
         print('Loading model')

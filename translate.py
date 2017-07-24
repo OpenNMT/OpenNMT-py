@@ -38,9 +38,6 @@ parser.add_argument('-replace_unk', action="store_true",
                     give the corresponding target token. If it is not provided
                     (or the identified source token does not exist in the
                     table) then it will copy the source token""")
-# parser.add_argument('-phrase_table',
-#                     help="""Path to source-target dictionary to replace UNK
-#                     tokens. See README.md for the format of this file.""")
 parser.add_argument('-verbose', action="store_true",
                     help='Print scores and predictions for each sentence')
 parser.add_argument('-attn_debug', action="store_true",
@@ -63,18 +60,11 @@ def reportScore(name, scoreTotal, wordsTotal):
         name, math.exp(-scoreTotal/wordsTotal)))
 
 
-def addone(f):
-    for line in f:
-        yield line
-    yield None
-
-
 def main():
     opt = parser.parse_args()
     dummy_parser = argparse.ArgumentParser(description='train.py')
     add_model_arguments(dummy_parser)
     dummy_opt = dummy_parser.parse_known_args()[0]
-
 
     opt.cuda = opt.gpu > -1
     if opt.cuda:
@@ -100,7 +90,7 @@ def main():
             = translator.translate(batch)
         predScoreTotal += sum(score[0] for score in predScore)
         predWordsTotal += sum(len(x[0]) for x in predBatch)
-        if tgtF is not None:
+        if opt.tgt:
             goldScoreTotal += sum(goldScore)
             goldWordsTotal += sum(len(x) for x in tgtBatch)
 
@@ -124,7 +114,7 @@ def main():
                                   (count, " ".join(predBatch[b][0])), 'UTF-8'))
                 print("PRED SCORE: %.4f" % predScore[b][0])
 
-                if tgtF is not None:
+                if opt.tgt:
                     tgtSent = ' '.join(tgtBatch[b])
                     if translator.tgt_dict.lower:
                         tgtSent = tgtSent.lower()
@@ -145,17 +135,14 @@ def main():
                         print(w)
                         _, ids = attn[b][0][i].sort(0, descending=True)
                         for j in ids[:5].tolist():
-                            print("\t%s\t%d\t%3f" % (srcTokens[j], j,
+                            print("\t%s\t%d\t%3f" % (srcBatch[b][j], j,
                                                      attn[b][0][i][j]))
 
         srcBatch, tgtBatch = [], []
 
     reportScore('PRED', predScoreTotal, predWordsTotal)
-    if tgtF:
+    if opt.tgt:
         reportScore('GOLD', goldScoreTotal, goldWordsTotal)
-
-    if tgtF:
-        tgtF.close()
 
     if opt.dump_beam:
         json.dump(translator.beam_accum,

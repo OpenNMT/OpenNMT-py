@@ -95,7 +95,8 @@ class ONMTDataset(torchtext.data.Dataset):
                     examples[i]["tgt"] = tgt
 
                     # Create Alignment
-                    mask = torch.ByteTensor(len(src_words[i]), len(tgt)).fill_(0)
+                    mask = torch.ByteTensor(len(src_words[i]),
+                                            len(tgt)).fill_(0)
                     for k in range(len(src_words[i])):
                         for j in range(len(tgt)):
                             if src_words[i][k] == tgt[j]:
@@ -113,7 +114,8 @@ class ONMTDataset(torchtext.data.Dataset):
                 and len(example.tgt) <= opt.tgt_seq_length
 
         super(ONMTDataset, self).__init__(examples, fields,
-                                          filter_pred if opt is not None else None)
+                                          filter_pred if opt is not None
+                                          else None)
 
     def __getstate__(self):
         return self.__dict__

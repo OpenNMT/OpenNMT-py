@@ -33,7 +33,8 @@ class Beam(object):
         self.prevKs = []
 
         # The outputs at each time-step.
-        self.nextYs = [self.tt.LongTensor(size).fill_(vocab.stoi[onmt.IO.PAD_WORD])]
+        self.nextYs = [self.tt.LongTensor(size)
+                       .fill_(vocab.stoi[onmt.IO.PAD_WORD])]
         self.nextYs[0][0] = vocab.stoi[onmt.IO.BOS_WORD]
         self.vocab = vocab
 

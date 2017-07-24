@@ -310,7 +310,8 @@ def main():
     if len(opt.gpus) > 1:
         print('Multi gpu training ', opt.gpus)
         model = nn.DataParallel(model, device_ids=opt.gpus, dim=1)
-        model.generator = nn.DataParallel(model.generator, device_ids=opt.gpus, dim=0)
+        model.generator = nn.DataParallel(model.generator, device_ids=opt.gpus,
+                                          dim=0)
 
     if not opt.train_from_state_dict:
         if opt.param_init != 0.0:

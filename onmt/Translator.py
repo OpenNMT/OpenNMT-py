@@ -2,7 +2,6 @@ import onmt
 import onmt.Models
 import onmt.modules
 import onmt.IO
-import torch.nn as nn
 import torch
 from torch.autograd import Variable
 import dill
@@ -24,7 +23,8 @@ class Translator(object):
         self._type = model_opt.encoder_type
         self.copy_attn = model_opt.copy_attn
 
-        self.model = onmt.Models.make_base_model(opt, model_opt, self.fields, opt.cuda, checkpoint)
+        self.model = onmt.Models.make_base_model(opt, model_opt, self.fields,
+                                                 opt.cuda, checkpoint)
         self.model.eval()
 
         # for debugging
@@ -54,7 +54,6 @@ class Translator(object):
         batchSize = batch.batch_size
         src, src_lengths = batch.src
         src = src.unsqueeze(2)
-
 
         #  (1) run the encoder on the src
         encStates, context = self.model.encoder(src, lengths=src_lengths)
@@ -100,7 +99,8 @@ class Translator(object):
         batch_src = Variable(src.data.repeat(1, beamSize, 1))
         decStates = encStates
         decStates.repeatBeam_(beamSize)
-        beam = [onmt.Beam(beamSize, cuda=self.opt.cuda, vocab=self.fields["tgt"].vocab)
+        beam = [onmt.Beam(beamSize, cuda=self.opt.cuda,
+                          vocab=self.fields["tgt"].vocab)
                 for _ in range(batchSize)]
         if useMasking:
             padMask = src.data[:, :, 0].eq(pad).t() \
@@ -208,8 +208,9 @@ class Translator(object):
         predBatch = []
         for b in range(batchSize):
             predBatch.append(
-                [self.buildTargetTokens(pred[b][n], srcBatch[b], attn[b][n])
+                [self.buildTargetTokens(pred[b][n], batch.src[0][:, b],
+                                        attn[b][n])
                  for n in range(self.opt.n_best)]
             )
 
-        return predBatch, predScore, goldScore, attn, batch.src
+        return predBatch, predScore, goldScore, attn, batch.src[0]
