@@ -363,9 +363,17 @@ class TransformerDecoderState(DecoderState):
 
 
 def make_base_model(opt, model_opt, fields, cuda, checkpoint=None):
+    # HACK: collect source feature vocabs.
+    feature_vocabs = []
+    for j in range(100):
+        key = "src_feats_" + str(j)
+        if key not in fields:
+            break
+        feature_vocabs.append(fields[key].vocabs)
+
     if model_opt.encoder_type == "text":
         encoder = Encoder(model_opt, fields["src"].vocab,
-                          fields["src_feats"].src_feature_dicts)
+                          feature_vocabs)
     elif model_opt.encoder_type == "img":
         encoder = onmt.modules.ImageEncoder(model_opt)
     else:

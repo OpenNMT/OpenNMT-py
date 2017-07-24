@@ -114,7 +114,6 @@ def eval(model, criterion, data, fields):
                                                (0, batch.tgt.size(0)))
         _, batch_stats = loss_compute.computeLoss(**gen_state)
         stats.update(batch_stats)
-        break
     model.train()
     return stats
 
@@ -218,7 +217,6 @@ def trainModel(model, criterion, trainData, validData, fields, optim):
                 if opt.log_server:
                     report_stats.log("progress", experiment, optim)
                 report_stats = onmt.Statistics()
-                break
         return total_stats
 
     for epoch in range(opt.start_epoch, opt.epochs + 1):
