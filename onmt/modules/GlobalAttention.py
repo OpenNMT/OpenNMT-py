@@ -38,7 +38,7 @@ class GlobalAttention(nn.Module):
     $$a_j = softmax(v_a^T \tanh(W_a q + U_a h_j) )$$.
 
     """
-    def __init__(self, dim, coverage=False, attn_type="dotprod"):
+    def __init__(self, dim, coverage=False, attn_type="dot"):
         super(GlobalAttention, self).__init__()
 
         self.dim = dim
