@@ -25,8 +25,12 @@ class GlobalAttention(nn.Module):
     $$(H_1 + H_n, q) => (a)$$
     Where H is of `batch x n x dim` and q is of `batch x dim`.
 
-    Loung Attention (dotprod):
-    $$\tanh(W_2 [(softmax((W_1 q + b_1) H) H), q] + b_2)$$.:
+    Luong Attention (dot, general):
+    The full function is
+    $$\tanh(W_2 [(softmax((W_1 q + b_1) H) H), q] + b_2)$$.
+
+    * dot: $$score(h_t,{\overline{h}}_s) = h_t^T{\overline{h}}_s$$
+    * general: $$score(h_t,{\overline{h}}_s) = h_t^T W_a {\overline{h}}_s$$
 
     Bahdanau Attention (mlp):
     $$c = \sum_{j=1}^{SeqLength}\a_jh_j$$.
@@ -39,16 +43,17 @@ class GlobalAttention(nn.Module):
 
         self.dim = dim
         self.attn_type = attn_type
-        assert (self.attn_type in ["dotprod", "general", "mlp"]), (
+        assert (self.attn_type in ["dot", "general", "mlp"]), (
                 "Please select a valid attention type.")
 
         if self.attn_type == "general":
             self.linear_in = nn.Linear(dim, dim, bias=False)
-        elif self.attn_type == 'mlp':
+        elif self.attn_type == "mlp":
             self.linear_context = BottleLinear(dim, dim, bias=False)
             self.linear_query = nn.Linear(dim, dim, bias=True)
             self.v = BottleLinear(dim, 1, bias=False)
-        out_bias = self.attn_type == 'mlp'  # mlp wants it with bias
+        # mlp wants it with bias
+        out_bias = self.attn_type == "mlp"
         self.linear_out = nn.Linear(dim*2, dim, bias=out_bias)
 
         self.sm = nn.Softmax()
@@ -69,7 +74,14 @@ class GlobalAttention(nn.Module):
             raw attention scores for each src index
         """
 
-        if self.attn_type in ["general", "dotprod"]:
+        # Check input sizes
+        src_batch, _, src_dim = h_s.size()
+        tgt_batch, tgt_dim = h_t.size()
+        aeq(src_batch, tgt_batch)
+        aeq(src_dim, tgt_dim)
+        aeq(self.dim, src_dim)
+
+        if self.attn_type in ["general", "dot"]:
             if self.attn_type == "general":
                 h_t = self.linear_in(h_t)
             return torch.bmm(h_s, h_t.unsqueeze(2)).squeeze(2)
@@ -129,7 +141,7 @@ class GlobalAttention(nn.Module):
 
         # concatenate
         attn_h_t = self.linear_out(torch.cat([c_t, input], 1))
-        if self.attn_type in ["general", "dotprod"]:
+        if self.attn_type in ["general", "dot"]:
             attn_h_t = self.tanh(attn_h_t)
 
         # Check output sizes
