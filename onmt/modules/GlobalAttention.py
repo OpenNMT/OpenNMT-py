@@ -118,7 +118,7 @@ class GlobalAttention(nn.Module):
         a_t = self.score(input, context)
         
         if self.mask is not None:
-            attention_scores.data.masked_fill_(self.mask, -float('inf'))
+            a_t.data.masked_fill_(self.mask, -float('inf'))
             
         # Softmax to normalize attention weights 
         align_vector = self.sm(a_t)
