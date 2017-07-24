@@ -16,7 +16,7 @@ install:
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION pytorch -c soumith
   - source activate test-environment
   - python setup.py install
-  - pip install --upgrade dill git+git://github.com/pytorch/text.git
+  - pip install --upgrade dill six tqdm git+git://github.com/pytorch/text.git
   
 script:
   - python -m unittest discover

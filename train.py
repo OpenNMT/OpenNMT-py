@@ -98,7 +98,7 @@ def make_features(batch, fields):
 
 def eval(model, criterion, data, fields):
     validData = onmt.IO.OrderedIterator(
-        dataset=data, device=opt.gpus if opt.gpus else -1,
+        dataset=data, device=opt.gpus[0] if opt.gpus else -1,
         batch_size=opt.batch_size, train=False, sort=True)
 
     stats = onmt.Statistics()
@@ -168,7 +168,7 @@ def trainModel(model, criterion, trainData, validData, fields, optim):
         train = onmt.IO.OrderedIterator(
             dataset=trainData, batch_size=opt.batch_size,
             sort=True,
-            device=opt.gpus if opt.gpus else -1)
+            device=opt.gpus[0] if opt.gpus else -1)
 
         total_stats = onmt.Statistics()
         report_stats = onmt.Statistics()
