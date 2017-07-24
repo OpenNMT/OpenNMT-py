@@ -17,8 +17,8 @@ class Encoder(nn.Module):
         """
         Args:
             opt: Model options.
-            dicts (`Dict`): The src dictionary
-            features_dicts (`[Dict]`): List of src feature dictionaries.
+            dicts: The src vocab
+            features_dicts: List of src feature vocabs.
         """
         # Number of rnn layers.
         self.layers = opt.layers
@@ -73,12 +73,9 @@ class Encoder(nn.Module):
             return Variable(emb.data), out.transpose(0, 1).contiguous()
         else:
             # Standard RNN encoder.
-            packed_emb = emb
-            if lengths is not None:
-                packed_emb = pack(emb, lengths.tolist())
+            packed_emb = pack(emb, lengths.tolist())
             outputs, hidden_t = self.rnn(packed_emb, hidden)
-            if lengths is not None:
-                outputs = unpack(outputs)[0]
+            outputs = unpack(outputs)[0]
             return hidden_t, outputs
 
 
@@ -91,7 +88,7 @@ class Decoder(nn.Module):
         """
         Args:
             opt: model options
-            dicts: Target `Dict` object
+            dicts: Target vocab object
         """
         self.layers = opt.layers
         self.decoder_layer = opt.decoder_layer

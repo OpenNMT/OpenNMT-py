@@ -4,7 +4,7 @@ import codecs
 import torchtext.data
 
 PAD_WORD = '<blank>'
-UNK_WORD = '<unk>'
+UNK = 0
 BOS_WORD = '<s>'
 EOS_WORD = '</s>'
 
@@ -37,9 +37,16 @@ def extractFeatures(tokens):
 
 class OrderedIterator(torchtext.data.Iterator):
     def create_batches(self):
-        self.batches = torchtext.data.pool(self.data(), self.batch_size,
-                                           self.sort_key, self.batch_size_fn,
-                                           random_shuffler=lambda a: a)
+        if self.train:
+            self.batches = torchtext.data.pool(self.data(), self.batch_size,
+                                               self.sort_key, self.batch_size_fn,
+                                               random_shuffler=self.random_shuffler)
+        else:
+            self.batches = []
+            for b in torchtext.data.batch(self.data(), self.batch_size,
+                                          self.batch_size_fn):
+                self.batches.append(sorted(b, key=self.sort_key))
+
 
 
 class ONMTDataset(torchtext.data.Dataset):
@@ -69,7 +76,7 @@ class ONMTDataset(torchtext.data.Dataset):
                     if opt is not None and opt.src_seq_length_trunc != 0:
                         src_line = src_line[:opt.src_seq_length_trunc]
                     src, src_feats, _ = extractFeatures(src_line)
-                    d = {"src": src}
+                    d = {"src": src, "indices": i}
                     self.nfeatures = len(src_feats)
                     for j, v in enumerate(src_feats):
                         examples["src_feats_"+str(j)] = v
@@ -157,13 +164,17 @@ class ONMTDataset(torchtext.data.Dataset):
         fields["alignment"] = torchtext.data.Field(
             use_vocab=False, tensor_type=make_alignment,
             sequential=False)
+        fields["indices"] = torchtext.data.Field(
+            use_vocab=False, tensor_type=torch.LongTensor,
+            sequential=False)
+
         return fields
 
     @staticmethod
     def build_vocab(train, opt):
         fields = train.fields
         fields["src"].build_vocab(train, max_size=opt.src_vocab_size)
-        for j in range(len(fields) - 3):
+        for j in range(train.nfeatures):
             fields["src_feat_" + str(j)].build_vocab(train)
         fields["tgt"].build_vocab(train, max_size=opt.tgt_vocab_size)
 

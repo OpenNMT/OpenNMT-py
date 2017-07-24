@@ -106,10 +106,19 @@ def main():
             outF.flush()
 
             if opt.verbose:
-                srcSent = ' '.join(srcBatch[b])
-                if translator.tgt_dict.lower:
-                    srcSent = srcSent.lower()
-                os.write(1, bytes('SENT %d: %s\n' % (count, srcSent), 'UTF-8'))
+                # print(srcBatch[b])
+                # srcSent = ' '.join(srcBatch[b])
+                # if translator.tgt_dict.lower:
+                #     srcSent = srcSent.lower()
+                words = []
+                for f in src[:, b]:
+                    word = translator.fields["src"].vocab.itos[f]
+                    if word == onmt.IO.PAD_WORD:
+                        break
+                    words.append(word)
+
+                os.write(1, bytes('SENT %d: %s\n' %
+                                  (count, " ".join(words)), 'UTF-8'))
                 os.write(1, bytes('PRED %d: %s\n' %
                                   (count, " ".join(predBatch[b][0])), 'UTF-8'))
                 print("PRED SCORE: %.4f" % predScore[b][0])

@@ -85,6 +85,7 @@ if opt.log_server != "":
 
 
 def make_features(batch, fields):
+    # This is a bit hacky for now. 
     feats = []
     for j in range(100):
         key = "src_feats_" + str(j)
@@ -94,6 +95,46 @@ def make_features(batch, fields):
     cat = [batch.src[0]] + feats
     cat = [c.unsqueeze(2) for c in cat]
     return torch.cat(cat, 2)
+
+
+class LossCompute:
+    def __init__(self, generator, crit, tgt_vocab):
+        self.generator = generator
+        self.crit = crit
+        self.tgt_vocab = tgt_vocab
+
+    @staticmethod
+    def makeLossBatch(outputs, batch, attns, range_):
+        """Create all the variables that need to be sharded.
+        This needs to match compute loss exactly.
+        """
+        return {"out": outputs,
+                "target": batch.tgt[range_[0] + 1: range_[1]],
+                "align": batch.alignment[range_[0] + 1: range_[1]],
+                "coverage": attns.get("coverage"),
+                "attn": attns.get("copy")}
+
+    def computeLoss(self, out, target, attn=None, align=None, coverage=None):
+        def bottle(v):
+            return v.view(-1, v.size(2))
+
+        if not opt.copy_attn:
+            # Standard loss.
+            scores = self.generator(bottle(out))
+            loss = self.crit(scores, target.view(-1))
+        else:
+            # Copy loss. 
+            scores, c_attn = self.generator(bottle(out), bottle(attn))
+            loss = self.crit(scores, c_attn, target, bottle(align))
+
+        # Coverage loss term. 
+        if opt.coverage_attn:
+            loss += opt.lambda_coverage * \
+                    torch.min(coverage, attn).sum()
+
+        stats = onmt.Statistics.score(loss.data, scores.data, target.data,
+                                      self.tgt_vocab.stoi[onmt.IO.PAD_WORD])
+        return loss, stats
 
 
 def eval(model, criterion, data, fields):
@@ -118,43 +159,6 @@ def eval(model, criterion, data, fields):
     return stats
 
 
-class LossCompute:
-    def __init__(self, generator, crit, tgt_vocab):
-        self.generator = generator
-        self.crit = crit
-        self.tgt_vocab = tgt_vocab
-
-    @staticmethod
-    def makeLossBatch(outputs, batch, attns, range_):
-        return {"out": outputs,
-                "target": batch.tgt[range_[0] + 1: range_[1]],
-                "align": batch.alignment[range_[0] + 1: range_[1]],
-                "coverage": attns.get("coverage"),
-                "attn": attns.get("copy")}
-
-    def computeLoss(self, out, target, attn=None, align=None, coverage=None):
-        def bottle(v):
-            return v.view(-1, v.size(2))
-
-        if not opt.copy_attn:
-            # Standard loss.
-            scores = self.generator(bottle(out))
-            loss = self.crit(scores, target.view(-1))
-        else:
-            # Need extra args for copy.
-            scores, c_attn = self.generator(bottle(out), bottle(attn))
-            loss = self.crit(scores, c_attn, target, bottle(align))
-
-        # Coverage can be applied for either.
-        if opt.coverage_attn:
-            loss += opt.lambda_coverage * \
-                    torch.min(coverage, attn).sum()
-
-        stats = onmt.Statistics.score(loss, scores.data, target.data,
-                                      self.tgt_vocab.stoi[onmt.IO.PAD_WORD])
-        return loss, stats
-
-
 def trainModel(model, criterion, trainData, validData, fields, optim):
     def trainEpoch(epoch):
         # if opt.extra_shuffle and epoch > opt.curriculum:
@@ -167,40 +171,48 @@ def trainModel(model, criterion, trainData, validData, fields, optim):
 
         train = onmt.IO.OrderedIterator(
             dataset=trainData, batch_size=opt.batch_size,
-            sort=True,
-            device=opt.gpus[0] if opt.gpus else -1)
+            device=opt.gpus[0] if opt.gpus else -1, 
+            repeat=False)
 
         total_stats = onmt.Statistics()
         report_stats = onmt.Statistics()
-
+        
+        # Main training loop
         for i, batch in enumerate(train):
             target_size = batch.tgt.size(0)
             dec_state = None
+            _, src_lengths = batch.src
+            src = make_features(batch, fields)
+            report_stats.n_src_words += src_lengths.sum()
+            
+            # Truncated BPTT
             trunc_size = opt.truncated_decoder if opt.truncated_decoder \
                 else target_size
 
             for j in range(0, target_size-1, trunc_size):
-                # Main training loop
-                _, src_lengths = batch.src
-                src = make_features(batch, fields)
-                tgt_r = (j, j + trunc_size)
 
+                # (1) Create truncated target.
+                tgt_r = (j, j + trunc_size)
+                tgt = batch.tgt[tgt_r[0]: tgt_r[1]]
+                
+                # (2) F-prop all but generator.
                 model.zero_grad()
                 outputs, attn, dec_state = \
-                    model(src, batch.tgt[tgt_r[0]: tgt_r[1]],
-                          src_lengths, dec_state)
+                    model(src, tgt, src_lengths, dec_state)
 
+                # (2) F-prop/B-prob generator in shards for memory
+                # efficiency.
+                batch_stats = onmt.Statistics()
                 gen_state = loss_compute.makeLossBatch(outputs, batch, attn,
                                                        tgt_r)
-                batch_stats = onmt.Statistics()
                 for shard in splitter.splitIter(gen_state):
+
+                    # Compute loss and backprop shard.
                     loss, stats = loss_compute.computeLoss(**shard)
-
-                    # Compute statistics.
-                    batch_stats.update(stats)
                     loss.div(batch.batch_size).backward()
-
-                # Update the parameters.
+                    batch_stats.update(stats)
+                    
+                # (3) Update the parameters and statistics.
                 optim.step()
                 total_stats.update(batch_stats)
                 report_stats.update(batch_stats)
@@ -209,10 +221,10 @@ def trainModel(model, criterion, trainData, validData, fields, optim):
                 if dec_state is not None:
                     dec_state.detach()
 
-            report_stats.n_src_words += src_lengths.sum()
 
+            # Log the statistics for the batch. 
             if i % opt.log_interval == -1 % opt.log_interval:
-                report_stats.output(epoch, i+1, len(trainData),
+                report_stats.output(epoch, i+1, len(train),
                                     total_stats.start_time)
                 if opt.log_server:
                     report_stats.log("progress", experiment, optim)
@@ -232,7 +244,7 @@ def trainModel(model, criterion, trainData, validData, fields, optim):
         print('Validation perplexity: %g' % valid_stats.ppl())
         print('Validation accuracy: %g' % valid_stats.accuracy())
 
-        # Log to remote server.
+        # (optional) Log to remote server.
         if opt.log_server:
             train_stats.log("train", experiment, optim)
             valid_stats.log("valid", experiment, optim)

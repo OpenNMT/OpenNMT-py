@@ -92,13 +92,13 @@ class Splitter:
         for i, shard in enumerate(shards):
             yield shard
 
-        # Assumed backproped
+        # Assumed backprop'd
         inputs = []
         grads = []
         for k, v in dummies.items():
-            if isinstance(v, Variable) and (dummies[k].grad is not None):
-                inputs.append(v)
-                grads.append(dummies[k].grad.data)
+            if isinstance(v, Variable) and (v.grad is not None):
+                inputs.append(d[k])
+                grads.append(v.grad.data)
         torch.autograd.backward(inputs, grads)
         return
 

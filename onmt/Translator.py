@@ -38,9 +38,13 @@ class Translator(object):
             "log_probs": []}
 
     def buildTargetTokens(self, pred, src, attn):
-        tgt_eos = self.fields["tgt"].vocab.stoi[onmt.IO.EOS]
-        unk_word = 0
-        tokens = self.tgt_dict.convertToLabels(tgt_eos)
+        tgt_eos = self.fields["tgt"].vocab.stoi[onmt.IO.EOS_WORD]
+        unk_word = onmt.IO.UNK
+        tokens = []
+        for tok in pred:
+            if tok != tgt_eos:
+                tokens.append(self.fields["tgt"].vocab.itos[tok])
+
         tokens = tokens[:-1]  # EOS
         if self.opt.replace_unk:
             for i in range(len(tokens)):
@@ -201,16 +205,19 @@ class Translator(object):
         #  (2) translate
         pred, predScore, attn, goldScore = self.translateBatch(batch)
         pred, predScore, attn, goldScore = list(zip(
-            *sorted(zip(pred, predScore, attn, goldScore, batch.indices),
+            *sorted(zip(pred, predScore, attn, goldScore,
+                        batch.indices),
                     key=lambda x: x[-1])))[:-1]
-
+        _, perm = torch.sort(batch.indices.data)
+        
         #  (3) convert indexes to words
         predBatch = []
+        src = batch.src[0].data.index_select(1, perm)
         for b in range(batchSize):
             predBatch.append(
-                [self.buildTargetTokens(pred[b][n], batch.src[0][:, b],
+                [self.buildTargetTokens(pred[b][n], src[:, b],
                                         attn[b][n])
                  for n in range(self.opt.n_best)]
             )
 
-        return predBatch, predScore, goldScore, attn, batch.src[0]
+        return predBatch, predScore, goldScore, attn, src

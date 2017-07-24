@@ -30,7 +30,7 @@ class Statistics:
 
     def output(self, epoch, batch, n_batches, start):
         t = self.elapsed_time()
-        print(("Epoch %2d, %5d/%5d; acc: %6.2f; ppl: %6.2f;" +
+        print(("Epoch %2d, %5d/%5d; acc: %6.2f; ppl: %6.2f; " +
                "%3.0f src tok/s; %3.0f tgt tok/s; %6.0f s elapsed") %
               (epoch, batch,  n_batches,
                self.accuracy(),
