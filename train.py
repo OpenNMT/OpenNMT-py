@@ -1,5 +1,7 @@
 from __future__ import division
 
+import os
+
 import onmt
 import onmt.Markdown
 import onmt.Models
@@ -205,6 +207,11 @@ def eval(model, criterion, data):
 
 def trainModel(model, trainData, validData, dataset, optim):
     model.train()
+
+    model_dirname = os.path.dirname(opt.save_model)
+    if not os.path.exists(model_dirname):
+        os.mkdir(model_dirname)
+    assert os.path.isdir(model_dirname), "%s not a directory" % opt.save_model
 
     # Define criterion of each GPU.
     if not opt.copy_attn:
