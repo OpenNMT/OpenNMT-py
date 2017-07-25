@@ -2,6 +2,8 @@
 import torch
 import codecs
 import torchtext.data
+import torchtext.vocab
+from collections import Counter
 
 PAD_WORD = '<blank>'
 UNK = 0
@@ -67,6 +69,7 @@ class ONMTDataset(torchtext.data.Dataset):
 
         examples = []
         src_words = []
+        self.src_vocabs, src_maps = [], []
         with codecs.open(src_path, "r", "utf-8") as src_file:
             for i, src_line in enumerate(src_file):
                 src_line = src_line.split()
@@ -76,12 +79,22 @@ class ONMTDataset(torchtext.data.Dataset):
                     if opt is not None and opt.src_seq_length_trunc != 0:
                         src_line = src_line[:opt.src_seq_length_trunc]
                     src, src_feats, _ = extractFeatures(src_line)
-                    d = {"src": src, "src_words": src, "indices": i}
+                    d = {"src": src, "indices": i}
                     self.nfeatures = len(src_feats)
                     for j, v in enumerate(src_feats):
                         d["src_feat_"+str(j)] = v
                     examples.append(d)
                     src_words.append(src)
+
+                    # Create Alignment
+                    src_vocab = torchtext.vocab.Vocab(Counter(src))
+
+                    src_map = torch.ByteTensor(len(src), len(src_vocab)).fill_(0)
+                    for j, w in enumerate(src):
+                        src_map[j, src_vocab.stoi[w]] = 1
+                        
+                    src_maps.append(src_map)
+                    self.src_vocabs.append(src_vocab)
                 else:
                     # TODO finish this.
                     if not transforms:
@@ -100,15 +113,23 @@ class ONMTDataset(torchtext.data.Dataset):
 
                     tgt, _, _ = extractFeatures(tgt_line)
                     examples[i]["tgt"] = tgt
-                    examples[i]["tgt_words"] = tgt
 
                     # Create Alignment
                     mask = torch.ByteTensor(len(src_words[i]),
-                                             len(tgt)).fill_(0)
-                    for k in range(len(src_words[i])):
-                        for j in range(len(tgt)):
-                            if src_words[i][k] == tgt[j]:
-                                mask[k][j] = 1
+                                            len(tgt)).fill_(0)
+
+                    src_vocab = self.src_vocabs[i]
+
+
+                    # Target word appears in src vocab.
+                    mask = torch.LongTensor(len(tgt)+2).fill_(0)
+                    for j in range(len(tgt)):
+                        mask[j+1] = src_vocab.stoi[tgt[j]]
+                    
+                    # Maps each source position to word in dynamic dict.
+                    examples[i]["src_map"] = src_maps[i]
+                    
+                    # Marks which target words should be copied from source.
                     examples[i]["alignment"] = mask
 
         keys = examples[0].keys()
@@ -131,17 +152,30 @@ class ONMTDataset(torchtext.data.Dataset):
     def __setstate__(self, d):
         self.__dict__.update(d)
 
+
+    def collapseCopyScores(self, scores, batch):
+        """Given scores from an expanded dictionary
+        corresponeding to a batch, sums together copies,
+        with a dictionary word when it is ambigious.
+        """
+        offset = len(self.fields["tgt"].vocab)
+        for b in range(batch.batch_size):
+            index = batch.indices.data[b]
+            src_vocab = self.src_vocabs[index]
+            for i in range(1, len(src_vocab)):
+                sw = src_vocab.itos[i]
+                ti = self.fields["tgt"].vocab.stoi[sw]
+                if ti != 0:
+                    scores[:, b, ti] += scores[:, b, offset + i]
+                    scores[:, b, offset + i].fill_(1e-20) 
+        return scores
+
     @staticmethod
     def get_fields(src_path=None, tgt_path=None):
         fields = {}
         fields["src"] = torchtext.data.Field(
             pad_token=PAD_WORD,
             include_lengths=True)
-
-        fields["src_words"] = torchtext.data.Field(
-            pad_token=PAD_WORD,
-            use_vocab=False, tensor_type=lambda a:a)
-
         
         # fields = [("src_img", torchtext.data.Field(
         #     include_lengths=True))]
@@ -157,24 +191,32 @@ class ONMTDataset(torchtext.data.Dataset):
         fields["tgt"] = torchtext.data.Field(
             init_token=BOS_WORD, eos_token=EOS_WORD,
             pad_token=PAD_WORD)
-        fields["tgt_words"] = torchtext.data.Field(
-            pad_token=PAD_WORD,
-            use_vocab=False, tensor_type=lambda a:a)
+        
+
+        def make_src(data):
+            src_size = max([t.size(0) for t in data])
+            src_vocab_size = max([t.size(1) for t in data]) 
+            alignment = torch.FloatTensor(src_size, len(data), src_vocab_size).fill_(0)
+            for i in range(len(data)):
+                alignment[:data[i].size(0), i, :data[i].size(1)] = data[i]
+            return alignment
 
         
-        def make_alignment(data):
-            src_len = max([t.size(0) for t in data]) 
-            tgt_len = max([t.size(1) for t in data]) + 2
-            alignment = torch.FloatTensor(tgt_len, len(data), src_len).fill_(0)
+        fields["src_map"] = torchtext.data.Field(
+            use_vocab=False, tensor_type=make_src,
+            sequential=False)
+
+        def make_tgt(data):
+            tgt_size = max([t.size(0) for t in data]) 
+            alignment = torch.LongTensor(tgt_size, len(data)).fill_(0)
             for i in range(len(data)):
-                # Compensate for start and end tag.
-                alignment[1:data[i].size(1)+1, i, :data[i].size(0)] \
-                    = data[i].t()
+                alignment[:data[i].size(0), i] = data[i]
             return alignment
 
         fields["alignment"] = torchtext.data.Field(
-            use_vocab=False, tensor_type=make_alignment,
+            use_vocab=False, tensor_type=make_tgt,
             sequential=False)
+
         fields["indices"] = torchtext.data.Field(
             use_vocab=False, tensor_type=torch.LongTensor,
             sequential=False)

@@ -98,11 +98,12 @@ def make_features(batch, fields):
 
 
 class LossCompute:
-    def __init__(self, generator, crit, tgt_vocab):
+    def __init__(self, generator, crit, tgt_vocab, dataset):
         self.generator = generator
         self.crit = crit
         self.tgt_vocab = tgt_vocab
-
+        self.dataset = dataset
+        
     @staticmethod
     def makeLossBatch(outputs, batch, attns, range_):
         """Create all the variables that need to be sharded.
@@ -114,27 +115,61 @@ class LossCompute:
                 "coverage": attns.get("coverage"),
                 "attn": attns.get("copy")}
 
-    def computeLoss(self, out, target, attn=None, align=None, coverage=None):
+    def computeLoss(self, batch, out, target, attn=None, align=None, coverage=None):
         def bottle(v):
             return v.view(-1, v.size(2))
+        def unbottle(v):
+            return v.view(-1, batch.batch_size, v.size(1))
 
+        pad = self.tgt_vocab.stoi[onmt.IO.PAD_WORD]
+        
+        target = target.view(-1)
+        
         if not opt.copy_attn:
-            # Standard loss.
+            # Standard generator.
             scores = self.generator(bottle(out))
-            loss = self.crit(scores, target.view(-1))
+            # NLL Loss
+            out = scores.gather(1, target.view(-1, 1)).view(-1)
+            loss = -out.mul(target.ne(pad).float()).sum()
+            scores = scores.data.clone()
+            target = target.data.clone()
         else:
-            # Copy loss. 
-            scores, c_attn = self.generator(bottle(out), bottle(attn))
-            loss = self.crit(scores, c_attn, target, bottle(align),
-                             self.tgt_vocab.stoi[onmt.IO.PAD_WORD])
+            # Copy generator. and loss.
+            scores = self.generator(bottle(out), bottle(attn), batch.src_map)
+            align = align.view(-1)
+            offset = len(self.tgt_vocab)
+            
+            # Copy prob
+            out = scores.gather(1, align.view(-1, 1) + offset).view(-1).mul(align.ne(0).float())
+            tmp = scores.gather(1, target.view(-1, 1)).view(-1)
+            
+            # Regular prob (no unks and unks that can't be copied)
+            out = out + 1e-20 + tmp.mul(align.ne(0).float()) + \
+                  tmp.mul(align.eq(0).float()).mul(align.eq(0).float())
+            
+            # Drop padding. 
+            loss = -out.log().mul(target.ne(pad).float()).sum()
 
+            # scores = scores.data.clone()
+            # target = target.data.clone()
+            
+            # # Collapse scores. (No autograd, this is just for scoring)
+            scores = self.dataset.collapseCopyScores(unbottle(scores.data), batch)
+            scores = bottle(scores)
+            
+            target = target.data.clone()
+            for i in range(target.size(0)):
+                if target[i] == 0 and align[i] != 0:
+                    target[i] = align[i] + offset
+
+                    
         # Coverage loss term. 
         if opt.coverage_attn:
             loss += opt.lambda_coverage * \
                     torch.min(coverage, attn).sum()
 
-        stats = onmt.Statistics.score(loss.data, scores.data, target.data,
-                                      self.tgt_vocab.stoi[onmt.IO.PAD_WORD])
+        
+        stats = onmt.Statistics.score(loss.data, scores, target, pad)
         return loss, stats
 
 
@@ -146,7 +181,7 @@ def eval(model, criterion, data, fields):
     stats = onmt.Statistics()
     model.eval()
     loss_compute = LossCompute(model.generator, criterion,
-                               fields["tgt"].vocab)
+                               fields["tgt"].vocab, data)
 
     for batch in validData:
         _, src_lengths = batch.src
@@ -154,7 +189,7 @@ def eval(model, criterion, data, fields):
         outputs, attn, _ = model(src, batch.tgt, src_lengths)
         gen_state = loss_compute.makeLossBatch(outputs, batch, attn,
                                                (0, batch.tgt.size(0)))
-        _, batch_stats = loss_compute.computeLoss(**gen_state)
+        _, batch_stats = loss_compute.computeLoss(batch=batch, **gen_state)
         stats.update(batch_stats)
     model.train()
     return stats
@@ -164,7 +199,7 @@ def trainModel(model, criterion, trainData, validData, fields, optim):
     def trainEpoch(epoch):
         model.train()
         loss_compute = LossCompute(model.generator, criterion,
-                                   fields["tgt"].vocab)
+                                   fields["tgt"].vocab, trainData)
         splitter = onmt.modules.Splitter(opt.max_generator_batches)
 
         train = onmt.IO.OrderedIterator(
@@ -206,7 +241,7 @@ def trainModel(model, criterion, trainData, validData, fields, optim):
                 for shard in splitter.splitIter(gen_state):
 
                     # Compute loss and backprop shard.
-                    loss, stats = loss_compute.computeLoss(**shard)
+                    loss, stats = loss_compute.computeLoss(batch=batch, **shard)
                     loss.div(batch.batch_size).backward()
                     batch_stats.update(stats)
                     
@@ -305,16 +340,25 @@ def main():
 
     # Define criterion of each GPU.
     vocabSize = len(fields['tgt'].vocab)
-    if not opt.copy_attn:
-        weight = torch.ones(vocabSize)
-        weight[fields['tgt'].vocab.stoi[onmt.IO.PAD_WORD]] = 0
-        criterion = nn.NLLLoss(weight, size_average=False)
-        if cuda:
-            criterion.cuda()
-        else:
-            criterion.cpu()
-    else:
-        criterion = onmt.modules.CopyCriterion
+
+    # # NLL Criterion (ignoring padding).
+    # pad = fields['tgt'].vocab.stoi[onmt.IO.PAD_WORD]
+    # def criterion(probs, target):
+    #     out = probs.gather(1, target.view(-1, 1)).view(-1)
+    #     out.mul(target.ne(pad).float())
+    #     return -out.sum()
+
+    # if True: # not opt.copy_attn:
+    #     # weight = torch.ones(vocabSize + 1000)
+        # weight[fields['tgt'].vocab.stoi[onmt.IO.PAD_WORD]] = 0
+        # criterion = nn.NLLLoss(weight, size_average=False)
+        # criterion = nn.NLLLoss(size_average=False)
+        # if cuda:
+        #     criterion.cuda()
+        # else:
+        #     criterion.cpu()
+    # else:
+    #     criterion = onmt.modules.CopyCriterion
 
     # Multi-gpu
     if len(opt.gpus) > 1:
@@ -344,7 +388,7 @@ def main():
     nParams = sum([p.nelement() for p in model.parameters()])
     print('* number of parameters: %d' % nParams)
 
-    trainModel(model, criterion, train, valid, fields, optim)
+    trainModel(model, None, train, valid, fields, optim)
 
 
 if __name__ == "__main__":

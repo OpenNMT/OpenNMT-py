@@ -20,19 +20,17 @@ class CopyGenerator(nn.Module):
         self.src_dict = src_dict
         self.tgt_dict = tgt_dict
 
-    def forward(self, hidden, attn, verbose=False):
+    def forward(self, hidden, attn, src_map, verbose=False):
         """
         Computes p(w) = p(z=1) p_{copy}(w|z=0)  +  p(z=0) * p_{softmax}(w|z=0)
-
-
-        Args:
-            hidden (FloatTensor): (tgt_len*batch) x hidden
-            attn (FloatTensor):   (tgt_len*batch) x src_len
-
-        Returns:
-            prob (FloatTensor):   (tgt_len*batch) x vocab
-            attn (FloatTensor):   (tgt_len*batch) x src_len
         """
+        # CHECKS
+        batch_by_tlen, _= hidden.size()
+        batch_by_tlen_, slen = attn.size()
+        slen_, batch, cvocab = src_map.size()
+        aeq(batch_by_tlen, batch_by_tlen_)
+        aeq(slen, slen_)
+        
         # Original probabilities.
         logits = self.linear(hidden)
         logits[:, onmt.IO.UNK] = -float('inf')
@@ -45,7 +43,10 @@ class CopyGenerator(nn.Module):
         # Probibility of not copying: p_{word}(w) * (1 - p(z))
         out_prob = torch.mul(prob,  1 - copy.expand_as(prob))
         mul_attn = torch.mul(attn, copy.expand_as(attn))
-        return out_prob, mul_attn
+        copy_prob = torch.bmm(mul_attn.view(-1, batch, slen).transpose(0, 1),
+                               src_map.transpose(0, 1)).transpose(0, 1)
+        copy_prob = copy_prob.contiguous().view(-1, cvocab)
+        return torch.cat([out_prob, copy_prob], 1)
 
     def _debug_copy(self, src, copy, prob, out_prob, attn, mul_attn):
         v, mid = prob[0].data.max(0)
@@ -62,19 +63,19 @@ class CopyGenerator(nn.Module):
 
 
 
-def CopyCriterion(probs, attn, targ, align, pad, eps=1e-12):
-    # CHECKS
-    batch_by_tlen, vocab = probs.size()
-    batch_by_tlen_, slen = attn.size()
-    batch, tlen = targ.size()
-    batch_by_tlen__, slen_ = align.size()
-    aeq(batch_by_tlen, batch_by_tlen_)
-    aeq(batch_by_tlen, batch_by_tlen__)
-    aeq(batch_by_tlen, batch * tlen)
-    aeq(slen, slen_)
+# def CopyCriterion(probs, attn, targ, align, pad, eps=1e-12):
+#     # CHECKS
+#     batch_by_tlen, vocab = probs.size()
+#     batch_by_tlen_, slen = attn.size()
+#     batch, tlen = targ.size()
+#     batch_by_tlen__, slen_ = align.size()
+#     aeq(batch_by_tlen, batch_by_tlen_)
+#     aeq(batch_by_tlen, batch_by_tlen__)
+#     aeq(batch_by_tlen, batch * tlen)
+#     aeq(slen, slen_)
     
-    copies = attn.mul(align).sum(-1).add(eps)
-    # Can't use UNK, must copy.
-    out = torch.log(probs.gather(1, targ.view(-1, 1)).view(-1) + copies + eps)
-    out = out.mul(targ.ne(pad).float())
-    return -out.sum()
+#     copies = attn.mul(align).sum(-1).add(eps)
+#     # Can't use UNK, must copy.
+#     out = torch.log(probs.gather(1, targ.view(-1, 1)).view(-1) + copies + eps)
+#     out = out.mul(targ.ne(pad).float())
+#     return -out.sum()
