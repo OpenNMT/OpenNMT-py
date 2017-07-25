@@ -76,10 +76,10 @@ class ONMTDataset(torchtext.data.Dataset):
                     if opt is not None and opt.src_seq_length_trunc != 0:
                         src_line = src_line[:opt.src_seq_length_trunc]
                     src, src_feats, _ = extractFeatures(src_line)
-                    d = {"src": src, "indices": i}
+                    d = {"src": src, "src_words": src, "indices": i}
                     self.nfeatures = len(src_feats)
                     for j, v in enumerate(src_feats):
-                        examples["src_feats_"+str(j)] = v
+                        d["src_feat_"+str(j)] = v
                     examples.append(d)
                     src_words.append(src)
                 else:
@@ -100,10 +100,11 @@ class ONMTDataset(torchtext.data.Dataset):
 
                     tgt, _, _ = extractFeatures(tgt_line)
                     examples[i]["tgt"] = tgt
+                    examples[i]["tgt_words"] = tgt
 
                     # Create Alignment
                     mask = torch.ByteTensor(len(src_words[i]),
-                                            len(tgt)).fill_(0)
+                                             len(tgt)).fill_(0)
                     for k in range(len(src_words[i])):
                         for j in range(len(tgt)):
                             if src_words[i][k] == tgt[j]:
@@ -137,6 +138,11 @@ class ONMTDataset(torchtext.data.Dataset):
             pad_token=PAD_WORD,
             include_lengths=True)
 
+        fields["src_words"] = torchtext.data.Field(
+            pad_token=PAD_WORD,
+            use_vocab=False, tensor_type=lambda a:a)
+
+        
         # fields = [("src_img", torchtext.data.Field(
         #     include_lengths=True))]
 
@@ -144,19 +150,24 @@ class ONMTDataset(torchtext.data.Dataset):
             with codecs.open(src_path, "r", "utf-8") as src_file:
                 src_line = src_file.readline().strip().split()
                 _, _, nFeatures = extractFeatures(src_line)
-                for j, v in range(nFeatures):
-                    fields["src_feats_"+str(j)] = \
+                for j in range(nFeatures):
+                    fields["src_feat_"+str(j)] = \
                         torchtext.data.Field(pad_token=PAD_WORD)
 
         fields["tgt"] = torchtext.data.Field(
             init_token=BOS_WORD, eos_token=EOS_WORD,
             pad_token=PAD_WORD)
+        fields["tgt_words"] = torchtext.data.Field(
+            pad_token=PAD_WORD,
+            use_vocab=False, tensor_type=lambda a:a)
 
+        
         def make_alignment(data):
-            src_len = max([t.size(0) for t in data])
-            tgt_len = max([t.size(1) for t in data])+1
-            alignment = torch.ByteTensor(tgt_len, len(data), src_len).fill_(0)
+            src_len = max([t.size(0) for t in data]) 
+            tgt_len = max([t.size(1) for t in data]) + 2
+            alignment = torch.FloatTensor(tgt_len, len(data), src_len).fill_(0)
             for i in range(len(data)):
+                # Compensate for start and end tag.
                 alignment[1:data[i].size(1)+1, i, :data[i].size(0)] \
                     = data[i].t()
             return alignment

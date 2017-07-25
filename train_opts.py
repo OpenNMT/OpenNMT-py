@@ -16,8 +16,6 @@ def add_model_arguments(parser):
     parser.add_argument('-rnn_type', type=str, default='LSTM',
                         choices=['LSTM', 'GRU'],
                         help="""The gate type to use in the RNNs""")
-    # parser.add_argument('-residual',   action="store_true",
-    #                     help="Add residual connections between RNN layers.")
     parser.add_argument('-brnn', action='store_true',
                         help='Use a bidirectional encoder')
     parser.add_argument('-brnn_merge', default='concat',
@@ -76,14 +74,6 @@ def add_optim_arguments(parser):
                         help="""If the norm of the gradient vector exceeds this,
                         renormalize it to have the norm equal to max_grad_norm
                         """)
-
-    # parser.add_argument('-curriculum', action="store_true",
-    #                     help="""For this many epochs, order the minibatches
-    #                     based on source sequence length. Sometimes setting
-    #                     this to 1 will increase convergence speed.""")
-    parser.add_argument('-extra_shuffle', action="store_true",
-                        help="""By default only shuffle mini-batch order; when true,
-                        shuffle and re-assign mini-batches""")
     parser.add_argument('-truncated_decoder', type=int, default=0,
                         help="""Truncated bptt.""")
 

@@ -88,7 +88,7 @@ def make_features(batch, fields):
     # This is a bit hacky for now. 
     feats = []
     for j in range(100):
-        key = "src_feats_" + str(j)
+        key = "src_feat_" + str(j)
         if key not in fields:
             break
         feats.append(batch.__dict__[key])
@@ -125,7 +125,8 @@ class LossCompute:
         else:
             # Copy loss. 
             scores, c_attn = self.generator(bottle(out), bottle(attn))
-            loss = self.crit(scores, c_attn, target, bottle(align))
+            loss = self.crit(scores, c_attn, target, bottle(align),
+                             self.tgt_vocab.stoi[onmt.IO.PAD_WORD])
 
         # Coverage loss term. 
         if opt.coverage_attn:
@@ -161,9 +162,6 @@ def eval(model, criterion, data, fields):
 
 def trainModel(model, criterion, trainData, validData, fields, optim):
     def trainEpoch(epoch):
-        # if opt.extra_shuffle and epoch > opt.curriculum:
-        #     trainData.shuffle()
-
         model.train()
         loss_compute = LossCompute(model.generator, criterion,
                                    fields["tgt"].vocab)
@@ -252,15 +250,17 @@ def trainModel(model, criterion, trainData, validData, fields, optim):
         #  (3) update the learning rate
         optim.updateLearningRate(valid_stats.ppl(), epoch)
 
-        model_state_dict = (model.module.state_dict() if len(opt.gpus) > 1
-                            else model.state_dict())
-        model_state_dict = {k: v for k, v in model_state_dict.items()
-                            if 'generator' not in k}
-        generator_state_dict = (model.generator.module.state_dict()
-                                if len(opt.gpus) > 1
-                                else model.generator.state_dict())
         #  (4) drop a checkpoint
         if epoch >= opt.start_checkpoint_at:
+            model_state_dict = (model.module.state_dict()
+                                if len(opt.gpus) > 1
+                                else model.state_dict())
+            model_state_dict = {k: v for k, v in model_state_dict.items()
+                                if 'generator' not in k}
+            generator_state_dict = (model.generator.module.state_dict()
+                                    if len(opt.gpus) > 1
+                                    else model.generator.state_dict())
+
             checkpoint = {
                 'model': model_state_dict,
                 'generator': generator_state_dict,
@@ -280,7 +280,7 @@ def main():
     fields = torch.load(opt.data + '.fields.pt', pickle_module=dill)
     valid = torch.load(opt.data + '.valid.pt', pickle_module=dill)
     fields = dict(fields)
-    src_features = [fields["src_feats_"+str(j)]
+    src_features = [fields["src_feat_"+str(j)]
                     for j in range(train.nfeatures)]
 
     checkpoint = None
@@ -309,12 +309,12 @@ def main():
         weight = torch.ones(vocabSize)
         weight[fields['tgt'].vocab.stoi[onmt.IO.PAD_WORD]] = 0
         criterion = nn.NLLLoss(weight, size_average=False)
+        if cuda:
+            criterion.cuda()
+        else:
+            criterion.cpu()
     else:
         criterion = onmt.modules.CopyCriterion
-    if cuda:
-        criterion.cuda()
-    else:
-        criterion.cpu()
 
     # Multi-gpu
     if len(opt.gpus) > 1:
@@ -323,7 +323,8 @@ def main():
         model.generator = nn.DataParallel(model.generator, device_ids=opt.gpus,
                                           dim=0)
 
-    if not opt.train_from_state_dict:
+    if not opt.train_from_state_dict:        
+        # Param initialization.
         if opt.param_init != 0.0:
             print('Intializing params')
             for p in model.parameters():
@@ -331,21 +332,12 @@ def main():
 
         model.encoder.embeddings.load_pretrained_vectors(opt.pre_word_vecs_enc)
         model.decoder.embeddings.load_pretrained_vectors(opt.pre_word_vecs_dec)
-
-        optim = onmt.Optim(
-            opt.optim, opt.learning_rate, opt.max_grad_norm,
-            lr_decay=opt.learning_rate_decay,
-            start_decay_at=opt.start_decay_at,
-            opt=opt
-        )
+        optim = onmt.Optim(opt)
+        optim.set_parameters(model.parameters())
     else:
         print('Loading optimizer from checkpoint:')
         optim = checkpoint['optim']
-        print(optim)
-
-    optim.set_parameters(model.parameters())
-
-    if opt.train_from_state_dict:
+        optim.set_parameters(model.parameters())
         optim.optimizer.load_state_dict(
             checkpoint['optim'].optimizer.state_dict())
 

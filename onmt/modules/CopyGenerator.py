@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import torch
 import torch.cuda
 from torch.autograd import Variable
+from onmt.modules import aeq
 
 
 class CopyGenerator(nn.Module):
@@ -14,7 +15,7 @@ class CopyGenerator(nn.Module):
 
     def __init__(self, opt, src_dict, tgt_dict):
         super(CopyGenerator, self).__init__()
-        self.linear = nn.Linear(opt.rnn_size, tgt_dict.size())
+        self.linear = nn.Linear(opt.rnn_size, len(tgt_dict))
         self.linear_copy = nn.Linear(opt.rnn_size, 1)
         self.src_dict = src_dict
         self.tgt_dict = tgt_dict
@@ -34,8 +35,8 @@ class CopyGenerator(nn.Module):
         """
         # Original probabilities.
         logits = self.linear(hidden)
-        logits[:, onmt.Constants.UNK] = -float('inf')
-        logits[:, onmt.Constants.PAD] = -float('inf')
+        logits[:, onmt.IO.UNK] = -float('inf')
+        logits[:, self.tgt_dict.stoi[onmt.IO.PAD_WORD]] = -float('inf')
         prob = F.softmax(logits)
 
         # Probability of copying p(z=1) batch
@@ -60,9 +61,20 @@ class CopyGenerator(nn.Module):
                 mul_attn[0, j].data[0]))
 
 
-def CopyCriterion(probs, attn, targ, align, eps=1e-12):
-    copies = attn.mul(Variable(align)).sum(-1).add(eps)
+
+def CopyCriterion(probs, attn, targ, align, pad, eps=1e-12):
+    # CHECKS
+    batch_by_tlen, vocab = probs.size()
+    batch_by_tlen_, slen = attn.size()
+    batch, tlen = targ.size()
+    batch_by_tlen__, slen_ = align.size()
+    aeq(batch_by_tlen, batch_by_tlen_)
+    aeq(batch_by_tlen, batch_by_tlen__)
+    aeq(batch_by_tlen, batch * tlen)
+    aeq(slen, slen_)
+    
+    copies = attn.mul(align).sum(-1).add(eps)
     # Can't use UNK, must copy.
     out = torch.log(probs.gather(1, targ.view(-1, 1)).view(-1) + copies + eps)
-    out = out.mul(targ.ne(onmt.Constants.PAD).float())
+    out = out.mul(targ.ne(pad).float())
     return -out.sum()

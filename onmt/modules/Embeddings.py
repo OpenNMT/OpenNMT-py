@@ -27,7 +27,7 @@ class Embeddings(nn.Module):
             self.feature_luts = nn.ModuleList([
                 nn.Embedding(feature_dict.size(),
                              opt.feature_vec_size,
-                             padding_idx=onmt.Constants.PAD)
+                             padding_idx=feature_dict.stoi[onmt.IO.PAD_WORD])
                 for feature_dict in feature_dicts])
 
             # MLP on features and words.
