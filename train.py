@@ -68,10 +68,10 @@ parser.add_argument('-context_gate', type=str, default=None,
                     choices=['source', 'target', 'both'],
                     help="""Type of context gate to use [source|target|both].
                     Do not select for no context gate.""")
-parser.add_argument('-attention_type', type=str, default='dotprod',
-                    choices=['dotprod', 'mlp'],
+parser.add_argument('-attention_type', type=str, default='general',
+                    choices=['dot', 'general', 'mlp'],
                     help="""The attention type to use:
-                    dotprot (Luong) or MLP (Bahdanau)""")
+                    dotprot or general (Luong) or MLP (Bahdanau)""")
 
 # Optimization options
 parser.add_argument('-encoder_type', default='text',
@@ -432,6 +432,17 @@ def main():
 
     nParams = sum([p.nelement() for p in model.parameters()])
     print('* number of parameters: %d' % nParams)
+    enc = 0
+    dec = 0
+    for name, param in model.named_parameters():
+        if 'encoder' in name:
+            enc += param.nelement()
+        elif 'decoder' in name:
+            dec += param.nelement()
+        else:
+            print(name, param.nelement())
+    print('encoder: ', enc)
+    print('decoder: ', dec)
 
     trainModel(model, trainData, validData, dataset, optim)
 
