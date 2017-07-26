@@ -159,8 +159,8 @@ class LossCompute:
             
             target = target.data.clone()
             for i in range(target.size(0)):
-                if target[i] == 0 and align[i] != 0:
-                    target[i] = align[i] + offset
+                if target[i] == 0 and align.data[i] != 0:
+                    target[i] = align.data[i] + offset
 
                     
         # Coverage loss term. 
@@ -262,6 +262,7 @@ def trainModel(model, criterion, trainData, validData, fields, optim):
                 if opt.log_server:
                     report_stats.log("progress", experiment, optim)
                 report_stats = onmt.Statistics()
+                
         return total_stats
 
     for epoch in range(opt.start_epoch, opt.epochs + 1):

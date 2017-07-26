@@ -95,6 +95,10 @@ class ONMTDataset(torchtext.data.Dataset):
                         
                     src_maps.append(src_map)
                     self.src_vocabs.append(src_vocab)
+                    
+                    # Maps each source position to word in dynamic dict.
+                    examples[i]["src_map"] = src_maps[i]
+
                 else:
                     # TODO finish this.
                     if not transforms:
@@ -126,8 +130,6 @@ class ONMTDataset(torchtext.data.Dataset):
                     for j in range(len(tgt)):
                         mask[j+1] = src_vocab.stoi[tgt[j]]
                     
-                    # Maps each source position to word in dynamic dict.
-                    examples[i]["src_map"] = src_maps[i]
                     
                     # Marks which target words should be copied from source.
                     examples[i]["alignment"] = mask
@@ -153,18 +155,18 @@ class ONMTDataset(torchtext.data.Dataset):
         self.__dict__.update(d)
 
 
-    def collapseCopyScores(self, scores, batch):
+    def collapseCopyScores(self, scores, batch, tgt_vocab):
         """Given scores from an expanded dictionary
         corresponeding to a batch, sums together copies,
         with a dictionary word when it is ambigious.
         """
-        offset = len(self.fields["tgt"].vocab)
+        offset = len(tgt_vocab)
         for b in range(batch.batch_size):
             index = batch.indices.data[b]
             src_vocab = self.src_vocabs[index]
             for i in range(1, len(src_vocab)):
                 sw = src_vocab.itos[i]
-                ti = self.fields["tgt"].vocab.stoi[sw]
+                ti = tgt_vocab.stoi[sw]
                 if ti != 0:
                     scores[:, b, ti] += scores[:, b, offset + i]
                     scores[:, b, offset + i].fill_(1e-20) 

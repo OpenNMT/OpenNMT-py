@@ -87,7 +87,7 @@ def main():
 
     for batch in testData:
         predBatch, predScore, goldScore, attn, src \
-            = translator.translate(batch)
+            = translator.translate(batch, data)
         predScoreTotal += sum(score[0] for score in predScore)
         predWordsTotal += sum(len(x[0]) for x in predBatch)
         if opt.tgt:
