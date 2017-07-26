@@ -139,7 +139,7 @@ class LossCompute:
             align = align.view(-1)
             offset = len(self.tgt_vocab)
             
-            # Copy prob
+            # Copy prob.
             out = scores.gather(1, align.view(-1, 1) + offset).view(-1).mul(align.ne(0).float())
             tmp = scores.gather(1, target.view(-1, 1)).view(-1)
             
@@ -149,19 +149,16 @@ class LossCompute:
             
             # Drop padding. 
             loss = -out.log().mul(target.ne(pad).float()).sum()
-
-            # scores = scores.data.clone()
-            # target = target.data.clone()
             
             # # Collapse scores. (No autograd, this is just for scoring)
-            scores = self.dataset.collapseCopyScores(unbottle(scores.data), batch)
+            scores = self.dataset.collapseCopyScores(unbottle(scores.data), batch,
+                                                     self.tgt_vocab)
             scores = bottle(scores)
             
             target = target.data.clone()
             for i in range(target.size(0)):
                 if target[i] == 0 and align.data[i] != 0:
                     target[i] = align.data[i] + offset
-
                     
         # Coverage loss term. 
         if opt.coverage_attn:
@@ -338,28 +335,10 @@ def main():
 
     cuda = (len(opt.gpus) >= 1)
     model = onmt.Models.make_base_model(opt, opt, fields, cuda, checkpoint)
+    print(model)
 
     # Define criterion of each GPU.
     vocabSize = len(fields['tgt'].vocab)
-
-    # # NLL Criterion (ignoring padding).
-    # pad = fields['tgt'].vocab.stoi[onmt.IO.PAD_WORD]
-    # def criterion(probs, target):
-    #     out = probs.gather(1, target.view(-1, 1)).view(-1)
-    #     out.mul(target.ne(pad).float())
-    #     return -out.sum()
-
-    # if True: # not opt.copy_attn:
-    #     # weight = torch.ones(vocabSize + 1000)
-        # weight[fields['tgt'].vocab.stoi[onmt.IO.PAD_WORD]] = 0
-        # criterion = nn.NLLLoss(weight, size_average=False)
-        # criterion = nn.NLLLoss(size_average=False)
-        # if cuda:
-        #     criterion.cuda()
-        # else:
-        #     criterion.cpu()
-    # else:
-    #     criterion = onmt.modules.CopyCriterion
 
     # Multi-gpu
     if len(opt.gpus) > 1:

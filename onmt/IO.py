@@ -89,9 +89,10 @@ class ONMTDataset(torchtext.data.Dataset):
                     # Create Alignment
                     src_vocab = torchtext.vocab.Vocab(Counter(src))
 
-                    src_map = torch.ByteTensor(len(src), len(src_vocab)).fill_(0)
+                    # src_map = torch.ByteTensor(len(src), len(src_vocab)).fill_(0)
+                    src_map = torch.LongTensor(len(src)).fill_(0)
                     for j, w in enumerate(src):
-                        src_map[j, src_vocab.stoi[w]] = 1
+                        src_map[j] = src_vocab.stoi[w]
                         
                     src_maps.append(src_map)
                     self.src_vocabs.append(src_vocab)
@@ -129,7 +130,6 @@ class ONMTDataset(torchtext.data.Dataset):
                     mask = torch.LongTensor(len(tgt)+2).fill_(0)
                     for j in range(len(tgt)):
                         mask[j+1] = src_vocab.stoi[tgt[j]]
-                    
                     
                     # Marks which target words should be copied from source.
                     examples[i]["alignment"] = mask
@@ -197,10 +197,11 @@ class ONMTDataset(torchtext.data.Dataset):
 
         def make_src(data):
             src_size = max([t.size(0) for t in data])
-            src_vocab_size = max([t.size(1) for t in data]) 
+            src_vocab_size = max([t.max() for t in data]) + 1
             alignment = torch.FloatTensor(src_size, len(data), src_vocab_size).fill_(0)
             for i in range(len(data)):
-                alignment[:data[i].size(0), i, :data[i].size(1)] = data[i]
+                for j, t in enumerate(data[i]):
+                    alignment[j, i, t] = 1
             return alignment
 
         

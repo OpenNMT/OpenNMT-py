@@ -365,10 +365,10 @@ def make_base_model(opt, model_opt, fields, cuda, checkpoint=None):
     # HACK: collect source feature vocabs.
     feature_vocabs = []
     for j in range(100):
-        key = "src_feats_" + str(j)
+        key = "src_feat_" + str(j)
         if key not in fields:
             break
-        feature_vocabs.append(fields[key].vocabs)
+        feature_vocabs.append(fields[key].vocab)
 
     if model_opt.encoder_type == "text":
         encoder = Encoder(model_opt, fields["src"].vocab,
