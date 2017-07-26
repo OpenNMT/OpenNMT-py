@@ -383,7 +383,7 @@ def main():
             nn.Linear(opt.rnn_size, dicts['tgt'].size()),
             nn.LogSoftmax())
         if opt.share_decoder_embeddings:
-            generator[0].weight = decoder.embeddings.word_lut.weight
+            generator[0].weight = decoder.embeddings.emb_lut[0].weight
 
     model = onmt.Models.NMTModel(encoder, decoder, len(opt.gpus) > 1)
 
