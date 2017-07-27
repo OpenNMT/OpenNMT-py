@@ -166,7 +166,7 @@ class Translator(object):
             decOut, decStates, attn = self.model.decoder(input, batch_src,
                                                          context, decStates)
             decOut = decOut.squeeze(0)
-            # decOut: (beam*batch) x numWords
+            # decOut: (beam*batch) x rnn_size
             attn["std"] = attn["std"].view(beamSize, batchSize, -1) \
                                      .transpose(0, 1).contiguous()
 
@@ -180,14 +180,15 @@ class Translator(object):
                              .contiguous()
                 attn_copy = attn["copy"].view(beamSize, batchSize, -1) \
                                         .transpose(0, 1).contiguous()
-
+                #attn_copy: batchSize x beamSize x src_len
                 out, c_attn_t \
                     = self.model.generator.forward(
-                        decOut, attn_copy.view(-1, batch_src.size(0)))
+                        decOut, attn_copy.transpose(0, 1).contiguous() \
+                        .view(-1, batch_src.size(0)))
 
                 for b in range(out.size(0)):
                     for c in range(c_attn_t.size(1)):
-                        v = self.align[words[0, c].data[0]]
+                        v = self.align[words[b // batchSize, c].data[0]]
                         if v != onmt.Constants.PAD:
                             out[b, v] += c_attn_t[b, c]
                 out = out.log()
