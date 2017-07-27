@@ -33,22 +33,39 @@ class CopyGenerator(nn.Module):
         
         # Original probabilities.
         logits = self.linear(hidden)
-        logits[:, onmt.IO.UNK] = -float('inf')
-        logits[:, self.tgt_dict.stoi[onmt.IO.PAD_WORD]] = -float('inf')
-        prob = F.softmax(logits)
 
-        # Probability of copying p(z=1) batch
-        copy = F.sigmoid(self.linear_copy(hidden))
 
-        # Probibility of not copying: p_{word}(w) * (1 - p(z))
-        out_prob = torch.mul(prob,  1 - copy.expand_as(prob))
-        mul_attn = torch.mul(attn, copy.expand_as(attn))
-        copy_prob = torch.bmm(mul_attn.view(-1, batch, slen).transpose(0, 1),
+        if True:
+            # logits[:, onmt.IO.UNK] = -float('inf')
+            logits[:, self.tgt_dict.stoi[onmt.IO.PAD_WORD]] = -float('inf')
+            
+            prob = F.softmax(logits)
+            # Probability of copying p(z=1) batch
+            copy = F.sigmoid(self.linear_copy(hidden))
+
+            # Probibility of not copying: p_{word}(w) * (1 - p(z))
+            out_prob = torch.mul(prob,  1 - copy.expand_as(prob))
+            mul_attn = torch.mul(attn, copy.expand_as(attn))
+            copy_prob = torch.bmm(mul_attn.view(-1, batch, slen).transpose(0, 1),
                                src_map.transpose(0, 1)).transpose(0, 1)
-        copy_prob = copy_prob.contiguous().view(-1, cvocab)
-        return torch.cat([out_prob, copy_prob], 1)
+            copy_prob = copy_prob.contiguous().view(-1, cvocab)        
+            dynamic_probs = torch.cat([out_prob, copy_prob], 1)
+        else:
+            copy = self.linear_copy(hidden)
+            copy_logit = torch.bmm(attn.view(-1, batch, slen).transpose(0, 1),
+                               src_map.transpose(0, 1)).transpose(0, 1)
+            copy_logit = copy_logit.contiguous().view(-1, cvocab)
+            copy_logit[:, 0] = -1e20
+            copy_logit[:, 1] = -1e20
 
-    def _debug_copy(self, src, copy, prob, out_prob, attn, mul_attn):
+            dynamic_logits = torch.cat([logits,
+                                        copy_logit + copy.expand_as(copy_logit)], 1)
+            # print(dynamic_logits[0])
+            dynamic_probs = F.softmax(dynamic_logits)
+
+        return dynamic_probs
+
+    def k_debug_copy(self, src, copy, prob, out_prob, attn, mul_attn):
         v, mid = prob[0].data.max(0)
         print("Initial:", self.tgt_dict.getLabel(mid[0], "FAIL"), v[0])
         print("COPY %3f" % copy.data[0][0])

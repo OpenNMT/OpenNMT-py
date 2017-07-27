@@ -124,6 +124,9 @@ class LossCompute:
         pad = self.tgt_vocab.stoi[onmt.IO.PAD_WORD]
         
         target = target.view(-1)
+        # print(batch.alignment[:10, 0])
+        # print([self.tgt_vocab.itos[i]
+        #        for i in batch.tgt.data[:10, 0]])
         
         if not opt.copy_attn:
             # Standard generator.
@@ -138,14 +141,23 @@ class LossCompute:
             scores = self.generator(bottle(out), bottle(attn), batch.src_map)
             align = align.view(-1)
             offset = len(self.tgt_vocab)
-            
+
+            # print(scores[0])
+            # print(target[0])
+            # print(align[0])
+
             # Copy prob.
-            out = scores.gather(1, align.view(-1, 1) + offset).view(-1).mul(align.ne(0).float())
+            out = scores.gather(1, align.view(-1, 1) + offset) \
+                        .view(-1).mul(align.ne(0).float())
             tmp = scores.gather(1, target.view(-1, 1)).view(-1)
-            
+
             # Regular prob (no unks and unks that can't be copied)
-            out = out + 1e-20 + tmp.mul(align.ne(0).float()) + \
-                  tmp.mul(align.eq(0).float()).mul(align.eq(0).float())
+            if False:
+                out = out + 1e-20 + tmp.mul(target.ne(0).float()) + \
+                      tmp.mul(align.eq(0).float()).mul(target.eq(0).float())
+            else:
+                # Forced copy.
+                out = out + 1e-20 + tmp.mul(align.eq(0).float())
             
             # Drop padding. 
             loss = -out.log().mul(target.ne(pad).float()).sum()

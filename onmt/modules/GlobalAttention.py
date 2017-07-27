@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from onmt.modules.Util import BottleLinear
 from onmt.modules import aeq
 
