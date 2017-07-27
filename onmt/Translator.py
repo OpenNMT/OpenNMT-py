@@ -180,10 +180,10 @@ class Translator(object):
                              .contiguous()
                 attn_copy = attn["copy"].view(beamSize, batchSize, -1) \
                                         .transpose(0, 1).contiguous()
-                #attn_copy: batchSize x beamSize x src_len
+                # attn_copy: batchSize x beamSize x src_len
                 out, c_attn_t \
                     = self.model.generator.forward(
-                        decOut, attn_copy.transpose(0, 1).contiguous() \
+                        decOut, attn_copy.transpose(0, 1).contiguous()
                         .view(-1, batch_src.size(0)))
 
                 for b in range(out.size(0)):
