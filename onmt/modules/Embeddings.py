@@ -22,6 +22,7 @@ class Embeddings(nn.Module):
         # Word embeddings.
         self.dropout = nn.Dropout(p=opt.dropout)
         self.feature_dicts = feature_dicts
+    
         # Feature embeddings.
         if self.feature_dicts:
             self.feature_luts = nn.ModuleList([
@@ -71,7 +72,6 @@ class Embeddings(nn.Module):
             # Apply one MLP layer.
             emb = self.activation(
                 self.linear(torch.cat([word] + features, -1)))
-
         if self.positional_encoding:
             emb = emb + Variable(self.pe[:emb.size(0), :1, :emb.size(2)]
                                  .expand_as(emb))
