@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch
 import torch.cuda
+import torch.nn as nn
 from torch.autograd import Variable
 from onmt.modules import aeq
 
@@ -19,7 +20,8 @@ class CopyGenerator(nn.Module):
         self.linear_copy = nn.Linear(opt.rnn_size, 1)
         self.src_dict = src_dict
         self.tgt_dict = tgt_dict
-
+        self.sm = nn.Softmax()
+        
     def forward(self, hidden, attn, src_map, verbose=False):
         """
         Computes p(w) = p(z=1) p_{copy}(w|z=0)  +  p(z=0) * p_{softmax}(w|z=0)
@@ -39,7 +41,7 @@ class CopyGenerator(nn.Module):
             # logits[:, onmt.IO.UNK] = -float('inf')
             logits[:, self.tgt_dict.stoi[onmt.IO.PAD_WORD]] = -float('inf')
             
-            prob = F.softmax(logits)
+            prob = self.sm(logits)
             # Probability of copying p(z=1) batch
             copy = F.sigmoid(self.linear_copy(hidden))
 
@@ -51,18 +53,17 @@ class CopyGenerator(nn.Module):
             copy_prob = copy_prob.contiguous().view(-1, cvocab)        
             dynamic_probs = torch.cat([out_prob, copy_prob], 1)
         else:
-            copy = self.linear_copy(hidden)
+            # copy = self.linear_copy(hidden)
             copy_logit = torch.bmm(attn.view(-1, batch, slen).transpose(0, 1),
-                               src_map.transpose(0, 1)).transpose(0, 1)
+                               src_map.transpose(0, 1)).transpose(0, 1)            
             copy_logit = copy_logit.contiguous().view(-1, cvocab)
-            copy_logit[:, 0] = -1e20
-            copy_logit[:, 1] = -1e20
-
-            dynamic_logits = torch.cat([logits,
-                                        copy_logit + copy.expand_as(copy_logit)], 1)
-            # print(dynamic_logits[0])
-            dynamic_probs = F.softmax(dynamic_logits)
-
+            copy_logit.data.masked_fill_(copy_logit.data.eq(0), -1e20)
+            # print(copy_logit)
+            # exit()
+            # copy_logit[:, 0] = -1e20
+            # copy_logit[:, 1] = -1e20
+            dynamic_logits = torch.cat([logits, copy_logit], 1)
+            dynamic_probs = self.sm(dynamic_logits.contiguous())
         return dynamic_probs
 
     def k_debug_copy(self, src, copy, prob, out_prob, attn, mul_attn):

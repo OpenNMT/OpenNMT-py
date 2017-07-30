@@ -134,7 +134,7 @@ class LossCompute:
             # NLL Loss
             out = scores.gather(1, target.view(-1, 1)).view(-1)
             loss = -out.mul(target.ne(pad).float()).sum()
-            scores = scores.data.clone()
+            scores2 = scores.data.clone()
             target = target.data.clone()
         else:
             # Copy generator. and loss.
@@ -152,7 +152,7 @@ class LossCompute:
             tmp = scores.gather(1, target.view(-1, 1)).view(-1)
 
             # Regular prob (no unks and unks that can't be copied)
-            if False:
+            if True:
                 out = out + 1e-20 + tmp.mul(target.ne(0).float()) + \
                       tmp.mul(align.eq(0).float()).mul(target.eq(0).float())
             else:
@@ -163,9 +163,10 @@ class LossCompute:
             loss = -out.log().mul(target.ne(pad).float()).sum()
             
             # # Collapse scores. (No autograd, this is just for scoring)
-            scores = self.dataset.collapseCopyScores(unbottle(scores.data), batch,
+            scores2 = scores.data.clone()
+            scores2 = self.dataset.collapseCopyScores(unbottle(scores2), batch,
                                                      self.tgt_vocab)
-            scores = bottle(scores)
+            scores2 = bottle(scores2)
             
             target = target.data.clone()
             for i in range(target.size(0)):
@@ -178,7 +179,7 @@ class LossCompute:
                     torch.min(coverage, attn).sum()
 
         
-        stats = onmt.Statistics.score(loss.data, scores, target, pad)
+        stats = onmt.Statistics.score(loss.data, scores2, target, pad)
         return loss, stats
 
 
@@ -251,6 +252,7 @@ def trainModel(model, criterion, trainData, validData, fields, optim):
 
                     # Compute loss and backprop shard.
                     loss, stats = loss_compute.computeLoss(batch=batch, **shard)
+                    # print("BACKWARD")
                     loss.div(batch.batch_size).backward()
                     batch_stats.update(stats)
                     
