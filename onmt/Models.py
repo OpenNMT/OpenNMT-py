@@ -191,9 +191,9 @@ class Decoder(nn.Module):
                 outputs = outputs[state.previous_input.size(0):]
                 attn = attn[:, state.previous_input.size(0):].squeeze()
                 attn = torch.stack([attn])
-            attns["std"] = attn
+            attns["std"] = attn.transpose(0, 1).contiguous()
             if self._copy:
-                attns["copy"] = attn
+                attns["copy"] = attn.transpose(0, 1).contiguous()
             state = TransformerDecoderState(input.unsqueeze(2))
         else:
             assert isinstance(state, RNNDecoderState)

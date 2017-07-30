@@ -98,11 +98,12 @@ def make_features(batch, fields):
 
 
 class LossCompute:
-    def __init__(self, generator, crit, tgt_vocab, dataset):
+    def __init__(self, generator, crit, tgt_vocab, dataset, epoch):
         self.generator = generator
         self.crit = crit
         self.tgt_vocab = tgt_vocab
         self.dataset = dataset
+        self.epoch = epoch
         
     @staticmethod
     def makeLossBatch(outputs, batch, attns, range_):
@@ -158,7 +159,8 @@ class LossCompute:
             else:
                 # Forced copy.
                 out = out + 1e-20 + tmp.mul(align.eq(0).float())
-            
+
+            # print(out)
             # Drop padding. 
             loss = -out.log().mul(target.ne(pad).float()).sum()
             
@@ -173,13 +175,17 @@ class LossCompute:
                 if target[i] == 0 and align.data[i] != 0:
                     target[i] = align.data[i] + offset
                     
-        # Coverage loss term. 
+        # Coverage loss term.
+        ppl = loss.data.clone()
         if opt.coverage_attn:
-            loss += opt.lambda_coverage * \
+            cov = 0.1
+            if self.epoch > 8:
+                cov = 1
+            loss += cov * \
                     torch.min(coverage, attn).sum()
 
         
-        stats = onmt.Statistics.score(loss.data, scores2, target, pad)
+        stats = onmt.Statistics.score(ppl, scores2, target, pad)
         return loss, stats
 
 
@@ -191,7 +197,7 @@ def eval(model, criterion, data, fields):
     stats = onmt.Statistics()
     model.eval()
     loss_compute = LossCompute(model.generator, criterion,
-                               fields["tgt"].vocab, data)
+                               fields["tgt"].vocab, data, 0)
 
     for batch in validData:
         _, src_lengths = batch.src
@@ -209,7 +215,7 @@ def trainModel(model, criterion, trainData, validData, fields, optim):
     def trainEpoch(epoch):
         model.train()
         loss_compute = LossCompute(model.generator, criterion,
-                                   fields["tgt"].vocab, trainData)
+                                   fields["tgt"].vocab, trainData, epoch)
         splitter = onmt.modules.Splitter(opt.max_generator_batches)
 
         train = onmt.IO.OrderedIterator(
