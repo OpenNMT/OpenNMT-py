@@ -7,45 +7,49 @@ from onmt.modules import aeq
 from onmt.modules.Gate import ContextGateFactory
 from torch.nn.utils.rnn import pad_packed_sequence as unpack
 from torch.nn.utils.rnn import pack_padded_sequence as pack
-import math
+from itertools import repeat
+import math  # for now
 
 
 class Embeddings(nn.Module):
     def __init__(self, opt, dicts, feature_dicts=None):
-        self.positional_encoding = opt.position_encoding
-        if self.positional_encoding:
-            self.pe = self.make_positional_encodings(opt.word_vec_size, 5000)
-            if len(opt.gpus) > 0:
-                self.pe.cuda()
-
-        self.word_vec_size = opt.word_vec_size
-
         super(Embeddings, self).__init__()
-        self.word_lut = nn.Embedding(dicts.size(),
-                                     opt.word_vec_size,
-                                     padding_idx=onmt.Constants.PAD)
-        # Word embeddings.
-        self.dropout = nn.Dropout(p=opt.dropout)
-        self.feature_dicts = feature_dicts
-        # Feature embeddings.
-        if self.feature_dicts:
-            self.feature_luts = nn.ModuleList([
-                nn.Embedding(feature_dict.size(),
-                             opt.feature_vec_size,
-                             padding_idx=onmt.Constants.PAD)
-                for feature_dict in feature_dicts])
-
-            # MLP on features and words.
-            self.activation = nn.ReLU()
-            self.linear = onmt.modules.BottleLinear(
-                opt.word_vec_size +
-                len(feature_dicts) * opt.feature_vec_size,
-                opt.word_vec_size)
-        else:
-            self.feature_luts = nn.ModuleList([])
-
+        # todo: re-add positional encodings
+        
+        self.feat_merge = opt.feat_merge
+        
+        feat_exp = opt.feat_vec_exponent
+        
+        # vocab_sizes: sequence of vocab sizes for words and each feature
+        vocab_sizes = [dicts.size()]
+        # emb_sizes
+        emb_sizes = [opt.word_vec_size]
+        
+        if feature_dicts:
+            vocab_sizes.extend(feat_dict.size() for feat_dict in feature_dicts)
+            if opt.feat_merge == 'concat':
+                # When concatenating, derive the size of each feature's
+                # embedding from the number of values the embedding
+                # takes
+                feat_sizes = (int(feat_dict.size() ** feat_exp) 
+                                for feat_dict in feature_dicts)
+            else:
+                # When summing, each feature must have the same
+                # number of dimensions
+                feat_sizes = (opt.feat_vec_size for feat_dict in feature_dicts)
+            emb_sizes.extend(feat_sizes)
+        
+        self.emb_luts = nn.ModuleList([
+                                nn.Embedding(vocab, dim, 
+                                        padding_idx=onmt.Constants.PAD) 
+                                for vocab, dim in zip(vocab_sizes, emb_sizes)])
+                                
+    @property
+    def word_lut(self):
+        return self.emb_luts[0]
+        
     def make_positional_encodings(self, dim, max_len):
-        pe = torch.FloatTensor(max_len, 1, dim).fill_(0)
+        pe = torch.zeros(max_len, 1, dim)
         for i in range(dim):
             for j in range(max_len):
                 k = float(j) / (10000.0 ** (2.0*i / float(dim)))
@@ -55,7 +59,15 @@ class Embeddings(nn.Module):
     def load_pretrained_vectors(self, emb_file):
         if emb_file is not None:
             pretrained = torch.load(emb_file)
-            self.word_lut.weight.data.copy_(pretrained)
+            self.emb_luts[0].weight.data.copy_(pretrained)
+            
+    def merge(self, features):
+        if self.feat_merge == 'concat':
+            return torch.cat(features, 2)
+        else:
+            # there is something to do with emb_luts[1:]
+            # i.e. gotta sum them. But how?
+            return
 
     def forward(self, src_input):
         """
@@ -65,22 +77,11 @@ class Embeddings(nn.Module):
             src_input (LongTensor): len x batch x nfeat
 
         Return:
-            emb (FloatTensor): len x batch x input_size
+            emb (FloatTensor): len x batch x sum of feature embedding sizes
         """
-        word = self.word_lut(src_input[:, :, 0])
-        emb = word
-        if self.feature_dicts:
-            features = [feature_lut(src_input[:, :, j+1])
-                        for j, feature_lut in enumerate(self.feature_luts)]
-
-            # Apply one MLP layer.
-            emb = self.activation(
-                self.linear(torch.cat([word] + features, -1)))
-
-        if self.positional_encoding:
-            emb = emb + Variable(self.pe[:emb.size(0), :1, :emb.size(2)]
-                                 .expand_as(emb))
-            emb = self.dropout(emb)
+        feat_inputs = (feat.squeeze(2) for feat in src_input.split(1, dim=2))
+        features = [lut(feat) for lut, feat in zip(self.emb_luts, feat_inputs)]
+        emb = self.merge(features)
         return emb
 
 
@@ -104,10 +105,12 @@ class Encoder(nn.Module):
 
         # Size of the encoder RNN.
         self.hidden_size = opt.rnn_size // self.num_directions
-        input_size = opt.word_vec_size
 
         super(Encoder, self).__init__()
         self.embeddings = Embeddings(opt, dicts, feature_dicts)
+        
+        input_size = sum(emb_lut.embedding_dim 
+                        for emb_lut in self.embeddings.emb_luts.children())
 
         # The Encoder RNN.
         self.encoder_layer = opt.encoder_layer
