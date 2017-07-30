@@ -37,7 +37,7 @@ parser.add_argument('-rnn_size', type=int, default=500,
                     help='Size of LSTM hidden states')
 parser.add_argument('-word_vec_size', type=int, default=500,
                     help='Word embedding sizes')
-parser.add_argument('-feature_vec_size', type=int, default=100,
+parser.add_argument('-feat_vec_size', type=int, default=20,
                     help='Feature vec sizes')
 parser.add_argument('-feat_merge', type=str, default='concat',
                     choices=['concat', 'sum'],
@@ -383,7 +383,7 @@ def main():
             nn.Linear(opt.rnn_size, dicts['tgt'].size()),
             nn.LogSoftmax())
         if opt.share_decoder_embeddings:
-            generator[0].weight = decoder.embeddings.emb_lut[0].weight
+            generator[0].weight = decoder.embeddings.word_lut.weight
 
     model = onmt.Models.NMTModel(encoder, decoder, len(opt.gpus) > 1)
 
