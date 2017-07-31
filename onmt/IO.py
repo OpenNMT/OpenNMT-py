@@ -91,7 +91,9 @@ class ONMTDataset(torchtext.data.Dataset):
         with codecs.open(src_path, "r", "utf-8") as src_file:
             for i, src_line in enumerate(src_file):
                 src_line = src_line.split()
-
+                # if len(src_line) == 0:
+                #     skip[i] = True
+                #     continue
                 if self.type_ == "text":
                     # Check truncation condition.
                     if opt is not None and opt.src_seq_length_trunc != 0:
@@ -127,6 +129,8 @@ class ONMTDataset(torchtext.data.Dataset):
         if tgt_path is not None:
             with codecs.open(tgt_path, "r", "utf-8") as tgt_file:
                 for i, tgt_line in enumerate(tgt_file):
+                    # if i in skip:
+                    #     continue
                     tgt_line = tgt_line.split()
 
                     # Check truncation condition.
@@ -152,8 +156,8 @@ class ONMTDataset(torchtext.data.Dataset):
                          for ex in examples])
 
         def filter_pred(example):
-            return len(example.src) <= opt.src_seq_length \
-                and len(example.tgt) <= opt.tgt_seq_length
+            return  0 < len(example.src) <= opt.src_seq_length \
+                and 0 < len(example.tgt) <= opt.tgt_seq_length
 
         super(ONMTDataset, self).__init__(examples, fields,
                                           filter_pred if opt is not None

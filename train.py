@@ -98,11 +98,12 @@ def make_features(batch, fields):
 
 
 class LossCompute:
-    def __init__(self, generator, crit, tgt_vocab, dataset):
+    def __init__(self, generator, crit, tgt_vocab, dataset, epoch):
         self.generator = generator
         self.crit = crit
         self.tgt_vocab = tgt_vocab
         self.dataset = dataset
+        self.epoch = epoch
         
     @staticmethod
     def makeLossBatch(outputs, batch, attns, range_):
@@ -134,7 +135,7 @@ class LossCompute:
             # NLL Loss
             out = scores.gather(1, target.view(-1, 1)).view(-1)
             loss = -out.mul(target.ne(pad).float()).sum()
-            scores = scores.data.clone()
+            scores2 = scores.data.clone()
             target = target.data.clone()
         else:
             # Copy generator. and loss.
@@ -152,33 +153,39 @@ class LossCompute:
             tmp = scores.gather(1, target.view(-1, 1)).view(-1)
 
             # Regular prob (no unks and unks that can't be copied)
-            if False:
+            if True:
                 out = out + 1e-20 + tmp.mul(target.ne(0).float()) + \
                       tmp.mul(align.eq(0).float()).mul(target.eq(0).float())
             else:
                 # Forced copy.
                 out = out + 1e-20 + tmp.mul(align.eq(0).float())
-            
+
+            # print(out)
             # Drop padding. 
             loss = -out.log().mul(target.ne(pad).float()).sum()
             
             # # Collapse scores. (No autograd, this is just for scoring)
-            scores = self.dataset.collapseCopyScores(unbottle(scores.data), batch,
+            scores2 = scores.data.clone()
+            scores2 = self.dataset.collapseCopyScores(unbottle(scores2), batch,
                                                      self.tgt_vocab)
-            scores = bottle(scores)
+            scores2 = bottle(scores2)
             
             target = target.data.clone()
             for i in range(target.size(0)):
                 if target[i] == 0 and align.data[i] != 0:
                     target[i] = align.data[i] + offset
                     
-        # Coverage loss term. 
+        # Coverage loss term.
+        ppl = loss.data.clone()
         if opt.coverage_attn:
-            loss += opt.lambda_coverage * \
+            cov = 0.1
+            if self.epoch > 8:
+                cov = 1
+            loss += cov * \
                     torch.min(coverage, attn).sum()
 
         
-        stats = onmt.Statistics.score(loss.data, scores, target, pad)
+        stats = onmt.Statistics.score(ppl, scores2, target, pad)
         return loss, stats
 
 
@@ -190,7 +197,7 @@ def eval(model, criterion, data, fields):
     stats = onmt.Statistics()
     model.eval()
     loss_compute = LossCompute(model.generator, criterion,
-                               fields["tgt"].vocab, data)
+                               fields["tgt"].vocab, data, 0)
 
     for batch in validData:
         _, src_lengths = batch.src
@@ -208,7 +215,7 @@ def trainModel(model, criterion, trainData, validData, fields, optim):
     def trainEpoch(epoch):
         model.train()
         loss_compute = LossCompute(model.generator, criterion,
-                                   fields["tgt"].vocab, trainData)
+                                   fields["tgt"].vocab, trainData, epoch)
         splitter = onmt.modules.Splitter(opt.max_generator_batches)
 
         train = onmt.IO.OrderedIterator(
@@ -251,6 +258,7 @@ def trainModel(model, criterion, trainData, validData, fields, optim):
 
                     # Compute loss and backprop shard.
                     loss, stats = loss_compute.computeLoss(batch=batch, **shard)
+                    # print("BACKWARD")
                     loss.div(batch.batch_size).backward()
                     batch_stats.update(stats)
                     

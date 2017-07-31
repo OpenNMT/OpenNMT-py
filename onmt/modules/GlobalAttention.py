@@ -97,6 +97,7 @@ class GlobalAttention(nn.Module):
             targetT = self.linear_in(input).unsqueeze(2)
             # batch x sourceL
             attn = torch.bmm(context, targetT).squeeze(2)
+            # attn.register_hook(lambda a: print("attn", a))
         elif self.attn_type == "mlp":
             # batch x 1 x dim
             wq = self.linear_query(input).unsqueeze(1)
@@ -113,6 +114,7 @@ class GlobalAttention(nn.Module):
             attn.data.masked_fill_(self.mask, -float('inf'))
 
         # SoftMax
+        #FIXME
         attn = self.sm(attn)
 
         # Compute context weighted by attention.
