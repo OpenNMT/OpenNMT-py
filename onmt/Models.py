@@ -106,8 +106,9 @@ class Decoder(nn.Module):
         if embeddings is None:
             self.embeddings = onmt.modules.Embeddings(opt, dicts, None)
         else:
-            assert(embeddings.feature_dicts is None,
-                   'decoder embeddings should not contain `feature_dicts`')
+            print(embeddings.feature_dicts)
+            assert embeddings.feature_dicts is None or len(embeddings.feature_dicts) == 0, \
+                   'decoder embeddings should not contain `feature_dicts`'
             self.embeddings = embeddings
         pad = dicts.stoi[onmt.IO.PAD_WORD]
         if self.decoder_layer == "transformer":
