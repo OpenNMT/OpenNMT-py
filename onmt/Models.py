@@ -13,7 +13,7 @@ class Encoder(nn.Module):
     """
     Encoder recurrent neural network.
     """
-    def __init__(self, opt, dicts, feature_dicts=None):
+    def __init__(self, opt, dicts, feature_dicts=None, embeddings=None):
         """
         Args:
             opt: Model options.
@@ -32,7 +32,10 @@ class Encoder(nn.Module):
         input_size = opt.word_vec_size
 
         super(Encoder, self).__init__()
-        self.embeddings = onmt.modules.Embeddings(opt, dicts, feature_dicts)
+        if embeddings is None:
+            self.embeddings = onmt.modules.Embeddings(opt, dicts, feature_dicts)
+        else:
+            self.embeddings = embeddings
 
         # The Encoder RNN.
         self.encoder_layer = opt.encoder_layer
@@ -84,7 +87,7 @@ class Decoder(nn.Module):
     Decoder + Attention recurrent neural network.
     """
 
-    def __init__(self, opt, dicts):
+    def __init__(self, opt, dicts, embeddings=None):
         """
         Args:
             opt: model options
@@ -100,7 +103,12 @@ class Decoder(nn.Module):
             input_size += opt.rnn_size
 
         super(Decoder, self).__init__()
-        self.embeddings = onmt.modules.Embeddings(opt, dicts, None)
+        if embeddings is None:
+            self.embeddings = onmt.modules.Embeddings(opt, dicts, None)
+        else:
+            assert(embeddings.feature_dicts is None,
+                   'decoder embeddings should not contain `feature_dicts`')
+            self.embeddings = embeddings
         pad = dicts.stoi[onmt.IO.PAD_WORD]
         if self.decoder_layer == "transformer":
             self.transformer = nn.ModuleList(
@@ -379,7 +387,9 @@ def make_base_model(opt, model_opt, fields, cuda, checkpoint=None):
         assert False, ("Unsupported encoder type %s"
                        % (model_opt.encoder_type))
 
-    decoder = onmt.Models.Decoder(model_opt, fields["tgt"].vocab)
+    decoder = onmt.Models.Decoder(
+        model_opt, fields["tgt"].vocab,
+        embeddings=encoder.embeddings if model_opt.share_embeddings else None)
     model = onmt.Models.NMTModel(encoder, decoder)
 
     if not model_opt.copy_attn:

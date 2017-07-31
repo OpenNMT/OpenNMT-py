@@ -49,6 +49,8 @@ def add_model_arguments(parser):
                         help='Use a sinusoids for words positions.')
     parser.add_argument('-share_decoder_embeddings', action='store_true',
                         help='Share the word and softmax embeddings..')
+    parser.add_argument('-share_embeddings', action='store_true',
+                        help='Share word embeddings between encoder and decoder')
 
 
 def add_optim_arguments(parser):

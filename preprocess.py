@@ -59,6 +59,12 @@ parser.add_argument('-lower', action='store_true', help='lowercase data')
 parser.add_argument('-report_every', type=int, default=100000,
                     help="Report status every this many sentences")
 
+# options most relevant to summarization
+parser.add_argument('-dynamic_dict', action='store_true',
+                    help="Create dynamic dictionaries")
+parser.add_argument('-share_vocab', action='store_true',
+                    help="Share source and target vocabulary")
+
 opt = parser.parse_args()
 torch.manual_seed(opt.seed)
 
