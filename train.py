@@ -1,5 +1,7 @@
 from __future__ import division
 
+import os
+
 import onmt
 import onmt.Markdown
 import onmt.Models
@@ -25,6 +27,7 @@ parser.add_argument('-save_model', default='model',
 parser.add_argument('-train_from_state_dict', default='', type=str,
                     help="""If training from a checkpoint then this is the
                     path to the pretrained model's state_dict.""")
+
 # parser.add_argument('-train_from', default='', type=str,
 #                     help="""If training from a checkpoint then this is the
 #                     path to the pretrained model.""")
@@ -213,6 +216,13 @@ def eval(model, criterion, data, fields):
 
 
 def trainModel(model, criterion, trainData, validData, fields, optim):
+    model.train()
+
+    model_dirname = os.path.dirname(opt.save_model)
+    if not os.path.exists(model_dirname):
+        os.mkdir(model_dirname)
+    assert os.path.isdir(model_dirname), "%s not a directory" % opt.save_model
+
     def trainEpoch(epoch):
         model.train()
         loss_compute = LossCompute(model.generator, criterion,
@@ -386,6 +396,17 @@ def main():
 
     nParams = sum([p.nelement() for p in model.parameters()])
     print('* number of parameters: %d' % nParams)
+    enc = 0
+    dec = 0
+    for name, param in model.named_parameters():
+        if 'encoder' in name:
+            enc += param.nelement()
+        elif 'decoder' in name:
+            dec += param.nelement()
+        else:
+            print(name, param.nelement())
+    print('encoder: ', enc)
+    print('decoder: ', dec)
 
     trainModel(model, None, train, valid, fields, optim)
 
