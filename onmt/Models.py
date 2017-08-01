@@ -33,7 +33,8 @@ class Encoder(nn.Module):
 
         super(Encoder, self).__init__()
         if embeddings is None:
-            self.embeddings = onmt.modules.Embeddings(opt, dicts, feature_dicts)
+            self.embeddings = onmt.modules.Embeddings(opt, dicts,
+                                                      feature_dicts)
         else:
             self.embeddings = embeddings
 
@@ -106,8 +107,8 @@ class Decoder(nn.Module):
         if embeddings is None:
             self.embeddings = onmt.modules.Embeddings(opt, dicts, None)
         else:
-            assert(embeddings.feature_dicts is None,
-                   'decoder embeddings should not contain `feature_dicts`')
+            assert (embeddings.feature_dicts is None), \
+                   'decoder embeddings should not contain `feature_dicts`'
             self.embeddings = embeddings
         pad = dicts.stoi[onmt.IO.PAD_WORD]
         if self.decoder_layer == "transformer":

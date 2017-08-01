@@ -36,6 +36,7 @@ def extractFeatures(tokens):
                     assert (len(features[i - 1]) == len(words))
     return words, features, numFeatures if numFeatures else 0
 
+
 def merge_vocabs(vocabs, vocab_size=None):
     """
     Merge individual vocabularies into a larger vocabularies.
@@ -118,7 +119,6 @@ class ONMTDataset(torchtext.data.Dataset):
 
                         self.src_vocabs.append(src_vocab)
                         examples[i]["src_map"] = src_map
-
 
                 else:
                     # TODO finish this.
