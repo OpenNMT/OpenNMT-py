@@ -148,7 +148,6 @@ class Encoder(nn.Module):
         self.embeddings = Embeddings(opt, dicts, feature_dicts)
 
         input_size = self.embeddings.embedding_size
-        print(input_size)
 
         # The Encoder RNN.
         self.encoder_layer = opt.encoder_layer
