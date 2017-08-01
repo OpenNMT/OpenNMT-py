@@ -8,7 +8,7 @@ import dill
 
 
 def make_features(batch, fields):
-    # This is a bit hacky for now. 
+    # This is a bit hacky for now.
     feats = []
     for j in range(100):
         key = "src_feat_" + str(j)
@@ -86,6 +86,7 @@ class Translator(object):
         if useMasking:
             pad = self.fields["src"].vocab.stoi[onmt.IO.PAD_WORD]
             padMask = src[:, :, 0].data.eq(pad).t()
+
         def mask(padMask):
             if useMasking:
                 self.model.decoder.attn.applyMask(padMask)
@@ -134,6 +135,7 @@ class Translator(object):
             input = Variable(input, volatile=True)
             decOut, decStates, attn = self.model.decoder(input, batch_src,
                                                          context, decStates)
+            # print(decStates.all[0][:, 0, 0])
             decOut = decOut.squeeze(0)
             # decOut: (beam*batch) x numWords
             attn["std"] = attn["std"].view(beamSize, batchSize, -1) \
@@ -143,14 +145,17 @@ class Translator(object):
             if not self.copy_attn:
                 out = self.model.generator.forward(decOut).data
             else:
+                # print(attn["copy"].size())
                 attn_copy = attn["copy"].view(beamSize, batchSize, -1) \
                                         .transpose(0, 1).contiguous()
                 out = self.model.generator.forward(
-                    decOut, attn_copy.view(-1, batch_src.size(0)), batch_src_map)
-                # out = out.data.log().view(beamSize * batchSize, -1)
+                    decOut, attn_copy.view(-1, batch_src.size(0)),
+                    batch_src_map)
                 out = data.collapseCopyScores(
-                    out.data.view(batchSize, beamSize, -1).transpose(0, 1), batch, self.fields["tgt"].vocab)
-                out = out.log().transpose(0, 1).contiguous().view(beamSize * batchSize, -1)
+                    out.data.view(batchSize, beamSize, -1).transpose(0, 1),
+                    batch, self.fields["tgt"].vocab)
+                out = out.log().transpose(0, 1).contiguous()\
+                                               .view(beamSize * batchSize, -1)
 
             word_scores = out.view(beamSize, batchSize, -1) \
                 .transpose(0, 1).contiguous()
@@ -214,7 +219,7 @@ class Translator(object):
                         batch.indices.data),
                     key=lambda x: x[-1])))
         inds, perm = torch.sort(batch.indices.data)
-        
+
         #  (3) convert indexes to words
         predBatch = []
         src = batch.src[0].data.index_select(1, perm)

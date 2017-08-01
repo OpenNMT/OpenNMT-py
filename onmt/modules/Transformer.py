@@ -118,7 +118,7 @@ class TransformerDecoder(nn.Module):
         aeq(t_len, t_len_)
         aeq(n_batch, n_batch_)
 
-        n_batch_, t_len_, s_len_  = attn.size()
+        n_batch_, t_len_, s_len_ = attn.size()
         aeq(n_batch, n_batch_)
         aeq(s_len, s_len_)
         aeq(t_len, t_len_)

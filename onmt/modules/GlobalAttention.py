@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from onmt.modules.Util import BottleLinear
 from onmt.modules import aeq
 
@@ -114,7 +113,6 @@ class GlobalAttention(nn.Module):
             attn.data.masked_fill_(self.mask, -float('inf'))
 
         # SoftMax
-        #FIXME
         attn = self.sm(attn)
 
         # Compute context weighted by attention.

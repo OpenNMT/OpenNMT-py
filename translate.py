@@ -85,6 +85,7 @@ def main():
         batch_size=opt.batch_size, train=False, sort=False,
         shuffle=False)
 
+    index = 0
     for batch in testData:
         predBatch, predScore, goldScore, attn, src \
             = translator.translate(batch, data)
@@ -119,7 +120,13 @@ def main():
 
                 os.write(1, bytes('SENT %d: %s\n' %
                                   (count, " ".join(words)), 'UTF-8'))
-                os.write(1, bytes('PRED %d: %s\n' %
+                # ex = data.examples[index]
+                # print(index, list(zip(ex.src, ex.src_feat_0, ex.src_feat_1,
+                #                       ex.src_feat_2)))
+
+                index += 1
+                print(len(predBatch[b][0]))
+                os.write(1, bytes('\n PRED %d: %s\n' %
                                   (count, " ".join(predBatch[b][0])), 'UTF-8'))
                 print("PRED SCORE: %.4f" % predScore[b][0])
 

@@ -22,7 +22,7 @@ class Embeddings(nn.Module):
         # Word embeddings.
         self.dropout = nn.Dropout(p=opt.dropout)
         self.feature_dicts = feature_dicts
-    
+
         # Feature embeddings.
         if self.feature_dicts:
             self.feature_luts = nn.ModuleList([

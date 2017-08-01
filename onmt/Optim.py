@@ -25,7 +25,7 @@ class Optim(object):
         self.betas = [0.9, 0.98]
         self.opt = opt
         self.start_decay = False
-        
+
     def _setRate(self, lr):
         self.lr = lr
         self.optimizer.param_groups[0]['lr'] = self.lr
@@ -52,7 +52,8 @@ class Optim(object):
         or we hit the start_decay_at limit.
         """
 
-        if self.opt.start_decay_at is not None and epoch >= self.opt.start_decay_at:
+        if self.opt.start_decay_at is not None \
+           and epoch >= self.opt.start_decay_at:
             self.start_decay = True
         if self.last_ppl is not None and ppl > self.last_ppl:
             self.start_decay = True

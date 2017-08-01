@@ -85,7 +85,7 @@ if opt.log_server != "":
 
 
 def make_features(batch, fields):
-    # This is a bit hacky for now. 
+    # This is a bit hacky for now.
     feats = []
     for j in range(100):
         key = "src_feat_" + str(j)
@@ -104,7 +104,7 @@ class LossCompute:
         self.tgt_vocab = tgt_vocab
         self.dataset = dataset
         self.epoch = epoch
-        
+
     @staticmethod
     def makeLossBatch(outputs, batch, attns, range_):
         """Create all the variables that need to be sharded.
@@ -116,19 +116,21 @@ class LossCompute:
                 "coverage": attns.get("coverage"),
                 "attn": attns.get("copy")}
 
-    def computeLoss(self, batch, out, target, attn=None, align=None, coverage=None):
+    def computeLoss(self, batch, out, target, attn=None,
+                    align=None, coverage=None):
         def bottle(v):
             return v.view(-1, v.size(2))
+
         def unbottle(v):
             return v.view(-1, batch.batch_size, v.size(1))
 
         pad = self.tgt_vocab.stoi[onmt.IO.PAD_WORD]
-        
+
         target = target.view(-1)
         # print(batch.alignment[:10, 0])
         # print([self.tgt_vocab.itos[i]
         #        for i in batch.tgt.data[:10, 0]])
-        
+
         if not opt.copy_attn:
             # Standard generator.
             scores = self.generator(bottle(out))
@@ -153,7 +155,7 @@ class LossCompute:
             tmp = scores.gather(1, target.view(-1, 1)).view(-1)
 
             # Regular prob (no unks and unks that can't be copied)
-            if True:
+            if not opt.copy_attn_force:
                 out = out + 1e-20 + tmp.mul(target.ne(0).float()) + \
                       tmp.mul(align.eq(0).float()).mul(target.eq(0).float())
             else:
@@ -161,30 +163,29 @@ class LossCompute:
                 out = out + 1e-20 + tmp.mul(align.eq(0).float())
 
             # print(out)
-            # Drop padding. 
+            # Drop padding.
             loss = -out.log().mul(target.ne(pad).float()).sum()
-            
+
             # # Collapse scores. (No autograd, this is just for scoring)
             scores2 = scores.data.clone()
             scores2 = self.dataset.collapseCopyScores(unbottle(scores2), batch,
-                                                     self.tgt_vocab)
+                                                      self.tgt_vocab)
             scores2 = bottle(scores2)
-            
+
             target = target.data.clone()
             for i in range(target.size(0)):
                 if target[i] == 0 and align.data[i] != 0:
                     target[i] = align.data[i] + offset
-                    
+
         # Coverage loss term.
         ppl = loss.data.clone()
         if opt.coverage_attn:
             cov = 0.1
             if self.epoch > 8:
                 cov = 1
-            loss += cov * \
-                    torch.min(coverage, attn).sum()
+            loss = loss + cov * \
+                torch.min(coverage, attn).sum()
 
-        
         stats = onmt.Statistics.score(ppl, scores2, target, pad)
         return loss, stats
 
@@ -220,12 +221,12 @@ def trainModel(model, criterion, trainData, validData, fields, optim):
 
         train = onmt.IO.OrderedIterator(
             dataset=trainData, batch_size=opt.batch_size,
-            device=opt.gpus[0] if opt.gpus else -1, 
+            device=opt.gpus[0] if opt.gpus else -1,
             repeat=False)
 
         total_stats = onmt.Statistics()
         report_stats = onmt.Statistics()
-        
+
         # Main training loop
         for i, batch in enumerate(train):
             target_size = batch.tgt.size(0)
@@ -233,7 +234,7 @@ def trainModel(model, criterion, trainData, validData, fields, optim):
             _, src_lengths = batch.src
             src = make_features(batch, fields)
             report_stats.n_src_words += src_lengths.sum()
-            
+
             # Truncated BPTT
             trunc_size = opt.truncated_decoder if opt.truncated_decoder \
                 else target_size
@@ -243,7 +244,7 @@ def trainModel(model, criterion, trainData, validData, fields, optim):
                 # (1) Create truncated target.
                 tgt_r = (j, j + trunc_size)
                 tgt = batch.tgt[tgt_r[0]: tgt_r[1]]
-                
+
                 # (2) F-prop all but generator.
                 model.zero_grad()
                 outputs, attn, dec_state = \
@@ -257,11 +258,12 @@ def trainModel(model, criterion, trainData, validData, fields, optim):
                 for shard in splitter.splitIter(gen_state):
 
                     # Compute loss and backprop shard.
-                    loss, stats = loss_compute.computeLoss(batch=batch, **shard)
+                    loss, stats = loss_compute.computeLoss(batch=batch,
+                                                           **shard)
                     # print("BACKWARD")
                     loss.div(batch.batch_size).backward()
                     batch_stats.update(stats)
-                    
+
                 # (3) Update the parameters and statistics.
                 optim.step()
                 total_stats.update(batch_stats)
@@ -271,15 +273,14 @@ def trainModel(model, criterion, trainData, validData, fields, optim):
                 if dec_state is not None:
                     dec_state.detach()
 
-
-            # Log the statistics for the batch. 
+            # Log the statistics for the batch.
             if i % opt.log_interval == -1 % opt.log_interval:
                 report_stats.output(epoch, i+1, len(train),
                                     total_stats.start_time)
                 if opt.log_server:
                     report_stats.log("progress", experiment, optim)
                 report_stats = onmt.Statistics()
-                
+
         return total_stats
 
     for epoch in range(opt.start_epoch, opt.epochs + 1):
@@ -358,8 +359,6 @@ def main():
     print(model)
 
     # Define criterion of each GPU.
-    vocabSize = len(fields['tgt'].vocab)
-
     # Multi-gpu
     if len(opt.gpus) > 1:
         print('Multi gpu training ', opt.gpus)
@@ -367,7 +366,7 @@ def main():
         model.generator = nn.DataParallel(model.generator, device_ids=opt.gpus,
                                           dim=0)
 
-    if not opt.train_from_state_dict:        
+    if not opt.train_from_state_dict:
         # Param initialization.
         if opt.param_init != 0.0:
             print('Intializing params')

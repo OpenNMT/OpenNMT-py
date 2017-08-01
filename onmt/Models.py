@@ -189,11 +189,12 @@ class Decoder(nn.Module):
             outputs = output.transpose(0, 1).contiguous()
             if state.previous_input:
                 outputs = outputs[state.previous_input.size(0):]
-                attn = attn[:, state.previous_input.size(0):].squeeze()
-                attn = torch.stack([attn])
+                attn = attn[:, state.previous_input.size(0):]
+                # attn = torch.stack([attn])
             attns["std"] = attn.transpose(0, 1).contiguous()
             if self._copy:
                 attns["copy"] = attn.transpose(0, 1).contiguous()
+            # print(attns["copy"].size())
             state = TransformerDecoderState(input.unsqueeze(2))
         else:
             assert isinstance(state, RNNDecoderState)
@@ -216,14 +217,6 @@ class Decoder(nn.Module):
                 rnn_output, hidden = self.rnn(emb_t, hidden)
                 attn_output, attn = self.attn(rnn_output,
                                               context.transpose(0, 1))
-                if self.context_gate is not None:
-                    output = self.context_gate(
-                        emb_t, rnn_output, attn_output
-                    )
-                    output = self.dropout(output)
-                else:
-                    output = self.dropout(attn_output)
-                outputs += [output]
                 attns["std"] += [attn]
 
                 # COVERAGE
@@ -233,9 +226,19 @@ class Decoder(nn.Module):
 
                 # COPY
                 if self._copy:
-                    _, copy_attn = self.copy_attn(output,
+                    _, copy_attn = self.copy_attn(attn_output,
                                                   context.transpose(0, 1))
                     attns["copy"] += [copy_attn]
+
+                if self.context_gate is not None:
+                    output = self.context_gate(
+                        emb_t, rnn_output, attn_output
+                    )
+                    output = self.dropout(output)
+                else:
+                    output = self.dropout(attn_output)
+                outputs += [output]
+
             state = RNNDecoderState(hidden, output.unsqueeze(0),
                                     coverage.unsqueeze(0)
                                     if coverage is not None else None)
@@ -303,6 +306,7 @@ class DecoderState(object):
         for h in self.all:
             if h is not None:
                 h.detach_()
+        self.coverage.detach_()
 
     def repeatBeam_(self, beamSize):
         self._resetAll([Variable(e.data.repeat(1, beamSize, 1))

@@ -23,6 +23,11 @@ def add_model_arguments(parser):
                         [concat|sum]""")
     parser.add_argument('-copy_attn', action="store_true",
                         help='Train copy attention layer.')
+    parser.add_argument('-copy_attn_force', action="store_true",
+                        help="""Train copy attention layer to copy even
+                        if word is in the src vocab.
+                        .""")
+
     parser.add_argument('-coverage_attn', action="store_true",
                         help='Train a coverage attention layer.')
     parser.add_argument('-lambda_coverage', type=float, default=1,

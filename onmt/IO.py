@@ -40,15 +40,15 @@ def extractFeatures(tokens):
 class OrderedIterator(torchtext.data.Iterator):
     def create_batches(self):
         if self.train:
-            self.batches = torchtext.data.pool(self.data(), self.batch_size,
-                                               self.sort_key, self.batch_size_fn,
-                                               random_shuffler=self.random_shuffler)
+            self.batches = torchtext.data.pool(
+                self.data(), self.batch_size,
+                self.sort_key, self.batch_size_fn,
+                random_shuffler=self.random_shuffler)
         else:
             self.batches = []
             for b in torchtext.data.batch(self.data(), self.batch_size,
                                           self.batch_size_fn):
                 self.batches.append(sorted(b, key=self.sort_key))
-
 
 
 class ONMTDataset(torchtext.data.Dataset):
@@ -92,14 +92,13 @@ class ONMTDataset(torchtext.data.Dataset):
                     # Create Alignment
                     src_vocab = torchtext.vocab.Vocab(Counter(src))
 
-                    # src_map = torch.ByteTensor(len(src), len(src_vocab)).fill_(0)
                     src_map = torch.LongTensor(len(src)).fill_(0)
                     for j, w in enumerate(src):
                         src_map[j] = src_vocab.stoi[w]
-                        
+
                     src_maps.append(src_map)
                     self.src_vocabs.append(src_vocab)
-                    
+
                     # Maps each source position to word in dynamic dict.
                     examples[i]["src_map"] = src_maps[i]
 
@@ -130,12 +129,11 @@ class ONMTDataset(torchtext.data.Dataset):
 
                     src_vocab = self.src_vocabs[i]
 
-
                     # Target word appears in src vocab.
                     mask = torch.LongTensor(len(tgt)+2).fill_(0)
                     for j in range(len(tgt)):
                         mask[j+1] = src_vocab.stoi[tgt[j]]
-                    
+
                     # Marks which target words should be copied from source.
                     examples[i]["alignment"] = mask
 
@@ -146,7 +144,7 @@ class ONMTDataset(torchtext.data.Dataset):
                          for ex in examples])
 
         def filter_pred(example):
-            return  0 < len(example.src) <= opt.src_seq_length \
+            return 0 < len(example.src) <= opt.src_seq_length \
                 and 0 < len(example.tgt) <= opt.tgt_seq_length
 
         super(ONMTDataset, self).__init__(examples, fields,
@@ -158,7 +156,6 @@ class ONMTDataset(torchtext.data.Dataset):
 
     def __setstate__(self, d):
         self.__dict__.update(d)
-
 
     def collapseCopyScores(self, scores, batch, tgt_vocab):
         """Given scores from an expanded dictionary
@@ -174,7 +171,7 @@ class ONMTDataset(torchtext.data.Dataset):
                 ti = tgt_vocab.stoi[sw]
                 if ti != 0:
                     scores[:, b, ti] += scores[:, b, offset + i]
-                    scores[:, b, offset + i].fill_(1e-20) 
+                    scores[:, b, offset + i].fill_(1e-20)
         return scores
 
     @staticmethod
@@ -183,7 +180,7 @@ class ONMTDataset(torchtext.data.Dataset):
         fields["src"] = torchtext.data.Field(
             pad_token=PAD_WORD,
             include_lengths=True)
-        
+
         # fields = [("src_img", torchtext.data.Field(
         #     include_lengths=True))]
 
@@ -198,24 +195,23 @@ class ONMTDataset(torchtext.data.Dataset):
         fields["tgt"] = torchtext.data.Field(
             init_token=BOS_WORD, eos_token=EOS_WORD,
             pad_token=PAD_WORD)
-        
 
         def make_src(data):
             src_size = max([t.size(0) for t in data])
             src_vocab_size = max([t.max() for t in data]) + 1
-            alignment = torch.FloatTensor(src_size, len(data), src_vocab_size).fill_(0)
+            alignment = torch.FloatTensor(src_size, len(data),
+                                          src_vocab_size).fill_(0)
             for i in range(len(data)):
                 for j, t in enumerate(data[i]):
                     alignment[j, i, t] = 1
             return alignment
 
-        
         fields["src_map"] = torchtext.data.Field(
             use_vocab=False, tensor_type=make_src,
             sequential=False)
 
         def make_tgt(data):
-            tgt_size = max([t.size(0) for t in data]) 
+            tgt_size = max([t.size(0) for t in data])
             alignment = torch.LongTensor(tgt_size, len(data)).fill_(0)
             for i in range(len(data)):
                 alignment[:data[i].size(0), i] = data[i]
