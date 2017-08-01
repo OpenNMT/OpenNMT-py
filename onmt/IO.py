@@ -36,6 +36,24 @@ def extractFeatures(tokens):
                     assert (len(features[i - 1]) == len(words))
     return words, features, numFeatures if numFeatures else 0
 
+def merge_vocabs(vocabs, vocab_size=None):
+    """
+    Merge individual vocabularies into a larger vocabularies.
+    Args:
+        vocabs: `torchtext.vocab.Vocab` vocabularies to be merged
+        vocab_size: `int` the final vocabulary size. `None` for no limit.
+    Return:
+        `torchtext.vocab.Vocab`
+    """
+    merged = Counter()
+    for vocab in vocabs:
+        # XXX note len(vocab) contains special symbols
+        for word, count in vocab.freqs.most_common(len(vocab)):
+            if word not in merged:
+                merged[word] = 0
+            merged[word] += count
+    return torchtext.vocab.Vocab(merged, max_size=vocab_size)
+
 
 class OrderedIterator(torchtext.data.Iterator):
     def create_batches(self):
@@ -69,8 +87,7 @@ class ONMTDataset(torchtext.data.Dataset):
 
         examples = []
         src_words = []
-        self.src_vocabs, src_maps = [], []
-        # skip = {}
+        self.src_vocabs = []
         with codecs.open(src_path, "r", "utf-8") as src_file:
             for i, src_line in enumerate(src_file):
                 src_line = src_line.split()
@@ -89,18 +106,19 @@ class ONMTDataset(torchtext.data.Dataset):
                     examples.append(d)
                     src_words.append(src)
 
-                    # Create Alignment
-                    src_vocab = torchtext.vocab.Vocab(Counter(src))
+                    # Create dynamic dictionaries
+                    if opt.dynamic_dict:
+                        # a temp vocab of a single source example
+                        src_vocab = torchtext.vocab.Vocab(Counter(src))
 
-                    src_map = torch.LongTensor(len(src)).fill_(0)
-                    for j, w in enumerate(src):
-                        src_map[j] = src_vocab.stoi[w]
+                        # mapping source tokens to indices in the dynamic dict
+                        src_map = torch.LongTensor(len(src)).fill_(0)
+                        for j, w in enumerate(src):
+                            src_map[j] = src_vocab.stoi[w]
 
-                    src_maps.append(src_map)
-                    self.src_vocabs.append(src_vocab)
+                        self.src_vocabs.append(src_vocab)
+                        examples[i]["src_map"] = src_map
 
-                    # Maps each source position to word in dynamic dict.
-                    examples[i]["src_map"] = src_maps[i]
 
                 else:
                     # TODO finish this.
@@ -123,19 +141,13 @@ class ONMTDataset(torchtext.data.Dataset):
                     tgt, _, _ = extractFeatures(tgt_line)
                     examples[i]["tgt"] = tgt
 
-                    # Create Alignment
-                    mask = torch.ByteTensor(len(src_words[i]),
-                                            len(tgt)).fill_(0)
-
-                    src_vocab = self.src_vocabs[i]
-
-                    # Target word appears in src vocab.
-                    mask = torch.LongTensor(len(tgt)+2).fill_(0)
-                    for j in range(len(tgt)):
-                        mask[j+1] = src_vocab.stoi[tgt[j]]
-
-                    # Marks which target words should be copied from source.
-                    examples[i]["alignment"] = mask
+                    if opt.dynamic_dict:
+                        src_vocab = self.src_vocabs[i]
+                        # Map target tokens to indices in the dynamic dict
+                        mask = torch.LongTensor(len(tgt)+2).fill_(0)
+                        for j in range(len(tgt)):
+                            mask[j+1] = src_vocab.stoi[tgt[j]]
+                        examples[i]["alignment"] = mask
 
         keys = examples[0].keys()
         fields = [(k, fields[k]) for k in keys]
@@ -196,7 +208,7 @@ class ONMTDataset(torchtext.data.Dataset):
             init_token=BOS_WORD, eos_token=EOS_WORD,
             pad_token=PAD_WORD)
 
-        def make_src(data):
+        def make_src(data, _):
             src_size = max([t.size(0) for t in data])
             src_vocab_size = max([t.max() for t in data]) + 1
             alignment = torch.FloatTensor(src_size, len(data),
@@ -207,10 +219,10 @@ class ONMTDataset(torchtext.data.Dataset):
             return alignment
 
         fields["src_map"] = torchtext.data.Field(
-            use_vocab=False, tensor_type=make_src,
-            sequential=False)
+            use_vocab=False, tensor_type=torch.FloatTensor,
+            postprocessing=make_src, sequential=False)
 
-        def make_tgt(data):
+        def make_tgt(data, _):
             tgt_size = max([t.size(0) for t in data])
             alignment = torch.LongTensor(tgt_size, len(data)).fill_(0)
             for i in range(len(data)):
@@ -218,8 +230,8 @@ class ONMTDataset(torchtext.data.Dataset):
             return alignment
 
         fields["alignment"] = torchtext.data.Field(
-            use_vocab=False, tensor_type=make_tgt,
-            sequential=False)
+            use_vocab=False, tensor_type=torch.LongTensor,
+            postprocessing=make_tgt, sequential=False)
 
         fields["indices"] = torchtext.data.Field(
             use_vocab=False, tensor_type=torch.LongTensor,
@@ -234,6 +246,14 @@ class ONMTDataset(torchtext.data.Dataset):
         for j in range(train.nfeatures):
             fields["src_feat_" + str(j)].build_vocab(train)
         fields["tgt"].build_vocab(train, max_size=opt.tgt_vocab_size)
+        # merge the input and output vocabularies
+        if opt.share_vocab:
+            # `tgt_vocab_size` is ignored when sharing vocabularies
+            merged_vocab = merge_vocabs(
+                [fields["src"].vocab, fields["tgt"].vocab],
+                vocab_size=opt.src_vocab_size)
+            fields["src"].vocab = merged_vocab
+            fields["tgt"].vocab = merged_vocab
 
 
 def loadImageLibs():
