@@ -34,8 +34,8 @@ class Embeddings(nn.Module):
                 # When concatenating, derive the size of each feature's
                 # embedding from the number of values the embedding
                 # takes
-                feat_sizes = (int(feat_dict.size() ** feat_exp
-                              for feat_dict in feature_dicts))
+                feat_sizes = (int(feat_dict.size() ** feat_exp)
+                              for feat_dict in feature_dicts)
             else:
                 # sum feature merge (for now, the same as the old option
                 # for merging features in OpenNMT-py)
