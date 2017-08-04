@@ -93,10 +93,10 @@ def makeVocabulary(filename, size):
                     featuresVocabs[j].add(features[j][i])
 
     originalSize = vocab.size()
-    if size!=0:
+    if size != 0:
         vocab = vocab.prune(size)
-        print('Created dictionary of size %d (pruned from %d)' %
-            (vocab.size(), originalSize))
+        print('Created dictionary of size %d (pruned from %d)' % 
+              (vocab.size(), originalSize))
     else:
         print('Created dictionary of size %d' % (vocab.size()))
 
