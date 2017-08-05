@@ -16,10 +16,10 @@ parser.add_argument('-gpu', type=int, default=-1,
                     help="Device to run on")
 
 
-def write_embeddings(filename, dict, embeddings):
+def write_embeddings(filename, dict, embeddings, encoding='utf-8'):
     with open(filename, 'w') as file:
         for i in range(len(embeddings)):
-            str = dict.idxToLabel[i].encode("utf-8")
+            str = dict.idxToLabel[i].encode(encoding)
             for j in range(len(embeddings[0])):
                 str = str + " %5f" % (embeddings[i][j])
             file.write(str + "\n")
