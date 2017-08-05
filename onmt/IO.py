@@ -108,7 +108,7 @@ class ONMTDataset(torchtext.data.Dataset):
                     src_words.append(src)
 
                     # Create dynamic dictionaries
-                    if opt.dynamic_dict:
+                    if opt is None or opt.dynamic_dict:
                         # a temp vocab of a single source example
                         src_vocab = torchtext.vocab.Vocab(Counter(src))
 

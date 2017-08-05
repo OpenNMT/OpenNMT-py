@@ -52,6 +52,11 @@ parser.add_argument('-n_best', type=int, default=1,
 
 parser.add_argument('-gpu', type=int, default=-1,
                     help="Device to run on")
+# options most relevant to summarization
+parser.add_argument('-dynamic_dict', action='store_true',
+                    help="Create dynamic dictionaries")
+parser.add_argument('-share_vocab', action='store_true',
+                    help="Share source and target vocabulary")
 
 
 def reportScore(name, scoreTotal, wordsTotal):
@@ -77,6 +82,7 @@ def main():
     if opt.dump_beam != "":
         import json
         translator.initBeamAccum()
+
 
     data = onmt.IO.ONMTDataset(opt.src, opt.tgt, translator.fields, None)
 

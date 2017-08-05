@@ -315,7 +315,7 @@ class DecoderState(object):
         for h in self.all:
             if h is not None:
                 h.detach_()
-        self.coverage.detach_()
+        # self.coverage.detach_()
 
     def repeatBeam_(self, beamSize):
         self._resetAll([Variable(e.data.repeat(1, beamSize, 1))
