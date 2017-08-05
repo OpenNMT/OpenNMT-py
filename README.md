@@ -8,6 +8,11 @@ This code is still in heavy development (pre-version 0.1). We recommend forking 
 
 <center style="padding: 40px"><img width="70%" src="http://opennmt.github.io/simple-attn.png" /></center>
 
+## Requirements
+
+> pip install  dill six tqdm git+git://github.com/pytorch/text.git
+
+
 ## Features
 
 The following OpenNMT features are implemented:

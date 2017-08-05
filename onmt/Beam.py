@@ -18,7 +18,7 @@ import onmt
 
 
 class Beam(object):
-    def __init__(self, size, cuda=False):
+    def __init__(self, size, cuda=False, vocab=None):
 
         self.size = size
         self.done = False
@@ -33,8 +33,10 @@ class Beam(object):
         self.prevKs = []
 
         # The outputs at each time-step.
-        self.nextYs = [self.tt.LongTensor(size).fill_(onmt.Constants.PAD)]
-        self.nextYs[0][0] = onmt.Constants.BOS
+        self.nextYs = [self.tt.LongTensor(size)
+                       .fill_(vocab.stoi[onmt.IO.PAD_WORD])]
+        self.nextYs[0][0] = vocab.stoi[onmt.IO.BOS_WORD]
+        self.vocab = vocab
 
         # The attentions (matrix) for each time.
         self.attn = []
@@ -81,7 +83,7 @@ class Beam(object):
         self.attn.append(attnOut.index_select(0, prevK))
 
         # End condition is when top-of-beam is EOS.
-        if self.nextYs[-1][0] == onmt.Constants.EOS:
+        if self.nextYs[-1][0] == self.vocab.stoi[onmt.IO.EOS_WORD]:
             self.done = True
             self.allScores.append(self.scores)
 

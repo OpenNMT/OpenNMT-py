@@ -9,7 +9,7 @@ import argparse
 import math
 import codecs
 import os
-
+from train_opts import add_model_arguments
 
 parser = argparse.ArgumentParser(description='translate.py')
 onmt.Markdown.add_md_help_argument(parser)
@@ -38,9 +38,6 @@ parser.add_argument('-replace_unk', action="store_true",
                     give the corresponding target token. If it is not provided
                     (or the identified source token does not exist in the
                     table) then it will copy the source token""")
-# parser.add_argument('-phrase_table',
-#                     help="""Path to source-target dictionary to replace UNK
-#                     tokens. See README.md for the format of this file.""")
 parser.add_argument('-verbose', action="store_true",
                     help='Print scores and predictions for each sentence')
 parser.add_argument('-attn_debug', action="store_true",
@@ -55,6 +52,11 @@ parser.add_argument('-n_best', type=int, default=1,
 
 parser.add_argument('-gpu', type=int, default=-1,
                     help="Device to run on")
+# options most relevant to summarization
+parser.add_argument('-dynamic_dict', action='store_true',
+                    help="Create dynamic dictionaries")
+parser.add_argument('-share_vocab', action='store_true',
+                    help="Share source and target vocabulary")
 
 
 def reportScore(name, scoreTotal, wordsTotal):
@@ -63,54 +65,38 @@ def reportScore(name, scoreTotal, wordsTotal):
         name, math.exp(-scoreTotal/wordsTotal)))
 
 
-def addone(f):
-    for line in f:
-        yield line
-    yield None
-
-
 def main():
     opt = parser.parse_args()
+    dummy_parser = argparse.ArgumentParser(description='train.py')
+    add_model_arguments(dummy_parser)
+    dummy_opt = dummy_parser.parse_known_args()[0]
+
     opt.cuda = opt.gpu > -1
     if opt.cuda:
         torch.cuda.set_device(opt.gpu)
-
-    translator = onmt.Translator(opt)
-
+    translator = onmt.Translator(opt, dummy_opt.__dict__)
     outF = codecs.open(opt.output, 'w', 'utf-8')
-
     predScoreTotal, predWordsTotal, goldScoreTotal, goldWordsTotal = 0, 0, 0, 0
-
     srcBatch, tgtBatch = [], []
-
     count = 0
-
-    tgtF = codecs.open(opt.tgt, 'r', 'utf-8') if opt.tgt else None
-
     if opt.dump_beam != "":
         import json
         translator.initBeamAccum()
 
-    for line in addone(codecs.open(opt.src, 'r', 'utf-8')):
-        if line is not None:
-            srcTokens = line.split()
-            srcBatch += [srcTokens]
-            if tgtF:
-                tgtTokens = tgtF.readline().split() if tgtF else None
-                tgtBatch += [tgtTokens]
+    data = onmt.IO.ONMTDataset(opt.src, opt.tgt, translator.fields, None)
 
-            if len(srcBatch) < opt.batch_size:
-                continue
-        else:
-            # at the end of file, check last batch
-            if len(srcBatch) == 0:
-                break
+    testData = onmt.IO.OrderedIterator(
+        dataset=data, device=opt.gpu if opt.gpu else -1,
+        batch_size=opt.batch_size, train=False, sort=False,
+        shuffle=False)
 
+    index = 0
+    for batch in testData:
         predBatch, predScore, goldScore, attn, src \
-            = translator.translate(srcBatch, tgtBatch)
+            = translator.translate(batch, data)
         predScoreTotal += sum(score[0] for score in predScore)
         predWordsTotal += sum(len(x[0]) for x in predBatch)
-        if tgtF is not None:
+        if opt.tgt:
             goldScoreTotal += sum(goldScore)
             goldWordsTotal += sum(len(x) for x in tgtBatch)
 
@@ -126,15 +112,30 @@ def main():
             outF.flush()
 
             if opt.verbose:
-                srcSent = ' '.join(srcBatch[b])
-                if translator.tgt_dict.lower:
-                    srcSent = srcSent.lower()
-                os.write(1, bytes('SENT %d: %s\n' % (count, srcSent), 'UTF-8'))
-                os.write(1, bytes('PRED %d: %s\n' %
+                # print(srcBatch[b])
+                # srcSent = ' '.join(srcBatch[b])
+                # if translator.tgt_dict.lower:
+                #     srcSent = srcSent.lower()
+                words = []
+                for f in src[:, b]:
+                    word = translator.fields["src"].vocab.itos[f]
+                    if word == onmt.IO.PAD_WORD:
+                        break
+                    words.append(word)
+
+                os.write(1, bytes('SENT %d: %s\n' %
+                                  (count, " ".join(words)), 'UTF-8'))
+                # ex = data.examples[index]
+                # print(index, list(zip(ex.src, ex.src_feat_0, ex.src_feat_1,
+                #                       ex.src_feat_2)))
+
+                index += 1
+                print(len(predBatch[b][0]))
+                os.write(1, bytes('\n PRED %d: %s\n' %
                                   (count, " ".join(predBatch[b][0])), 'UTF-8'))
                 print("PRED SCORE: %.4f" % predScore[b][0])
 
-                if tgtF is not None:
+                if opt.tgt:
                     tgtSent = ' '.join(tgtBatch[b])
                     if translator.tgt_dict.lower:
                         tgtSent = tgtSent.lower()
@@ -155,17 +156,14 @@ def main():
                         print(w)
                         _, ids = attn[b][0][i].sort(0, descending=True)
                         for j in ids[:5].tolist():
-                            print("\t%s\t%d\t%3f" % (srcTokens[j], j,
+                            print("\t%s\t%d\t%3f" % (srcBatch[b][j], j,
                                                      attn[b][0][i][j]))
 
         srcBatch, tgtBatch = [], []
 
     reportScore('PRED', predScoreTotal, predWordsTotal)
-    if tgtF:
+    if opt.tgt:
         reportScore('GOLD', goldScoreTotal, goldWordsTotal)
-
-    if tgtF:
-        tgtF.close()
 
     if opt.dump_beam:
         json.dump(translator.beam_accum,
