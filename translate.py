@@ -83,7 +83,6 @@ def main():
         import json
         translator.initBeamAccum()
 
-
     data = onmt.IO.ONMTDataset(opt.src, opt.tgt, translator.fields, None)
 
     testData = onmt.IO.OrderedIterator(

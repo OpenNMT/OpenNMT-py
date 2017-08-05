@@ -43,7 +43,7 @@ class GlobalAttention(nn.Module):
 
         self.dim = dim
         if attn_type == "dotprod":
-            attn_type = "general" 
+            attn_type = "general"
         self.attn_type = attn_type
         assert (self.attn_type in ["dot", "general", "mlp"]), (
                 "Please select a valid attention type.")
