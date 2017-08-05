@@ -1,6 +1,6 @@
-
 import torch
 import torch.nn as nn
+from torch.autograd import Variable
 
 
 def aeq(*args):
@@ -51,6 +51,56 @@ class LayerNorm(nn.Module):
         ln_out = ln_out.mul(self.a_2.expand_as(ln_out)) \
             + self.b_2.expand_as(ln_out)
         return ln_out
+
+
+class Splitter:
+    """
+    Spliter is a utilty that splits a dictionary of
+    data up into shards and waits for them to be backprop'd.
+    It blocks until all gradients have been computed and then
+    call backward on its inputs.
+    """
+
+    def __init__(self, shard_max, eval=False):
+        self.shard_max = shard_max
+        self.eval = eval
+
+    def splitIter(self, d):
+        # If eval mode, don't need to split at all
+        if self.eval:
+            yield d
+            return
+
+        # Split each element and make dummy variable.
+        dummies = {}
+        shards = []
+        for k, v in d.items():
+            if v is None:
+                continue
+            if isinstance(v, Variable) and v.requires_grad:
+                dummies[k] = Variable(v.data, requires_grad=True,
+                                      volatile=False)
+            else:
+                dummies[k] = v
+            splits = torch.split(dummies[k], self.shard_max)
+
+            for i, val in enumerate(splits):
+                if i >= len(shards):
+                    shards.append({})
+                shards[i][k] = val
+
+        for i, shard in enumerate(shards):
+            yield shard
+
+        # Assumed backprop'd
+        inputs = []
+        grads = []
+        for k, v in dummies.items():
+            if isinstance(v, Variable) and (v.grad is not None):
+                inputs.append(d[k])
+                grads.append(v.grad.data)
+        torch.autograd.backward(inputs, grads)
+        return
 
 
 class BottleLinear(Bottle, nn.Linear):
