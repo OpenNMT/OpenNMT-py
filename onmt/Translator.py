@@ -119,7 +119,7 @@ class Translator(object):
         decStates.repeatBeam_(beamSize)
         beam = [onmt.Beam(beamSize, cuda=self.opt.cuda,
                           vocab=self.fields["tgt"].vocab)
-                for _ in range(batchSize)]
+                for __ in range(batchSize)]
         if useMasking:
             padMask = src.data[:, :, 0].eq(pad).t() \
                                                .unsqueeze(0) \
