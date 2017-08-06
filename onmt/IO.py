@@ -16,7 +16,7 @@ def align(src_tokens, tgt_tokens):
     a mask of where there is overlap.
 
     Returns:
-        mask: tgt_len x src_len
+        mask: src_len x tgt_len
     """
     mask = torch.ByteTensor(len(src_tokens), len(tgt_tokens)).fill_(0)
 
