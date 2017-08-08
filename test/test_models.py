@@ -19,7 +19,7 @@ parser.add_argument('-word_vec_size', type=int, default=500,
 parser.add_argument('-feat_vec_size', type=int, default=100,
                     help='Feature vec sizes')
 parser.add_argument('-feat_merge', type=str, default='concat',
-                    choices=['concat', 'sum'],
+                    choices=['concat', 'sum', 'mlp'],
                     help='Merge action for the features embeddings')
 parser.add_argument('-feat_vec_exponent', type=float, default=0.7,
                     help="""When features embedding sizes are not set and
