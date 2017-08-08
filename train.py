@@ -325,7 +325,6 @@ def check_model_path():
     model_dirname = os.path.dirname(save_model_path)
     if not os.path.exists(model_dirname):
         os.makedirs(model_dirname)
-    assert os.path.isdir(model_dirname), "%s not a directory" % opt.save_model
 
 
 def main():
