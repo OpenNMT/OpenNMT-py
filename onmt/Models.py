@@ -358,7 +358,9 @@ class Decoder(nn.Module):
 
                 # COVERAGE
                 if self._coverage:
-                    coverage = (coverage + attn) if coverage else attn
+                    coverage = attn
++                    if coverage is not None:
++                        coverage += attn
                     attns["coverage"] += [coverage]
 
                 # COPY
