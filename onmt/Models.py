@@ -57,6 +57,10 @@ class Embeddings(nn.Module):
 
     @property
     def embedding_size(self):
+        """
+        Returns sum of all feature dimensions if the merge action is concat.
+        Otherwise, returns word vector size.
+        """
         if self.feat_merge == 'concat':
             return sum(emb_lut.embedding_dim
                        for emb_lut in self.emb_luts.children())
@@ -86,17 +90,11 @@ class Embeddings(nn.Module):
 
     def forward(self, src_input):
         """
-        Embed the words or utilize features and MLP.
-
+        Return the embeddings for words, and features if there are any.
         Args:
             src_input (LongTensor): len x batch x nfeat
-
         Return:
-            emb (FloatTensor): len x batch x emb_size
-                                emb_size is word_vec_size if there are no
-                                features or the merge action is sum.
-                                It is the sum of all feature dimensions
-                                if the merge action is concatenate.
+            emb (FloatTensor): len x batch x self.embedding_size
         """
         in_length, in_batch, nfeat = src_input.size()
         aeq(nfeat, len(self.emb_luts))
