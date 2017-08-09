@@ -51,10 +51,14 @@ class Optim(object):
         Decay learning rate if val perf does not improve
         or we hit the start_decay_at limit.
         """
+        print("Learning rate:", self.lr)
+        self.start_decay = False
 
         if self.opt.start_decay_at is not None \
-           and epoch >= self.opt.start_decay_at:
+           and epoch >= self.opt.start_decay_at \
+           and not self.opt.decay_method == "restart":
             self.start_decay = True
+
         if self.last_ppl is not None and ppl > self.last_ppl:
             self.start_decay = True
 
@@ -62,5 +66,12 @@ class Optim(object):
             self.lr = self.lr * self.opt.learning_rate_decay
             print("Decaying learning rate to %g" % self.lr)
 
-        self.last_ppl = ppl
-        self.optimizer.param_groups[0]['lr'] = self.lr
+            if self.opt.decay_method == "restart":
+                # Reset optim method
+                # Don't update self.last_ppl (epoch resets)
+                self.set_parameters(self.params)
+            else:
+                self.last_ppl = ppl
+                self.optimizer.param_groups[0]['lr'] = self.lr
+        else:
+            self.last_ppl = ppl

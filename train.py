@@ -10,6 +10,7 @@ import argparse
 import torch
 import torch.nn as nn
 from torch import cuda
+from copy import deepcopy
 import dill
 from train_opts import add_model_arguments, add_optim_arguments
 
@@ -211,6 +212,7 @@ def eval(model, criterion, data, fields):
                                                (0, batch.tgt.size(0)))
         _, batch_stats = loss_compute.computeLoss(batch=batch, **gen_state)
         stats.update(batch_stats)
+
     model.train()
     return stats
 
@@ -296,6 +298,10 @@ def trainModel(model, criterion, trainData, validData, fields, optim):
     for epoch in range(opt.start_epoch, opt.epochs + 1):
         print('')
 
+        #  (0) Save params if we activate restart method
+        if opt.decay_method == "restart":
+            prev_params = deepcopy(model.state_dict())
+
         #  (1) train for one epoch on the training set
         train_stats = trainEpoch(epoch)
         print('Train perplexity: %g' % train_stats.ppl())
@@ -305,6 +311,12 @@ def trainModel(model, criterion, trainData, validData, fields, optim):
         valid_stats = eval(model, criterion, validData, fields)
         print('Validation perplexity: %g' % valid_stats.ppl())
         print('Validation accuracy: %g' % valid_stats.accuracy())
+
+        # (optional) Check if we restart the epoch
+        if optim.last_ppl is not None and valid_stats.ppl() > optim.last_ppl:
+            print("PPL increased! Reversing Epoch...")
+            model.load_state_dict(prev_params)
+            model.zero_grad()
 
         # (optional) Log to remote server.
         if opt.log_server:
