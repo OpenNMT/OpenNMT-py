@@ -38,15 +38,15 @@ parser.add_argument('-rnn_size', type=int, default=500,
 parser.add_argument('-word_vec_size', type=int, default=500,
                     help='Word embedding sizes')
 parser.add_argument('-feat_vec_size', type=int, default=20,
-                    help='Feature vec sizes')
+                    help="""When using -feat_merge mlp, feature embedding
+                    sizes will be set to this.""")
 parser.add_argument('-feat_merge', type=str, default='concat',
-                    choices=['concat', 'sum'],
+                    choices=['concat', 'sum', 'mlp'],
                     help='Merge action for the features embeddings')
 parser.add_argument('-feat_vec_exponent', type=float, default=0.7,
-                    help="""When features embedding sizes are not set and
-                    using -feat_merge concat, their dimension will be set
-                    to N^feat_vec_exponent where N is the number of values
-                    the feature takes""")
+                    help="""When using -feat_merge concat, feature embedding
+                    sizes will be set to N^feat_vec_exponent where N is the
+                    number of values the feature takes.""")
 parser.add_argument('-input_feed', type=int, default=1,
                     help="""Feed the context vector at each time step as
                     additional input (via concatenation with the word

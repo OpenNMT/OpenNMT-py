@@ -31,22 +31,20 @@ class Embeddings(nn.Module):
         if feature_dicts:
             vocab_sizes.extend(feat_dict.size() for feat_dict in feature_dicts)
             if opt.feat_merge == 'concat':
-                # When concatenating, derive the size of each feature's
-                # embedding from the number of values the embedding
-                # takes
-                feat_sizes = (int(feat_dict.size() ** feat_exp)
-                              for feat_dict in feature_dicts)
+                # Derive embedding sizes from each feature's vocab size
+                emb_sizes.extend([int(feat_dict.size() ** feat_exp)
+                                  for feat_dict in feature_dicts])
+            elif opt.feat_merge == 'sum':
+                # All embeddings to be summed must be the same size
+                emb_sizes.extend([opt.word_vec_size] * len(feature_dicts))
             else:
-                # sum feature merge (for now, the same as the old option
-                # for merging features in OpenNMT-py)
-                feat_sizes = (opt.feat_vec_size for feat_dict in feature_dicts)
-                # apply a layer of mlp to get it down to the right dim
+                # mlp feature merge
+                emb_sizes.extend([opt.feat_vec_size] * len(feature_dicts))
+                # apply a layer of mlp to get it down to the correct dim
                 self.mlp = nn.Sequential(onmt.modules.BottleLinear(
-                                        opt.word_vec_size +
-                                        len(feature_dicts) * opt.feat_vec_size,
+                                        sum(emb_sizes),
                                         opt.word_vec_size),
                                         nn.ReLU())
-            emb_sizes.extend(feat_sizes)
 
         self.emb_luts = nn.ModuleList([
                                 nn.Embedding(vocab, dim,
@@ -59,7 +57,11 @@ class Embeddings(nn.Module):
 
     @property
     def embedding_size(self):
-        if self.feat_merge == 'concat' and len(self.emb_luts) > 1:
+        """
+        Returns sum of all feature dimensions if the merge action is concat.
+        Otherwise, returns word vector size.
+        """
+        if self.feat_merge == 'concat':
             return sum(emb_lut.embedding_dim
                        for emb_lut in self.emb_luts.children())
         else:
@@ -81,22 +83,18 @@ class Embeddings(nn.Module):
     def merge(self, features):
         if self.feat_merge == 'concat':
             return torch.cat(features, 2)
+        elif self.feat_merge == 'sum':
+            return sum(features)
         else:
             return self.mlp(torch.cat(features, 2))
 
     def forward(self, src_input):
         """
-        Embed the words or utilize features and MLP.
-
+        Return the embeddings for words, and features if there are any.
         Args:
             src_input (LongTensor): len x batch x nfeat
-
         Return:
-            emb (FloatTensor): len x batch x emb_size
-                                emb_size is word_vec_size if there are no
-                                features or the merge action is sum.
-                                It is the sum of all feature dimensions
-                                if the merge action is concatenate.
+            emb (FloatTensor): len x batch x self.embedding_size
         """
         in_length, in_batch, nfeat = src_input.size()
         aeq(nfeat, len(self.emb_luts))
