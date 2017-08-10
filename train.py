@@ -215,11 +215,6 @@ def eval(model, criterion, data):
 def trainModel(model, trainData, validData, dataset, optim):
     model.train()
 
-    model_dirname = os.path.dirname(opt.save_model)
-    if not os.path.exists(model_dirname):
-        os.mkdir(model_dirname)
-    assert os.path.isdir(model_dirname), "%s not a directory" % opt.save_model
-
     # Define criterion of each GPU.
     if not opt.copy_attn:
         criterion = onmt.Loss.NMTCriterion(dataset['dicts']['tgt'].size(), opt)
@@ -323,6 +318,13 @@ def trainModel(model, trainData, validData, dataset, optim):
                        '%s_acc_%.2f_ppl_%.2f_e%d.pt'
                        % (opt.save_model, valid_stats.accuracy(),
                           valid_stats.ppl(), epoch))
+
+
+def check_model_path():
+    save_model_path = os.path.abspath(opt.save_model)
+    model_dirname = os.path.dirname(save_model_path)
+    if not os.path.exists(model_dirname):
+        os.makedirs(model_dirname)
 
 
 def main():
@@ -458,6 +460,8 @@ def main():
             print(name, param.nelement())
     print('encoder: ', enc)
     print('decoder: ', dec)
+
+    check_model_path()
 
     trainModel(model, trainData, validData, dataset, optim)
 
