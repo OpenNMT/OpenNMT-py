@@ -333,7 +333,8 @@ def main():
                        else opt.train_from_state_dict)
     if dict_checkpoint:
         print('Loading dicts from checkpoint at %s' % dict_checkpoint)
-        checkpoint = torch.load(dict_checkpoint)
+        checkpoint = torch.load(dict_checkpoint,
+                                map_location=lambda storage, loc: storage)
         dataset['dicts'] = checkpoint['dicts']
 
     trainData = onmt.Dataset(dataset['train']['src'],
