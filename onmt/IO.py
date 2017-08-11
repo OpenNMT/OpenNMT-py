@@ -49,10 +49,10 @@ def merge_vocabs(vocabs, vocab_size=None):
         `torchtext.vocab.Vocab`
     """
     merged = Counter()
-    # take the counts of the disjoint union of all the vocabs up to `vocab_size`
+    # take the counts of the disjoint union of all the vocabs
     for vocab in vocabs:
         # XXX note that `vocab.freqs` does not contain special symbols
-        for word, count in vocab.freqs.most_common(vocab_size):
+        for word, count in vocab.freqs.most_common():
             if word not in merged:
                 merged[word] = 0
             merged[word] += count
