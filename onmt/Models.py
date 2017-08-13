@@ -107,8 +107,9 @@ class Decoder(nn.Module):
         if embeddings is None:
             self.embeddings = onmt.modules.Embeddings(opt, dicts, None)
         else:
-            assert (embeddings.feature_dicts is None), \
-                   'decoder embeddings should not contain `feature_dicts`'
+            assert embeddings.feature_dicts is None or \
+                len(embeddings.feature_dicts) == 0, \
+                'decoder embeddings should not contain `feature_dicts`'
             self.embeddings = embeddings
         pad = dicts.stoi[onmt.IO.PAD_WORD]
         if self.decoder_layer == "transformer":
@@ -230,7 +231,8 @@ class Decoder(nn.Module):
 
                 # COVERAGE
                 if self._coverage:
-                    coverage = (coverage + attn) if coverage else attn
+                    coverage = (coverage + attn) \
+                        if coverage is not None else attn
                     attns["coverage"] += [coverage]
 
                 # COPY
