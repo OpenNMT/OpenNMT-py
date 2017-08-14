@@ -153,3 +153,91 @@ class GlobalAttention(nn.Module):
         aeq(dim, dim_)
 
         return attn_h_t, align_vector
+
+    def score_all(self, h_t, h_s):
+        """
+        whole sequence version of score().
+        h_t (FloatTensor): batch x tgt_len x dim
+        h_s (FloatTensor): batch x src_len x dim
+        returns scores (FloatTensor): batch x tgt_len x src_len:
+            raw attention scores for each src index
+        """
+
+        # Check input sizes
+        src_batch, src_len, src_dim = h_s.size()
+        tgt_batch, tgt_len, tgt_dim = h_t.size()
+        aeq(src_batch, tgt_batch)
+        aeq(src_dim, tgt_dim)
+        aeq(self.dim, src_dim)
+
+        if self.attn_type in ["general", "dot"]:
+            if self.attn_type == "general":
+                h_t_ = h_t.view(tgt_batch*tgt_len, tgt_dim)
+                h_t_ = self.linear_in(h_t_)
+                h_t  = h_t_.view(tgt_batch, tgt_len, tgt_dim)
+            h_s_ = h_s.transpose(1, 2)
+            # (batch, tgt_len, dim) x (batch, dim, src_len) --> (batch, tgt_len, src_len)
+            return torch.bmm(h_t, h_s_)
+        else:
+            #TODO: MLP
+            raise Exception("mlp not supported yet.")
+
+    def forward_all(self, input, context, coverage=None):
+        """
+        whole sequence version of forward().
+        input (FloatTensor): batch x tgt_len x dim: decoder's rnn's output.
+        context (FloatTensor): batch x src_len x dim: src hidden states
+        coverage (FloatTensor): None (not supported yet)
+        """
+
+        batch, sourceL, dim = context.size()
+        batch_, targetL, dim_ = input.size()
+        aeq(batch, batch_)
+        aeq(dim, dim_)
+        aeq(self.dim, dim)
+
+        if self.mask is not None:
+            beam_, batch_, sourceL_ = self.mask.size()
+            aeq(batch, batch_*beam_)
+            aeq(sourceL, sourceL_)
+
+        #TODO: coverage
+        if coverage is not None:
+            raise Exception("coverage not supported yet.")
+
+        # compute attention scores, as in Luong et al.
+        align = self.score_all(input, context)
+
+        if self.mask is not None:
+            mask_ = self.mask.view(batch, 1, sourceL)   # making it broardcastable
+            align.data.masked_fill_(mask_, -float('inf'))
+
+        # Softmax to normalize attention weights
+        align_vectors = self.sm(align.view(batch*targetL, sourceL)).view(batch, targetL, sourceL)
+
+        # each context vector c_t is the weighted average
+        # over all the source hidden states
+        c = torch.bmm(align_vectors, context)
+
+        # concatenate
+        concat_c = torch.cat([c, input], 2).view(batch*targetL, dim*2)
+        attn_h = self.linear_out(concat_c).view(batch, targetL, dim)
+        if self.attn_type in ["general", "dot"]:
+            attn_h = self.tanh(attn_h)
+
+        attn_h = attn_h.transpose(0, 1)
+        align_vectors = align_vectors.transpose(0, 1)
+
+        # Check output sizes
+        targetL_, batch_, dim_ = attn_h.size()
+        aeq(targetL, targetL_)
+        aeq(batch, batch_)
+        aeq(dim, dim_)
+        targetL_, batch_, sourceL_ = align_vectors.size()
+        aeq(targetL, targetL_)
+        aeq(batch, batch_)
+        aeq(sourceL, sourceL_)
+
+        return attn_h, align_vectors
+
+
