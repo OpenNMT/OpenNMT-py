@@ -174,12 +174,12 @@ class GlobalAttention(nn.Module):
             if self.attn_type == "general":
                 h_t_ = h_t.view(tgt_batch*tgt_len, tgt_dim)
                 h_t_ = self.linear_in(h_t_)
-                h_t  = h_t_.view(tgt_batch, tgt_len, tgt_dim)
+                h_t = h_t_.view(tgt_batch, tgt_len, tgt_dim)
             h_s_ = h_s.transpose(1, 2)
-            # (batch, tgt_len, dim) x (batch, dim, src_len) --> (batch, tgt_len, src_len)
+            # (batch, t_len, d) x (batch, d, s_len) --> (batch, t_len, s_len)
             return torch.bmm(h_t, h_s_)
         else:
-            #TODO: MLP
+            # TODO: MLP
             raise Exception("mlp not supported yet.")
 
     def forward_all(self, input, context, coverage=None):
@@ -201,7 +201,7 @@ class GlobalAttention(nn.Module):
             aeq(batch, batch_*beam_)
             aeq(sourceL, sourceL_)
 
-        #TODO: coverage
+        # TODO: coverage
         if coverage is not None:
             raise Exception("coverage not supported yet.")
 
@@ -209,11 +209,12 @@ class GlobalAttention(nn.Module):
         align = self.score_all(input, context)
 
         if self.mask is not None:
-            mask_ = self.mask.view(batch, 1, sourceL)   # making it broardcastable
+            mask_ = self.mask.view(batch, 1, sourceL) # make it broardcastable
             align.data.masked_fill_(mask_, -float('inf'))
 
         # Softmax to normalize attention weights
-        align_vectors = self.sm(align.view(batch*targetL, sourceL)).view(batch, targetL, sourceL)
+        align_vectors = self.sm(align.view(batch*targetL, sourceL))
+        align_vectors = align_vectors.view(batch, targetL, sourceL)
 
         # each context vector c_t is the weighted average
         # over all the source hidden states
@@ -239,5 +240,3 @@ class GlobalAttention(nn.Module):
         aeq(sourceL, sourceL_)
 
         return attn_h, align_vectors
-
-

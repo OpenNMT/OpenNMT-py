@@ -384,7 +384,7 @@ class Decoder(nn.Module):
             assert isinstance(state, RNNDecoderState)
             assert emb.dim() == 3
 
-            #TODO: context_gate, coverage and copy
+            # TODO: context_gate, coverage and copy
             assert self.context_gate is None
             assert not self._coverage
             assert not self._copy
