@@ -1,4 +1,4 @@
 dill
 six
 tqdm
-git+git://github.com/pytorch/text.git@086bcc25ae0b9734d171f1ba670c80f560465293
+torchtext
