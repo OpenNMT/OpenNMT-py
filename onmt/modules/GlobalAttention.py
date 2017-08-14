@@ -209,7 +209,7 @@ class GlobalAttention(nn.Module):
         align = self.score_all(input, context)
 
         if self.mask is not None:
-            mask_ = self.mask.view(batch, 1, sourceL) # make it broardcastable
+            mask_ = self.mask.view(batch, 1, sourceL)  # make it broardcastable
             align.data.masked_fill_(mask_, -float('inf'))
 
         # Softmax to normalize attention weights
