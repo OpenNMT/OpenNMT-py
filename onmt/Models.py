@@ -235,13 +235,20 @@ class Decoder(nn.Module):
             self.transformer = nn.ModuleList(
                 [onmt.modules.TransformerDecoder(self.hidden_size, opt)
                  for _ in range(opt.layers)])
-        elif self.input_feed:
-            if opt.rnn_type == "LSTM":
-                stackedCell = onmt.modules.StackedLSTM
+        else:
+            if self.input_feed:
+                if opt.rnn_type == "LSTM":
+                    stackedCell = onmt.modules.StackedLSTM
+                else:
+                    stackedCell = onmt.modules.StackedGRU
+                self.rnn = stackedCell(opt.layers, input_size,
+                                       opt.rnn_size, opt.dropout)
             else:
-                stackedCell = onmt.modules.StackedGRU
-            self.rnn = stackedCell(opt.layers, input_size,
-                                   opt.rnn_size, opt.dropout)
+                self.rnn = getattr(nn, opt.rnn_type)(
+                     input_size, opt.rnn_size,
+                     num_layers=opt.layers,
+                     dropout=opt.dropout
+                )
             self.context_gate = None
             if opt.context_gate is not None:
                 self.context_gate = ContextGateFactory(
@@ -249,15 +256,6 @@ class Decoder(nn.Module):
                     opt.rnn_size, opt.rnn_size,
                     opt.rnn_size
                 )
-        else:
-            self.rnn = getattr(nn, opt.rnn_type)(
-                 input_size, opt.rnn_size,
-                 num_layers=opt.layers,
-                 dropout=opt.dropout
-            )
-            self.context_gate = None
-            # TODO: context gate
-            assert opt.context_gate is None
 
         self.dropout = nn.Dropout(opt.dropout)
 
@@ -384,11 +382,11 @@ class Decoder(nn.Module):
             assert isinstance(state, RNNDecoderState)
             assert emb.dim() == 3
 
-            # TODO: context_gate, coverage and copy
-            assert self.context_gate is None
             assert not self._coverage
-            assert not self._copy
             assert state.coverage is None
+
+            # TODO: copy
+            assert not self._copy
 
             hidden = state.hidden
             rnn_output, hidden = self.rnn(emb, hidden)
@@ -399,11 +397,21 @@ class Decoder(nn.Module):
             aeq(t_len, t_len_)
             # END CHECKS
 
-            attn_outputs, attn_scores = self.attn.forward_all(
+            attn_outputs, attn_scores = self.attn(
                 rnn_output.transpose(0, 1).contiguous(),    # (batch, t_len, d)
                 context.transpose(0, 1)                     # (batch, s_len, d)
             )
-            outputs = self.dropout(attn_outputs)
+
+            if self.context_gate is not None:
+                outputs = self.context_gate(
+                    emb.view(-1, emb.size(2)),
+                    rnn_output.view(-1, rnn_output.size(2)),
+                    attn_outputs.view(-1, attn_outputs.size(2))
+                )
+                outputs = outputs.view(t_len, n_batch, self.hidden_size)
+                outputs = self.dropout(outputs)
+            else:
+                outputs = self.dropout(attn_outputs)        # (t_len, batch, d)
             state = RNNDecoderState(hidden, outputs[-1].unsqueeze(0), None)
             attns["std"] = attn_scores
 
