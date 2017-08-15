@@ -90,6 +90,7 @@ class GlobalAttention(nn.Module):
             # (batch, t_len, d) x (batch, d, s_len) --> (batch, t_len, s_len)
             return torch.bmm(h_t, h_s_)
         else:
+            dim = self.dim
             wq = self.linear_query(h_t.view(-1, dim))
             wq = wq.view(tgt_batch, tgt_len, 1, dim)
 
