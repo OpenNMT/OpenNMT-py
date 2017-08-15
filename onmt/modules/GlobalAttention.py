@@ -93,14 +93,16 @@ class GlobalAttention(nn.Module):
             dim = self.dim
             wq = self.linear_query(h_t.view(-1, dim))
             wq = wq.view(tgt_batch, tgt_len, 1, dim)
+            wq = wq.expand(tgt_batch, tgt_len, src_len, dim)
 
             uh = self.linear_context(h_s.contiguous().view(-1, dim))
             uh = uh.view(src_batch, 1, src_len, dim)
+            uh = uh.expand(src_batch, tgt_len, src_len, dim)
 
             # (batch, t_len, s_len, d)
             wquh = self.tanh(wq + uh)
 
-            return self.v(wquh.view(-1, dim)).squeeze(3)
+            return self.v(wquh.view(-1, dim)).view(tgt_batch, tgt_len, src_len)
 
     def forward(self, input, context, coverage=None):
         """
