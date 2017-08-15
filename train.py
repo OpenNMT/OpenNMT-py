@@ -1,5 +1,7 @@
 from __future__ import division
 
+import os
+
 import onmt
 import onmt.Markdown
 import onmt.Models
@@ -35,9 +37,16 @@ parser.add_argument('-rnn_size', type=int, default=500,
                     help='Size of LSTM hidden states')
 parser.add_argument('-word_vec_size', type=int, default=500,
                     help='Word embedding sizes')
-parser.add_argument('-feature_vec_size', type=int, default=100,
-                    help='Feature vec sizes')
-
+parser.add_argument('-feat_vec_size', type=int, default=20,
+                    help="""When using -feat_merge mlp, feature embedding
+                    sizes will be set to this.""")
+parser.add_argument('-feat_merge', type=str, default='concat',
+                    choices=['concat', 'sum', 'mlp'],
+                    help='Merge action for the features embeddings')
+parser.add_argument('-feat_vec_exponent', type=float, default=0.7,
+                    help="""When using -feat_merge concat, feature embedding
+                    sizes will be set to N^feat_vec_exponent where N is the
+                    number of values the feature takes.""")
 parser.add_argument('-input_feed', type=int, default=1,
                     help="""Feed the context vector at each time step as
                     additional input (via concatenation with the word
@@ -68,10 +77,10 @@ parser.add_argument('-context_gate', type=str, default=None,
                     choices=['source', 'target', 'both'],
                     help="""Type of context gate to use [source|target|both].
                     Do not select for no context gate.""")
-parser.add_argument('-attention_type', type=str, default='dotprod',
-                    choices=['dotprod', 'mlp'],
+parser.add_argument('-attention_type', type=str, default='general',
+                    choices=['dot', 'general', 'mlp'],
                     help="""The attention type to use:
-                    dotprot (Luong) or MLP (Bahdanau)""")
+                    dotprot or general (Luong) or MLP (Bahdanau)""")
 
 # Optimization options
 parser.add_argument('-encoder_type', default='text',
@@ -311,6 +320,13 @@ def trainModel(model, trainData, validData, dataset, optim):
                           valid_stats.ppl(), epoch))
 
 
+def check_model_path():
+    save_model_path = os.path.abspath(opt.save_model)
+    model_dirname = os.path.dirname(save_model_path)
+    if not os.path.exists(model_dirname):
+        os.makedirs(model_dirname)
+
+
 def main():
     print("Loading data from '%s'" % opt.data)
 
@@ -319,7 +335,8 @@ def main():
                        else opt.train_from_state_dict)
     if dict_checkpoint:
         print('Loading dicts from checkpoint at %s' % dict_checkpoint)
-        checkpoint = torch.load(dict_checkpoint)
+        checkpoint = torch.load(dict_checkpoint,
+                                map_location=lambda storage, loc: storage)
         dataset['dicts'] = checkpoint['dicts']
 
     trainData = onmt.Dataset(dataset['train']['src'],
@@ -432,6 +449,19 @@ def main():
 
     nParams = sum([p.nelement() for p in model.parameters()])
     print('* number of parameters: %d' % nParams)
+    enc = 0
+    dec = 0
+    for name, param in model.named_parameters():
+        if 'encoder' in name:
+            enc += param.nelement()
+        elif 'decoder' in name:
+            dec += param.nelement()
+        else:
+            print(name, param.nelement())
+    print('encoder: ', enc)
+    print('decoder: ', dec)
+
+    check_model_path()
 
     trainModel(model, trainData, validData, dataset, optim)
 
