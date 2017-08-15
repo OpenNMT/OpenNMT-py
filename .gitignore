@@ -8,3 +8,4 @@ multi-bleu.perl
 .DS_Store
 data/
 build/
+logs/
