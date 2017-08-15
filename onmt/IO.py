@@ -39,7 +39,9 @@ def extractFeatures(tokens):
 
 def merge_vocabs(vocabs, vocab_size=None):
     """
-    Merge individual vocabularies into a larger vocabularies.
+    Merge individual vocabularies (assumed to be generated from disjoint
+    documents) into a larger vocabulary.
+
     Args:
         vocabs: `torchtext.vocab.Vocab` vocabularies to be merged
         vocab_size: `int` the final vocabulary size. `None` for no limit.
@@ -47,13 +49,16 @@ def merge_vocabs(vocabs, vocab_size=None):
         `torchtext.vocab.Vocab`
     """
     merged = Counter()
+    # take the counts of the disjoint union of all the vocabs
     for vocab in vocabs:
-        # XXX note len(vocab) contains special symbols
-        for word, count in vocab.freqs.most_common(len(vocab)):
+        # XXX note that `vocab.freqs` does not contain special symbols
+        for word, count in vocab.freqs.most_common():
             if word not in merged:
                 merged[word] = 0
             merged[word] += count
-    return torchtext.vocab.Vocab(merged, max_size=vocab_size)
+    return torchtext.vocab.Vocab(merged,
+                                 specials=[PAD_WORD, BOS_WORD, EOS_WORD],
+                                 max_size=vocab_size)
 
 
 class OrderedIterator(torchtext.data.Iterator):
