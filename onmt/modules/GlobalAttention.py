@@ -94,7 +94,7 @@ class GlobalAttention(nn.Module):
             wq = self.linear_query(h_t.view(-1, dim))
             wq = wq.view(tgt_batch, tgt_len, 1, dim)
 
-            uh = self.linear_context(h_s.view(-1, dim))
+            uh = self.linear_context(h_s.contiguous().view(-1, dim))
             uh = uh.view(src_batch, 1, src_len, dim)
 
             # (batch, t_len, s_len, d)
