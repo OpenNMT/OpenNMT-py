@@ -23,6 +23,8 @@ def add_model_arguments(parser):
                         [concat|sum]""")
     parser.add_argument('-copy_attn', action="store_true",
                         help='Train copy attention layer.')
+    parser.add_argument('-copy_with_base', action="store_true",
+                        help='Use the base attention for copying.')
     parser.add_argument('-copy_attn_force', action="store_true",
                         help="""Train copy attention layer to copy even
                         if word is in the src vocab.
