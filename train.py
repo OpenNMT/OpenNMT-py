@@ -431,9 +431,6 @@ def main():
             for p in model.parameters():
                 p.data.uniform_(-opt.param_init, opt.param_init)
 
-        encoder.embeddings.load_pretrained_vectors(opt.pre_word_vecs_enc)
-        decoder.embeddings.load_pretrained_vectors(opt.pre_word_vecs_dec)
-
         optim = onmt.Optim(
             opt.optim, opt.learning_rate, opt.max_grad_norm,
             lr_decay=opt.learning_rate_decay,
