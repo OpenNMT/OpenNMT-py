@@ -90,6 +90,22 @@ parser.add_argument('-share_decoder_embeddings', action='store_true',
 parser.add_argument('-gpus', default=[], nargs='+', type=int,
                     help="Use CUDA on the listed devices.")
 
+# pretrained word vectors
+parser.add_argument('-pre_word_vecs_enc',
+                    help="""If a valid path is specified, then this will load
+                    pretrained word embeddings on the encoder side.
+                    See README for specific formatting instructions.""")
+parser.add_argument('-pre_word_vecs_dec',
+                    help="""If a valid path is specified, then this will load
+                    pretrained word embeddings on the decoder side.
+                    See README for specific formatting instructions.""")
+parser.add_argument('-fix_word_vecs_enc',
+                    action='store_true',
+                    help="Fix word embeddings on the encoder side.")
+parser.add_argument('-fix_word_vecs_dec',
+                    action='store_true',
+                    help="Fix word embeddings on the encoder side.")
+
 opt = parser.parse_known_args()[0]
 print(opt)
 
@@ -123,7 +139,11 @@ class TestModel(unittest.TestCase):
             bsize: Batchsize of generated input
         '''
         vocab = self.get_vocab()
-        emb = onmt.Models.Embeddings(opt, vocab)
+        emb = onmt.Models.Embeddings(
+            vocab, None,
+            opt.word_vec_size, opt.pre_word_vecs_enc, opt.fix_word_vecs_enc,
+            opt.feat_merge, opt.feat_vec_size, opt.feat_vec_exponent,
+            opt.position_encoding, opt.gpus, opt.dropout)
         test_src, _, __ = self.get_batch(sourceL=sourceL,
                                          bsize=bsize)
         if opt.decoder_layer == 'transformer':
