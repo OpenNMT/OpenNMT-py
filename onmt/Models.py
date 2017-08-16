@@ -48,11 +48,13 @@ class Embeddings(nn.Module):
                                         nn.ReLU())
 
         self.emb_luts = nn.ModuleList([
-                                nn.Embedding(vocab, dim,
-                                             padding_idx=onmt.Constants.PAD)
-                                for vocab, dim in zip(vocab_sizes, emb_sizes)])
+                            nn.Embedding(vocab, dim,
+                                         padding_idx=onmt.Constants.PAD)
+                            for vocab, dim in zip(vocab_sizes, emb_sizes)])
         if pre_word_vecs:
             self._load_pretrained_vectors(pre_word_vecs)
+        if fix_word_vecs:
+            self.word_lut.weight.requires_grad = False
 
     @property
     def word_lut(self):
