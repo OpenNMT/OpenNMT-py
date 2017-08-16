@@ -11,39 +11,40 @@ from torch.nn.utils.rnn import pack_padded_sequence as pack
 
 
 class Embeddings(nn.Module):
-    def __init__(self, opt, dicts, feature_dicts=None):
+    def __init__(
+            self, dicts, feature_dicts,
+            word_vec_size, pre_word_vecs, fix_word_vecs,
+            feat_merge, feat_vec_size, feat_vec_exponent,
+            position_encoding, gpus, dropout):
         super(Embeddings, self).__init__()
-        self.positional_encoding = opt.position_encoding
+
+        self.positional_encoding = position_encoding
         if self.positional_encoding:
-            self.pe = self.make_positional_encodings(opt.word_vec_size, 5000)
-            if len(opt.gpus) > 0:
+            self.pe = self.make_positional_encodings(word_vec_size, 5000)
+            if len(gpus) > 0:
                 self.pe.cuda()
-            self.dropout = nn.Dropout(p=opt.dropout)
+            self.dropout = nn.Dropout(p=dropout)
 
-        self.feat_merge = opt.feat_merge
+        self.feat_merge = feat_merge
 
-        feat_exp = opt.feat_vec_exponent
-
-        # vocab_sizes: sequence of vocab sizes for words and each feature
         vocab_sizes = [dicts.size()]
-        # emb_sizes
-        emb_sizes = [opt.word_vec_size]
+        emb_sizes = [word_vec_size]
         if feature_dicts:
             vocab_sizes.extend(feat_dict.size() for feat_dict in feature_dicts)
-            if opt.feat_merge == 'concat':
+            if feat_merge == 'concat':
                 # Derive embedding sizes from each feature's vocab size
-                emb_sizes.extend([int(feat_dict.size() ** feat_exp)
+                emb_sizes.extend([int(feat_dict.size() ** feat_vec_exponent)
                                   for feat_dict in feature_dicts])
-            elif opt.feat_merge == 'sum':
+            elif feat_merge == 'sum':
                 # All embeddings to be summed must be the same size
-                emb_sizes.extend([opt.word_vec_size] * len(feature_dicts))
+                emb_sizes.extend([word_vec_size] * len(feature_dicts))
             else:
                 # mlp feature merge
-                emb_sizes.extend([opt.feat_vec_size] * len(feature_dicts))
+                emb_sizes.extend([feat_vec_size] * len(feature_dicts))
                 # apply a layer of mlp to get it down to the correct dim
                 self.mlp = nn.Sequential(onmt.modules.BottleLinear(
                                         sum(emb_sizes),
-                                        opt.word_vec_size),
+                                        word_vec_size),
                                         nn.ReLU())
 
         self.emb_luts = nn.ModuleList([
@@ -143,7 +144,11 @@ class Encoder(nn.Module):
         self.hidden_size = opt.rnn_size // self.num_directions
 
         super(Encoder, self).__init__()
-        self.embeddings = Embeddings(opt, dicts, feature_dicts)
+        self.embeddings = Embeddings(
+            dicts, feature_dicts,
+            opt.word_vec_size, opt.pre_word_vecs_enc, opt.fix_word_vecs_enc,
+            opt.feat_merge, opt.feat_vec_size, opt.feat_vec_exponent,
+            opt.position_encoding, opt.gpus, opt.dropout)
 
         input_size = self.embeddings.embedding_size
 
@@ -229,7 +234,11 @@ class Decoder(nn.Module):
             input_size += opt.rnn_size
 
         super(Decoder, self).__init__()
-        self.embeddings = Embeddings(opt, dicts, None)
+        self.embeddings = Embeddings(
+            dicts, None,
+            opt.word_vec_size, opt.pre_word_vecs_enc, opt.fix_word_vecs_dec,
+            opt.feat_merge, opt.feat_vec_size, opt.feat_vec_exponent,
+            opt.position_encoding, opt.gpus, opt.dropout)
 
         if self.decoder_layer == "transformer":
             self.transformer = nn.ModuleList(
