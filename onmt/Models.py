@@ -51,6 +51,8 @@ class Embeddings(nn.Module):
                                 nn.Embedding(vocab, dim,
                                              padding_idx=onmt.Constants.PAD)
                                 for vocab, dim in zip(vocab_sizes, emb_sizes)])
+        if pre_word_vecs:
+            self._load_pretrained_vectors(pre_word_vecs)
 
     @property
     def word_lut(self):
@@ -76,10 +78,9 @@ class Embeddings(nn.Module):
         pe[:, 1::2] = torch.cos(pe[:, 1::2])
         return pe.unsqueeze(1)
 
-    def load_pretrained_vectors(self, emb_file):
-        if emb_file is not None:
-            pretrained = torch.load(emb_file)
-            self.word_lut.weight.data.copy_(pretrained)
+    def _load_pretrained_vectors(self, emb_file):
+        pretrained = torch.load(emb_file)
+        self.word_lut.weight.data.copy_(pretrained)
 
     def merge(self, features):
         if self.feat_merge == 'concat':
