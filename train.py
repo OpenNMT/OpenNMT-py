@@ -143,9 +143,7 @@ parser.add_argument('-decay_method', type=str, default="",
 parser.add_argument('-warmup_steps', type=int, default=4000,
                     help="""Number of warmup steps for custom decay.""")
 
-
 # pretrained word vectors
-
 parser.add_argument('-pre_word_vecs_enc',
                     help="""If a valid path is specified, then this will load
                     pretrained word embeddings on the encoder side.
@@ -154,6 +152,12 @@ parser.add_argument('-pre_word_vecs_dec',
                     help="""If a valid path is specified, then this will load
                     pretrained word embeddings on the decoder side.
                     See README for specific formatting instructions.""")
+parser.add_argument('-fix_word_vecs_enc',
+                    action='store_true',
+                    help="Fix word embeddings on the encoder side.")
+parser.add_argument('-fix_word_vecs_dec',
+                    action='store_true',
+                    help="Fix word embeddings on the encoder side.")
 
 # GPU
 parser.add_argument('-gpus', default=[], nargs='+', type=int,
