@@ -239,7 +239,7 @@ class Decoder(nn.Module):
         super(Decoder, self).__init__()
         self.embeddings = Embeddings(
             dicts, None,
-            opt.word_vec_size, opt.pre_word_vecs_enc, opt.fix_word_vecs_dec,
+            opt.word_vec_size, opt.pre_word_vecs_dec, opt.fix_word_vecs_dec,
             opt.feat_merge, opt.feat_vec_size, opt.feat_vec_exponent,
             opt.position_encoding, opt.gpus, opt.dropout)
 
