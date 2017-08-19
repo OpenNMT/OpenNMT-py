@@ -299,6 +299,7 @@ def trainModel(model, criterion, trainData, validData, fields, optim):
         print('')
 
         #  (0) Save params if we activate restart method
+        #  From http://aclweb.org/anthology/W/W17/W17-3203.pdf
         if opt.decay_method == "restart":
             prev_params = deepcopy(model.state_dict())
 
