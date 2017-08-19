@@ -113,9 +113,14 @@ class LossCompute:
         """Create all the variables that need to be sharded.
         This needs to match compute loss exactly.
         """
+        if opt.copy_attn:
+            # Only copy attn uses alignment
+            align = batch.alignment[range_[0] + 1: range_[1]]
+        else:
+            align = None
         return {"out": outputs,
                 "target": batch.tgt[range_[0] + 1: range_[1]],
-                "align": batch.alignment[range_[0] + 1: range_[1]],
+                "align": align,
                 "coverage": attns.get("coverage"),
                 "attn": attns.get("copy")}
 
