@@ -69,6 +69,7 @@ class Optim(object):
             if self.opt.decay_method == "restart":
                 # Reset optim method
                 # Don't update self.last_ppl (epoch resets)
+                # From http://aclweb.org/anthology/W/W17/W17-3203.pdf
                 self.set_parameters(self.params)
             else:
                 self.last_ppl = ppl
