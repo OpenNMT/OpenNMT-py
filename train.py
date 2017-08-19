@@ -313,7 +313,10 @@ def trainModel(model, criterion, trainData, validData, fields, optim):
         print('Validation accuracy: %g' % valid_stats.accuracy())
 
         # (optional) Check if we restart the epoch
-        if optim.last_ppl is not None and valid_stats.ppl() > optim.last_ppl:
+        if optim.last_ppl is not None\
+           and valid_stats.ppl() > optim.last_ppl\
+           and opt.decay_method == "restart":
+
             print("PPL increased! Reversing Epoch...")
             model.load_state_dict(prev_params)
             model.zero_grad()
