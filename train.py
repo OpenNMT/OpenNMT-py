@@ -47,9 +47,9 @@ if opt.gpuid:
 
 
 # Set up the Crayon logging server.
-if opt.log_server != "":
+if opt.exp_host != "":
     from pycrayon import CrayonClient
-    cc = CrayonClient(hostname=opt.log_server)
+    cc = CrayonClient(hostname=opt.exp_host)
 
     experiments = cc.get_experiment_names()
     print(experiments)
@@ -108,8 +108,6 @@ def trainModel(model, trainData, validData, fields, optim):
         repeat=False)
 
     def trainEpoch(epoch):
-        if opt.extra_shuffle and epoch > opt.curriculum:
-            trainData.shuffle()
 
         mem_loss = onmt.Loss.MemoryEfficientLoss(opt, model.generator,
                                                  criterion, pad_id,
