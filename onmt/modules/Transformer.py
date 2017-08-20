@@ -88,7 +88,7 @@ class TransformerDecoder(nn.Module):
                                                     opt.dropout)
         self.dropout = opt.dropout
         self.mask = get_attn_subsequent_mask(5000)
-        if len(opt.gpus) > 0:
+        if len(opt.gpuid) > 0:
             self.mask = self.mask.cuda()
         self.pad = pad
 

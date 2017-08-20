@@ -19,6 +19,7 @@ parser = argparse.ArgumentParser(description='train.py')
 opts.add_md_help_argument(parser)
 opts.model_opts(parser)
 opts.train_opts(parser)
+opt.brnn = (opt.encoder_type == "brnn")
 
 opt = parser.parse_args()
 print(opt)
@@ -26,11 +27,11 @@ print(opt)
 if opt.seed > 0:
     torch.manual_seed(opt.seed)
 
-if torch.cuda.is_available() and not opt.gpus:
-    print("WARNING: You have a CUDA device, should run with -gpus 0")
+if torch.cuda.is_available() and not opt.gpuid:
+    print("WARNING: You have a CUDA device, should run with -gpuid 0")
 
-if opt.gpus:
-    cuda.set_device(opt.gpus[0])
+if opt.gpuid:
+    cuda.set_device(opt.gpuid[0])
     if opt.seed > 0:
         torch.cuda.manual_seed(opt.seed)
 
@@ -42,9 +43,9 @@ if opt.log_server != "":
 
     experiments = cc.get_experiment_names()
     print(experiments)
-    if opt.experiment_name in experiments:
-        cc.remove_experiment(opt.experiment_name)
-    experiment = cc.create_experiment(opt.experiment_name)
+    if opt.exp in experiments:
+        cc.remove_experiment(opt.exp)
+    experiment = cc.create_experiment(opt.exp)
 
 
 def make_features(batch, fields):
@@ -62,7 +63,7 @@ def make_features(batch, fields):
 
 def eval(model, criterion, data, fields):
     validData = onmt.IO.OrderedIterator(
-        dataset=data, device=opt.gpus[0] if opt.gpus else -1,
+        dataset=data, device=opt.gpuid[0] if opt.gpuid else -1,
         batch_size=opt.batch_size, train=False, sort=True)
     pad_id = fields['tgt'].vocab.stoi[onmt.IO.PAD_WORD]
     stats = onmt.Loss.Statistics()
@@ -93,7 +94,7 @@ def trainModel(model, trainData, validData, fields, optim):
 
     train = onmt.IO.OrderedIterator(
         dataset=trainData, batch_size=opt.batch_size,
-        device=opt.gpus[0] if opt.gpus else -1,
+        device=opt.gpuid[0] if opt.gpuid else -1,
         repeat=False)
 
     def trainEpoch(epoch):
@@ -146,10 +147,10 @@ def trainModel(model, trainData, validData, fields, optim):
 
             report_stats.n_src_words += src_lengths.sum()
 
-            if i % opt.log_interval == -1 % opt.log_interval:
+            if i % opt.report_every == -1 % opt.report_every:
                 report_stats.output(epoch, i+1, len(train),
                                     total_stats.start_time)
-                if opt.log_server:
+                if opt.exp_host:
                     report_stats.log("progress", experiment, optim)
                 report_stats = onmt.Loss.Statistics()
         return total_stats
@@ -168,19 +169,19 @@ def trainModel(model, trainData, validData, fields, optim):
         print('Validation accuracy: %g' % valid_stats.accuracy())
 
         # Log to remote server.
-        if opt.log_server:
+        if opt.exp_host:
             train_stats.log("train", experiment, optim)
             valid_stats.log("valid", experiment, optim)
 
         #  (3) update the learning rate
         optim.updateLearningRate(valid_stats.ppl(), epoch)
 
-        model_state_dict = (model.module.state_dict() if len(opt.gpus) > 1
+        model_state_dict = (model.module.state_dict() if len(opt.gpuid) > 1
                             else model.state_dict())
         model_state_dict = {k: v for k, v in model_state_dict.items()
                             if 'generator' not in k}
         generator_state_dict = (model.generator.module.state_dict()
-                                if len(opt.gpus) > 1
+                                if len(opt.gpuid) > 1
                                 else model.generator.state_dict())
         #  (4) drop a checkpoint
         if epoch >= opt.start_checkpoint_at:
@@ -217,7 +218,7 @@ def main():
                     for j in range(train.nfeatures)]
 
     checkpoint = None
-    dict_checkpoint = opt.train_from_state_dict
+    dict_checkpoint = opt.train_from
 
     if dict_checkpoint:
         print('Loading dicts from checkpoint at %s' % dict_checkpoint)
@@ -236,21 +237,21 @@ def main():
     print(' * maximum batch size. %d' % opt.batch_size)
 
     print('Building model...')
-    cuda = (len(opt.gpus) >= 1)
+    cuda = (len(opt.gpuid) >= 1)
     model = onmt.Models.make_base_model(opt, opt, fields, cuda, checkpoint)
     print(model)
 
-    if opt.train_from_state_dict:
+    if opt.train_from:
         print('Loading model from checkpoint at %s'
-              % opt.train_from_state_dict)
+              % opt.train_from)
         opt.start_epoch = checkpoint['epoch'] + 1
 
-    if len(opt.gpus) > 1:
-        print('Multi gpu training ', opt.gpus)
-        model = nn.DataParallel(model, device_ids=opt.gpus, dim=1)
-    #     generator = nn.DataParallel(generator, device_ids=opt.gpus, dim=0)
+    if len(opt.gpuid) > 1:
+        print('Multi gpu training ', opt.gpuid)
+        model = nn.DataParallel(model, device_ids=opt.gpuid, dim=1)
+    #     generator = nn.DataParallel(generator, device_ids=opt.gpuid, dim=0)
 
-    if not opt.train_from_state_dict:
+    if not opt.train_from:
         if opt.param_init != 0.0:
             print('Intializing params')
             for p in model.parameters():
@@ -272,7 +273,7 @@ def main():
 
     optim.set_parameters(model.parameters())
 
-    if opt.train_from_state_dict:
+    if opt.train_from:
         optim.optimizer.load_state_dict(
             checkpoint['optim'].optimizer.state_dict())
 
