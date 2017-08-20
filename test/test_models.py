@@ -103,14 +103,15 @@ class TestModel(unittest.TestCase):
     # Helper to generate a vocabulary
 
     def get_vocab(self):
-        return onmt.Dict([onmt.Constants.PAD_WORD, onmt.Constants.UNK_WORD,
-                          onmt.Constants.BOS_WORD, onmt.Constants.EOS_WORD])
+        src = onmt.IO.ONMTDataset.get_fields()["src"]
+        src.build_vocab([])
+        return src.vocab
 
     def get_batch(self, sourceL=3, bsize=1):
         # len x batch x nfeat
         test_src = Variable(torch.ones(sourceL, bsize, 1)).long()
         test_tgt = Variable(torch.ones(sourceL, bsize)).long()
-        test_length = Variable(torch.ones(1, bsize).fill_(sourceL))
+        test_length = torch.ones(bsize).fill_(sourceL)
         return test_src, test_tgt, test_length
 
     def embeddings_forward(self, opt, sourceL=3, bsize=1):
