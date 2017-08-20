@@ -546,14 +546,14 @@ def make_base_model(opt, model_opt, fields, cuda, checkpoint=None):
             break
         feature_vocabs.append(fields[key].vocab)
 
-    if model_opt.encoder_type == "text":
+    if model_opt.model_type == "text":
         encoder = Encoder(model_opt, fields["src"].vocab,
                           feature_vocabs)
-    elif model_opt.encoder_type == "img":
+    elif model_opt.model_type == "img":
         encoder = onmt.modules.ImageEncoder(model_opt)
     else:
-        assert False, ("Unsupported encoder type %s"
-                       % (model_opt.encoder_type))
+        assert False, ("Unsupported model type %s"
+                       % (model_opt.model_type))
 
     decoder = onmt.Models.Decoder(
         model_opt, fields["tgt"].vocab)

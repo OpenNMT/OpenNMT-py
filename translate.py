@@ -126,8 +126,6 @@ def main():
 
                 if opt.tgt:
                     tgtSent = ' '.join(tgtBatch[b])
-                    if translator.tgt_dict.lower:
-                        tgtSent = tgtSent.lower()
                     os.write(1, bytes('GOLD %d: %s\n' %
                              (count, tgtSent), 'UTF-8'))
                     print("GOLD SCORE: %.4f" % goldScore[b])

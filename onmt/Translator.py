@@ -33,7 +33,7 @@ class Translator(object):
             if arg not in model_opt:
                 model_opt.__dict__[arg] = dummy_opt[arg]
 
-        self._type = model_opt.encoder_type
+        self._type = model_opt.model_type
         self.copy_attn = model_opt.copy_attn
 
         self.model = onmt.Models.make_base_model(opt, model_opt, self.fields,
