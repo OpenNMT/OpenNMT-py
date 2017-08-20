@@ -236,12 +236,19 @@ class Decoder(nn.Module):
                 [onmt.modules.TransformerDecoder(self.hidden_size, opt)
                  for _ in range(opt.layers)])
         else:
-            if opt.rnn_type == "LSTM":
-                stackedCell = onmt.modules.StackedLSTM
+            if self.input_feed:
+                if opt.rnn_type == "LSTM":
+                    stackedCell = onmt.modules.StackedLSTM
+                else:
+                    stackedCell = onmt.modules.StackedGRU
+                self.rnn = stackedCell(opt.layers, input_size,
+                                       opt.rnn_size, opt.dropout)
             else:
-                stackedCell = onmt.modules.StackedGRU
-            self.rnn = stackedCell(opt.layers, input_size,
-                                   opt.rnn_size, opt.dropout)
+                self.rnn = getattr(nn, opt.rnn_type)(
+                     input_size, opt.rnn_size,
+                     num_layers=opt.layers,
+                     dropout=opt.dropout
+                )
             self.context_gate = None
             if opt.context_gate is not None:
                 self.context_gate = ContextGateFactory(
@@ -323,7 +330,7 @@ class Decoder(nn.Module):
             if self._copy:
                 attns["copy"] = attn
             state = TransformerDecoderState(input.unsqueeze(2))
-        else:
+        elif self.input_feed:
             assert isinstance(state, RNNDecoderState)
             output = state.input_feed.squeeze(0)
             hidden = state.hidden
@@ -371,6 +378,43 @@ class Decoder(nn.Module):
             outputs = torch.stack(outputs)
             for k in attns:
                 attns[k] = torch.stack(attns[k])
+        else:
+            assert isinstance(state, RNNDecoderState)
+            assert emb.dim() == 3
+
+            assert not self._coverage
+            assert state.coverage is None
+
+            # TODO: copy
+            assert not self._copy
+
+            hidden = state.hidden
+            rnn_output, hidden = self.rnn(emb, hidden)
+
+            # CHECKS
+            t_len_, n_batch_, _ = rnn_output.size()
+            aeq(n_batch, n_batch_)
+            aeq(t_len, t_len_)
+            # END CHECKS
+
+            attn_outputs, attn_scores = self.attn(
+                rnn_output.transpose(0, 1).contiguous(),    # (batch, t_len, d)
+                context.transpose(0, 1)                     # (batch, s_len, d)
+            )
+
+            if self.context_gate is not None:
+                outputs = self.context_gate(
+                    emb.view(-1, emb.size(2)),
+                    rnn_output.view(-1, rnn_output.size(2)),
+                    attn_outputs.view(-1, attn_outputs.size(2))
+                )
+                outputs = outputs.view(t_len, n_batch, self.hidden_size)
+                outputs = self.dropout(outputs)
+            else:
+                outputs = self.dropout(attn_outputs)        # (t_len, batch, d)
+            state = RNNDecoderState(hidden, outputs[-1].unsqueeze(0), None)
+            attns["std"] = attn_scores
+
         return outputs, state, attns
 
 
