@@ -153,7 +153,7 @@ class ONMTDataset(torchtext.data.Dataset):
                         for j in range(len(tgt)):
                             mask[j+1] = src_vocab.stoi[tgt[j]]
                         examples[i]["alignment"] = mask
-
+                assert i + 1 == len(examples), "Len src and tgt do not match"
         keys = examples[0].keys()
         fields = [(k, fields[k]) for k in keys]
         examples = list([torchtext.data.Example.fromlist([ex[k] for k in keys],
@@ -167,12 +167,16 @@ class ONMTDataset(torchtext.data.Dataset):
         super(ONMTDataset, self).__init__(examples, fields,
                                           filter_pred if opt is not None
                                           else None)
-
     def __getstate__(self):
         return self.__dict__
 
     def __setstate__(self, d):
         self.__dict__.update(d)
+
+
+    def __reduce_ex__(self, proto):
+        "This is a hack. Something is broken with torch pickle."
+        return super(ONMTDataset, self).__reduce_ex__()
 
     def collapseCopyScores(self, scores, batch, tgt_vocab):
         """Given scores from an expanded dictionary
@@ -251,7 +255,8 @@ class ONMTDataset(torchtext.data.Dataset):
         for j in range(train.nfeatures):
             fields["src_feat_" + str(j)].build_vocab(train)
         fields["tgt"].build_vocab(train, max_size=opt.tgt_vocab_size)
-        # merge the input and output vocabularies
+
+        # Merge the input and output vocabularies.
         if opt.share_vocab:
             # `tgt_vocab_size` is ignored when sharing vocabularies
             merged_vocab = merge_vocabs(

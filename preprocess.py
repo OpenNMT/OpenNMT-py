@@ -80,13 +80,12 @@ def main():
 
     print("Building Valid...")
     valid = onmt.IO.ONMTDataset(opt.valid_src, opt.valid_tgt, fields, opt)
-
     print("Saving train/valid/fields")
+    torch.save(fields, open(opt.save_data + '.fields.pt', 'wb'),
+               pickle_module=dill)
     torch.save(train, open(opt.save_data + '.train.pt', 'wb'),
                pickle_module=dill)
     torch.save(valid, open(opt.save_data + '.valid.pt', 'wb'),
-               pickle_module=dill)
-    torch.save(fields, open(opt.save_data + '.fields.pt', 'wb'),
                pickle_module=dill)
 
 

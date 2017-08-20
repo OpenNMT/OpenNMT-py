@@ -179,7 +179,7 @@ class MemoryEfficientLoss:
 
             stats.update(self.score(loss_t, scores_t, s["targ_t"]))
             if not self.eval:
-                loss_t.div(batch.batchSize).backward()
+                loss_t.div(batch.batch_size).backward()
 
         # Return the gradients
         inputs, grads = collectGrads(original, dummies)
