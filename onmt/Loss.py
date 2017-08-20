@@ -1,4 +1,3 @@
-import onmt
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
@@ -7,12 +6,12 @@ import sys
 import math
 
 
-def NMTCriterion(vocabSize, opt):
+def NMTCriterion(vocabSize, opt, pad_id):
     """
     Construct the standard NMT Criterion
     """
     weight = torch.ones(vocabSize)
-    weight[onmt.Constants.PAD] = 0
+    weight[pad_id] = 0
     crit = nn.NLLLoss(weight, size_average=False)
     if opt.gpus:
         crit.cuda()
@@ -99,7 +98,7 @@ class MemoryEfficientLoss:
     """
     Class for best batchin the loss for NMT.
     """
-    def __init__(self, opt, generator, crit,
+    def __init__(self, opt, generator, crit, pad_id,
                  copy_loss=False,
                  coverage_loss=False,
                  eval=False):
@@ -116,10 +115,11 @@ class MemoryEfficientLoss:
         self.copy_loss = copy_loss
         self.lambda_coverage = opt.lambda_coverage
         self.coverage_loss = coverage_loss
+        self.pad_id = pad_id
 
     def score(self, loss_t, scores_t, targ_t):
         pred_t = scores_t.data.max(1)[1]
-        non_padding = targ_t.ne(onmt.Constants.PAD).data
+        non_padding = targ_t.ne(self.pad_id).data
         num_correct_t = pred_t.eq(targ_t.data) \
                               .masked_select(non_padding) \
                               .sum()

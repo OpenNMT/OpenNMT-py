@@ -216,10 +216,11 @@ def eval(model, criterion, data, fields):
     validData = onmt.IO.OrderedIterator(
         dataset=data, device=opt.gpus[0] if opt.gpus else -1,
         batch_size=opt.batch_size, train=False, sort=True)
-
+    pad_id = fields['tgt'].vocab.stoi[onmt.IO.PAD_WORD]
     stats = onmt.Loss.Statistics()
     model.eval()
     loss = onmt.Loss.MemoryEfficientLoss(opt, model.generator, criterion,
+                                         pad_id,
                                          eval=True, copy_loss=opt.copy_attn)
     for batch in validData:
         _, src_lengths = batch.src
@@ -234,9 +235,11 @@ def eval(model, criterion, data, fields):
 def trainModel(model, trainData, validData, fields, optim):
     model.train()
 
+    pad_id = fields['tgt'].vocab.stoi[onmt.IO.PAD_WORD]
     # Define criterion of each GPU.
     if not opt.copy_attn:
-        criterion = onmt.Loss.NMTCriterion(len(fields['tgt'].vocab), opt)
+        criterion = onmt.Loss.NMTCriterion(len(fields['tgt'].vocab), opt,
+                                           pad_id)
     else:
         criterion = onmt.modules.CopyCriterion
 
@@ -250,7 +253,7 @@ def trainModel(model, trainData, validData, fields, optim):
             trainData.shuffle()
 
         mem_loss = onmt.Loss.MemoryEfficientLoss(opt, model.generator,
-                                                 criterion,
+                                                 criterion, pad_id,
                                                  copy_loss=opt.copy_attn)
 
         total_stats = onmt.Loss.Statistics()
