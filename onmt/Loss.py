@@ -1,5 +1,3 @@
-import onmt
-import onmt.Constants
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
@@ -8,12 +6,12 @@ import sys
 import math
 
 
-def NMTCriterion(vocabSize, opt):
+def NMTCriterion(vocabSize, opt, pad_id):
     """
     Construct the standard NMT Criterion
     """
     weight = torch.ones(vocabSize)
-    weight[onmt.Constants.PAD] = 0
+    weight[pad_id] = 0
     crit = nn.NLLLoss(weight, size_average=False)
     if opt.gpus:
         crit.cuda()
@@ -80,7 +78,7 @@ class Statistics:
         t = self.elapsed_time()
         print(("Epoch %2d, %5d/%5d; acc: %6.2f; ppl: %6.2f;" +
                "%3.0f src tok/s; %3.0f tgt tok/s; %6.0f s elapsed") %
-              (epoch, batch,  n_batches,
+              (epoch, batch, n_batches,
                self.accuracy(),
                self.ppl(),
                self.n_src_words / (t + 1e-5),
@@ -100,7 +98,7 @@ class MemoryEfficientLoss:
     """
     Class for best batchin the loss for NMT.
     """
-    def __init__(self, opt, generator, crit,
+    def __init__(self, opt, generator, crit, pad_id,
                  copy_loss=False,
                  coverage_loss=False,
                  eval=False):
@@ -117,10 +115,11 @@ class MemoryEfficientLoss:
         self.copy_loss = copy_loss
         self.lambda_coverage = opt.lambda_coverage
         self.coverage_loss = coverage_loss
+        self.pad_id = pad_id
 
     def score(self, loss_t, scores_t, targ_t):
         pred_t = scores_t.data.max(1)[1]
-        non_padding = targ_t.ne(onmt.Constants.PAD).data
+        non_padding = targ_t.ne(self.pad_id).data
         num_correct_t = pred_t.eq(targ_t.data) \
                               .masked_select(non_padding) \
                               .sum()
@@ -179,7 +178,7 @@ class MemoryEfficientLoss:
 
             stats.update(self.score(loss_t, scores_t, s["targ_t"]))
             if not self.eval:
-                loss_t.div(batch.batchSize).backward()
+                loss_t.div(batch.batch_size).backward()
 
         # Return the gradients
         inputs, grads = collectGrads(original, dummies)

@@ -4,9 +4,16 @@ This is a [Pytorch](https://github.com/pytorch/pytorch)
 port of [OpenNMT](https://github.com/OpenNMT/OpenNMT),
 an open-source (MIT) neural machine translation system. Full documentation is available [here](http://opennmt.net/OpenNMT-py).
 
-This code is still in heavy development (pre-version 0.1). We recommend forking if you want a stable version. 
+This code is still in heavy development (pre-version 0.1). We recommend forking if you want a stable version.
 
 <center style="padding: 40px"><img width="70%" src="http://opennmt.github.io/simple-attn.png" /></center>
+
+## Requirements
+
+```bash
+pip install -r requirements.txt
+```
+
 
 ## Features
 
@@ -20,10 +27,10 @@ The following OpenNMT features are implemented:
 
 Beta Features:
 - Context gate
-- Multiple source and target RNN (lstm/gru) types and attention (dotprod/mlp) types 
+- Multiple source and target RNN (lstm/gru) types and attention (dotprod/mlp) types
 - Image-to-text processing
 - Source word features
-- "Attention is all you need" 
+- "Attention is all you need"
 - TensorBoard/Crayon logging
 - Copy, coverage, and structured attention
 
@@ -60,7 +67,7 @@ Internally the system never touches the words themselves, but uses these indices
 ## Step 2: Train the model
 
 ```bash
-python train.py -data data/demo.train.pt -save_model demo-model 
+python train.py -data data/demo -save_model demo-model
 ```
 
 The main train command is quite simple. Minimally it takes a data file
@@ -82,7 +89,7 @@ Now you have a model which you can use to predict on new data. We do this by run
 ## Some useful tools:
 
 
-## Full Translation Example 
+## Full Translation Example
 
 The example below uses the Moses tokenizer (http://www.statmt.org/moses/) to prepare the data and the moses BLEU script for evaluation.
 
@@ -140,5 +147,3 @@ The following pretrained models can be downloaded and used with translate.py (Th
 
 - [onmt_model_en_de_200k](https://s3.amazonaws.com/pytorch/examples/opennmt/models/onmt_model_en_de_200k-4783d9c3.pt): An English-German translation model based on the 200k sentence dataset at [OpenNMT/IntegrationTesting](https://github.com/OpenNMT/IntegrationTesting/tree/master/data). Perplexity: 21.
 - [onmt_model_en_fr_b1M](https://s3.amazonaws.com/pytorch/examples/opennmt/models/onmt_model_en_fr_b1M-261c69a7.pt): An English-French model trained on benchmark-1M. Perplexity: 4.85.
-
-

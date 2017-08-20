@@ -12,15 +12,17 @@ install:
   - conda config --set always_yes yes --set changeps1 no
   - conda update -q conda
   # Useful for debugging any issues with conda
-  - conda info -a  
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION pytorch -c soumith
+  - conda info -a
+  # freeze the supported pytorch version for consistency
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION pytorch=0.2.0 -c soumith
   - source activate test-environment
+  # use requirements.txt for dependencies
+  - pip install -r requirements.txt
   - python setup.py install
-  - pip install --upgrade pytest
-  
+
 script:
   - python -m unittest discover
-  
+
 matrix:
   include:
     - env: LINT_CHECK

@@ -1,0 +1,4 @@
+dill
+six
+tqdm
+torchtext

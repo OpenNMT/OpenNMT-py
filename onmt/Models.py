@@ -25,14 +25,14 @@ class Embeddings(nn.Module):
         feat_exp = opt.feat_vec_exponent
 
         # vocab_sizes: sequence of vocab sizes for words and each feature
-        vocab_sizes = [dicts.size()]
+        vocab_sizes = [len(dicts)]
         # emb_sizes
         emb_sizes = [opt.word_vec_size]
         if feature_dicts:
-            vocab_sizes.extend(feat_dict.size() for feat_dict in feature_dicts)
+            vocab_sizes.extend(len(feat_dict) for feat_dict in feature_dicts)
             if opt.feat_merge == 'concat':
                 # Derive embedding sizes from each feature's vocab size
-                emb_sizes.extend([int(feat_dict.size() ** feat_exp)
+                emb_sizes.extend([int(len(feat_dict) ** feat_exp)
                                   for feat_dict in feature_dicts])
             elif opt.feat_merge == 'sum':
                 # All embeddings to be summed must be the same size
@@ -46,10 +46,11 @@ class Embeddings(nn.Module):
                                         opt.word_vec_size),
                                         nn.ReLU())
 
-        self.emb_luts = nn.ModuleList([
-                                nn.Embedding(vocab, dim,
-                                             padding_idx=onmt.Constants.PAD)
-                                for vocab, dim in zip(vocab_sizes, emb_sizes)])
+        self.emb_luts = \
+            nn.ModuleList([
+                nn.Embedding(vocab, dim,
+                             padding_idx=dicts.stoi[onmt.IO.PAD_WORD])
+                for vocab, dim in zip(vocab_sizes, emb_sizes)])
 
     @property
     def word_lut(self):
@@ -149,10 +150,11 @@ class Encoder(nn.Module):
 
         # The Encoder RNN.
         self.encoder_layer = opt.encoder_layer
+        pad_id = dicts.stoi[onmt.IO.PAD_WORD]
 
         if self.encoder_layer == "transformer":
             self.transformer = nn.ModuleList(
-                [onmt.modules.TransformerEncoder(self.hidden_size, opt)
+                [onmt.modules.TransformerEncoder(self.hidden_size, opt, pad_id)
                  for i in range(opt.layers)])
         else:
             self.rnn = getattr(nn, opt.rnn_type)(
@@ -176,7 +178,7 @@ class Encoder(nn.Module):
         # CHECKS
         s_len, n_batch, n_feats = input.size()
         if lengths is not None:
-            _, n_batch_ = lengths.size()
+            n_batch_, = lengths.size()
             aeq(n_batch, n_batch_)
         # END CHECKS
 
@@ -200,7 +202,7 @@ class Encoder(nn.Module):
             packed_emb = emb
             if lengths is not None:
                 # Lengths data is wrapped inside a Variable.
-                lengths = lengths.data.view(-1).tolist()
+                lengths = lengths.view(-1).tolist()
                 packed_emb = pack(emb, lengths)
             outputs, hidden_t = self.rnn(packed_emb, hidden)
             if lengths:
@@ -231,9 +233,10 @@ class Decoder(nn.Module):
         super(Decoder, self).__init__()
         self.embeddings = Embeddings(opt, dicts, None)
 
+        pad_id = dicts.stoi[onmt.IO.PAD_WORD]
         if self.decoder_layer == "transformer":
             self.transformer = nn.ModuleList(
-                [onmt.modules.TransformerDecoder(self.hidden_size, opt)
+                [onmt.modules.TransformerDecoder(self.hidden_size, opt, pad_id)
                  for _ in range(opt.layers)])
         else:
             if self.input_feed:
@@ -532,3 +535,50 @@ class TransformerDecoderState(DecoderState):
 
     def repeatBeam_(self, beamSize):
         pass
+
+
+def make_base_model(opt, model_opt, fields, cuda, checkpoint=None):
+    # HACK: collect source feature vocabs.
+    feature_vocabs = []
+    for j in range(100):
+        key = "src_feat_" + str(j)
+        if key not in fields:
+            break
+        feature_vocabs.append(fields[key].vocab)
+
+    if model_opt.encoder_type == "text":
+        encoder = Encoder(model_opt, fields["src"].vocab,
+                          feature_vocabs)
+    elif model_opt.encoder_type == "img":
+        encoder = onmt.modules.ImageEncoder(model_opt)
+    else:
+        assert False, ("Unsupported encoder type %s"
+                       % (model_opt.encoder_type))
+
+    decoder = onmt.Models.Decoder(
+        model_opt, fields["tgt"].vocab)
+    model = onmt.Models.NMTModel(encoder, decoder)
+
+    if not model_opt.copy_attn:
+        generator = nn.Sequential(
+            nn.Linear(model_opt.rnn_size, len(fields["tgt"].vocab)),
+            nn.LogSoftmax())
+    else:
+        generator = onmt.modules.CopyGenerator(model_opt, fields["src"].vocab,
+                                               fields["tgt"].vocab)
+        if model_opt.share_decoder_embeddings:
+            generator[0].weight = decoder.embeddings.word_lut.weight
+
+    if checkpoint is not None:
+        print('Loading model')
+        model.load_state_dict(checkpoint['model'])
+        generator.load_state_dict(checkpoint['generator'])
+
+    if cuda:
+        model.cuda()
+        generator.cuda()
+    else:
+        model.cpu()
+        generator.cpu()
+    model.generator = generator
+    return model

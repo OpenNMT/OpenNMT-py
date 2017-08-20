@@ -10,6 +10,7 @@ import argparse
 import torch
 import torch.nn as nn
 from torch import cuda
+import dill
 
 parser = argparse.ArgumentParser(description='train.py')
 onmt.Markdown.add_md_help_argument(parser)
@@ -25,9 +26,9 @@ parser.add_argument('-save_model', default='model',
 parser.add_argument('-train_from_state_dict', default='', type=str,
                     help="""If training from a checkpoint then this is the
                     path to the pretrained model's state_dict.""")
-parser.add_argument('-train_from', default='', type=str,
-                    help="""If training from a checkpoint then this is the
-                    path to the pretrained model.""")
+# parser.add_argument('-train_from', default='', type=str,
+#                     help="""If training from a checkpoint then this is the
+#                     path to the pretrained model.""")
 
 # Model options
 
@@ -198,63 +199,93 @@ if opt.log_server != "":
     experiment = cc.create_experiment(opt.experiment_name)
 
 
-def eval(model, criterion, data):
+def make_features(batch, fields):
+    # TODO: This is bit hacky remove.
+    feats = []
+    for j in range(100):
+        key = "src_feat_" + str(j)
+        if key not in fields:
+            break
+        feats.append(batch.__dict__[key])
+    cat = [batch.src[0]] + feats
+    cat = [c.unsqueeze(2) for c in cat]
+    return torch.cat(cat, 2)
+
+
+def eval(model, criterion, data, fields):
+    validData = onmt.IO.OrderedIterator(
+        dataset=data, device=opt.gpus[0] if opt.gpus else -1,
+        batch_size=opt.batch_size, train=False, sort=True)
+    pad_id = fields['tgt'].vocab.stoi[onmt.IO.PAD_WORD]
     stats = onmt.Loss.Statistics()
     model.eval()
     loss = onmt.Loss.MemoryEfficientLoss(opt, model.generator, criterion,
+                                         pad_id,
                                          eval=True, copy_loss=opt.copy_attn)
-    for i in range(len(data)):
-        batch = data[i]
-        outputs, attn, dec_hidden = model(batch.src, batch.tgt, batch.lengths)
+    for batch in validData:
+        _, src_lengths = batch.src
+        src = make_features(batch, fields)
+        outputs, attn, _ = model(src, batch.tgt, src_lengths)
         batch_stats, _, _ = loss.loss(batch, outputs, attn)
         stats.update(batch_stats)
     model.train()
     return stats
 
 
-def trainModel(model, trainData, validData, dataset, optim):
+def trainModel(model, trainData, validData, fields, optim):
     model.train()
 
+    pad_id = fields['tgt'].vocab.stoi[onmt.IO.PAD_WORD]
     # Define criterion of each GPU.
     if not opt.copy_attn:
-        criterion = onmt.Loss.NMTCriterion(dataset['dicts']['tgt'].size(), opt)
+        criterion = onmt.Loss.NMTCriterion(len(fields['tgt'].vocab), opt,
+                                           pad_id)
     else:
         criterion = onmt.modules.CopyCriterion
+
+    train = onmt.IO.OrderedIterator(
+        dataset=trainData, batch_size=opt.batch_size,
+        device=opt.gpus[0] if opt.gpus else -1,
+        repeat=False)
 
     def trainEpoch(epoch):
         if opt.extra_shuffle and epoch > opt.curriculum:
             trainData.shuffle()
 
         mem_loss = onmt.Loss.MemoryEfficientLoss(opt, model.generator,
-                                                 criterion,
+                                                 criterion, pad_id,
                                                  copy_loss=opt.copy_attn)
-
-        # Shuffle mini batch order.
-        batchOrder = torch.randperm(len(trainData))
 
         total_stats = onmt.Loss.Statistics()
         report_stats = onmt.Loss.Statistics()
 
-        for i in range(len(trainData)):
-            batchIdx = batchOrder[i] if epoch > opt.curriculum else i
-            batch = trainData[batchIdx]
+        for i, batch in enumerate(train):
             target_size = batch.tgt.size(0)
 
             dec_state = None
+            _, src_lengths = batch.src
+            src = make_features(batch, fields)
+            report_stats.n_src_words += src_lengths.sum()
+
+            # Truncated BPTT
+
             trunc_size = opt.truncated_decoder if opt.truncated_decoder \
                 else target_size
 
             for j in range(0, target_size-1, trunc_size):
-                trunc_batch = batch.truncate(j, j + trunc_size)
+                # (1) Create truncated target.
+                tgt_r = (j, j + trunc_size)
+                tgt = batch.tgt[tgt_r[0]: tgt_r[1]]
+
+                # (2) F-prop all but generator.
 
                 # Main training loop
                 model.zero_grad()
-                outputs, attn, dec_state = model(trunc_batch.src,
-                                                 trunc_batch.tgt,
-                                                 trunc_batch.lengths,
-                                                 dec_state)
+                outputs, attn, dec_state = \
+                    model(src, tgt, src_lengths, dec_state)
+
                 batch_stats, inputs, grads \
-                    = mem_loss.loss(trunc_batch, outputs, attn)
+                    = mem_loss.loss(batch, outputs, attn)
 
                 torch.autograd.backward(inputs, grads)
 
@@ -265,15 +296,14 @@ def trainModel(model, trainData, validData, dataset, optim):
                 if dec_state is not None:
                     dec_state.detach()
 
-            report_stats.n_src_words += batch.lengths.data.sum()
+            report_stats.n_src_words += src_lengths.sum()
 
             if i % opt.log_interval == -1 % opt.log_interval:
-                report_stats.output(epoch, i+1, len(trainData),
+                report_stats.output(epoch, i+1, len(train),
                                     total_stats.start_time)
                 if opt.log_server:
                     report_stats.log("progress", experiment, optim)
                 report_stats = onmt.Loss.Statistics()
-
         return total_stats
 
     for epoch in range(opt.start_epoch, opt.epochs + 1):
@@ -285,7 +315,7 @@ def trainModel(model, trainData, validData, dataset, optim):
         print('Train accuracy: %g' % train_stats.accuracy())
 
         #  (2) evaluate on the validation set
-        valid_stats = eval(model, criterion, validData)
+        valid_stats = eval(model, criterion, validData, fields)
         print('Validation perplexity: %g' % valid_stats.ppl())
         print('Validation accuracy: %g' % valid_stats.accuracy())
 
@@ -309,7 +339,7 @@ def trainModel(model, trainData, validData, dataset, optim):
             checkpoint = {
                 'model': model_state_dict,
                 'generator': generator_state_dict,
-                'dicts': dataset['dicts'],
+                'fields': fields,
                 'opt': opt,
                 'epoch': epoch,
                 'optim': optim
@@ -317,7 +347,8 @@ def trainModel(model, trainData, validData, dataset, optim):
             torch.save(checkpoint,
                        '%s_acc_%.2f_ppl_%.2f_e%d.pt'
                        % (opt.save_model, valid_stats.accuracy(),
-                          valid_stats.ppl(), epoch))
+                          valid_stats.ppl(), epoch),
+                       pickle_module=dill)
 
 
 def check_model_path():
@@ -330,105 +361,55 @@ def check_model_path():
 def main():
     print("Loading data from '%s'" % opt.data)
 
-    dataset = torch.load(opt.data)
-    dict_checkpoint = (opt.train_from if opt.train_from
-                       else opt.train_from_state_dict)
+    train = torch.load(opt.data + '.train.pt', pickle_module=dill)
+    fields = torch.load(opt.data + '.fields.pt', pickle_module=dill)
+    valid = torch.load(opt.data + '.valid.pt', pickle_module=dill)
+    fields = dict(fields)
+    src_features = [fields["src_feat_"+str(j)]
+                    for j in range(train.nfeatures)]
+
+    checkpoint = None
+    dict_checkpoint = opt.train_from_state_dict
+
     if dict_checkpoint:
         print('Loading dicts from checkpoint at %s' % dict_checkpoint)
         checkpoint = torch.load(dict_checkpoint,
                                 map_location=lambda storage, loc: storage)
-        dataset['dicts'] = checkpoint['dicts']
+        fields = checkpoint['fields']
 
-    trainData = onmt.Dataset(dataset['train']['src'],
-                             dataset['train']['tgt'], opt.batch_size, opt.gpus,
-                             data_type=dataset.get("type", "text"),
-                             srcFeatures=dataset['train'].get('src_features'),
-                             tgtFeatures=dataset['train'].get('tgt_features'),
-                             alignment=dataset['train'].get('alignments'))
-    validData = onmt.Dataset(dataset['valid']['src'],
-                             dataset['valid']['tgt'], opt.batch_size, opt.gpus,
-                             volatile=True,
-                             data_type=dataset.get("type", "text"),
-                             srcFeatures=dataset['valid'].get('src_features'),
-                             tgtFeatures=dataset['valid'].get('tgt_features'),
-                             alignment=dataset['valid'].get('alignments'))
-
-    dicts = dataset['dicts']
     print(' * vocabulary size. source = %d; target = %d' %
-          (dicts['src'].size(), dicts['tgt'].size()))
-    if 'src_features' in dicts:
-        for j in range(len(dicts['src_features'])):
-            print(' * src feature %d size = %d' %
-                  (j, dicts['src_features'][j].size()))
+          (len(fields['src'].vocab), len(fields['tgt'].vocab)))
+    for j, feat in enumerate(src_features):
+        print(' * src feature %d size = %d' %
+              (j, len(feat.vocab)))
 
-    dicts = dataset['dicts']
     print(' * number of training sentences. %d' %
-          len(dataset['train']['src']))
+          len(train))
     print(' * maximum batch size. %d' % opt.batch_size)
 
     print('Building model...')
-
-    if opt.encoder_type == "text":
-        encoder = onmt.Models.Encoder(opt, dicts['src'],
-                                      dicts.get('src_features', None))
-    elif opt.encoder_type == "img":
-        encoder = onmt.modules.ImageEncoder(opt)
-        assert("type" not in dataset or dataset["type"] == "img")
-    else:
-        print("Unsupported encoder type %s" % (opt.encoder_type))
-
-    decoder = onmt.Models.Decoder(opt, dicts['tgt'])
-
-    if opt.copy_attn:
-        generator = onmt.modules.CopyGenerator(opt, dicts['src'], dicts['tgt'])
-    else:
-        generator = nn.Sequential(
-            nn.Linear(opt.rnn_size, dicts['tgt'].size()),
-            nn.LogSoftmax())
-        if opt.share_decoder_embeddings:
-            generator[0].weight = decoder.embeddings.word_lut.weight
-
-    model = onmt.Models.NMTModel(encoder, decoder, len(opt.gpus) > 1)
-
-    if opt.train_from:
-        print('Loading model from checkpoint at %s' % opt.train_from)
-        chk_model = checkpoint['model']
-        generator_state_dict = chk_model.generator.state_dict()
-        model_state_dict = {k: v for k, v in chk_model.state_dict().items()
-                            if 'generator' not in k}
-        model.load_state_dict(model_state_dict)
-        generator.load_state_dict(generator_state_dict)
-        opt.start_epoch = checkpoint['epoch'] + 1
+    cuda = (len(opt.gpus) >= 1)
+    model = onmt.Models.make_base_model(opt, opt, fields, cuda, checkpoint)
+    print(model)
 
     if opt.train_from_state_dict:
         print('Loading model from checkpoint at %s'
               % opt.train_from_state_dict)
-        model.load_state_dict(checkpoint['model'])
-        generator.load_state_dict(checkpoint['generator'])
         opt.start_epoch = checkpoint['epoch'] + 1
-
-    if len(opt.gpus) >= 1:
-        model.cuda()
-        generator.cuda()
-    else:
-        model.cpu()
-        generator.cpu()
 
     if len(opt.gpus) > 1:
         print('Multi gpu training ', opt.gpus)
         model = nn.DataParallel(model, device_ids=opt.gpus, dim=1)
-        generator = nn.DataParallel(generator, device_ids=opt.gpus, dim=0)
+    #     generator = nn.DataParallel(generator, device_ids=opt.gpus, dim=0)
 
-    model.generator = generator
-
-    if not opt.train_from_state_dict and not opt.train_from:
+    if not opt.train_from_state_dict:
         if opt.param_init != 0.0:
             print('Intializing params')
             for p in model.parameters():
                 p.data.uniform_(-opt.param_init, opt.param_init)
 
-        encoder.embeddings.load_pretrained_vectors(opt.pre_word_vecs_enc)
-        decoder.embeddings.load_pretrained_vectors(opt.pre_word_vecs_dec)
+        model.encoder.embeddings.load_pretrained_vectors(opt.pre_word_vecs_enc)
+        model.decoder.embeddings.load_pretrained_vectors(opt.pre_word_vecs_dec)
 
         optim = onmt.Optim(
             opt.optim, opt.learning_rate, opt.max_grad_norm,
@@ -443,7 +424,7 @@ def main():
 
     optim.set_parameters(model.parameters())
 
-    if opt.train_from or opt.train_from_state_dict:
+    if opt.train_from_state_dict:
         optim.optimizer.load_state_dict(
             checkpoint['optim'].optimizer.state_dict())
 
@@ -463,7 +444,7 @@ def main():
 
     check_model_path()
 
-    trainModel(model, trainData, validData, dataset, optim)
+    trainModel(model, train, valid, fields, optim)
 
 
 if __name__ == "__main__":
