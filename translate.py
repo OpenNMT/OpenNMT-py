@@ -9,7 +9,6 @@ import argparse
 import math
 import codecs
 import os
-from train_opts import add_model_arguments
 
 parser = argparse.ArgumentParser(description='translate.py')
 onmt.Markdown.add_md_help_argument(parser)
@@ -67,14 +66,11 @@ def reportScore(name, scoreTotal, wordsTotal):
 
 def main():
     opt = parser.parse_args()
-    dummy_parser = argparse.ArgumentParser(description='train.py')
-    add_model_arguments(dummy_parser)
-    dummy_opt = dummy_parser.parse_known_args()[0]
 
     opt.cuda = opt.gpu > -1
     if opt.cuda:
         torch.cuda.set_device(opt.gpu)
-    translator = onmt.Translator(opt, dummy_opt.__dict__)
+    translator = onmt.Translator(opt, {})
     outF = codecs.open(opt.output, 'w', 'utf-8')
     predScoreTotal, predWordsTotal, goldScoreTotal, goldWordsTotal = 0, 0, 0, 0
     srcBatch, tgtBatch = [], []
@@ -86,7 +82,7 @@ def main():
     data = onmt.IO.ONMTDataset(opt.src, opt.tgt, translator.fields, None)
 
     testData = onmt.IO.OrderedIterator(
-        dataset=data, device=opt.gpu if opt.gpu else -1,
+        dataset=data, device=opt.gpu,
         batch_size=opt.batch_size, train=False, sort=False,
         shuffle=False)
 
