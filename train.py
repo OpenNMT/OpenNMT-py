@@ -3,7 +3,6 @@ from __future__ import division
 import os
 
 import onmt
-import onmt.Markdown
 import onmt.Models
 import onmt.modules
 import argparse
