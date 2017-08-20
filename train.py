@@ -75,17 +75,18 @@ def eval(model, criterion, data, fields):
     validData = onmt.IO.OrderedIterator(
         dataset=data, device=opt.gpuid[0] if opt.gpuid else -1,
         batch_size=opt.batch_size, train=False, sort=True)
-    pad_id = fields['tgt'].vocab.stoi[onmt.IO.PAD_WORD]
+
     stats = onmt.Loss.Statistics()
     model.eval()
-    loss = onmt.Loss.MemoryEfficientLoss(opt, model.generator, criterion,
-                                         pad_id,
-                                         eval=True, copy_loss=opt.copy_attn)
+    loss = onmt.Loss.LossCompute(model.generator, criterion,
+                                 fields["tgt"].vocab, data, 0, opt)
     for batch in validData:
         _, src_lengths = batch.src
         src = make_features(batch, fields)
         outputs, attn, _ = model(src, batch.tgt, src_lengths)
-        batch_stats, _, _ = loss.loss(batch, outputs, attn)
+        gen_state = loss.makeLossBatch(outputs, batch, attn,
+                                       (0, batch.tgt.size(0)))
+        _, batch_stats = loss.computeLoss(batch=batch, **gen_state)
         stats.update(batch_stats)
     model.train()
     return stats
@@ -95,12 +96,14 @@ def trainModel(model, trainData, validData, fields, optim):
     model.train()
 
     pad_id = fields['tgt'].vocab.stoi[onmt.IO.PAD_WORD]
+
     # Define criterion of each GPU.
     if not opt.copy_attn:
         criterion = onmt.Loss.NMTCriterion(len(fields['tgt'].vocab), opt,
                                            pad_id)
     else:
         criterion = onmt.modules.CopyCriterion
+    splitter = onmt.Loss.Splitter(opt.max_generator_batches)
 
     train = onmt.IO.OrderedIterator(
         dataset=trainData, batch_size=opt.batch_size,
@@ -108,10 +111,9 @@ def trainModel(model, trainData, validData, fields, optim):
         repeat=False)
 
     def trainEpoch(epoch):
-
-        mem_loss = onmt.Loss.MemoryEfficientLoss(opt, model.generator,
-                                                 criterion, pad_id,
-                                                 copy_loss=opt.copy_attn)
+        closs = onmt.Loss.LossCompute(model.generator, criterion,
+                                      fields["tgt"].vocab, trainData,
+                                      epoch, opt)
 
         total_stats = onmt.Loss.Statistics()
         report_stats = onmt.Loss.Statistics()
@@ -125,7 +127,6 @@ def trainModel(model, trainData, validData, fields, optim):
             report_stats.n_src_words += src_lengths.sum()
 
             # Truncated BPTT
-
             trunc_size = opt.truncated_decoder if opt.truncated_decoder \
                 else target_size
 
@@ -141,19 +142,27 @@ def trainModel(model, trainData, validData, fields, optim):
                 outputs, attn, dec_state = \
                     model(src, tgt, src_lengths, dec_state)
 
-                batch_stats, inputs, grads \
-                    = mem_loss.loss(batch, outputs, attn)
+                # (2) F-prop/B-prob generator in shards for memory
+                # efficiency.
+                batch_stats = onmt.Loss.Statistics()
+                gen_state = closs.makeLossBatch(outputs, batch, attn,
+                                                tgt_r)
+                for shard in splitter.splitIter(gen_state):
 
-                torch.autograd.backward(inputs, grads)
+                    # Compute loss and backprop shard.
+                    loss, stats = closs.computeLoss(batch=batch,
+                                                    **shard)
+                    loss.div(batch.batch_size).backward()
+                    batch_stats.update(stats)
 
-                # Update the parameters.
+                # (3) Update the parameters and statistics.
                 optim.step()
                 total_stats.update(batch_stats)
                 report_stats.update(batch_stats)
+
+                # If truncated, don't backprop fully.
                 if dec_state is not None:
                     dec_state.detach()
-
-            report_stats.n_src_words += src_lengths.sum()
 
             if i % opt.report_every == -1 % opt.report_every:
                 report_stats.output(epoch, i+1, len(train),
