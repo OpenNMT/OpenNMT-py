@@ -26,9 +26,9 @@ parser.add_argument('-save_model', default='model',
 parser.add_argument('-train_from_state_dict', default='', type=str,
                     help="""If training from a checkpoint then this is the
                     path to the pretrained model's state_dict.""")
-parser.add_argument('-train_from', default='', type=str,
-                    help="""If training from a checkpoint then this is the
-                    path to the pretrained model.""")
+# parser.add_argument('-train_from', default='', type=str,
+#                     help="""If training from a checkpoint then this is the
+#                     path to the pretrained model.""")
 
 # Model options
 
@@ -392,38 +392,24 @@ def main():
     model = onmt.Models.make_base_model(opt, opt, fields, cuda, checkpoint)
     print(model)
 
-    # if opt.train_from:
-    #     print('Loading model from checkpoint at %s' % opt.train_from)
-    #     chk_model = checkpoint['model']
-    #     generator_state_dict = chk_model.generator.state_dict()
-    #     model_state_dict = {k: v for k, v in chk_model.state_dict().items()
-    #                         if 'generator' not in k}
-    #     model.load_state_dict(model_state_dict)
-    #     generator.load_state_dict(generator_state_dict)
-    #     opt.start_epoch = checkpoint['epoch'] + 1
-
-    # if opt.train_from_state_dict:
-    #     print('Loading model from checkpoint at %s'
-    #           % opt.train_from_state_dict)
-    #     model.load_state_dict(checkpoint['model'])
-    #     generator.load_state_dict(checkpoint['generator'])
-    #     opt.start_epoch = checkpoint['epoch'] + 1
+    if opt.train_from_state_dict:
+        print('Loading model from checkpoint at %s'
+              % opt.train_from_state_dict)
+        opt.start_epoch = checkpoint['epoch'] + 1
 
     if len(opt.gpus) > 1:
         print('Multi gpu training ', opt.gpus)
         model = nn.DataParallel(model, device_ids=opt.gpus, dim=1)
     #     generator = nn.DataParallel(generator, device_ids=opt.gpus, dim=0)
 
-    # model.generator = generator
-
-    if not opt.train_from_state_dict and not opt.train_from:
+    if not opt.train_from_state_dict:
         if opt.param_init != 0.0:
             print('Intializing params')
             for p in model.parameters():
                 p.data.uniform_(-opt.param_init, opt.param_init)
 
-        # encoder.embeddings.load_pretrained_vectors(opt.pre_word_vecs_enc)
-        # decoder.embeddings.load_pretrained_vectors(opt.pre_word_vecs_dec)
+        model.encoder.embeddings.load_pretrained_vectors(opt.pre_word_vecs_enc)
+        model.decoder.embeddings.load_pretrained_vectors(opt.pre_word_vecs_dec)
 
         optim = onmt.Optim(
             opt.optim, opt.learning_rate, opt.max_grad_norm,
@@ -438,7 +424,7 @@ def main():
 
     optim.set_parameters(model.parameters())
 
-    if opt.train_from or opt.train_from_state_dict:
+    if opt.train_from_state_dict:
         optim.optimizer.load_state_dict(
             checkpoint['optim'].optimizer.state_dict())
 
