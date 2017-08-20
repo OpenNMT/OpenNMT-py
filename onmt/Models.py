@@ -46,10 +46,11 @@ class Embeddings(nn.Module):
                                         opt.word_vec_size),
                                         nn.ReLU())
 
-        self.emb_luts = nn.ModuleList([
-                                nn.Embedding(vocab, dim,
-                                             padding_idx=dicts.stoi[onmt.IO.PAD_WORD])
-                                for vocab, dim in zip(vocab_sizes, emb_sizes)])
+        self.emb_luts = \
+            nn.ModuleList([
+                nn.Embedding(vocab, dim,
+                             padding_idx=dicts.stoi[onmt.IO.PAD_WORD])
+                for vocab, dim in zip(vocab_sizes, emb_sizes)])
 
     @property
     def word_lut(self):
@@ -532,6 +533,7 @@ class TransformerDecoderState(DecoderState):
 
     def repeatBeam_(self, beamSize):
         pass
+
 
 def make_base_model(opt, model_opt, fields, cuda, checkpoint=None):
     # HACK: collect source feature vocabs.

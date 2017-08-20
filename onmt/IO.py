@@ -167,12 +167,12 @@ class ONMTDataset(torchtext.data.Dataset):
         super(ONMTDataset, self).__init__(examples, fields,
                                           filter_pred if opt is not None
                                           else None)
+
     def __getstate__(self):
         return self.__dict__
 
     def __setstate__(self, d):
         self.__dict__.update(d)
-
 
     def __reduce_ex__(self, proto):
         "This is a hack. Something is broken with torch pickle."

@@ -212,7 +212,7 @@ def make_features(batch, fields):
     return torch.cat(cat, 2)
 
 
-def eval(model, criterion, data):
+def eval(model, criterion, data, fields):
     validData = onmt.IO.OrderedIterator(
         dataset=data, device=opt.gpus[0] if opt.gpus else -1,
         batch_size=opt.batch_size, train=False, sort=True)
@@ -252,9 +252,6 @@ def trainModel(model, trainData, validData, fields, optim):
         mem_loss = onmt.Loss.MemoryEfficientLoss(opt, model.generator,
                                                  criterion,
                                                  copy_loss=opt.copy_attn)
-
-        # Shuffle mini batch order.
-        batchOrder = torch.randperm(len(trainData))
 
         total_stats = onmt.Loss.Statistics()
         report_stats = onmt.Loss.Statistics()
@@ -316,7 +313,7 @@ def trainModel(model, trainData, validData, fields, optim):
         print('Train accuracy: %g' % train_stats.accuracy())
 
         #  (2) evaluate on the validation set
-        valid_stats = eval(model, criterion, validData)
+        valid_stats = eval(model, criterion, validData, fields)
         print('Validation perplexity: %g' % valid_stats.ppl())
         print('Validation accuracy: %g' % valid_stats.accuracy())
 
@@ -340,7 +337,7 @@ def trainModel(model, trainData, validData, fields, optim):
             checkpoint = {
                 'model': model_state_dict,
                 'generator': generator_state_dict,
-                'dicts': dataset['dicts'],
+                'fields': fields,
                 'opt': opt,
                 'epoch': epoch,
                 'optim': optim
@@ -392,29 +389,6 @@ def main():
     model = onmt.Models.make_base_model(opt, opt, fields, cuda, checkpoint)
     print(model)
 
-
-    # if opt.encoder_type == "text":
-    #     encoder = onmt.Models.Encoder(opt, dicts['src'],
-    #                                   dicts.get('src_features', None))
-    # elif opt.encoder_type == "img":
-    #     encoder = onmt.modules.ImageEncoder(opt)
-    #     assert("type" not in dataset or dataset["type"] == "img")
-    # else:
-    #     print("Unsupported encoder type %s" % (opt.encoder_type))
-
-    # decoder = onmt.Models.Decoder(opt, dicts['tgt'])
-
-    # if opt.copy_attn:
-    #     generator = onmt.modules.CopyGenerator(opt, dicts['src'], dicts['tgt'])
-    # else:
-    #     generator = nn.Sequential(
-    #         nn.Linear(opt.rnn_size, dicts['tgt'].size()),
-    #         nn.LogSoftmax())
-    #     if opt.share_decoder_embeddings:
-    #         generator[0].weight = decoder.embeddings.word_lut.weight
-
-    # model = onmt.Models.NMTModel(encoder, decoder, len(opt.gpus) > 1)
-
     # if opt.train_from:
     #     print('Loading model from checkpoint at %s' % opt.train_from)
     #     chk_model = checkpoint['model']
@@ -431,13 +405,6 @@ def main():
     #     model.load_state_dict(checkpoint['model'])
     #     generator.load_state_dict(checkpoint['generator'])
     #     opt.start_epoch = checkpoint['epoch'] + 1
-
-    # if len(opt.gpus) >= 1:
-    #     model.cuda()
-    #     generator.cuda()
-    # else:
-    #     model.cpu()
-    #     generator.cpu()
 
     if len(opt.gpus) > 1:
         print('Multi gpu training ', opt.gpus)
