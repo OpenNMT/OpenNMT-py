@@ -15,15 +15,25 @@ import opts
 
 parser = argparse.ArgumentParser(description='train.py')
 
+# Data and loading options
+parser.add_argument('-data', required=True,
+                    help='Path to the *-train.pt file from preprocess.py')
+
 # opts.py
 opts.add_md_help_argument(parser)
 opts.model_opts(parser)
 opts.train_opts(parser)
-opt.brnn = (opt.encoder_type == "brnn")
 
 opt = parser.parse_args()
-print(opt)
+if opt.word_vec_size != -1:
+    opt.src_word_vec_size = opt.word_vec_size
+    opt.tgt_word_vec_size = opt.word_vec_size
 
+if opt.layers != -1:
+    opt.enc_layers = opt.layers
+    opt.dec_layers = opt.layers
+
+opt.brnn = (opt.encoder_type == "brnn")
 if opt.seed > 0:
     torch.manual_seed(opt.seed)
 

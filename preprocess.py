@@ -1,4 +1,4 @@
-o# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 import onmt
 import onmt.Markdown

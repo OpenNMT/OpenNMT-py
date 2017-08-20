@@ -45,7 +45,6 @@ class Embeddings(nn.Module):
                                         sum(emb_sizes),
                                         vec_size),
                                         nn.ReLU())
-
         self.emb_luts = \
             nn.ModuleList([
                 nn.Embedding(vocab, dim,
@@ -265,9 +264,10 @@ class Decoder(nn.Module):
         self.dropout = nn.Dropout(opt.dropout)
 
         # Std attention layer.
-        self.attn = onmt.modules.GlobalAttention(opt.rnn_size,
-                                                 coverage=self._coverage,
-                                                 attn_type=opt.global_attention)
+        self.attn = onmt.modules.GlobalAttention(
+            opt.rnn_size,
+            coverage=self._coverage,
+            attn_type=opt.global_attention)
 
         # Separate Copy Attention.
         self._copy = False

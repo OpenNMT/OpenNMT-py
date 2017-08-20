@@ -46,16 +46,16 @@ class TestModel(unittest.TestCase):
             bsize: Batchsize of generated input
         '''
         vocab = self.get_vocab()
-        emb = onmt.Models.Embeddings(opt, vocab)
+        emb = onmt.Models.Embeddings(opt.src_word_vec_size, opt, vocab)
         test_src, _, __ = self.get_batch(sourceL=sourceL,
                                          bsize=bsize)
         if opt.decoder_type == 'transformer':
             input = torch.cat([test_src, test_src], 0)
             res = emb(input)
-            compare_to = torch.zeros(sourceL*2, bsize, opt.word_vec_size)
+            compare_to = torch.zeros(sourceL*2, bsize, opt.src_word_vec_size)
         else:
             res = emb(test_src)
-            compare_to = torch.zeros(sourceL, bsize, opt.word_vec_size)
+            compare_to = torch.zeros(sourceL, bsize, opt.src_word_vec_size)
 
         self.assertEqual(res.size(), compare_to.size())
 
@@ -77,7 +77,7 @@ class TestModel(unittest.TestCase):
         hidden_t, outputs = enc(test_src, test_length)
 
         # Initialize vectors to compare size with
-        test_hid = torch.zeros(self.opt.layers, bsize, opt.rnn_size)
+        test_hid = torch.zeros(self.opt.enc_layers, bsize, opt.rnn_size)
         test_out = torch.zeros(sourceL, bsize, opt.rnn_size)
 
         # Ensure correct sizes and types
@@ -166,14 +166,16 @@ tests_ntmodel = [[('rnn_type', 'GRU')],
                  [('input_feed', 0)],
                  [('decoder_type', 'transformer'),
                   ('encoder_type', 'transformer'),
-                  ('word_vec_size', 16),
+                  ('src_word_vec_size', 16),
+                  ('tgt_word_vec_size', 16),
                   ('rnn_size', 16)],
                  # [('encoder_type', 'transformer'),
                  #  ('word_vec_size', 16),
                  #  ('rnn_size', 16)],
                  [('decoder_type', 'transformer'),
                   ('encoder_type', 'transformer'),
-                  ('word_vec_size', 16),
+                  ('src_word_vec_size', 16),
+                  ('tgt_word_vec_size', 16),
                   ('rnn_size', 16),
                   ('position_encoding', True)],
                  [('coverage_attn', True)],
