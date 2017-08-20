@@ -2,7 +2,6 @@ from __future__ import division
 from builtins import bytes
 
 import onmt
-import onmt.Markdown
 import onmt.IO
 import torch
 import argparse
