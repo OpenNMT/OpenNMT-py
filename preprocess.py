@@ -50,8 +50,8 @@ parser.add_argument('-tgt_seq_length', type=int, default=50,
 parser.add_argument('-tgt_seq_length_trunc', type=int, default=0,
                     help="Truncate target sequence length.")
 
-parser.add_argument('src_words_min_frequency', type=int, default=0)
-parser.add_argument('tgt_words_min_frequency', type=int, default=0)
+parser.add_argument('-src_words_min_frequency', type=int, default=0)
+parser.add_argument('-tgt_words_min_frequency', type=int, default=0)
 
 parser.add_argument('-shuffle',    type=int, default=1,
                     help="Shuffle data")
