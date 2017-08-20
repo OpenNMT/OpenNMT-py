@@ -5,9 +5,11 @@ import onmt.IO
 import argparse
 import torch
 import dill
+import opts
 
 parser = argparse.ArgumentParser(description='preprocess.py')
-onmt.Markdown.add_md_help_argument(parser)
+opts.add_md_help_argument(parser)
+
 
 # **Preprocess Options**
 parser.add_argument('-config',    help="Read options from this file")
