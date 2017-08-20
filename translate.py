@@ -108,10 +108,6 @@ def main():
             outF.flush()
 
             if opt.verbose:
-                # print(srcBatch[b])
-                # srcSent = ' '.join(srcBatch[b])
-                # if translator.tgt_dict.lower:
-                #     srcSent = srcSent.lower()
                 words = []
                 for f in src[:, b]:
                     word = translator.fields["src"].vocab.itos[f]
@@ -121,9 +117,6 @@ def main():
 
                 os.write(1, bytes('SENT %d: %s\n' %
                                   (count, " ".join(words)), 'UTF-8'))
-                # ex = data.examples[index]
-                # print(index, list(zip(ex.src, ex.src_feat_0, ex.src_feat_1,
-                #                       ex.src_feat_2)))
 
                 index += 1
                 print(len(predBatch[b][0]))
