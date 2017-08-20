@@ -301,7 +301,6 @@ def trainModel(model, trainData, validData, fields, optim):
                 if opt.log_server:
                     report_stats.log("progress", experiment, optim)
                 report_stats = onmt.Loss.Statistics()
-
         return total_stats
 
     for epoch in range(opt.start_epoch, opt.epochs + 1):
@@ -345,7 +344,8 @@ def trainModel(model, trainData, validData, fields, optim):
             torch.save(checkpoint,
                        '%s_acc_%.2f_ppl_%.2f_e%d.pt'
                        % (opt.save_model, valid_stats.accuracy(),
-                          valid_stats.ppl(), epoch))
+                          valid_stats.ppl(), epoch),
+                       pickle_module=dill)
 
 
 def check_model_path():
