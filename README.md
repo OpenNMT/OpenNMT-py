@@ -67,7 +67,7 @@ Internally the system never touches the words themselves, but uses these indices
 ## Step 2: Train the model
 
 ```bash
-python train.py -data data/demo.train.pt -save_model demo-model
+python train.py -data data/demo -save_model demo-model
 ```
 
 The main train command is quite simple. Minimally it takes a data file
