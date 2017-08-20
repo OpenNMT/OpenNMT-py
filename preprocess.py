@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import onmt
-import onmt.Markdown
 import onmt.IO
 import argparse
 import torch
