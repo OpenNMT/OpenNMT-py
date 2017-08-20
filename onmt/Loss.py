@@ -128,6 +128,7 @@ class Splitter:
         torch.autograd.backward(inputs, grads)
         return
 
+
 class LossCompute:
     def __init__(self, generator, crit, tgt_vocab, dataset, epoch, opt):
         self.generator = generator

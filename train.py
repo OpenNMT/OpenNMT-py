@@ -75,7 +75,7 @@ def eval(model, criterion, data, fields):
     validData = onmt.IO.OrderedIterator(
         dataset=data, device=opt.gpuid[0] if opt.gpuid else -1,
         batch_size=opt.batch_size, train=False, sort=True)
-    pad_id = fields['tgt'].vocab.stoi[onmt.IO.PAD_WORD]
+
     stats = onmt.Loss.Statistics()
     model.eval()
     loss = onmt.Loss.LossCompute(model.generator, criterion,
@@ -112,7 +112,8 @@ def trainModel(model, trainData, validData, fields, optim):
 
     def trainEpoch(epoch):
         closs = onmt.Loss.LossCompute(model.generator, criterion,
-                                     fields["tgt"].vocab, trainData, epoch, opt)
+                                      fields["tgt"].vocab, trainData,
+                                      epoch, opt)
 
         total_stats = onmt.Loss.Statistics()
         report_stats = onmt.Loss.Statistics()
@@ -145,7 +146,7 @@ def trainModel(model, trainData, validData, fields, optim):
                 # efficiency.
                 batch_stats = onmt.Loss.Statistics()
                 gen_state = closs.makeLossBatch(outputs, batch, attn,
-                                                       tgt_r)
+                                                tgt_r)
                 for shard in splitter.splitIter(gen_state):
 
                     # Compute loss and backprop shard.
