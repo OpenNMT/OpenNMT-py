@@ -1,21 +1,24 @@
-# Class for managing the internals of the beam search process.
-#
-#
-#         hyp1#-hyp1---hyp1 -hyp1
-#                 \             /
-#         hyp2 \-hyp2 /-hyp2#hyp2
-#                               /      \
-#         hyp3#-hyp3---hyp3 -hyp3
-#         ========================
-#
-# Takes care of beams, back pointers, and scores.
-
+from __future__ import division
 import torch
 import onmt
 
+"""
+ Class for managing the internals of the beam search process.
+
+
+         hyp1-hyp1---hyp1 -hyp1
+                 \             /
+         hyp2 \-hyp2 /-hyp2hyp2
+                               /      \
+         hyp3-hyp3---hyp3 -hyp3
+         ========================
+
+ Takes care of beams, back pointers, and scores.
+"""
+
 
 class Beam(object):
-    def __init__(self, size, cuda=False):
+    def __init__(self, size, cuda=False, vocab=None):
 
         self.size = size
         self.done = False
@@ -24,36 +27,40 @@ class Beam(object):
 
         # The score for each translation on the beam.
         self.scores = self.tt.FloatTensor(size).zero_()
+        self.allScores = []
 
         # The backpointers at each time-step.
         self.prevKs = []
 
         # The outputs at each time-step.
-        self.nextYs = [self.tt.LongTensor(size).fill_(onmt.Constants.PAD)]
-        self.nextYs[0][0] = onmt.Constants.BOS
+        self.nextYs = [self.tt.LongTensor(size)
+                       .fill_(vocab.stoi[onmt.IO.PAD_WORD])]
+        self.nextYs[0][0] = vocab.stoi[onmt.IO.BOS_WORD]
+        self.vocab = vocab
 
         # The attentions (matrix) for each time.
         self.attn = []
 
-    # Get the outputs for the current timestep.
     def getCurrentState(self):
+        "Get the outputs for the current timestep."
         return self.nextYs[-1]
 
-    # Get the backpointers for the current timestep.
     def getCurrentOrigin(self):
+        "Get the backpointers for the current timestep."
         return self.prevKs[-1]
 
-    #  Given prob over words for every last beam `wordLk` and attention
-    #   `attnOut`: Compute and update the beam search.
-    #
-    # Parameters:
-    #
-    #     * `wordLk`- probs of advancing from the last step (K x words)
-    #     * `attnOut`- attention at the last step
-    #
-    # Returns: True if beam search is complete.
     def advance(self, wordLk, attnOut):
+        """
+        Given prob over words for every last beam `wordLk` and attention
+        `attnOut`: Compute and update the beam search.
 
+        Parameters:
+
+        * `wordLk`- probs of advancing from the last step (K x words)
+        * `attnOut`- attention at the last step
+
+        Returns: True if beam search is complete.
+        """
         numWords = wordLk.size(1)
 
         # Sum the previous scores.
@@ -65,6 +72,7 @@ class Beam(object):
         flatBeamLk = beamLk.view(-1)
 
         bestScores, bestScoresId = flatBeamLk.topk(self.size, 0, True, True)
+        self.allScores.append(self.scores)
         self.scores = bestScores
 
         # bestScoresId is flattened beam x word array, so calculate which
@@ -75,32 +83,34 @@ class Beam(object):
         self.attn.append(attnOut.index_select(0, prevK))
 
         # End condition is when top-of-beam is EOS.
-        if self.nextYs[-1][0] == onmt.Constants.EOS:
+        if self.nextYs[-1][0] == self.vocab.stoi[onmt.IO.EOS_WORD]:
             self.done = True
+            self.allScores.append(self.scores)
 
         return self.done
 
     def sortBest(self):
         return torch.sort(self.scores, 0, True)
 
-    # Get the score of the best in the beam.
     def getBest(self):
+        "Get the score of the best in the beam."
         scores, ids = self.sortBest()
         return scores[1], ids[1]
 
-    # Walk back to construct the full hypothesis.
-    #
-    # Parameters.
-    #
-    #     * `k` - the position in the beam to construct.
-    #
-    # Returns.
-    #
-    #     1. The hypothesis
-    #     2. The attention at each time step.
     def getHyp(self, k):
+        """
+        Walk back to construct the full hypothesis.
+
+        Parameters.
+
+             * `k` - the position in the beam to construct.
+
+         Returns.
+
+            1. The hypothesis
+            2. The attention at each time step.
+        """
         hyp, attn = [], []
-        # print(len(self.prevKs), len(self.nextYs), len(self.attn))
         for j in range(len(self.prevKs) - 1, -1, -1):
             hyp.append(self.nextYs[j+1][k])
             attn.append(self.attn[j][k])

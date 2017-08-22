@@ -1,282 +1,315 @@
+from __future__ import division
+
+import os
+
 import onmt
+import onmt.Models
+import onmt.modules
 import argparse
 import torch
 import torch.nn as nn
-from torch.autograd import Variable
-import math
-import time
+from torch import cuda
+import dill
+import opts
 
 parser = argparse.ArgumentParser(description='train.py')
 
-## Data options
-
+# Data and loading options
 parser.add_argument('-data', required=True,
                     help='Path to the *-train.pt file from preprocess.py')
-parser.add_argument('-save_model', default='model',
-                    help="""Model filename (the model will be saved as
-                    <save_model>_epochN_PPL.pt where PPL is the
-                    validation perplexity""")
-parser.add_argument('-train_from',
-                    help="""If training from a checkpoint then this is the
-                    path to the pretrained model.""")
 
-## Model options
-
-parser.add_argument('-layers', type=int, default=2,
-                    help='Number of layers in the LSTM encoder/decoder')
-parser.add_argument('-rnn_size', type=int, default=500,
-                    help='Size of LSTM hidden states')
-parser.add_argument('-word_vec_size', type=int, default=500,
-                    help='Word embedding sizes')
-parser.add_argument('-input_feed', type=int, default=1,
-                    help="""Feed the context vector at each time step as
-                    additional input (via concatenation with the word
-                    embeddings) to the decoder.""")
-# parser.add_argument('-residual',   action="store_true",
-#                     help="Add residual connections between RNN layers.")
-parser.add_argument('-brnn', action='store_true',
-                    help='Use a bidirectional encoder')
-parser.add_argument('-brnn_merge', default='concat',
-                    help="""Merge action for the bidirectional hidden states:
-                    [concat|sum]""")
-
-## Optimization options
-
-parser.add_argument('-batch_size', type=int, default=64,
-                    help='Maximum batch size')
-parser.add_argument('-max_generator_batches', type=int, default=32,
-                    help="""Maximum batches of words in a sequence to run
-                    the generator on in parallel. Higher is faster, but uses
-                    more memory.""")
-parser.add_argument('-epochs', type=int, default=13,
-                    help='Number of training epochs')
-parser.add_argument('-start_epoch', type=int, default=1,
-                    help='The epoch from which to start')
-parser.add_argument('-param_init', type=float, default=0.1,
-                    help="""Parameters are initialized over uniform distribution
-                    with support (-param_init, param_init)""")
-parser.add_argument('-optim', default='sgd',
-                    help="Optimization method. [sgd|adagrad|adadelta|adam]")
-parser.add_argument('-learning_rate', type=float, default=1,
-                    help="""Starting learning rate. If adagrad/adadelta/adam is
-                    used, then this is the global learning rate. Recommended
-                    settings: sgd = 1, adagrad = 0.1, adadelta = 1, adam = 0.1""")
-parser.add_argument('-max_grad_norm', type=float, default=5,
-                    help="""If the norm of the gradient vector exceeds this,
-                    renormalize it to have the norm equal to max_grad_norm""")
-parser.add_argument('-dropout', type=float, default=0.3,
-                    help='Dropout probability; applied between LSTM stacks.')
-parser.add_argument('-learning_rate_decay', type=float, default=0.5,
-                    help="""Decay learning rate by this much if (i) perplexity
-                    does not decrease on the validation set or (ii) epoch has
-                    gone past the start_decay_at_limit""")
-parser.add_argument('-start_decay_at', default=8,
-                    help="Start decay after this epoch")
-parser.add_argument('-curriculum', action="store_true",
-                    help="""For this many epochs, order the minibatches based
-                    on source sequence length. Sometimes setting this to 1 will
-                    increase convergence speed.""")
-parser.add_argument('-pre_word_vecs_enc',
-                    help="""If a valid path is specified, then this will load
-                    pretrained word embeddings on the encoder side.
-                    See README for specific formatting instructions.""")
-parser.add_argument('-pre_word_vecs_dec',
-                    help="""If a valid path is specified, then this will load
-                    pretrained word embeddings on the decoder side.
-                    See README for specific formatting instructions.""")
-
-# GPU
-parser.add_argument('-cuda', action='store_true',
-                    help="Use CUDA")
-
-parser.add_argument('-log_interval', type=int, default=50,
-                    help="Print stats at this interval.")
-# parser.add_argument('-seed', type=int, default=3435,
-#                     help="Seed for random initialization")
+# opts.py
+opts.add_md_help_argument(parser)
+opts.model_opts(parser)
+opts.train_opts(parser)
 
 opt = parser.parse_args()
-print(opt)
+if opt.word_vec_size != -1:
+    opt.src_word_vec_size = opt.word_vec_size
+    opt.tgt_word_vec_size = opt.word_vec_size
 
-if torch.cuda.is_available() and not opt.cuda:
-    print("WARNING: You have a CUDA device, so you should probably run with -cuda")
+if opt.layers != -1:
+    opt.enc_layers = opt.layers
+    opt.dec_layers = opt.layers
 
+opt.brnn = (opt.encoder_type == "brnn")
+if opt.seed > 0:
+    torch.manual_seed(opt.seed)
 
-def NMTCriterion(vocabSize):
-    weight = torch.ones(vocabSize)
-    weight[onmt.Constants.PAD] = 0
-    crit = nn.NLLLoss(weight, size_average=False)
-    if opt.cuda:
-        crit.cuda()
-    return crit
+if torch.cuda.is_available() and not opt.gpuid:
+    print("WARNING: You have a CUDA device, should run with -gpuid 0")
 
-
-def memoryEfficientLoss(outputs, targets, generator, crit, eval=False):
-    # compute generations one piece at a time
-    loss = 0
-    outputs = Variable(outputs.data, requires_grad=(not eval), volatile=eval)
-
-    batch_size = outputs.size(1)
-    outputs_split = torch.split(outputs, opt.max_generator_batches)
-    targets_split = torch.split(targets, opt.max_generator_batches)
-    for out_t, targ_t in zip(outputs_split, targets_split):
-        out_t = out_t.view(-1, out_t.size(2))
-        pred_t = generator(out_t)
-        loss_t = crit(pred_t, targ_t.view(-1))
-        loss += loss_t.data[0]
-        if not eval:
-            loss_t.div(batch_size).backward()
-
-    grad_output = None if outputs.grad is None else outputs.grad.data
-    return loss, grad_output
+if opt.gpuid:
+    cuda.set_device(opt.gpuid[0])
+    if opt.seed > 0:
+        torch.cuda.manual_seed(opt.seed)
 
 
-def eval(model, criterion, data):
-    total_loss = 0
-    total_words = 0
+# Set up the Crayon logging server.
+if opt.exp_host != "":
+    from pycrayon import CrayonClient
+    cc = CrayonClient(hostname=opt.exp_host)
 
+    experiments = cc.get_experiment_names()
+    print(experiments)
+    if opt.exp in experiments:
+        cc.remove_experiment(opt.exp)
+    experiment = cc.create_experiment(opt.exp)
+
+
+def make_features(batch, fields):
+    # TODO: This is bit hacky remove.
+    feats = []
+    for j in range(100):
+        key = "src_feat_" + str(j)
+        if key not in fields:
+            break
+        feats.append(batch.__dict__[key])
+    cat = [batch.src[0]] + feats
+    cat = [c.unsqueeze(2) for c in cat]
+    return torch.cat(cat, 2)
+
+
+def eval(model, criterion, data, fields):
+    validData = onmt.IO.OrderedIterator(
+        dataset=data, device=opt.gpuid[0] if opt.gpuid else -1,
+        batch_size=opt.batch_size, train=False, sort=True)
+
+    stats = onmt.Loss.Statistics()
     model.eval()
-    for i in range(len(data)):
-        batch = data[i]
-        outputs = model(batch)  # FIXME volatile
-        targets = batch[1][1:]  # exclude <s> from targets
-        loss, _ = memoryEfficientLoss(
-                outputs, targets, model.generator, criterion, eval=True)
-        total_loss += loss
-        total_words += targets.data.ne(onmt.Constants.PAD).sum()
-
+    loss = onmt.Loss.LossCompute(model.generator, criterion,
+                                 fields["tgt"].vocab, data, 0, opt)
+    for batch in validData:
+        _, src_lengths = batch.src
+        src = make_features(batch, fields)
+        outputs, attn, _ = model(src, batch.tgt, src_lengths)
+        gen_state = loss.makeLossBatch(outputs, batch, attn,
+                                       (0, batch.tgt.size(0)))
+        _, batch_stats = loss.computeLoss(batch=batch, **gen_state)
+        stats.update(batch_stats)
     model.train()
-    return total_loss / total_words
+    return stats
 
 
-def trainModel(model, trainData, validData, dataset, optim):
-    print(model)
+def trainModel(model, trainData, validData, fields, optim):
     model.train()
 
-    # define criterion of each GPU
-    criterion = NMTCriterion(dataset['dicts']['tgt'].size())
+    pad_id = fields['tgt'].vocab.stoi[onmt.IO.PAD_WORD]
+
+    # Define criterion of each GPU.
+    if not opt.copy_attn:
+        criterion = onmt.Loss.NMTCriterion(len(fields['tgt'].vocab), opt,
+                                           pad_id)
+    else:
+        criterion = onmt.modules.CopyCriterion
+    splitter = onmt.Loss.Splitter(opt.max_generator_batches)
+
+    train = onmt.IO.OrderedIterator(
+        dataset=trainData, batch_size=opt.batch_size,
+        device=opt.gpuid[0] if opt.gpuid else -1,
+        repeat=False)
 
     def trainEpoch(epoch):
+        closs = onmt.Loss.LossCompute(model.generator, criterion,
+                                      fields["tgt"].vocab, trainData,
+                                      epoch, opt)
 
-        # shuffle mini batch order
-        batchOrder = torch.randperm(len(trainData))
+        total_stats = onmt.Loss.Statistics()
+        report_stats = onmt.Loss.Statistics()
 
-        total_loss, report_loss = 0, 0
-        total_words, report_words = 0, 0
-        report_src_words = 0
-        start = time.time()
-        for i in range(len(trainData)):
+        for i, batch in enumerate(train):
+            target_size = batch.tgt.size(0)
 
-            batchIdx = batchOrder[i] if epoch >= opt.curriculum else i
-            batch = trainData[batchIdx]
+            dec_state = None
+            _, src_lengths = batch.src
+            src = make_features(batch, fields)
+            report_stats.n_src_words += src_lengths.sum()
 
-            model.zero_grad()
-            outputs = model(batch)
-            targets = batch[1][1:]  # exclude <s> from targets
-            loss, gradOutput = memoryEfficientLoss(
-                    outputs, targets, model.generator, criterion)
+            # Truncated BPTT
+            trunc_size = opt.truncated_decoder if opt.truncated_decoder \
+                else target_size
 
-            outputs.backward(gradOutput)
+            for j in range(0, target_size-1, trunc_size):
+                # (1) Create truncated target.
+                tgt_r = (j, j + trunc_size)
+                tgt = batch.tgt[tgt_r[0]: tgt_r[1]]
 
-            # update the parameters
-            grad_norm = optim.step()
+                # (2) F-prop all but generator.
 
-            report_loss += loss
-            total_loss += loss
-            report_src_words += batch[0].data.ne(onmt.Constants.PAD).sum()
-            num_words = targets.data.ne(onmt.Constants.PAD).sum()
-            total_words += num_words
-            report_words += num_words
-            if i % opt.log_interval == 0 and i > 0:
-                print("Epoch %2d, %5d/%5d batches; perplexity: %6.2f; %3.0f Source tokens/s" %
-                      (epoch, i, len(trainData),
-                      math.exp(report_loss / report_words),
-                      report_src_words/(time.time()-start)))
+                # Main training loop
+                model.zero_grad()
+                outputs, attn, dec_state = \
+                    model(src, tgt, src_lengths, dec_state)
 
-                report_loss = report_words = report_src_words = 0
-                start = time.time()
+                # (2) F-prop/B-prob generator in shards for memory
+                # efficiency.
+                batch_stats = onmt.Loss.Statistics()
+                gen_state = closs.makeLossBatch(outputs, batch, attn,
+                                                tgt_r)
+                for shard in splitter.splitIter(gen_state):
 
-        return total_loss / total_words
+                    # Compute loss and backprop shard.
+                    loss, stats = closs.computeLoss(batch=batch,
+                                                    **shard)
+                    loss.div(batch.batch_size).backward()
+                    batch_stats.update(stats)
+
+                # (3) Update the parameters and statistics.
+                optim.step()
+                total_stats.update(batch_stats)
+                report_stats.update(batch_stats)
+
+                # If truncated, don't backprop fully.
+                if dec_state is not None:
+                    dec_state.detach()
+
+            if i % opt.report_every == -1 % opt.report_every:
+                report_stats.output(epoch, i+1, len(train),
+                                    total_stats.start_time)
+                if opt.exp_host:
+                    report_stats.log("progress", experiment, optim)
+                report_stats = onmt.Loss.Statistics()
+        return total_stats
 
     for epoch in range(opt.start_epoch, opt.epochs + 1):
         print('')
 
         #  (1) train for one epoch on the training set
-        train_loss = trainEpoch(epoch)
-        print('Train perplexity: %g' % math.exp(min(train_loss, 100)))
+        train_stats = trainEpoch(epoch)
+        print('Train perplexity: %g' % train_stats.ppl())
+        print('Train accuracy: %g' % train_stats.accuracy())
 
         #  (2) evaluate on the validation set
-        valid_loss = eval(model, criterion, validData)
-        valid_ppl = math.exp(min(valid_loss, 100))
-        print('Validation perplexity: %g' % valid_ppl)
+        valid_stats = eval(model, criterion, validData, fields)
+        print('Validation perplexity: %g' % valid_stats.ppl())
+        print('Validation accuracy: %g' % valid_stats.accuracy())
 
-        #  (3) maybe update the learning rate
-        if opt.optim == 'sgd':
-            optim.updateLearningRate(valid_loss, epoch)
+        # Log to remote server.
+        if opt.exp_host:
+            train_stats.log("train", experiment, optim)
+            valid_stats.log("valid", experiment, optim)
 
+        #  (3) update the learning rate
+        optim.updateLearningRate(valid_stats.ppl(), epoch)
+
+        model_state_dict = (model.module.state_dict() if len(opt.gpuid) > 1
+                            else model.state_dict())
+        model_state_dict = {k: v for k, v in model_state_dict.items()
+                            if 'generator' not in k}
+        generator_state_dict = (model.generator.module.state_dict()
+                                if len(opt.gpuid) > 1
+                                else model.generator.state_dict())
         #  (4) drop a checkpoint
-        checkpoint = {
-            'model': model,
-            'dicts': dataset['dicts'],
-            'opt': opt,
-            'epoch': epoch,
-            'optim': optim,
-        }
-        torch.save(checkpoint,
-                   '%s_e%d_%.2f.pt' % (opt.save_model, epoch, valid_ppl))
+        if epoch >= opt.start_checkpoint_at:
+            checkpoint = {
+                'model': model_state_dict,
+                'generator': generator_state_dict,
+                'fields': fields,
+                'opt': opt,
+                'epoch': epoch,
+                'optim': optim
+            }
+            torch.save(checkpoint,
+                       '%s_acc_%.2f_ppl_%.2f_e%d.pt'
+                       % (opt.save_model, valid_stats.accuracy(),
+                          valid_stats.ppl(), epoch),
+                       pickle_module=dill)
+
+
+def check_model_path():
+    save_model_path = os.path.abspath(opt.save_model)
+    model_dirname = os.path.dirname(save_model_path)
+    if not os.path.exists(model_dirname):
+        os.makedirs(model_dirname)
 
 
 def main():
-
     print("Loading data from '%s'" % opt.data)
 
-    dataset = torch.load(opt.data)
+    train = torch.load(opt.data + '.train.pt', pickle_module=dill)
+    fields = torch.load(opt.data + '.fields.pt', pickle_module=dill)
+    valid = torch.load(opt.data + '.valid.pt', pickle_module=dill)
+    fields = dict(fields)
+    src_features = [fields["src_feat_"+str(j)]
+                    for j in range(train.nfeatures)]
 
-    trainData = onmt.Dataset(dataset['train']['src'],
-                             dataset['train']['tgt'], opt.batch_size, opt.cuda)
-    validData = onmt.Dataset(dataset['valid']['src'],
-                             dataset['valid']['tgt'], opt.batch_size, opt.cuda)
+    checkpoint = None
+    dict_checkpoint = opt.train_from
 
-    dicts = dataset['dicts']
+    if dict_checkpoint:
+        print('Loading dicts from checkpoint at %s' % dict_checkpoint)
+        checkpoint = torch.load(dict_checkpoint,
+                                map_location=lambda storage, loc: storage)
+        fields = checkpoint['fields']
+
     print(' * vocabulary size. source = %d; target = %d' %
-          (dicts['src'].size(), dicts['tgt'].size()))
+          (len(fields['src'].vocab), len(fields['tgt'].vocab)))
+    for j, feat in enumerate(src_features):
+        print(' * src feature %d size = %d' %
+              (j, len(feat.vocab)))
+
     print(' * number of training sentences. %d' %
-          len(dataset['train']['src']))
+          len(train))
     print(' * maximum batch size. %d' % opt.batch_size)
 
     print('Building model...')
+    cuda = (len(opt.gpuid) >= 1)
+    model = onmt.Models.make_base_model(opt, opt, fields, cuda, checkpoint)
+    print(model)
 
-    if opt.train_from is None:
-        encoder = onmt.Models.Encoder(opt, dicts['src'])
-        decoder = onmt.Models.Decoder(opt, dicts['tgt'])
-        generator = nn.Sequential(
-            nn.Linear(opt.rnn_size, dicts['tgt'].size()),
-            nn.LogSoftmax())
-        model = onmt.Models.NMTModel(encoder, decoder, generator)
-
-        for p in model.parameters():
-            p.data.uniform_(-opt.param_init, opt.param_init)
-
-        optim = onmt.Optim(
-            model.parameters(), opt.optim, opt.learning_rate, opt.max_grad_norm,
-            lr_decay=opt.learning_rate_decay,
-            start_decay_at=opt.start_decay_at
-        )
-    else:
-        print('Loading from checkpoint at %s' % opt.train_from)
-        checkpoint = torch.load(opt.train_from)
-        model = checkpoint['model']
-        optim = checkpoint['optim']
+    if opt.train_from:
+        print('Loading model from checkpoint at %s'
+              % opt.train_from)
         opt.start_epoch = checkpoint['epoch'] + 1
 
-    if opt.cuda:
-        model.cuda()
+    if len(opt.gpuid) > 1:
+        print('Multi gpu training ', opt.gpuid)
+        model = nn.DataParallel(model, device_ids=opt.gpuid, dim=1)
+    #     generator = nn.DataParallel(generator, device_ids=opt.gpuid, dim=0)
+
+    if not opt.train_from:
+        if opt.param_init != 0.0:
+            print('Intializing params')
+            for p in model.parameters():
+                p.data.uniform_(-opt.param_init, opt.param_init)
+
+        model.encoder.embeddings.load_pretrained_vectors(opt.pre_word_vecs_enc)
+        model.decoder.embeddings.load_pretrained_vectors(opt.pre_word_vecs_dec)
+
+        optim = onmt.Optim(
+            opt.optim, opt.learning_rate, opt.max_grad_norm,
+            lr_decay=opt.learning_rate_decay,
+            start_decay_at=opt.start_decay_at,
+            opt=opt
+        )
     else:
-        model.cpu()
+        print('Loading optimizer from checkpoint:')
+        optim = checkpoint['optim']
+        print(optim)
+
+    optim.set_parameters(model.parameters())
+
+    if opt.train_from:
+        optim.optimizer.load_state_dict(
+            checkpoint['optim'].optimizer.state_dict())
 
     nParams = sum([p.nelement() for p in model.parameters()])
     print('* number of parameters: %d' % nParams)
+    enc = 0
+    dec = 0
+    for name, param in model.named_parameters():
+        if 'encoder' in name:
+            enc += param.nelement()
+        elif 'decoder' in name:
+            dec += param.nelement()
+        else:
+            print(name, param.nelement())
+    print('encoder: ', enc)
+    print('decoder: ', dec)
 
-    trainModel(model, trainData, validData, dataset, optim)
+    check_model_path()
+
+    trainModel(model, train, valid, fields, optim)
 
 
 if __name__ == "__main__":
