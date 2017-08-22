@@ -49,6 +49,9 @@ parser.add_argument('-dump_beam', type=str, default="",
 parser.add_argument('-n_best', type=int, default=1,
                     help="""If verbose is set, will output the n_best
                     decoded sentences""")
+# Most relevant to copy model that can generate OOV tokens
+parser.add_argument('-decorate_oov', action='store_true',
+                    help='Decorate OOV tokens in verbose printout.')
 
 parser.add_argument('-gpu', type=int, default=-1,
                     help="Device to run on")
@@ -64,6 +67,13 @@ def reportScore(name, scoreTotal, wordsTotal):
         name, scoreTotal / wordsTotal,
         name, math.exp(-scoreTotal/wordsTotal)))
 
+
+def decorate_oov(tokens, vocab):
+    for i, token in enumerate(tokens):
+        if vocab.stoi[token] == 0:
+            # token is OOV
+            tokens[i] = '__%s__' % token
+    return tokens
 
 def main():
     opt = parser.parse_args()
@@ -117,11 +127,18 @@ def main():
                 # if translator.tgt_dict.lower:
                 #     srcSent = srcSent.lower()
                 words = []
-                for f in src[:, b]:
-                    word = translator.fields["src"].vocab.itos[f]
-                    if word == onmt.IO.PAD_WORD:
-                        break
-                    words.append(word)
+
+
+                if opt.decorate_oov:
+                    example_index = batch.indices.data[b]
+                    words = decorate_oov(data[example_index].src,
+                                         translator.fields["src"].vocab)
+                else:
+                    for f in src[:, b]:
+                        word = translator.fields["src"].vocab.itos[f]
+                        if word == onmt.IO.PAD_WORD:
+                            break
+                        words.append(word)
 
                 os.write(1, bytes('SENT %d: %s\n' %
                                   (count, " ".join(words)), 'UTF-8'))
@@ -130,10 +147,17 @@ def main():
                 #                       ex.src_feat_2)))
 
                 index += 1
-                print(len(predBatch[b][0]))
-                os.write(1, bytes('\n PRED %d: %s\n' %
-                                  (count, " ".join(predBatch[b][0])), 'UTF-8'))
-                print("PRED SCORE: %.4f" % predScore[b][0])
+
+                if opt.decorate_oov:
+                    tokens = decorate_oov(predBatch[b][0],
+                                          translator.fields['tgt'].vocab)
+                else:
+                    tokens = predBatch[b][0]
+
+                os.write(1, bytes('\nPRED %d (len = %d): %s\n' %
+                                  (count, len(tokens),
+                                   " ".join(tokens)), 'UTF-8'))
+                print("PRED SCORE: %.4f\n" % predScore[b][0])
 
                 if opt.tgt:
                     tgtSent = ' '.join(tgtBatch[b])
