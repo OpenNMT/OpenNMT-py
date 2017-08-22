@@ -11,7 +11,7 @@ import os
 import opts
 
 parser = argparse.ArgumentParser(description='translate.py')
-onmt.Markdown.add_md_help_argument(parser)
+opts.add_md_help_argument(parser)
 
 parser.add_argument('-model', required=True,
                     help='Path to model .pt file')
