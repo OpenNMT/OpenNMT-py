@@ -75,6 +75,7 @@ def decorate_oov(tokens, vocab):
             tokens[i] = '__%s__' % token
     return tokens
 
+
 def main():
     opt = parser.parse_args()
     dummy_parser = argparse.ArgumentParser(description='train.py')
@@ -100,7 +101,7 @@ def main():
         batch_size=opt.batch_size, train=False, sort=False,
         shuffle=False)
 
-    index = 0
+    # index = 0
     for batch in testData:
         predBatch, predScore, goldScore, attn, src \
             = translator.translate(batch, data)
@@ -126,14 +127,13 @@ def main():
                 # srcSent = ' '.join(srcBatch[b])
                 # if translator.tgt_dict.lower:
                 #     srcSent = srcSent.lower()
-                words = []
-
 
                 if opt.decorate_oov:
                     example_index = batch.indices.data[b]
                     words = decorate_oov(data[example_index].src,
                                          translator.fields["src"].vocab)
                 else:
+                    words = []
                     for f in src[:, b]:
                         word = translator.fields["src"].vocab.itos[f]
                         if word == onmt.IO.PAD_WORD:
@@ -146,7 +146,7 @@ def main():
                 # print(index, list(zip(ex.src, ex.src_feat_0, ex.src_feat_1,
                 #                       ex.src_feat_2)))
 
-                index += 1
+                # index += 1
 
                 if opt.decorate_oov:
                     tokens = decorate_oov(predBatch[b][0],
