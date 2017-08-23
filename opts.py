@@ -79,6 +79,8 @@ def model_opts(parser):
     # Genenerator and loss options.
     parser.add_argument('-copy_attn', action="store_true",
                         help='Train copy attention layer.')
+    parser.add_argument('-copy_attn_force', action="store_true",
+                        help='When available, train to copy.')
     parser.add_argument('-coverage_attn', action="store_true",
                         help='Train a coverage attention layer.')
     parser.add_argument('-lambda_coverage', type=float, default=1,
