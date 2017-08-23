@@ -197,15 +197,3 @@ tests_ntmodel = [[('rnn_type', 'GRU')],
 
 for p in tests_ntmodel:
     _add_test(p, 'ntmmodel_forward')
-
-
-def suite():
-    # Initialize Testsuite
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestModel)
-
-    return suite
-
-
-if __name__ == '__main__':
-    # Run Test
-    unittest.TextTestRunner(verbosity=2).run(suite())
