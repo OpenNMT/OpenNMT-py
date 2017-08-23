@@ -102,6 +102,7 @@ def add_optim_arguments(parser):
                         help="""Start checkpointing every epoch after and including this
                         epoch""")
     parser.add_argument('-decay_method', type=str, default="",
-                        help="""Use a custom learning rate decay [|noam] """)
+                        help="""Use a custom learning rate
+                        decay [restart|noam]""")
     parser.add_argument('-warmup_steps', type=int, default=4000,
                         help="""Number of warmup steps for custom decay.""")
