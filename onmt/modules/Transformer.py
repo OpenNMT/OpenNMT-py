@@ -9,14 +9,14 @@ import onmt.modules
 from onmt.modules import aeq
 
 
-def get_attn_padding_mask(seq_q, seq_k):
+def get_attn_padding_mask(seq_q, seq_k, pad):
     ''' Indicate the padding-related part to mask '''
     assert seq_q.dim() == 2 and seq_k.dim() == 2
     mb_size, len_k = seq_k.size()
     mb_size_, len_q = seq_q.size()
     aeq(mb_size, mb_size_)
     # bx1xsk
-    pad_attn_mask = seq_k.data.eq(onmt.Constants.PAD).unsqueeze(1) \
+    pad_attn_mask = seq_k.data.eq(pad).unsqueeze(1) \
         .expand(mb_size, len_q, len_k)
     return pad_attn_mask
 
@@ -46,7 +46,8 @@ class PositionwiseFeedForward(nn.Module):
 
 
 class TransformerEncoder(nn.Module):
-    def __init__(self, hidden_size, opt, n_head=8, d_inner=2048):
+    def __init__(self, hidden_size, opt, pad,
+                 n_head=8, d_inner=2048):
         super(TransformerEncoder, self).__init__()
 
         self.self_attn = onmt.modules.MultiHeadedAttention(
@@ -54,6 +55,7 @@ class TransformerEncoder(nn.Module):
         self.feed_forward = PositionwiseFeedForward(hidden_size,
                                                     d_inner,
                                                     opt.dropout)
+        self.pad = pad
 
     def forward(self, input, words):
         # CHECKS
@@ -63,7 +65,7 @@ class TransformerEncoder(nn.Module):
         aeq(s_len, s_len_)
         # END CHECKS
 
-        mask = get_attn_padding_mask(words, words)
+        mask = get_attn_padding_mask(words, words, self.pad)
         mid, _ = self.self_attn(input, input, input, mask=mask)
         out = self.feed_forward(mid)
         return out
@@ -73,7 +75,8 @@ class TransformerDecoder(nn.Module):
     """
     The Transformer Decoder from AIAYN
     """
-    def __init__(self, hidden_size, opt, n_head=8, d_inner=2048):
+    def __init__(self, hidden_size, opt, pad,
+                 n_head=8, d_inner=2048):
         super(TransformerDecoder, self).__init__()
         self.self_attn = onmt.modules.MultiHeadedAttention(n_head, hidden_size,
                                                            p=opt.dropout)
@@ -85,8 +88,9 @@ class TransformerDecoder(nn.Module):
                                                     opt.dropout)
         self.dropout = opt.dropout
         self.mask = get_attn_subsequent_mask(5000)
-        if len(opt.gpus) > 0:
-            self.mask.cuda()
+        if len(opt.gpuid) > 0:
+            self.mask = self.mask.cuda()
+        self.pad = pad
 
     def forward(self, input, context, src_words, tgt_words):
         # CHECKS
@@ -99,14 +103,23 @@ class TransformerDecoder(nn.Module):
         aeq(t_len, t_len_)
         # END CHECKS
 
-        attn_mask = get_attn_padding_mask(tgt_words, tgt_words)
+        attn_mask = get_attn_padding_mask(tgt_words, tgt_words, self.pad)
         dec_mask = torch.gt(attn_mask + self.mask[:, :attn_mask.size(1),
                                                   :attn_mask.size(1)]
                             .expand_as(attn_mask), 0)
 
-        pad_mask = get_attn_padding_mask(tgt_words, src_words)
+        pad_mask = get_attn_padding_mask(tgt_words, src_words, self.pad)
         query, attn = self.self_attn(input, input, input, mask=dec_mask)
         mid, attn = self.context_attn(context, context, query, mask=pad_mask)
         output = self.feed_forward(mid)
 
+        # CHECKS
+        n_batch_, t_len_, _ = output.size()
+        aeq(t_len, t_len_)
+        aeq(n_batch, n_batch_)
+
+        n_batch_, t_len_, s_len_ = attn.size()
+        aeq(n_batch, n_batch_)
+        aeq(s_len, s_len_)
+        aeq(t_len, t_len_)
         return output, attn
