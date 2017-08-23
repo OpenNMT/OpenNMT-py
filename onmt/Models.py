@@ -571,7 +571,6 @@ def make_base_model(opt, model_opt, fields, cuda, checkpoint=None):
         generator = onmt.modules.CopyGenerator(model_opt, fields["src"].vocab,
                                                fields["tgt"].vocab)
 
-
     if checkpoint is not None:
         print('Loading model')
         model.load_state_dict(checkpoint['model'])
