@@ -6,7 +6,6 @@ import torch
 from train_opts import add_model_arguments, add_optim_arguments
 from torch.autograd import Variable
 
-# This will be redundant with #104 pull. Can simply include the parameter file
 
 parser = argparse.ArgumentParser(description='train.py')
 add_model_arguments(parser)
