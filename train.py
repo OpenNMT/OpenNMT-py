@@ -101,7 +101,9 @@ def trainModel(model, trainData, validData, fields, optim):
         criterion = onmt.Loss.NMTCriterion(len(fields['tgt'].vocab), opt,
                                            pad_id)
     else:
-        criterion = onmt.modules.CopyCriterion
+        criterion = onmt.modules.CopyCriterion(len(fields['tgt'].vocab),
+                                               opt.copy_attn_force, pad_id)
+
     splitter = onmt.Loss.Splitter(opt.max_generator_batches)
 
     train = onmt.IO.OrderedIterator(

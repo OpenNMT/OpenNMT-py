@@ -11,16 +11,14 @@ class CopyGenerator(nn.Module):
     Generator module that additionally considers copying
     words directly from the source.
     """
-
     def __init__(self, opt, src_dict, tgt_dict):
         super(CopyGenerator, self).__init__()
         self.linear = nn.Linear(opt.rnn_size, len(tgt_dict))
         self.linear_copy = nn.Linear(opt.rnn_size, 1)
         self.src_dict = src_dict
         self.tgt_dict = tgt_dict
-        self.sm = nn.Softmax()
 
-    def forward(self, hidden, attn, src_map, verbose=False):
+    def forward(self, hidden, attn, src_map):
         """
         Computes p(w) = p(z=1) p_{copy}(w|z=0)  +  p(z=0) * p_{softmax}(w|z=0)
         """
@@ -33,45 +31,45 @@ class CopyGenerator(nn.Module):
 
         # Original probabilities.
         logits = self.linear(hidden)
+        logits[:, self.tgt_dict.stoi[onmt.IO.PAD_WORD]] = -float('inf')
+        prob = F.softmax(logits)
 
-        if True:
-            logits[:, self.tgt_dict.stoi[onmt.IO.PAD_WORD]] = -float('inf')
+        # Probability of copying p(z=1) batch.
+        copy = F.sigmoid(self.linear_copy(hidden))
 
-            prob = self.sm(logits)
-            # Probability of copying p(z=1) batch
-            copy = F.sigmoid(self.linear_copy(hidden))
+        # Probibility of not copying: p_{word}(w) * (1 - p(z))
+        out_prob = torch.mul(prob,  1 - copy.expand_as(prob))
+        mul_attn = torch.mul(attn, copy.expand_as(attn))
+        copy_prob = torch.bmm(mul_attn.view(-1, batch, slen)
+                              .transpose(0, 1),
+                              src_map.transpose(0, 1)).transpose(0, 1)
+        copy_prob = copy_prob.contiguous().view(-1, cvocab)
+        return torch.cat([out_prob, copy_prob], 1)
 
-            # Probibility of not copying: p_{word}(w) * (1 - p(z))
-            out_prob = torch.mul(prob,  1 - copy.expand_as(prob))
-            mul_attn = torch.mul(attn, copy.expand_as(attn))
-            copy_prob = torch.bmm(mul_attn.view(-1, batch, slen)
-                                  .transpose(0, 1),
-                                  src_map.transpose(0, 1)).transpose(0, 1)
-            copy_prob = copy_prob.contiguous().view(-1, cvocab)
-            dynamic_probs = torch.cat([out_prob, copy_prob], 1)
+
+class CopyCriterion(object):
+    def __init__(self, vocab_size, force_copy, pad, eps=1e-20):
+        self.force_copy = force_copy
+        self.eps = eps
+        self.offset = vocab_size
+        self.pad = pad
+
+    def __call__(self, scores, align, target):
+        align = align.view(-1)
+
+        # Copy prob.
+        out = scores.gather(1, align.view(-1, 1) + self.offset) \
+                    .view(-1).mul(align.ne(0).float())
+        tmp = scores.gather(1, target.view(-1, 1)).view(-1)
+
+        # Regular prob (no unks and unks that can't be copied)
+        if not self.force_copy:
+            out = out + self.eps + tmp.mul(target.ne(0).float()) + \
+                  tmp.mul(align.eq(0).float()).mul(target.eq(0).float())
         else:
-            # copy = self.linear_copy(hidden)
-            copy_logit = torch.bmm(attn.view(-1, batch, slen).transpose(0, 1),
-                                   src_map.transpose(0, 1)).transpose(0, 1)
-            copy_logit = copy_logit.contiguous().view(-1, cvocab)
-            copy_logit.data.masked_fill_(copy_logit.data.eq(0), -1e20)
-            # print(copy_logit)
-            # exit()
-            # copy_logit[:, 0] = -1e20
-            # copy_logit[:, 1] = -1e20
-            dynamic_logits = torch.cat([logits, copy_logit], 1)
-            dynamic_probs = self.sm(dynamic_logits.contiguous())
-        return dynamic_probs
+            # Forced copy.
+            out = out + self.eps + tmp.mul(align.eq(0).float())
 
-    def k_debug_copy(self, src, copy, prob, out_prob, attn, mul_attn):
-        v, mid = prob[0].data.max(0)
-        print("Initial:", self.tgt_dict.getLabel(mid[0], "FAIL"), v[0])
-        print("COPY %3f" % copy.data[0][0])
-        _, ids = attn[0].cpu().data.sort(0, descending=True)
-        for j in ids[:10].tolist():
-            src_idx = src[0, j].data[0]
-            print("\t%s\t\t%d\t%3f\t%3f" % (
-                self.src_dict.getLabel(src_idx),
-                j,
-                attn[0, j].data[0],
-                mul_attn[0, j].data[0]))
+        # Drop padding.
+        loss = -out.log().mul(target.ne(self.pad).float()).sum()
+        return loss
