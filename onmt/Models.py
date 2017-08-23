@@ -565,11 +565,12 @@ def make_base_model(opt, model_opt, fields, cuda, checkpoint=None):
         generator = nn.Sequential(
             nn.Linear(model_opt.rnn_size, len(fields["tgt"].vocab)),
             nn.LogSoftmax())
+        if model_opt.share_decoder_embeddings:
+            generator[0].weight = decoder.embeddings.word_lut.weight
     else:
         generator = onmt.modules.CopyGenerator(model_opt, fields["src"].vocab,
                                                fields["tgt"].vocab)
-        if model_opt.share_decoder_embeddings:
-            generator[0].weight = decoder.embeddings.word_lut.weight
+
 
     if checkpoint is not None:
         print('Loading model')
