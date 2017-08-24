@@ -11,12 +11,12 @@ from torch.nn.utils.rnn import pack_padded_sequence as pack
 
 
 class Embeddings(nn.Module):
-    def __init__(self, opt, dicts, feature_dicts=None):
+    def __init__(self, vec_size, opt, dicts, feature_dicts=None):
         super(Embeddings, self).__init__()
         self.positional_encoding = opt.position_encoding
         if self.positional_encoding:
-            self.pe = self.make_positional_encodings(opt.word_vec_size, 5000)
-            if len(opt.gpus) > 0:
+            self.pe = self.make_positional_encodings(vec_size, 5000)
+            if len(opt.gpuid) > 0:
                 self.pe.cuda()
             self.dropout = nn.Dropout(p=opt.dropout)
 
@@ -25,33 +25,31 @@ class Embeddings(nn.Module):
         feat_exp = opt.feat_vec_exponent
 
         # vocab_sizes: sequence of vocab sizes for words and each feature
-        vocab_sizes = [dicts.size()]
+        vocab_sizes = [len(dicts)]
         # emb_sizes
-        emb_sizes = [opt.word_vec_size]
+        emb_sizes = [vec_size]
         if feature_dicts:
-            vocab_sizes.extend(feat_dict.size() for feat_dict in feature_dicts)
+            vocab_sizes.extend(len(feat_dict) for feat_dict in feature_dicts)
             if opt.feat_merge == 'concat':
-                # When concatenating, derive the size of each feature's
-                # embedding from the number of values the embedding
-                # takes
-                feat_sizes = (int(feat_dict.size() ** feat_exp)
-                              for feat_dict in feature_dicts)
+                # Derive embedding sizes from each feature's vocab size
+                emb_sizes.extend([int(len(feat_dict) ** feat_exp)
+                                  for feat_dict in feature_dicts])
+            elif opt.feat_merge == 'sum':
+                # All embeddings to be summed must be the same size
+                emb_sizes.extend([vec_size] * len(feature_dicts))
             else:
-                # sum feature merge (for now, the same as the old option
-                # for merging features in OpenNMT-py)
-                feat_sizes = (opt.feat_vec_size for feat_dict in feature_dicts)
-                # apply a layer of mlp to get it down to the right dim
+                # mlp feature merge
+                emb_sizes.extend([opt.feat_vec_size] * len(feature_dicts))
+                # apply a layer of mlp to get it down to the correct dim
                 self.mlp = nn.Sequential(onmt.modules.BottleLinear(
-                                        opt.word_vec_size +
-                                        len(feature_dicts) * opt.feat_vec_size,
-                                        opt.word_vec_size),
+                                        sum(emb_sizes),
+                                        vec_size),
                                         nn.ReLU())
-            emb_sizes.extend(feat_sizes)
-
-        self.emb_luts = nn.ModuleList([
-                                nn.Embedding(vocab, dim,
-                                             padding_idx=onmt.Constants.PAD)
-                                for vocab, dim in zip(vocab_sizes, emb_sizes)])
+        self.emb_luts = \
+            nn.ModuleList([
+                nn.Embedding(vocab, dim,
+                             padding_idx=dicts.stoi[onmt.IO.PAD_WORD])
+                for vocab, dim in zip(vocab_sizes, emb_sizes)])
 
     @property
     def word_lut(self):
@@ -59,7 +57,11 @@ class Embeddings(nn.Module):
 
     @property
     def embedding_size(self):
-        if self.feat_merge == 'concat' and len(self.emb_luts) > 1:
+        """
+        Returns sum of all feature dimensions if the merge action is concat.
+        Otherwise, returns word vector size.
+        """
+        if self.feat_merge == 'concat':
             return sum(emb_lut.embedding_dim
                        for emb_lut in self.emb_luts.children())
         else:
@@ -81,22 +83,18 @@ class Embeddings(nn.Module):
     def merge(self, features):
         if self.feat_merge == 'concat':
             return torch.cat(features, 2)
+        elif self.feat_merge == 'sum':
+            return sum(features)
         else:
             return self.mlp(torch.cat(features, 2))
 
     def forward(self, src_input):
         """
-        Embed the words or utilize features and MLP.
-
+        Return the embeddings for words, and features if there are any.
         Args:
             src_input (LongTensor): len x batch x nfeat
-
         Return:
-            emb (FloatTensor): len x batch x emb_size
-                                emb_size is word_vec_size if there are no
-                                features or the merge action is sum.
-                                It is the sum of all feature dimensions
-                                if the merge action is concatenate.
+            emb (FloatTensor): len x batch x self.embedding_size
         """
         in_length, in_batch, nfeat = src_input.size()
         aeq(nfeat, len(self.emb_luts))
@@ -135,7 +133,7 @@ class Encoder(nn.Module):
             features_dicts (`[Dict]`): List of src feature dictionaries.
         """
         # Number of rnn layers.
-        self.layers = opt.layers
+        self.layers = opt.enc_layers
 
         # Use a bidirectional model.
         self.num_directions = 2 if opt.brnn else 1
@@ -145,21 +143,23 @@ class Encoder(nn.Module):
         self.hidden_size = opt.rnn_size // self.num_directions
 
         super(Encoder, self).__init__()
-        self.embeddings = Embeddings(opt, dicts, feature_dicts)
+        self.embeddings = Embeddings(opt.src_word_vec_size,
+                                     opt, dicts, feature_dicts)
 
         input_size = self.embeddings.embedding_size
 
         # The Encoder RNN.
-        self.encoder_layer = opt.encoder_layer
+        self.encoder_type = opt.encoder_type
+        pad_id = dicts.stoi[onmt.IO.PAD_WORD]
 
-        if self.encoder_layer == "transformer":
+        if self.encoder_type == "transformer":
             self.transformer = nn.ModuleList(
-                [onmt.modules.TransformerEncoder(self.hidden_size, opt)
-                 for i in range(opt.layers)])
+                [onmt.modules.TransformerEncoder(self.hidden_size, opt, pad_id)
+                 for i in range(opt.enc_layers)])
         else:
             self.rnn = getattr(nn, opt.rnn_type)(
                  input_size, self.hidden_size,
-                 num_layers=opt.layers,
+                 num_layers=opt.enc_layers,
                  dropout=opt.dropout,
                  bidirectional=opt.brnn)
 
@@ -178,20 +178,20 @@ class Encoder(nn.Module):
         # CHECKS
         s_len, n_batch, n_feats = input.size()
         if lengths is not None:
-            _, n_batch_ = lengths.size()
+            n_batch_, = lengths.size()
             aeq(n_batch, n_batch_)
         # END CHECKS
 
         emb = self.embeddings(input)
         s_len, n_batch, vec_size = emb.size()
 
-        if self.encoder_layer == "mean":
+        if self.encoder_type == "mean":
             # No RNN, just take mean as final state.
             mean = emb.mean(0) \
                    .expand(self.layers, n_batch, vec_size)
             return (mean, mean), emb
 
-        elif self.encoder_layer == "transformer":
+        elif self.encoder_type == "transformer":
             # Self-attention tranformer.
             out = emb.transpose(0, 1).contiguous()
             for i in range(self.layers):
@@ -202,7 +202,7 @@ class Encoder(nn.Module):
             packed_emb = emb
             if lengths is not None:
                 # Lengths data is wrapped inside a Variable.
-                lengths = lengths.data.view(-1).tolist()
+                lengths = lengths.view(-1).tolist()
                 packed_emb = pack(emb, lengths)
             outputs, hidden_t = self.rnn(packed_emb, hidden)
             if lengths:
@@ -221,29 +221,38 @@ class Decoder(nn.Module):
             opt: model options
             dicts: Target `Dict` object
         """
-        self.layers = opt.layers
-        self.decoder_layer = opt.decoder_layer
+        self.layers = opt.dec_layers
+        self.decoder_type = opt.decoder_type
         self._coverage = opt.coverage_attn
         self.hidden_size = opt.rnn_size
         self.input_feed = opt.input_feed
-        input_size = opt.word_vec_size
+        input_size = opt.tgt_word_vec_size
         if self.input_feed:
             input_size += opt.rnn_size
 
         super(Decoder, self).__init__()
-        self.embeddings = Embeddings(opt, dicts, None)
+        self.embeddings = Embeddings(opt.tgt_word_vec_size,
+                                     opt, dicts, None)
 
-        if self.decoder_layer == "transformer":
+        pad_id = dicts.stoi[onmt.IO.PAD_WORD]
+        if self.decoder_type == "transformer":
             self.transformer = nn.ModuleList(
-                [onmt.modules.TransformerDecoder(self.hidden_size, opt)
-                 for _ in range(opt.layers)])
+                [onmt.modules.TransformerDecoder(self.hidden_size, opt, pad_id)
+                 for _ in range(opt.dec_layers)])
         else:
-            if opt.rnn_type == "LSTM":
-                stackedCell = onmt.modules.StackedLSTM
+            if self.input_feed:
+                if opt.rnn_type == "LSTM":
+                    stackedCell = onmt.modules.StackedLSTM
+                else:
+                    stackedCell = onmt.modules.StackedGRU
+                self.rnn = stackedCell(opt.dec_layers, input_size,
+                                       opt.rnn_size, opt.dropout)
             else:
-                stackedCell = onmt.modules.StackedGRU
-            self.rnn = stackedCell(opt.layers, input_size,
-                                   opt.rnn_size, opt.dropout)
+                self.rnn = getattr(nn, opt.rnn_type)(
+                     input_size, opt.rnn_size,
+                     num_layers=opt.dec_layers,
+                     dropout=opt.dropout
+                )
             self.context_gate = None
             if opt.context_gate is not None:
                 self.context_gate = ContextGateFactory(
@@ -255,15 +264,16 @@ class Decoder(nn.Module):
         self.dropout = nn.Dropout(opt.dropout)
 
         # Std attention layer.
-        self.attn = onmt.modules.GlobalAttention(opt.rnn_size,
-                                                 coverage=self._coverage,
-                                                 attn_type=opt.attention_type)
+        self.attn = onmt.modules.GlobalAttention(
+            opt.rnn_size,
+            coverage=self._coverage,
+            attn_type=opt.global_attention)
 
         # Separate Copy Attention.
         self._copy = False
         if opt.copy_attn:
             self.copy_attn = onmt.modules.GlobalAttention(
-                opt.rnn_size, attn_type=opt.attention_type)
+                opt.rnn_size, attn_type=opt.global_attention)
             self._copy = True
 
     def forward(self, input, src, context, state):
@@ -288,7 +298,7 @@ class Decoder(nn.Module):
         aeq(n_batch, n_batch_, n_batch__)
         # aeq(s_len, s_len_)
         # END CHECKS
-        if self.decoder_layer == "transformer":
+        if self.decoder_type == "transformer":
             if state.previous_input:
                 input = torch.cat([state.previous_input.squeeze(2), input], 0)
 
@@ -306,7 +316,7 @@ class Decoder(nn.Module):
         if self._coverage:
             attns["coverage"] = []
 
-        if self.decoder_layer == "transformer":
+        if self.decoder_type == "transformer":
             # Tranformer Decoder.
             assert isinstance(state, TransformerDecoderState)
             output = emb.transpose(0, 1).contiguous()
@@ -325,7 +335,7 @@ class Decoder(nn.Module):
             if self._copy:
                 attns["copy"] = attn
             state = TransformerDecoderState(input.unsqueeze(2))
-        else:
+        elif self.input_feed:
             assert isinstance(state, RNNDecoderState)
             output = state.input_feed.squeeze(0)
             hidden = state.hidden
@@ -358,7 +368,8 @@ class Decoder(nn.Module):
 
                 # COVERAGE
                 if self._coverage:
-                    coverage = (coverage + attn) if coverage else attn
+                    coverage = coverage + attn \
+                               if coverage is not None else attn
                     attns["coverage"] += [coverage]
 
                 # COPY
@@ -372,6 +383,43 @@ class Decoder(nn.Module):
             outputs = torch.stack(outputs)
             for k in attns:
                 attns[k] = torch.stack(attns[k])
+        else:
+            assert isinstance(state, RNNDecoderState)
+            assert emb.dim() == 3
+
+            assert not self._coverage
+            assert state.coverage is None
+
+            # TODO: copy
+            assert not self._copy
+
+            hidden = state.hidden
+            rnn_output, hidden = self.rnn(emb, hidden)
+
+            # CHECKS
+            t_len_, n_batch_, _ = rnn_output.size()
+            aeq(n_batch, n_batch_)
+            aeq(t_len, t_len_)
+            # END CHECKS
+
+            attn_outputs, attn_scores = self.attn(
+                rnn_output.transpose(0, 1).contiguous(),    # (batch, t_len, d)
+                context.transpose(0, 1)                     # (batch, s_len, d)
+            )
+
+            if self.context_gate is not None:
+                outputs = self.context_gate(
+                    emb.view(-1, emb.size(2)),
+                    rnn_output.view(-1, rnn_output.size(2)),
+                    attn_outputs.view(-1, attn_outputs.size(2))
+                )
+                outputs = outputs.view(t_len, n_batch, self.hidden_size)
+                outputs = self.dropout(outputs)
+            else:
+                outputs = self.dropout(attn_outputs)        # (t_len, batch, d)
+            state = RNNDecoderState(hidden, outputs[-1].unsqueeze(0), None)
+            attns["std"] = attn_scores
+
         return outputs, state, attns
 
 
@@ -392,7 +440,7 @@ class NMTModel(nn.Module):
         return h
 
     def init_decoder_state(self, context, enc_hidden):
-        if self.decoder.decoder_layer == "transformer":
+        if self.decoder.decoder_type == "transformer":
             return TransformerDecoderState()
         elif isinstance(enc_hidden, tuple):
             dec = RNNDecoderState(tuple([self._fix_enc_hidden(enc_hidden[i])
@@ -489,3 +537,50 @@ class TransformerDecoderState(DecoderState):
 
     def repeatBeam_(self, beamSize):
         pass
+
+
+def make_base_model(opt, model_opt, fields, cuda, checkpoint=None):
+    # HACK: collect source feature vocabs.
+    feature_vocabs = []
+    for j in range(100):
+        key = "src_feat_" + str(j)
+        if key not in fields:
+            break
+        feature_vocabs.append(fields[key].vocab)
+
+    if model_opt.model_type == "text":
+        encoder = Encoder(model_opt, fields["src"].vocab,
+                          feature_vocabs)
+    elif model_opt.model_type == "img":
+        encoder = onmt.modules.ImageEncoder(model_opt)
+    else:
+        assert False, ("Unsupported model type %s"
+                       % (model_opt.model_type))
+
+    decoder = onmt.Models.Decoder(
+        model_opt, fields["tgt"].vocab)
+    model = onmt.Models.NMTModel(encoder, decoder)
+
+    if not model_opt.copy_attn:
+        generator = nn.Sequential(
+            nn.Linear(model_opt.rnn_size, len(fields["tgt"].vocab)),
+            nn.LogSoftmax())
+        if model_opt.share_decoder_embeddings:
+            generator[0].weight = decoder.embeddings.word_lut.weight
+    else:
+        generator = onmt.modules.CopyGenerator(model_opt, fields["src"].vocab,
+                                               fields["tgt"].vocab)
+
+    if checkpoint is not None:
+        print('Loading model')
+        model.load_state_dict(checkpoint['model'])
+        generator.load_state_dict(checkpoint['generator'])
+
+    if cuda:
+        model.cuda()
+        generator.cuda()
+    else:
+        model.cpu()
+        generator.cpu()
+    model.generator = generator
+    return model
