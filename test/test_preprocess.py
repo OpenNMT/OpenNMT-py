@@ -2,9 +2,7 @@ import argparse
 import copy
 import unittest
 import onmt
-import torch
 from train_opts import add_preprocess_arguments
-from torch.autograd import Variable
 
 
 parser = argparse.ArgumentParser(description='preprocess.py')
@@ -18,27 +16,28 @@ opt.valid_src = 'data/src-val.txt'
 opt.valid_tgt = 'data/tgt-val.txt'
 print(opt)
 
+
 class TestData(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super(TestData, self).__init__(*args, **kwargs)
         self.opt = opt
 
     def dataset_build(self, opt):
-        fields = onmt.IO.ONMTDataset.get_fields(opt.train_src, 
+        fields = onmt.IO.ONMTDataset.get_fields(opt.train_src,
                                                 opt.train_tgt)
 
-        train = onmt.IO.ONMTDataset(opt.train_src, 
+        train = onmt.IO.ONMTDataset(opt.train_src,
                                     opt.train_tgt,
                                     fields,
                                     opt)
 
-        onmt.IO.ONMTDataset.build_vocab(train, 
+        onmt.IO.ONMTDataset.build_vocab(train,
                                         opt)
 
-        valid = onmt.IO.ONMTDataset(opt.valid_src, 
-                                    opt.valid_tgt, 
-                                    fields, 
-                                    opt)
+        onmt.IO.ONMTDataset(opt.valid_src,
+                            opt.valid_tgt,
+                            fields,
+                            opt)
 
 
 def _add_test(paramSetting, methodname):
