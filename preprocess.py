@@ -6,9 +6,6 @@ import argparse
 import torch
 import dill
 import opts
-
-from train_opts import add_preprocess_arguments
-
 parser = argparse.ArgumentParser(description='preprocess.py')
 opts.add_md_help_argument(parser)
 
@@ -44,7 +41,7 @@ parser.add_argument('-seed', type=int, default=3435,
 parser.add_argument('-report_every', type=int, default=100000,
                     help="Report status every this many sentences")
 
-add_preprocess_arguments(parser)
+opts.preprocess_opts(parser)
 
 opt = parser.parse_args()
 torch.manual_seed(opt.seed)

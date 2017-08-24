@@ -2,11 +2,11 @@ import argparse
 import copy
 import unittest
 import onmt
-from train_opts import add_preprocess_arguments
+import opts
 
 
 parser = argparse.ArgumentParser(description='preprocess.py')
-add_preprocess_arguments(parser)
+opts.preprocess_opts(parser)
 
 opt = parser.parse_known_args()[0]
 
