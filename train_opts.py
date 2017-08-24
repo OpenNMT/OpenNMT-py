@@ -84,7 +84,7 @@ def add_optim_arguments(parser):
     parser.add_argument('-truncated_decoder', type=int, default=0,
                         help="""Truncated bptt.""")
 
-    # learning rate
+    # Learning rate
     parser.add_argument('-learning_rate', type=float, default=1.0,
                         help="""Starting learning rate. If adagrad/adadelta/adam
                         is used, then this is the global learning rate.
@@ -106,3 +106,32 @@ def add_optim_arguments(parser):
                         decay [restart|noam]""")
     parser.add_argument('-warmup_steps', type=int, default=4000,
                         help="""Number of warmup steps for custom decay.""")
+
+
+def add_preprocess_arguments(parser):
+    # Dictionary Options
+    parser.add_argument('-src_vocab_size', type=int, default=50000,
+                        help="Size of the source vocabulary")
+    parser.add_argument('-tgt_vocab_size', type=int, default=50000,
+                        help="Size of the target vocabulary")
+
+    # Truncation options
+    parser.add_argument('-src_seq_length', type=int, default=50,
+                        help="Maximum source sequence length")
+    parser.add_argument('-src_seq_length_trunc', type=int, default=0,
+                        help="Truncate source sequence length.")
+    parser.add_argument('-tgt_seq_length', type=int, default=50,
+                        help="Maximum target sequence length to keep.")
+    parser.add_argument('-tgt_seq_length_trunc', type=int, default=0,
+                        help="Truncate target sequence length.")
+
+    # Data processing options
+    parser.add_argument('-shuffle', type=int, default=1,
+                        help="Shuffle data")
+    parser.add_argument('-lower', action='store_true', help='lowercase data')
+
+    # Options most relevant to summarization
+    parser.add_argument('-dynamic_dict', action='store_true',
+                        help="Create dynamic dictionaries")
+    parser.add_argument('-share_vocab', action='store_true',
+                        help="Share source and target vocabulary")

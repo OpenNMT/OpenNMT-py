@@ -6,7 +6,6 @@ import torch
 from train_opts import add_model_arguments, add_optim_arguments
 from torch.autograd import Variable
 
-# This will be redundant with #104 pull. Can simply include the parameter file
 
 parser = argparse.ArgumentParser(description='train.py')
 add_model_arguments(parser)
@@ -198,15 +197,3 @@ tests_ntmodel = [[('rnn_type', 'GRU')],
 
 for p in tests_ntmodel:
     _add_test(p, 'ntmmodel_forward')
-
-
-def suite():
-    # Initialize Testsuite
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestModel)
-
-    return suite
-
-
-if __name__ == '__main__':
-    # Run Test
-    unittest.TextTestRunner(verbosity=2).run(suite())
