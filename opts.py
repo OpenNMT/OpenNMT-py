@@ -170,6 +170,38 @@ def train_opts(parser):
                         help="Name of the experiment for logging.")
 
 
+def preprocess_opts(parser):
+    # Dictionary Options
+    parser.add_argument('-src_vocab_size', type=int, default=50000,
+                        help="Size of the source vocabulary")
+    parser.add_argument('-tgt_vocab_size', type=int, default=50000,
+                        help="Size of the target vocabulary")
+
+    parser.add_argument('-src_words_min_frequency', type=int, default=0)
+    parser.add_argument('-tgt_words_min_frequency', type=int, default=0)
+
+    # Truncation options
+    parser.add_argument('-src_seq_length', type=int, default=50,
+                        help="Maximum source sequence length")
+    parser.add_argument('-src_seq_length_trunc', type=int, default=0,
+                        help="Truncate source sequence length.")
+    parser.add_argument('-tgt_seq_length', type=int, default=50,
+                        help="Maximum target sequence length to keep.")
+    parser.add_argument('-tgt_seq_length_trunc', type=int, default=0,
+                        help="Truncate target sequence length.")
+
+    # Data processing options
+    parser.add_argument('-shuffle', type=int, default=1,
+                        help="Shuffle data")
+    parser.add_argument('-lower', action='store_true', help='lowercase data')
+
+    # Options most relevant to summarization
+    parser.add_argument('-dynamic_dict', action='store_true',
+                        help="Create dynamic dictionaries")
+    parser.add_argument('-share_vocab', action='store_true',
+                        help="Share source and target vocabulary")
+
+
 def add_md_help_argument(parser):
     parser.add_argument('-md', action=MarkdownHelpAction,
                         help='print Markdown-formatted help text and exit.')
