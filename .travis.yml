@@ -22,8 +22,10 @@ install:
 
 script:
   - python -m unittest discover
+  - python preprocess.py -train_src data/src-train.txt -train_tgt data/tgt-train.txt -valid_src data/src-val.txt -valid_tgt data/tgt-val.txt -save_data /tmp/data -src_vocab_size 1000 -tgt_vocab_size 1000
   - head data/src-test.txt > /tmp/src-test.txt; python translate.py -model data/test_model.pt -src /tmp/src-test.txt -verbose
-  
+  - head data/src-val.txt > /tmp/src-val.txt; head data/tg-val.txt > /tmp/tgt-val.txt; python preprocess.py -train_src /tmp/src-val.txt -train_tgt /tmp/tgt-val.txt -valid_src t/tmp/src-val.txt -valid_tgt /tmp/tgt-val.txt -save_data /tmp/q -src_vocab_size 1000 -tgt_vocab_size 1000; python train.py   -data /tmp/q -rnn_size 2 -batch_size 1000 -word_vec_size 5 -report_every 5 -rnn_size 10 -epochs 1
+
 matrix:
   include:
     - env: LINT_CHECK
