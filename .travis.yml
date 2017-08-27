@@ -22,7 +22,9 @@ install:
 
 script:
   - python -m unittest discover
-
+  - head data/src-test.txt > /tmp/src-test.txt
+  - python translate.py -model data/test_model.pt -src /tmp/src-test.txt
+  
 matrix:
   include:
     - env: LINT_CHECK
