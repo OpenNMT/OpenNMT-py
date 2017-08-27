@@ -56,14 +56,6 @@ if opt.exp_host != "":
     experiment = cc.create_experiment(opt.exp)
 
 
-def make_features(batch, fields):
-    # TODO: This is bit hacky remove.
-    f = onmt.IO.ONMTDataset.collect_features(fields)
-    cat = [batch.src[0]] + [batch.__dict__[k] for k in f]
-    cat = [c.unsqueeze(2) for c in cat]
-    return torch.cat(cat, 2)
-
-
 def eval(model, criterion, data, fields):
     validData = onmt.IO.OrderedIterator(
         dataset=data, device=opt.gpuid[0] if opt.gpuid else -1,
@@ -75,7 +67,7 @@ def eval(model, criterion, data, fields):
                                  fields["tgt"].vocab, data, 0, opt)
     for batch in validData:
         _, src_lengths = batch.src
-        src = make_features(batch, fields)
+        src = onmt.IO.make_features(batch, fields)
         outputs, attn, _ = model(src, batch.tgt, src_lengths)
         gen_state = loss.makeLossBatch(outputs, batch, attn,
                                        (0, batch.tgt.size(0)))
@@ -118,7 +110,7 @@ def trainModel(model, trainData, validData, fields, optim):
 
             dec_state = None
             _, src_lengths = batch.src
-            src = make_features(batch, fields)
+            src = onmt.IO.make_features(batch, fields)
             report_stats.n_src_words += src_lengths.sum()
 
             # Truncated BPTT

@@ -61,6 +61,14 @@ def merge_vocabs(vocabs, vocab_size=None):
                                  max_size=vocab_size)
 
 
+def make_features(batch, fields):
+    # TODO: This is bit hacky, add to batch somehow.
+    f = ONMTDataset.collect_features(fields)
+    cat = [batch.src[0]] + [batch.__dict__[k] for k in f]
+    cat = [c.unsqueeze(2) for c in cat]
+    return torch.cat(cat, 2)
+
+
 class OrderedIterator(torchtext.data.Iterator):
     def create_batches(self):
         if self.train:

@@ -6,19 +6,6 @@ import torch
 from torch.autograd import Variable
 
 
-def make_features(batch, fields):
-    # This is a bit hacky for now.
-    feats = []
-    for j in range(100):
-        key = "src_feat_" + str(j)
-        if key not in fields:
-            break
-        feats.append(batch.__dict__[key])
-    cat = [batch.src[0]] + feats
-    cat = [c.unsqueeze(2) for c in cat]
-    return torch.cat(cat, 2)
-
-
 class Translator(object):
     def __init__(self, opt, dummy_opt={}):
         # Add in default model arguments, possibly added since training.
@@ -71,7 +58,7 @@ class Translator(object):
         beamSize = self.opt.beam_size
         batchSize = batch.batch_size
         _, src_lengths = batch.src
-        src = make_features(batch, self.fields)
+        src = onmt.IO.make_features(batch, self.fields)
 
         #  (1) run the encoder on the src
         encStates, context = self.model.encoder(src, lengths=src_lengths)
