@@ -4,20 +4,6 @@ import onmt.modules
 import onmt.IO
 import torch
 from torch.autograd import Variable
-import dill
-
-
-def make_features(batch, fields):
-    # This is a bit hacky for now.
-    feats = []
-    for j in range(100):
-        key = "src_feat_" + str(j)
-        if key not in fields:
-            break
-        feats.append(batch.__dict__[key])
-    cat = [batch.src[0]] + feats
-    cat = [c.unsqueeze(2) for c in cat]
-    return torch.cat(cat, 2)
 
 
 class Translator(object):
@@ -25,9 +11,9 @@ class Translator(object):
         # Add in default model arguments, possibly added since training.
         self.opt = opt
         checkpoint = torch.load(opt.model,
-                                map_location=lambda storage, loc: storage,
-                                pickle_module=dill)
-        self.fields = checkpoint['fields']
+                                map_location=lambda storage, loc: storage)
+        self.fields = onmt.IO.ONMTDataset.load_fields(checkpoint['vocab'])
+
         model_opt = checkpoint['opt']
         for arg in dummy_opt:
             if arg not in model_opt:
@@ -72,7 +58,7 @@ class Translator(object):
         beamSize = self.opt.beam_size
         batchSize = batch.batch_size
         _, src_lengths = batch.src
-        src = make_features(batch, self.fields)
+        src = onmt.IO.make_features(batch, self.fields)
 
         #  (1) run the encoder on the src
         encStates, context = self.model.encoder(src, lengths=src_lengths)

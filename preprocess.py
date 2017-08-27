@@ -4,8 +4,9 @@ import onmt
 import onmt.IO
 import argparse
 import torch
-import dill
 import opts
+import codecs
+
 parser = argparse.ArgumentParser(description='preprocess.py')
 opts.add_md_help_argument(parser)
 
@@ -49,8 +50,11 @@ torch.manual_seed(opt.seed)
 
 def main():
     print('Preparing training ...')
+    with codecs.open(opt.train_src, "r", "utf-8") as src_file:
+        src_line = src_file.readline().strip().split()
+        _, _, nFeatures = onmt.IO.extractFeatures(src_line)
 
-    fields = onmt.IO.ONMTDataset.get_fields(opt.train_src, opt.train_tgt)
+    fields = onmt.IO.ONMTDataset.get_fields(nFeatures)
     print("Building Training...")
     train = onmt.IO.ONMTDataset(opt.train_src, opt.train_tgt, fields, opt)
     print("Building Vocab...")
@@ -59,12 +63,14 @@ def main():
     print("Building Valid...")
     valid = onmt.IO.ONMTDataset(opt.valid_src, opt.valid_tgt, fields, opt)
     print("Saving train/valid/fields")
-    torch.save(fields, open(opt.save_data + '.fields.pt', 'wb'),
-               pickle_module=dill)
-    torch.save(train, open(opt.save_data + '.train.pt', 'wb'),
-               pickle_module=dill)
-    torch.save(valid, open(opt.save_data + '.valid.pt', 'wb'),
-               pickle_module=dill)
+
+    # Can't save fields, so remove/reconstruct at training time.
+    torch.save(onmt.IO.ONMTDataset.save_vocab(fields),
+               open(opt.save_data + '.vocab.pt', 'wb'))
+    train.fields = []
+    valid.fields = []
+    torch.save(train, open(opt.save_data + '.train.pt', 'wb'))
+    torch.save(valid, open(opt.save_data + '.valid.pt', 'wb'))
 
 
 if __name__ == "__main__":

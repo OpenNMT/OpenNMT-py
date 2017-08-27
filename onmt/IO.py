@@ -3,7 +3,7 @@ import torch
 import codecs
 import torchtext.data
 import torchtext.vocab
-from collections import Counter
+from collections import Counter, defaultdict
 
 PAD_WORD = '<blank>'
 UNK = 0
@@ -59,6 +59,14 @@ def merge_vocabs(vocabs, vocab_size=None):
     return torchtext.vocab.Vocab(merged,
                                  specials=[PAD_WORD, BOS_WORD, EOS_WORD],
                                  max_size=vocab_size)
+
+
+def make_features(batch, fields):
+    # TODO: This is bit hacky, add to batch somehow.
+    f = ONMTDataset.collect_features(fields)
+    cat = [batch.src[0]] + [batch.__dict__[k] for k in f]
+    cat = [c.unsqueeze(2) for c in cat]
+    return torch.cat(cat, 2)
 
 
 class OrderedIterator(torchtext.data.Iterator):
@@ -196,7 +204,39 @@ class ONMTDataset(torchtext.data.Dataset):
         return scores
 
     @staticmethod
-    def get_fields(src_path=None, tgt_path=None):
+    def load_fields(vocab):
+        vocab = dict(vocab)
+        fields = ONMTDataset.get_fields(
+            len(ONMTDataset.collect_features(vocab)))
+        for k, v in vocab.items():
+            # Hack. Can't pickle defaultdict :(
+            v.stoi = defaultdict(lambda: 0, v.stoi)
+            fields[k].vocab = v
+        return fields
+
+    @staticmethod
+    def save_vocab(fields):
+        vocab = []
+        for k, f in fields.items():
+            if 'vocab' in f.__dict__:
+                f.vocab.stoi = dict(f.vocab.stoi)
+                vocab.append((k, f.vocab))
+        return vocab
+
+    @staticmethod
+    def collect_features(fields):
+        feats = []
+        j = 0
+        while True:
+            key = "src_feat_" + str(j)
+            if key not in fields:
+                break
+            feats.append(key)
+            j += 1
+        return feats
+
+    @staticmethod
+    def get_fields(nFeatures=0):
         fields = {}
         fields["src"] = torchtext.data.Field(
             pad_token=PAD_WORD,
@@ -205,13 +245,9 @@ class ONMTDataset(torchtext.data.Dataset):
         # fields = [("src_img", torchtext.data.Field(
         #     include_lengths=True))]
 
-        if src_path is not None:
-            with codecs.open(src_path, "r", "utf-8") as src_file:
-                src_line = src_file.readline().strip().split()
-                _, _, nFeatures = extractFeatures(src_line)
-                for j in range(nFeatures):
-                    fields["src_feat_"+str(j)] = \
-                        torchtext.data.Field(pad_token=PAD_WORD)
+        for j in range(nFeatures):
+            fields["src_feat_"+str(j)] = \
+                torchtext.data.Field(pad_token=PAD_WORD)
 
         fields["tgt"] = torchtext.data.Field(
             init_token=BOS_WORD, eos_token=EOS_WORD,

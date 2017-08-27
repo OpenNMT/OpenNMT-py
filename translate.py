@@ -82,7 +82,6 @@ def main():
     if opt.dump_beam != "":
         import json
         translator.initBeamAccum()
-
     data = onmt.IO.ONMTDataset(opt.src, opt.tgt, translator.fields, None)
 
     testData = onmt.IO.OrderedIterator(
