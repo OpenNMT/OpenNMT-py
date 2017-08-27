@@ -9,7 +9,6 @@ import argparse
 import torch
 import torch.nn as nn
 from torch import cuda
-import dill
 import opts
 
 parser = argparse.ArgumentParser(description='train.py')
@@ -59,13 +58,8 @@ if opt.exp_host != "":
 
 def make_features(batch, fields):
     # TODO: This is bit hacky remove.
-    feats = []
-    for j in range(100):
-        key = "src_feat_" + str(j)
-        if key not in fields:
-            break
-        feats.append(batch.__dict__[key])
-    cat = [batch.src[0]] + feats
+    f = onmt.IO.ONMTDataset.collect_features(fields)
+    cat = [batch.src[0]] + [batch.__dict__[k] for k in f]
     cat = [c.unsqueeze(2) for c in cat]
     return torch.cat(cat, 2)
 
@@ -206,7 +200,7 @@ def trainModel(model, trainData, validData, fields, optim):
             checkpoint = {
                 'model': model_state_dict,
                 'generator': generator_state_dict,
-                'fields': fields,
+                'vocab': onmt.IO.ONMTDataset.save_vocab(fields),
                 'opt': opt,
                 'epoch': epoch,
                 'optim': optim
@@ -214,8 +208,7 @@ def trainModel(model, trainData, validData, fields, optim):
             torch.save(checkpoint,
                        '%s_acc_%.2f_ppl_%.2f_e%d.pt'
                        % (opt.save_model, valid_stats.accuracy(),
-                          valid_stats.ppl(), epoch),
-                       pickle_module=dill)
+                          valid_stats.ppl(), epoch))
 
 
 def check_model_path():
@@ -228,10 +221,14 @@ def check_model_path():
 def main():
     print("Loading data from '%s'" % opt.data)
 
-    train = torch.load(opt.data + '.train.pt', pickle_module=dill)
-    fields = torch.load(opt.data + '.fields.pt', pickle_module=dill)
-    valid = torch.load(opt.data + '.valid.pt', pickle_module=dill)
-    fields = dict(fields)
+    train = torch.load(opt.data + '.train.pt')
+    fields = onmt.IO.ONMTDataset.load_fields(
+        torch.load(opt.data + '.vocab.pt'))
+    valid = torch.load(opt.data + '.valid.pt')
+    fields = dict([(k, f) for (k, f) in fields.items()
+                   if k in train.examples[0].__dict__])
+    train.fields = fields
+    valid.fields = fields
     src_features = [fields["src_feat_"+str(j)]
                     for j in range(train.nfeatures)]
 
@@ -242,7 +239,7 @@ def main():
         print('Loading dicts from checkpoint at %s' % dict_checkpoint)
         checkpoint = torch.load(dict_checkpoint,
                                 map_location=lambda storage, loc: storage)
-        fields = checkpoint['fields']
+        fields = onmt.IO.load_fields(checkpoint['vocab'])
 
     print(' * vocabulary size. source = %d; target = %d' %
           (len(fields['src'].vocab), len(fields['tgt'].vocab)))

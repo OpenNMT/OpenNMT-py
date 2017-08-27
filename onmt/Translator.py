@@ -4,7 +4,6 @@ import onmt.modules
 import onmt.IO
 import torch
 from torch.autograd import Variable
-import dill
 
 
 def make_features(batch, fields):
@@ -25,9 +24,9 @@ class Translator(object):
         # Add in default model arguments, possibly added since training.
         self.opt = opt
         checkpoint = torch.load(opt.model,
-                                map_location=lambda storage, loc: storage,
-                                pickle_module=dill)
-        self.fields = checkpoint['fields']
+                                map_location=lambda storage, loc: storage)
+        self.fields = onmt.IO.ONMTDataset.load_fields(checkpoint['vocab'])
+
         model_opt = checkpoint['opt']
         for arg in dummy_opt:
             if arg not in model_opt:
