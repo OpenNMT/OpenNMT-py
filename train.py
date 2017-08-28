@@ -50,7 +50,7 @@ parser.add_argument('-feat_vec_exponent', type=float, default=0.7,
 parser.add_argument('-input_feed', type=int, default=1,
                     help="""Feed the context vector at each time step as
                     additional input (via concatenation with the word
-                    embeddings) to the decoder.""")
+                    embeddings) to the decoder. """)
 parser.add_argument('-rnn_type', type=str, default='LSTM',
                     choices=['LSTM', 'GRU'],
                     help="""The gate type to use in the RNNs""")
@@ -205,14 +205,15 @@ def eval(model, criterion, data):
                                          eval=True, copy_loss=opt.copy_attn)
     for i in range(len(data)):
         batch = data[i]
-        outputs, attn, dec_hidden = model(batch.src, batch.tgt, batch.lengths)
+        outputs, attn, dec_hidden = model(batch.src, batch.tgt, batch.lengths,
+                                          largest_len=batch.lengths.data.max())
         batch_stats, _, _ = loss.loss(batch, outputs, attn)
         stats.update(batch_stats)
     model.train()
     return stats
 
 
-def trainModel(model, trainData, validData, dataset, optim):
+def trainModel(model, trainData, validData, dataset, optim, mrtTrainer=None):
     model.train()
 
     model_dirname = os.path.dirname(opt.save_model)
@@ -239,6 +240,8 @@ def trainModel(model, trainData, validData, dataset, optim):
 
         total_stats = onmt.Loss.Statistics()
         report_stats = onmt.Loss.Statistics()
+        # total_rl_stats = onmt.Loss.RLStatistics()
+        # report_rl_stats = onmt.Loss.RLStatistics()
 
         for i in range(len(trainData)):
             batchIdx = batchOrder[i] if epoch > opt.curriculum else i
@@ -249,6 +252,10 @@ def trainModel(model, trainData, validData, dataset, optim):
             trunc_size = opt.truncated_decoder if opt.truncated_decoder \
                 else target_size
 
+            # rl_stats = mrtTrainer.policy_grad(batch)
+            # total_rl_stats.update(rl_stats)
+            # report_rl_stats.update(rl_stats)
+
             for j in range(0, target_size-1, trunc_size):
                 trunc_batch = batch.truncate(j, j + trunc_size)
 
@@ -257,7 +264,9 @@ def trainModel(model, trainData, validData, dataset, optim):
                 outputs, attn, dec_state = model(trunc_batch.src,
                                                  trunc_batch.tgt,
                                                  trunc_batch.lengths,
-                                                 dec_state)
+                                                 dec_state,
+                                                 largest_len=trunc_batch.lengths.data.max())
+
                 batch_stats, inputs, grads \
                     = mem_loss.loss(trunc_batch, outputs, attn)
 
@@ -275,9 +284,12 @@ def trainModel(model, trainData, validData, dataset, optim):
             if i % opt.log_interval == -1 % opt.log_interval:
                 report_stats.output(epoch, i+1, len(trainData),
                                     total_stats.start_time)
+                # report_rl_stats.output(epoch, i+1, len(trainData),
+                #                        total_rl_stats.start_time)
                 if opt.log_server:
                     report_stats.log("progress", experiment, optim)
                 report_stats = onmt.Loss.Statistics()
+                # report_rl_stats = onmt.Loss.RLStatistics()
 
         return total_stats
 
@@ -288,11 +300,13 @@ def trainModel(model, trainData, validData, dataset, optim):
         train_stats = trainEpoch(epoch)
         print('Train perplexity: %g' % train_stats.ppl())
         print('Train accuracy: %g' % train_stats.accuracy())
+        print('Train bleu: %g' % train_stats.bleu())
 
         #  (2) evaluate on the validation set
         valid_stats = eval(model, criterion, validData)
         print('Validation perplexity: %g' % valid_stats.ppl())
         print('Validation accuracy: %g' % valid_stats.accuracy())
+        print('Validation bleu: %g' % valid_stats.bleu())
 
         # Log to remote server.
         if opt.log_server:
@@ -309,6 +323,7 @@ def trainModel(model, trainData, validData, dataset, optim):
         generator_state_dict = (model.generator.module.state_dict()
                                 if len(opt.gpus) > 1
                                 else model.generator.state_dict())
+        optim_state_dict = optim.optimizer.state_dict()
         #  (4) drop a checkpoint
         if epoch >= opt.start_checkpoint_at:
             checkpoint = {
@@ -317,7 +332,7 @@ def trainModel(model, trainData, validData, dataset, optim):
                 'dicts': dataset['dicts'],
                 'opt': opt,
                 'epoch': epoch,
-                'optim': optim
+                'optim': (optim, optim_state_dict)
             }
             torch.save(checkpoint,
                        '%s_acc_%.2f_ppl_%.2f_e%d.pt'
@@ -404,16 +419,22 @@ def main():
         generator.load_state_dict(checkpoint['generator'])
         opt.start_epoch = checkpoint['epoch'] + 1
 
+    # XXX for rl test
+    mrtTrainer = onmt.MRT(model, generator, onmt.Loss.BleuScore(), opt)
+
     if len(opt.gpus) >= 1:
         model.cuda()
         generator.cuda()
+        mrtTrainer.step.cuda()
     else:
         model.cpu()
         generator.cpu()
+        mrtTrainer.step.cpu()
 
     if len(opt.gpus) > 1:
         print('Multi gpu training ', opt.gpus)
         model = nn.DataParallel(model, device_ids=opt.gpus, dim=1)
+        mrtTrainer.step = nn.DataParallel(mrtTrainer.step, device_ids=opt.gpus, dim=1)
         generator = nn.DataParallel(generator, device_ids=opt.gpus, dim=0)
 
     model.generator = generator
@@ -422,7 +443,10 @@ def main():
         if opt.param_init != 0.0:
             print('Intializing params')
             for p in model.parameters():
-                p.data.uniform_(-opt.param_init, opt.param_init)
+                if len(p.size()) == 1:
+                    p.data.fill_(1.0)
+                else:
+                    p.data.uniform_(-opt.param_init, opt.param_init)
 
         encoder.embeddings.load_pretrained_vectors(opt.pre_word_vecs_enc)
         decoder.embeddings.load_pretrained_vectors(opt.pre_word_vecs_dec)
@@ -435,14 +459,23 @@ def main():
         )
     else:
         print('Loading optimizer from checkpoint:')
-        optim = checkpoint['optim']
+        optim = checkpoint['optim'][0]
+        if opt.learning_rate != parser.get_default('learning_rate'):
+            optim.lr = opt.learning_rate
+            optim.optimizer.param_groups[0]['lr'] = optim.lr
+        if opt.start_decay_at != parser.get_default('start_decay_at'):
+            optim.start_decay_at = opt.start_decay_at
+            optim.start_decay = False
+        if opt.optim != optim.method:
+            print("Change optim method %s -> %s" % (optim.method, opt.optim))
+            optim.method = opt.optim
         print(optim)
 
     optim.set_parameters(model.parameters())
 
     if opt.train_from or opt.train_from_state_dict:
         optim.optimizer.load_state_dict(
-            checkpoint['optim'].optimizer.state_dict())
+            checkpoint['optim'][1])
 
     nParams = sum([p.nelement() for p in model.parameters()])
     print('* number of parameters: %d' % nParams)
@@ -458,7 +491,7 @@ def main():
     print('encoder: ', enc)
     print('decoder: ', dec)
 
-    trainModel(model, trainData, validData, dataset, optim)
+    trainModel(model, trainData, validData, dataset, optim, mrtTrainer)
 
 
 if __name__ == "__main__":

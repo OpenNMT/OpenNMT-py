@@ -66,6 +66,9 @@ class GlobalAttention(nn.Module):
     def applyMask(self, mask):
         self.mask = mask
 
+    def removeMask(self):
+        self.mask = None
+
     def score(self, h_t, h_s):
         """
         h_t (FloatTensor): batch x dim

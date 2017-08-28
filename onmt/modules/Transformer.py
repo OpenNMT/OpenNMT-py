@@ -84,9 +84,9 @@ class TransformerDecoder(nn.Module):
                                                     d_inner,
                                                     opt.dropout)
         self.dropout = opt.dropout
-        self.mask = get_attn_subsequent_mask(5000)
+        self.mask = get_attn_subsequent_mask(500)
         if len(opt.gpus) > 0:
-            self.mask.cuda()
+            self.mask = self.mask.cuda()
 
     def forward(self, input, context, src_words, tgt_words):
         # CHECKS

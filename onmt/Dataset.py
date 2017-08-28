@@ -198,4 +198,16 @@ class Batch(object):
         """
         return Batch(self.src, self.tgt[start:end],
                      self.lengths, self.indices, self.batchSize,
-                     self.alignment[start:end])
+                     self.alignment[start:end] if self.alignment is not None else None)
+
+    def xsplit(self, mini_size):
+        n = 0
+        while n < self.batchSize:
+            m = min(self.batchSize, n+mini_size)
+            lengths = self.lengths[:, n:m]
+            max_len = lengths.data.max()
+            yield Batch(self.src[:max_len, n:m], self.tgt[:, n:m],
+                        lengths, self.indices[n:m], mini_size,
+                        self.alignment[:, n:m]
+                            if self.alignment is not None else None)
+            n += mini_size
