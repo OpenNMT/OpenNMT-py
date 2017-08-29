@@ -77,7 +77,6 @@ def main():
     translator = onmt.Translator(opt, dummy_opt.__dict__)
     outF = codecs.open(opt.output, 'w', 'utf-8')
     predScoreTotal, predWordsTotal, goldScoreTotal, goldWordsTotal = 0, 0, 0, 0
-    srcBatch, tgtBatch = [], []
     count = 0
     if opt.dump_beam != "":
         import json
@@ -91,13 +90,13 @@ def main():
 
     index = 0
     for batch in testData:
-        predBatch, predScore, goldScore, attn, src \
+        predBatch, goldBatch, predScore, goldScore, attn, src \
             = translator.translate(batch, data)
         predScoreTotal += sum(score[0] for score in predScore)
         predWordsTotal += sum(len(x[0]) for x in predBatch)
         if opt.tgt:
             goldScoreTotal += sum(goldScore)
-            goldWordsTotal += sum(len(x) for x in tgtBatch)
+            goldWordsTotal += sum(len(x) for x in batch.tgt[1:])
 
         for b in range(len(predBatch)):
             count += 1
@@ -118,17 +117,16 @@ def main():
                         break
                     words.append(word)
 
-                os.write(1, bytes('SENT %d: %s\n' %
+                os.write(1, bytes('\nSENT %d: %s\n' %
                                   (count, " ".join(words)), 'UTF-8'))
 
                 index += 1
-                print(len(predBatch[b][0]))
-                os.write(1, bytes('\n PRED %d: %s\n' %
+                os.write(1, bytes('PRED %d: %s\n' %
                                   (count, " ".join(predBatch[b][0])), 'UTF-8'))
                 print("PRED SCORE: %.4f" % predScore[b][0])
 
                 if opt.tgt:
-                    tgtSent = ' '.join(tgtBatch[b])
+                    tgtSent = ' '.join(goldBatch[b])
                     os.write(1, bytes('GOLD %d: %s\n' %
                              (count, tgtSent), 'UTF-8'))
                     print("GOLD SCORE: %.4f" % goldScore[b])
@@ -139,17 +137,6 @@ def main():
                         os.write(1, bytes("[%.4f] %s\n" % (predScore[b][n],
                                  " ".join(predBatch[b][n])),
                             'UTF-8'))
-
-                if opt.attn_debug:
-                    print('')
-                    for i, w in enumerate(predBatch[b][0]):
-                        print(w)
-                        _, ids = attn[b][0][i].sort(0, descending=True)
-                        for j in ids[:5].tolist():
-                            print("\t%s\t%d\t%3f" % (srcBatch[b][j], j,
-                                                     attn[b][0][i][j]))
-
-        srcBatch, tgtBatch = [], []
 
     reportScore('PRED', predScoreTotal, predWordsTotal)
     if opt.tgt:
