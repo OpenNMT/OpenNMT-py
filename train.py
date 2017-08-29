@@ -211,6 +211,7 @@ def check_model_path():
 
 
 def main():
+    global opt
     print("Loading data from '%s'" % opt.data)
 
     train = torch.load(opt.data + '.train.pt')
@@ -223,7 +224,7 @@ def main():
     valid.fields = fields
     src_features = [fields["src_feat_"+str(j)]
                     for j in range(train.nfeatures)]
-
+    model_opt = opt
     checkpoint = None
     dict_checkpoint = opt.train_from
 
@@ -231,7 +232,8 @@ def main():
         print('Loading dicts from checkpoint at %s' % dict_checkpoint)
         checkpoint = torch.load(dict_checkpoint,
                                 map_location=lambda storage, loc: storage)
-        fields = onmt.IO.load_fields(checkpoint['vocab'])
+        fields = onmt.IO.ONMTDataset.load_fields(checkpoint['vocab'])
+        model_opt = checkpoint["opt"]
 
     print(' * vocabulary size. source = %d; target = %d' %
           (len(fields['src'].vocab), len(fields['tgt'].vocab)))
@@ -245,7 +247,8 @@ def main():
 
     print('Building model...')
     cuda = (len(opt.gpuid) >= 1)
-    model = onmt.Models.make_base_model(opt, opt, fields, cuda, checkpoint)
+    model = onmt.Models.make_base_model(opt, model_opt,
+                                        fields, cuda, checkpoint)
     print(model)
 
     if opt.train_from:
@@ -278,11 +281,10 @@ def main():
         optim = checkpoint['optim']
         print(optim)
 
-    optim.set_parameters(model.parameters())
-
     if opt.train_from:
         optim.optimizer.load_state_dict(
             checkpoint['optim'].optimizer.state_dict())
+    optim.set_parameters(model.parameters())
 
     nParams = sum([p.nelement() for p in model.parameters()])
     print('* number of parameters: %d' % nParams)
