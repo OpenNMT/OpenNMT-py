@@ -105,7 +105,7 @@ class Translator(object):
         decStates.repeatBeam_(beamSize)
         beam = [onmt.Beam(beamSize, n_best=self.opt.n_best, cuda=self.opt.cuda,
                           vocab=self.fields["tgt"].vocab)
-                for _ in range(batchSize)]
+                for __ in range(batchSize)]
 
         #  (2) run the decoder to generate sentences, using beam search
         i = 0
