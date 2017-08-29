@@ -1,7 +1,6 @@
 from __future__ import division
 import torch
 import onmt
-import time
 
 """
  Class for managing the internals of the beam search process.
@@ -11,11 +10,10 @@ import time
 
 
 class Beam(object):
-    def __init__(self, size, n_best=1, cuda=False, vocab=None):
+    def __init__(self, size, n_best=1, cuda=False, vocab=None,
+                 global_scorer=None):
 
         self.size = size
-        self.done = False
-
         self.tt = torch.cuda if cuda else torch
 
         # The score for each translation on the beam.
@@ -30,19 +28,22 @@ class Beam(object):
                        .fill_(vocab.stoi[onmt.IO.PAD_WORD])]
         self.nextYs[0][0] = vocab.stoi[onmt.IO.BOS_WORD]
         self.vocab = vocab
+
+        # Has EOS topped the beam yet.
         self._eos = self.vocab.stoi[onmt.IO.EOS_WORD]
+        self.eosTop = False
 
         # The attentions (matrix) for each time.
         self.attn = []
-        
-        # Sum of attentions at beam. 
-        self.coverage = None
-        self.sents = None 
 
         # Time and k pair for finished.
         self.finished = []
         self.n_best = n_best
-        
+
+        # Information for global scoring.
+        self.globalScorer = global_scorer
+        self.globalState = None
+
     def getCurrentState(self):
         "Get the outputs for the current timestep."
         return self.nextYs[-1]
@@ -51,18 +52,7 @@ class Beam(object):
         "Get the backpointers for the current timestep."
         return self.prevKs[-1]
 
-    def _global_score(self, ys=None, end=False, beta = 0.15):
-        pen = beta * torch.min(1.0 - self.coverage,
-                               self.coverage.clone().fill_(0.0)).sum(1).squeeze(1)
-        for i in range(ys.size(0)):
-            if not end and ys[i] == self._eos:
-                pen[i] = -1e20
-            
-            if self.sents[i] < 3:
-                pen[i] -= 1.0
-        return pen
-    
-    def advance(self, wordLk, attnOut, alpha = 0.9):
+    def advance(self, wordLk, attnOut):
         """
         Given prob over words for every last beam `wordLk` and attention
         `attnOut`: Compute and update the beam search.
@@ -74,71 +64,56 @@ class Beam(object):
 
         Returns: True if beam search is complete.
         """
-        s = time.time()
         numWords = wordLk.size(1)
 
         # Sum the previous scores.
-        pen = None
-        global_score = True
-        ys = self.nextYs[-1].cpu()
         if len(self.prevKs) > 0:
             beamLk = wordLk + self.scores.unsqueeze(1).expand_as(wordLk)
-            if global_score:
-                pen = self._global_score(ys=ys)
-                beamLk.add_(pen.unsqueeze(1).expand_as(beamLk))
+
+            # Don't let EOS have children.
+            for i in range(self.nextYs[-1].size(0)):
+                if self.nextYs[-1][i] == self._eos:
+                    beamLk[i] = -1e20
         else:
             beamLk = wordLk[0]
         flatBeamLk = beamLk.view(-1)
         bestScores, bestScoresId = flatBeamLk.topk(self.size, 0, True, True)
-        
+
         self.allScores.append(self.scores)
-        self.scores = bestScores 
+        self.scores = bestScores
 
         # bestScoresId is flattened beam x word array, so calculate which
         # word and beam each score came from
         prevK = bestScoresId / numWords
         self.prevKs.append(prevK)
-        if pen is not None:
-            self.scores = self.scores - pen[prevK]
         self.nextYs.append((bestScoresId - prevK * numWords))
         self.attn.append(attnOut.index_select(0, prevK))
 
-        if len(self.prevKs) == 1:
-            self.sents = self.nextYs[-1].eq(self.vocab.stoi["</t>"])
-            self.coverage = self.attn[-1]
-        else:
-            self.coverage = self.coverage.index_select(0, prevK).add(self.attn[-1])
-            self.sents = self.sents.index_select(0, prevK).add(self.nextYs[-1].eq(self.vocab.stoi["</t>"]))
+        if self.globalScorer is not None:
+            self.globalScorer.updateGlobalState(self)
 
-        ys = self.nextYs[-1].cpu()
-        pen = None
-        for i in range(ys.size(0)):
-            if ys[i] == self._eos:
-                k = i
+        for i in range(self.nextYs[-1].size(0)):
+            if self.nextYs[-1][i] == self._eos:
                 s = self.scores[i]
-                if global_score:
-                    # Ranking score from Wu et al.
-                    s = self.scores[i] / ((5 + len(self.nextYs)) ** alpha / (5 + 1) ** alpha)
-                    if pen is None:
-                        # Ranking score from Wu et al.
-                        pen = self._global_score(end=True, ys=ys)
-                    coverage_bonus = pen[i] if pen is not None else 0
-                    s += coverage_bonus
+                if self.globalScorer is not None:
+                    globalScores = self.globalScorer.score(self, self.scores)
+                    s = globalScores[i]
                 self.finished.append((s, len(self.nextYs) - 1, i))
 
-        # End condition is when top-of-beam is EOS.
-        # if self.nextYs[-1][0] == self.vocab.stoi[onmt.IO.EOS_WORD] and len(self.finished) > self.n_best:
-        #     self.done = True
-        #     self.allScores.append(self.scores)
-            
-        return self.done
+        # End condition is when top-of-beam is EOS and no global score.
+        if self.nextYs[-1][0] == self.vocab.stoi[onmt.IO.EOS_WORD]:
+            # self.allScores.append(self.scores)
+            self.eosTop = True
+
+    def done(self):
+        return self.eosTop and len(self.finished) >= self.n_best
 
     def sortFinished(self):
         self.finished.sort(key=lambda a: -a[0])
         scores = [s for s, _, _ in self.finished]
         ks = [(t, k) for _, t, k in self.finished]
         return scores, ks
-        
+
     def getHyp(self, timestep, k):
         """
         Walk back to construct the full hypothesis.
@@ -148,5 +123,29 @@ class Beam(object):
             hyp.append(self.nextYs[j+1][k])
             attn.append(self.attn[j][k])
             k = self.prevKs[j][k]
-
         return hyp[::-1], torch.stack(attn[::-1])
+
+
+class GNMTGlobalScorer(object):
+    """
+    Google NMT ranking score from Wu et al.
+    """
+    def __init__(self, alpha, beta):
+        self.alpha = alpha
+        self.beta = beta
+
+    def score(self, beam, logprobs):
+        "Additional term add to log probability"
+        cov = beam.globalState["coverage"]
+        pen = self.beta * torch.min(beam.globalState["coverage"].sum(2),
+                                    cov.clone().fill_(1.0)).log().sum(1)
+        l_term = ((5 + len(self.nextYs)) ** self.alpha / (5 + 1) ** self.alpha)
+        return logprobs / l_term + pen
+
+    def updateGlobalState(self, beam):
+        "Keeps the coverage vector as sum of attens"
+        if len(beam.prevKs) == 1:
+            beam.globalState["coverage"] = beam.attn[-1]
+        else:
+            beam.globalState["coverage"] = beam.globalState["coverage"] \
+                .index_select(0, self.prevKs[-1]).add(beam.attn[-1])

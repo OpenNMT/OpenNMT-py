@@ -39,15 +39,16 @@ class Translator(object):
 
     def buildTargetTokens(self, pred, src, attn, copy_vocab):
         vocab = self.fields["tgt"].vocab
-        tgt_eos = vocab.stoi[onmt.IO.EOS_WORD]
         tokens = []
         for tok in pred:
             if tok < len(vocab):
                 tokens.append(vocab.itos[tok])
             else:
                 tokens.append(copy_vocab.itos[tok - len(vocab)])
+            if tokens[-1] == onmt.IO.EOS_WORD:
+                tokens = tokens[:-1]
+                break
 
-        tokens = tokens[:-1]  # EOS
         if self.opt.replace_unk:
             for i in range(len(tokens)):
                 if tokens[i] == onmt.IO.UNK:
@@ -66,20 +67,21 @@ class Translator(object):
 
         #  (2) if a target is specified, compute the 'goldScore'
         #  (i.e. log likelihood) of the target under the model
-        goldScores = 0
+        goldScores = torch.FloatTensor(batch.batch_size).fill_(0)
         decOut, decStates, attn = self.model.decoder(
-            batch.tgt[:-1], batch.src, context, decStates)
+            batch.tgt[:-1], src, context, decStates)
 
-        aeq(decOut.size(), batch.tgt[1:].data.size())
+        # print(decOut.size(), batch.tgt[1:].data.size())
+        # aeq(decOut.size(), batch.tgt[1:].data.size())
+        tgt_pad = self.fields["tgt"].vocab.stoi[onmt.IO.PAD_WORD]
         for dec, tgt in zip(decOut, batch.tgt[1:].data):
             # Log prob of each word.
             out = self.model.generator.forward(dec)
             tgt = tgt.unsqueeze(1)
             scores = out.data.gather(1, tgt)
             scores.masked_fill_(tgt.eq(tgt_pad), 0)
-            goldScores += scores[0]
+            goldScores += scores
         return goldScores
-
 
     def translateBatch(self, batch, dataset):
         beamSize = self.opt.beam_size
@@ -87,12 +89,13 @@ class Translator(object):
 
         #  (1) run the encoder on the src
         _, src_lengths = batch.src
-        src = make_features(batch, self.fields)
+        src = onmt.IO.make_features(batch, self.fields)
         encStates, context = self.model.encoder(src, src_lengths)
         decStates = self.model.init_decoder_state(context, encStates)
 
         #  (1b) initialize for the decoder.
         def var(a): return Variable(a, volatile=True)
+
         def rvar(a): return var(a.repeat(1, beamSize, 1))
 
         # Repeat everything beam_times
@@ -106,36 +109,42 @@ class Translator(object):
 
         #  (2) run the decoder to generate sentences, using beam search
         i = 0
+
         def bottle(m):
             return m.view(batchSize * beamSize, -1)
+
         def unbottle(m):
             return m.view(beamSize, batchSize, -1)
 
-        while i < self.opt.max_sent_length \
-              or any([len(b.finished) == 0 for b in beam]):
+        for i in range(self.opt.max_sent_length):
+            if all((b.done() for b in beam)):
+                break
+
             # Construct batch x beam_size nxt words.
             # Get all the pending current beam words and arrange for forward.
             inp = var(torch.stack([b.getCurrentState() for b in beam])
                       .t().contiguous().view(1, -1))
-            
+
             # Turn any copied words to UNKs
             # 0 is unk
             if self.copy_attn:
-                inp = inp.masked_fill(inp.gt(len(self.fields["tgt"].vocab) - 1), 0)
-                            
+                inp = inp.masked_fill(
+                    inp.gt(len(self.fields["tgt"].vocab) - 1), 0)
+
             # Run one step.
             decOut, decStates, attn = \
                 self.model.decoder(inp, src, context, decStates)
             decOut = decOut.squeeze(0)
             # decOut: beam x rnn_size
-            
+
             # (b) Compute a vector of batch*beam word scores.
             if not self.copy_attn:
                 out = self.model.generator.forward(decOut).data
                 out = unbottle(out)
                 # beam x tgt_vocab
-            else:                
-                out = self.model.generator.forward(decOut, attn["copy"].squeeze(0),
+            else:
+                out = self.model.generator.forward(decOut,
+                                                   attn["copy"].squeeze(0),
                                                    srcMap)
                 # beam x (tgt_vocab + extra_vocab)
                 out = dataset.collapseCopyScores(
@@ -146,32 +155,29 @@ class Translator(object):
 
             # (c) Advance each beam.
             for j, b in enumerate(beam):
-                is_done = b.advance(out[:, j], unbottle(attn["copy"]).data[:, j])
+                b.advance(out[:, j],  unbottle(attn["std"]).data[:, j])
                 decStates.beamUpdate_(j, b.getCurrentOrigin(), beamSize)
-                if is_done:
-                    break
             i += 1
-            
+
         if "tgt" in batch.__dict__:
             allGold = self._runTarget(batch, dataset)
         else:
             allGold = [0] * batchSize
 
-            
         #  (3) package everything up
         allHyps, allScores, allAttn = [], [], []
         for b in beam:
             n_best = self.opt.n_best
             scores, ks = b.sortFinished()
             hyps, attn = [], []
-            for i, (times, k) in enumerate(ks):# [:n_best]:
+            for i, (times, k) in enumerate(ks[:n_best]):
                 hyp, att = b.getHyp(times, k)
                 hyps.append(hyp)
                 attn.append(att)
             allHyps.append(hyps)
             allScores.append(scores)
             allAttn.append(attn)
-            
+
         return allHyps, allScores, allAttn, allGold
 
     def translate(self, batch, data):
@@ -180,6 +186,7 @@ class Translator(object):
 
         #  (2) translate
         pred, predScore, attn, goldScore = self.translateBatch(batch, data)
+        assert(len(goldScore) == len(pred))
         pred, predScore, attn, goldScore, i = list(zip(
             *sorted(zip(pred, predScore, attn, goldScore,
                         batch.indices.data),
@@ -187,14 +194,18 @@ class Translator(object):
         inds, perm = torch.sort(batch.indices.data)
 
         #  (3) convert indexes to words
-        predBatch = []
+        predBatch, goldBatch = [], []
         src = batch.src[0].data.index_select(1, perm)
+        if self.opt.tgt:
+            tgt = batch.tgt.data.index_select(1, perm)
         for b in range(batchSize):
             src_vocab = data.src_vocabs[inds[b]]
             predBatch.append(
                 [self.buildTargetTokens(pred[b][n], src[:, b],
                                         attn[b][n], src_vocab)
-                 for n in range(self.opt.n_best)]
-            )
-
-        return predBatch, predScore, goldScore, attn, src
+                 for n in range(self.opt.n_best)])
+            if self.opt.tgt:
+                goldBatch.append(
+                    self.buildTargetTokens(tgt[1:, b], src[:, b],
+                                           None, None))
+        return predBatch, goldBatch, predScore, goldScore, attn, src

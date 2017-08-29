@@ -154,7 +154,7 @@ class ONMTDataset(torchtext.data.Dataset):
                     tgt, _, _ = extractFeatures(tgt_line)
                     examples[i]["tgt"] = tgt
 
-                    if opt.dynamic_dict:
+                    if opt is None or opt.dynamic_dict:
                         src_vocab = self.src_vocabs[i]
                         # Map target tokens to indices in the dynamic dict
                         mask = torch.LongTensor(len(tgt)+2).fill_(0)
