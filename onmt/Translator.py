@@ -67,7 +67,8 @@ class Translator(object):
 
         #  (2) if a target is specified, compute the 'goldScore'
         #  (i.e. log likelihood) of the target under the model
-        goldScores = torch.FloatTensor(batch.batch_size).fill_(0)
+        tt = torch.cuda if self.opt.cuda else torch
+        goldScores = tt.FloatTensor(batch.batch_size).fill_(0)
         decOut, decStates, attn = self.model.decoder(
             batch.tgt[:-1], src, context, decStates)
 
