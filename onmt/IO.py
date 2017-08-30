@@ -249,6 +249,18 @@ class ONMTDataset(torchtext.data.Dataset):
         return feats
 
     @staticmethod
+    def collect_feature_dicts(fields):
+        feature_dicts = []
+        j = 0
+        while True:
+            key = "src_feat_" + str(j)
+            if key not in fields:
+                break
+            feature_dicts.append(fields[key].vocab)
+            j += 1
+        return feature_dicts
+
+    @staticmethod
     def get_fields(nFeatures=0):
         fields = {}
         fields["src"] = torchtext.data.Field(
