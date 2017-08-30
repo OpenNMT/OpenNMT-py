@@ -9,7 +9,8 @@ class Elementwise(nn.ModuleList):
     """
     A simple network container.
     Parameters are a list of modules.
-    Inputs are one Variable per parameter.
+    Inputs are a 3d Variable whose last dimension is the same length
+    as the list.
     Outputs are the result of applying modules to inputs elementwise.
     An optional merge parameter allows the outputs to be reduced to a
     single Variable.
@@ -20,9 +21,10 @@ class Elementwise(nn.ModuleList):
         self.merge = merge
         super(Elementwise, self).__init__(*args)
 
-    def forward(self, *args):
-        assert len(self) == len(args)
-        outputs = [f(x) for f, x in zip(self, args)]
+    def forward(self, input):
+        inputs = [feat.squeeze(2) for feat in input.split(1, dim=2)]
+        assert len(self) == len(inputs)
+        outputs = [f(x) for f, x in zip(self, inputs)]
         if self.merge == 'first':
             return outputs[0]
         elif self.merge == 'concat' or self.merge == 'mlp':
@@ -72,11 +74,12 @@ class Embeddings(nn.Module):
                                     of embeddings for each feature.
     """
     def __init__(self, embedding_dim, position_encoding, feat_merge,
-                 feat_vec_exponent, feat_vec_size, dropout,
-                 padding_idx, word_vocab_size, feat_vocab_sizes=[]):
+                 feat_vec_exponent, feat_vec_size, dropout, padding_idx,
+                 feat_pads, word_vocab_size, feat_vocab_sizes=[]):
         super(Embeddings, self).__init__()
 
         self.padding_idx = padding_idx
+        pad_indices = [padding_idx] + feat_pads
 
         if feat_merge == 'concat':
             feat_dims = [int(vocab ** feat_vec_exponent)
@@ -90,10 +93,9 @@ class Embeddings(nn.Module):
         self.embedding_size = (sum(emb_dims) if feat_merge == 'concat'
                                else embedding_dim)
 
-        embeddings = [nn.Embedding(vocab,
-                                   dim,
-                                   padding_idx=padding_idx)
-                      for vocab, dim in zip(vocab_sizes, emb_dims)]
+        emb_params = zip(vocab_sizes, emb_dims, pad_indices)
+        embeddings = [nn.Embedding(vocab, dim, padding_idx=pad)
+                      for vocab, dim, pad in emb_params]
         emb_luts = Elementwise(embeddings, merge=feat_merge)
 
         self.make_embedding = nn.Sequential()
@@ -139,8 +141,7 @@ class Embeddings(nn.Module):
         in_length, in_batch, nfeat = input.size()
         aeq(nfeat, len(self.emb_luts))
 
-        inputs = [feat.squeeze(2) for feat in input.split(1, dim=2)]
-        emb = self.make_embedding(*inputs)
+        emb = self.make_embedding(input)
 
         out_length, out_batch, emb_size = emb.size()
         aeq(in_length, out_length)
