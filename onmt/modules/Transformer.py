@@ -9,14 +9,17 @@ import onmt.modules
 from onmt.modules import aeq
 
 
-def get_attn_padding_mask(seq_q, seq_k, pad):
+MAX_SIZE = 5000
+
+
+def get_attn_padding_mask(seq_q, seq_k, padding_idx):
     ''' Indicate the padding-related part to mask '''
     assert seq_q.dim() == 2 and seq_k.dim() == 2
     mb_size, len_k = seq_k.size()
     mb_size_, len_q = seq_q.size()
     aeq(mb_size, mb_size_)
     # bx1xsk
-    pad_attn_mask = seq_k.data.eq(pad).unsqueeze(1) \
+    pad_attn_mask = seq_k.data.eq(padding_idx).unsqueeze(1) \
         .expand(mb_size, len_q, len_k)
     return pad_attn_mask
 
@@ -30,12 +33,19 @@ def get_attn_subsequent_mask(size):
 
 
 class PositionwiseFeedForward(nn.Module):
-    ''' A two-feed-forward-layer module '''
-    def __init__(self, d_hid, d_inner_hid, dropout=0.1):
+    """ A two-layer Feed-Forward-Network."""
+    def __init__(self, size, hidden_size, dropout=0.1):
+        """
+        Args:
+            size(int): the size of input for the first-layer of the FFN.
+            hidden_size(int): the hidden layer size of the second-layer
+                              of the FNN.
+            droput(float): dropout probability(0-1.0).
+        """
         super(PositionwiseFeedForward, self).__init__()
-        self.w_1 = onmt.modules.BottleLinear(d_hid, d_inner_hid)
-        self.w_2 = onmt.modules.BottleLinear(d_inner_hid, d_hid)
-        self.layer_norm = onmt.modules.BottleLayerNorm(d_hid)
+        self.w_1 = onmt.modules.BottleLinear(size, hidden_size)
+        self.w_2 = onmt.modules.BottleLinear(hidden_size, size)
+        self.layer_norm = onmt.modules.BottleLayerNorm(size)
         self.dropout = nn.Dropout(dropout)
         self.relu = nn.ReLU()
 
@@ -46,14 +56,27 @@ class PositionwiseFeedForward(nn.Module):
 
 
 class TransformerEncoder(nn.Module):
-    def __init__(self, hidden_size, dropout, padding_idx,
-                 n_head=8, d_inner=2048):
+    """
+    The Transformer Decoder from "Attention is All You Need".
+    """
+    def __init__(self, size, dropout, padding_idx,
+                 head_count=8, hidden_size=2048):
+        """
+        Args:
+            size(int): the dimension of keys/values/queries in
+                       MultiHeadedAttention, also the input size of
+                       the first-layer of the PositionwiseFeedForward.
+            droput(float): dropout probability(0-1.0).
+            padding_idx(id): the padding character idx in the Vocabulary.
+            head_count(int): the number of head for MultiHeadedAttention.
+            hidden_size(int): the second-layer of the PositionwiseFeedForward.
+        """
         super(TransformerEncoder, self).__init__()
 
         self.self_attn = onmt.modules.MultiHeadedAttention(
-            n_head, hidden_size, p=dropout)
-        self.feed_forward = PositionwiseFeedForward(hidden_size,
-                                                    d_inner,
+            head_count, size, p=dropout)
+        self.feed_forward = PositionwiseFeedForward(size,
+                                                    hidden_size,
                                                     dropout)
         self.padding_idx = padding_idx
 
@@ -75,22 +98,32 @@ class TransformerDecoder(nn.Module):
     """
     The Transformer Decoder from AIAYN
     """
-    def __init__(self, hidden_size, opt, pad,
-                 n_head=8, d_inner=2048):
+    def __init__(self, size, dropout, padding_idx,
+                 head_count=8, hidden_size=2048):
+        """
+        Args:
+            size(int): the dimension of keys/values/queries in
+                       MultiHeadedAttention, also the input size of
+                       the first-layer of the PositionwiseFeedForward.
+            droput(float): dropout probability(0-1.0).
+            padding_idx(id): the padding character idx in the Vocabulary.
+            head_count(int): the number of head for MultiHeadedAttention.
+            hidden_size(int): the second-layer of the PositionwiseFeedForward.
+        """
         super(TransformerDecoder, self).__init__()
-        self.self_attn = onmt.modules.MultiHeadedAttention(n_head, hidden_size,
-                                                           p=opt.dropout)
-        self.context_attn = onmt.modules.MultiHeadedAttention(n_head,
-                                                              hidden_size,
-                                                              p=opt.dropout)
-        self.feed_forward = PositionwiseFeedForward(hidden_size,
-                                                    d_inner,
-                                                    opt.dropout)
-        self.dropout = opt.dropout
-        self.mask = get_attn_subsequent_mask(5000)
-        if len(opt.gpuid) > 0:
-            self.mask = self.mask.cuda()
-        self.pad = pad
+        self.self_attn = onmt.modules.MultiHeadedAttention(
+                head_count, size, p=dropout)
+        self.context_attn = onmt.modules.MultiHeadedAttention(
+                head_count, size, p=dropout)
+        self.feed_forward = PositionwiseFeedForward(size,
+                                                    hidden_size,
+                                                    dropout)
+        self.dropout = dropout
+        self.mask = get_attn_subsequent_mask(MAX_SIZE)
+        # Register self.mask as a buffer in TransformerDecoder, so
+        # it gets TransformerDecoder's cuda behavior automatically.
+        self.register_buffer('mask', self.mask)
+        self.padding_idx = padding_idx
 
     def forward(self, input, context, src_words, tgt_words):
         # CHECKS
@@ -103,12 +136,14 @@ class TransformerDecoder(nn.Module):
         aeq(t_len, t_len_)
         # END CHECKS
 
-        attn_mask = get_attn_padding_mask(tgt_words, tgt_words, self.pad)
+        attn_mask = get_attn_padding_mask(tgt_words, tgt_words,
+                                          self.padding_idx)
         dec_mask = torch.gt(attn_mask + self.mask[:, :attn_mask.size(1),
                                                   :attn_mask.size(1)]
                             .expand_as(attn_mask), 0)
 
-        pad_mask = get_attn_padding_mask(tgt_words, src_words, self.pad)
+        pad_mask = get_attn_padding_mask(tgt_words, src_words,
+                                         self.padding_idx)
         query, attn = self.self_attn(input, input, input, mask=dec_mask)
         mid, attn = self.context_attn(context, context, query, mask=pad_mask)
         output = self.feed_forward(mid)

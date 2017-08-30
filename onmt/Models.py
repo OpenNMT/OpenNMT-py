@@ -284,10 +284,11 @@ class Decoder(nn.Module):
         super(Decoder, self).__init__()
         self.embeddings = embeddings
 
-        pad_id = embeddings.padding_idx
         if self.decoder_type == "transformer":
+            padding_idx = embeddings.padding_idx
             self.transformer = nn.ModuleList(
-                [onmt.modules.TransformerDecoder(self.hidden_size, opt, pad_id)
+                [onmt.modules.TransformerDecoder(self.hidden_size,
+                                                 opt.dropout, padding_idx)
                  for _ in range(opt.dec_layers)])
         else:
             if self.input_feed:
