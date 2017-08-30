@@ -16,7 +16,7 @@ class Elementwise(nn.ModuleList):
     single Variable.
     """
 
-    def __init__(self, *args, merge=None):
+    def __init__(self, merge=None, *args):
         assert merge in [None, 'first', 'concat', 'sum', 'mlp']
         self.merge = merge
         super(Elementwise, self).__init__(*args)
@@ -96,7 +96,7 @@ class Embeddings(nn.Module):
         emb_params = zip(vocab_sizes, emb_dims, pad_indices)
         embeddings = [nn.Embedding(vocab, dim, padding_idx=pad)
                       for vocab, dim, pad in emb_params]
-        emb_luts = Elementwise(embeddings, merge=feat_merge)
+        emb_luts = Elementwise(feat_merge, embeddings)
 
         self.make_embedding = nn.Sequential()
         self.make_embedding.add_module('emb_luts', emb_luts)
