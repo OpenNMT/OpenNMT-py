@@ -11,7 +11,7 @@ from torch.nn.utils.rnn import pad_packed_sequence as unpack
 from torch.nn.utils.rnn import pack_padded_sequence as pack
 
 
-def build_embeddings(opt, padding_idx, num_word_embeddings,
+def build_embeddings(opt, word_pad_ix, feat_pad_ix, num_word_embeddings,
                      for_encoder, num_feat_embeddings=[]):
     """
     Create an Embeddings instance.
@@ -34,7 +34,8 @@ def build_embeddings(opt, padding_idx, num_word_embeddings,
                       opt.feat_vec_exponent,
                       opt.feat_vec_size,
                       opt.dropout,
-                      padding_idx,
+                      word_pad_ix,
+                      feat_pad_ix,
                       num_word_embeddings,
                       num_feat_embeddings)
 
@@ -465,11 +466,14 @@ def make_base_model(opt, model_opt, fields, checkpoint=None):
     """
     # Make Encoder.
     src_vocab = fields["src"].vocab
+    feature_dicts = ONMTDataset.collect_feature_dicts(fields)
+    feat_pad_ix = [feat_dict.stoi[onmt.IO.PAD_WORD]
+                   for feat_dict in feature_dicts]
     num_feat_embeddings = [len(feat_dict) for feat_dict in
-                           ONMTDataset.collect_feature_dicts(fields)]
+                           feature_dicts]
     embeddings = build_embeddings(
                 model_opt, src_vocab.stoi[onmt.IO.PAD_WORD],
-                len(src_vocab), for_encoder=True,
+                feat_pad_ix, len(src_vocab), for_encoder=True,
                 num_feat_embeddings=num_feat_embeddings)
 
     if model_opt.model_type == "text":
@@ -485,9 +489,10 @@ def make_base_model(opt, model_opt, fields, checkpoint=None):
 
     # Make Decoder.
     tgt_vocab = fields["tgt"].vocab
+    # TODO: prepare for a future where tgt features are possible
     embeddings = build_embeddings(
                     model_opt, tgt_vocab.stoi[onmt.IO.PAD_WORD],
-                    len(tgt_vocab), for_encoder=False)
+                    [], len(tgt_vocab), for_encoder=False)
     decoder = onmt.Models.Decoder(model_opt, embeddings)
 
     # Make NMTModel(= Encoder + Decoder).
