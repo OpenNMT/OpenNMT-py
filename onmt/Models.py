@@ -29,10 +29,10 @@ class Embeddings(nn.Module):
 
         self.feat_merge = feat_merge
 
-        vocab_sizes = [dicts.size()]
+        vocab_sizes = [len(dicts)]
         emb_sizes = [word_vec_size]
         if feature_dicts:
-            vocab_sizes.extend(feat_dict.size() for feat_dict in feature_dicts)
+            vocab_sizes.extend(len(feat_dict) for feat_dict in feature_dicts)
             if feat_merge == 'concat':
                 # Derive embedding sizes from each feature's vocab size
                 emb_sizes.extend([int(feat_dict.size() ** feat_vec_exponent)
@@ -51,10 +51,11 @@ class Embeddings(nn.Module):
                                         word_vec_size),
                                         nn.ReLU())
 
-        self.emb_luts = nn.ModuleList([
-                            nn.Embedding(vocab, dim,
-                                         padding_idx=onmt.Constants.PAD)
-                            for vocab, dim in zip(vocab_sizes, emb_sizes)])
+        self.emb_luts = \
+            nn.ModuleList([
+                nn.Embedding(vocab, dim,
+                             padding_idx=dicts.stoi[onmt.IO.PAD_WORD])
+                for vocab, dim in zip(vocab_sizes, emb_sizes)])
         if pre_word_vecs:
             self._load_pretrained_vectors(pre_word_vecs)
         if fix_word_vecs:
@@ -155,7 +156,7 @@ class Encoder(nn.Module):
             dicts, feature_dicts,
             opt.word_vec_size, opt.pre_word_vecs_enc, opt.fix_word_vecs_enc,
             opt.feat_merge, opt.feat_vec_size, opt.feat_vec_exponent,
-            opt.position_encoding, opt.gpus, opt.dropout)
+            opt.position_encoding, opt.gpuid, opt.dropout)
 
         input_size = self.embeddings.embedding_size
 
@@ -246,7 +247,7 @@ class Decoder(nn.Module):
             dicts, None,
             opt.word_vec_size, opt.pre_word_vecs_dec, opt.fix_word_vecs_dec,
             opt.feat_merge, opt.feat_vec_size, opt.feat_vec_exponent,
-            opt.position_encoding, opt.gpus, opt.dropout)
+            opt.position_encoding, opt.gpuid, opt.dropout)
 
         pad_id = dicts.stoi[onmt.IO.PAD_WORD]
         if self.decoder_type == "transformer":
