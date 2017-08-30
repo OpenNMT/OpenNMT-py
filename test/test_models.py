@@ -61,7 +61,7 @@ class TestModel(unittest.TestCase):
             bsize: Batchsize of generated input
         '''
         vocab = self.get_vocab()
-        emb = onmt.Models.Embeddings(
+        emb = onmt.modules.Embeddings(
             vocab, None,
             opt.word_vec_size, opt.pre_word_vecs_enc, opt.fix_word_vecs_enc,
             opt.feat_merge, opt.feat_vec_size, opt.feat_vec_exponent,
