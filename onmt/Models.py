@@ -11,18 +11,19 @@ from torch.nn.utils.rnn import pack_padded_sequence as pack
 
 
 class Embeddings(nn.Module):
-    def __init__(self, vec_size, opt, dicts, feature_dicts=None):
+    def __init__(self, dropout, cuda, dicts, feature_dicts=None, **emb_opts):
         super(Embeddings, self).__init__()
-        self.positional_encoding = opt.position_encoding
+        vec_size = emb_opts['src_word_vec_size']
+        self.positional_encoding = emb_opts['position_encoding']
         if self.positional_encoding:
             self.pe = self.make_positional_encodings(vec_size, 5000)
-            if len(opt.gpuid) > 0:
+            if cuda:
                 self.pe.cuda()
-            self.dropout = nn.Dropout(p=opt.dropout)
+            self.dropout = nn.Dropout(p=dropout)
 
-        self.feat_merge = opt.feat_merge
+        self.feat_merge = emb_opts['feat_merge']
 
-        feat_exp = opt.feat_vec_exponent
+        feat_exp = emb_opts['feat_vec_exponent']
 
         # vocab_sizes: sequence of vocab sizes for words and each feature
         vocab_sizes = [len(dicts)]
@@ -30,16 +31,17 @@ class Embeddings(nn.Module):
         emb_sizes = [vec_size]
         if feature_dicts:
             vocab_sizes.extend(len(feat_dict) for feat_dict in feature_dicts)
-            if opt.feat_merge == 'concat':
+            if emb_opts['feat_merge'] == 'concat':
                 # Derive embedding sizes from each feature's vocab size
                 emb_sizes.extend([int(len(feat_dict) ** feat_exp)
                                   for feat_dict in feature_dicts])
-            elif opt.feat_merge == 'sum':
+            elif emb_opts['feat_merge'] == 'sum':
                 # All embeddings to be summed must be the same size
                 emb_sizes.extend([vec_size] * len(feature_dicts))
             else:
                 # mlp feature merge
-                emb_sizes.extend([opt.feat_vec_size] * len(feature_dicts))
+                emb_sizes.extend([emb_opts['feat_vec_size']]
+                                 * len(feature_dicts))
                 # apply a layer of mlp to get it down to the correct dim
                 self.mlp = nn.Sequential(onmt.modules.BottleLinear(
                                         sum(emb_sizes),
@@ -125,7 +127,7 @@ class Encoder(nn.Module):
     """
     Encoder recurrent neural network.
     """
-    def __init__(self, opt, dicts, feature_dicts=None):
+    def __init__(self, opt, cuda, dicts, feature_dicts=None, **emb_opts):
         """
         Args:
             opt: Model options.
@@ -143,8 +145,8 @@ class Encoder(nn.Module):
         self.hidden_size = opt.rnn_size // self.num_directions
 
         super(Encoder, self).__init__()
-        self.embeddings = Embeddings(opt.src_word_vec_size,
-                                     opt, dicts, feature_dicts)
+        self.embeddings = Embeddings(opt.dropout, cuda,
+                                     dicts, feature_dicts, **emb_opts)
 
         input_size = self.embeddings.embedding_size
 
@@ -215,7 +217,7 @@ class Decoder(nn.Module):
     Decoder + Attention recurrent neural network.
     """
 
-    def __init__(self, opt, dicts):
+    def __init__(self, opt, cuda, dicts, **emb_opts):
         """
         Args:
             opt: model options
@@ -231,8 +233,8 @@ class Decoder(nn.Module):
             input_size += opt.rnn_size
 
         super(Decoder, self).__init__()
-        self.embeddings = Embeddings(opt.tgt_word_vec_size,
-                                     opt, dicts, None)
+        self.embeddings = Embeddings(opt.dropout, cuda,
+                                     dicts, None, **emb_opts)
 
         pad_id = dicts.stoi[onmt.IO.PAD_WORD]
         if self.decoder_type == "transformer":
@@ -548,9 +550,15 @@ def make_base_model(opt, model_opt, fields, cuda, checkpoint=None):
             break
         feature_vocabs.append(fields[key].vocab)
 
+    emb_opts = {'src_word_vec_size': model_opt.src_word_vec_size,
+                'position_encoding': model_opt.position_encoding,
+                'feat_merge': model_opt.feat_merge,
+                'feat_vec_exponent': model_opt.feat_vec_exponent,
+                'feat_vec_size': model_opt.feat_vec_size}
+
     if model_opt.model_type == "text":
-        encoder = Encoder(model_opt, fields["src"].vocab,
-                          feature_vocabs)
+        encoder = Encoder(model_opt, cuda, fields["src"].vocab,
+                          feature_vocabs, **emb_opts)
     elif model_opt.model_type == "img":
         encoder = onmt.modules.ImageEncoder(model_opt)
     else:
@@ -558,7 +566,7 @@ def make_base_model(opt, model_opt, fields, cuda, checkpoint=None):
                        % (model_opt.model_type))
 
     decoder = onmt.Models.Decoder(
-        model_opt, fields["tgt"].vocab)
+            model_opt, cuda, fields["tgt"].vocab, **emb_opts)
     model = onmt.Models.NMTModel(encoder, decoder)
 
     if not model_opt.copy_attn:

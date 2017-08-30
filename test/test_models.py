@@ -45,7 +45,14 @@ class TestModel(unittest.TestCase):
             bsize: Batchsize of generated input
         '''
         vocab = self.get_vocab()
-        emb = onmt.Models.Embeddings(opt.src_word_vec_size, opt, vocab)
+        emb_opts = {'src_word_vec_size': opt.src_word_vec_size,
+                    'position_encoding': opt.position_encoding,
+                    'feat_merge': opt.feat_merge,
+                    'feat_vec_exponent': opt.feat_vec_exponent,
+                    'feat_vec_size': opt.feat_vec_size}
+        cuda = (len(opt.gpuid) >= 1)
+        emb = onmt.Models.Embeddings(opt.dropout, cuda, vocab,
+                                     None, **emb_opts)
         test_src, _, __ = self.get_batch(sourceL=sourceL,
                                          bsize=bsize)
         if opt.decoder_type == 'transformer':
@@ -68,7 +75,13 @@ class TestModel(unittest.TestCase):
             bsize: Batchsize of generated input
         '''
         vocab = self.get_vocab()
-        enc = onmt.Models.Encoder(opt, vocab)
+        emb_opts = {'src_word_vec_size': opt.src_word_vec_size,
+                    'position_encoding': opt.position_encoding,
+                    'feat_merge': opt.feat_merge,
+                    'feat_vec_exponent': opt.feat_vec_exponent,
+                    'feat_vec_size': opt.feat_vec_size}
+        cuda = (len(opt.gpuid) >= 1)
+        enc = onmt.Models.Encoder(opt, cuda, vocab, None, **emb_opts)
 
         test_src, test_tgt, test_length = self.get_batch(sourceL=sourceL,
                                                          bsize=bsize)
@@ -98,8 +111,14 @@ class TestModel(unittest.TestCase):
             bsize: batchsize
         """
         vocab = self.get_vocab()
-        enc = onmt.Models.Encoder(opt, vocab)
-        dec = onmt.Models.Decoder(opt, vocab)
+        emb_opts = {'src_word_vec_size': opt.src_word_vec_size,
+                    'position_encoding': opt.position_encoding,
+                    'feat_merge': opt.feat_merge,
+                    'feat_vec_exponent': opt.feat_vec_exponent,
+                    'feat_vec_size': opt.feat_vec_size}
+        cuda = (len(opt.gpuid) >= 1)
+        enc = onmt.Models.Encoder(opt, cuda, vocab, None, **emb_opts)
+        dec = onmt.Models.Decoder(opt, cuda, vocab, **emb_opts)
         model = onmt.Models.NMTModel(enc, dec)
 
         test_src, test_tgt, test_length = self.get_batch(sourceL=sourceL,
