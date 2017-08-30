@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 from onmt.modules import BottleLinear
-from onmt.IO import PAD_WORD
 from onmt.modules import aeq
 
 
@@ -12,7 +11,8 @@ class Elementwise(nn.ModuleList):
     Parameters are a list of modules.
     Inputs are one Variable per parameter.
     Outputs are the result of applying modules to inputs elementwise.
-    An optional merge parameter allows
+    An optional merge parameter allows the outputs to be reduced to a
+    single Variable.
     """
 
     def __init__(self, *args, merge=None):
@@ -29,8 +29,6 @@ class Elementwise(nn.ModuleList):
             return torch.cat(outputs, 2)
         elif self.merge == 'sum':
             return sum(outputs)
-        elif self.merge == 'mlp':
-            return self.mlp(outputs)
         else:
             return outputs
 
@@ -54,55 +52,55 @@ class PositionalEncoding(nn.Module):
 
 
 class Embeddings(nn.Module):
+    """
+    Words embeddings dictionary for Encoder/Decoder.
 
-    def __init__(
-            self, dicts, feature_dicts,
-            word_vec_size, pre_word_vecs, fix_word_vecs,
-            feat_merge, feat_vec_size, feat_vec_exponent,
-            position_encoding, gpus, dropout):
-
+    Args:
+        embedding_dim (int): size of the dictionary of embeddings.
+        position_encoding (bool): use a sin to mark relative words positions.
+        feat_merge (string): merge action for the features embeddings:
+                    concat, sum or mlp.
+        feat_dim_exponent (float): when using '-feat_merge concat', feature
+                    embedding size is N^feat_dim_exponent, where N is the
+                    number of values of feature takes.
+        feat_embedding_dim (int): embedding dimension for features when using
+                    '-feat_merge mlp'
+        dropout (float): dropout probablity.
+        padding_idx (int): padding index in the embedding dictionary.
+        num_word_embeddings (int): size of dictionary of embeddings for words.
+        num_feat_embeddings ([int], optional): list of size of dictionary
+                                    of embeddings for each feature.
+    """
+    def __init__(self, embedding_dim, position_encoding, feat_merge,
+                 feat_vec_exponent, feat_vec_size, dropout,
+                 padding_idx, word_vocab_size, feat_vocab_sizes=[]):
         super(Embeddings, self).__init__()
 
-        self.feat_merge = feat_merge
+        self.padding_idx = padding_idx
 
-        vocab_sizes = [len(dicts)]
-        emb_sizes = [word_vec_size]
-        '''
-        if feature_dicts:
-            vocab_sizes.extend(len(feat_dict) for feat_dict in feature_dicts)
-            if feat_merge == 'concat':
-                # Derive embedding sizes from each feature's vocab size
-                emb_sizes.extend([int(feat_dict.size() ** feat_vec_exponent)
-                                  for feat_dict in feature_dicts])
-            elif feat_merge == 'sum':
-                # All embeddings to be summed must be the same size
-                emb_sizes.extend([word_vec_size] * len(feature_dicts))
-            else:
-                # mlp feature merge
-                emb_sizes.extend([feat_vec_size] * len(feature_dicts))
-        self.emb_luts = \
-            nn.ModuleList([
-                nn.Embedding(vocab, dim,
-                             padding_idx=dicts.stoi[PAD_WORD])
-                for vocab, dim in zip(vocab_sizes, emb_sizes)])
-        if pre_word_vecs:
-            self._load_pretrained_vectors(pre_word_vecs)
-        if fix_word_vecs:
-            self.word_lut.weight.requires_grad = False
-        '''
+        if feat_merge == 'concat':
+            feat_dims = [int(vocab ** feat_vec_exponent)
+                         for vocab in feat_vocab_sizes]
+        else:
+            feat_dim = embedding_dim if feat_merge == 'sum' else feat_vec_size
+            feat_dims = [feat_dim] * len(feat_vocab_sizes)
+        vocab_sizes = [word_vocab_size] + feat_vocab_sizes
+        emb_dims = [embedding_dim] + feat_dims
+
+        self.embedding_size = (sum(emb_dims) if feat_merge == 'concat'
+                               else embedding_dim)
+
         embeddings = [nn.Embedding(vocab,
                                    dim,
-                                   padding_idx=dicts.stoi[PAD_WORD])
-                      for vocab, dim in zip(vocab_sizes, emb_sizes)]
-        emb_luts = Elementwise(embeddings, merge='first')
+                                   padding_idx=padding_idx)
+                      for vocab, dim in zip(vocab_sizes, emb_dims)]
+        emb_luts = Elementwise(embeddings, merge=feat_merge)
 
         self.make_embedding = nn.Sequential()
         self.make_embedding.add_module('emb_luts', emb_luts)
 
         if feat_merge == 'mlp':
-            # note: not the same thing as self.embedding_size
-            in_dim = sum(emb_lut.embedding_dim
-                         for emb_lut in self.emb_luts.children())
+            in_dim = sum(emb_dims)
             out_dim = feat_vec_size
             mlp = nn.Sequential(BottleLinear(in_dim, out_dim), nn.ReLU())
             self.make_embedding.add_module('mlp', mlp)
@@ -111,6 +109,13 @@ class Embeddings(nn.Module):
             pe = PositionalEncoding(dropout, self.embedding_size)
             self.make_embedding.add_module('pe', pe)
 
+        '''
+        if pre_word_vecs:
+            self._load_pretrained_vectors(pre_word_vecs)
+        if fix_word_vecs:
+            self.word_lut.weight.requires_grad = False
+        '''
+
     @property
     def word_lut(self):
         return self.make_embedding[0][0]
@@ -118,18 +123,6 @@ class Embeddings(nn.Module):
     @property
     def emb_luts(self):
         return self.make_embedding[0]
-
-    @property
-    def embedding_size(self):
-        """
-        Returns sum of all feature dimensions if the merge action is concat.
-        Otherwise, returns word vector size.
-        """
-        if self.feat_merge == 'concat':
-            return sum(emb_lut.embedding_dim
-                       for emb_lut in self.emb_luts.children())
-        else:
-            return self.word_lut.embedding_dim
 
     def _load_pretrained_vectors(self, emb_file):
         pretrained = torch.load(emb_file)
