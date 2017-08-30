@@ -74,7 +74,7 @@ class Encoder(nn.Module):
                  for i in range(self.num_layers)])
         else:
             self.rnn = getattr(nn, rnn_type)(
-                 input_size=self.embeddings.embedding_dim,
+                 input_size=self.embeddings.embedding_size,
                  hidden_size=self.hidden_size,
                  num_layers=self.num_layers,
                  dropout=dropout,
