@@ -11,22 +11,6 @@ parser = argparse.ArgumentParser(description='train.py')
 opts.model_opts(parser)
 opts.train_opts(parser)
 
-# pretrained word vectors
-parser.add_argument('-pre_word_vecs_enc',
-                    help="""If a valid path is specified, then this will load
-                    pretrained word embeddings on the encoder side.
-                    See README for specific formatting instructions.""")
-parser.add_argument('-pre_word_vecs_dec',
-                    help="""If a valid path is specified, then this will load
-                    pretrained word embeddings on the decoder side.
-                    See README for specific formatting instructions.""")
-parser.add_argument('-fix_word_vecs_enc',
-                    action='store_true',
-                    help="Fix word embeddings on the encoder side.")
-parser.add_argument('-fix_word_vecs_dec',
-                    action='store_true',
-                    help="Fix word embeddings on the encoder side.")
-
 opt = parser.parse_known_args()[0]
 print(opt)
 
@@ -62,7 +46,7 @@ class TestModel(unittest.TestCase):
         '''
         vocab = self.get_vocab()
         emb = onmt.Models.build_embeddings(opt, vocab.stoi[onmt.IO.PAD_WORD],
-                                           len(vocab), for_encoder=True)
+                                           [], len(vocab), for_encoder=True)
         test_src, _, __ = self.get_batch(sourceL=sourceL,
                                          bsize=bsize)
         if opt.decoder_type == 'transformer':
@@ -87,7 +71,7 @@ class TestModel(unittest.TestCase):
         vocab = self.get_vocab()
         embeddings = onmt.Models.build_embeddings(
                                     opt, vocab.stoi[onmt.IO.PAD_WORD],
-                                    len(vocab), for_encoder=True)
+                                    [], len(vocab), for_encoder=True)
         enc = onmt.Models.Encoder(opt.encoder_type, opt.brnn,
                                   opt.rnn_type, opt.enc_layers,
                                   opt.rnn_size, opt.dropout, embeddings)
@@ -121,13 +105,14 @@ class TestModel(unittest.TestCase):
         """
         vocab = self.get_vocab()
         padding_idx = vocab.stoi[onmt.IO.PAD_WORD]
-        embeddings = onmt.Models.build_embeddings(opt, padding_idx, len(vocab),
-                                                  for_encoder=True)
+        embeddings = onmt.Models.build_embeddings(opt, padding_idx, [],
+                                                  len(vocab), for_encoder=True)
         enc = onmt.Models.Encoder(opt.encoder_type, opt.brnn,
                                   opt.rnn_type, opt.enc_layers,
                                   opt.rnn_size, opt.dropout,
                                   embeddings)
-        embeddings = onmt.Models.build_embeddings(opt, padding_idx, len(vocab),
+        embeddings = onmt.Models.build_embeddings(opt, padding_idx, [],
+                                                  len(vocab),
                                                   for_encoder=False)
         dec = onmt.Models.Decoder(opt, embeddings)
         model = onmt.Models.NMTModel(enc, dec)
