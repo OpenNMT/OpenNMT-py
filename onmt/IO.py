@@ -89,6 +89,7 @@ class OrderedIterator(torchtext.data.Iterator):
                                           self.batch_size_fn):
                 self.batches.append(sorted(b, key=self.sort_key))
 
+
 class ONMTDataset(torchtext.data.Dataset):
     """Defines a dataset for machine translation."""
 
@@ -138,7 +139,7 @@ class ONMTDataset(torchtext.data.Dataset):
 
                         self.src_vocabs.append(src_vocab)
                         examples[i]["src_map"] = src_map
-                        
+
                 else:
                     # TODO finish this.
                     if not transforms:
@@ -161,13 +162,12 @@ class ONMTDataset(torchtext.data.Dataset):
                     examples[i]["tgt"] = tgt
 
                     if opt is None or opt.dynamic_dict:
-                        pass
-                        # src_vocab = self.src_vocabs[i]
-                        # # Map target tokens to indices in the dynamic dict
-                        # mask = torch.LongTensor(len(tgt)+2).fill_(0)
-                        # for j in range(len(tgt)):
-                        #     mask[j+1] = src_vocab.stoi[tgt[j]]
-                        # examples[i]["alignment"] = mask
+                        src_vocab = self.src_vocabs[i]
+                        # Map target tokens to indices in the dynamic dict
+                        mask = torch.LongTensor(len(tgt)+2).fill_(0)
+                        for j in range(len(tgt)):
+                            mask[j+1] = src_vocab.stoi[tgt[j]]
+                        examples[i]["alignment"] = mask
                 assert i + 1 == len(examples), "Len src and tgt do not match"
         keys = examples[0].keys()
         fields = [(k, fields[k]) for k in keys]
