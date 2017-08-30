@@ -246,9 +246,7 @@ def main():
     print(' * maximum batch size. %d' % opt.batch_size)
 
     print('Building model...')
-    cuda = (len(opt.gpuid) >= 1)
-    model = onmt.Models.make_base_model(opt, model_opt,
-                                        fields, cuda, checkpoint)
+    model = onmt.Models.make_base_model(opt, model_opt, fields, checkpoint)
     print(model)
 
     if opt.train_from:

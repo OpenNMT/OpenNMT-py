@@ -61,12 +61,8 @@ class TestModel(unittest.TestCase):
             bsize: Batchsize of generated input
         '''
         vocab = self.get_vocab()
-        emb = onmt.modules.Embeddings(
-            vocab, None,
-            opt.word_vec_size, opt.pre_word_vecs_enc, opt.fix_word_vecs_enc,
-            opt.feat_merge, opt.feat_vec_size, opt.feat_vec_exponent,
-            opt.position_encoding, opt.gpus, opt.dropout)
-
+        emb = onmt.Models.build_embeddings(opt, vocab.stoi[onmt.IO.PAD_WORD],
+                                           len(vocab), for_encoder=True)
         test_src, _, __ = self.get_batch(sourceL=sourceL,
                                          bsize=bsize)
         if opt.decoder_type == 'transformer':
@@ -89,7 +85,12 @@ class TestModel(unittest.TestCase):
             bsize: Batchsize of generated input
         '''
         vocab = self.get_vocab()
-        enc = onmt.Models.Encoder(opt, vocab)
+        embeddings = onmt.Models.build_embeddings(
+                                    opt, vocab.stoi[onmt.IO.PAD_WORD],
+                                    len(vocab), for_encoder=True)
+        enc = onmt.Models.Encoder(opt.encoder_type, opt.brnn,
+                                  opt.rnn_type, opt.enc_layers,
+                                  opt.rnn_size, opt.dropout, embeddings)
 
         test_src, test_tgt, test_length = self.get_batch(sourceL=sourceL,
                                                          bsize=bsize)
@@ -119,8 +120,16 @@ class TestModel(unittest.TestCase):
             bsize: batchsize
         """
         vocab = self.get_vocab()
-        enc = onmt.Models.Encoder(opt, vocab)
-        dec = onmt.Models.Decoder(opt, vocab)
+        padding_idx = vocab.stoi[onmt.IO.PAD_WORD]
+        embeddings = onmt.Models.build_embeddings(opt, padding_idx, len(vocab),
+                                                  for_encoder=True)
+        enc = onmt.Models.Encoder(opt.encoder_type, opt.brnn,
+                                  opt.rnn_type, opt.enc_layers,
+                                  opt.rnn_size, opt.dropout,
+                                  embeddings)
+        embeddings = onmt.Models.build_embeddings(opt, padding_idx, len(vocab),
+                                                  for_encoder=False)
+        dec = onmt.Models.Decoder(opt, embeddings)
         model = onmt.Models.NMTModel(enc, dec)
 
         test_src, test_tgt, test_length = self.get_batch(sourceL=sourceL,
