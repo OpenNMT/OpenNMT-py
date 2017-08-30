@@ -23,7 +23,7 @@ class Translator(object):
         self.copy_attn = model_opt.copy_attn
 
         self.model = onmt.Models.make_base_model(opt, model_opt, self.fields,
-                                                 opt.cuda, checkpoint)
+                                                 checkpoint)
         self.model.eval()
         self.model.generator.eval()
 
