@@ -5,4 +5,4 @@ from distutils.core import setup
 setup(name='OpenNMT',
       version='0.1',
       description='OpenNMT',
-      packages=['onmt', 'onmt.modules'])
+      packages=['onmt', 'onmt.modules'], requires=['torch'])
