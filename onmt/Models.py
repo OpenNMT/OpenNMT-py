@@ -12,7 +12,7 @@ from torch.nn.utils.rnn import pack_padded_sequence as pack
 
 
 def build_embeddings(opt, padding_idx, num_word_embeddings,
-                     for_encoder, num_feat_embeddings=None):
+                     for_encoder, num_feat_embeddings=[]):
     """
     Create an Embeddings instance.
     Args:
