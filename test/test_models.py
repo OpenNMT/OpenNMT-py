@@ -106,7 +106,7 @@ class TestModel(unittest.TestCase):
         vocab = self.get_vocab()
         padding_idx = vocab.stoi[onmt.IO.PAD_WORD]
         embeddings = onmt.Models.build_embeddings(opt, padding_idx, len(vocab),
-                                               for_encoder=True)
+                                                  for_encoder=True)
         enc = onmt.Models.Encoder(opt.encoder_type, opt.brnn,
                                   opt.rnn_type, opt.enc_layers,
                                   opt.rnn_size, opt.dropout,
