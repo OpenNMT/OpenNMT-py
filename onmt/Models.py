@@ -177,8 +177,7 @@ class Encoder(nn.Module):
     Encoder recurrent neural network.
     """
     def __init__(self, encoder_type, bidirectional, rnn_type,
-                 num_layers, rnn_size, dropout, cuda,
-                 embeddings):
+                 num_layers, rnn_size, dropout, embeddings):
         """
         Args:
             encoder_type (string): rnn, brnn, mean, or transformer.
@@ -187,7 +186,6 @@ class Encoder(nn.Module):
             num_layers (int): number of Encoder layers.
             rnn_size (int): size of hidden states of a rnn.
             dropout (float): dropout probablity.
-            cuda (bool): use GPU?
             embeddings (Embeddings): vocab embeddings for this Encoder.
         """
         # Call nn.Module.__init().
@@ -203,10 +201,10 @@ class Encoder(nn.Module):
 
         # Build the Encoder RNN.
         if self.encoder_type == "transformer":
-            pad_id = embeddings.padding_idx
+            padding_idx = embeddings.padding_idx
             self.transformer = nn.ModuleList(
                 [onmt.modules.TransformerEncoder(
-                        self.hidden_size, dropout, pad_id)
+                        self.hidden_size, dropout, padding_idx)
                  for i in range(self.num_layers)])
         else:
             self.rnn = getattr(nn, rnn_type)(
@@ -268,7 +266,7 @@ class Decoder(nn.Module):
     Decoder + Attention recurrent neural network.
     """
 
-    def __init__(self, opt, cuda, embeddings):
+    def __init__(self, opt, embeddings):
         """
         Args:
             opt: model options
@@ -591,8 +589,14 @@ class TransformerDecoderState(DecoderState):
         pass
 
 
-def make_base_model(opt, model_opt, fields, cuda, checkpoint=None):
-
+def make_base_model(opt, model_opt, fields, checkpoint=None):
+    """
+    Args:
+        opt: the option in current environment.
+        model_opt: the option loaded from checkpoint.
+        fields: `Field` objects for the model.
+        checkpoint: the snapshot model.
+    """
     # Make Encoder.
     src_vocab = fields["src"].vocab
     num_feat_embeddings = [len(feat_dict) for feat_dict in
@@ -605,7 +609,7 @@ def make_base_model(opt, model_opt, fields, cuda, checkpoint=None):
     if model_opt.model_type == "text":
         encoder = Encoder(model_opt.encoder_type, model_opt.brnn,
                           model_opt.rnn_type, model_opt.enc_layers,
-                          model_opt.rnn_size, model_opt.dropout, cuda,
+                          model_opt.rnn_size, model_opt.dropout,
                           embeddings)
     elif model_opt.model_type == "img":
         encoder = onmt.modules.ImageEncoder(model_opt)
@@ -618,7 +622,7 @@ def make_base_model(opt, model_opt, fields, cuda, checkpoint=None):
     embeddings = build_embeddings(
                     model_opt, tgt_vocab.stoi[onmt.IO.PAD_WORD],
                     len(tgt_vocab), for_encoder=False)
-    decoder = onmt.Models.Decoder(model_opt, cuda, embeddings)
+    decoder = onmt.Models.Decoder(model_opt, embeddings)
 
     # Make NMTModel(= Encoder + Decoder).
     model = onmt.Models.NMTModel(encoder, decoder)
@@ -638,6 +642,13 @@ def make_base_model(opt, model_opt, fields, cuda, checkpoint=None):
         print('Loading model')
         model.load_state_dict(checkpoint['model'])
         generator.load_state_dict(checkpoint['generator'])
+
+    if hasattr(opt, 'gpuid'):
+        cuda = len(opt.gpuid) >= 1
+    elif hasattr(opt, 'gpu'):
+        cuda = opt.gpu > -1
+    else:
+        cuda = False
 
     if cuda:
         model.cuda()

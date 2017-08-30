@@ -46,7 +46,7 @@ class PositionwiseFeedForward(nn.Module):
 
 
 class TransformerEncoder(nn.Module):
-    def __init__(self, hidden_size, dropout, pad,
+    def __init__(self, hidden_size, dropout, padding_idx,
                  n_head=8, d_inner=2048):
         super(TransformerEncoder, self).__init__()
 
@@ -55,7 +55,7 @@ class TransformerEncoder(nn.Module):
         self.feed_forward = PositionwiseFeedForward(hidden_size,
                                                     d_inner,
                                                     dropout)
-        self.pad = pad
+        self.padding_idx = padding_idx
 
     def forward(self, input, words):
         # CHECKS
@@ -65,7 +65,7 @@ class TransformerEncoder(nn.Module):
         aeq(s_len, s_len_)
         # END CHECKS
 
-        mask = get_attn_padding_mask(words, words, self.pad)
+        mask = get_attn_padding_mask(words, words, self.padding_idx)
         mid, _ = self.self_attn(input, input, input, mask=mask)
         out = self.feed_forward(mid)
         return out

@@ -69,14 +69,12 @@ class TestModel(unittest.TestCase):
             bsize: Batchsize of generated input
         '''
         vocab = self.get_vocab()
-        cuda = (len(opt.gpuid) >= 1)
         embeddings = onmt.Models.build_embeddings(
                                     opt, vocab.stoi[onmt.IO.PAD_WORD],
                                     len(vocab), for_encoder=True)
         enc = onmt.Models.Encoder(opt.encoder_type, opt.brnn,
                                   opt.rnn_type, opt.enc_layers,
-                                  opt.rnn_size, opt.dropout, cuda,
-                                  embeddings)
+                                  opt.rnn_size, opt.dropout, embeddings)
 
         test_src, test_tgt, test_length = self.get_batch(sourceL=sourceL,
                                                          bsize=bsize)
@@ -106,17 +104,16 @@ class TestModel(unittest.TestCase):
             bsize: batchsize
         """
         vocab = self.get_vocab()
-        cuda = (len(opt.gpuid) >= 1)
         padding_idx = vocab.stoi[onmt.IO.PAD_WORD]
         embeddings = onmt.Models.build_embeddings(opt, padding_idx, len(vocab),
                                                for_encoder=True)
         enc = onmt.Models.Encoder(opt.encoder_type, opt.brnn,
                                   opt.rnn_type, opt.enc_layers,
-                                  opt.rnn_size, opt.dropout, cuda,
+                                  opt.rnn_size, opt.dropout,
                                   embeddings)
         embeddings = onmt.Models.build_embeddings(opt, padding_idx, len(vocab),
-                                               for_encoder=False)
-        dec = onmt.Models.Decoder(opt, cuda, embeddings)
+                                                  for_encoder=False)
+        dec = onmt.Models.Decoder(opt, embeddings)
         model = onmt.Models.NMTModel(enc, dec)
 
         test_src, test_tgt, test_length = self.get_batch(sourceL=sourceL,
