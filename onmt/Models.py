@@ -29,15 +29,15 @@ def build_embeddings(opt, word_pad_ix, feat_pad_ix, num_word_embeddings,
     else:
         embedding_dim = opt.tgt_word_vec_size
     return onmt.modules.Embeddings(embedding_dim,
-                      opt.position_encoding,
-                      opt.feat_merge,
-                      opt.feat_vec_exponent,
-                      opt.feat_vec_size,
-                      opt.dropout,
-                      word_pad_ix,
-                      feat_pad_ix,
-                      num_word_embeddings,
-                      num_feat_embeddings)
+                                   opt.position_encoding,
+                                   opt.feat_merge,
+                                   opt.feat_vec_exponent,
+                                   opt.feat_vec_size,
+                                   opt.dropout,
+                                   word_pad_ix,
+                                   feat_pad_ix,
+                                   num_word_embeddings,
+                                   num_feat_embeddings)
 
 
 class Encoder(nn.Module):
