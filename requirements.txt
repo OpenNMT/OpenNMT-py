@@ -1,0 +1,4 @@
+six
+tqdm
+torchtext
+future
