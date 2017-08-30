@@ -31,20 +31,6 @@ def model_opts(parser):
                         help='Use a sin to mark relative words positions.')
     parser.add_argument('-share_decoder_embeddings', action='store_true',
                         help='Share the word and out embeddings for decoder.')
-    parser.add_argument('-pre_word_vecs_enc',
-                        help="""If a valid path is specified, then this will load
-                        pretrained word embeddings on the encoder side.
-                        See README for specific formatting instructions.""")
-    parser.add_argument('-pre_word_vecs_dec',
-                        help="""If a valid path is specified, then this will load
-                        pretrained word embeddings on the decoder side.
-                        See README for specific formatting instructions.""")
-    parser.add_argument('-fix_word_vecs_enc',
-                        action='store_true',
-                        help="Fix word embeddings on the encoder side.")
-    parser.add_argument('-fix_word_vecs_dec',
-                        action='store_true',
-                        help="Fix word embeddings on the encoder side.")
 
     # RNN Options
     parser.add_argument('-encoder_type', type=str, default='rnn',
@@ -133,6 +119,13 @@ def train_opts(parser):
                         help="""If a valid path is specified, then this will load
                         pretrained word embeddings on the decoder side.
                         See README for specific formatting instructions.""")
+    # Fixed word vectors
+    parser.add_argument('-fix_word_vecs_enc',
+                        action='store_true',
+                        help="Fix word embeddings on the encoder side.")
+    parser.add_argument('-fix_word_vecs_dec',
+                        action='store_true',
+                        help="Fix word embeddings on the encoder side.")
 
     # Optimization options
     parser.add_argument('-batch_size', type=int, default=64,
