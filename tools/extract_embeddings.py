@@ -36,17 +36,18 @@ def main():
     src_dict = checkpoint['dicts']['src']
     tgt_dict = checkpoint['dicts']['tgt']
 
-    emb_opts = {'src_word_vec_size': model_opt.src_word_vec_size,
-                'position_encoding': model_opt.position_encoding,
-                'feat_merge': model_opt.feat_merge,
-                'feat_vec_exponent': model_opt.feat_vec_exponent,
-                'feat_vec_size': model_opt.feat_vec_size}
     cuda = (len(model_opt.gpuid) > 0)
+    embeddings = onmt.Models.build_embeddings(
+                model_opt, src_dict.stoi[onmt.IO.PAD_WORD],
+                len(src_dict), for_encoder=True)
     encoder = onmt.Models.Encoder(model_opt.encoder_type, model_opt.brnn,
                                   model_opt.rnn_type, model_opt.enc_layers,
                                   model_opt.rnn_size, model_opt.dropout,
-                                  cuda, src_dict, None, **emb_opts)
-    decoder = onmt.Models.Decoder(model_opt, cuda, tgt_dict, **emb_opts)
+                                  cuda, embeddings)
+    embeddings = onmt.Models.build_embeddings(
+                model_opt, tgt_dict.stoi[onmt.IO.PAD_WORD],
+                len(tgt_dict), for_encoder=False)
+    decoder = onmt.Models.Decoder(model_opt, cuda, embeddings)
     encoder_embeddings = encoder.word_lut.weight.data.tolist()
     decoder_embeddings = decoder.word_lut.weight.data.tolist()
 
