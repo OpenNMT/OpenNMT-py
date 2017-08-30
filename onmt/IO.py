@@ -11,6 +11,13 @@ BOS_WORD = '<s>'
 EOS_WORD = '</s>'
 
 
+def __getstate__(self):
+    return dict(self.__dict__, stoi=dict(self.stoi))
+
+
+torchtext.vocab.Vocab.__getstate__ = __getstate__
+
+
 def extractFeatures(tokens):
     "Given a list of token separate out words and features (if any)."
     words = []
