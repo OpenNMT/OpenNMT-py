@@ -126,45 +126,61 @@ class Embeddings(nn.Module):
 class Encoder(nn.Module):
     """
     Encoder recurrent neural network.
+
+    Attributes:
+        encdoer_type: rnn, brnn, mean, or transformer.
+        transformer: the transformer list for transformer encdoer_type.
+        rnn: the rnn for ther other encdoer_type.
+        num_directions: number of direction for this Encoder(2 if brnn).
+        num_layers: number of Encoder layers.
+        hidden_size: size of hidden states of a rnn.
+        embedding: Embeddings instance for this Encoder.
     """
-    def __init__(self, opt, cuda, dicts, feature_dicts=None, **emb_opts):
+    def __init__(self, encoder_type, brnn, rnn_type,
+                 num_layers, rnn_size, dropout, cuda,
+                 dicts, feature_dicts=None, **emb_opts):
         """
         Args:
-            opt: Model options.
-            dicts (`Dict`): The src dictionary
+            encdoer_type: rnn, brnn, mean, or transformer.
+            brnn: brnn Encoder. Deprecated, use encdoer_type.
+            rnn_type: LSTM or GRU.
+            num_layers: number of Encoder layers.
+            rnn_size: size of hidden states of a rnn.
+            dropout: dropout probablity.
+            cuda: use GPU?
+            dicts (`Dict`): The src dictionary.
             features_dicts (`[Dict]`): List of src feature dictionaries.
+            emb_opts: a dicctionary passed for Embeddings constructor.
         """
-        # Number of rnn layers.
-        self.layers = opt.enc_layers
+        # Basic attributes.
+        self.encoder_type = encoder_type
 
-        # Use a bidirectional model.
-        self.num_directions = 2 if opt.brnn else 1
-        assert opt.rnn_size % self.num_directions == 0
+        self.num_directions = 2 if brnn else 1
+        assert rnn_size % self.num_directions == 0
 
-        # Size of the encoder RNN.
-        self.hidden_size = opt.rnn_size // self.num_directions
+        self.num_layers = num_layers
+        self.hidden_size = rnn_size // self.num_directions
 
         super(Encoder, self).__init__()
-        self.embeddings = Embeddings(opt.dropout, cuda,
-                                     dicts, feature_dicts, **emb_opts)
 
-        input_size = self.embeddings.embedding_size
+        # Create a word embedding instance for this Encoder.
+        self.embeddings = Embeddings(dropout, cuda, dicts, feature_dicts,
+                                     **emb_opts)
 
-        # The Encoder RNN.
-        self.encoder_type = opt.encoder_type
-        pad_id = dicts.stoi[onmt.IO.PAD_WORD]
-
+        # Build the Encoder RNN.
         if self.encoder_type == "transformer":
+            pad_id = dicts.stoi[onmt.IO.PAD_WORD]
             self.transformer = nn.ModuleList(
                 [onmt.modules.TransformerEncoder(
-                        self.hidden_size, opt.dropout, pad_id)
-                 for i in range(opt.enc_layers)])
+                        self.hidden_size, dropout, pad_id)
+                 for i in range(self.num_layers)])
         else:
-            self.rnn = getattr(nn, opt.rnn_type)(
-                 input_size, self.hidden_size,
-                 num_layers=opt.enc_layers,
-                 dropout=opt.dropout,
-                 bidirectional=opt.brnn)
+            self.rnn = getattr(nn, rnn_type)(
+                 input_size=self.embeddings.embedding_size,
+                 hidden_size=self.hidden_size,
+                 num_layers=self.num_layers,
+                 dropout=dropout,
+                 bidirectional=brnn)
 
     def forward(self, input, lengths=None, hidden=None):
         """
@@ -191,13 +207,13 @@ class Encoder(nn.Module):
         if self.encoder_type == "mean":
             # No RNN, just take mean as final state.
             mean = emb.mean(0) \
-                   .expand(self.layers, n_batch, vec_size)
+                   .expand(self.num_layers, n_batch, vec_size)
             return (mean, mean), emb
 
         elif self.encoder_type == "transformer":
             # Self-attention tranformer.
             out = emb.transpose(0, 1).contiguous()
-            for i in range(self.layers):
+            for i in range(self.num_layers):
                 out = self.transformer[i](out, input[:, :, 0].transpose(0, 1))
             return Variable(emb.data), out.transpose(0, 1).contiguous()
         else:
@@ -558,8 +574,10 @@ def make_base_model(opt, model_opt, fields, cuda, checkpoint=None):
                 'feat_vec_size': model_opt.feat_vec_size}
 
     if model_opt.model_type == "text":
-        encoder = Encoder(model_opt, cuda, fields["src"].vocab,
-                          feature_vocabs, **emb_opts)
+        encoder = Encoder(model_opt.encoder_type, model_opt.brnn,
+                          model_opt.rnn_type, model_opt.enc_layers,
+                          model_opt.rnn_size, model_opt.dropout, cuda,
+                          fields["src"].vocab, feature_vocabs, **emb_opts)
     elif model_opt.model_type == "img":
         encoder = onmt.modules.ImageEncoder(model_opt)
     else:

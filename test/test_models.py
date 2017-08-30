@@ -81,7 +81,10 @@ class TestModel(unittest.TestCase):
                     'feat_vec_exponent': opt.feat_vec_exponent,
                     'feat_vec_size': opt.feat_vec_size}
         cuda = (len(opt.gpuid) >= 1)
-        enc = onmt.Models.Encoder(opt, cuda, vocab, None, **emb_opts)
+        enc = onmt.Models.Encoder(opt.encoder_type, opt.brnn,
+                                  opt.rnn_type, opt.enc_layers,
+                                  opt.rnn_size, opt.dropout, cuda,
+                                  vocab, None, **emb_opts)
 
         test_src, test_tgt, test_length = self.get_batch(sourceL=sourceL,
                                                          bsize=bsize)
@@ -117,7 +120,10 @@ class TestModel(unittest.TestCase):
                     'feat_vec_exponent': opt.feat_vec_exponent,
                     'feat_vec_size': opt.feat_vec_size}
         cuda = (len(opt.gpuid) >= 1)
-        enc = onmt.Models.Encoder(opt, cuda, vocab, None, **emb_opts)
+        enc = onmt.Models.Encoder(opt.encoder_type, opt.brnn,
+                                  opt.rnn_type, opt.enc_layers,
+                                  opt.rnn_size, opt.dropout, cuda,
+                                  vocab, None, **emb_opts)
         dec = onmt.Models.Decoder(opt, cuda, vocab, **emb_opts)
         model = onmt.Models.NMTModel(enc, dec)
 

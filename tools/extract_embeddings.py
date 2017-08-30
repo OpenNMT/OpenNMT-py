@@ -42,7 +42,10 @@ def main():
                 'feat_vec_exponent': model_opt.feat_vec_exponent,
                 'feat_vec_size': model_opt.feat_vec_size}
     cuda = (len(model_opt.gpuid) > 0)
-    encoder = onmt.Models.Encoder(model_opt, cuda, src_dict, None, **emb_opts)
+    encoder = onmt.Models.Encoder(model_opt.encoder_type, model_opt.brnn,
+                                  model_opt.rnn_type, model_opt.enc_layers,
+                                  model_opt.rnn_size, model_opt.dropout,
+                                  cuda, src_dict, None, **emb_opts)
     decoder = onmt.Models.Decoder(model_opt, cuda, tgt_dict, **emb_opts)
     encoder_embeddings = encoder.word_lut.weight.data.tolist()
     decoder_embeddings = decoder.word_lut.weight.data.tolist()
