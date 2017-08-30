@@ -26,22 +26,19 @@ class Embeddings(nn.Module):
         feat_embedding_dim (int): embedding dimension for features when using
                     '-feat_merge mlp'
         dropout (float): dropout probablity.
-        cuda (bool): use GPU?
         padding_idx (int): padding index in the embedding dictionary.
         num_word_embeddings (int): size of dictionary of embeddings for words.
         num_feat_embeddings ([int], optional): list of size of dictionary
                                     of embeddings for each feature.
     """
     def __init__(self, embedding_dim, position_encoding, feat_merge,
-                 feat_dim_exponent, feat_embedding_dim, dropout, cuda,
+                 feat_dim_exponent, feat_embedding_dim, dropout,
                  padding_idx,
                  num_word_embeddings, num_feat_embeddings=None):
         super(Embeddings, self).__init__()
         self.positional_encoding = position_encoding
         if self.positional_encoding:
             self.pe = self.make_positional_encodings(embedding_dim, 5000)
-            if cuda:
-                self.pe.cuda()
             self.dropout = nn.Dropout(p=dropout)
 
         self.padding_idx = padding_idx
@@ -164,14 +161,12 @@ def build_embeddings(opt, padding_idx, num_word_embeddings,
         embedding_dim = opt.src_word_vec_size
     else:
         embedding_dim = opt.tgt_word_vec_size
-    cuda = (len(opt.gpuid) >= 1)
     return Embeddings(embedding_dim,
                       opt.position_encoding,
                       opt.feat_merge,
                       opt.feat_vec_exponent,
                       opt.feat_vec_size,
                       opt.dropout,
-                      cuda,
                       padding_idx,
                       num_word_embeddings,
                       num_feat_embeddings)
