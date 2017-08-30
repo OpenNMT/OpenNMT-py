@@ -156,7 +156,8 @@ class Encoder(nn.Module):
 
         if self.encoder_type == "transformer":
             self.transformer = nn.ModuleList(
-                [onmt.modules.TransformerEncoder(self.hidden_size, opt, pad_id)
+                [onmt.modules.TransformerEncoder(
+                        self.hidden_size, opt.dropout, pad_id)
                  for i in range(opt.enc_layers)])
         else:
             self.rnn = getattr(nn, opt.rnn_type)(

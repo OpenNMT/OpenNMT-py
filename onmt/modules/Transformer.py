@@ -46,15 +46,15 @@ class PositionwiseFeedForward(nn.Module):
 
 
 class TransformerEncoder(nn.Module):
-    def __init__(self, hidden_size, opt, pad,
+    def __init__(self, hidden_size, dropout, pad,
                  n_head=8, d_inner=2048):
         super(TransformerEncoder, self).__init__()
 
         self.self_attn = onmt.modules.MultiHeadedAttention(
-            n_head, hidden_size, p=opt.dropout)
+            n_head, hidden_size, p=dropout)
         self.feed_forward = PositionwiseFeedForward(hidden_size,
                                                     d_inner,
-                                                    opt.dropout)
+                                                    dropout)
         self.pad = pad
 
     def forward(self, input, words):
