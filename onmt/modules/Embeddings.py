@@ -111,13 +111,6 @@ class Embeddings(nn.Module):
             pe = PositionalEncoding(dropout, self.embedding_size)
             self.make_embedding.add_module('pe', pe)
 
-        '''
-        if pre_word_vecs:
-            self._load_pretrained_vectors(pre_word_vecs)
-        if fix_word_vecs:
-            self.word_lut.weight.requires_grad = False
-        '''
-
     @property
     def word_lut(self):
         return self.make_embedding[0][0]
@@ -126,9 +119,12 @@ class Embeddings(nn.Module):
     def emb_luts(self):
         return self.make_embedding[0]
 
-    def _load_pretrained_vectors(self, emb_file):
-        pretrained = torch.load(emb_file)
-        self.word_lut.weight.data.copy_(pretrained)
+    def load_pretrained_vectors(self, emb_file, fixed):
+        if emb_file:
+            pretrained = torch.load(emb_file)
+            self.word_lut.weight.data.copy_(pretrained)
+            if fixed:
+                self.word_lut.weight.requires_grad = False
 
     def forward(self, input):
         """
