@@ -612,7 +612,10 @@ def make_base_model(opt, model_opt, fields, checkpoint=None):
                           model_opt.rnn_size, model_opt.dropout,
                           embeddings)
     elif model_opt.model_type == "img":
-        encoder = onmt.modules.ImageEncoder(model_opt)
+        encoder = onmt.modules.ImageEncoder(model_opt.layers,
+                                            model_opt.brnn,
+                                            model_opt.rnn_size,
+                                            model_opt.dropout)
     else:
         assert False, ("Unsupported model type %s"
                        % (model_opt.model_type))
