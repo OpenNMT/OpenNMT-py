@@ -240,8 +240,8 @@ def trainModel(model, trainData, validData, dataset, optim, mrtTrainer=None):
 
         total_stats = onmt.Loss.Statistics()
         report_stats = onmt.Loss.Statistics()
-        # total_rl_stats = onmt.Loss.RLStatistics()
-        # report_rl_stats = onmt.Loss.RLStatistics()
+        total_rl_stats = onmt.Loss.RLStatistics()
+        report_rl_stats = onmt.Loss.RLStatistics()
 
         for i in range(len(trainData)):
             batchIdx = batchOrder[i] if epoch > opt.curriculum else i
@@ -252,15 +252,17 @@ def trainModel(model, trainData, validData, dataset, optim, mrtTrainer=None):
             trunc_size = opt.truncated_decoder if opt.truncated_decoder \
                 else target_size
 
-            # rl_stats = mrtTrainer.policy_grad(batch)
-            # total_rl_stats.update(rl_stats)
-            # report_rl_stats.update(rl_stats)
+            model.zero_grad()
+
+            rl_stats = mrtTrainer.policy_grad(batch)
+            total_rl_stats.update(rl_stats)
+            report_rl_stats.update(rl_stats)
 
             for j in range(0, target_size-1, trunc_size):
                 trunc_batch = batch.truncate(j, j + trunc_size)
 
                 # Main training loop
-                model.zero_grad()
+                # model.zero_grad()
                 outputs, attn, dec_state = model(trunc_batch.src,
                                                  trunc_batch.tgt,
                                                  trunc_batch.lengths,
@@ -270,7 +272,7 @@ def trainModel(model, trainData, validData, dataset, optim, mrtTrainer=None):
                 batch_stats, inputs, grads \
                     = mem_loss.loss(trunc_batch, outputs, attn)
 
-                torch.autograd.backward(inputs, grads)
+                # torch.autograd.backward(inputs, grads)
 
                 # Update the parameters.
                 optim.step()
@@ -284,12 +286,12 @@ def trainModel(model, trainData, validData, dataset, optim, mrtTrainer=None):
             if i % opt.log_interval == -1 % opt.log_interval:
                 report_stats.output(epoch, i+1, len(trainData),
                                     total_stats.start_time)
-                # report_rl_stats.output(epoch, i+1, len(trainData),
-                #                        total_rl_stats.start_time)
+                report_rl_stats.output(epoch, i+1, len(trainData),
+                                       total_rl_stats.start_time)
                 if opt.log_server:
                     report_stats.log("progress", experiment, optim)
                 report_stats = onmt.Loss.Statistics()
-                # report_rl_stats = onmt.Loss.RLStatistics()
+                report_rl_stats = onmt.Loss.RLStatistics()
 
         return total_stats
 

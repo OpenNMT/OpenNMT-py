@@ -209,8 +209,8 @@ class Encoder(nn.Module):
             if lengths:
                 outputs = unpack(outputs)[0]
                 if self.multi_gpu and largest_len and outputs.size(0) < largest_len:
-                    pads = Variable(torch.FloatTensor(\
-                            largest_len-outputs.size(0), outputs.size(1), outputs.size(2))\
+                    pads = Variable(torch.FloatTensor(
+                            largest_len-outputs.size(0), outputs.size(1), outputs.size(2))
                             .zero_(), requires_grad=False).cuda()
                     outputs = torch.cat([outputs, pads], 0)
             return hidden_t, outputs
@@ -569,10 +569,10 @@ class RNNDecoderState(DecoderState):
             aeq(b, 1)
             self.input_feed = self.input_feed.expand(dim1, batch_size, rnn_size)
 
-        if self.coverages is not None:
+        if self.coverage is not None:
             b, dim1, rnn_size = self.input_feed.size()
             aeq(b, 1)
-            self.coverages = self.coverages.expand(batch_size, dim1, rnn_size)
+            self.coverage = self.coverage.expand(batch_size, dim1, rnn_size)
 
         self.all = self.hidden + (self.input_feed,)
 
@@ -587,11 +587,10 @@ class RNNDecoderState(DecoderState):
 
         if self.input_feed is not None:
             self.input_feed = self.input_feed.index_select(1, positions)
-        if self.coverages is not None:
-            self.coverages = self.coverages.index_select(0, positions)
+        if self.coverage is not None:
+            self.coverage = self.coverage.index_select(0, positions)
 
         self.all = self.hidden + (self.input_feed,)
-
 
     def init_input_feed(self, context, rnn_size):
         batch_size = context.size(1)

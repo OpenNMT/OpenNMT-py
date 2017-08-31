@@ -259,13 +259,23 @@ class BleuScore:
         return now_bleu
 
     def score(self, pred_t, targ_t, ngram=4):
+        """
+        Give sBLEU score
+
+        Inputs:
+            pred_t: (n) interger list or (n*len) LongTensor Variable
+            targ_t: (n*len) LongTensor Variable
+
+        Return:
+            bleus: (n) float list
+        """
         bleus = []
         # print pred_t.size()
         for i in range(targ_t.size(0)):
             targ_seq = list(targ_t.data[i])
             if onmt.Constants.EOS in targ_seq:
                 targ_seq = targ_seq[:targ_seq.index(onmt.Constants.EOS)+1]
-            pred_seq = list(pred_t.data[i])
+            pred_seq = pred_t[i] if isinstance(pred_t, list) else list(pred_t.data[i])
             if onmt.Constants.EOS in pred_seq:
                 pred_seq = pred_seq[:pred_seq.index(onmt.Constants.EOS)+1]
             ref_dict, targ_len = self.getRefDict(targ_seq, ngram)
