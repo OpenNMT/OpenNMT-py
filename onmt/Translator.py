@@ -51,9 +51,9 @@ class Translator(object):
 
         if self.opt.replace_unk:
             for i in range(len(tokens)):
-                if tokens[i] == onmt.IO.UNK:
+                if tokens[i] == vocab.itos[onmt.IO.UNK]:
                     _, maxIndex = attn[i].max(0)
-                    tokens[i] = src[maxIndex[0]]
+                    tokens[i] = self.fields["src"].vocab.itos[src[maxIndex[0]]]
         return tokens
 
     def _runTarget(self, batch, data):
