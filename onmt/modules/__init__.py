@@ -1,5 +1,5 @@
 from onmt.modules.Util import LayerNorm, Bottle, BottleLinear, \
-    BottleLayerNorm, BottleSoftmax, aeq
+    BottleLayerNorm, BottleSoftmax, Elementwise, aeq
 from onmt.modules.GlobalAttention import GlobalAttention
 from onmt.modules.ImageEncoder import ImageEncoder
 from onmt.modules.CopyGenerator import CopyGenerator, CopyCriterion
@@ -13,5 +13,5 @@ from onmt.modules.Embeddings import Embeddings
 # For flake8 compatibility.
 __all__ = [GlobalAttention, ImageEncoder, CopyGenerator, MultiHeadedAttention,
            LayerNorm, Bottle, BottleLinear, BottleLayerNorm, BottleSoftmax,
-           TransformerEncoder, TransformerDecoder, Embeddings,
+           TransformerEncoder, TransformerDecoder, Embeddings, Elementwise,
            CopyCriterion, MatrixTree, StackedLSTM, StackedGRU, aeq]
