@@ -26,28 +26,16 @@ torchtext.vocab.Vocab.__setstate__ = __setstate__
 
 def extractFeatures(tokens):
     "Given a list of token separate out words and features (if any)."
-    words = []
-    features = []
-    numFeatures = None
 
-    for t in range(len(tokens)):
-        field = tokens[t].split(u"￨")
-        word = field[0]
-        if len(word) > 0:
-            words.append(word)
-            if numFeatures is None:
-                numFeatures = len(field) - 1
-            else:
-                assert (len(field) - 1 == numFeatures), \
-                    "all words must have the same number of features"
-
-            if len(field) > 1:
-                for i in range(1, len(field)):
-                    if len(features) <= i-1:
-                        features.append([])
-                    features[i - 1].append(field[i])
-                    assert (len(features[i - 1]) == len(words))
-    return words, features, numFeatures if numFeatures else 0
+    split_tokens = [token.split(u"￨") for token in tokens]
+    split_tokens = [token for token in split_tokens if token[0]]
+    token_size = len(split_tokens[0])
+    assert all(len(token) == token_size for token in split_tokens), \
+        "all words must have the same number of features"
+    words_and_features = list(zip(*split_tokens))
+    words = words_and_features[0]
+    features = words_and_features[1:]
+    return words, features, token_size - 1
 
 
 def merge_vocabs(vocabs, vocab_size=None):
