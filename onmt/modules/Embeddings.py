@@ -43,8 +43,9 @@ class PositionalEncoding(nn.Module):
         pe = pe * div_term.expand_as(pe)
         pe[:, 0::2] = torch.sin(pe[:, 0::2])
         pe[:, 1::2] = torch.cos(pe[:, 1::2])
-        self.pe = Variable(pe.unsqueeze(1))
+        pe = Variable(pe.unsqueeze(1))
         super(PositionalEncoding, self).__init__()
+        self.register_buffer('pe', pe)
         self.dropout = nn.Dropout(p=dropout)
 
     def forward(self, emb):
