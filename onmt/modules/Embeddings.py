@@ -50,25 +50,41 @@ class Embeddings(nn.Module):
         super(Embeddings, self).__init__()
 
         self.padding_idx = padding_idx
-        pad_indices = [padding_idx] + feat_pads
 
+        # Parameters for constructing the word embedding matrix
+        vocab_sizes = [word_vocab_size]
+        emb_dims = [embedding_dim]
+        pad_indices = [padding_idx]
+
+        # Parameters for additional feature embedding matrices
+        # (these have no effect if feat_vocab_sizes is empty)
         if feat_merge == 'concat':
             feat_dims = [int(vocab ** feat_vec_exponent)
                          for vocab in feat_vocab_sizes]
         else:
             feat_dim = embedding_dim if feat_merge == 'sum' else feat_vec_size
             feat_dims = [feat_dim] * len(feat_vocab_sizes)
-        vocab_sizes = [word_vocab_size] + feat_vocab_sizes
-        emb_dims = [embedding_dim] + feat_dims
+        vocab_sizes.extend(feat_vocab_sizes)
+        emb_dims.extend(feat_dims)
+        pad_indices.extend(feat_pads)
 
-        self.embedding_size = (sum(emb_dims) if feat_merge == 'concat'
-                               else embedding_dim)
-
+        # The embedding matrix look-up tables. The first look-up table
+        # is for words. Subsequent ones are for features, if any exist.
         emb_params = zip(vocab_sizes, emb_dims, pad_indices)
         embeddings = [nn.Embedding(vocab, dim, padding_idx=pad)
                       for vocab, dim, pad in emb_params]
         emb_luts = Elementwise(feat_merge, embeddings)
 
+        # The final output size of word + feature vectors. This can vary
+        # from the word vector size if and only if features are defined.
+        self.embedding_size = (sum(emb_dims) if feat_merge == 'concat'
+                               else embedding_dim)
+
+        # The sequence of operations that converts the input sequence
+        # into a sequence of embeddings. At minimum this consists of
+        # looking up the embeddings for each word and feature in the
+        # input. Model parameters may require the sequence to contain
+        # additional operations as well.
         self.make_embedding = nn.Sequential()
         self.make_embedding.add_module('emb_luts', emb_luts)
 
