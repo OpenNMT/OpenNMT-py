@@ -6,11 +6,21 @@ from torch.autograd import Variable
 
 
 class ImageEncoder(nn.Module):
-    def __init__(self, opt):
+    """
+    Encoder recurrent neural network for Images.
+    """
+    def __init__(self, num_layers, bidirectional, rnn_size, dropout):
+        """
+        Args:
+            num_layers (int): number of Encoder layers.
+            bidirectional (bool): bidirectional Encoder.
+            rnn_size (int): size of hidden states of the rnn.
+            dropout (float): dropout probablity.
+        """
         super(ImageEncoder, self).__init__()
-        self.layers = opt.layers
-        self.num_directions = 2 if opt.brnn else 1
-        self.hidden_size = opt.rnn_size
+        self.num_layers = num_layers
+        self.num_directions = 2 if bidirectional else 1
+        self.hidden_size = rnn_size
 
         self.layer1 = nn.Conv2d(3,   64, kernel_size=(3, 3),
                                 padding=(1, 1), stride=(1, 1))
@@ -30,13 +40,14 @@ class ImageEncoder(nn.Module):
         self.batch_norm3 = nn.BatchNorm2d(512)
 
         input_size = 512
-        self.rnn = nn.LSTM(input_size, opt.rnn_size,
-                           num_layers=opt.layers,
-                           dropout=opt.dropout,
-                           bidirectional=opt.brnn)
+        self.rnn = nn.LSTM(input_size, rnn_size,
+                           num_layers=num_layers,
+                           dropout=dropout,
+                           bidirectional=bidirectional)
         self.pos_lut = nn.Embedding(1000, input_size)
 
     def load_pretrained_vectors(self, opt):
+        # Pass in needed options only when modify function definition.
         pass
 
     def forward(self, input, lengths=None):

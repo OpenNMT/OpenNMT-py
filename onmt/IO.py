@@ -15,7 +15,13 @@ def __getstate__(self):
     return dict(self.__dict__, stoi=dict(self.stoi))
 
 
+def __setstate__(self, state):
+    self.__dict__.update(state)
+    self.stoi = defaultdict(lambda: 0, self.stoi)
+
+
 torchtext.vocab.Vocab.__getstate__ = __getstate__
+torchtext.vocab.Vocab.__setstate__ = __setstate__
 
 
 def extractFeatures(tokens):
