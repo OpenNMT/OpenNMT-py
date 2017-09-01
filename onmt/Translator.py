@@ -117,7 +117,7 @@ class Translator(object):
         def unbottle(m):
             return m.view(beamSize, batchSize, -1)
 
-        for i in range(self.opt.max_sent_length):
+        for i in range(self.opt.max_sent_length):        
             if all((b.done() for b in beam)):
                 break
 
@@ -158,7 +158,6 @@ class Translator(object):
             for j, b in enumerate(beam):
                 b.advance(out[:, j],  unbottle(attn["std"]).data[:, j])
                 decStates.beamUpdate_(j, b.getCurrentOrigin(), beamSize)
-            i += 1
 
         if "tgt" in batch.__dict__:
             allGold = self._runTarget(batch, dataset)
@@ -169,7 +168,7 @@ class Translator(object):
         allHyps, allScores, allAttn = [], [], []
         for b in beam:
             n_best = self.opt.n_best
-            scores, ks = b.sortFinished()
+            scores, ks = b.sortFinished(minimum=n_best)
             hyps, attn = [], []
             for i, (times, k) in enumerate(ks[:n_best]):
                 hyp, att = b.getHyp(times, k)
