@@ -4,7 +4,7 @@ import codecs
 import torchtext.data
 import torchtext.vocab
 from collections import Counter, defaultdict
-from itertools import chain
+from itertools import chain, count
 
 PAD_WORD = '<blank>'
 UNK = 0
@@ -74,7 +74,7 @@ def make_features(batch, fields):
 def join_dicts(*args):
     """
     args: dictionaries with disjoint keys
-    returns: a single dictionary that is the union of these keys
+    returns: a single dictionary that has the union of these keys
     """
     return dict(chain(*[d.items() for d in args]))
 
@@ -260,25 +260,21 @@ class ONMTDataset(torchtext.data.Dataset):
     @staticmethod
     def collect_features(fields):
         feats = []
-        j = 0
-        while True:
+        for j in count():
             key = "src_feat_" + str(j)
             if key not in fields:
                 break
             feats.append(key)
-            j += 1
         return feats
 
     @staticmethod
     def collect_feature_dicts(fields):
         feature_dicts = []
-        j = 0
-        while True:
+        for j in count():
             key = "src_feat_" + str(j)
             if key not in fields:
                 break
             feature_dicts.append(fields[key].vocab)
-            j += 1
         return feature_dicts
 
     @staticmethod
@@ -302,8 +298,7 @@ class ONMTDataset(torchtext.data.Dataset):
         def make_src(data, _):
             src_size = max([t.size(0) for t in data])
             src_vocab_size = max([t.max() for t in data]) + 1
-            alignment = torch.FloatTensor(src_size, len(data),
-                                          src_vocab_size).fill_(0)
+            alignment = torch.zeros(src_size, len(data), src_vocab_size)
             for i in range(len(data)):
                 for j, t in enumerate(data[i]):
                     alignment[j, i, t] = 1
@@ -315,7 +310,7 @@ class ONMTDataset(torchtext.data.Dataset):
 
         def make_tgt(data, _):
             tgt_size = max([t.size(0) for t in data])
-            alignment = torch.LongTensor(tgt_size, len(data)).fill_(0)
+            alignment = torch.zeros(tgt_size, len(data))
             for i in range(len(data)):
                 alignment[:data[i].size(0), i] = data[i]
             return alignment
