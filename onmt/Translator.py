@@ -51,9 +51,9 @@ class Translator(object):
 
         if self.opt.replace_unk:
             for i in range(len(tokens)):
-                if tokens[i] == onmt.IO.UNK:
+                if tokens[i] == vocab.itos[onmt.IO.UNK]:
                     _, maxIndex = attn[i].max(0)
-                    tokens[i] = src[maxIndex[0]]
+                    tokens[i] = self.fields["src"].vocab.itos[src[maxIndex[0]]]
         return tokens
 
     def _runTarget(self, batch, data):
@@ -158,7 +158,6 @@ class Translator(object):
             for j, b in enumerate(beam):
                 b.advance(out[:, j],  unbottle(attn["std"]).data[:, j])
                 decStates.beamUpdate_(j, b.getCurrentOrigin(), beamSize)
-            i += 1
 
         if "tgt" in batch.__dict__:
             allGold = self._runTarget(batch, dataset)
@@ -169,7 +168,7 @@ class Translator(object):
         allHyps, allScores, allAttn = [], [], []
         for b in beam:
             n_best = self.opt.n_best
-            scores, ks = b.sortFinished()
+            scores, ks = b.sortFinished(minimum=n_best)
             hyps, attn = [], []
             for i, (times, k) in enumerate(ks[:n_best]):
                 hyp, att = b.getHyp(times, k)

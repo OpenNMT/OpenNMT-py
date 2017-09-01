@@ -167,6 +167,7 @@ class LossCompute:
             scores_data = scores.data.clone()
             target = target.data.clone()
         else:
+            align = align.view(-1)
             scores = self.generator(bottle(out), bottle(attn), batch.src_map)
             loss = self.crit(scores, align, target)
             scores_data = scores.data.clone()
