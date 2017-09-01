@@ -79,6 +79,8 @@ def model_opts(parser):
     # Genenerator and loss options.
     parser.add_argument('-copy_attn', action="store_true",
                         help='Train copy attention layer.')
+    parser.add_argument('-copy_attn_force', action="store_true",
+                        help='When available, train to copy.')
     parser.add_argument('-coverage_attn', action="store_true",
                         help='Train a coverage attention layer.')
     parser.add_argument('-lambda_coverage', type=float, default=1,
@@ -166,6 +168,38 @@ def train_opts(parser):
                         help="Send logs to this crayon server.")
     parser.add_argument('-exp', type=str, default="",
                         help="Name of the experiment for logging.")
+
+
+def preprocess_opts(parser):
+    # Dictionary Options
+    parser.add_argument('-src_vocab_size', type=int, default=50000,
+                        help="Size of the source vocabulary")
+    parser.add_argument('-tgt_vocab_size', type=int, default=50000,
+                        help="Size of the target vocabulary")
+
+    parser.add_argument('-src_words_min_frequency', type=int, default=0)
+    parser.add_argument('-tgt_words_min_frequency', type=int, default=0)
+
+    # Truncation options
+    parser.add_argument('-src_seq_length', type=int, default=50,
+                        help="Maximum source sequence length")
+    parser.add_argument('-src_seq_length_trunc', type=int, default=0,
+                        help="Truncate source sequence length.")
+    parser.add_argument('-tgt_seq_length', type=int, default=50,
+                        help="Maximum target sequence length to keep.")
+    parser.add_argument('-tgt_seq_length_trunc', type=int, default=0,
+                        help="Truncate target sequence length.")
+
+    # Data processing options
+    parser.add_argument('-shuffle', type=int, default=1,
+                        help="Shuffle data")
+    parser.add_argument('-lower', action='store_true', help='lowercase data')
+
+    # Options most relevant to summarization
+    parser.add_argument('-dynamic_dict', action='store_true',
+                        help="Create dynamic dictionaries")
+    parser.add_argument('-share_vocab', action='store_true',
+                        help="Share source and target vocabulary")
 
 
 def add_md_help_argument(parser):

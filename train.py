@@ -9,7 +9,6 @@ import argparse
 import torch
 import torch.nn as nn
 from torch import cuda
-import dill
 import opts
 
 parser = argparse.ArgumentParser(description='train.py')
@@ -57,19 +56,6 @@ if opt.exp_host != "":
     experiment = cc.create_experiment(opt.exp)
 
 
-def make_features(batch, fields):
-    # TODO: This is bit hacky remove.
-    feats = []
-    for j in range(100):
-        key = "src_feat_" + str(j)
-        if key not in fields:
-            break
-        feats.append(batch.__dict__[key])
-    cat = [batch.src[0]] + feats
-    cat = [c.unsqueeze(2) for c in cat]
-    return torch.cat(cat, 2)
-
-
 def eval(model, criterion, data, fields):
     validData = onmt.IO.OrderedIterator(
         dataset=data, device=opt.gpuid[0] if opt.gpuid else -1,
@@ -81,7 +67,7 @@ def eval(model, criterion, data, fields):
                                  fields["tgt"].vocab, data, 0, opt)
     for batch in validData:
         _, src_lengths = batch.src
-        src = make_features(batch, fields)
+        src = onmt.IO.make_features(batch, fields)
         outputs, attn, _ = model(src, batch.tgt, src_lengths)
         gen_state = loss.makeLossBatch(outputs, batch, attn,
                                        (0, batch.tgt.size(0)))
@@ -101,7 +87,9 @@ def trainModel(model, trainData, validData, fields, optim):
         criterion = onmt.Loss.NMTCriterion(len(fields['tgt'].vocab), opt,
                                            pad_id)
     else:
-        criterion = onmt.modules.CopyCriterion
+        criterion = onmt.modules.CopyCriterion(len(fields['tgt'].vocab),
+                                               opt.copy_attn_force, pad_id)
+
     splitter = onmt.Loss.Splitter(opt.max_generator_batches)
 
     train = onmt.IO.OrderedIterator(
@@ -122,7 +110,7 @@ def trainModel(model, trainData, validData, fields, optim):
 
             dec_state = None
             _, src_lengths = batch.src
-            src = make_features(batch, fields)
+            src = onmt.IO.make_features(batch, fields)
             report_stats.n_src_words += src_lengths.sum()
 
             # Truncated BPTT
@@ -204,7 +192,7 @@ def trainModel(model, trainData, validData, fields, optim):
             checkpoint = {
                 'model': model_state_dict,
                 'generator': generator_state_dict,
-                'fields': fields,
+                'vocab': onmt.IO.ONMTDataset.save_vocab(fields),
                 'opt': opt,
                 'epoch': epoch,
                 'optim': optim
@@ -212,8 +200,7 @@ def trainModel(model, trainData, validData, fields, optim):
             torch.save(checkpoint,
                        '%s_acc_%.2f_ppl_%.2f_e%d.pt'
                        % (opt.save_model, valid_stats.accuracy(),
-                          valid_stats.ppl(), epoch),
-                       pickle_module=dill)
+                          valid_stats.ppl(), epoch))
 
 
 def check_model_path():
@@ -224,15 +211,20 @@ def check_model_path():
 
 
 def main():
+    global opt
     print("Loading data from '%s'" % opt.data)
 
-    train = torch.load(opt.data + '.train.pt', pickle_module=dill)
-    fields = torch.load(opt.data + '.fields.pt', pickle_module=dill)
-    valid = torch.load(opt.data + '.valid.pt', pickle_module=dill)
-    fields = dict(fields)
+    train = torch.load(opt.data + '.train.pt')
+    fields = onmt.IO.ONMTDataset.load_fields(
+        torch.load(opt.data + '.vocab.pt'))
+    valid = torch.load(opt.data + '.valid.pt')
+    fields = dict([(k, f) for (k, f) in fields.items()
+                   if k in train.examples[0].__dict__])
+    train.fields = fields
+    valid.fields = fields
     src_features = [fields["src_feat_"+str(j)]
                     for j in range(train.nfeatures)]
-
+    model_opt = opt
     checkpoint = None
     dict_checkpoint = opt.train_from
 
@@ -240,7 +232,8 @@ def main():
         print('Loading dicts from checkpoint at %s' % dict_checkpoint)
         checkpoint = torch.load(dict_checkpoint,
                                 map_location=lambda storage, loc: storage)
-        fields = checkpoint['fields']
+        fields = onmt.IO.ONMTDataset.load_fields(checkpoint['vocab'])
+        model_opt = checkpoint["opt"]
 
     print(' * vocabulary size. source = %d; target = %d' %
           (len(fields['src'].vocab), len(fields['tgt'].vocab)))
@@ -253,8 +246,7 @@ def main():
     print(' * maximum batch size. %d' % opt.batch_size)
 
     print('Building model...')
-    cuda = (len(opt.gpuid) >= 1)
-    model = onmt.Models.make_base_model(opt, opt, fields, cuda, checkpoint)
+    model = onmt.Models.make_base_model(opt, model_opt, fields, checkpoint)
     print(model)
 
     if opt.train_from:
@@ -287,11 +279,10 @@ def main():
         optim = checkpoint['optim']
         print(optim)
 
-    optim.set_parameters(model.parameters())
-
     if opt.train_from:
         optim.optimizer.load_state_dict(
             checkpoint['optim'].optimizer.state_dict())
+    optim.set_parameters(model.parameters())
 
     nParams = sum([p.nelement() for p in model.parameters()])
     print('* number of parameters: %d' % nParams)

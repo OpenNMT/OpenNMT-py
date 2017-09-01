@@ -1,4 +1,3 @@
-dill
 six
 tqdm
 torchtext

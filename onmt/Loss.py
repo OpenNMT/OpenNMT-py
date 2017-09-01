@@ -167,7 +167,19 @@ class LossCompute:
             scores_data = scores.data.clone()
             target = target.data.clone()
         else:
-            assert False, "Copy training, coming soon"
+            align = align.view(-1)
+            scores = self.generator(bottle(out), bottle(attn), batch.src_map)
+            loss = self.crit(scores, align, target)
+            scores_data = scores.data.clone()
+            scores_data = self.dataset.collapseCopyScores(
+                unbottle(scores_data), batch, self.tgt_vocab)
+            scores_data = bottle(scores_data)
+
+            # Correct target is copy when only option.
+            target = target.data.clone()
+            for i in range(target.size(0)):
+                if target[i] == 0 and align.data[i] != 0:
+                    target[i] = align.data[i] + len(self.tgt_vocab)
 
         # Coverage loss term.
         ppl = loss.data.clone()
