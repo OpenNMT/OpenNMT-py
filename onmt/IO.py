@@ -305,7 +305,7 @@ class ONMTDataset(torchtext.data.Dataset):
             return alignment
 
         fields["src_map"] = torchtext.data.Field(
-            use_vocab=False, tensor_type=torch.FloatTensor,
+            use_vocab=False, tensor_type=torch.LongTensor,
             postprocessing=make_src, sequential=False)
 
         def make_tgt(data, _):
