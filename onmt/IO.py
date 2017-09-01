@@ -50,14 +50,7 @@ def merge_vocabs(vocabs, vocab_size=None):
     Return:
         `torchtext.vocab.Vocab`
     """
-    merged = Counter()
-    # take the counts of the disjoint union of all the vocabs
-    for vocab in vocabs:
-        # XXX note that `vocab.freqs` does not contain special symbols
-        for word, count in vocab.freqs.most_common():
-            if word not in merged:
-                merged[word] = 0
-            merged[word] += count
+    merged = Counter(chain(*[vocab.freqs for vocab in vocabs]))
     return torchtext.vocab.Vocab(merged,
                                  specials=[PAD_WORD, BOS_WORD, EOS_WORD],
                                  max_size=vocab_size)
