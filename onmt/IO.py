@@ -135,10 +135,20 @@ class ONMTDataset(torchtext.data.Dataset):
             assert len(src_data) == len(tgt_data), \
                 "Len src and tgt do not match"
             tgt_examples = self.construct_examples(tgt_data, "tgt")
+        else:
+            tgt_examples = None
+
+        # examples: one for each src line or (src, tgt) line pair.
+        # Each element is a dictionary whose keys represent at minimum
+        # the src tokens and their indices and potentially also the
+        # src and tgt features and alignment information.
+        if tgt_examples:
             examples = [join_dicts(src, tgt)
                         for src, tgt in zip(src_examples, tgt_examples)]
         else:
             examples = src_examples
+        for i, example in enumerate(examples):
+            example["indices"] = i
 
         if opt is None or opt.dynamic_dict:
             for example in examples:
@@ -146,7 +156,7 @@ class ONMTDataset(torchtext.data.Dataset):
                 src_vocab = torchtext.vocab.Vocab(Counter(src))
                 self.src_vocabs.append(src_vocab)
                 # mapping source tokens to indices in the dynamic dict
-                src_map = torch.LongTensor(len(src)).fill_(0)
+                src_map = torch.zeros(len(src)).long()
                 for j, w in enumerate(src):
                     src_map[j] = src_vocab.stoi[w]
 
@@ -155,16 +165,16 @@ class ONMTDataset(torchtext.data.Dataset):
 
                 if "tgt" in example:
                     tgt = example["tgt"]
-                    mask = torch.LongTensor(len(tgt) + 2).fill_(0)
+                    mask = torch.zeros(len(tgt) + 2).long()
                     for j, word in enumerate(tgt, 1):
                         mask[j] = src_vocab.stoi[word]
                     example["alignment"] = mask
 
         keys = examples[0].keys()
         fields = [(k, fields[k]) for k in keys]
-        examples = list([torchtext.data.Example.fromlist([ex[k] for k in keys],
-                                                         fields)
-                         for ex in examples])
+        examples = [torchtext.data.Example.fromlist([ex[k] for k in keys],
+                                                    fields)
+                    for ex in examples]
 
         def filter_pred(example):
             return 0 < len(example.src) <= opt.src_seq_length \
