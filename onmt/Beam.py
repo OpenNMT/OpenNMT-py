@@ -120,7 +120,7 @@ class Beam(object):
                 self.finished.append((s, len(self.nextYs) - 1, i))
 
         self.finished.sort(key=lambda a: -a[0])
-        scores = [s for s, _, _ in self.finished]
+        scores = [sc for sc, _, _ in self.finished]
         ks = [(t, k) for _, t, k in self.finished]
         return scores, ks
 
