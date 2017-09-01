@@ -117,7 +117,7 @@ class Translator(object):
         def unbottle(m):
             return m.view(beamSize, batchSize, -1)
 
-        for i in range(self.opt.max_sent_length):        
+        for i in range(self.opt.max_sent_length):
             if all((b.done() for b in beam)):
                 break
 
