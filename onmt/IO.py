@@ -298,7 +298,7 @@ class ONMTDataset(torchtext.data.Dataset):
         def make_src(data, _):
             src_size = max([t.size(0) for t in data])
             src_vocab_size = max([t.max() for t in data]) + 1
-            alignment = torch.zeros(src_size, len(data), src_vocab_size)
+            alignment = torch.zeros(src_size, len(data), src_vocab_size).long()
             for i in range(len(data)):
                 for j, t in enumerate(data[i]):
                     alignment[j, i, t] = 1
@@ -310,7 +310,7 @@ class ONMTDataset(torchtext.data.Dataset):
 
         def make_tgt(data, _):
             tgt_size = max([t.size(0) for t in data])
-            alignment = torch.zeros(tgt_size, len(data))
+            alignment = torch.zeros(tgt_size, len(data)).long()
             for i in range(len(data)):
                 alignment[:data[i].size(0), i] = data[i]
             return alignment
