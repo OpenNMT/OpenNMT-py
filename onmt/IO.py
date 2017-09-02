@@ -174,7 +174,7 @@ class ONMTDataset(torchtext.data.Dataset):
                                           filter_pred if opt is not None
                                           else None)
 
-    def read_corpus_file(self, path, truncate):
+    def _read_corpus_file(self, path, truncate):
         """
         path: location of a src or tgt file
         truncate: maximum sequence length (0 for unlimited)
@@ -187,7 +187,7 @@ class ONMTDataset(torchtext.data.Dataset):
                 lines = (line[:truncate] for line in lines)
             return [extract_features(line) for line in lines]
 
-    def construct_examples(self, lines, side):
+    def _construct_examples(self, lines, side):
         assert side in ["src", "tgt"]
         examples = []
         for line in lines:
