@@ -25,7 +25,7 @@ torchtext.vocab.Vocab.__getstate__ = __getstate__
 torchtext.vocab.Vocab.__setstate__ = __setstate__
 
 
-def extractFeatures(tokens):
+def extract_features(tokens):
     "Given a list of token separate out words and features (if any)."
 
     split_tokens = [token.split(u"￨") for token in tokens]
@@ -188,7 +188,7 @@ class ONMTDataset(torchtext.data.Dataset):
             lines = (line.split() for line in corpus_file)
             if truncate:
                 lines = (line[:truncate] for line in lines)
-            return [extractFeatures(line) for line in lines]
+            return [extract_features(line) for line in lines]
 
     def construct_examples(self, lines, side):
         assert side in ["src", "tgt"]
