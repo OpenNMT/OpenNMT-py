@@ -148,7 +148,7 @@ class Translator(object):
                                                    attn["copy"].squeeze(0),
                                                    srcMap)
                 # beam x (tgt_vocab + extra_vocab)
-                out = dataset.collapseCopyScores(
+                out = dataset.collapse_copy_scores(
                     unbottle(out.data),
                     batch, self.fields["tgt"].vocab)
                 # beam x tgt_vocab
