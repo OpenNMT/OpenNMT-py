@@ -149,18 +149,15 @@ class ONMTDataset(torchtext.data.Dataset):
                 src_vocab = torchtext.vocab.Vocab(Counter(src))
                 self.src_vocabs.append(src_vocab)
                 # mapping source tokens to indices in the dynamic dict
-                src_map = torch.zeros(len(src)).long()
-                for j, w in enumerate(src):
-                    src_map[j] = src_vocab.stoi[w]
+                src_map = torch.LongTensor([src_vocab.stoi[w] for w in src])
 
                 self.src_vocabs.append(src_vocab)
                 example["src_map"] = src_map
 
                 if "tgt" in example:
                     tgt = example["tgt"]
-                    mask = torch.zeros(len(tgt) + 2).long()
-                    for j, word in enumerate(tgt, 1):
-                        mask[j] = src_vocab.stoi[word]
+                    mask = torch.LongTensor(
+                            [0] + [src_vocab.stoi[w] for w in tgt] + [0])
                     example["alignment"] = mask
 
         keys = examples[0].keys()
@@ -213,7 +210,7 @@ class ONMTDataset(torchtext.data.Dataset):
         "This is a hack. Something is broken with torch pickle."
         return super(ONMTDataset, self).__reduce_ex__()
 
-    def collapseCopyScores(self, scores, batch, tgt_vocab):
+    def collapse_copy_scores(self, scores, batch, tgt_vocab):
         """Given scores from an expanded dictionary
         corresponeding to a batch, sums together copies,
         with a dictionary word when it is ambigious.
