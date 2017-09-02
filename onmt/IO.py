@@ -114,8 +114,8 @@ class ONMTDataset(torchtext.data.Dataset):
         if self.type_ == "text":
             self.src_vocabs = []
             src_truncate = 0 if opt is None else opt.src_seq_length_trunc
-            src_data = self.read_corpus_file(src_path, src_truncate)
-            src_examples = self.construct_examples(src_data, "src")
+            src_data = self._read_corpus_file(src_path, src_truncate)
+            src_examples = self._construct_examples(src_data, "src")
             self.nfeatures = src_data[0][2]
         else:
             # TODO finish this.
@@ -124,10 +124,10 @@ class ONMTDataset(torchtext.data.Dataset):
 
         if tgt_path:
             tgt_truncate = 0 if opt is None else opt.tgt_seq_length_trunc
-            tgt_data = self.read_corpus_file(tgt_path, tgt_truncate)
+            tgt_data = self._read_corpus_file(tgt_path, tgt_truncate)
             assert len(src_data) == len(tgt_data), \
                 "Len src and tgt do not match"
-            tgt_examples = self.construct_examples(tgt_data, "tgt")
+            tgt_examples = self._construct_examples(tgt_data, "tgt")
         else:
             tgt_examples = None
 
