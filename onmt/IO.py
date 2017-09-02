@@ -120,7 +120,7 @@ class ONMTDataset(torchtext.data.Dataset):
         else:
             # TODO finish this.
             if not transforms:
-                loadImageLibs()
+                load_image_libs()
 
         if tgt_path:
             tgt_truncate = 0 if opt is None else opt.tgt_seq_length_trunc
@@ -338,7 +338,7 @@ class ONMTDataset(torchtext.data.Dataset):
             fields["tgt"].vocab = merged_vocab
 
 
-def loadImageLibs():
+def load_image_libs():
     "Conditional import of torch image libs."
     global Image, transforms
     from PIL import Image
