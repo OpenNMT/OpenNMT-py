@@ -261,6 +261,95 @@ class Encoder(nn.Module):
             return hidden_t, outputs
 
 
+def make_decoder(decoder_type, rnn_type, num_layers, hidden_size,
+                 input_feed, attn_type, coverage_attn, context_gate,
+                 copy_attn, dropout, embeddings):
+    """
+    Decoder dispatcher function.
+    Args:
+        decoder_type (string): 'rnn' or 'transformer'.
+        rnn_type (string): 'LSTM' or 'GRU'.
+        num_layers (int): number of Decoder layers.
+        hidden_size (int): size of hidden states of a rnn.
+        input_feed (int): feed the context vector at each time step to the
+                          decoder(by concating the word embeddings).
+        attn_type (string): the attention type to use:
+                    'dot'(dotprot), 'general'(Luong), or 'mlp'(Bahdanau).
+        coverage_attn (bool): train a coverage attention layer?
+        context_gate (string): type of context gate to use:
+                               'source', 'target', 'both'.
+        copy_attn (bool): train copy attention layer?
+        dropout (float): dropout probablity.
+        embeddings (Embeddings): vocab embeddings for this Decoder.
+    """
+    if decoder_type == "transformer":
+        return TransformerDecoder(num_layers, hidden_size, attn_type,
+                                  copy_attn, dropout, embeddings)
+    else:
+        if input_feed:
+            return InputFeedRNNDecoder(
+                        rnn_type, num_layers, hidden_size,
+                        attn_type, coverage_attn, context_gate,
+                        copy_attn, dropout, embeddings)
+        else:
+            return StdRNNDecoder(rnn_type, num_layers, hidden_size,
+                                 attn_type, coverage_attn, context_gate,
+                                 copy_attn, dropout, embeddings)
+
+
+class RNNDecoderBase(nn.Module):
+    """
+    RNN Decoder base class.
+    """
+    def __init__(self, rnn_type, num_layers, hidden_size,
+                 attn_type, coverage_attn, context_gate,
+                 copy_attn, dropout, embeddings):
+        pass
+
+    def forward(self, input, src, context, state):
+        pass
+
+
+class StdRNNDecoder(RNNDecoderBase):
+    """
+    Stardard RNN Decoder, with Attention.
+    Currently no 'coverage_attn' and 'copy_attn' support.
+    """
+    def __init__(self, rnn_type, num_layers, hidden_size,
+                 attn_type, coverage_attn, context_gate,
+                 copy_attn, dropout, embeddings):
+        pass
+
+    def forward(self, input, src, context, state):
+        pass
+
+
+class InputFeedRNNDecoder(RNNDecoderBase):
+    """
+    Stardard RNN Decoder, with Input Feed and Attention.
+    """
+    def __init__(self, rnn_type, num_layers, hidden_size,
+                 attn_type, coverage_attn, context_gate,
+                 copy_attn, dropout, embeddings):
+        pass
+
+    def forward(self, input, src, context, state):
+        pass
+
+
+class TransformerDecoder(nn.Module):
+    """
+    Transformer Decoder. Wrapper around
+    onmt.modules.TransformerDecoder.
+    """
+    def __init__(self, num_layers, hidden_size, attn_type,
+                 copy_attn, dropout, embeddings):
+        pass
+
+    def forward(self, input, src, context, state):
+        pass
+
+
 class Decoder(nn.Module):
     """
     Decoder + Attention recurrent neural network.
