@@ -90,6 +90,7 @@ class Embeddings(nn.Module):
 
         Args:
             src_input (LongTensor): len x batch x nfeat
+                    or (FloatTensor) : len x batch x vocab_sizes
 
         Return:
             emb (FloatTensor): len x batch x emb_size
@@ -102,7 +103,10 @@ class Embeddings(nn.Module):
         aeq(nfeat, len(self.emb_luts))
 
         if len(self.emb_luts) == 1:
-            emb = self.word_lut(src_input.squeeze(2))
+            if 'FloatTensor' in str(type(src_input.data)):
+                emb = torch.matmul(src_input, self.word_lut.weight)
+            else:
+                emb = self.word_lut(src_input.squeeze(2))
         else:
             feat_inputs = (feat.squeeze(2)
                            for feat in src_input.split(1, dim=2))

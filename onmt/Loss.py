@@ -13,6 +13,7 @@ class _Loss(nn.Module):
         super(_Loss, self).__init__()
         self.size_average = size_average
 
+
 class FocalLoss(_Loss):
     r"""The focal loss. It is useful to train a classification
     problem with n classes
@@ -20,7 +21,7 @@ class FocalLoss(_Loss):
 
     def __init__(self, size_average=True, gamma=2.0, alpha=0.5):
         super(FocalLoss, self).__init__(size_average)
-        self.gamme = gamme
+        self.gamme = gamma
         self.alpha = alpha
 
     def forward(self, input, target):
@@ -34,6 +35,7 @@ class FocalLoss(_Loss):
         loss = input.gather(1, target)
         loss = - self.alpha * loss * (1-loss.exp()).pow(self.gamma)
         return loss.mean() if self.size_average else loss.sum()
+
 
 def NMTCriterion(vocabSize, opt):
     """
@@ -164,8 +166,8 @@ class RLStatistics(BasicStatistics):
         return 100 * (self.bleu / float(self.n_sents))
 
     def bleu_std(self):
-        return math.sqrt(self.bleu_2 * 10000 / float(self.n_sents)
-                         - self.bleu_mean() ** 2)
+        return 100 * math.sqrt(self.bleu_2 / float(self.n_sents)
+                         - (self.bleu / float(self.n_sents)) ** 2)
 
     def output(self, epoch, batch, n_batches, start):
         t = self.elapsed_time()

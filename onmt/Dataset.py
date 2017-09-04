@@ -171,7 +171,10 @@ class Dataset(object):
 
     def shuffle(self):
         data = list(zip(self.src, self.tgt))
-        self.src, self.tgt = zip(*[data[i] for i in torch.randperm(len(data))])
+        indices = torch.randperm(len(data))
+        self.src, self.tgt = zip(*[data[i] for i in indices])
+        if self.alignment is not None:
+            self.alignment = [self.alignment[i] for i in indices]
 
 
 class Batch(object):
@@ -205,9 +208,9 @@ class Batch(object):
         while n < self.batchSize:
             m = min(self.batchSize, n+mini_size)
             lengths = self.lengths[:, n:m]
-            max_len = lengths.data.max()
-            yield Batch(self.src[:max_len, n:m], self.tgt[:, n:m],
+            src_max_len = lengths.data.max()
+            yield Batch(self.src[:src_max_len, n:m], self.tgt[:, n:m],
                         lengths, self.indices[n:m], mini_size,
-                        self.alignment[:, n:m]
+                        self.alignment[:, n:m, :src_max_len]
                             if self.alignment is not None else None)
             n += mini_size

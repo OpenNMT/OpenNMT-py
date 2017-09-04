@@ -253,7 +253,6 @@ def trainModel(model, trainData, validData, dataset, optim, mrtTrainer=None):
                 else target_size
 
             model.zero_grad()
-
             rl_stats = mrtTrainer.policy_grad(batch)
             total_rl_stats.update(rl_stats)
             report_rl_stats.update(rl_stats)
