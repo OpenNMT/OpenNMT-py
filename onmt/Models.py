@@ -568,10 +568,94 @@ class TransformerDecoder(nn.Module):
     """
     def __init__(self, num_layers, hidden_size, attn_type,
                  copy_attn, dropout, embeddings):
-        pass
+        """
+        See make_decoder() comment for arguments description.
+        """
+        super(TransformerDecoder, self).__init__()
+
+        # Basic attributes.
+        self.decoder_type = 'transformer'
+        self.num_layers = num_layers
+        self.embeddings = embeddings
+
+        # Build TransformerDecoder.
+        padding_idx = embeddings.padding_idx
+        self.transformer = nn.ModuleList(
+            [onmt.modules.TransformerDecoder(hidden_size, dropout,
+                                             padding_idx)
+             for _ in range(num_layers)])
+
+        # TransformerDecoder has its own attention mechanism.
+        # Set up a separated copy attention layer, if needed.
+        self._copy = False
+        if copy_attn:
+            self.copy_attn = onmt.modules.GlobalAttention(
+                hidden_size, attn_type=attn_type)
+            self._copy = True
 
     def forward(self, input, src, context, state):
-        pass
+        """
+        Forward through the TransformerDecoder.
+
+        Args:
+            input (LongTensor): a tensor sequence of input tokens
+                                of size (len x batch x nfeats).
+            src (LongTensor): a tensor sequence of source and (optional)
+                        feature of size (len x batch x nfeats).
+            context (FloatTensor): output(tensor sequence) from the Encoder
+                        RNN of size (src_len x batch x hidden_size).
+            state (FloatTensor): hidden state from the Encoder RNN for
+                                 initializing the decoder.
+
+        Returns:
+            outputs (FloatTensor): a Tensor sequence of output from the Decoder
+                                   of shape (len x batch x hidden_size).
+            state (FloatTensor): final hidden state from the Decoder.
+            attns (dict of (str, FloatTensor)): a dictionary of different
+                                type of attention Tensor from the Decoder
+                                of shape (src_len x batch).
+        """
+        # Args Check
+        assert isinstance(state, TransformerDecoderState)
+        input_len, input_batch, _ = input.size()
+        src_len, src_batch, _ = src.size()
+        contxt_len, contxt_batch, _ = context.size()
+        aeq(input_batch, src_batch, contxt_batch)
+        # END Args Check
+
+        if state.previous_input is not None:
+            input = torch.cat([state.previous_input, input], 0)
+
+        # Initialize local and return variables.
+        outputs = []
+        attns = {"std": []}
+        if self._copy:
+            attns["copy"] = []
+        emb = self.embeddings(input)
+
+        # Run the forward pass of the TransformerDecoder.
+        output = emb.transpose(0, 1).contiguous()
+        src_context = context.transpose(0, 1).contiguous()
+        for i in range(self.num_layers):
+            output, attn \
+                = self.transformer[i](output, src_context,
+                                      src[:, :, 0].transpose(0, 1),
+                                      input[:, :, 0].transpose(0, 1))
+
+        # Process the result and update the attentions.
+        outputs = output.transpose(0, 1).contiguous()
+        if state.previous_input is not None:
+            outputs = outputs[state.previous_input.size(0):]
+            attn = attn[:, state.previous_input.size(0):].squeeze()
+            attn = torch.stack([attn])
+        attns["std"] = attn
+        if self._copy:
+            attns["copy"] = attn
+
+        # Update the TransformerDecoderState.
+        state = TransformerDecoderState(input)
+
+        return outputs, state, attns
 
 
 class Decoder(nn.Module):
