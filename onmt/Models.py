@@ -177,7 +177,7 @@ class Encoder(nn.Module):
     Encoder recurrent neural network.
     """
     def __init__(self, encoder_type, bidirectional, rnn_type,
-                 num_layers, rnn_size, dropout, embeddings):
+                 num_layers, rnn_size, dropout, embeddings, width=3):
         """
         Args:
             encoder_type (string): rnn, brnn, mean, or transformer.
@@ -206,6 +206,10 @@ class Encoder(nn.Module):
                 [onmt.modules.TransformerEncoder(
                         self.hidden_size, dropout, padding_idx)
                  for i in range(self.num_layers)])
+        elif self.encoder_type == "cnn":
+            # transmit param width later, this will confict origin encoder declare
+            self.cnn = onmt.modules.ConvEncoder(
+                self.embeddings.embedding_dim, self.hidden_size, self.num_layers, dropout, width)
         else:
             self.rnn = getattr(nn, rnn_type)(
                  input_size=self.embeddings.embedding_dim,
@@ -248,6 +252,10 @@ class Encoder(nn.Module):
             for i in range(self.num_layers):
                 out = self.transformer[i](out, input[:, :, 0].transpose(0, 1))
             return Variable(emb.data), out.transpose(0, 1).contiguous()
+        elif self.encoder_type == "cnn":
+            out = emb.transpose(0, 1).contiguous()
+            out, emb_remap = self.cnn(out)
+            return emb_remap.transpose(0,1).contiguous(), out.transpose(0, 1).contiguous()            
         else:
             # Standard RNN encoder.
             packed_emb = emb
@@ -278,6 +286,7 @@ class Decoder(nn.Module):
         self.hidden_size = opt.rnn_size
         self.input_feed = opt.input_feed
         input_size = opt.tgt_word_vec_size
+        self.width = opt.width
         if self.input_feed:
             input_size += opt.rnn_size
 
@@ -289,6 +298,8 @@ class Decoder(nn.Module):
             self.transformer = nn.ModuleList(
                 [onmt.modules.TransformerDecoder(self.hidden_size, opt, pad_id)
                  for _ in range(opt.dec_layers)])
+        elif self.decoder_type == "cnn":
+            self.cnn = onmt.modules.ConvDecoder(self.hidden_size, self.layers, opt)
         else:
             if self.input_feed:
                 if opt.rnn_type == "LSTM":
@@ -351,6 +362,9 @@ class Decoder(nn.Module):
         if self.decoder_type == "transformer":
             if state.previous_input:
                 input = torch.cat([state.previous_input.squeeze(2), input], 0)
+        elif self.decoder_type == "cnn":
+            if state.previous_input:
+                input = torch.cat([state.previous_input.squeeze(2), input], 0)
 
         emb = self.embeddings(input.unsqueeze(2))
 
@@ -377,6 +391,7 @@ class Decoder(nn.Module):
                                           src[:, :, 0].transpose(0, 1),
                                           input.transpose(0, 1))
             outputs = output.transpose(0, 1).contiguous()
+
             if state.previous_input:
                 outputs = outputs[state.previous_input.size(0):]
                 attn = attn[:, state.previous_input.size(0):].squeeze()
@@ -385,6 +400,27 @@ class Decoder(nn.Module):
             if self._copy:
                 attns["copy"] = attn
             state = TransformerDecoderState(input.unsqueeze(2))
+
+        elif self.decoder_type == "cnn":
+
+            assert isinstance(state, CNNDecoderState)
+            src_context_t = context.transpose(0, 1).contiguous()
+            src_context_c = state.init_src.transpose(0, 1).contiguous()
+            emb = emb.transpose(0,1).contiguous()
+            output, attn = self.cnn(emb, src_context_t, src_context_c)
+            outputs = output.transpose(0, 1).contiguous()
+
+            if state.previous_input:
+                outputs = outputs[state.previous_input.size(0):]
+                attn = attn[:, state.previous_input.size(0):].squeeze()
+                attn = torch.stack([attn])
+
+            attns["std"] = attn
+            assert not self._copy, "Copy mechanism not yet tested in conv2conv"
+            if self._copy:
+                attns["copy"] = attn
+            state.resetPrevious(input.unsqueeze(2))
+
         elif self.input_feed:
             assert isinstance(state, RNNDecoderState)
             output = state.input_feed.squeeze(0)
@@ -492,6 +528,11 @@ class NMTModel(nn.Module):
     def init_decoder_state(self, context, enc_hidden):
         if self.decoder.decoder_type == "transformer":
             return TransformerDecoderState()
+        elif self.decoder.decoder_type == "cnn":
+            init_state = CNNDecoderState()
+            scale_weight = 0.5 ** 0.5
+            init_state.init_src = (context + enc_hidden) * scale_weight
+            return init_state
         elif isinstance(enc_hidden, tuple):
             dec = RNNDecoderState(tuple([self._fix_enc_hidden(enc_hidden[i])
                                          for i in range(len(enc_hidden))]))
@@ -515,6 +556,7 @@ class NMTModel(nn.Module):
         src = src
         tgt = tgt[:-1]  # exclude last target from inputs
         enc_hidden, context = self.encoder(src, lengths)
+
         enc_state = self.init_decoder_state(context, enc_hidden)
         out, dec_state, attns = self.decoder(tgt, src, context,
                                              enc_state if dec_state is None
@@ -589,6 +631,27 @@ class TransformerDecoderState(DecoderState):
         pass
 
 
+class CNNDecoderState(DecoderState):
+    def __init__(self, input=None):
+        self.init_src = None
+        self.previous_input = input
+        self.all = (self.previous_input,)
+
+    def _resetAll(self, all):
+        vars = [(Variable(a.data if isinstance(a, Variable) else a,
+                          volatile=True))
+                for a in all]
+        self.previous_input = vars[0]
+        self.all = (self.previous_input,)
+
+    def repeatBeam_(self, beamSize):
+        self.init_src = Variable(self.init_src.data.repeat(1, beamSize, 1),volatile=True)
+
+    def resetPrevious(self, input):
+        self.previous_input = input
+        self.all = (self.previous_input,)
+
+
 def make_base_model(opt, model_opt, fields, checkpoint=None):
     """
     Args:
@@ -610,7 +673,7 @@ def make_base_model(opt, model_opt, fields, checkpoint=None):
         encoder = Encoder(model_opt.encoder_type, model_opt.brnn,
                           model_opt.rnn_type, model_opt.enc_layers,
                           model_opt.rnn_size, model_opt.dropout,
-                          embeddings)
+                          embeddings, model_opt.width)
     elif model_opt.model_type == "img":
         encoder = onmt.modules.ImageEncoder(model_opt.layers,
                                             model_opt.brnn,

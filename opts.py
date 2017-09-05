@@ -12,9 +12,9 @@ def model_opts(parser):
     # Embedding Options
     parser.add_argument('-word_vec_size', type=int, default=-1,
                         help='Word embedding for both.')
-    parser.add_argument('-src_word_vec_size', type=int, default=500,
+    parser.add_argument('-src_word_vec_size', type=int, default=64,
                         help='Src word embedding sizes')
-    parser.add_argument('-tgt_word_vec_size', type=int, default=500,
+    parser.add_argument('-tgt_word_vec_size', type=int, default=64,
                         help='Tgt word embedding sizes')
 
     parser.add_argument('-feat_vec_size', type=int, default=20,
@@ -34,10 +34,10 @@ def model_opts(parser):
 
     # RNN Options
     parser.add_argument('-encoder_type', type=str, default='rnn',
-                        choices=['rnn', 'brnn', 'mean', 'transformer'],
+                        choices=['rnn', 'brnn', 'mean', 'transformer','cnn'],
                         help="""Type of encoder layer to use.""")
     parser.add_argument('-decoder_type', type=str, default='rnn',
-                        choices=['rnn', 'transformer'],
+                        choices=['rnn', 'transformer','cnn'],
                         help='Type of decoder layer to use.')
 
     parser.add_argument('-layers', type=int, default=-1,
@@ -47,7 +47,10 @@ def model_opts(parser):
     parser.add_argument('-dec_layers', type=int, default=2,
                         help='Number of layers in the decoder')
 
-    parser.add_argument('-rnn_size', type=int, default=500,
+    parser.add_argument('-width', type=int, default=3,
+                        help='Size of windows in the cnn')
+
+    parser.add_argument('-rnn_size', type=int, default=64,
                         help='Size of LSTM hidden states')
     parser.add_argument('-input_feed', type=int, default=1,
                         help="""Feed the context vector at each time step as
