@@ -209,9 +209,9 @@ class Encoder(nn.Module):
                     self.hidden_size, dropout, padding_idx)
                  for i in range(self.num_layers)])
         elif self.encoder_type == "cnn":
-            # transmit param width later, this will confict origin encoder declare
             self.cnn = onmt.modules.ConvEncoder(
-                self.embeddings.embedding_dim, self.hidden_size, self.num_layers, dropout, width)
+                self.embeddings.embedding_dim, self.hidden_size,
+                self.num_layers, dropout, width)
         else:
             self.rnn = getattr(nn, rnn_type)(
                 input_size=self.embeddings.embedding_dim,
@@ -257,7 +257,8 @@ class Encoder(nn.Module):
         elif self.encoder_type == "cnn":
             out = emb.transpose(0, 1).contiguous()
             out, emb_remap = self.cnn(out)
-            return emb_remap.transpose(0, 1).contiguous(), out.transpose(0, 1).contiguous()
+            return emb_remap.transpose(0, 1).contiguous(),\
+                out.transpose(0, 1).contiguous()
         else:
             # Standard RNN encoder.
             packed_emb = emb

@@ -20,8 +20,9 @@ def shape_transform(x):
 class GatedConv(nn.Module):
     def __init__(self, input_size, width=3, dropout=0.2, nopad=False):
         super(GatedConv, self).__init__()
-        self.conv = WN_Conv2d(input_size, 2 * input_size, kernel_size=(width, 1),
-                              stride=(1, 1), padding=(width // 2 * (1 - nopad), 0))
+        self.conv = WN_Conv2d(input_size, 2 * input_size,
+                              kernel_size=(width, 1), stride=(1, 1),
+                              padding=(width // 2 * (1 - nopad), 0))
         init.xavier_uniform(self.conv.weight, gain=(4 * (1 - dropout))**0.5)
         self.dropout = nn.Dropout(dropout)
 

@@ -1,6 +1,6 @@
 """
 Conv attention takes a matrix, a query vector and a value vector.
-calculate attention weight by query vector and sum on value vector. 
+calculate attention weight by query vector and sum on value vector.
 """
 
 import torch
