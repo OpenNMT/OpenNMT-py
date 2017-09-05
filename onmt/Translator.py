@@ -59,7 +59,7 @@ class Translator(object):
     def _runTarget(self, batch, data):
 
         _, src_lengths = batch.src
-        src = onmt.IO.make_features(batch, self.fields)
+        src = onmt.IO.make_features(batch, 'src')
 
         #  (1) run the encoder on the src
         encStates, context = self.model.encoder(src, src_lengths)
@@ -90,7 +90,7 @@ class Translator(object):
 
         #  (1) run the encoder on the src
         _, src_lengths = batch.src
-        src = onmt.IO.make_features(batch, self.fields)
+        src = onmt.IO.make_features(batch, 'src')
         encStates, context = self.model.encoder(src, src_lengths)
         decStates = self.model.init_decoder_state(context, encStates)
 
@@ -108,8 +108,7 @@ class Translator(object):
                           vocab=self.fields["tgt"].vocab)
                 for __ in range(batchSize)]
 
-        #  (2) run the decoder to generate sentences, using beam search
-        i = 0
+        #  (2) run the decoder to generate sentences, using beam search\
 
         def bottle(m):
             return m.view(batchSize * beamSize, -1)
@@ -131,6 +130,10 @@ class Translator(object):
             if self.copy_attn:
                 inp = inp.masked_fill(
                     inp.gt(len(self.fields["tgt"].vocab) - 1), 0)
+
+            # Temporary kludge solution to handle changed dim expectation
+            # in the decoder
+            inp = inp.unsqueeze(2)
 
             # Run one step.
             decOut, decStates, attn = \
