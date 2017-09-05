@@ -60,6 +60,7 @@ class Translator(object):
 
         _, src_lengths = batch.src
         src = onmt.IO.make_features(batch, 'src')
+        tgt_in = onmt.IO.make_features(batch, 'tgt')[:-1]
 
         #  (1) run the encoder on the src
         encStates, context = self.model.encoder(src, src_lengths)
@@ -70,7 +71,7 @@ class Translator(object):
         tt = torch.cuda if self.opt.cuda else torch
         goldScores = tt.FloatTensor(batch.batch_size).fill_(0)
         decOut, decStates, attn = self.model.decoder(
-            batch.tgt[:-1], src, context, decStates)
+            tgt_in, src, context, decStates)
 
         # print(decOut.size(), batch.tgt[1:].data.size())
         # aeq(decOut.size(), batch.tgt[1:].data.size())
