@@ -5,10 +5,9 @@ import torch
 import torch.nn as nn
 import torch.nn.init as init
 import onmt.modules
-from WeightNorm import WN_Conv2d
+from onmt.modules.WeightNorm import WN_Conv2d
 import torch.nn.functional as F
 from torch.autograd import Variable
-
 
 scale_weight = 0.5 ** 0.5
 

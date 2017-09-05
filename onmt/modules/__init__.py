@@ -9,6 +9,7 @@ from onmt.modules.Transformer import TransformerEncoder, TransformerDecoder
 from onmt.modules.Conv2Conv import ConvEncoder, ConvDecoder
 from onmt.modules.MultiHeadedAttn import MultiHeadedAttention
 from onmt.modules.StackedRNN import StackedLSTM, StackedGRU
+from onmt.modules.WeightNorm import WN_Conv2d
 
 
 # For flake8 compatibility.
@@ -16,4 +17,4 @@ __all__ = [GlobalAttention, ImageEncoder, CopyGenerator,
            MultiHeadedAttention, ConvAttention, LayerNorm, Bottle,
            BottleLinear, BottleLayerNorm, BottleSoftmax, TransformerEncoder,
            TransformerDecoder, ConvEncoder, ConvDecoder, CopyCriterion,
-           MatrixTree, StackedLSTM, StackedGRU, aeq]
+           MatrixTree, StackedLSTM, StackedGRU, WN_Conv2d, aeq]
