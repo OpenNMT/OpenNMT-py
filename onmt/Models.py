@@ -375,7 +375,7 @@ class Decoder(nn.Module):
                 output, attn \
                     = self.transformer[i](output, src_context,
                                           src[:, :, 0].transpose(0, 1),
-                                          input.transpose(0, 1))
+                                          input[:, :, 0].transpose(0, 1))
             outputs = output.transpose(0, 1).contiguous()
             if state.previous_input:
                 outputs = outputs[state.previous_input.size(0):]
