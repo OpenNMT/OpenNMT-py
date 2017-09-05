@@ -67,8 +67,9 @@ def eval(model, criterion, data, fields):
                                  fields["tgt"].vocab, data, 0, opt)
     for batch in validData:
         _, src_lengths = batch.src
-        src = onmt.IO.make_features(batch, fields)
-        outputs, attn, _ = model(src, batch.tgt, src_lengths)
+        src = onmt.IO.make_features(batch, 'src')
+        tgt = onmt.IO.make_features(batch, 'tgt')
+        outputs, attn, _ = model(src, tgt, src_lengths)
         gen_state = loss.makeLossBatch(outputs, batch, attn,
                                        (0, batch.tgt.size(0)))
         _, batch_stats = loss.computeLoss(batch=batch, **gen_state)
