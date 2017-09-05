@@ -110,7 +110,9 @@ def trainModel(model, trainData, validData, fields, optim):
 
             dec_state = None
             _, src_lengths = batch.src
-            src = onmt.IO.make_features(batch, fields)
+
+            src = onmt.IO.make_features(batch, 'src')
+            tgt = onmt.IO.make_features(batch, 'tgt')
             report_stats.n_src_words += src_lengths.sum()
 
             # Truncated BPTT
@@ -119,8 +121,7 @@ def trainModel(model, trainData, validData, fields, optim):
 
             for j in range(0, target_size-1, trunc_size):
                 # (1) Create truncated target.
-                tgt_r = (j, j + trunc_size)
-                tgt = batch.tgt[tgt_r[0]: tgt_r[1]]
+                tgt = tgt[j: j + trunc_size]
 
                 # (2) F-prop all but generator.
 
@@ -133,7 +134,7 @@ def trainModel(model, trainData, validData, fields, optim):
                 # efficiency.
                 batch_stats = onmt.Loss.Statistics()
                 gen_state = closs.makeLossBatch(outputs, batch, attn,
-                                                tgt_r)
+                                                (j, j + trunc_size))
                 for shard in splitter.splitIter(gen_state):
 
                     # Compute loss and backprop shard.
