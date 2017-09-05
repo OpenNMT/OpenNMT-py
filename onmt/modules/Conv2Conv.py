@@ -77,12 +77,6 @@ class ConvDecoder(nn.Module):
         super(ConvDecoder, self).__init__()
         self.linear = nn.Linear(input_size, self.hidden_size)
         self.conv_layers = nn.ModuleList()
-        if hasattr(opt, 'gpuid'):
-            self.cuda = len(opt.gpuid) >= 1
-        elif hasattr(opt, 'gpu'):
-            self.cuda = opt.gpu > -1
-        else:
-            self.cuda = False
         for i in range(self.n_layers):
             self.conv_layers.append(
                 GatedConv(self.hidden_size, opt.width, opt.dropout, True))
@@ -100,8 +94,7 @@ class ConvDecoder(nn.Module):
         x = shape_transform(x)
 
         pad = Variable(torch.zeros(x.size(0), x.size(1), self.width - 1, 1))
-        if self.cuda:
-            pad = pad.cuda()
+        pad = pad.type_as(x)
         base_target_emb = x
 
         for conv, attention in zip(self.conv_layers, self.attn_layers):
