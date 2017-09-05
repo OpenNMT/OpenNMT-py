@@ -49,7 +49,7 @@ class Translator(object):
                 tokens = tokens[:-1]
                 break
 
-        if self.opt.replace_unk:
+        if self.opt.replace_unk and attn is not None:
             for i in range(len(tokens)):
                 if tokens[i] == vocab.itos[onmt.IO.UNK]:
                     _, maxIndex = attn[i].max(0)
@@ -149,7 +149,7 @@ class Translator(object):
                                                    attn["copy"].squeeze(0),
                                                    srcMap)
                 # beam x (tgt_vocab + extra_vocab)
-                out = dataset.collapseCopyScores(
+                out = dataset.collapse_copy_scores(
                     unbottle(out.data),
                     batch, self.fields["tgt"].vocab)
                 # beam x tgt_vocab
