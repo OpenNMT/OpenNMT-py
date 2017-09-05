@@ -14,5 +14,5 @@ from onmt.modules.StackedRNN import StackedLSTM, StackedGRU
 # For flake8 compatibility.
 __all__ = [GlobalAttention, ImageEncoder, CopyGenerator, MultiHeadedAttention, ConvAttention,
            LayerNorm, Bottle, BottleLinear, BottleLayerNorm, BottleSoftmax,
-           TransformerEncoder, TransformerDecoder,ConvEncoder,ConvDecoder,
+           TransformerEncoder, TransformerDecoder, ConvEncoder, ConvDecoder,
            CopyCriterion, MatrixTree, StackedLSTM, StackedGRU, aeq]

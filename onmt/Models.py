@@ -31,6 +31,7 @@ class Embeddings(nn.Module):
         num_feat_embeddings ([int], optional): list of size of dictionary
                                     of embeddings for each feature.
     """
+
     def __init__(self, embedding_dim, position_encoding, feat_merge,
                  feat_dim_exponent, feat_embedding_dim, dropout,
                  padding_idx,
@@ -55,7 +56,7 @@ class Embeddings(nn.Module):
             if feat_merge == 'concat':
                 # Derive embedding dims from each feature's vocab size
                 embedding_dims.extend([int(num_feat ** feat_dim_exponent)
-                                      for num_feat in num_feat_embeddings])
+                                       for num_feat in num_feat_embeddings])
             elif feat_merge == 'sum':
                 # All embeddings to be summed must be the same size
                 embedding_dims.extend([embedding_dim] *
@@ -66,9 +67,9 @@ class Embeddings(nn.Module):
                                       * len(num_feat_embeddings))
                 # apply a layer of mlp to get it down to the correct dim
                 self.mlp = nn.Sequential(onmt.modules.BottleLinear(
-                                        sum(embedding_dims),
-                                        embedding_dim),
-                                        nn.ReLU())
+                    sum(embedding_dims),
+                    embedding_dim),
+                    nn.ReLU())
         self.emb_luts = \
             nn.ModuleList([
                 nn.Embedding(num_emb, emb_dim, padding_idx=padding_idx)
@@ -176,6 +177,7 @@ class Encoder(nn.Module):
     """
     Encoder recurrent neural network.
     """
+
     def __init__(self, encoder_type, bidirectional, rnn_type,
                  num_layers, rnn_size, dropout, embeddings, width=3):
         """
@@ -204,7 +206,7 @@ class Encoder(nn.Module):
             padding_idx = embeddings.padding_idx
             self.transformer = nn.ModuleList(
                 [onmt.modules.TransformerEncoder(
-                        self.hidden_size, dropout, padding_idx)
+                    self.hidden_size, dropout, padding_idx)
                  for i in range(self.num_layers)])
         elif self.encoder_type == "cnn":
             # transmit param width later, this will confict origin encoder declare
@@ -212,11 +214,11 @@ class Encoder(nn.Module):
                 self.embeddings.embedding_dim, self.hidden_size, self.num_layers, dropout, width)
         else:
             self.rnn = getattr(nn, rnn_type)(
-                 input_size=self.embeddings.embedding_dim,
-                 hidden_size=self.hidden_size,
-                 num_layers=self.num_layers,
-                 dropout=dropout,
-                 bidirectional=bidirectional)
+                input_size=self.embeddings.embedding_dim,
+                hidden_size=self.hidden_size,
+                num_layers=self.num_layers,
+                dropout=dropout,
+                bidirectional=bidirectional)
 
     def forward(self, input, lengths=None, hidden=None):
         """
@@ -243,7 +245,7 @@ class Encoder(nn.Module):
         if self.encoder_type == "mean":
             # No RNN, just take mean as final state.
             mean = emb.mean(0) \
-                   .expand(self.num_layers, n_batch, emb_dim)
+                .expand(self.num_layers, n_batch, emb_dim)
             return (mean, mean), emb
 
         elif self.encoder_type == "transformer":
@@ -255,7 +257,7 @@ class Encoder(nn.Module):
         elif self.encoder_type == "cnn":
             out = emb.transpose(0, 1).contiguous()
             out, emb_remap = self.cnn(out)
-            return emb_remap.transpose(0,1).contiguous(), out.transpose(0, 1).contiguous()            
+            return emb_remap.transpose(0, 1).contiguous(), out.transpose(0, 1).contiguous()
         else:
             # Standard RNN encoder.
             packed_emb = emb
@@ -299,7 +301,8 @@ class Decoder(nn.Module):
                 [onmt.modules.TransformerDecoder(self.hidden_size, opt, pad_id)
                  for _ in range(opt.dec_layers)])
         elif self.decoder_type == "cnn":
-            self.cnn = onmt.modules.ConvDecoder(self.hidden_size, self.layers, opt)
+            self.cnn = onmt.modules.ConvDecoder(
+                self.hidden_size, self.layers, opt)
         else:
             if self.input_feed:
                 if opt.rnn_type == "LSTM":
@@ -310,9 +313,9 @@ class Decoder(nn.Module):
                                        opt.rnn_size, opt.dropout)
             else:
                 self.rnn = getattr(nn, opt.rnn_type)(
-                     input_size, opt.rnn_size,
-                     num_layers=opt.dec_layers,
-                     dropout=opt.dropout
+                    input_size, opt.rnn_size,
+                    num_layers=opt.dec_layers,
+                    dropout=opt.dropout
                 )
             self.context_gate = None
             if opt.context_gate is not None:
@@ -406,7 +409,7 @@ class Decoder(nn.Module):
             assert isinstance(state, CNNDecoderState)
             src_context_t = context.transpose(0, 1).contiguous()
             src_context_c = state.init_src.transpose(0, 1).contiguous()
-            emb = emb.transpose(0,1).contiguous()
+            emb = emb.transpose(0, 1).contiguous()
             output, attn = self.cnn(emb, src_context_t, src_context_c)
             outputs = output.transpose(0, 1).contiguous()
 
@@ -455,7 +458,7 @@ class Decoder(nn.Module):
                 # COVERAGE
                 if self._coverage:
                     coverage = coverage + attn \
-                               if coverage is not None else attn
+                        if coverage is not None else attn
                     attns["coverage"] += [coverage]
 
                 # COPY
@@ -645,7 +648,8 @@ class CNNDecoderState(DecoderState):
         self.all = (self.previous_input,)
 
     def repeatBeam_(self, beamSize):
-        self.init_src = Variable(self.init_src.data.repeat(1, beamSize, 1),volatile=True)
+        self.init_src = Variable(
+            self.init_src.data.repeat(1, beamSize, 1), volatile=True)
 
     def resetPrevious(self, input):
         self.previous_input = input
@@ -665,9 +669,9 @@ def make_base_model(opt, model_opt, fields, checkpoint=None):
     num_feat_embeddings = [len(feat_dict) for feat_dict in
                            ONMTDataset.collect_feature_dicts(fields)]
     embeddings = build_embeddings(
-                model_opt, src_vocab.stoi[onmt.IO.PAD_WORD],
-                len(src_vocab), for_encoder=True,
-                num_feat_embeddings=num_feat_embeddings)
+        model_opt, src_vocab.stoi[onmt.IO.PAD_WORD],
+        len(src_vocab), for_encoder=True,
+        num_feat_embeddings=num_feat_embeddings)
 
     if model_opt.model_type == "text":
         encoder = Encoder(model_opt.encoder_type, model_opt.brnn,
@@ -686,8 +690,8 @@ def make_base_model(opt, model_opt, fields, checkpoint=None):
     # Make Decoder.
     tgt_vocab = fields["tgt"].vocab
     embeddings = build_embeddings(
-                    model_opt, tgt_vocab.stoi[onmt.IO.PAD_WORD],
-                    len(tgt_vocab), for_encoder=False)
+        model_opt, tgt_vocab.stoi[onmt.IO.PAD_WORD],
+        len(tgt_vocab), for_encoder=False)
     decoder = onmt.Models.Decoder(model_opt, embeddings)
 
     # Make NMTModel(= Encoder + Decoder).
