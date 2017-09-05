@@ -384,7 +384,7 @@ class Decoder(nn.Module):
             attns["std"] = attn
             if self._copy:
                 attns["copy"] = attn
-            state = TransformerDecoderState(input.unsqueeze(2))
+            state = TransformerDecoderState(input)
         elif self.input_feed:
             assert isinstance(state, RNNDecoderState)
             output = state.input_feed.squeeze(0)
