@@ -62,8 +62,8 @@ class Embeddings(nn.Module):
                                       len(num_feat_embeddings))
             else:
                 # mlp feature merge
-                embedding_dims.extend([feat_embedding_dim]
-                                      * len(num_feat_embeddings))
+                embedding_dims.extend([feat_embedding_dim] *
+                                      len(num_feat_embeddings))
                 # apply a layer of mlp to get it down to the correct dim
                 self.mlp = nn.Sequential(onmt.modules.BottleLinear(
                                         sum(embedding_dims),
