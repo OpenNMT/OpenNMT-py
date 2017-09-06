@@ -6,6 +6,7 @@ echo > ${LOG_FILE} # Empty the log file.
 
 PROJECT_ROOT=`dirname "$0"`"/.."
 DATA_DIR="$PROJECT_ROOT/data"
+TEST_DIR="$PROJECT_ROOT/test"
 
 clean_up()
 {
@@ -51,7 +52,7 @@ echo "Succeeded" | tee -a ${LOG_FILE}
 # Translation test
 echo -n "[+] Doing translation test..."
 head ${DATA_DIR}/src-test.txt > /tmp/src-test.txt
-python translate.py -model ${DATA_DIR}/test_model.pt -src /tmp/src-test.txt -verbose >> ${LOG_FILE} 2>&1
+python translate.py -model ${TEST_DIR}/test_model.pt -src /tmp/src-test.txt -verbose >> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 
@@ -70,7 +71,7 @@ python preprocess.py -train_src /tmp/src-val.txt \
 python train.py -data /tmp/q -rnn_size 2 -batch_size 10 \
 		-word_vec_size 5 -report_every 5        \
 		-rnn_size 10 -epochs 1                 >> ${LOG_FILE} 2>&1
-python translate.py -model ${DATA_DIR}/test_model2.pt  \
+python translate.py -model ${TEST_DIR}/test_model2.pt  \
 		    -src ${DATA_DIR}/morph/src.valid   \
 		    -verbose -batch_size 10     \
 		    -beam_size 10               \
