@@ -38,7 +38,7 @@ class Embeddings(nn.Module):
         super(Embeddings, self).__init__()
         self.positional_encoding = position_encoding
         if self.positional_encoding:
-            self.pe = self.make_positional_encodings(embedding_dim, 5000)
+            self.pe = self.make_positional_encodings(embedding_dim, 5000).cuda()
             self.dropout = nn.Dropout(p=dropout)
 
         self.padding_idx = padding_idx
@@ -349,7 +349,7 @@ class Decoder(nn.Module):
         # aeq(s_len, s_len_)
         # END CHECKS
         if self.decoder_type == "transformer":
-            if state.previous_input:
+            if state.previous_input is not None:
                 input = torch.cat([state.previous_input.squeeze(2), input], 0)
 
         emb = self.embeddings(input.unsqueeze(2))
@@ -377,7 +377,7 @@ class Decoder(nn.Module):
                                           src[:, :, 0].transpose(0, 1),
                                           input.transpose(0, 1))
             outputs = output.transpose(0, 1).contiguous()
-            if state.previous_input:
+            if state.previous_input is not None:
                 outputs = outputs[state.previous_input.size(0):]
                 attn = attn[:, state.previous_input.size(0):].squeeze()
                 attn = torch.stack([attn])
