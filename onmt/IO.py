@@ -58,7 +58,12 @@ def merge_vocabs(vocabs, vocab_size=None):
 
 def make_features(batch, side):
     """
-    batch (Variable): a batch of source or target data
+    Args:
+        batch (Variable): a batch of source or target data.
+        side (str): for source or for target.
+    Returns:
+        A sequence of src/tgt tensors with optional feature tensors
+        of size (len x batch).
     """
     assert side in ['src', 'tgt']
     if isinstance(batch.__dict__[side], tuple):

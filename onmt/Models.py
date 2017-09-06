@@ -344,15 +344,13 @@ class RNNDecoderBase(nn.Module):
             )
             self._copy = True
 
-    def forward(self, input, src, context, state):
+    def forward(self, input, context, state):
         """
         Forward through the decoder.
 
         Args:
-            input (LongTensor): a tensor sequence of input tokens
+            input (LongTensor): a sequence of input tokens tensors
                                 of size (len x batch x nfeats).
-            src (LongTensor): a tensor sequence of source and (optional)
-                        feature of size (len x batch x nfeats).
             context (FloatTensor): output(tensor sequence) from the Encoder
                         RNN of size (src_len x batch x hidden_size).
             state (FloatTensor): hidden state from the Encoder RNN for
@@ -369,9 +367,8 @@ class RNNDecoderBase(nn.Module):
         # Args Check
         assert isinstance(state, RNNDecoderState)
         input_len, input_batch, _ = input.size()
-        src_len, src_batch, _ = src.size()
         contxt_len, contxt_batch, _ = context.size()
-        aeq(input_batch, src_batch, contxt_batch)
+        aeq(input_batch, contxt_batch)
         # END Args Check
 
         # Run the forward pass of the RNN.
@@ -403,7 +400,7 @@ class StdRNNDecoder(RNNDecoderBase):
         Must be overriden by all subclasses.
 
         Args:
-            input (LongTensor): a tensor sequence of input tokens
+            input (LongTensor): a sequence of input tokens tensors
                                 of size (len x batch x nfeats).
             context (FloatTensor): output(tensor sequence) from the Encoder
                         RNN of size (src_len x batch x hidden_size).
@@ -593,15 +590,13 @@ class TransformerDecoder(nn.Module):
                 hidden_size, attn_type=attn_type)
             self._copy = True
 
-    def forward(self, input, src, context, state):
+    def forward(self, input, context, state):
         """
         Forward through the TransformerDecoder.
 
         Args:
-            input (LongTensor): a tensor sequence of input tokens
+            input (LongTensor): a sequence of input tokens tensors
                                 of size (len x batch x nfeats).
-            src (LongTensor): a tensor sequence of source and (optional)
-                        feature of size (len x batch x nfeats).
             context (FloatTensor): output(tensor sequence) from the Encoder
                         RNN of size (src_len x batch x hidden_size).
             state (FloatTensor): hidden state from the Encoder RNN for
@@ -618,9 +613,8 @@ class TransformerDecoder(nn.Module):
         # Args Check
         assert isinstance(state, TransformerDecoderState)
         input_len, input_batch, _ = input.size()
-        src_len, src_batch, _ = src.size()
         contxt_len, contxt_batch, _ = context.size()
-        aeq(input_batch, src_batch, contxt_batch)
+        aeq(input_batch, contxt_batch)
         # END Args Check
 
         if state.previous_input is not None:
@@ -636,11 +630,13 @@ class TransformerDecoder(nn.Module):
         # Run the forward pass of the TransformerDecoder.
         output = emb.transpose(0, 1).contiguous()
         src_context = context.transpose(0, 1).contiguous()
+        src = state.src
+        src_words = src[:, :, 0].transpose(0, 1)
+        tgt_words = input[:, :, 0].transpose(0, 1)
         for i in range(self.num_layers):
             output, attn \
                 = self.transformer[i](output, src_context,
-                                      src[:, :, 0].transpose(0, 1),
-                                      input[:, :, 0].transpose(0, 1))
+                                      src_words, tgt_words)
 
         # Process the result and update the attentions.
         outputs = output.transpose(0, 1).contiguous()
@@ -653,13 +649,22 @@ class TransformerDecoder(nn.Module):
             attns["copy"] = attn
 
         # Update the TransformerDecoderState.
-        state = TransformerDecoderState(input)
+        state = TransformerDecoderState(src, input)
 
         return outputs, state, attns
 
 
 class NMTModel(nn.Module):
+    """
+    The seq2seq Encoder + Decoder Neural Machine Translation Model.
+    """
     def __init__(self, encoder, decoder, multigpu=False):
+        """
+        Args:
+            encoder(Encoder): the Encoder.
+            decoder(*Decoder): the various *Decoder.
+            multigpu(bool): run parellel on multi-GPU?
+        """
         self.multigpu = multigpu
         super(NMTModel, self).__init__()
         self.encoder = encoder
@@ -674,13 +679,13 @@ class NMTModel(nn.Module):
             h = torch.cat([h[0:h.size(0):2], h[1:h.size(0):2]], 2)
         return h
 
-    def init_decoder_state(self, context, enc_hidden):
+    def init_decoder_state(self, src, context, enc_hidden):
         if self.decoder.decoder_type == "transformer":
-            return TransformerDecoderState()
-        elif isinstance(enc_hidden, tuple):
+            return TransformerDecoderState(src)
+        elif isinstance(enc_hidden, tuple):  # GRU
             dec = RNNDecoderState(tuple([self._fix_enc_hidden(enc_hidden[i])
                                          for i in range(len(enc_hidden))]))
-        else:
+        else:  # LSTM
             dec = RNNDecoderState(self._fix_enc_hidden(enc_hidden))
         dec.init_input_feed(context, self.decoder.hidden_size)
         return dec
@@ -688,7 +693,11 @@ class NMTModel(nn.Module):
     def forward(self, src, tgt, lengths, dec_state=None):
         """
         Args:
-            src, tgt, lengths
+            src(FloatTensor): a sequence of source tensors with
+                    optional feature tensors of size (len x batch).
+            tgt(FloatTensor): a sequence of target tensors with
+                    optional feature tensors of size (len x batch).
+            lengths([int]): an array of the src length.
             dec_state: A decoder state object
 
         Returns:
@@ -700,8 +709,8 @@ class NMTModel(nn.Module):
         src = src
         tgt = tgt[:-1]  # exclude last target from inputs
         enc_hidden, context = self.encoder(src, lengths)
-        enc_state = self.init_decoder_state(context, enc_hidden)
-        out, dec_state, attns = self.decoder(tgt, src, context,
+        enc_state = self.init_decoder_state(src, context, enc_hidden)
+        out, dec_state, attns = self.decoder(tgt, context,
                                              enc_state if dec_state is None
                                              else dec_state)
         if self.multigpu:
@@ -731,8 +740,14 @@ class DecoderState(object):
 
 class RNNDecoderState(DecoderState):
     def __init__(self, rnnstate, input_feed=None, coverage=None):
-        # all objects are X x batch x dim
-        # or X x (beam * sent) for beam search
+        """
+        Args:
+            rnnstate (FloatTensor): hidden state from the Decoder,
+                transformed to shape: layers x batch x (directions*dim).
+            input_feed (FloatTensor): output from last layer of the
+                StdRNNDecoder or InputFeedRNNDecoder.
+            coverage (FloatTensor): coverage output from the Decoder.
+        """
         if not isinstance(rnnstate, tuple):
             self.hidden = (rnnstate,)
         else:
@@ -757,9 +772,15 @@ class RNNDecoderState(DecoderState):
 
 
 class TransformerDecoderState(DecoderState):
-    def __init__(self, input=None):
-        # all objects are X x batch x dim
-        # or X x (beam * sent) for beam search
+    def __init__(self, src, input=None):
+        """
+        Args:
+            src (FloatTensor): a sequence of source words tensors
+                    with optional feature tensors, of size (len x batch).
+            input (LongTensor): a sequence of input tokens tensors
+                                of size (len x batch).
+        """
+        self.src = src
         self.previous_input = input
         self.all = (self.previous_input,)
 
