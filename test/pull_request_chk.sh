@@ -23,7 +23,7 @@ error_exit()
 
 # flake8 check
 echo -n "[+] Doing flake8 check..."
-python -m flake8 >> ${LOG_FILE} 2>&1
+python -m flake8  >> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 
@@ -51,7 +51,7 @@ echo "Succeeded" | tee -a ${LOG_FILE}
 # Translation test
 echo -n "[+] Doing translation test..."
 head ${DATA_DIR}/src-test.txt > /tmp/src-test.txt
-python3 translate.py -model ${DATA_DIR}/test_model.pt -src /tmp/src-test.txt -verbose >> ${LOG_FILE} 2>&1
+python translate.py -model ${DATA_DIR}/test_model.pt -src /tmp/src-test.txt -verbose >> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 
@@ -67,16 +67,16 @@ python preprocess.py -train_src /tmp/src-val.txt \
 		     -save_data /tmp/q           \
 		     -src_vocab_size 1000        \
 		     -tgt_vocab_size 1000        >> ${LOG_FILE} 2>&1
-python3 train.py -data /tmp/q -rnn_size 2 -batch_size 10 \
+python train.py -data /tmp/q -rnn_size 2 -batch_size 10 \
 		-word_vec_size 5 -report_every 5        \
 		-rnn_size 10 -epochs 1                 >> ${LOG_FILE} 2>&1
-python3 translate.py -model ${DATA_DIR}/test_model2.pt  \
-		    -src ${DATA_DIR}/test_model2.src   \
+python translate.py -model ${DATA_DIR}/test_model2.pt  \
+		    -src ${DATA_DIR}/morph/src.valid   \
 		    -verbose -batch_size 10     \
 		    -beam_size 10               \
-		    -tgt ${DATA_DIR}/test_model2.tgt   \
+		    -tgt ${DATA_DIR}/morph/tgt.valid   \
 		    -out /tmp/trans             >> ${LOG_FILE} 2>&1
-diff ${DATA_DIR}/test_model2.tgt /tmp/trans
+diff ${DATA_DIR}/morph/tgt.valid /tmp/trans
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 
