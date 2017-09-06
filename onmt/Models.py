@@ -201,10 +201,8 @@ class Encoder(nn.Module):
 
         # Build the Encoder RNN.
         if self.encoder_type == "transformer":
-            padding_idx = embeddings.padding_idx
             self.transformer = nn.ModuleList(
-                [onmt.modules.TransformerEncoder(
-                        self.hidden_size, dropout, padding_idx)
+                [onmt.modules.TransformerEncoder(self.hidden_size, dropout)
                  for i in range(self.num_layers)])
         else:
             self.rnn = getattr(nn, rnn_type)(
@@ -245,8 +243,23 @@ class Encoder(nn.Module):
         elif self.encoder_type == "transformer":
             # Self-attention tranformer.
             out = emb.transpose(0, 1).contiguous()
+            words = input[:, :, 0].transpose(0, 1)
+            # CHECKS
+            out_batch, out_len, _ = out.size()
+            w_batch, w_len = words.size()
+            aeq(out_batch, w_batch)
+            aeq(out_len, w_len)
+            # END CHECKS
+
+            # Make mask.
+            padding_idx = self.embeddings.padding_idx
+            mask = words.data.eq(padding_idx).unsqueeze(1) \
+                .expand(w_batch, w_len, w_len)
+
+            # Run the forward pass of every layer of the tranformer.
             for i in range(self.num_layers):
-                out = self.transformer[i](out, input[:, :, 0].transpose(0, 1))
+                out = self.transformer[i](out, mask)
+
             return Variable(emb.data), out.transpose(0, 1).contiguous()
         else:
             # Standard RNN encoder.
@@ -576,10 +589,8 @@ class TransformerDecoder(nn.Module):
         self.embeddings = embeddings
 
         # Build TransformerDecoder.
-        padding_idx = embeddings.padding_idx
         self.transformer = nn.ModuleList(
-            [onmt.modules.TransformerDecoder(hidden_size, dropout,
-                                             padding_idx)
+            [onmt.modules.TransformerDecoder(hidden_size, dropout)
              for _ in range(num_layers)])
 
         # TransformerDecoder has its own attention mechanism.
@@ -610,33 +621,46 @@ class TransformerDecoder(nn.Module):
                                 type of attention Tensor from the Decoder
                                 of shape (src_len x batch).
         """
-        # Args Check
+        # CHECKS
         assert isinstance(state, TransformerDecoderState)
         input_len, input_batch, _ = input.size()
         contxt_len, contxt_batch, _ = context.size()
         aeq(input_batch, contxt_batch)
-        # END Args Check
 
         if state.previous_input is not None:
             input = torch.cat([state.previous_input, input], 0)
 
-        # Initialize local and return variables.
+        src = state.src
+        src_words = src[:, :, 0].transpose(0, 1)
+        tgt_words = input[:, :, 0].transpose(0, 1)
+        src_batch, src_len = src_words.size()
+        tgt_batch, tgt_len = tgt_words.size()
+        aeq(input_batch, contxt_batch, src_batch, tgt_batch)
+        aeq(contxt_len, src_len)
+        aeq(input_len, tgt_len)
+        # END CHECKS
+
+        # Initialize return variables.
         outputs = []
         attns = {"std": []}
         if self._copy:
             attns["copy"] = []
-        emb = self.embeddings(input)
 
         # Run the forward pass of the TransformerDecoder.
+        emb = self.embeddings(input)
         output = emb.transpose(0, 1).contiguous()
         src_context = context.transpose(0, 1).contiguous()
-        src = state.src
-        src_words = src[:, :, 0].transpose(0, 1)
-        tgt_words = input[:, :, 0].transpose(0, 1)
+
+        padding_idx = self.embeddings.padding_idx
+        src_pad_mask = src_words.data.eq(padding_idx).unsqueeze(1) \
+            .expand(src_batch, tgt_len, src_len)
+        tgt_pad_mask = tgt_words.data.eq(padding_idx).unsqueeze(1) \
+            .expand(tgt_batch, tgt_len, tgt_len)
+
         for i in range(self.num_layers):
             output, attn \
                 = self.transformer[i](output, src_context,
-                                      src_words, tgt_words)
+                                      src_pad_mask, tgt_pad_mask)
 
         # Process the result and update the attentions.
         outputs = output.transpose(0, 1).contiguous()
