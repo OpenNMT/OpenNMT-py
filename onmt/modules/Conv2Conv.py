@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.init as init
 import onmt.modules
-from onmt.modules.WeightNorm import WN_Conv2d
+from onmt.modules.WeightNorm import WeightNormConv2d
 import torch.nn.functional as F
 from torch.autograd import Variable
 
@@ -13,15 +13,16 @@ scale_weight = 0.5 ** 0.5
 
 
 def shape_transform(x):
+    # tranform the size of the tensor to fit for conv input
     return torch.unsqueeze(torch.transpose(x, 1, 2), 3)
 
 
 class GatedConv(nn.Module):
     def __init__(self, input_size, width=3, dropout=0.2, nopad=False):
         super(GatedConv, self).__init__()
-        self.conv = WN_Conv2d(input_size, 2 * input_size,
-                              kernel_size=(width, 1), stride=(1, 1),
-                              padding=(width // 2 * (1 - nopad), 0))
+        self.conv = WeightNormConv2d(input_size, 2 * input_size,
+                                     kernel_size=(width, 1), stride=(1, 1),
+                                     padding=(width // 2 * (1 - nopad), 0))
         init.xavier_uniform(self.conv.weight, gain=(4 * (1 - dropout))**0.5)
         self.dropout = nn.Dropout(dropout)
 
@@ -84,7 +85,7 @@ class ConvDecoder(nn.Module):
         self.attn_layers = nn.ModuleList()
         for i in range(self.n_layers):
             self.attn_layers.append(
-                onmt.modules.ConvAttention(self.hidden_size))
+                onmt.modules.ConvMultiStepAttention(self.hidden_size))
 
     def forward(self, target_emb, encoder_out_t, encoder_out_c):
         emb_reshape = target_emb.contiguous().view(
