@@ -12,8 +12,8 @@
 
 # python preprocess.py -train_src data/morph/src.train -train_tgt data/morph/tgt.train -valid_src data/morph/src.valid -valid_tgt data/morph/tgt.valid -save_data data/morph/data 
 
-python train.py -data data/morph/data -save_model /tmp/tmp -gpuid 0  -epochs 20
+python3 train.py -data data/morph/data -save_model /tmp/tmp -gpuid 0 -rnn_size 400 -word_vec_size 100 -layers 1 -epochs 15
 
-mv /tmp/tmp*e10.pt data/test_model2.pt
+mv /tmp/tmp*e15.pt data/test_model2.pt
 
-rm /tmp/tmp*.pt
+# rm /tmp/tmp*.pt
