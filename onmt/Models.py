@@ -62,8 +62,8 @@ class Embeddings(nn.Module):
                                       len(num_feat_embeddings))
             else:
                 # mlp feature merge
-                embedding_dims.extend([feat_embedding_dim]
-                                      * len(num_feat_embeddings))
+                embedding_dims.extend([feat_embedding_dim] *
+                                      len(num_feat_embeddings))
                 # apply a layer of mlp to get it down to the correct dim
                 self.mlp = nn.Sequential(onmt.modules.BottleLinear(
                                         sum(embedding_dims),
@@ -331,7 +331,7 @@ class Decoder(nn.Module):
         Forward through the decoder.
 
         Args:
-            input (LongTensor):  (len x batch) -- Input tokens
+            input (LongTensor):  (len x batch x nfeats) -- Input tokens
             src (LongTensor)
             context:  (src_len x batch x rnn_size)  -- Memory bank
             state: an object initializing the decoder.
@@ -342,7 +342,7 @@ class Decoder(nn.Module):
             attns: Dictionary of (src_len x batch)
         """
         # CHECKS
-        t_len, n_batch = input.size()
+        t_len, n_batch, _ = input.size()
         s_len, n_batch_, _ = src.size()
         s_len_, n_batch__, _ = context.size()
         aeq(n_batch, n_batch_, n_batch__)
@@ -350,9 +350,9 @@ class Decoder(nn.Module):
         # END CHECKS
         if self.decoder_type == "transformer":
             if state.previous_input:
-                input = torch.cat([state.previous_input.squeeze(2), input], 0)
+                input = torch.cat([state.previous_input, input], 0)
 
-        emb = self.embeddings(input.unsqueeze(2))
+        emb = self.embeddings(input)
 
         # n.b. you can increase performance if you compute W_ih * x for all
         # iterations in parallel, but that's only possible if
@@ -375,7 +375,7 @@ class Decoder(nn.Module):
                 output, attn \
                     = self.transformer[i](output, src_context,
                                           src[:, :, 0].transpose(0, 1),
-                                          input.transpose(0, 1))
+                                          input[:, :, 0].transpose(0, 1))
             outputs = output.transpose(0, 1).contiguous()
             if state.previous_input:
                 outputs = outputs[state.previous_input.size(0):]
@@ -384,7 +384,7 @@ class Decoder(nn.Module):
             attns["std"] = attn
             if self._copy:
                 attns["copy"] = attn
-            state = TransformerDecoderState(input.unsqueeze(2))
+            state = TransformerDecoderState(input)
         elif self.input_feed:
             assert isinstance(state, RNNDecoderState)
             output = state.input_feed.squeeze(0)
