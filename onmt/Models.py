@@ -38,7 +38,7 @@ class Embeddings(nn.Module):
         super(Embeddings, self).__init__()
         self.positional_encoding = position_encoding
         if self.positional_encoding:
-            self.pe = self.make_positional_encodings(embedding_dim, 5000).cuda()
+            self.pe = self.make_positional_encodings(embedding_dim, 5000)
             self.dropout = nn.Dropout(p=dropout)
 
         self.padding_idx = padding_idx
@@ -133,7 +133,7 @@ class Embeddings(nn.Module):
 
         if self.positional_encoding:
             emb = emb + Variable(self.pe[:emb.size(0), :1, :emb.size(2)]
-                                 .expand_as(emb))
+                                 .expand_as(emb).type_as(emb))
             emb = self.dropout(emb)
 
         out_length, out_batch, emb_dim = emb.size()
