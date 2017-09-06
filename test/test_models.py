@@ -200,6 +200,8 @@ tests_ntmodel = [[('rnn_type', 'GRU')],
                  [('encoder_type', "brnn"),
                   ('brnn_merge', 'sum')],
                  [('encoder_type', "brnn")],
+                 [('decoder_type', 'cnn'),
+                  ('encoder_type', 'cnn')],
                  []
                  ]
 

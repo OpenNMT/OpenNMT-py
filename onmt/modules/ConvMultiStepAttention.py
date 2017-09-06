@@ -44,8 +44,8 @@ class ConvMultiStepAttention(nn.Module):
         aeq(batch, batch_)
         aeq(height, height_)
 
-        e_batch, e_channel, e_height, e_width = encoder_out_t.size()
-        e_batch_, e_channel_, e_height_, e_width_ = encoder_out_c.size()
+        e_batch, e_channel, e_height = encoder_out_t.size()
+        e_batch_, e_channel_, e_height_ = encoder_out_c.size()
 
         aeq(e_batch, e_batch_)
         aeq(e_height, e_height_)
