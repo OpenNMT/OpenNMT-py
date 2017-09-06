@@ -115,14 +115,14 @@ class TestModel(unittest.TestCase):
 
         embeddings = onmt.Models.build_embeddings(opt, padding_idx, len(vocab),
                                                   for_encoder=False)
-        dec = onmt.Models.Decoder(opt.decoder_type, opt.rnn_type,
-                                  opt.dec_layers, opt.rnn_size,
-                                  opt.input_feed,
-                                  opt.global_attention,
-                                  opt.coverage_attn,
-                                  opt.context_gate,
-                                  opt.copy_attn,
-                                  opt.dropout, embeddings)
+        dec = onmt.Models.make_decoder(opt.decoder_type, opt.rnn_type,
+                                       opt.dec_layers, opt.rnn_size,
+                                       opt.input_feed,
+                                       opt.global_attention,
+                                       opt.coverage_attn,
+                                       opt.context_gate,
+                                       opt.copy_attn,
+                                       opt.dropout, embeddings)
 
         model = onmt.Models.NMTModel(enc, dec)
 

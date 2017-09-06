@@ -43,17 +43,20 @@ def main():
                                   model_opt.rnn_type, model_opt.enc_layers,
                                   model_opt.rnn_size, model_opt.dropout,
                                   embeddings)
+
     embeddings = onmt.Models.build_embeddings(
                 model_opt, tgt_dict.stoi[onmt.IO.PAD_WORD],
                 len(tgt_dict), for_encoder=False)
-    decoder = onmt.Models.Decoder(model_opt.decoder_type, model_opt.rnn_type,
-                                  model_opt.dec_layers, model_opt.rnn_size,
-                                  model_opt.input_feed,
-                                  model_opt.global_attention,
-                                  model_opt.coverage_attn,
-                                  model_opt.context_gate,
-                                  model_opt.copy_attn,
-                                  model_opt.dropout, embeddings)
+    decoder = onmt.Models.make_decoder(model_opt.decoder_type,
+                                       model_opt.rnn_type,
+                                       model_opt.dec_layers,
+                                       model_opt.rnn_size,
+                                       model_opt.input_feed,
+                                       model_opt.global_attention,
+                                       model_opt.coverage_attn,
+                                       model_opt.context_gate,
+                                       model_opt.copy_attn,
+                                       model_opt.dropout, embeddings)
 
     encoder_embeddings = encoder.word_lut.weight.data.tolist()
     decoder_embeddings = decoder.word_lut.weight.data.tolist()
