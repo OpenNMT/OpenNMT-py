@@ -58,7 +58,7 @@ def merge_vocabs(vocabs, vocab_size=None):
 
 def make_features(batch, side):
     """
-    data (Variable): a batch of source or target data
+    batch (Variable): a batch of source or target data
     """
     assert side in ['src', 'tgt']
     if isinstance(batch.__dict__[side], tuple):
