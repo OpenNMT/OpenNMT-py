@@ -81,15 +81,16 @@ def eval(model, criterion, data, fields):
 def train_model(model, train_data, valid_data, fields, optim):
     model.train()
 
-    pad_id = fields['tgt'].vocab.stoi[onmt.IO.PAD_WORD]
+    padding_idx = fields['tgt'].vocab.stoi[onmt.IO.PAD_WORD]
 
     # Define criterion of each GPU.
     if not opt.copy_attn:
         criterion = onmt.Loss.NMTCriterion(len(fields['tgt'].vocab), opt,
-                                           pad_id)
+                                           padding_idx)
     else:
         criterion = onmt.modules.CopyCriterion(len(fields['tgt'].vocab),
-                                               opt.copy_attn_force, pad_id)
+                                               opt.copy_attn_force,
+                                               padding_idx)
 
     splitter = onmt.Loss.Splitter(opt.max_generator_batches)
 
