@@ -53,11 +53,22 @@ class StackedCNN(nn.Module):
 
 
 class ConvEncoder(nn.Module):
-    def __init__(self, input_size, hidden_size, layers, dropout,
+    def __init__(self, input_size, hidden_size, num_layers, dropout,
                  cnn_kernel_width):
-        self.num_layers = layers
-        self.hidden_size = hidden_size
+        """
+          Conv Encoder consists of layers of resduial conv layer.
+          encoder the sequence of source token.
+          Args:
+                input_size: dim of source token vector.
+                hidden_dim: the size of channel in conv.
+                num_layers: the num of conv layer.
+                dropout: dropout rate.
+                cnn_kernel_width: the width of the kernel in cnn.
+        """
         super(ConvEncoder, self).__init__()
+
+        self.num_layers = num_layers
+        self.hidden_size = hidden_size
         self.linear = nn.Linear(input_size, self.hidden_size)
         self.conv = StackedCNN(
             self.num_layers, self.hidden_size, cnn_kernel_width, dropout)
@@ -74,18 +85,32 @@ class ConvEncoder(nn.Module):
 
 class ConvDecoder(nn.Module):
 
-    def __init__(self, hidden_size, layers, opt):
-        self.num_layers = layers
-        input_size = opt.tgt_word_vec_size
-        self.cnn_kernel_width = opt.cnn_kernel_width
-        self.hidden_size = hidden_size
+    def __init__(self, input_size, hidden_size, num_layers, dropout,
+                 cnn_kernel_width):
+        """
+          Conv Decoder consists of layers of resduial conv layer
+          and ConvMultiStepAttention. encoder the sequence of target token.
+          Args:
+                input_size: dim of target token vector.
+                hidden_dim: the size of channel in conv.
+                num_layers: the num of conv layer.
+                dropout: dropout rate.
+                cnn_kernel_width: the width of the kernel in cnn.
+        """
+
         super(ConvDecoder, self).__init__()
+
+        self.num_layers = num_layers
+        self.input_size = input_size
+        self.cnn_kernel_width = cnn_kernel_width
+        self.hidden_size = hidden_size
+
         self.linear = nn.Linear(input_size, self.hidden_size)
         self.conv_layers = nn.ModuleList()
         for i in range(self.num_layers):
             self.conv_layers.append(
-                GatedConv(self.hidden_size, opt.cnn_kernel_width,
-                          opt.dropout, True))
+                GatedConv(self.hidden_size, self.cnn_kernel_width,
+                          self.dropout, True))
 
         self.attn_layers = nn.ModuleList()
         for i in range(self.num_layers):

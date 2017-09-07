@@ -708,10 +708,10 @@ class CNNDecoder(nn.Module):
         self.hidden_size = hidden_size
         self.cnn_kernel_width = cnn_kernel_width
         self.embeddings = embeddings
-
+        input_size = self.embeddings.embedding_dim()
         # Build the ConvDecoder.
         self.cnn = onmt.modules.ConvDecoder(
-            hidden_size, num_layers, cnn_kernel_width, dropout)
+            input_size, hidden_size, num_layers, dropout, cnn_kernel_width)
 
         # CNNDecoder has its own attention mechanism.
         # Set up a separated copy attention layer, if needed.
