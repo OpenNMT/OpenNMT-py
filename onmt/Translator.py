@@ -106,7 +106,7 @@ class Translator(object):
         batchSize = batch.batchSize
 
         #  (1) run the encoder on the src
-        encStates, context = self.model.encoder(
+        encStates, context, emb = self.model.encoder(
             batch.src, lengths=batch.lengths)
         encStates = self.model.init_decoder_state(context, encStates)
 
@@ -133,7 +133,8 @@ class Translator(object):
             decOut, decStates, attn = self.model.decoder(batch.tgt[:-1],
                                                          batch.src,
                                                          context,
-                                                         decStates)
+                                                         decStates,
+                                                         emb)
             for dec_t, tgt_t in zip(decOut, batch.tgt[1:].data):
                 gen_t = self.model.generator.forward(dec_t)
                 tgt_t = tgt_t.unsqueeze(1)
@@ -145,6 +146,7 @@ class Translator(object):
         # Each hypothesis in the beam uses the same context
         # and initial decoder state
         context = Variable(context.data.repeat(1, beamSize, 1))
+        emb = Variable(emb.data.repeat(1, beamSize, 1))
         batch_src = Variable(batch.src.data.repeat(1, beamSize, 1))
         decStates = encStates
         decStates.repeatBeam_(beamSize)
@@ -164,7 +166,7 @@ class Translator(object):
                          .t().contiguous().view(1, -1)
             input = Variable(input, volatile=True)
             decOut, decStates, attn = self.model.decoder(input, batch_src,
-                                                         context, decStates)
+                                                         context, decStates, emb)
             decOut = decOut.squeeze(0)
             # decOut: (beam*batch) x numWords
             attn["std"] = attn["std"].view(beamSize, batchSize, -1) \

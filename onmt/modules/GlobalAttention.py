@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from onmt.modules.Util import BottleLinear
 from onmt.modules import aeq
+import math
 
 
 class GlobalAttention(nn.Module):
@@ -38,11 +39,12 @@ class GlobalAttention(nn.Module):
     $$a_j = softmax(v_a^T \tanh(W_a q + U_a h_j) )$$.
 
     """
-    def __init__(self, dim, coverage=False, attn_type="dot"):
+    def __init__(self, dim, coverage=False, attn_type="dot", use_emb=False):
         super(GlobalAttention, self).__init__()
 
         self.dim = dim
         self.attn_type = attn_type
+        self.use_emb = use_emb
         assert (self.attn_type in ["dot", "general", "mlp"]), (
                 "Please select a valid attention type.")
 
@@ -87,7 +89,8 @@ class GlobalAttention(nn.Module):
         if self.attn_type in ["general", "dot"]:
             if self.attn_type == "general":
                 h_t = self.linear_in(h_t)
-            return torch.bmm(h_s, h_t.unsqueeze(2)).squeeze(2)
+            return torch.bmm(h_s, h_t.unsqueeze(2)).squeeze(2) / \
+                   math.sqrt(self.dim)
         else:
             # MLP
             # batch x 1 x dim
@@ -101,11 +104,12 @@ class GlobalAttention(nn.Module):
             # batch x src_len
             return self.v(wquh.contiguous()).squeeze(2)
 
-    def forward(self, input, context, coverage=None):
+    def forward(self, input, context, coverage=None, emb=None):
         """
         input (FloatTensor): batch x dim: decoder's rnn's output.
         context (FloatTensor): batch x src_len x dim: src hidden states
         coverage (FloatTensor): batch x src_len
+        emb (FloatTensor): batch x src_len x dim: src embeddings
         """
 
         # Check input sizes
@@ -118,6 +122,12 @@ class GlobalAttention(nn.Module):
             batch_, sourceL_ = coverage.size()
             aeq(batch, batch_)
             aeq(sourceL, sourceL_)
+
+        if emb is not None:
+            batch_, sourceL_, dim_ = emb.size()
+            aeq(batch, batch_)
+            aeq(sourceL, sourceL_)
+            aeq(dim, dim_)
 
         if self.mask is not None:
             beam_, batch_, sourceL_ = self.mask.size()
@@ -138,9 +148,14 @@ class GlobalAttention(nn.Module):
         # Softmax to normalize attention weights
         align_vector = self.sm(a_t)
 
-        # the context vector c_t is the weighted average
-        # over all the source hidden states
-        c_t = torch.bmm(align_vector.unsqueeze(1), context).squeeze(1)
+        if self.use_emb and emb is not None:
+            # the context vector c_t is the weighted average
+            # over all the source hidden states + source embeddings
+            c_t = torch.bmm(align_vector.unsqueeze(1), context+emb).squeeze(1)
+        else:
+            # the context vector c_t is the weighted average
+            # over all the source hidden states
+            c_t = torch.bmm(align_vector.unsqueeze(1), context).squeeze(1)
 
         # concatenate
         attn_h_t = self.linear_out(torch.cat([c_t, input], 1))

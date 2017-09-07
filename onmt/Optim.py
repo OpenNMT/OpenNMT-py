@@ -7,7 +7,8 @@ class Optim(object):
     def set_parameters(self, params):
         self.params = list(params)  # careful: params may be a generator
         if self.method == 'sgd':
-            self.optimizer = optim.SGD(self.params, lr=self.lr)
+            self.optimizer = optim.SGD(self.params, lr=self.lr,
+                                       momentum=self.momentum)
         elif self.method == 'adagrad':
             self.optimizer = optim.Adagrad(self.params, lr=self.lr)
         elif self.method == 'adadelta':
@@ -20,7 +21,7 @@ class Optim(object):
 
     def __init__(self, method, lr, max_grad_norm,
                  lr_decay=1, start_decay_at=None,
-                 beta1=0.9, beta2=0.98,
+                 beta1=0.9, beta2=0.98, momentum=0.9,
                  opt=None):
         self.last_ppl = None
         self.lr = lr
@@ -30,7 +31,8 @@ class Optim(object):
         self.start_decay_at = start_decay_at
         self.start_decay = False
         self._step = 0
-        self.betas = [beta1, beta2]
+        self.betas = (beta1, beta2)
+        self.momentum = momentum
         self.opt = opt
 
     def _setRate(self, lr):

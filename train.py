@@ -10,6 +10,8 @@ import argparse
 import torch
 import torch.nn as nn
 from torch import cuda
+import math
+import line_profiler
 
 parser = argparse.ArgumentParser(description='train.py')
 onmt.Markdown.add_md_help_argument(parser)
@@ -81,6 +83,11 @@ parser.add_argument('-attention_type', type=str, default='general',
                     choices=['dot', 'general', 'mlp'],
                     help="""The attention type to use:
                     dotprot or general (Luong) or MLP (Bahdanau)""")
+parser.add_argument('-attention_use_emb', action="store_true",
+                    help="""Whether add source embeddings to contexts
+                    when averaging the query values""")
+parser.add_argument('-multi_attn', action="store_true",
+                    help="""Whether use multi-hop attention in decoder""")
 
 # Optimization options
 parser.add_argument('-encoder_type', default='text',
@@ -110,6 +117,13 @@ parser.add_argument('-position_encoding', action='store_true',
                     help='Use a sinusoid to mark relative words positions.')
 parser.add_argument('-share_decoder_embeddings', action='store_true',
                     help='Share the word and softmax embeddings for decoder.')
+parser.add_argument('-momentum', type=float, default=0.9,
+                    help='Momentum')
+parser.add_argument('-adam_beta1', type=float, default=0.9,
+                    help='Adam beta1')
+parser.add_argument('-adam_beta2', type=float, default=0.98,
+                    help='Adam beta2')
+
 
 parser.add_argument('-curriculum', action="store_true",
                     help="""For this many epochs, order the minibatches based
@@ -214,6 +228,7 @@ def eval(model, criterion, data):
 
 
 def trainModel(model, trainData, validData, dataset, optim, mrtTrainer=None):
+    print(model)
     model.train()
 
     model_dirname = os.path.dirname(opt.save_model)
@@ -252,16 +267,23 @@ def trainModel(model, trainData, validData, dataset, optim, mrtTrainer=None):
             trunc_size = opt.truncated_decoder if opt.truncated_decoder \
                 else target_size
 
-            model.zero_grad()
-            rl_stats = mrtTrainer.policy_grad(batch)
-            total_rl_stats.update(rl_stats)
-            report_rl_stats.update(rl_stats)
+            if i and i % 500 == 0:
+                # model.zero_grad()
+                break
+                rl_stats = mrtTrainer.policy_grad(batch)
+                mrtTrainer.step.temperature = max(0.5, math.exp(
+                                            -3e-5*(epoch * len(trainData) + i)))
+                total_rl_stats.update(rl_stats)
+                report_rl_stats.update(rl_stats)
+                report_rl_stats.output(epoch, i+1, len(trainData),
+                                       total_rl_stats.start_time)
+                report_rl_stats = onmt.Loss.RLStatistics()
 
             for j in range(0, target_size-1, trunc_size):
                 trunc_batch = batch.truncate(j, j + trunc_size)
 
                 # Main training loop
-                # model.zero_grad()
+                model.zero_grad()
                 outputs, attn, dec_state = model(trunc_batch.src,
                                                  trunc_batch.tgt,
                                                  trunc_batch.lengths,
@@ -271,7 +293,10 @@ def trainModel(model, trainData, validData, dataset, optim, mrtTrainer=None):
                 batch_stats, inputs, grads \
                     = mem_loss.loss(trunc_batch, outputs, attn)
 
-                # torch.autograd.backward(inputs, grads)
+                torch.autograd.backward(inputs, grads)
+                for n, p in model.named_parameters():
+                    print '%-40s: %10.10f' % (n, p.grad.data.sum())
+                import pdb; pdb.set_trace()
 
                 # Update the parameters.
                 optim.step()
@@ -285,12 +310,10 @@ def trainModel(model, trainData, validData, dataset, optim, mrtTrainer=None):
             if i % opt.log_interval == -1 % opt.log_interval:
                 report_stats.output(epoch, i+1, len(trainData),
                                     total_stats.start_time)
-                report_rl_stats.output(epoch, i+1, len(trainData),
-                                       total_rl_stats.start_time)
+
                 if opt.log_server:
                     report_stats.log("progress", experiment, optim)
                 report_stats = onmt.Loss.Statistics()
-                report_rl_stats = onmt.Loss.RLStatistics()
 
         return total_stats
 
@@ -444,6 +467,7 @@ def main():
         if opt.param_init != 0.0:
             print('Intializing params')
             for p in model.parameters():
+                # p.data.uniform_(-opt.param_init, opt.param_init)
                 if len(p.size()) == 1:
                     p.data.fill_(1.0)
                 else:
@@ -456,6 +480,8 @@ def main():
             opt.optim, opt.learning_rate, opt.max_grad_norm,
             lr_decay=opt.learning_rate_decay,
             start_decay_at=opt.start_decay_at,
+            momentum=opt.momentum,
+            beta1=opt.adam_beta1, beta2=opt.adam_beta2,
             opt=opt
         )
     else:

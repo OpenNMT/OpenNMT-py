@@ -8,6 +8,7 @@ from onmt.modules import aeq
 from onmt.modules.Gate import ContextGateFactory
 from torch.nn.utils.rnn import pad_packed_sequence as unpack
 from torch.nn.utils.rnn import pack_padded_sequence as pack
+import line_profiler
 
 
 class Embeddings(nn.Module):
@@ -100,7 +101,7 @@ class Embeddings(nn.Module):
                                 if the merge action is concatenate.
         """
         in_length, in_batch, nfeat = src_input.size()
-        aeq(nfeat, len(self.emb_luts))
+        # aeq(nfeat, len(self.emb_luts))
 
         if len(self.emb_luts) == 1:
             if 'FloatTensor' in str(type(src_input.data)):
@@ -213,11 +214,11 @@ class Encoder(nn.Module):
             if lengths:
                 outputs = unpack(outputs)[0]
                 if self.multi_gpu and largest_len and outputs.size(0) < largest_len:
-                    pads = Variable(torch.FloatTensor(
+                    pads = Variable(outputs.data.new(
                             largest_len-outputs.size(0), outputs.size(1), outputs.size(2))
-                            .zero_(), requires_grad=False).cuda()
+                            .zero_(), requires_grad=False)
                     outputs = torch.cat([outputs, pads], 0)
-            return hidden_t, outputs
+            return hidden_t, outputs, emb
 
 
 class Decoder(nn.Module):
@@ -253,7 +254,8 @@ class Decoder(nn.Module):
             else:
                 stackedCell = onmt.modules.StackedGRU
             self.rnn = stackedCell(opt.layers, input_size,
-                                   opt.rnn_size, opt.dropout)
+                                   opt.rnn_size, opt.dropout,
+                                   opt.multi_attn, opt.attention_use_emb)
             self.context_gate = None
             if opt.context_gate is not None:
                 self.context_gate = ContextGateFactory(
@@ -267,7 +269,8 @@ class Decoder(nn.Module):
         # Std attention layer.
         self.attn = onmt.modules.GlobalAttention(opt.rnn_size,
                                                  coverage=self._coverage,
-                                                 attn_type=opt.attention_type)
+                                                 attn_type=opt.attention_type,
+                                                 use_emb=opt.attention_use_emb)
 
         # Separate Copy Attention.
         self._copy = False
@@ -276,7 +279,7 @@ class Decoder(nn.Module):
                 opt.rnn_size, attn_type=opt.attention_type)
             self._copy = True
 
-    def forward(self, input, src, context, state):
+    def forward(self, input, src, context, state, src_emb=None):
         """
         Forward through the decoder.
 
@@ -285,6 +288,7 @@ class Decoder(nn.Module):
             src (LongTensor)
             context:  (src_len x batch x rnn_size)  -- Memory bank
             state: an object initializing the decoder.
+            src_emb: (src_len x batch x word_vec_size) -- Embeddings of src
 
         Returns:
             outputs: (len x batch x rnn_size)
@@ -292,7 +296,10 @@ class Decoder(nn.Module):
             attns: Dictionary of (src_len x batch)
         """
         # CHECKS
-        t_len, n_batch = input.size()
+        if len(input.size()) == 2:
+            t_len, n_batch = input.size()
+        else:
+            t_len, n_batch, _ = input.size()
         s_len, n_batch_, _ = src.size()
         s_len_, n_batch__, _ = context.size()
         aeq(n_batch, n_batch_, n_batch__)
@@ -302,7 +309,8 @@ class Decoder(nn.Module):
             if state.previous_input:
                 input = torch.cat([state.previous_input.squeeze(2), input], 0)
 
-        emb = self.embeddings(input.unsqueeze(2))
+        emb = self.embeddings(input.unsqueeze(-1)
+                                if len(input.size()) == 2 else input)
 
         # n.b. you can increase performance if you compute W_ih * x for all
         # iterations in parallel, but that's only possible if
@@ -354,9 +362,11 @@ class Decoder(nn.Module):
                 if self.input_feed:
                     emb_t = torch.cat([emb_t, output], 1)
 
-                rnn_output, hidden = self.rnn(emb_t, hidden)
+                rnn_output, hidden = self.rnn(emb_t, hidden, context, src_emb)
                 attn_output, attn = self.attn(rnn_output,
-                                              context.transpose(0, 1))
+                                              context.transpose(0, 1),
+                                              emb=src_emb.transpose(0, 1)
+                                                if src_emb is not None else None)
                 if self.context_gate is not None:
                     output = self.context_gate(
                         emb_t, rnn_output, attn_output
@@ -428,11 +438,12 @@ class NMTModel(nn.Module):
         """
         src = src
         tgt = tgt[:-1]  # exclude last target from inputs
-        enc_hidden, context = self.encoder(src, lengths, largest_len=largest_len)
+        enc_hidden, context, emb = self.encoder(src, lengths, largest_len=largest_len)
         enc_state = self.init_decoder_state(context, enc_hidden)
         out, dec_state, attns = self.decoder(tgt, src, context,
                                              enc_state if dec_state is None
-                                             else dec_state)
+                                                else dec_state,
+                                             emb.detach())
         # if self.multigpu:
         #     # Not yet supported on multi-gpu
         #     dec_state = None
