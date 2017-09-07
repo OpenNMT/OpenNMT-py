@@ -7,6 +7,7 @@ scale_weight = 0.5 ** 0.5
 
 
 def seq_linear(linear, x):
+    # linear transform for 3-d tensor
     batch, hidden_size, length, _ = x.size()
     h = linear(torch.transpose(x, 1, 2).contiguous().view(
         batch * length, hidden_size))
@@ -55,17 +56,14 @@ class ConvMultiStepAttention(nn.Module):
         target = (base_target_emb + preatt) * scale_weight
         target = torch.squeeze(target, 3)
         target = torch.transpose(target, 1, 2)
-        pre_a = torch.bmm(target, encoder_out_top)
+        pre_attn = torch.bmm(target, encoder_out_top)
 
         if self.mask is not None:
-            pre_a.data.masked_fill_(self.mask, -float('inf'))
+            pre_attn.data.masked_fill_(self.mask, -float('inf'))
 
-        attn = F.softmax(pre_a)
+        attn = F.softmax(pre_attn)
         context_output = torch.bmm(
             attn, torch.transpose(encoder_out_combine, 1, 2))
         context_output = torch.transpose(
             torch.unsqueeze(context_output, 3), 1, 2)
         return context_output, attn
-
-
-n_l

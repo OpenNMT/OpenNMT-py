@@ -74,6 +74,11 @@ class ConvEncoder(nn.Module):
             self.num_layers, self.hidden_size, cnn_kernel_width, dropout)
 
     def forward(self, emb):
+        """
+        encoder source sequence by cnn network.
+        Args:
+            emb: the embedding of source token
+        """
         emb_reshape = emb.view(emb.size(0) * emb.size(1), -1)
         emb_remap = self.linear(emb_reshape)
         emb_remap = emb_remap.view(emb.size(0), emb.size(1), -1)
@@ -118,6 +123,15 @@ class ConvDecoder(nn.Module):
                 onmt.modules.ConvMultiStepAttention(self.hidden_size))
 
     def forward(self, target_emb, encoder_out_top, encoder_out_combine):
+        """
+        decode current timestep token by history target token with
+        ource encoder vector.
+        Args:
+            target_emb: the embedding vector of target sequence
+            encoder_out_top: the top output of source sequence
+            through ConvEncoder
+            encoder_out_combine: encoder_out_top + source_emb.
+        """
         emb_reshape = target_emb.contiguous().view(
             target_emb.size(0) * target_emb.size(1), -1)
         linear_out = self.linear(emb_reshape)

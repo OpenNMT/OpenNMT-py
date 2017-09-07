@@ -692,7 +692,7 @@ class TransformerDecoder(nn.Module):
 
 class CNNDecoder(nn.Module):
     """
-    CNN Decoder. Wrapper aroundonmt.modules.ConvDecoder.
+    CNN Decoder. Wrapper around onmt.modules.ConvDecoder.
     """
 
     def __init__(self, num_layers, hidden_size, attn_type,
@@ -723,13 +723,13 @@ class CNNDecoder(nn.Module):
 
     def forward(self, input, context, state):
         """
-        Forward through the TransformerDecoder.
+        Forward through the ConvDecoder.
         Args:
             input (LongTensor): a sequence of input tokens tensors
                                 of size (len x batch x nfeats).
             context (FloatTensor): output(tensor sequence) from the Encoder
-                        RNN of size (src_len x batch x hidden_size).
-            state (FloatTensor): hidden state from the Encoder RNN for
+                        CNN of size (src_len x batch x hidden_size).
+            state (FloatTensor): hidden state from the Encoder CNN for
                                  initializing the decoder.
         Returns:
             outputs (FloatTensor): a Tensor sequence of output from the Decoder
