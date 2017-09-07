@@ -122,6 +122,7 @@ class TestModel(unittest.TestCase):
                                        opt.coverage_attn,
                                        opt.context_gate,
                                        opt.copy_attn,
+                                       opt.cnn_kernel_width,
                                        opt.dropout, embeddings)
 
         model = onmt.Models.NMTModel(enc, dec)

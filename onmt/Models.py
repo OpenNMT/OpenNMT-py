@@ -178,7 +178,8 @@ class Encoder(nn.Module):
     """
 
     def __init__(self, encoder_type, bidirectional, rnn_type,
-                 num_layers, rnn_size, dropout, embeddings, cnn_kernel_width):
+                 num_layers, rnn_size, dropout, embeddings,
+                 cnn_kernel_width=3):
         """
         Args:
             encoder_type (string): rnn, brnn, mean, or transformer.
@@ -708,7 +709,7 @@ class CNNDecoder(nn.Module):
         self.hidden_size = hidden_size
         self.cnn_kernel_width = cnn_kernel_width
         self.embeddings = embeddings
-        input_size = self.embeddings.embedding_dim()
+        input_size = self.embeddings.embedding_dim
         # Build the ConvDecoder.
         self.cnn = onmt.modules.ConvDecoder(
             input_size, hidden_size, num_layers, dropout, cnn_kernel_width)

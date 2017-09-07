@@ -109,6 +109,7 @@ class ConvDecoder(nn.Module):
         self.input_size = input_size
         self.cnn_kernel_width = cnn_kernel_width
         self.hidden_size = hidden_size
+        self.dropout = dropout
 
         self.linear = nn.Linear(input_size, self.hidden_size)
         self.conv_layers = nn.ModuleList()
@@ -138,7 +139,8 @@ class ConvDecoder(nn.Module):
         x = linear_out.view(target_emb.size(0), target_emb.size(1), -1)
         x = shape_transform(x)
 
-        pad = Variable(torch.zeros(x.size(0), x.size(1), self.width - 1, 1))
+        pad = Variable(torch.zeros(x.size(0), x.size(1),
+                                   self.cnn_kernel_width - 1, 1))
         pad = pad.type_as(x)
         base_target_emb = x
 
