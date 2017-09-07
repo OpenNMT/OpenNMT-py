@@ -88,10 +88,10 @@ class TransformerDecoder(nn.Module):
                                                     hidden_size,
                                                     dropout)
         self.dropout = dropout
-        self.mask = self._get_attn_subsequent_mask(MAX_SIZE)
+        mask = self._get_attn_subsequent_mask(MAX_SIZE)
         # Register self.mask as a buffer in TransformerDecoder, so
         # it gets TransformerDecoder's cuda behavior automatically.
-        self.register_buffer('mask', self.mask)
+        self.register_buffer('mask', mask)
 
     def forward(self, input, context, src_pad_mask, tgt_pad_mask):
         # Args Checks
