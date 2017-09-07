@@ -3,10 +3,11 @@ import torch
 import torch.nn as nn
 
 
-def aeq(*args):
-    base = args[0]
-    for a in args[1:]:
-        assert a == base, str(args)
+def aeq(base, *rest):
+    """ Assert the first arg equals to each of the rest."""
+    for a in rest[:]:
+        assert a == base, "base(" + str(base) \
+            + ") doesn't equals to each of " + str(rest)
 
 
 class Bottle(nn.Module):

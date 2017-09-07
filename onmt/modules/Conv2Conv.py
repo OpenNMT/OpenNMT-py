@@ -35,13 +35,15 @@ class GatedConv(nn.Module):
 
 
 class StackedCNN(nn.Module):
-    def __init__(self, n_layers, input_size, width=3, dropout=0.2):
+    def __init__(self, num_layers, input_size, cnn_kernel_width=3,
+                 dropout=0.2):
         super(StackedCNN, self).__init__()
         self.dropout = dropout
-        self.n_layers = n_layers
+        self.num_layers = num_layers
         self.layers = nn.ModuleList()
-        for i in range(n_layers):
-            self.layers.append(GatedConv(input_size, width, dropout))
+        for i in range(num_layers):
+            self.layers.append(
+                GatedConv(input_size, cnn_kernel_width, dropout))
 
     def forward(self, x, hidden=None):
         for conv in self.layers:
@@ -51,12 +53,14 @@ class StackedCNN(nn.Module):
 
 
 class ConvEncoder(nn.Module):
-    def __init__(self, input_size, hidden_size, layers, dropout, width):
-        self.n_layers = layers
+    def __init__(self, input_size, hidden_size, layers, dropout,
+                 cnn_kernel_width):
+        self.num_layers = layers
         self.hidden_size = hidden_size
         super(ConvEncoder, self).__init__()
         self.linear = nn.Linear(input_size, self.hidden_size)
-        self.conv = StackedCNN(self.n_layers, self.hidden_size, width, dropout)
+        self.conv = StackedCNN(
+            self.num_layers, self.hidden_size, cnn_kernel_width, dropout)
 
     def forward(self, emb):
         emb_reshape = emb.view(emb.size(0) * emb.size(1), -1)
@@ -71,23 +75,24 @@ class ConvEncoder(nn.Module):
 class ConvDecoder(nn.Module):
 
     def __init__(self, hidden_size, layers, opt):
-        self.n_layers = layers
+        self.num_layers = layers
         input_size = opt.tgt_word_vec_size
-        self.width = opt.width
+        self.cnn_kernel_width = opt.cnn_kernel_width
         self.hidden_size = hidden_size
         super(ConvDecoder, self).__init__()
         self.linear = nn.Linear(input_size, self.hidden_size)
         self.conv_layers = nn.ModuleList()
-        for i in range(self.n_layers):
+        for i in range(self.num_layers):
             self.conv_layers.append(
-                GatedConv(self.hidden_size, opt.width, opt.dropout, True))
+                GatedConv(self.hidden_size, opt.cnn_kernel_width,
+                          opt.dropout, True))
 
         self.attn_layers = nn.ModuleList()
-        for i in range(self.n_layers):
+        for i in range(self.num_layers):
             self.attn_layers.append(
                 onmt.modules.ConvMultiStepAttention(self.hidden_size))
 
-    def forward(self, target_emb, encoder_out_t, encoder_out_c):
+    def forward(self, target_emb, encoder_out_top, encoder_out_combine):
         emb_reshape = target_emb.contiguous().view(
             target_emb.size(0) * target_emb.size(1), -1)
         linear_out = self.linear(emb_reshape)
@@ -102,6 +107,6 @@ class ConvDecoder(nn.Module):
             new_target_input = torch.cat([pad, x], 2)
             out = conv(new_target_input)
             c, attn = attention(base_target_emb, out,
-                                encoder_out_t, encoder_out_c)
+                                encoder_out_top, encoder_out_combine)
             x = (x + (c + out) * scale_weight) * scale_weight
         return x.squeeze(3).transpose(1, 2), attn

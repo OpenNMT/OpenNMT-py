@@ -22,7 +22,8 @@ class ConvMultiStepAttention(nn.Module):
     def applyMask(self, mask):
         self.mask = mask
 
-    def forward(self, base_target_emb, input, encoder_out_t, encoder_out_c):
+    def forward(self, base_target_emb, input, encoder_out_top,
+                encoder_out_combine):
         """
         It's like Luong Attetion.
         Conv attention takes a key matrix, a value matrix and a query vector.
@@ -44,23 +45,27 @@ class ConvMultiStepAttention(nn.Module):
         aeq(batch, batch_)
         aeq(height, height_)
 
-        e_batch, e_channel, e_height = encoder_out_t.size()
-        e_batch_, e_channel_, e_height_ = encoder_out_c.size()
+        enc_batch, enc_channel, enc_height = encoder_out_top.size()
+        enc_batch_, enc_channel_, enc_height_ = encoder_out_combine.size()
 
-        aeq(e_batch, e_batch_)
-        aeq(e_height, e_height_)
+        aeq(enc_batch, enc_batch_)
+        aeq(enc_height, enc_height_)
 
         preatt = seq_linear(self.linear_in, input)
         target = (base_target_emb + preatt) * scale_weight
         target = torch.squeeze(target, 3)
         target = torch.transpose(target, 1, 2)
-        pre_a = torch.bmm(target, encoder_out_t)
+        pre_a = torch.bmm(target, encoder_out_top)
 
         if self.mask is not None:
             pre_a.data.masked_fill_(self.mask, -float('inf'))
 
         attn = F.softmax(pre_a)
-        contextOutput = torch.bmm(attn, torch.transpose(encoder_out_c, 1, 2))
-        contextOutput = torch.transpose(
-            torch.unsqueeze(contextOutput, 3), 1, 2)
-        return contextOutput, attn
+        context_output = torch.bmm(
+            attn, torch.transpose(encoder_out_combine, 1, 2))
+        context_output = torch.transpose(
+            torch.unsqueeze(context_output, 3), 1, 2)
+        return context_output, attn
+
+
+n_l

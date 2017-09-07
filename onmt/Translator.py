@@ -59,21 +59,20 @@ class Translator(object):
     def _runTarget(self, batch, data):
 
         _, src_lengths = batch.src
-        src = onmt.IO.make_features(batch, self.fields)
+        src = onmt.IO.make_features(batch, 'src')
+        tgt_in = onmt.IO.make_features(batch, 'tgt')[:-1]
 
         #  (1) run the encoder on the src
         encStates, context = self.model.encoder(src, src_lengths)
-        decStates = self.model.init_decoder_state(context, encStates)
+        decStates = self.model.init_decoder_state(src, context, encStates)
 
         #  (2) if a target is specified, compute the 'goldScore'
         #  (i.e. log likelihood) of the target under the model
         tt = torch.cuda if self.opt.cuda else torch
         goldScores = tt.FloatTensor(batch.batch_size).fill_(0)
         decOut, decStates, attn = self.model.decoder(
-            batch.tgt[:-1], src, context, decStates)
+            tgt_in, context, decStates)
 
-        # print(decOut.size(), batch.tgt[1:].data.size())
-        # aeq(decOut.size(), batch.tgt[1:].data.size())
         tgt_pad = self.fields["tgt"].vocab.stoi[onmt.IO.PAD_WORD]
         for dec, tgt in zip(decOut, batch.tgt[1:].data):
             # Log prob of each word.
@@ -90,9 +89,9 @@ class Translator(object):
 
         #  (1) run the encoder on the src
         _, src_lengths = batch.src
-        src = onmt.IO.make_features(batch, self.fields)
+        src = onmt.IO.make_features(batch, 'src')
         encStates, context = self.model.encoder(src, src_lengths)
-        decStates = self.model.init_decoder_state(context, encStates)
+        decStates = self.model.init_decoder_state(src, context, encStates)
 
         #  (1b) initialize for the decoder.
         def var(a): return Variable(a, volatile=True)
@@ -108,8 +107,7 @@ class Translator(object):
                           vocab=self.fields["tgt"].vocab)
                 for __ in range(batchSize)]
 
-        #  (2) run the decoder to generate sentences, using beam search
-        i = 0
+        #  (2) run the decoder to generate sentences, using beam search\
 
         def bottle(m):
             return m.view(batchSize * beamSize, -1)
@@ -133,9 +131,13 @@ class Translator(object):
                 inp = inp.masked_fill(
                     inp.gt(len(self.fields["tgt"].vocab) - 1), 0)
 
+            # Temporary kludge solution to handle changed dim expectation
+            # in the decoder
+            inp = inp.unsqueeze(2)
+
             # Run one step.
             decOut, decStates, attn = \
-                self.model.decoder(inp, src, context, decStates)
+                self.model.decoder(inp, context, decStates)
             decOut = decOut.squeeze(0)
             # decOut: beam x rnn_size
 

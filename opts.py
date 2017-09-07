@@ -47,9 +47,9 @@ def model_opts(parser):
     parser.add_argument('-dec_layers', type=int, default=2,
                         help='Number of layers in the decoder')
 
-    parser.add_argument('-width', type=int, default=3,
+    parser.add_argument('-cnn_kernel_width', type=int, default=3,
                         help="""Size of windows in the cnn, the kernel_size is
-                         (width, 1) in conv layer""")
+                         (cnn_kernel_width, 1) in conv layer""")
 
     parser.add_argument('-rnn_size', type=int, default=500,
                         help='Size of LSTM hidden states')
