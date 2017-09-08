@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import onmt.modules.GlobalAttention
-import line_profiler
 
 
 class StackedLSTM(nn.Module):
@@ -36,7 +35,7 @@ class StackedLSTM(nn.Module):
                 attn_output, _ = self.attns[i](input,
                                                context.transpose(0, 1),
                                                emb=emb.transpose(0, 1)
-                                                if emb is not None else None)
+                                               if emb is not None else None)
                 input = input + attn_output
             h_1_i, c_1_i = layer(input, (h_0[i], c_0[i]))
             input = h_1_i
@@ -80,7 +79,7 @@ class StackedGRU(nn.Module):
                 attn_output, _ = self.attns[i](h_1_i,
                                                context.transpose(0, 1),
                                                emb.transpose(0, 1)
-                                                if emb is not None else None)
+                                               if emb is not None else None)
                 h_1_i = h_1_i + attn_output
             input = h_1_i
             if i + 1 != self.num_layers:
