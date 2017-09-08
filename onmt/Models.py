@@ -637,7 +637,7 @@ class TransformerDecoder(nn.Module):
         tgt_batch, tgt_len = tgt_words.size()
         aeq(input_batch, contxt_batch, src_batch, tgt_batch)
         aeq(contxt_len, src_len)
-        aeq(input_len, tgt_len)
+        # aeq(input_len, tgt_len)
         # END CHECKS
 
         # Initialize return variables.
@@ -806,7 +806,7 @@ class TransformerDecoderState(DecoderState):
         """
         self.src = src
         self.previous_input = input
-        self.all = (self.previous_input,)
+        self.all = (self.previous_input, self.src)
 
     def _resetAll(self, all):
         vars = [(Variable(a.data if isinstance(a, Variable) else a,
@@ -816,7 +816,7 @@ class TransformerDecoderState(DecoderState):
         self.all = (self.previous_input,)
 
     def repeatBeam_(self, beamSize):
-        pass
+        self.src = Variable(self.src.data.repeat(1, beamSize, 1))
 
 
 def make_base_model(opt, model_opt, fields, checkpoint=None):
