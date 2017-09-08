@@ -8,7 +8,6 @@ from onmt.modules import aeq
 from onmt.modules.Gate import ContextGateFactory
 from torch.nn.utils.rnn import pad_packed_sequence as unpack
 from torch.nn.utils.rnn import pack_padded_sequence as pack
-import line_profiler
 
 
 class Embeddings(nn.Module):
@@ -91,7 +90,6 @@ class Embeddings(nn.Module):
 
         Args:
             src_input (LongTensor): len x batch x nfeat
-                    or (FloatTensor) : len x batch x vocab_sizes
 
         Return:
             emb (FloatTensor): len x batch x emb_size
@@ -101,13 +99,10 @@ class Embeddings(nn.Module):
                                 if the merge action is concatenate.
         """
         in_length, in_batch, nfeat = src_input.size()
-        # aeq(nfeat, len(self.emb_luts))
+        aeq(nfeat, len(self.emb_luts))
 
         if len(self.emb_luts) == 1:
-            if 'FloatTensor' in str(type(src_input.data)):
-                emb = torch.matmul(src_input, self.word_lut.weight)
-            else:
-                emb = self.word_lut(src_input.squeeze(2))
+            emb = self.word_lut(src_input.squeeze(2))
         else:
             feat_inputs = (feat.squeeze(2)
                            for feat in src_input.split(1, dim=2))
@@ -202,7 +197,7 @@ class Encoder(nn.Module):
             out = emb.transpose(0, 1).contiguous()
             for i in range(self.layers):
                 out = self.transformer[i](out, input[:, :, 0].transpose(0, 1))
-            return Variable(emb.data), out.transpose(0, 1).contiguous()
+            return Variable(emb.data), out.transpose(0, 1).contiguous(), emb
         else:
             # Standard RNN encoder.
             packed_emb = emb
@@ -213,10 +208,12 @@ class Encoder(nn.Module):
             outputs, hidden_t = self.rnn(packed_emb, hidden)
             if lengths:
                 outputs = unpack(outputs)[0]
-                if self.multi_gpu and largest_len and outputs.size(0) < largest_len:
+                if self.multi_gpu and largest_len \
+                   and outputs.size(0) < largest_len:
                     pads = Variable(outputs.data.new(
-                            largest_len-outputs.size(0), outputs.size(1), outputs.size(2))
-                            .zero_(), requires_grad=False)
+                            largest_len-outputs.size(0),
+                            outputs.size(1),
+                            outputs.size(2)).zero_(), requires_grad=False)
                     outputs = torch.cat([outputs, pads], 0)
             return hidden_t, outputs, emb
 
@@ -288,7 +285,6 @@ class Decoder(nn.Module):
             src (LongTensor)
             context:  (src_len x batch x rnn_size)  -- Memory bank
             state: an object initializing the decoder.
-            src_emb: (src_len x batch x word_vec_size) -- Embeddings of src
 
         Returns:
             outputs: (len x batch x rnn_size)
@@ -296,10 +292,7 @@ class Decoder(nn.Module):
             attns: Dictionary of (src_len x batch)
         """
         # CHECKS
-        if len(input.size()) == 2:
-            t_len, n_batch = input.size()
-        else:
-            t_len, n_batch, _ = input.size()
+        t_len, n_batch = input.size()
         s_len, n_batch_, _ = src.size()
         s_len_, n_batch__, _ = context.size()
         aeq(n_batch, n_batch_, n_batch__)
@@ -309,8 +302,7 @@ class Decoder(nn.Module):
             if state.previous_input:
                 input = torch.cat([state.previous_input.squeeze(2), input], 0)
 
-        emb = self.embeddings(input.unsqueeze(-1)
-                                if len(input.size()) == 2 else input)
+        emb = self.embeddings(input.unsqueeze(-1))
 
         # n.b. you can increase performance if you compute W_ih * x for all
         # iterations in parallel, but that's only possible if
@@ -358,7 +350,6 @@ class Decoder(nn.Module):
             # Standard RNN decoder.
             for i, emb_t in enumerate(emb.split(1)):
                 emb_t = emb_t.squeeze(0)
-
                 if self.input_feed:
                     emb_t = torch.cat([emb_t, output], 1)
 
@@ -366,7 +357,7 @@ class Decoder(nn.Module):
                 attn_output, attn = self.attn(rnn_output,
                                               context.transpose(0, 1),
                                               emb=src_emb.transpose(0, 1)
-                                                if src_emb is not None else None)
+                                              if src_emb is not None else None)
                 if self.context_gate is not None:
                     output = self.context_gate(
                         emb_t, rnn_output, attn_output
@@ -379,7 +370,8 @@ class Decoder(nn.Module):
 
                 # COVERAGE
                 if self._coverage:
-                    coverage = (coverage + attn) if coverage is not None else attn
+                    coverage = (coverage + attn) \
+                               if coverage is not None else attn
                     attns["coverage"] += [coverage]
 
                 # COPY
@@ -387,7 +379,6 @@ class Decoder(nn.Module):
                     _, copy_attn = self.copy_attn(output,
                                                   context.transpose(0, 1))
                     attns["copy"] += [copy_attn]
-
             state = RNNDecoderState(hidden, output.unsqueeze(0),
                                     coverage.unsqueeze(0)
                                     if coverage is not None else None)
@@ -438,11 +429,12 @@ class NMTModel(nn.Module):
         """
         src = src
         tgt = tgt[:-1]  # exclude last target from inputs
-        enc_hidden, context, emb = self.encoder(src, lengths, largest_len=largest_len)
+        enc_hidden, context, emb = self.encoder(src, lengths,
+                                                largest_len=largest_len)
         enc_state = self.init_decoder_state(context, enc_hidden)
         out, dec_state, attns = self.decoder(tgt, src, context,
                                              enc_state if dec_state is None
-                                                else dec_state,
+                                             else dec_state,
                                              emb.detach())
         # if self.multigpu:
         #     # Not yet supported on multi-gpu
@@ -452,6 +444,10 @@ class NMTModel(nn.Module):
 
 
 class DecoderState(object):
+    '''
+    Implemente DecoderState as iterable, so that it can be
+    turned into tuple and scattered properly.
+    '''
     def __init__(self):
         self.iter = -1
         self.all = ()
@@ -476,23 +472,6 @@ class DecoderState(object):
             if h is not None:
                 h.detach_()
 
-    def retain_grad(self):
-        for h in self.all:
-            if h is not None:
-                h.retain_grad()
-
-    def size(self, dim):
-        dim_size = None
-        for h in self.all:
-            if h is not None:
-                dim_size = h.size(dim)
-            elif dim_size != h.size(dim):
-                print("DecoderState WARNING, dimension not matched for all items!")
-                return None
-        if dim_size is None:
-            print("DecoderState WARNING, all states are None!")
-        return dim_size
-
     def repeatBeam_(self, beamSize):
         self._resetAll([Variable(e.data.repeat(1, beamSize, 1))
                         for e in self.all])
@@ -510,7 +489,7 @@ class RNNDecoderState(DecoderState):
         # all objects are X x batch x dim
         # or X x (beam * sent) for beam search
         super(RNNDecoderState, self).__init__()
-        # perhaps it can be initialized from list
+        # it can be initialized from list
         if isinstance(rnnstate, list):
             input_feed = rnnstate[1]
             coverage = rnnstate[2]
@@ -537,75 +516,6 @@ class RNNDecoderState(DecoderState):
             return self.input_feed
         else:
             return self.coverage
-
-    def split(self, split_size, dim=0, coverage_dim=0):
-        dim_size = self.size(dim)
-        if dim_size is None:
-            return None
-
-        def _split(hs, d, d_size):
-            if isinstance(hs, tuple):
-                hs_list = []
-                for h in hs:
-                    if h is not None:
-                        hs_list.append(h.split(split_size, d))
-                    else:
-                        hs_list.append([None] * d_size)
-                return zip(*hs_list)
-            elif hs is not None:
-                return hs.split(split_size, d)
-            else:
-                return [None] * d_size
-
-        hiddens = _split(self.hidden, dim, dim_size)
-        input_feeds = _split(self.input_feed, dim, dim_size)
-        coverages = _split(self.coverage, coverage_dim, dim_size)
-        return [RNNDecoderState(hiddens[i], input_feeds[i], coverages[i])
-                                    for i in range(len(hiddens))]
-
-    def expandAsBatch_(self, batch_size):
-        if isinstance(self.hidden, tuple):
-            new_tuple = []
-            for i in range(len(self.hidden)):
-                if self.hidden[i] is not None:
-                    n_layers, b, rnn_size = self.hidden[i].size()
-                    aeq(b, 1)
-                    new_tuple.append(self.hidden[i].expand(n_layers, batch_size, rnn_size))
-                else:
-                    new_tuple.append(None)
-            self.hidden = tuple(new_tuple)
-        else:
-            n_layers, b, rnn_size = self.hidden.size()
-            aeq(b, 1)
-            self.hidden = self.hidden.expand(n_layers, batch_size, rnn_size)
-
-        if self.input_feed is not None:
-            dim1, b, rnn_size = self.input_feed.size()
-            aeq(b, 1)
-            self.input_feed = self.input_feed.expand(dim1, batch_size, rnn_size)
-
-        if self.coverage is not None:
-            b, dim1, rnn_size = self.input_feed.size()
-            aeq(b, 1)
-            self.coverage = self.coverage.expand(batch_size, dim1, rnn_size)
-
-        self.all = self.hidden + (self.input_feed,)
-
-    def activeUpdate_(self, positions):
-        if isinstance(self.hidden, tuple):
-            new_tuple = []
-            for h in self.hidden:
-                new_tuple.append(h.index_select(1, positions))
-            self.hidden = tuple(new_tuple)
-        else:
-            self.hidden = self.hidden.index_select(1, positions)
-
-        if self.input_feed is not None:
-            self.input_feed = self.input_feed.index_select(1, positions)
-        if self.coverage is not None:
-            self.coverage = self.coverage.index_select(0, positions)
-
-        self.all = self.hidden + (self.input_feed,)
 
     def init_input_feed(self, context, rnn_size):
         batch_size = context.size(1)

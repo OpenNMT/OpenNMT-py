@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 from onmt.modules.Util import BottleLinear
 from onmt.modules import aeq
-import math
 
 
 class GlobalAttention(nn.Module):
@@ -89,8 +88,7 @@ class GlobalAttention(nn.Module):
         if self.attn_type in ["general", "dot"]:
             if self.attn_type == "general":
                 h_t = self.linear_in(h_t)
-            return torch.bmm(h_s, h_t.unsqueeze(2)).squeeze(2) / \
-                   math.sqrt(self.dim)
+            return torch.bmm(h_s, h_t.unsqueeze(2)).squeeze(2)
         else:
             # MLP
             # batch x 1 x dim
@@ -151,6 +149,7 @@ class GlobalAttention(nn.Module):
         if self.use_emb and emb is not None:
             # the context vector c_t is the weighted average
             # over all the source hidden states + source embeddings
+            # Refs: "Convolutional Sequences to Sequences Learning"
             c_t = torch.bmm(align_vector.unsqueeze(1), context+emb).squeeze(1)
         else:
             # the context vector c_t is the weighted average

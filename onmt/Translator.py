@@ -166,7 +166,8 @@ class Translator(object):
                          .t().contiguous().view(1, -1)
             input = Variable(input, volatile=True)
             decOut, decStates, attn = self.model.decoder(input, batch_src,
-                                                         context, decStates, emb)
+                                                         context, decStates,
+                                                         emb)
             decOut = decOut.squeeze(0)
             # decOut: (beam*batch) x numWords
             attn["std"] = attn["std"].view(beamSize, batchSize, -1) \

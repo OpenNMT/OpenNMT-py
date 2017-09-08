@@ -11,7 +11,6 @@ import torch
 import torch.nn as nn
 from torch import cuda
 import math
-import line_profiler
 
 parser = argparse.ArgumentParser(description='train.py')
 onmt.Markdown.add_md_help_argument(parser)
@@ -227,8 +226,7 @@ def eval(model, criterion, data):
     return stats
 
 
-def trainModel(model, trainData, validData, dataset, optim, mrtTrainer=None):
-    print(model)
+def trainModel(model, trainData, validData, dataset, optim):
     model.train()
 
     model_dirname = os.path.dirname(opt.save_model)
@@ -269,7 +267,6 @@ def trainModel(model, trainData, validData, dataset, optim, mrtTrainer=None):
 
             if i and i % 500 == 0:
                 # model.zero_grad()
-                break
                 rl_stats = mrtTrainer.policy_grad(batch)
                 mrtTrainer.step.temperature = max(0.5, math.exp(
                                             -3e-5*(epoch * len(trainData) + i)))
@@ -295,7 +292,8 @@ def trainModel(model, trainData, validData, dataset, optim, mrtTrainer=None):
 
                 torch.autograd.backward(inputs, grads)
                 for n, p in model.named_parameters():
-                    print '%-40s: %10.10f' % (n, p.grad.data.sum())
+                    if p.grad is not None:
+                        print '%-40s: %10.10f' % (n, p.grad.data.sum())
                 import pdb; pdb.set_trace()
 
                 # Update the parameters.
