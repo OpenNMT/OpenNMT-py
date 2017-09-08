@@ -115,7 +115,6 @@ class WeightNormConv2d(nn.Conv2d):
         return
 
     def forward(self, x, init=False):
-        print "begin"
         if init is True:
             # out_channels, in_channels // groups, * kernel_size
             self.V.data.copy_(torch.randn(self.V.data.size()
