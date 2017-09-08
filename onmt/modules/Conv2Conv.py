@@ -29,7 +29,7 @@ class GatedConv(nn.Module):
     def forward(self, x_var, hidden=None):
         x_var = self.dropout(x_var)
         x_var = self.conv(x_var)
-        out, gate = x_var.split(x_var.size(1) / 2, 1)
+        out, gate = x_var.split(int(x_var.size(1) / 2), 1)
         out = out * F.sigmoid(gate)
         return out
 
