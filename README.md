@@ -12,10 +12,11 @@ This code is still in heavy development (pre-version 0.1). We recommend forking 
 Table of Contents
 =================
 
-  * [Requirement](#Requirements)
-  * [Featyres](#Features)
-  * [Quickstart](#Quickstart)
-  
+  * [Requirements](#requirements)
+  * [Features](#features)
+  * [Quickstart](#quickstart)
+  * [Advanced](#advanced)
+ 
 ## Requirements
 
 ```bash
