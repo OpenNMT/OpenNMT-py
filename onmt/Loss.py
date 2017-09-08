@@ -183,5 +183,4 @@ class MemoryEfficientLoss:
 
         # Return the gradients
         inputs, grads = collectGrads(original, dummies)
-
         return stats, inputs, grads

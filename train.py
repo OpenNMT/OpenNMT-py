@@ -253,8 +253,6 @@ def trainModel(model, trainData, validData, dataset, optim):
 
         total_stats = onmt.Loss.Statistics()
         report_stats = onmt.Loss.Statistics()
-        total_rl_stats = onmt.Loss.RLStatistics()
-        report_rl_stats = onmt.Loss.RLStatistics()
 
         for i in range(len(trainData)):
             batchIdx = batchOrder[i] if epoch > opt.curriculum else i
@@ -264,17 +262,6 @@ def trainModel(model, trainData, validData, dataset, optim):
             dec_state = None
             trunc_size = opt.truncated_decoder if opt.truncated_decoder \
                 else target_size
-
-            if i and i % 500 == 0:
-                # model.zero_grad()
-                rl_stats = mrtTrainer.policy_grad(batch)
-                mrtTrainer.step.temperature = max(0.5, math.exp(
-                                            -3e-5*(epoch * len(trainData) + i)))
-                total_rl_stats.update(rl_stats)
-                report_rl_stats.update(rl_stats)
-                report_rl_stats.output(epoch, i+1, len(trainData),
-                                       total_rl_stats.start_time)
-                report_rl_stats = onmt.Loss.RLStatistics()
 
             for j in range(0, target_size-1, trunc_size):
                 trunc_batch = batch.truncate(j, j + trunc_size)
@@ -291,10 +278,6 @@ def trainModel(model, trainData, validData, dataset, optim):
                     = mem_loss.loss(trunc_batch, outputs, attn)
 
                 torch.autograd.backward(inputs, grads)
-                for n, p in model.named_parameters():
-                    if p.grad is not None:
-                        print '%-40s: %10.10f' % (n, p.grad.data.sum())
-                import pdb; pdb.set_trace()
 
                 # Update the parameters.
                 optim.step()
@@ -308,7 +291,6 @@ def trainModel(model, trainData, validData, dataset, optim):
             if i % opt.log_interval == -1 % opt.log_interval:
                 report_stats.output(epoch, i+1, len(trainData),
                                     total_stats.start_time)
-
                 if opt.log_server:
                     report_stats.log("progress", experiment, optim)
                 report_stats = onmt.Loss.Statistics()
@@ -322,13 +304,11 @@ def trainModel(model, trainData, validData, dataset, optim):
         train_stats = trainEpoch(epoch)
         print('Train perplexity: %g' % train_stats.ppl())
         print('Train accuracy: %g' % train_stats.accuracy())
-        print('Train bleu: %g' % train_stats.bleu())
 
         #  (2) evaluate on the validation set
         valid_stats = eval(model, criterion, validData)
         print('Validation perplexity: %g' % valid_stats.ppl())
         print('Validation accuracy: %g' % valid_stats.accuracy())
-        print('Validation bleu: %g' % valid_stats.bleu())
 
         # Log to remote server.
         if opt.log_server:
@@ -441,22 +421,16 @@ def main():
         generator.load_state_dict(checkpoint['generator'])
         opt.start_epoch = checkpoint['epoch'] + 1
 
-    # XXX for rl test
-    mrtTrainer = onmt.MRT(model, generator, onmt.Loss.BleuScore(), opt)
-
     if len(opt.gpus) >= 1:
         model.cuda()
         generator.cuda()
-        mrtTrainer.step.cuda()
     else:
         model.cpu()
         generator.cpu()
-        mrtTrainer.step.cpu()
 
     if len(opt.gpus) > 1:
         print('Multi gpu training ', opt.gpus)
         model = nn.DataParallel(model, device_ids=opt.gpus, dim=1)
-        mrtTrainer.step = nn.DataParallel(mrtTrainer.step, device_ids=opt.gpus, dim=1)
         generator = nn.DataParallel(generator, device_ids=opt.gpus, dim=0)
 
     model.generator = generator
@@ -465,11 +439,7 @@ def main():
         if opt.param_init != 0.0:
             print('Intializing params')
             for p in model.parameters():
-                # p.data.uniform_(-opt.param_init, opt.param_init)
-                if len(p.size()) == 1:
-                    p.data.fill_(1.0)
-                else:
-                    p.data.uniform_(-opt.param_init, opt.param_init)
+                p.data.uniform_(-opt.param_init, opt.param_init)
 
         encoder.embeddings.load_pretrained_vectors(opt.pre_word_vecs_enc)
         decoder.embeddings.load_pretrained_vectors(opt.pre_word_vecs_dec)
@@ -516,7 +486,7 @@ def main():
     print('encoder: ', enc)
     print('decoder: ', dec)
 
-    trainModel(model, trainData, validData, dataset, optim, mrtTrainer)
+    trainModel(model, trainData, validData, dataset, optim)
 
 
 if __name__ == "__main__":
