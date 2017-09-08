@@ -52,7 +52,7 @@ class TestModel(unittest.TestCase):
         if opt.decoder_type == 'transformer':
             input = torch.cat([test_src, test_src], 0)
             res = emb(input)
-            compare_to = torch.zeros(sourceL*2, bsize, opt.src_word_vec_size)
+            compare_to = torch.zeros(sourceL * 2, bsize, opt.src_word_vec_size)
         else:
             res = emb(test_src)
             compare_to = torch.zeros(sourceL, bsize, opt.src_word_vec_size)
@@ -70,8 +70,8 @@ class TestModel(unittest.TestCase):
         '''
         vocab = self.get_vocab()
         embeddings = onmt.Models.build_embeddings(
-                                    opt, vocab.stoi[onmt.IO.PAD_WORD],
-                                    len(vocab), for_encoder=True)
+            opt, vocab.stoi[onmt.IO.PAD_WORD],
+            len(vocab), for_encoder=True)
         enc = onmt.Models.Encoder(opt.encoder_type, opt.brnn,
                                   opt.rnn_type, opt.enc_layers,
                                   opt.rnn_size, opt.dropout, embeddings)
@@ -122,6 +122,7 @@ class TestModel(unittest.TestCase):
                                        opt.coverage_attn,
                                        opt.context_gate,
                                        opt.copy_attn,
+                                       opt.cnn_kernel_width,
                                        opt.dropout, embeddings)
 
         model = onmt.Models.NMTModel(enc, dec)
@@ -131,7 +132,7 @@ class TestModel(unittest.TestCase):
         outputs, attn, _ = model(test_src,
                                  test_tgt,
                                  test_length)
-        outputsize = torch.zeros(sourceL-1, bsize, opt.rnn_size)
+        outputsize = torch.zeros(sourceL - 1, bsize, opt.rnn_size)
         # Make sure that output has the correct size and type
         self.assertEqual(outputs.size(), outputsize.size())
         self.assertEqual(type(outputs), torch.autograd.Variable)
@@ -210,6 +211,8 @@ tests_ntmodel = [[('rnn_type', 'GRU')],
                  [('encoder_type', "brnn"),
                   ('brnn_merge', 'sum')],
                  [('encoder_type', "brnn")],
+                 [('decoder_type', 'cnn'),
+                  ('encoder_type', 'cnn')],
                  []
                  ]
 

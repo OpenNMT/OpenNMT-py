@@ -56,6 +56,7 @@ def main():
                                        model_opt.coverage_attn,
                                        model_opt.context_gate,
                                        model_opt.copy_attn,
+                                       model_opt.cnn_kernel_width,
                                        model_opt.dropout, embeddings)
 
     encoder_embeddings = encoder.word_lut.weight.data.tolist()

@@ -116,6 +116,7 @@ class Translator(object):
             return m.view(beamSize, batchSize, -1)
 
         for i in range(self.opt.max_sent_length):
+
             if all((b.done() for b in beam)):
                 break
 
