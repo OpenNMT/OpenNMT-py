@@ -149,8 +149,7 @@ class WeightNormConv2d(nn.Conv2d):
                 polyak_decay=self.polyak_decay)
 
             scalar = g / \
-                torch.norm(V.view(self.out_channels, -1),
-                           2, 1).squeeze(1)
+                torch.norm(V.view(self.out_channels, -1), 2, 1).squeeze(1)
             W = scalar.view(self.out_channels, *
                             ([1] * (len(V.size()) - 1))).expand_as(V) * V
 
