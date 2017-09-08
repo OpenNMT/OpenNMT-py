@@ -115,6 +115,7 @@ class WeightNormConv2d(nn.Conv2d):
         return
 
     def forward(self, x, init=False):
+        print "begin"
         if init is True:
             # out_channels, in_channels // groups, * kernel_size
             self.V.data.copy_(torch.randn(self.V.data.size()
@@ -148,8 +149,12 @@ class WeightNormConv2d(nn.Conv2d):
                 self, ['V', 'g', 'b'], self.training,
                 polyak_decay=self.polyak_decay)
 
-            scalar = g / \
-                torch.norm(V.view(self.out_channels, -1), 2, 1).squeeze(1)
+            scalar = torch.norm(V.view(self.out_channels, -1), 2, 1)
+            if len(scalar.size()) == 2:
+                scalar = g / scalar.squeeze(1)
+            else:
+                scalar = g / scalar
+
             W = scalar.view(self.out_channels, *
                             ([1] * (len(V.size()) - 1))).expand_as(V) * V
 
