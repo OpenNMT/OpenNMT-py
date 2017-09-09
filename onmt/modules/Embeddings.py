@@ -128,7 +128,7 @@ class Embeddings(nn.Module):
 
         out_length, out_batch, emb_size = emb.size()
         aeq(in_length, out_length)
-        aeq(in_length, out_length)
+        aeq(in_batch, out_batch)
         aeq(emb_size, self.embedding_size)
 
         return emb
