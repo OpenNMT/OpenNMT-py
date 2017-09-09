@@ -822,17 +822,6 @@ def make_base_model(opt, model_opt, fields, checkpoint=None):
         fields: `Field` objects for the model.
         checkpoint: the snapshot model.
     """
-    # Make Encoder.
-    src_vocab = fields["src"].vocab
-    feature_dicts = ONMTDataset.collect_feature_dicts(fields)
-    feat_pad_ix = [feat_dict.stoi[onmt.IO.PAD_WORD]
-                   for feat_dict in feature_dicts]
-    num_feat_embeddings = [len(feat_dict) for feat_dict in
-                           feature_dicts]
-    embeddings = build_embeddings(
-                model_opt, src_vocab.stoi[onmt.IO.PAD_WORD],
-                feat_pad_ix, len(src_vocab), for_encoder=True,
-                num_feat_embeddings=num_feat_embeddings)
 
     assert model_opt.model_type in ["text", "img"], \
         ("Unsupported model type %s" % (model_opt.model_type))
