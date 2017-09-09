@@ -7,22 +7,35 @@ from onmt.modules import aeq
 
 
 class MultiHeadedAttention(nn.Module):
-    ''' Multi-Head Attention module '''
-
-    def __init__(self, n_head, d_model, p=0.1):
-        self.d_k = d_model // n_head
-        self.d_model = d_model
+    ''' Multi-Head Attention module from
+        "Attention is All You Need".
+    '''
+    def __init__(self, head_count, model_dim, p=0.1):
+        """
+        Args:
+            head_count(int): number of parallel heads.
+            model_dim(int): the dimension of keys/values/queries in this
+                MultiHeadedAttention, must be divisible by head_count.
+        """
+        assert model_dim % head_count == 0
+        self.dim_per_head = model_dim // head_count
+        self.model_dim = model_dim
 
         super(MultiHeadedAttention, self).__init__()
-        heads = self.heads = n_head
+        self.head_count = head_count
 
-        self.linear_keys = BottleLinear(d_model, heads * self.d_k, bias=False)
-        self.linear_values = BottleLinear(d_model, heads * self.d_k,
+        self.linear_keys = BottleLinear(model_dim,
+                                        head_count * self.dim_per_head,
+                                        bias=False)
+        self.linear_values = BottleLinear(model_dim,
+                                          head_count * self.dim_per_head,
                                           bias=False)
-        self.linear_query = BottleLinear(d_model, heads * self.d_k, bias=False)
+        self.linear_query = BottleLinear(model_dim,
+                                         head_count * self.dim_per_head,
+                                         bias=False)
         self.sm = BottleSoftmax()
         self.activation = nn.ReLU()
-        self.layer_norm = BottleLayerNorm(d_model)
+        self.layer_norm = BottleLayerNorm(model_dim)
         self.dropout = nn.Dropout(p)
         self.res_dropout = nn.Dropout(p)
 
@@ -36,7 +49,7 @@ class MultiHeadedAttention(nn.Module):
         batch_, q_len, d_ = query.size()
         aeq(batch, batch_)
         aeq(d, d_)
-        aeq(self.d_model % 8, 0)
+        aeq(self.model_dim % 8, 0)
         if mask is not None:
             batch_, q_len_, k_len_ = mask.size()
             aeq(batch_, batch)
@@ -46,14 +59,15 @@ class MultiHeadedAttention(nn.Module):
 
         def shape_projection(x):
             b, l, d = x.size()
-            return x.view(b, l, self.heads, self.d_k).transpose(1, 2) \
-                    .contiguous().view(b * self.heads, l, self.d_k)
+            return x.view(b, l, self.head_count, self.dim_per_head) \
+                .transpose(1, 2).contiguous() \
+                .view(b * self.head_count, l, self.dim_per_head)
 
         def unshape_projection(x, q):
             b, l, d = q.size()
-            return x.view(b, self.heads, l, self.d_k) \
+            return x.view(b, self.head_count, l, self.dim_per_head) \
                     .transpose(1, 2).contiguous() \
-                    .view(b, l, self.heads * self.d_k)
+                    .view(b, l, self.head_count * self.dim_per_head)
 
         residual = query
         key_up = shape_projection(self.linear_keys(key))
@@ -61,18 +75,20 @@ class MultiHeadedAttention(nn.Module):
         query_up = shape_projection(self.linear_query(query))
 
         scaled = torch.bmm(query_up, key_up.transpose(1, 2))
-        scaled = scaled / math.sqrt(self.d_k)
-        bh, l, d_k = scaled.size()
-        b = bh // self.heads
+        scaled = scaled / math.sqrt(self.dim_per_head)
+        bh, l, dim_per_head = scaled.size()
+        b = bh // self.head_count
         if mask is not None:
 
-            scaled = scaled.view(b, self.heads, l, d_k)
+            scaled = scaled.view(b, self.head_count, l, dim_per_head)
             mask = mask.unsqueeze(1).expand_as(scaled)
             scaled = scaled.masked_fill(Variable(mask), -float('inf')) \
-                           .view(bh, l, d_k)
+                           .view(bh, l, dim_per_head)
         attn = self.sm(scaled)
         # Return one attn
-        top_attn = attn.view(b, self.heads, l, d_k)[:, 0, :, :].contiguous()
+        top_attn = attn \
+            .view(b, self.head_count, l, dim_per_head)[:, 0, :, :] \
+            .contiguous()
 
         drop_attn = self.dropout(self.sm(scaled))
 

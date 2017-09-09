@@ -57,7 +57,7 @@ if opt.exp_host != "":
 
 
 def eval(model, criterion, data, fields):
-    validData = onmt.IO.OrderedIterator(
+    valid_data = onmt.IO.OrderedIterator(
         dataset=data, device=opt.gpuid[0] if opt.gpuid else -1,
         batch_size=opt.batch_size, train=False, sort=True)
 
@@ -65,10 +65,11 @@ def eval(model, criterion, data, fields):
     model.eval()
     loss = onmt.Loss.LossCompute(model.generator, criterion,
                                  fields["tgt"].vocab, data, 0, opt)
-    for batch in validData:
+    for batch in valid_data:
         _, src_lengths = batch.src
-        src = onmt.IO.make_features(batch, fields)
-        outputs, attn, _ = model(src, batch.tgt, src_lengths)
+        src = onmt.IO.make_features(batch, 'src')
+        tgt = onmt.IO.make_features(batch, 'tgt')
+        outputs, attn, _ = model(src, tgt, src_lengths)
         gen_state = loss.makeLossBatch(outputs, batch, attn,
                                        (0, batch.tgt.size(0)))
         _, batch_stats = loss.computeLoss(batch=batch, **gen_state)
@@ -77,29 +78,30 @@ def eval(model, criterion, data, fields):
     return stats
 
 
-def trainModel(model, trainData, validData, fields, optim):
+def train_model(model, train_data, valid_data, fields, optim):
     model.train()
 
-    pad_id = fields['tgt'].vocab.stoi[onmt.IO.PAD_WORD]
+    padding_idx = fields['tgt'].vocab.stoi[onmt.IO.PAD_WORD]
 
     # Define criterion of each GPU.
     if not opt.copy_attn:
         criterion = onmt.Loss.NMTCriterion(len(fields['tgt'].vocab), opt,
-                                           pad_id)
+                                           padding_idx)
     else:
         criterion = onmt.modules.CopyCriterion(len(fields['tgt'].vocab),
-                                               opt.copy_attn_force, pad_id)
+                                               opt.copy_attn_force,
+                                               padding_idx)
 
     splitter = onmt.Loss.Splitter(opt.max_generator_batches)
 
     train = onmt.IO.OrderedIterator(
-        dataset=trainData, batch_size=opt.batch_size,
+        dataset=train_data, batch_size=opt.batch_size,
         device=opt.gpuid[0] if opt.gpuid else -1,
         repeat=False)
 
-    def trainEpoch(epoch):
+    def train_epoch(epoch):
         closs = onmt.Loss.LossCompute(model.generator, criterion,
-                                      fields["tgt"].vocab, trainData,
+                                      fields["tgt"].vocab, train_data,
                                       epoch, opt)
 
         total_stats = onmt.Loss.Statistics()
@@ -110,7 +112,9 @@ def trainModel(model, trainData, validData, fields, optim):
 
             dec_state = None
             _, src_lengths = batch.src
-            src = onmt.IO.make_features(batch, fields)
+
+            src = onmt.IO.make_features(batch, 'src')
+            tgt = onmt.IO.make_features(batch, 'tgt')
             report_stats.n_src_words += src_lengths.sum()
 
             # Truncated BPTT
@@ -119,8 +123,7 @@ def trainModel(model, trainData, validData, fields, optim):
 
             for j in range(0, target_size-1, trunc_size):
                 # (1) Create truncated target.
-                tgt_r = (j, j + trunc_size)
-                tgt = batch.tgt[tgt_r[0]: tgt_r[1]]
+                tgt = tgt[j: j + trunc_size]
 
                 # (2) F-prop all but generator.
 
@@ -133,7 +136,7 @@ def trainModel(model, trainData, validData, fields, optim):
                 # efficiency.
                 batch_stats = onmt.Loss.Statistics()
                 gen_state = closs.makeLossBatch(outputs, batch, attn,
-                                                tgt_r)
+                                                (j, j + trunc_size))
                 for shard in splitter.splitIter(gen_state):
 
                     # Compute loss and backprop shard.
@@ -163,12 +166,12 @@ def trainModel(model, trainData, validData, fields, optim):
         print('')
 
         #  (1) train for one epoch on the training set
-        train_stats = trainEpoch(epoch)
+        train_stats = train_epoch(epoch)
         print('Train perplexity: %g' % train_stats.ppl())
         print('Train accuracy: %g' % train_stats.accuracy())
 
         #  (2) evaluate on the validation set
-        valid_stats = eval(model, criterion, validData, fields)
+        valid_stats = eval(model, criterion, valid_data, fields)
         print('Validation perplexity: %g' % valid_stats.ppl())
         print('Validation accuracy: %g' % valid_stats.accuracy())
 
@@ -285,8 +288,8 @@ def main():
             checkpoint['optim'].optimizer.state_dict())
     optim.set_parameters(model.parameters())
 
-    nParams = sum([p.nelement() for p in model.parameters()])
-    print('* number of parameters: %d' % nParams)
+    n_params = sum([p.nelement() for p in model.parameters()])
+    print('* number of parameters: %d' % n_params)
     enc = 0
     dec = 0
     for name, param in model.named_parameters():
@@ -301,7 +304,7 @@ def main():
 
     check_model_path()
 
-    trainModel(model, train, valid, fields, optim)
+    train_model(model, train, valid, fields, optim)
 
 
 if __name__ == "__main__":

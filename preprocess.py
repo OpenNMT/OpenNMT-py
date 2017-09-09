@@ -52,7 +52,7 @@ def main():
     print('Preparing training ...')
     with codecs.open(opt.train_src, "r", "utf-8") as src_file:
         src_line = src_file.readline().strip().split()
-        _, _, nFeatures = onmt.IO.extractFeatures(src_line)
+        _, _, nFeatures = onmt.IO.extract_features(src_line)
 
     fields = onmt.IO.ONMTDataset.get_fields(nFeatures)
     print("Building Training...")

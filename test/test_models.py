@@ -31,7 +31,7 @@ class TestModel(unittest.TestCase):
     def get_batch(self, sourceL=3, bsize=1):
         # len x batch x nfeat
         test_src = Variable(torch.ones(sourceL, bsize, 1)).long()
-        test_tgt = Variable(torch.ones(sourceL, bsize)).long()
+        test_tgt = Variable(torch.ones(sourceL, bsize, 1)).long()
         test_length = torch.ones(bsize).fill_(sourceL)
         return test_src, test_tgt, test_length
 
@@ -52,7 +52,7 @@ class TestModel(unittest.TestCase):
         if opt.decoder_type == 'transformer':
             input = torch.cat([test_src, test_src], 0)
             res = emb(input)
-            compare_to = torch.zeros(sourceL*2, bsize, opt.src_word_vec_size)
+            compare_to = torch.zeros(sourceL * 2, bsize, opt.src_word_vec_size)
         else:
             res = emb(test_src)
             compare_to = torch.zeros(sourceL, bsize, opt.src_word_vec_size)
@@ -114,7 +114,16 @@ class TestModel(unittest.TestCase):
         embeddings = onmt.Models.build_embeddings(opt, padding_idx, [],
                                                   len(vocab),
                                                   for_encoder=False)
-        dec = onmt.Models.Decoder(opt, embeddings)
+        dec = onmt.Models.make_decoder(opt.decoder_type, opt.rnn_type,
+                                       opt.dec_layers, opt.rnn_size,
+                                       opt.input_feed,
+                                       opt.global_attention,
+                                       opt.coverage_attn,
+                                       opt.context_gate,
+                                       opt.copy_attn,
+                                       opt.cnn_kernel_width,
+                                       opt.dropout, embeddings)
+
         model = onmt.Models.NMTModel(enc, dec)
 
         test_src, test_tgt, test_length = self.get_batch(sourceL=sourceL,
@@ -122,7 +131,7 @@ class TestModel(unittest.TestCase):
         outputs, attn, _ = model(test_src,
                                  test_tgt,
                                  test_length)
-        outputsize = torch.zeros(sourceL-1, bsize, opt.rnn_size)
+        outputsize = torch.zeros(sourceL - 1, bsize, opt.rnn_size)
         # Make sure that output has the correct size and type
         self.assertEqual(outputs.size(), outputsize.size())
         self.assertEqual(type(outputs), torch.autograd.Variable)
@@ -201,6 +210,8 @@ tests_ntmodel = [[('rnn_type', 'GRU')],
                  [('encoder_type', "brnn"),
                   ('brnn_merge', 'sum')],
                  [('encoder_type', "brnn")],
+                 [('decoder_type', 'cnn'),
+                  ('encoder_type', 'cnn')],
                  []
                  ]
 

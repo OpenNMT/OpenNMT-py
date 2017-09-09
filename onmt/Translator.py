@@ -49,31 +49,30 @@ class Translator(object):
                 tokens = tokens[:-1]
                 break
 
-        if self.opt.replace_unk:
+        if self.opt.replace_unk and attn is not None:
             for i in range(len(tokens)):
-                if tokens[i] == onmt.IO.UNK:
+                if tokens[i] == vocab.itos[onmt.IO.UNK]:
                     _, maxIndex = attn[i].max(0)
-                    tokens[i] = src[maxIndex[0]]
+                    tokens[i] = self.fields["src"].vocab.itos[src[maxIndex[0]]]
         return tokens
 
     def _runTarget(self, batch, data):
 
         _, src_lengths = batch.src
-        src = onmt.IO.make_features(batch, self.fields)
+        src = onmt.IO.make_features(batch, 'src')
+        tgt_in = onmt.IO.make_features(batch, 'tgt')[:-1]
 
         #  (1) run the encoder on the src
         encStates, context = self.model.encoder(src, src_lengths)
-        decStates = self.model.init_decoder_state(context, encStates)
+        decStates = self.model.init_decoder_state(src, context, encStates)
 
         #  (2) if a target is specified, compute the 'goldScore'
         #  (i.e. log likelihood) of the target under the model
         tt = torch.cuda if self.opt.cuda else torch
         goldScores = tt.FloatTensor(batch.batch_size).fill_(0)
         decOut, decStates, attn = self.model.decoder(
-            batch.tgt[:-1], src, context, decStates)
+            tgt_in, context, decStates)
 
-        # print(decOut.size(), batch.tgt[1:].data.size())
-        # aeq(decOut.size(), batch.tgt[1:].data.size())
         tgt_pad = self.fields["tgt"].vocab.stoi[onmt.IO.PAD_WORD]
         for dec, tgt in zip(decOut, batch.tgt[1:].data):
             # Log prob of each word.
@@ -90,9 +89,9 @@ class Translator(object):
 
         #  (1) run the encoder on the src
         _, src_lengths = batch.src
-        src = onmt.IO.make_features(batch, self.fields)
+        src = onmt.IO.make_features(batch, 'src')
         encStates, context = self.model.encoder(src, src_lengths)
-        decStates = self.model.init_decoder_state(context, encStates)
+        decStates = self.model.init_decoder_state(src, context, encStates)
 
         #  (1b) initialize for the decoder.
         def var(a): return Variable(a, volatile=True)
@@ -108,8 +107,7 @@ class Translator(object):
                           vocab=self.fields["tgt"].vocab)
                 for __ in range(batchSize)]
 
-        #  (2) run the decoder to generate sentences, using beam search
-        i = 0
+        #  (2) run the decoder to generate sentences, using beam search\
 
         def bottle(m):
             return m.view(batchSize * beamSize, -1)
@@ -118,6 +116,7 @@ class Translator(object):
             return m.view(beamSize, batchSize, -1)
 
         for i in range(self.opt.max_sent_length):
+
             if all((b.done() for b in beam)):
                 break
 
@@ -132,9 +131,13 @@ class Translator(object):
                 inp = inp.masked_fill(
                     inp.gt(len(self.fields["tgt"].vocab) - 1), 0)
 
+            # Temporary kludge solution to handle changed dim expectation
+            # in the decoder
+            inp = inp.unsqueeze(2)
+
             # Run one step.
             decOut, decStates, attn = \
-                self.model.decoder(inp, src, context, decStates)
+                self.model.decoder(inp, context, decStates)
             decOut = decOut.squeeze(0)
             # decOut: beam x rnn_size
 
@@ -148,7 +151,7 @@ class Translator(object):
                                                    attn["copy"].squeeze(0),
                                                    srcMap)
                 # beam x (tgt_vocab + extra_vocab)
-                out = dataset.collapseCopyScores(
+                out = dataset.collapse_copy_scores(
                     unbottle(out.data),
                     batch, self.fields["tgt"].vocab)
                 # beam x tgt_vocab
@@ -158,7 +161,6 @@ class Translator(object):
             for j, b in enumerate(beam):
                 b.advance(out[:, j],  unbottle(attn["std"]).data[:, j])
                 decStates.beamUpdate_(j, b.getCurrentOrigin(), beamSize)
-            i += 1
 
         if "tgt" in batch.__dict__:
             allGold = self._runTarget(batch, dataset)
@@ -169,7 +171,7 @@ class Translator(object):
         allHyps, allScores, allAttn = [], [], []
         for b in beam:
             n_best = self.opt.n_best
-            scores, ks = b.sortFinished()
+            scores, ks = b.sortFinished(minimum=n_best)
             hyps, attn = [], []
             for i, (times, k) in enumerate(ks[:n_best]):
                 hyp, att = b.getHyp(times, k)

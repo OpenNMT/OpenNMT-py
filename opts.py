@@ -34,10 +34,10 @@ def model_opts(parser):
 
     # RNN Options
     parser.add_argument('-encoder_type', type=str, default='rnn',
-                        choices=['rnn', 'brnn', 'mean', 'transformer'],
+                        choices=['rnn', 'brnn', 'mean', 'transformer', 'cnn'],
                         help="""Type of encoder layer to use.""")
     parser.add_argument('-decoder_type', type=str, default='rnn',
-                        choices=['rnn', 'transformer'],
+                        choices=['rnn', 'transformer', 'cnn'],
                         help='Type of decoder layer to use.')
 
     parser.add_argument('-layers', type=int, default=-1,
@@ -46,6 +46,10 @@ def model_opts(parser):
                         help='Number of layers in the encoder')
     parser.add_argument('-dec_layers', type=int, default=2,
                         help='Number of layers in the decoder')
+
+    parser.add_argument('-cnn_kernel_width', type=int, default=3,
+                        help="""Size of windows in the cnn, the kernel_size is
+                         (cnn_kernel_width, 1) in conv layer""")
 
     parser.add_argument('-rnn_size', type=int, default=500,
                         help='Size of LSTM hidden states')
@@ -59,7 +63,7 @@ def model_opts(parser):
     # parser.add_argument('-residual',   action="store_true",
     #                     help="Add residual connections between RNN layers.")
 
-    parser.add_argument('-brnn',   action="store_true",
+    parser.add_argument('-brnn', action="store_true",
                         help="Deprecated, use `encoder_type`.")
     parser.add_argument('-brnn_merge', default='concat',
                         choices=['concat', 'sum'],
@@ -232,7 +236,7 @@ class MarkdownHelpFormatter(argparse.HelpFormatter):
 
     def _format_usage(self, usage, actions, groups, prefix):
         usage_text = super(MarkdownHelpFormatter, self)._format_usage(
-                usage, actions, groups, prefix)
+            usage, actions, groups, prefix)
         return '\n```\n%s\n```\n\n' % usage_text
 
     def format_help(self):
@@ -261,11 +265,11 @@ class MarkdownHelpAction(argparse.Action):
                  dest=argparse.SUPPRESS, default=argparse.SUPPRESS,
                  **kwargs):
         super(MarkdownHelpAction, self).__init__(
-                option_strings=option_strings,
-                dest=dest,
-                default=default,
-                nargs=0,
-                **kwargs)
+            option_strings=option_strings,
+            dest=dest,
+            default=default,
+            nargs=0,
+            **kwargs)
 
     def __call__(self, parser, namespace, values, option_string=None):
         parser.formatter_class = MarkdownHelpFormatter

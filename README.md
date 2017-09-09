@@ -8,6 +8,15 @@ This code is still in heavy development (pre-version 0.1). We recommend forking 
 
 <center style="padding: 40px"><img width="70%" src="http://opennmt.github.io/simple-attn.png" /></center>
 
+
+Table of Contents
+=================
+
+  * [Requirements](#requirements)
+  * [Features](#features)
+  * [Quickstart](#quickstart)
+  * [Advanced](#advanced)
+ 
 ## Requirements
 
 ```bash

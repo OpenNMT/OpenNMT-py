@@ -4,6 +4,7 @@ import codecs
 import torchtext.data
 import torchtext.vocab
 from collections import Counter, defaultdict
+from itertools import chain, count
 
 PAD_WORD = '<blank>'
 UNK = 0
@@ -11,30 +12,31 @@ BOS_WORD = '<s>'
 EOS_WORD = '</s>'
 
 
-def extractFeatures(tokens):
+def __getstate__(self):
+    return dict(self.__dict__, stoi=dict(self.stoi))
+
+
+def __setstate__(self, state):
+    self.__dict__.update(state)
+    self.stoi = defaultdict(lambda: 0, self.stoi)
+
+
+torchtext.vocab.Vocab.__getstate__ = __getstate__
+torchtext.vocab.Vocab.__setstate__ = __setstate__
+
+
+def extract_features(tokens):
     "Given a list of token separate out words and features (if any)."
-    words = []
-    features = []
-    numFeatures = None
 
-    for t in range(len(tokens)):
-        field = tokens[t].split(u"￨")
-        word = field[0]
-        if len(word) > 0:
-            words.append(word)
-            if numFeatures is None:
-                numFeatures = len(field) - 1
-            else:
-                assert (len(field) - 1 == numFeatures), \
-                    "all words must have the same number of features"
-
-            if len(field) > 1:
-                for i in range(1, len(field)):
-                    if len(features) <= i-1:
-                        features.append([])
-                    features[i - 1].append(field[i])
-                    assert (len(features[i - 1]) == len(words))
-    return words, features, numFeatures if numFeatures else 0
+    split_tokens = [token.split(u"￨") for token in tokens]
+    split_tokens = [token for token in split_tokens if token[0]]
+    token_size = len(split_tokens[0])
+    assert all(len(token) == token_size for token in split_tokens), \
+        "all words must have the same number of features"
+    words_and_features = list(zip(*split_tokens))
+    words = words_and_features[0]
+    features = words_and_features[1:]
+    return words, features, token_size - 1
 
 
 def merge_vocabs(vocabs, vocab_size=None):
@@ -48,25 +50,39 @@ def merge_vocabs(vocabs, vocab_size=None):
     Return:
         `torchtext.vocab.Vocab`
     """
-    merged = Counter()
-    # take the counts of the disjoint union of all the vocabs
-    for vocab in vocabs:
-        # XXX note that `vocab.freqs` does not contain special symbols
-        for word, count in vocab.freqs.most_common():
-            if word not in merged:
-                merged[word] = 0
-            merged[word] += count
+    merged = Counter(chain(*[vocab.freqs for vocab in vocabs]))
     return torchtext.vocab.Vocab(merged,
                                  specials=[PAD_WORD, BOS_WORD, EOS_WORD],
                                  max_size=vocab_size)
 
 
-def make_features(batch, fields):
-    # TODO: This is bit hacky, add to batch somehow.
-    f = ONMTDataset.collect_features(fields)
-    cat = [batch.src[0]] + [batch.__dict__[k] for k in f]
-    cat = [c.unsqueeze(2) for c in cat]
-    return torch.cat(cat, 2)
+def make_features(batch, side):
+    """
+    Args:
+        batch (Variable): a batch of source or target data.
+        side (str): for source or for target.
+    Returns:
+        A sequence of src/tgt tensors with optional feature tensors
+        of size (len x batch).
+    """
+    assert side in ['src', 'tgt']
+    if isinstance(batch.__dict__[side], tuple):
+        data = batch.__dict__[side][0]
+    else:
+        data = batch.__dict__[side]
+    feat_start = side + "_feat_"
+    features = sorted(batch.__dict__[k]
+                      for k in batch.__dict__ if feat_start in k)
+    levels = [data] + features
+    return torch.cat([level.unsqueeze(2) for level in levels], 2)
+
+
+def join_dicts(*args):
+    """
+    args: dictionaries with disjoint keys
+    returns: a single dictionary that has the union of these keys
+    """
+    return dict(chain(*[d.items() for d in args]))
 
 
 class OrderedIterator(torchtext.data.Iterator):
@@ -93,80 +109,75 @@ class ONMTDataset(torchtext.data.Dataset):
 
     def __init__(self, src_path, tgt_path, fields, opt,
                  src_img_dir=None, **kwargs):
-        "Create a TranslationDataset given paths and fields."
+        """
+        Create a TranslationDataset given paths and fields.
+
+        src_path: location of source-side data
+        tgt_path: location of target-side data or None. If it exists, it
+                  source and target data must be the same length.
+        fields:
+        src_img_dir: if not None, uses images instead of text for the
+                     source. TODO: finish
+        """
         if src_img_dir:
             self.type_ = "img"
         else:
             self.type_ = "text"
 
-        examples = []
-        src_words = []
-        self.src_vocabs = []
-        with codecs.open(src_path, "r", "utf-8") as src_file:
-            for i, src_line in enumerate(src_file):
-                src_line = src_line.split()
-                # if len(src_line) == 0:
-                #     skip[i] = True
-                #     continue
-                if self.type_ == "text":
-                    # Check truncation condition.
-                    if opt is not None and opt.src_seq_length_trunc != 0:
-                        src_line = src_line[:opt.src_seq_length_trunc]
-                    src, src_feats, _ = extractFeatures(src_line)
-                    d = {"src": src, "indices": i}
-                    self.nfeatures = len(src_feats)
-                    for j, v in enumerate(src_feats):
-                        d["src_feat_"+str(j)] = v
-                    examples.append(d)
-                    src_words.append(src)
+        if self.type_ == "text":
+            self.src_vocabs = []
+            src_truncate = 0 if opt is None else opt.src_seq_length_trunc
+            src_data = self._read_corpus_file(src_path, src_truncate)
+            src_examples = self._construct_examples(src_data, "src")
+            self.nfeatures = src_data[0][2]
+        else:
+            # TODO finish this.
+            if not transforms:
+                load_image_libs()
 
-                    # Create dynamic dictionaries
-                    if opt is None or opt.dynamic_dict:
-                        # a temp vocab of a single source example
-                        src_vocab = torchtext.vocab.Vocab(Counter(src))
+        if tgt_path:
+            tgt_truncate = 0 if opt is None else opt.tgt_seq_length_trunc
+            tgt_data = self._read_corpus_file(tgt_path, tgt_truncate)
+            assert len(src_data) == len(tgt_data), \
+                "Len src and tgt do not match"
+            tgt_examples = self._construct_examples(tgt_data, "tgt")
+        else:
+            tgt_examples = None
 
-                        # mapping source tokens to indices in the dynamic dict
-                        src_map = torch.LongTensor(len(src)).fill_(0)
-                        for j, w in enumerate(src):
-                            src_map[j] = src_vocab.stoi[w]
+        # examples: one for each src line or (src, tgt) line pair.
+        # Each element is a dictionary whose keys represent at minimum
+        # the src tokens and their indices and potentially also the
+        # src and tgt features and alignment information.
+        if tgt_examples:
+            examples = [join_dicts(src, tgt)
+                        for src, tgt in zip(src_examples, tgt_examples)]
+        else:
+            examples = src_examples
+        for i, example in enumerate(examples):
+            example["indices"] = i
 
-                        self.src_vocabs.append(src_vocab)
-                        examples[i]["src_map"] = src_map
+        if opt is None or opt.dynamic_dict:
+            for example in examples:
+                src = example["src"]
+                src_vocab = torchtext.vocab.Vocab(Counter(src))
+                self.src_vocabs.append(src_vocab)
+                # mapping source tokens to indices in the dynamic dict
+                src_map = torch.LongTensor([src_vocab.stoi[w] for w in src])
 
-                else:
-                    # TODO finish this.
-                    if not transforms:
-                        loadImageLibs()
-                    # src_data = transforms.ToTensor()(
-                    #     Image.open(src_img_dir + "/" + src_line[0]))
+                self.src_vocabs.append(src_vocab)
+                example["src_map"] = src_map
 
-        if tgt_path is not None:
-            with codecs.open(tgt_path, "r", "utf-8") as tgt_file:
-                for i, tgt_line in enumerate(tgt_file):
-                    # if i in skip:
-                    #     continue
-                    tgt_line = tgt_line.split()
+                if "tgt" in example:
+                    tgt = example["tgt"]
+                    mask = torch.LongTensor(
+                            [0] + [src_vocab.stoi[w] for w in tgt] + [0])
+                    example["alignment"] = mask
 
-                    # Check truncation condition.
-                    if opt is not None and opt.tgt_seq_length_trunc != 0:
-                        tgt_line = tgt_line[:opt.tgt_seq_length_trunc]
-
-                    tgt, _, _ = extractFeatures(tgt_line)
-                    examples[i]["tgt"] = tgt
-
-                    if opt is None or opt.dynamic_dict:
-                        src_vocab = self.src_vocabs[i]
-                        # Map target tokens to indices in the dynamic dict
-                        mask = torch.LongTensor(len(tgt)+2).fill_(0)
-                        for j in range(len(tgt)):
-                            mask[j+1] = src_vocab.stoi[tgt[j]]
-                        examples[i]["alignment"] = mask
-                assert i + 1 == len(examples), "Len src and tgt do not match"
         keys = examples[0].keys()
         fields = [(k, fields[k]) for k in keys]
-        examples = list([torchtext.data.Example.fromlist([ex[k] for k in keys],
-                                                         fields)
-                         for ex in examples])
+        examples = [torchtext.data.Example.fromlist([ex[k] for k in keys],
+                                                    fields)
+                    for ex in examples]
 
         def filter_pred(example):
             return 0 < len(example.src) <= opt.src_seq_length \
@@ -175,6 +186,32 @@ class ONMTDataset(torchtext.data.Dataset):
         super(ONMTDataset, self).__init__(examples, fields,
                                           filter_pred if opt is not None
                                           else None)
+
+    def _read_corpus_file(self, path, truncate):
+        """
+        path: location of a src or tgt file
+        truncate: maximum sequence length (0 for unlimited)
+
+        returns: (word, features, nfeat) triples for each line
+        """
+        with codecs.open(path, "r", "utf-8") as corpus_file:
+            lines = (line.split() for line in corpus_file)
+            if truncate:
+                lines = (line[:truncate] for line in lines)
+            return [extract_features(line) for line in lines]
+
+    def _construct_examples(self, lines, side):
+        assert side in ["src", "tgt"]
+        examples = []
+        for line in lines:
+            words, feats, _ = line
+            example_dict = {side: words}
+            if feats:
+                prefix = side + "_feat_"
+                example_dict.update((prefix + str(j), f)
+                                    for j, f in enumerate(feats))
+            examples.append(example_dict)
+        return examples
 
     def __getstate__(self):
         return self.__dict__
@@ -186,7 +223,7 @@ class ONMTDataset(torchtext.data.Dataset):
         "This is a hack. Something is broken with torch pickle."
         return super(ONMTDataset, self).__reduce_ex__()
 
-    def collapseCopyScores(self, scores, batch, tgt_vocab):
+    def collapse_copy_scores(self, scores, batch, tgt_vocab):
         """Given scores from an expanded dictionary
         corresponeding to a batch, sums together copies,
         with a dictionary word when it is ambigious.
@@ -226,25 +263,21 @@ class ONMTDataset(torchtext.data.Dataset):
     @staticmethod
     def collect_features(fields):
         feats = []
-        j = 0
-        while True:
+        for j in count():
             key = "src_feat_" + str(j)
             if key not in fields:
                 break
             feats.append(key)
-            j += 1
         return feats
 
     @staticmethod
     def collect_feature_dicts(fields):
         feature_dicts = []
-        j = 0
-        while True:
+        for j in count():
             key = "src_feat_" + str(j)
             if key not in fields:
                 break
             feature_dicts.append(fields[key].vocab)
-            j += 1
         return feature_dicts
 
     @staticmethod
@@ -268,10 +301,9 @@ class ONMTDataset(torchtext.data.Dataset):
         def make_src(data, _):
             src_size = max([t.size(0) for t in data])
             src_vocab_size = max([t.max() for t in data]) + 1
-            alignment = torch.FloatTensor(src_size, len(data),
-                                          src_vocab_size).fill_(0)
-            for i in range(len(data)):
-                for j, t in enumerate(data[i]):
+            alignment = torch.zeros(src_size, len(data), src_vocab_size)
+            for i, sent in enumerate(data):
+                for j, t in enumerate(sent):
                     alignment[j, i, t] = 1
             return alignment
 
@@ -281,9 +313,9 @@ class ONMTDataset(torchtext.data.Dataset):
 
         def make_tgt(data, _):
             tgt_size = max([t.size(0) for t in data])
-            alignment = torch.LongTensor(tgt_size, len(data)).fill_(0)
-            for i in range(len(data)):
-                alignment[:data[i].size(0), i] = data[i]
+            alignment = torch.zeros(tgt_size, len(data)).long()
+            for i, sent in enumerate(data):
+                alignment[:sent.size(0), i] = sent
             return alignment
 
         fields["alignment"] = torchtext.data.Field(
@@ -316,7 +348,7 @@ class ONMTDataset(torchtext.data.Dataset):
             fields["tgt"].vocab = merged_vocab
 
 
-def loadImageLibs():
+def load_image_libs():
     "Conditional import of torch image libs."
     global Image, transforms
     from PIL import Image
