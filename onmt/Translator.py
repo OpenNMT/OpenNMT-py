@@ -6,6 +6,28 @@ import torch
 from torch.autograd import Variable
 
 
+class DecoderState(object):
+    """
+    DecoderState is a base class for models, used during translation
+    for storing translation states.
+    """
+    def detach(self):
+        for h in self.all:
+            if h is not None:
+                h.detach_()
+
+    def repeatBeam_(self, beamSize):
+        self._resetAll([Variable(e.data.repeat(1, beamSize, 1))
+                        for e in self.all])
+
+    def beamUpdate_(self, idx, positions, beamSize):
+        for e in self.all:
+            a, br, d = e.size()
+            sentStates = e.view(a, beamSize, br // beamSize, d)[:, :, idx]
+            sentStates.data.copy_(
+                sentStates.data.index_select(1, positions))
+
+
 class Translator(object):
     def __init__(self, opt, dummy_opt={}):
         # Add in default model arguments, possibly added since training.
