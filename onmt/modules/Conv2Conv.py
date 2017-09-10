@@ -9,8 +9,8 @@ from torch.autograd import Variable
 
 import onmt.modules
 from onmt.modules.WeightNorm import WeightNormConv2d
-from onmt.Translator import DecoderState
-from onmt.modules import aeq
+from onmt.Models import DecoderState
+from onmt.Utils import aeq
 
 
 SCALE_WEIGHT = 0.5 ** 0.5
@@ -212,6 +212,9 @@ class CNNDecoder(nn.Module):
         state.resetPrevious(input)
 
         return outputs, state, attns
+
+    def init_decoder_state(self, src, context, enc_hidden):
+        return CNNDecoderState(context, enc_hidden)
 
 
 class CNNDecoderState(DecoderState):

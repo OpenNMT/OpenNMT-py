@@ -1,14 +1,14 @@
 from __future__ import division
 
 import os
-
-import onmt
-import onmt.Models
-import onmt.modules
 import argparse
 import torch
 import torch.nn as nn
 from torch import cuda
+
+import onmt
+import onmt.Models
+import onmt.modules
 import opts
 
 parser = argparse.ArgumentParser(description='train.py')

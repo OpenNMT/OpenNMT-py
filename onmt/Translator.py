@@ -1,31 +1,10 @@
+import torch
+from torch.autograd import Variable
+
 import onmt
 import onmt.Models
 import onmt.modules
 import onmt.IO
-import torch
-from torch.autograd import Variable
-
-
-class DecoderState(object):
-    """
-    DecoderState is a base class for models, used during translation
-    for storing translation states.
-    """
-    def detach(self):
-        for h in self.all:
-            if h is not None:
-                h.detach_()
-
-    def repeatBeam_(self, beamSize):
-        self._resetAll([Variable(e.data.repeat(1, beamSize, 1))
-                        for e in self.all])
-
-    def beamUpdate_(self, idx, positions, beamSize):
-        for e in self.all:
-            a, br, d = e.size()
-            sentStates = e.view(a, beamSize, br // beamSize, d)[:, :, idx]
-            sentStates.data.copy_(
-                sentStates.data.index_select(1, positions))
 
 
 class Translator(object):
@@ -86,7 +65,8 @@ class Translator(object):
 
         #  (1) run the encoder on the src
         encStates, context = self.model.encoder(src, src_lengths)
-        decStates = self.model.init_decoder_state(src, context, encStates)
+        decStates = self.model.decoder.init_decoder_state(
+                                        src, context, encStates)
 
         #  (2) if a target is specified, compute the 'goldScore'
         #  (i.e. log likelihood) of the target under the model
@@ -109,18 +89,19 @@ class Translator(object):
         beamSize = self.opt.beam_size
         batchSize = batch.batch_size
 
-        #  (1) run the encoder on the src
+        # (1) Run the encoder on the src.
         _, src_lengths = batch.src
         src = onmt.IO.make_features(batch, 'src')
         encStates, context = self.model.encoder(src, src_lengths)
-        decStates = self.model.init_decoder_state(src, context, encStates)
+        decStates = self.model.decoder.init_decoder_state(
+                                        src, context, encStates)
 
-        #  (1b) initialize for the decoder.
+        #  (1b) Initialize for the decoder.
         def var(a): return Variable(a, volatile=True)
 
         def rvar(a): return var(a.repeat(1, beamSize, 1))
 
-        # Repeat everything beam_times
+        # Repeat everything beam_times.
         context = rvar(context.data)
         src = rvar(src.data)
         srcMap = rvar(batch.src_map.data)
@@ -132,7 +113,7 @@ class Translator(object):
                           global_scorer=scorer)
                 for __ in range(batchSize)]
 
-        #  (2) run the decoder to generate sentences, using beam search\
+        # (2) run the decoder to generate sentences, using beam search.
 
         def bottle(m):
             return m.view(batchSize * beamSize, -1)
@@ -192,7 +173,7 @@ class Translator(object):
         else:
             allGold = [0] * batchSize
 
-        #  (3) package everything up
+        # (3) Package everything up.
         allHyps, allScores, allAttn = [], [], []
         for b in beam:
             n_best = self.opt.n_best

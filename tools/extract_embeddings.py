@@ -50,6 +50,7 @@ def main():
                 feat_padding_idx, len(tgt_dict), for_encoder=False)
     decoder = onmt.Models.make_decoder(model_opt.decoder_type,
                                        model_opt.rnn_type,
+                                       model_opt.brnn,
                                        model_opt.dec_layers,
                                        model_opt.rnn_size,
                                        model_opt.input_feed,

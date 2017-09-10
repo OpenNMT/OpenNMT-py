@@ -4,13 +4,15 @@ This file handles the details of the loss function during training.
 This includes: loss criterion, training statistics, and memory optimizations.
 """
 
-import onmt
-import torch
-import torch.nn as nn
-from torch.autograd import Variable
 import time
 import sys
 import math
+
+import torch
+import torch.nn as nn
+from torch.autograd import Variable
+
+import onmt
 
 
 def NMTCriterion(vocabSize, opt, pad_id):

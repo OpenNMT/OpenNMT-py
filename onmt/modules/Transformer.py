@@ -7,9 +7,9 @@ import torch.nn as nn
 from torch.autograd import Variable
 import numpy as np
 
-import onmt.modules
-from onmt.Translator import DecoderState
-from onmt.modules import aeq
+import onmt
+from onmt.Models import DecoderState
+from onmt.Utils import aeq
 
 
 MAX_SIZE = 5000
@@ -242,6 +242,9 @@ class TransformerDecoder(nn.Module):
         state = TransformerDecoderState(src, input)
 
         return outputs, state, attns
+
+    def init_decoder_state(self, src, context, enc_hidden):
+        return TransformerDecoderState(src)
 
 
 class TransformerDecoderState(DecoderState):

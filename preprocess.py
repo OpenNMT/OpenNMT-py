@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 
+import argparse
+import codecs
+import torch
+
 import onmt
 import onmt.IO
-import argparse
-import torch
 import opts
-import codecs
 
 parser = argparse.ArgumentParser(description='preprocess.py')
 opts.add_md_help_argument(parser)

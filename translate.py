@@ -1,13 +1,13 @@
 from __future__ import division
 from builtins import bytes
-
-import onmt
-import onmt.IO
-import torch
+import os
 import argparse
 import math
 import codecs
-import os
+import torch
+
+import onmt
+import onmt.IO
 import opts
 
 parser = argparse.ArgumentParser(description='translate.py')

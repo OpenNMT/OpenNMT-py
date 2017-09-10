@@ -6,14 +6,8 @@ from torch.nn.utils.rnn import pad_packed_sequence as unpack
 from torch.nn.utils.rnn import pack_padded_sequence as pack
 
 import onmt
-import onmt.modules
 from onmt.IO import ONMTDataset
-from onmt.modules import aeq
-from onmt.modules.Gate import ContextGateFactory
-from onmt.Translator import DecoderState
-from onmt.modules.Transformer import TransformerDecoder, \
-                                     TransformerDecoderState
-from onmt.modules.Conv2Conv import CNNDecoder, CNNDecoderState
+from onmt.Utils import aeq
 
 
 class Encoder(nn.Module):
@@ -130,9 +124,8 @@ class RNNDecoderBase(nn.Module):
     """
     RNN Decoder base class.
     """
-
-    def __init__(self, rnn_type, num_layers, hidden_size,
-                 attn_type, coverage_attn, context_gate,
+    def __init__(self, rnn_type, bidirectional_encoder, num_layers,
+                 hidden_size, attn_type, coverage_attn, context_gate,
                  copy_attn, dropout, embeddings):
         """
         See make_decoder() comment for arguments description.
@@ -141,6 +134,7 @@ class RNNDecoderBase(nn.Module):
 
         # Basic attributes.
         self.decoder_type = 'rnn'
+        self.bidirectional_encoder = bidirectional_encoder
         self.num_layers = num_layers
         self.hidden_size = hidden_size
         self.embeddings = embeddings
@@ -153,7 +147,7 @@ class RNNDecoderBase(nn.Module):
         # Set up the context gate.
         self.context_gate = None
         if context_gate is not None:
-            self.context_gate = ContextGateFactory(
+            self.context_gate = onmt.modules.ContextGateFactory(
                 context_gate, self._input_size,
                 hidden_size, hidden_size, hidden_size
             )
@@ -214,6 +208,24 @@ class RNNDecoderBase(nn.Module):
             attns[k] = torch.stack(attns[k])
 
         return outputs, state, attns
+
+    def _fix_enc_hidden(self, h):
+        """
+        The encoder hidden is  (layers*directions) x batch x dim.
+        We need to convert it to layers x batch x (directions*dim).
+        """
+        if self.bidirectional_encoder:
+            h = torch.cat([h[0:h.size(0):2], h[1:h.size(0):2]], 2)
+        return h
+
+    def init_decoder_state(self, src, context, enc_hidden):
+        if isinstance(enc_hidden, tuple):  # GRU
+            dec = RNNDecoderState(tuple([self._fix_enc_hidden(enc_hidden[i])
+                                         for i in range(len(enc_hidden))]))
+        else:  # LSTM
+            dec = RNNDecoderState(self._fix_enc_hidden(enc_hidden))
+        dec.init_input_feed(context, self.hidden_size)
+        return dec
 
 
 class StdRNNDecoder(RNNDecoderBase):
@@ -398,28 +410,6 @@ class NMTModel(nn.Module):
         self.encoder = encoder
         self.decoder = decoder
 
-    def _fix_enc_hidden(self, h):
-        """
-        The encoder hidden is  (layers*directions) x batch x dim
-        We need to convert it to layers x batch x (directions*dim)
-        """
-        if self.encoder.num_directions == 2:
-            h = torch.cat([h[0:h.size(0):2], h[1:h.size(0):2]], 2)
-        return h
-
-    def init_decoder_state(self, src, context, enc_hidden):
-        if self.decoder.decoder_type == "transformer":
-            return TransformerDecoderState(src)
-        elif self.decoder.decoder_type == "cnn":
-            return CNNDecoderState(context, enc_hidden)
-        elif isinstance(enc_hidden, tuple):  # GRU
-            dec = RNNDecoderState(tuple([self._fix_enc_hidden(enc_hidden[i])
-                                         for i in range(len(enc_hidden))]))
-        else:  # LSTM
-            dec = RNNDecoderState(self._fix_enc_hidden(enc_hidden))
-        dec.init_input_feed(context, self.decoder.hidden_size)
-        return dec
-
     def forward(self, src, tgt, lengths, dec_state=None):
         """
         Args:
@@ -438,7 +428,7 @@ class NMTModel(nn.Module):
         src = src
         tgt = tgt[:-1]  # exclude last target from inputs
         enc_hidden, context = self.encoder(src, lengths)
-        enc_state = self.init_decoder_state(src, context, enc_hidden)
+        enc_state = self.decoder.init_decoder_state(src, context, enc_hidden)
         out, dec_state, attns = self.decoder(tgt, context,
                                              enc_state if dec_state is None
                                              else dec_state)
@@ -447,6 +437,28 @@ class NMTModel(nn.Module):
             dec_state = None
             attns = None
         return out, attns, dec_state
+
+
+class DecoderState(object):
+    """
+    DecoderState is a base class for models, used during translation
+    for storing translation states.
+    """
+    def detach(self):
+        for h in self.all:
+            if h is not None:
+                h.detach_()
+
+    def repeatBeam_(self, beamSize):
+        self._resetAll([Variable(e.data.repeat(1, beamSize, 1))
+                        for e in self.all])
+
+    def beamUpdate_(self, idx, positions, beamSize):
+        for e in self.all:
+            a, br, d = e.size()
+            sentStates = e.view(a, beamSize, br // beamSize, d)[:, :, idx]
+            sentStates.data.copy_(
+                sentStates.data.index_select(1, positions))
 
 
 class RNNDecoderState(DecoderState):
@@ -514,14 +526,16 @@ def make_embeddings(opt, word_padding_idx, feats_padding_idx,
                                    num_feat_embeddings)
 
 
-def make_decoder(decoder_type, rnn_type, num_layers, hidden_size,
-                 input_feed, attn_type, coverage_attn, context_gate,
-                 copy_attn, cnn_kernel_width, dropout, embeddings):
+def make_decoder(decoder_type, rnn_type, bidirectional_encoder,
+                 num_layers, hidden_size, input_feed, attn_type,
+                 coverage_attn, context_gate, copy_attn,
+                 cnn_kernel_width, dropout, embeddings):
     """
     Decoder dispatcher function.
     Args:
         decoder_type (string): 'rnn', 'transformer' or 'cnn'.
         rnn_type (string): 'LSTM' or 'GRU'.
+        bidirectional_encoder(boo): is encoder bidirectional?
         num_layers (int): number of Decoder layers.
         hidden_size (int): size of hidden states of a rnn.
         input_feed (int): feed the context vector at each time step to the
@@ -537,18 +551,24 @@ def make_decoder(decoder_type, rnn_type, num_layers, hidden_size,
         embeddings (Embeddings): vocab embeddings for this Decoder.
     """
     if decoder_type == "transformer":
-        return TransformerDecoder(num_layers, hidden_size, attn_type,
-                                  copy_attn, dropout, embeddings)
-    elif decoder_type == 'cnn':
-        return CNNDecoder(num_layers, hidden_size, attn_type,
-                          copy_attn, cnn_kernel_width, dropout, embeddings)
+        return onmt.modules.TransformerDecoder(
+                    num_layers, hidden_size, attn_type,
+                    copy_attn, dropout, embeddings)
+
+    elif decoder_type == "cnn":
+        return onmt.modules.CNNDecoder(
+                    num_layers, hidden_size, attn_type,
+                    copy_attn, cnn_kernel_width, dropout, embeddings)
+
     elif input_feed:
         return InputFeedRNNDecoder(
-            rnn_type, num_layers, hidden_size,
+            rnn_type, bidirectional_encoder, num_layers, hidden_size,
             attn_type, coverage_attn, context_gate,
             copy_attn, dropout, embeddings)
+
     else:
-        return StdRNNDecoder(rnn_type, num_layers, hidden_size,
+        return StdRNNDecoder(rnn_type, bidirectional_encoder,
+                             num_layers, hidden_size,
                              attn_type, coverage_attn, context_gate,
                              copy_attn, dropout, embeddings)
 
@@ -595,8 +615,8 @@ def make_base_model(opt, model_opt, fields, checkpoint=None):
                     model_opt, tgt_vocab.stoi[onmt.IO.PAD_WORD],
                     [], len(tgt_vocab), for_encoder=False)
     decoder = make_decoder(model_opt.decoder_type, model_opt.rnn_type,
-                           model_opt.dec_layers, model_opt.rnn_size,
-                           model_opt.input_feed,
+                           model_opt.brnn, model_opt.dec_layers,
+                           model_opt.rnn_size, model_opt.input_feed,
                            model_opt.global_attention,
                            model_opt.coverage_attn,
                            model_opt.context_gate,

@@ -1,9 +1,10 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from onmt.modules import aeq
+from onmt.Utils import aeq
 
-scale_weight = 0.5 ** 0.5
+
+SCALE_WEIGHT = 0.5 ** 0.5
 
 
 def seq_linear(linear, x):
@@ -53,7 +54,7 @@ class ConvMultiStepAttention(nn.Module):
         aeq(enc_height, enc_height_)
 
         preatt = seq_linear(self.linear_in, input)
-        target = (base_target_emb + preatt) * scale_weight
+        target = (base_target_emb + preatt) * SCALE_WEIGHT
         target = torch.squeeze(target, 3)
         target = torch.transpose(target, 1, 2)
         pre_attn = torch.bmm(target, encoder_out_top)
