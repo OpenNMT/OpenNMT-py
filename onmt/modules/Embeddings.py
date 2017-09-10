@@ -55,6 +55,7 @@ class Embeddings(nn.Module):
         vocab_sizes = [word_vocab_size]
         emb_dims = [embedding_dim]
         pad_indices = [padding_idx]
+        self.embedding_dim = embedding_dim
 
         # Parameters for additional feature embedding matrices
         # (these have no effect if feat_vocab_sizes is empty)
