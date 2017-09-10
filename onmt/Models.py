@@ -41,7 +41,8 @@ class Encoder(nn.Module):
         # Build the Encoder RNN.
         if self.encoder_type == "transformer":
             self.transformer = nn.ModuleList(
-                [onmt.modules.TransformerEncoder(self.hidden_size, dropout)
+                [onmt.modules.TransformerEncoderLayer(
+                    self.hidden_size, dropout)
                  for i in range(self.num_layers)])
         elif self.encoder_type == "cnn":
             self.cnn = onmt.modules.ConvEncoder(

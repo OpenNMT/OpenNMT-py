@@ -38,7 +38,7 @@ class PositionwiseFeedForward(nn.Module):
         return self.layer_norm(output + residual)
 
 
-class TransformerEncoder(nn.Module):
+class TransformerEncoderLayer(nn.Module):
     """
     The Transformer Decoder from "Attention is All You Need".
     """
@@ -53,7 +53,7 @@ class TransformerEncoder(nn.Module):
             head_count(int): the number of head for MultiHeadedAttention.
             hidden_size(int): the second-layer of the PositionwiseFeedForward.
         """
-        super(TransformerEncoder, self).__init__()
+        super(TransformerEncoderLayer, self).__init__()
 
         self.self_attn = onmt.modules.MultiHeadedAttention(
             head_count, size, p=dropout)
