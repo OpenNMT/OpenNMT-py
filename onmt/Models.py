@@ -11,141 +11,8 @@ from torch.nn.utils.rnn import pad_packed_sequence as unpack
 from torch.nn.utils.rnn import pack_padded_sequence as pack
 
 
-class Embeddings(nn.Module):
-    """
-    Words embeddings dictionary for Encoder/Decoder.
-    Args:
-        embedding_dim (int): size of the dictionary of embeddings.
-        position_encoding (bool): use a sin to mark relative words positions.
-        feat_merge (string): merge action for the features embeddings:
-                    concat, sum or mlp.
-        feat_dim_exponent (float): when using '-feat_merge concat', feature
-                    embedding size is N^feat_dim_exponent, where N is the
-                    number of values of feature takes.
-        feat_embedding_dim (int): embedding dimension for features when using
-                    '-feat_merge mlp'
-        dropout (float): dropout probablity.
-        padding_idx (int): padding index in the embedding dictionary.
-        num_word_embeddings (int): size of dictionary of embeddings for words.
-        num_feat_embeddings ([int], optional): list of size of dictionary
-                                    of embeddings for each feature.
-    """
-
-    def __init__(self, embedding_dim, position_encoding, feat_merge,
-                 feat_dim_exponent, feat_embedding_dim, dropout,
-                 padding_idx,
-                 num_word_embeddings, num_feat_embeddings=None):
-        super(Embeddings, self).__init__()
-        self.positional_encoding = position_encoding
-        if self.positional_encoding:
-            self.pe = self.make_positional_encodings(embedding_dim, 5000)
-            self.dropout = nn.Dropout(p=dropout)
-
-        self.padding_idx = padding_idx
-        self.feat_merge = feat_merge
-
-        # num_embeddings: list of size of dictionary of embeddings
-        #                 for words and each feature.
-        num_embeddings = [num_word_embeddings]
-        # embedding_dims: list of dimension of each embedding vector
-        #                 for words and each feature.
-        embedding_dims = [embedding_dim]
-        if num_feat_embeddings:
-            num_embeddings.extend(num_feat for num_feat in num_feat_embeddings)
-            if feat_merge == 'concat':
-                # Derive embedding dims from each feature's vocab size
-                embedding_dims.extend([int(num_feat ** feat_dim_exponent)
-                                       for num_feat in num_feat_embeddings])
-            elif feat_merge == 'sum':
-                # All embeddings to be summed must be the same size
-                embedding_dims.extend([embedding_dim] *
-                                      len(num_feat_embeddings))
-            else:
-                # mlp feature merge
-                embedding_dims.extend([feat_embedding_dim] *
-                                      len(num_feat_embeddings))
-                # apply a layer of mlp to get it down to the correct dim
-                self.mlp = nn.Sequential(onmt.modules.BottleLinear(
-                    sum(embedding_dims),
-                    embedding_dim),
-                    nn.ReLU())
-        self.emb_luts = \
-            nn.ModuleList([
-                nn.Embedding(num_emb, emb_dim, padding_idx=padding_idx)
-                for num_emb, emb_dim in zip(num_embeddings, embedding_dims)])
-
-    @property
-    def word_lut(self):
-        return self.emb_luts[0]
-
-    @property
-    def embedding_dim(self):
-        """
-        Returns sum of all feature dimensions if the merge action is concat.
-        Otherwise, returns word vector size.
-        """
-        if self.feat_merge == 'concat':
-            return sum(emb_lut.embedding_dim
-                       for emb_lut in self.emb_luts.children())
-        else:
-            return self.word_lut.embedding_dim
-
-    def make_positional_encodings(self, dim, max_len):
-        pe = torch.arange(0, max_len).unsqueeze(1).expand(max_len, dim)
-        div_term = 1 / torch.pow(10000, torch.arange(0, dim * 2, 2) / dim)
-        pe = pe * div_term.expand_as(pe)
-        pe[:, 0::2] = torch.sin(pe[:, 0::2])
-        pe[:, 1::2] = torch.cos(pe[:, 1::2])
-        return pe.unsqueeze(1)
-
-    def load_pretrained_vectors(self, emb_file):
-        if emb_file is not None:
-            pretrained = torch.load(emb_file)
-            self.word_lut.weight.data.copy_(pretrained)
-
-    def merge(self, features):
-        if self.feat_merge == 'concat':
-            return torch.cat(features, 2)
-        elif self.feat_merge == 'sum':
-            return sum(features)
-        else:
-            return self.mlp(torch.cat(features, 2))
-
-    def forward(self, src_input):
-        """
-        Return the embeddings for words, and features if there are any.
-        Args:
-            src_input (LongTensor): len x batch x nfeat
-        Return:
-            emb (FloatTensor): len x batch x self.embedding_dim
-        """
-        in_length, in_batch, nfeat = src_input.size()
-        aeq(nfeat, len(self.emb_luts))
-
-        if len(self.emb_luts) == 1:
-            emb = self.word_lut(src_input.squeeze(2))
-        else:
-            feat_inputs = (feat.squeeze(2)
-                           for feat in src_input.split(1, dim=2))
-            features = [lut(feat)
-                        for lut, feat in zip(self.emb_luts, feat_inputs)]
-            emb = self.merge(features)
-
-        if self.positional_encoding:
-            emb = emb + Variable(self.pe[:emb.size(0), :1, :emb.size(2)]
-                                 .expand_as(emb).type_as(emb.data))
-            emb = self.dropout(emb)
-
-        out_length, out_batch, emb_dim = emb.size()
-        aeq(in_length, out_length)
-        aeq(in_length, out_length)
-        aeq(emb_dim, self.embedding_dim)
-
-        return emb
-
-
-def build_embeddings(opt, padding_idx, num_word_embeddings,
-                     for_encoder, num_feat_embeddings=None):
+def build_embeddings(opt, word_pad_ix, feat_pad_ix, num_word_embeddings,
+                     for_encoder, num_feat_embeddings=[]):
     """
     Create an Embeddings instance.
     Args:
@@ -161,15 +28,16 @@ def build_embeddings(opt, padding_idx, num_word_embeddings,
         embedding_dim = opt.src_word_vec_size
     else:
         embedding_dim = opt.tgt_word_vec_size
-    return Embeddings(embedding_dim,
-                      opt.position_encoding,
-                      opt.feat_merge,
-                      opt.feat_vec_exponent,
-                      opt.feat_vec_size,
-                      opt.dropout,
-                      padding_idx,
-                      num_word_embeddings,
-                      num_feat_embeddings)
+    return onmt.modules.Embeddings(embedding_dim,
+                                   opt.position_encoding,
+                                   opt.feat_merge,
+                                   opt.feat_vec_exponent,
+                                   opt.feat_vec_size,
+                                   opt.dropout,
+                                   word_pad_ix,
+                                   feat_pad_ix,
+                                   num_word_embeddings,
+                                   num_feat_embeddings)
 
 
 class Encoder(nn.Module):
@@ -190,7 +58,6 @@ class Encoder(nn.Module):
             dropout (float): dropout probablity.
             embeddings (Embeddings): vocab embeddings for this Encoder.
         """
-        # Call nn.Module.__init().
         super(Encoder, self).__init__()
 
         # Basic attributes.
@@ -241,8 +108,7 @@ class Encoder(nn.Module):
 
         if self.encoder_type == "mean":
             # No RNN, just take mean as final state.
-            mean = emb.mean(0) \
-                .expand(self.num_layers, n_batch, emb_dim)
+            mean = emb.mean(0).expand(self.num_layers, n_batch, emb_dim)
             return (mean, mean), emb
 
         elif self.encoder_type == "transformer":
@@ -312,16 +178,15 @@ def make_decoder(decoder_type, rnn_type, num_layers, hidden_size,
     elif decoder_type == 'cnn':
         return CNNDecoder(num_layers, hidden_size, attn_type,
                           copy_attn, cnn_kernel_width, dropout, embeddings)
+    elif input_feed:
+        return InputFeedRNNDecoder(
+            rnn_type, num_layers, hidden_size,
+            attn_type, coverage_attn, context_gate,
+            copy_attn, dropout, embeddings)
     else:
-        if input_feed:
-            return InputFeedRNNDecoder(
-                rnn_type, num_layers, hidden_size,
-                attn_type, coverage_attn, context_gate,
-                copy_attn, dropout, embeddings)
-        else:
-            return StdRNNDecoder(rnn_type, num_layers, hidden_size,
-                                 attn_type, coverage_attn, context_gate,
-                                 copy_attn, dropout, embeddings)
+        return StdRNNDecoder(rnn_type, num_layers, hidden_size,
+                             attn_type, coverage_attn, context_gate,
+                             copy_attn, dropout, embeddings)
 
 
 class RNNDecoderBase(nn.Module):
@@ -449,16 +314,15 @@ class StdRNNDecoder(RNNDecoderBase):
         coverage = None
 
         emb = self.embeddings(input)
-        assert emb.dim() == 3  # len x batch x embedding_dim
 
         # Run the forward pass of the RNN.
         rnn_output, hidden = self.rnn(emb, state.hidden)
-        # Reuslt Check
+        # Result Check
         input_len, input_batch, _ = input.size()
         output_len, output_batch, _ = rnn_output.size()
         aeq(input_len, output_len)
         aeq(input_batch, output_batch)
-        # END Reuslt Check
+        # END Result Check
 
         # Calculate the attention.
         attn_outputs, attn_scores = self.attn(
@@ -958,34 +822,36 @@ def make_base_model(opt, model_opt, fields, checkpoint=None):
         fields: `Field` objects for the model.
         checkpoint: the snapshot model.
     """
-    # Make Encoder.
-    src_vocab = fields["src"].vocab
-    num_feat_embeddings = [len(feat_dict) for feat_dict in
-                           ONMTDataset.collect_feature_dicts(fields)]
-    embeddings = build_embeddings(
-        model_opt, src_vocab.stoi[onmt.IO.PAD_WORD],
-        len(src_vocab), for_encoder=True,
-        num_feat_embeddings=num_feat_embeddings)
 
+    assert model_opt.model_type in ["text", "img"], \
+        ("Unsupported model type %s" % (model_opt.model_type))
     if model_opt.model_type == "text":
+        src_vocab = fields["src"].vocab
+        feature_dicts = ONMTDataset.collect_feature_dicts(fields)
+        feat_pad_ix = [feat_dict.stoi[onmt.IO.PAD_WORD]
+                       for feat_dict in feature_dicts]
+        num_feat_embeddings = [len(feat_dict) for feat_dict in
+                               feature_dicts]
+        src_embeddings = build_embeddings(
+                    model_opt, src_vocab.stoi[onmt.IO.PAD_WORD],
+                    feat_pad_ix, len(src_vocab), for_encoder=True,
+                    num_feat_embeddings=num_feat_embeddings)
         encoder = Encoder(model_opt.encoder_type, model_opt.brnn,
                           model_opt.rnn_type, model_opt.enc_layers,
                           model_opt.rnn_size, model_opt.dropout,
-                          embeddings, model_opt.cnn_kernel_width)
-    elif model_opt.model_type == "img":
+                          src_embeddings, model_opt.cnn_kernel_width)
+    else:
         encoder = onmt.modules.ImageEncoder(model_opt.layers,
                                             model_opt.brnn,
                                             model_opt.rnn_size,
                                             model_opt.dropout)
-    else:
-        assert False, ("Unsupported model type %s"
-                       % (model_opt.model_type))
 
     # Make Decoder.
     tgt_vocab = fields["tgt"].vocab
-    embeddings = build_embeddings(
-        model_opt, tgt_vocab.stoi[onmt.IO.PAD_WORD],
-        len(tgt_vocab), for_encoder=False)
+    # TODO: prepare for a future where tgt features are possible
+    tgt_embeddings = build_embeddings(
+                    model_opt, tgt_vocab.stoi[onmt.IO.PAD_WORD],
+                    [], len(tgt_vocab), for_encoder=False)
     decoder = make_decoder(model_opt.decoder_type, model_opt.rnn_type,
                            model_opt.dec_layers, model_opt.rnn_size,
                            model_opt.input_feed,
@@ -994,7 +860,7 @@ def make_base_model(opt, model_opt, fields, checkpoint=None):
                            model_opt.context_gate,
                            model_opt.copy_attn,
                            model_opt.cnn_kernel_width,
-                           model_opt.dropout, embeddings)
+                           model_opt.dropout, tgt_embeddings)
 
     # Make NMTModel(= Encoder + Decoder).
     model = onmt.Models.NMTModel(encoder, decoder)
