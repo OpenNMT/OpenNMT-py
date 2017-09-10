@@ -13,6 +13,7 @@ from onmt.modules.Gate import ContextGateFactory
 from onmt.Translator import DecoderState
 from onmt.modules.Transformer import TransformerDecoder, \
                                      TransformerDecoderState
+from onmt.modules.Conv2Conv import CNNDecoder, CNNDecoderState
 
 
 def build_embeddings(opt, word_pad_ix, feat_pad_ix, num_word_embeddings,
@@ -451,97 +452,6 @@ class InputFeedRNNDecoder(RNNDecoderBase):
         return self.embeddings.embedding_dim + self.hidden_size
 
 
-class CNNDecoder(nn.Module):
-    """
-    CNN Decoder. Wrapper around onmt.modules.ConvDecoder.
-    """
-
-    def __init__(self, num_layers, hidden_size, attn_type,
-                 copy_attn, cnn_kernel_width, dropout, embeddings):
-        """
-        See make_decoder() comment for arguments description.
-        """
-        super(CNNDecoder, self).__init__()
-
-        # Basic attributes.
-        self.decoder_type = 'cnn'
-        self.num_layers = num_layers
-        self.hidden_size = hidden_size
-        self.cnn_kernel_width = cnn_kernel_width
-        self.embeddings = embeddings
-        input_size = self.embeddings.embedding_dim
-        # Build the ConvDecoder.
-        self.cnn = onmt.modules.ConvDecoder(
-            input_size, hidden_size, num_layers, dropout, cnn_kernel_width)
-
-        # CNNDecoder has its own attention mechanism.
-        # Set up a separated copy attention layer, if needed.
-        self._copy = False
-        if copy_attn:
-            self.copy_attn = onmt.modules.GlobalAttention(
-                hidden_size, attn_type=attn_type)
-            self._copy = True
-
-    def forward(self, input, context, state):
-        """
-        Forward through the ConvDecoder.
-        Args:
-            input (LongTensor): a sequence of input tokens tensors
-                                of size (len x batch x nfeats).
-            context (FloatTensor): output(tensor sequence) from the Encoder
-                        CNN of size (src_len x batch x hidden_size).
-            state (FloatTensor): hidden state from the Encoder CNN for
-                                 initializing the decoder.
-        Returns:
-            outputs (FloatTensor): a Tensor sequence of output from the Decoder
-                                   of shape (len x batch x hidden_size).
-            state (FloatTensor): final hidden state from the Decoder.
-            attns (dict of (str, FloatTensor)): a dictionary of different
-                                type of attention Tensor from the Decoder
-                                of shape (src_len x batch).
-        """
-        # CHECKS
-        assert isinstance(state, CNNDecoderState)
-        input_len, input_batch, _ = input.size()
-        contxt_len, contxt_batch, _ = context.size()
-        aeq(input_batch, contxt_batch)
-        # END CHECKS
-
-        if state.previous_input is not None:
-            input = torch.cat([state.previous_input, input], 0)
-
-        # Initialize return variables.
-        outputs = []
-        attns = {"std": []}
-        assert not self._copy, "Copy mechanism not yet tested in conv2conv"
-        if self._copy:
-            attns["copy"] = []
-
-        # Run the forward pass of the CNNDecoder.
-        emb = self.embeddings(input)
-        assert emb.dim() == 3  # len x batch x embedding_dim
-
-        emb = emb.transpose(0, 1).contiguous()
-        src_context_t = context.transpose(0, 1).contiguous()
-        src_context_c = state.init_src.transpose(0, 1).contiguous()
-        output, attn = self.cnn(emb, src_context_t, src_context_c)
-
-        # Process the result and update the attentions.
-        outputs = output.transpose(0, 1).contiguous()
-        if state.previous_input is not None:
-            outputs = outputs[state.previous_input.size(0):]
-            attn = attn[:, state.previous_input.size(0):].squeeze()
-            attn = torch.stack([attn])
-        attns["std"] = attn
-        if self._copy:
-            attns["copy"] = attn
-
-        # Update the CNNDecoderState.
-        state.resetPrevious(input)
-
-        return outputs, state, attns
-
-
 class NMTModel(nn.Module):
     """
     The seq2seq Encoder + Decoder Neural Machine Translation Model.
@@ -572,10 +482,7 @@ class NMTModel(nn.Module):
         if self.decoder.decoder_type == "transformer":
             return TransformerDecoderState(src)
         elif self.decoder.decoder_type == "cnn":
-            init_state = CNNDecoderState()
-            scale_weight = 0.5 ** 0.5
-            init_state.init_src = (context + enc_hidden) * scale_weight
-            return init_state
+            return CNNDecoderState(context, enc_hidden)
         elif isinstance(enc_hidden, tuple):  # GRU
             dec = RNNDecoderState(tuple([self._fix_enc_hidden(enc_hidden[i])
                                          for i in range(len(enc_hidden))]))
@@ -644,28 +551,6 @@ class RNNDecoderState(DecoderState):
         self.hidden = tuple(vars[:-1])
         self.input_feed = vars[-1]
         self.all = self.hidden + (self.input_feed,)
-
-
-class CNNDecoderState(DecoderState):
-    def __init__(self, input=None):
-        self.init_src = None
-        self.previous_input = input
-        self.all = (self.previous_input,)
-
-    def _resetAll(self, all):
-        vars = [(Variable(a.data if isinstance(a, Variable) else a,
-                          volatile=True))
-                for a in all]
-        self.previous_input = vars[0]
-        self.all = (self.previous_input,)
-
-    def repeatBeam_(self, beamSize):
-        self.init_src = Variable(
-            self.init_src.data.repeat(1, beamSize, 1), volatile=True)
-
-    def resetPrevious(self, input):
-        self.previous_input = input
-        self.all = (self.previous_input,)
 
 
 def make_base_model(opt, model_opt, fields, checkpoint=None):

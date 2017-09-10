@@ -6,7 +6,7 @@ from onmt.modules.ImageEncoder import ImageEncoder
 from onmt.modules.CopyGenerator import CopyGenerator, CopyCriterion
 from onmt.modules.StructuredAttention import MatrixTree
 from onmt.modules.Transformer import TransformerEncoder, TransformerDecoder
-from onmt.modules.Conv2Conv import ConvEncoder, ConvDecoder
+from onmt.modules.Conv2Conv import ConvEncoder, CNNDecoder
 from onmt.modules.MultiHeadedAttn import MultiHeadedAttention
 from onmt.modules.StackedRNN import StackedLSTM, StackedGRU
 from onmt.modules.Embeddings import Embeddings
@@ -18,4 +18,4 @@ __all__ = [GlobalAttention, ImageEncoder, CopyGenerator, MultiHeadedAttention,
            LayerNorm, Bottle, BottleLinear, BottleLayerNorm, BottleSoftmax,
            TransformerEncoder, TransformerDecoder, Embeddings, Elementwise,
            CopyCriterion, MatrixTree, WeightNormConv2d, ConvMultiStepAttention,
-           ConvEncoder, ConvDecoder, StackedLSTM, StackedGRU, aeq]
+           ConvEncoder, CNNDecoder, StackedLSTM, StackedGRU, aeq]
