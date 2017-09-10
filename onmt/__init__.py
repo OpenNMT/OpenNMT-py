@@ -7,4 +7,5 @@ from onmt.Beam import Beam, GNMTGlobalScorer
 
 
 # For flake8 compatibility
-__all__ = [onmt.Loss, onmt.IO, onmt.Models, Translator, Optim, Beam, GNMTGlobalScorer]
+__all__ = [onmt.Loss, onmt.IO, onmt.Models, Translator, Optim, Beam,
+           GNMTGlobalScorer]
