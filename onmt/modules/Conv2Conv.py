@@ -208,8 +208,8 @@ class CNNDecoder(nn.Module):
         if self._copy:
             attns["copy"] = attn
 
-        # Update the CNNDecoderState.
-        state.resetPrevious(input)
+        # Update the state.
+        state.update_state(input)
 
         return outputs, state, attns
 
@@ -218,22 +218,22 @@ class CNNDecoder(nn.Module):
 
 
 class CNNDecoderState(DecoderState):
-    def __init__(self, context, enc_hidden, input=None):
+    def __init__(self, context, enc_hidden):
         self.init_src = (context + enc_hidden) * SCALE_WEIGHT
+        self.previous_input = None
+
+    @property
+    def _all(self):
+        """
+        Contains attributes that need to be updated in self.beam_update().
+        """
+        return (self.previous_input,)
+
+    def update_state(self, input):
+        """ Called for every decoder forward pass. """
         self.previous_input = input
-        self.all = (self.previous_input,)
 
-    def _resetAll(self, all):
-        vars = [(Variable(a.data if isinstance(a, Variable) else a,
-                          volatile=True))
-                for a in all]
-        self.previous_input = vars[0]
-        self.all = (self.previous_input,)
-
-    def repeatBeam_(self, beamSize):
+    def repeat_beam_size_times(self, beam_size):
+        """ Repeat beam_size times along batch dimension. """
         self.init_src = Variable(
-            self.init_src.data.repeat(1, beamSize, 1), volatile=True)
-
-    def resetPrevious(self, input):
-        self.previous_input = input
-        self.all = (self.previous_input,)
+            self.init_src.data.repeat(1, beam_size, 1), volatile=True)

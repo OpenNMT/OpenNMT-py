@@ -174,7 +174,7 @@ class TransformerDecoder(nn.Module):
             input (LongTensor): a sequence of input tokens tensors
                                 of size (len x batch x nfeats).
             context (FloatTensor): output(tensor sequence) from the Encoder
-                        RNN of size (src_len x batch x hidden_size).
+                                of size (src_len x batch x hidden_size).
             state (FloatTensor): hidden state from the Encoder RNN for
                                  initializing the decoder.
         Returns:
@@ -238,8 +238,8 @@ class TransformerDecoder(nn.Module):
         if self._copy:
             attns["copy"] = attn
 
-        # Update the TransformerDecoderState.
-        state = TransformerDecoderState(src, input)
+        # Update the state.
+        state.update_state(input)
 
         return outputs, state, attns
 
@@ -248,24 +248,27 @@ class TransformerDecoder(nn.Module):
 
 
 class TransformerDecoderState(DecoderState):
-    def __init__(self, src, input=None):
+    def __init__(self, src):
         """
         Args:
             src (FloatTensor): a sequence of source words tensors
                     with optional feature tensors, of size (len x batch).
-            input (LongTensor): a sequence of input tokens tensors
-                                of size (len x batch).
         """
         self.src = src
+        self.previous_input = None
+
+    @property
+    def _all(self):
+        """
+        Contains attributes that need to be updated in self.beam_update().
+        """
+        return (self.previous_input, self.src)
+
+    def update_state(self, input):
+        """ Called for every decoder forward pass. """
         self.previous_input = input
-        self.all = (self.previous_input, self.src)
 
-    def _resetAll(self, all):
-        vars = [(Variable(a.data if isinstance(a, Variable) else a,
-                          volatile=True))
-                for a in all]
-        self.previous_input = vars[0]
-        self.all = (self.previous_input,)
-
-    def repeatBeam_(self, beamSize):
-        self.src = Variable(self.src.data.repeat(1, beamSize, 1))
+    def repeat_beam_size_times(self, beam_size):
+        """ Repeat beam_size times along batch dimension. """
+        self.src = Variable(self.src.data.repeat(1, beam_size, 1),
+                            volatile=True)

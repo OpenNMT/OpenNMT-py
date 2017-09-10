@@ -196,11 +196,11 @@ class RNNDecoderBase(nn.Module):
         hidden, outputs, attns, coverage = \
             self._run_forward_pass(input, context, state)
 
-        # Update the DecoderState with the result.
+        # Update the state with the result.
         final_output = outputs[-1]
-        state = RNNDecoderState(hidden, final_output.unsqueeze(0),
-                                coverage.unsqueeze(0)
-                                if coverage is not None else None)
+        state.update_state(hidden, final_output.unsqueeze(0),
+                           coverage.unsqueeze(0)
+                           if coverage is not None else None)
 
         # Concatenates sequence of tensors along a new dimension.
         outputs = torch.stack(outputs)
@@ -220,12 +220,12 @@ class RNNDecoderBase(nn.Module):
 
     def init_decoder_state(self, src, context, enc_hidden):
         if isinstance(enc_hidden, tuple):  # GRU
-            dec = RNNDecoderState(tuple([self._fix_enc_hidden(enc_hidden[i])
+            return RNNDecoderState(context, self.hidden_size,
+                                   tuple([self._fix_enc_hidden(enc_hidden[i])
                                          for i in range(len(enc_hidden))]))
         else:  # LSTM
-            dec = RNNDecoderState(self._fix_enc_hidden(enc_hidden))
-        dec.init_input_feed(context, self.hidden_size)
-        return dec
+            return RNNDecoderState(context, self.hidden_size,
+                                   self._fix_enc_hidden(enc_hidden))
 
 
 class StdRNNDecoder(RNNDecoderBase):
@@ -245,7 +245,7 @@ class StdRNNDecoder(RNNDecoderBase):
             state (FloatTensor): hidden state from the Encoder RNN for
                                  initializing the decoder.
         Returns:
-            hidden (FloatTensor): final hidden state from the Decoder.
+            hidden (Variable): final hidden state from the Decoder.
             outputs ([FloatTensor]): an array of output of every time
                                      step from the Decoder.
             attns (dict of (str, [FloatTensor]): a dictionary of different
@@ -445,53 +445,65 @@ class DecoderState(object):
     for storing translation states.
     """
     def detach(self):
-        for h in self.all:
+        """
+        Detaches all Variables from the graph
+        that created it, making it a leaf.
+        """
+        for h in self._all:
             if h is not None:
                 h.detach_()
 
-    def repeatBeam_(self, beamSize):
-        self._resetAll([Variable(e.data.repeat(1, beamSize, 1))
-                        for e in self.all])
-
-    def beamUpdate_(self, idx, positions, beamSize):
-        for e in self.all:
+    def beam_update(self, idx, positions, beam_size):
+        """ Update when beam advances. """
+        for e in self._all:
             a, br, d = e.size()
-            sentStates = e.view(a, beamSize, br // beamSize, d)[:, :, idx]
+            sentStates = e.view(a, beam_size, br // beam_size, d)[:, :, idx]
             sentStates.data.copy_(
                 sentStates.data.index_select(1, positions))
 
 
 class RNNDecoderState(DecoderState):
-    def __init__(self, rnnstate, input_feed=None, coverage=None):
+    def __init__(self, context, hidden_size, rnnstate):
         """
         Args:
-            rnnstate (FloatTensor): hidden state from the Decoder,
+            context (FloatTensor): output from the Encoder of size
+                                   len x batch x rnn_size.
+            hidden_size (int): the size of hidden layer of the Decoder.
+            rnnstate (Variable): final hidden state from the Encoder.
                 transformed to shape: layers x batch x (directions*dim).
-            input_feed (FloatTensor): output from last layer of the
-                StdRNNDecoder or InputFeedRNNDecoder.
+            input_feed (FloatTensor): output from last layer of the Decoder.
             coverage (FloatTensor): coverage output from the Decoder.
         """
         if not isinstance(rnnstate, tuple):
             self.hidden = (rnnstate,)
         else:
             self.hidden = rnnstate
-        self.input_feed = input_feed
-        self.coverage = coverage
-        self.all = self.hidden + (self.input_feed,)
+        self.coverage = None
 
-    def init_input_feed(self, context, hidden_size):
+        # Init the input feed.
         batch_size = context.size(1)
         h_size = (batch_size, hidden_size)
         self.input_feed = Variable(context.data.new(*h_size).zero_(),
                                    requires_grad=False).unsqueeze(0)
-        self.all = self.hidden + (self.input_feed,)
 
-    def _resetAll(self, all):
-        vars = [Variable(a.data if isinstance(a, Variable) else a,
-                         volatile=True) for a in all]
+    @property
+    def _all(self):
+        return self.hidden + (self.input_feed,)
+
+    def update_state(self, rnnstate, input_feed, coverage):
+        if not isinstance(rnnstate, tuple):
+            self.hidden = (rnnstate,)
+        else:
+            self.hidden = rnnstate
+        self.input_feed = input_feed
+        self.coverage = coverage
+
+    def repeat_beam_size_times(self, beam_size):
+        """ Repeat beam_size times along batch dimension. """
+        vars = [Variable(e.data.repeat(1, beam_size, 1), volatile=True)
+                for e in self._all]
         self.hidden = tuple(vars[:-1])
         self.input_feed = vars[-1]
-        self.all = self.hidden + (self.input_feed,)
 
 
 def make_embeddings(opt, word_padding_idx, feats_padding_idx,
