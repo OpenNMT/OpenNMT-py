@@ -35,10 +35,11 @@ def main():
     model_opt = checkpoint['opt']
     src_dict = checkpoint['dicts']['src']
     tgt_dict = checkpoint['dicts']['tgt']
+    feat_padding_idx = []
 
     embeddings = onmt.Models.build_embeddings(
                 model_opt, src_dict.stoi[onmt.IO.PAD_WORD],
-                len(src_dict), for_encoder=True)
+                feat_padding_idx, len(src_dict), for_encoder=True)
     encoder = onmt.Models.Encoder(model_opt.encoder_type, model_opt.brnn,
                                   model_opt.rnn_type, model_opt.enc_layers,
                                   model_opt.rnn_size, model_opt.dropout,
@@ -46,7 +47,7 @@ def main():
 
     embeddings = onmt.Models.build_embeddings(
                 model_opt, tgt_dict.stoi[onmt.IO.PAD_WORD],
-                len(tgt_dict), for_encoder=False)
+                feat_padding_idx, len(tgt_dict), for_encoder=False)
     decoder = onmt.Models.make_decoder(model_opt.decoder_type,
                                        model_opt.rnn_type,
                                        model_opt.dec_layers,

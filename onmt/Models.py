@@ -16,35 +16,6 @@ from onmt.modules.Transformer import TransformerDecoder, \
 from onmt.modules.Conv2Conv import CNNDecoder, CNNDecoderState
 
 
-def build_embeddings(opt, word_pad_ix, feat_pad_ix, num_word_embeddings,
-                     for_encoder, num_feat_embeddings=[]):
-    """
-    Create an Embeddings instance.
-    Args:
-        opt: command-line options.
-        padding_idx(int): padding index in the embedding dictionary.
-        num_word_embeddings(int): size of dictionary
-                                 of embedding for words.
-        for_encoder(bool): make Embeddings for Encoder or Decoder?
-        num_feat_embeddings([int]): list of size of dictionary
-                                    of embedding for each feature.
-    """
-    if for_encoder:
-        embedding_dim = opt.src_word_vec_size
-    else:
-        embedding_dim = opt.tgt_word_vec_size
-    return onmt.modules.Embeddings(embedding_dim,
-                                   opt.position_encoding,
-                                   opt.feat_merge,
-                                   opt.feat_vec_exponent,
-                                   opt.feat_vec_size,
-                                   opt.dropout,
-                                   word_pad_ix,
-                                   feat_pad_ix,
-                                   num_word_embeddings,
-                                   num_feat_embeddings)
-
-
 class Encoder(nn.Module):
     """
     Encoder recurrent neural network.
@@ -128,7 +99,7 @@ class Encoder(nn.Module):
             # END CHECKS
 
             # Make mask.
-            padding_idx = self.embeddings.padding_idx
+            padding_idx = self.embeddings.word_padding_idx
             mask = words.data.eq(padding_idx).unsqueeze(1) \
                 .expand(w_batch, w_len, w_len)
 
@@ -153,45 +124,6 @@ class Encoder(nn.Module):
             if lengths:
                 outputs = unpack(outputs)[0]
             return hidden_t, outputs
-
-
-def make_decoder(decoder_type, rnn_type, num_layers, hidden_size,
-                 input_feed, attn_type, coverage_attn, context_gate,
-                 copy_attn, cnn_kernel_width, dropout, embeddings):
-    """
-    Decoder dispatcher function.
-    Args:
-        decoder_type (string): 'rnn', 'transformer' or 'cnn'.
-        rnn_type (string): 'LSTM' or 'GRU'.
-        num_layers (int): number of Decoder layers.
-        hidden_size (int): size of hidden states of a rnn.
-        input_feed (int): feed the context vector at each time step to the
-                          decoder(by concating the word embeddings).
-        attn_type (string): the attention type to use:
-                    'dot'(dotprot), 'general'(Luong), or 'mlp'(Bahdanau).
-        coverage_attn (bool): train a coverage attention layer?
-        context_gate (string): type of context gate to use:
-                               'source', 'target', 'both'.
-        copy_attn (bool): train copy attention layer?
-        cnn_kernel_width (int): size of windows in the cnn.
-        dropout (float): dropout probablity.
-        embeddings (Embeddings): vocab embeddings for this Decoder.
-    """
-    if decoder_type == "transformer":
-        return TransformerDecoder(num_layers, hidden_size, attn_type,
-                                  copy_attn, dropout, embeddings)
-    elif decoder_type == 'cnn':
-        return CNNDecoder(num_layers, hidden_size, attn_type,
-                          copy_attn, cnn_kernel_width, dropout, embeddings)
-    elif input_feed:
-        return InputFeedRNNDecoder(
-            rnn_type, num_layers, hidden_size,
-            attn_type, coverage_attn, context_gate,
-            copy_attn, dropout, embeddings)
-    else:
-        return StdRNNDecoder(rnn_type, num_layers, hidden_size,
-                             attn_type, coverage_attn, context_gate,
-                             copy_attn, dropout, embeddings)
 
 
 class RNNDecoderBase(nn.Module):
@@ -289,7 +221,6 @@ class StdRNNDecoder(RNNDecoderBase):
     Stardard RNN Decoder, with Attention.
     Currently no 'coverage_attn' and 'copy_attn' support.
     """
-
     def _run_forward_pass(self, input, context, state):
         """
         Private helper for running the specific RNN forward pass.
@@ -373,7 +304,6 @@ class InputFeedRNNDecoder(RNNDecoderBase):
     """
     Stardard RNN Decoder, with Input Feed and Attention.
     """
-
     def _run_forward_pass(self, input, context, state):
         """
         See StdRNNDecoder._run_forward_pass() for description
@@ -456,7 +386,6 @@ class NMTModel(nn.Module):
     """
     The seq2seq Encoder + Decoder Neural Machine Translation Model.
     """
-
     def __init__(self, encoder, decoder, multigpu=False):
         """
         Args:
@@ -553,6 +482,77 @@ class RNNDecoderState(DecoderState):
         self.all = self.hidden + (self.input_feed,)
 
 
+def make_embeddings(opt, word_padding_idx, feats_padding_idx,
+                    num_word_embeddings, for_encoder,
+                    num_feat_embeddings=[]):
+    """
+    Make an Embeddings instance.
+    Args:
+        opt: command-line options.
+        word_padding_idx(int): padding index for words in the embeddings.
+        feats_padding_idx(int): padding index for a list of features
+                                in the embeddings.
+        num_word_embeddings(int): size of dictionary
+                                 of embedding for words.
+        for_encoder(bool): make Embeddings for Encoder or Decoder?
+        num_feat_embeddings([int]): list of size of dictionary
+                                    of embedding for each feature.
+    """
+    if for_encoder:
+        embedding_dim = opt.src_word_vec_size
+    else:
+        embedding_dim = opt.tgt_word_vec_size
+    return onmt.modules.Embeddings(embedding_dim,
+                                   opt.position_encoding,
+                                   opt.feat_merge,
+                                   opt.feat_vec_exponent,
+                                   opt.feat_vec_size,
+                                   opt.dropout,
+                                   word_padding_idx,
+                                   feats_padding_idx,
+                                   num_word_embeddings,
+                                   num_feat_embeddings)
+
+
+def make_decoder(decoder_type, rnn_type, num_layers, hidden_size,
+                 input_feed, attn_type, coverage_attn, context_gate,
+                 copy_attn, cnn_kernel_width, dropout, embeddings):
+    """
+    Decoder dispatcher function.
+    Args:
+        decoder_type (string): 'rnn', 'transformer' or 'cnn'.
+        rnn_type (string): 'LSTM' or 'GRU'.
+        num_layers (int): number of Decoder layers.
+        hidden_size (int): size of hidden states of a rnn.
+        input_feed (int): feed the context vector at each time step to the
+                          decoder(by concating the word embeddings).
+        attn_type (string): the attention type to use:
+                    'dot'(dotprot), 'general'(Luong), or 'mlp'(Bahdanau).
+        coverage_attn (bool): train a coverage attention layer?
+        context_gate (string): type of context gate to use:
+                               'source', 'target', 'both'.
+        copy_attn (bool): train copy attention layer?
+        cnn_kernel_width (int): size of windows in the cnn.
+        dropout (float): dropout probablity.
+        embeddings (Embeddings): vocab embeddings for this Decoder.
+    """
+    if decoder_type == "transformer":
+        return TransformerDecoder(num_layers, hidden_size, attn_type,
+                                  copy_attn, dropout, embeddings)
+    elif decoder_type == 'cnn':
+        return CNNDecoder(num_layers, hidden_size, attn_type,
+                          copy_attn, cnn_kernel_width, dropout, embeddings)
+    elif input_feed:
+        return InputFeedRNNDecoder(
+            rnn_type, num_layers, hidden_size,
+            attn_type, coverage_attn, context_gate,
+            copy_attn, dropout, embeddings)
+    else:
+        return StdRNNDecoder(rnn_type, num_layers, hidden_size,
+                             attn_type, coverage_attn, context_gate,
+                             copy_attn, dropout, embeddings)
+
+
 def make_base_model(opt, model_opt, fields, checkpoint=None):
     """
     Args:
@@ -564,17 +564,20 @@ def make_base_model(opt, model_opt, fields, checkpoint=None):
 
     assert model_opt.model_type in ["text", "img"], \
         ("Unsupported model type %s" % (model_opt.model_type))
+
+    # Make Encoder.
     if model_opt.model_type == "text":
         src_vocab = fields["src"].vocab
         feature_dicts = ONMTDataset.collect_feature_dicts(fields)
-        feat_pad_ix = [feat_dict.stoi[onmt.IO.PAD_WORD]
-                       for feat_dict in feature_dicts]
+        feats_padding_idx = [feat_dict.stoi[onmt.IO.PAD_WORD]
+                             for feat_dict in feature_dicts]
         num_feat_embeddings = [len(feat_dict) for feat_dict in
                                feature_dicts]
-        src_embeddings = build_embeddings(
+        src_embeddings = make_embeddings(
                     model_opt, src_vocab.stoi[onmt.IO.PAD_WORD],
-                    feat_pad_ix, len(src_vocab), for_encoder=True,
+                    feats_padding_idx, len(src_vocab), for_encoder=True,
                     num_feat_embeddings=num_feat_embeddings)
+
         encoder = Encoder(model_opt.encoder_type, model_opt.brnn,
                           model_opt.rnn_type, model_opt.enc_layers,
                           model_opt.rnn_size, model_opt.dropout,
@@ -588,7 +591,7 @@ def make_base_model(opt, model_opt, fields, checkpoint=None):
     # Make Decoder.
     tgt_vocab = fields["tgt"].vocab
     # TODO: prepare for a future where tgt features are possible
-    tgt_embeddings = build_embeddings(
+    tgt_embeddings = make_embeddings(
                     model_opt, tgt_vocab.stoi[onmt.IO.PAD_WORD],
                     [], len(tgt_vocab), for_encoder=False)
     decoder = make_decoder(model_opt.decoder_type, model_opt.rnn_type,

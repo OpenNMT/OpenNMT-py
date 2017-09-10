@@ -33,28 +33,31 @@ class Embeddings(nn.Module):
         position_encoding (bool): use a sin to mark relative words positions.
         feat_merge (string): merge action for the features embeddings:
                     concat, sum or mlp.
-        feat_dim_exponent (float): when using '-feat_merge concat', feature
+        feat_vec_exponent (float): when using '-feat_merge concat', feature
                     embedding size is N^feat_dim_exponent, where N is the
                     number of values of feature takes.
         feat_embedding_dim (int): embedding dimension for features when using
                     '-feat_merge mlp'
-        dropout (float): dropout probablity.
-        padding_idx (int): padding index in the embedding dictionary.
-        num_word_embeddings (int): size of dictionary of embeddings for words.
-        num_feat_embeddings ([int], optional): list of size of dictionary
+        dropout (float): dropout probability.
+        word_padding_idx (int): padding index for words in the embeddings.
+        feats_padding_idx ([int]): padding index for a list of features
+                                   in the embeddings.
+        word_vocab_size (int): size of dictionary of embeddings for words.
+        feat_vocab_sizes ([int], optional): list of size of dictionary
                                     of embeddings for each feature.
     """
     def __init__(self, embedding_dim, position_encoding, feat_merge,
-                 feat_vec_exponent, feat_vec_size, dropout, padding_idx,
-                 feat_pads, word_vocab_size, feat_vocab_sizes=[]):
+                 feat_vec_exponent, feat_embedding_dim, dropout,
+                 word_padding_idx, feat_padding_idx,
+                 word_vocab_size, feat_vocab_sizes=[]):
         super(Embeddings, self).__init__()
 
-        self.padding_idx = padding_idx
+        self.word_padding_idx = word_padding_idx
 
         # Parameters for constructing the word embedding matrix
         vocab_sizes = [word_vocab_size]
         emb_dims = [embedding_dim]
-        pad_indices = [padding_idx]
+        pad_indices = [word_padding_idx]
         self.embedding_dim = embedding_dim
 
         # Parameters for additional feature embedding matrices
@@ -63,11 +66,14 @@ class Embeddings(nn.Module):
             feat_dims = [int(vocab ** feat_vec_exponent)
                          for vocab in feat_vocab_sizes]
         else:
-            feat_dim = embedding_dim if feat_merge == 'sum' else feat_vec_size
+            if feat_merge == 'sum':
+                feat_dim = embedding_dim
+            else:
+                feat_dim = feat_embedding_dim
             feat_dims = [feat_dim] * len(feat_vocab_sizes)
         vocab_sizes.extend(feat_vocab_sizes)
         emb_dims.extend(feat_dims)
-        pad_indices.extend(feat_pads)
+        pad_indices.extend(feat_padding_idx)
 
         # The embedding matrix look-up tables. The first look-up table
         # is for words. Subsequent ones are for features, if any exist.
@@ -91,7 +97,7 @@ class Embeddings(nn.Module):
 
         if feat_merge == 'mlp':
             in_dim = sum(emb_dims)
-            out_dim = feat_vec_size
+            out_dim = feat_embedding_dim
             mlp = nn.Sequential(BottleLinear(in_dim, out_dim), nn.ReLU())
             self.make_embedding.add_module('mlp', mlp)
 
