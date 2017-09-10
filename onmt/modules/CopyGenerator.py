@@ -1,9 +1,10 @@
-import onmt
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
 import torch.cuda
-from onmt.modules import aeq
+
+import onmt
+from onmt.Utils import aeq
 
 
 class CopyGenerator(nn.Module):

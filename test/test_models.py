@@ -45,8 +45,10 @@ class TestModel(unittest.TestCase):
             bsize: Batchsize of generated input
         '''
         vocab = self.get_vocab()
-        emb = onmt.Models.build_embeddings(opt, vocab.stoi[onmt.IO.PAD_WORD],
-                                           [], len(vocab), for_encoder=True)
+        feats_padding_idx = []
+        emb = onmt.Models.make_embeddings(
+                    opt, vocab.stoi[onmt.IO.PAD_WORD], feats_padding_idx,
+                    len(vocab), for_encoder=True)
         test_src, _, __ = self.get_batch(sourceL=sourceL,
                                          bsize=bsize)
         if opt.decoder_type == 'transformer':
@@ -69,9 +71,10 @@ class TestModel(unittest.TestCase):
             bsize: Batchsize of generated input
         '''
         vocab = self.get_vocab()
-        embeddings = onmt.Models.build_embeddings(
-                                    opt, vocab.stoi[onmt.IO.PAD_WORD],
-                                    [], len(vocab), for_encoder=True)
+        feats_padding_idx = []
+        embeddings = onmt.Models.make_embeddings(
+                        opt, vocab.stoi[onmt.IO.PAD_WORD], feats_padding_idx,
+                        len(vocab), for_encoder=True)
         enc = onmt.Models.Encoder(opt.encoder_type, opt.brnn,
                                   opt.rnn_type, opt.enc_layers,
                                   opt.rnn_size, opt.dropout, embeddings)
@@ -104,19 +107,23 @@ class TestModel(unittest.TestCase):
             bsize: batchsize
         """
         vocab = self.get_vocab()
-        padding_idx = vocab.stoi[onmt.IO.PAD_WORD]
-        embeddings = onmt.Models.build_embeddings(opt, padding_idx, [],
-                                                  len(vocab), for_encoder=True)
+        word_padding_idx = vocab.stoi[onmt.IO.PAD_WORD]
+        feats_padding_idx = []
+
+        embeddings = onmt.Models.make_embeddings(
+                            opt, word_padding_idx, feats_padding_idx,
+                            len(vocab), for_encoder=True)
         enc = onmt.Models.Encoder(opt.encoder_type, opt.brnn,
                                   opt.rnn_type, opt.enc_layers,
                                   opt.rnn_size, opt.dropout,
                                   embeddings)
-        embeddings = onmt.Models.build_embeddings(opt, padding_idx, [],
-                                                  len(vocab),
-                                                  for_encoder=False)
+
+        embeddings = onmt.Models.make_embeddings(
+                            opt, word_padding_idx, feats_padding_idx,
+                            len(vocab), for_encoder=False)
         dec = onmt.Models.make_decoder(opt.decoder_type, opt.rnn_type,
-                                       opt.dec_layers, opt.rnn_size,
-                                       opt.input_feed,
+                                       opt.brnn, opt.dec_layers,
+                                       opt.rnn_size, opt.input_feed,
                                        opt.global_attention,
                                        opt.coverage_attn,
                                        opt.context_gate,

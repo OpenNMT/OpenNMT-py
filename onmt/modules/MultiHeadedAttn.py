@@ -1,9 +1,11 @@
+import math
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
-from onmt.modules.Util import BottleLinear, BottleLayerNorm, BottleSoftmax
-import math
-from onmt.modules import aeq
+
+from onmt.Utils import aeq
+from onmt.modules.UtilClass import BottleLinear, \
+                    BottleLayerNorm, BottleSoftmax
 
 
 class MultiHeadedAttention(nn.Module):

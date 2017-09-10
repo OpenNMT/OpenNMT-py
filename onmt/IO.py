@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
-import torch
+
 import codecs
-import torchtext.data
-import torchtext.vocab
 from collections import Counter, defaultdict
 from itertools import chain, count
+
+import torch
+import torchtext.data
+import torchtext.vocab
 
 PAD_WORD = '<blank>'
 UNK = 0

@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn
-from onmt.modules.Util import BottleLinear
-from onmt.modules import aeq
+
+from onmt.modules.UtilClass import BottleLinear
+from onmt.Utils import aeq
 
 
 class GlobalAttention(nn.Module):
