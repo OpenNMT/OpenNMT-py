@@ -42,7 +42,7 @@ class Beam(object):
 
         # Information for global scoring.
         self.globalScorer = global_scorer
-        self.globalState = None
+        self.globalState = {}
 
     def getCurrentState(self):
         "Get the outputs for the current timestep."
@@ -147,10 +147,9 @@ class GNMTGlobalScorer(object):
     def score(self, beam, logprobs):
         "Additional term add to log probability"
         cov = beam.globalState["coverage"]
-        pen = self.beta * torch.min(beam.globalState["coverage"].sum(2),
-                                    cov.clone().fill_(1.0)).log().sum(1)
-        l_term = ((5 + len(self.nextYs)) ** self.alpha / (5 + 1) ** self.alpha)
-        return logprobs / l_term + pen
+        pen = self.beta * torch.min(cov, cov.clone().fill_(1.0)).log().sum(1)
+        l_term = (((5 + len(beam.nextYs)) ** self.alpha) / ((5 + 1) ** self.alpha))
+        return (logprobs / l_term) + pen
 
     def updateGlobalState(self, beam):
         "Keeps the coverage vector as sum of attens"
@@ -158,4 +157,4 @@ class GNMTGlobalScorer(object):
             beam.globalState["coverage"] = beam.attn[-1]
         else:
             beam.globalState["coverage"] = beam.globalState["coverage"] \
-                .index_select(0, self.prevKs[-1]).add(beam.attn[-1])
+                .index_select(0, beam.prevKs[-1]).add(beam.attn[-1])
