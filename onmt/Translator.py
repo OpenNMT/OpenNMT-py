@@ -103,8 +103,11 @@ class Translator(object):
         src = rvar(src.data)
         srcMap = rvar(batch.src_map.data)
         decStates.repeatBeam_(beamSize)
+        scorer = None
+        # scorer=onmt.GNMTGlobalScorer(0.3, 0.4)
         beam = [onmt.Beam(beamSize, n_best=self.opt.n_best, cuda=self.opt.cuda,
-                          vocab=self.fields["tgt"].vocab)
+                          vocab=self.fields["tgt"].vocab,
+                          global_scorer=scorer)
                 for __ in range(batchSize)]
 
         #  (2) run the decoder to generate sentences, using beam search\

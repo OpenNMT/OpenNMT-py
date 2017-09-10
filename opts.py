@@ -123,6 +123,13 @@ def train_opts(parser):
                         help="""If a valid path is specified, then this will load
                         pretrained word embeddings on the decoder side.
                         See README for specific formatting instructions.""")
+    # Fixed word vectors
+    parser.add_argument('-fix_word_vecs_enc',
+                        action='store_true',
+                        help="Fix word embeddings on the encoder side.")
+    parser.add_argument('-fix_word_vecs_dec',
+                        action='store_true',
+                        help="Fix word embeddings on the encoder side.")
 
     # Optimization options
     parser.add_argument('-batch_size', type=int, default=64,

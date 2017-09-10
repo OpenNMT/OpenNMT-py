@@ -267,9 +267,10 @@ def main():
             print('Intializing params')
             for p in model.parameters():
                 p.data.uniform_(-opt.param_init, opt.param_init)
-
-        model.encoder.embeddings.load_pretrained_vectors(opt.pre_word_vecs_enc)
-        model.decoder.embeddings.load_pretrained_vectors(opt.pre_word_vecs_dec)
+        model.encoder.embeddings.load_pretrained_vectors(opt.pre_word_vecs_enc,
+                                                         opt.fix_word_vecs_enc)
+        model.decoder.embeddings.load_pretrained_vectors(opt.pre_word_vecs_dec,
+                                                         opt.fix_word_vecs_dec)
 
         optim = onmt.Optim(
             opt.optim, opt.learning_rate, opt.max_grad_norm,

@@ -5,7 +5,7 @@ from torch.nn.utils import clip_grad_norm
 class Optim(object):
 
     def set_parameters(self, params):
-        self.params = list(params)  # careful: params may be a generator
+        self.params = [p for p in params if p.requires_grad]
         if self.method == 'sgd':
             self.optimizer = optim.SGD(self.params, lr=self.lr)
         elif self.method == 'adagrad':
