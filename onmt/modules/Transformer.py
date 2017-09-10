@@ -8,6 +8,7 @@ from torch.autograd import Variable
 import numpy as np
 
 import onmt
+from onmt.Models import EncoderBase
 from onmt.Models import DecoderState
 from onmt.Utils import aeq
 
@@ -65,6 +66,16 @@ class TransformerEncoderLayer(nn.Module):
         mid, _ = self.self_attn(input, input, input, mask=mask)
         out = self.feed_forward(mid)
         return out
+
+
+class TransformerEncoder(EncoderBase):
+    """ Transformer Encoder. """
+    def __init__(self, num_layers, hidden_size,
+                 dropout, embeddings):
+        pass
+
+    def forward(self, input, lengths=None, hidden=None):
+        pass
 
 
 class TransformerDecoderLayer(nn.Module):
@@ -139,9 +150,7 @@ class TransformerDecoderLayer(nn.Module):
 
 
 class TransformerDecoder(nn.Module):
-    """
-    Transformer Decoder.
-    """
+    """ Transformer Decoder. """
     def __init__(self, num_layers, hidden_size, attn_type,
                  copy_attn, dropout, embeddings):
         """

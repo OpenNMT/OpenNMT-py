@@ -121,6 +121,43 @@ class Encoder(nn.Module):
             return hidden_t, outputs
 
 
+class EncoderBase(nn.Module):
+    """
+    EncoderBase class for sharing code among various *Encoder.
+    """
+    def forward(self, input, lengths=None, hidden=None):
+        """
+        Args:
+            input (LongTensor): len x batch x nfeat.
+            lengths (LongTensor): batch
+            hidden: Initial hidden state.
+        Returns:
+            hidden_t (Variable): Pair of layers x batch x rnn_size - final
+                                    Encoder state
+            outputs (FloatTensor):  len x batch x rnn_size -  Memory bank
+        """
+        pass
+
+
+class MeanEncoder(EncoderBase):
+    """ A plain encoder without RNN, just takes mean of as final state. """
+    def __init__(self, num_layers, embeddings):
+        pass
+
+    def forward(self, input, lengths=None, hidden=None):
+        pass
+
+
+class RNNEncoder(EncoderBase):
+    """ The standard RNN encoder. """
+    def __init__(self, rnn_type, bidirectional, num_layers,
+                 hidden_size, dropout, embeddings):
+        pass
+
+    def forward(self, input, lengths=None, hidden=None):
+        pass
+
+
 class RNNDecoderBase(nn.Module):
     """
     RNN Decoder base class.
@@ -397,7 +434,7 @@ class InputFeedRNNDecoder(RNNDecoderBase):
 
 class NMTModel(nn.Module):
     """
-    The seq2seq Encoder + Decoder Neural Machine Translation Model.
+    The Encoder + Decoder Neural Machine Translation Model.
     """
     def __init__(self, encoder, decoder, multigpu=False):
         """
@@ -537,6 +574,36 @@ def make_embeddings(opt, word_padding_idx, feats_padding_idx,
                                    feats_padding_idx,
                                    num_word_embeddings,
                                    num_feat_embeddings)
+
+
+def make_encoder(encoder_type, bidirectional, rnn_type,
+                 num_layers, hidden_size, cnn_kernel_width,
+                 dropout, embeddings):
+    """
+    Encoder dispatcher function.
+    Args:
+        encoder_type (string): rnn, brnn, mean, transformer, or cnn.
+        bidirectional (bool): bidirectional Encoder.
+        rnn_type (string): LSTM or GRU.
+        num_layers (int): number of Encoder layers.
+        hidden_size (int): size of hidden states of a rnn.
+        cnn_kernel_width (int): size of windows in the cnn.
+        dropout (float): dropout probablity.
+        embeddings (Embeddings): vocab embeddings for this Encoder.
+    """
+    if encoder_type == "transformer":
+        return onmt.modules.TransformerEncoder(num_layers, hidden_size,
+                                               dropout, embeddings)
+    elif encoder_type == "cnn":
+        return onmt.modules.CNNEncoder(num_layers, hidden_size,
+                                       cnn_kernel_width,
+                                       dropout, embeddings)
+    elif encoder_type == "mean":
+        return MeanEncoder(num_layers, embeddings)
+    else:
+        # "rnn" or "brnn"
+        return RNNEncoder(rnn_type, bidirectional, num_layers,
+                          hidden_size, dropout, embeddings)
 
 
 def make_decoder(decoder_type, rnn_type, bidirectional_encoder,

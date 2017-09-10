@@ -9,6 +9,7 @@ from torch.autograd import Variable
 
 import onmt.modules
 from onmt.modules.WeightNorm import WeightNormConv2d
+from onmt.Models import EncoderBase
 from onmt.Models import DecoderState
 from onmt.Utils import aeq
 
@@ -90,6 +91,18 @@ class ConvEncoder(nn.Module):
         outputs = self.conv(emb_remap)
 
         return outputs.squeeze(3), emb_remap.squeeze(3)
+
+
+class CNNEncoder(EncoderBase):
+    """
+    Encoder bulit on CNN.
+    """
+    def __init__(self, num_layers, hidden_size,
+                 cnn_kernel_width, dropout, embeddings):
+        pass
+
+    def forward(self, input, lengths=None, hidden=None):
+        pass
 
 
 class CNNDecoder(nn.Module):
