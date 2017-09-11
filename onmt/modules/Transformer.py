@@ -72,10 +72,40 @@ class TransformerEncoder(EncoderBase):
     """ Transformer Encoder. """
     def __init__(self, num_layers, hidden_size,
                  dropout, embeddings):
-        pass
+        super(TransformerEncoder, self).__init__()
+
+        self.num_layers = num_layers
+        self.embeddings = embeddings
+        self.transformer = nn.ModuleList(
+            [TransformerEncoderLayer(hidden_size, dropout)
+             for i in range(num_layers)])
 
     def forward(self, input, lengths=None, hidden=None):
-        pass
+        """ See EncoderBase.forward() for description of args and returns."""
+        self._check_args(input, lengths, hidden)
+
+        emb = self.embeddings(input)
+        s_len, n_batch, emb_dim = emb.size()
+
+        out = emb.transpose(0, 1).contiguous()
+        words = input[:, :, 0].transpose(0, 1)
+        # CHECKS
+        out_batch, out_len, _ = out.size()
+        w_batch, w_len = words.size()
+        aeq(out_batch, w_batch)
+        aeq(out_len, w_len)
+        # END CHECKS
+
+        # Make mask.
+        padding_idx = self.embeddings.word_padding_idx
+        mask = words.data.eq(padding_idx).unsqueeze(1) \
+            .expand(w_batch, w_len, w_len)
+
+        # Run the forward pass of every layer of the tranformer.
+        for i in range(self.num_layers):
+            out = self.transformer[i](out, mask)
+
+        return Variable(emb.data), out.transpose(0, 1).contiguous()
 
 
 class TransformerDecoderLayer(nn.Module):
