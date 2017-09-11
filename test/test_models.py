@@ -8,7 +8,7 @@ from torch.autograd import Variable
 import onmt
 import opts
 from onmt.ModelConstructor import make_embeddings, \
-                                  make_decoder
+                            make_encoder, make_decoder
 
 parser = argparse.ArgumentParser(description='train.py')
 opts.model_opts(parser)
@@ -78,10 +78,10 @@ class TestModel(unittest.TestCase):
         embeddings = make_embeddings(opt, vocab.stoi[onmt.IO.PAD_WORD],
                                      feats_padding_idx, len(vocab),
                                      for_encoder=True)
-        enc = onmt.Models.Encoder(opt.encoder_type, opt.brnn,
-                                  opt.rnn_type, opt.enc_layers,
-                                  opt.rnn_size, opt.dropout,
-                                  embeddings, opt.cnn_kernel_width)
+        enc = make_encoder(opt.encoder_type, opt.brnn,
+                           opt.rnn_type, opt.enc_layers,
+                           opt.rnn_size, opt.cnn_kernel_width,
+                           opt.dropout, embeddings)
 
         test_src, test_tgt, test_length = self.get_batch(sourceL=sourceL,
                                                          bsize=bsize)
@@ -117,10 +117,10 @@ class TestModel(unittest.TestCase):
         embeddings = make_embeddings(opt, word_padding_idx,
                                      feats_padding_idx, len(vocab),
                                      for_encoder=True)
-        enc = onmt.Models.Encoder(opt.encoder_type, opt.brnn,
-                                  opt.rnn_type, opt.enc_layers,
-                                  opt.rnn_size, opt.dropout,
-                                  embeddings, opt.cnn_kernel_width)
+        enc = make_encoder(opt.encoder_type, opt.brnn,
+                           opt.rnn_type, opt.enc_layers,
+                           opt.rnn_size, opt.cnn_kernel_width,
+                           opt.dropout, embeddings)
 
         embeddings = make_embeddings(opt, word_padding_idx,
                                      feats_padding_idx, len(vocab),

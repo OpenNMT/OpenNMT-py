@@ -8,9 +8,8 @@ import onmt
 import onmt.Models
 import onmt.modules
 from onmt.IO import ONMTDataset
-from onmt.Models import Encoder, MeanEncoder, RNNEncoder, \
-                        StdRNNDecoder, InputFeedRNNDecoder, \
-                        NMTModel
+from onmt.Models import NMTModel, MeanEncoder, RNNEncoder, \
+                        StdRNNDecoder, InputFeedRNNDecoder
 from onmt.modules import Embeddings, ImageEncoder, CopyGenerator, \
                          TransformerEncoder, TransformerDecoder, \
                          CNNEncoder, CNNDecoder
@@ -129,6 +128,8 @@ def make_base_model(opt, model_opt, fields, checkpoint=None):
         model_opt: the option loaded from checkpoint.
         fields: `Field` objects for the model.
         checkpoint: the snapshot model.
+    Returns:
+        the NMTModel.
     """
     assert model_opt.model_type in ["text", "img"], \
         ("Unsupported model type %s" % (model_opt.model_type))
@@ -146,10 +147,11 @@ def make_base_model(opt, model_opt, fields, checkpoint=None):
                     feats_padding_idx, len(src_vocab), for_encoder=True,
                     num_feat_embeddings=num_feat_embeddings)
 
-        encoder = Encoder(model_opt.encoder_type, model_opt.brnn,
-                          model_opt.rnn_type, model_opt.enc_layers,
-                          model_opt.rnn_size, model_opt.dropout,
-                          src_embeddings, model_opt.cnn_kernel_width)
+        encoder = make_encoder(model_opt.encoder_type, model_opt.brnn,
+                               model_opt.rnn_type, model_opt.enc_layers,
+                               model_opt.rnn_size,
+                               model_opt.cnn_kernel_width,
+                               model_opt.dropout, src_embeddings)
     else:
         encoder = ImageEncoder(model_opt.layers,
                                model_opt.brnn,

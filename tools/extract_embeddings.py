@@ -6,7 +6,7 @@ import argparse
 
 import onmt.Models
 from onmt.ModelConstructor import make_embeddings, \
-                                  make_decoder
+                            make_encoder, make_decoder
 
 parser = argparse.ArgumentParser(description='translate.py')
 
@@ -44,10 +44,10 @@ def main():
                                  feat_padding_idx,
                                  len(src_dict),
                                  for_encoder=True)
-    encoder = onmt.Models.Encoder(model_opt.encoder_type, model_opt.brnn,
-                                  model_opt.rnn_type, model_opt.enc_layers,
-                                  model_opt.rnn_size, model_opt.dropout,
-                                  embeddings, model_opt.cnn_kernel_width)
+    encoder = make_encoder(model_opt.encoder_type, model_opt.brnn,
+                           model_opt.rnn_type, model_opt.enc_layers,
+                           model_opt.rnn_size, model_opt.cnn_kernel_width,
+                           model_opt.dropout, embeddings)
 
     embeddings = make_embeddings(model_opt,
                                  tgt_dict.stoi[onmt.IO.PAD_WORD],

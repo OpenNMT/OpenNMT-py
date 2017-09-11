@@ -57,48 +57,14 @@ class StackedCNN(nn.Module):
         return x
 
 
-class ConvEncoder(nn.Module):
-    def __init__(self, input_size, hidden_size, num_layers, dropout,
-                 cnn_kernel_width):
-        """
-          Conv Encoder consists of layers of resduial conv layer.
-          encoder the sequence of source token.
-          Args:
-                input_size: dim of source token vector.
-                hidden_dim: the size of channel in conv.
-                num_layers: the num of conv layer.
-                dropout: dropout rate.
-                cnn_kernel_width: the width of the kernel in cnn.
-        """
-        super(ConvEncoder, self).__init__()
-
-        self.num_layers = num_layers
-        self.hidden_size = hidden_size
-        self.linear = nn.Linear(input_size, self.hidden_size)
-        self.conv = StackedCNN(
-            self.num_layers, self.hidden_size, cnn_kernel_width, dropout)
-
-    def forward(self, emb):
-        """
-        encoder source sequence by cnn network.
-        Args:
-            emb: the embedding of source token
-        """
-        emb_reshape = emb.view(emb.size(0) * emb.size(1), -1)
-        emb_remap = self.linear(emb_reshape)
-        emb_remap = emb_remap.view(emb.size(0), emb.size(1), -1)
-        emb_remap = shape_transform(emb_remap)
-        outputs = self.conv(emb_remap)
-
-        return outputs.squeeze(3), emb_remap.squeeze(3)
-
-
 class CNNEncoder(EncoderBase):
     """
     Encoder built on CNN.
     """
     def __init__(self, num_layers, hidden_size,
                  cnn_kernel_width, dropout, embeddings):
+        super(CNNEncoder, self).__init__()
+
         self.embeddings = embeddings
         input_size = embeddings.embedding_dim
         self.linear = nn.Linear(input_size, hidden_size)
@@ -117,7 +83,7 @@ class CNNEncoder(EncoderBase):
         emb_remap = self.linear(emb_reshape)
         emb_remap = emb_remap.view(emb.size(0), emb.size(1), -1)
         emb_remap = shape_transform(emb_remap)
-        out = self.conv(emb_remap)
+        out = self.cnn(emb_remap)
 
         return emb_remap.squeeze(3).transpose(0, 1).contiguous(),\
             out.squeeze(3).transpose(0, 1).contiguous()
@@ -204,9 +170,9 @@ class CNNDecoder(nn.Module):
         assert emb.dim() == 3  # len x batch x embedding_dim
 
         tgt_emb = emb.transpose(0, 1).contiguous()
-        # The output of ConvEncoder.
+        # The output of CNNEncoder.
         src_context_t = context.transpose(0, 1).contiguous()
-        # The combination of output of ConvEncoder and source embeddings.
+        # The combination of output of CNNEncoder and source embeddings.
         src_context_c = state.init_src.transpose(0, 1).contiguous()
 
         # Run the forward pass of the CNNDecoder.
