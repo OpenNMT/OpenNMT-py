@@ -544,7 +544,7 @@ class TransformerDecoderState(DecoderState):
                           volatile=True))
                 for a in all]
         self.previous_input = vars[0]
-        self.all = (self.previous_input,)
+        self.all = (self.previous_input, self.src)
 
     def repeatBeam_(self, beamSize):
-        pass
+        self.src = Variable(self.src.data.repeat(1, beamSize, 1))
