@@ -123,6 +123,12 @@ class EncoderBase(nn.Module):
     """
     EncoderBase class for sharing code among various *Encoder.
     """
+    def _check_args(self, input, lengths=None, hidden=None):
+        s_len, n_batch, n_feats = input.size()
+        if lengths is not None:
+            n_batch_, = lengths.size()
+            aeq(n_batch, n_batch_)
+
     def forward(self, input, lengths=None, hidden=None):
         """
         Args:
@@ -134,16 +140,23 @@ class EncoderBase(nn.Module):
                                     Encoder state
             outputs (FloatTensor):  len x batch x rnn_size -  Memory bank
         """
-        pass
+        raise NotImplementedError
 
 
 class MeanEncoder(EncoderBase):
-    """ A plain encoder without RNN, just takes mean of as final state. """
+    """ A trivial encoder without RNN, just takes mean of as final state. """
     def __init__(self, num_layers, embeddings):
-        pass
+        self.num_layers = num_layers
+        self.embeddings = embeddings
 
     def forward(self, input, lengths=None, hidden=None):
-        pass
+        """ See EncoderBase.forward() for description of args and returns. """
+        self._check_args(input, lengths, hidden)
+
+        emb = self.embeddings(input)
+        s_len, batch, emb_dim = emb.size()
+        mean = emb.mean(0).expand(self.num_layers, batch, emb_dim)
+        return (mean, mean), emb
 
 
 class RNNEncoder(EncoderBase):
