@@ -69,48 +69,40 @@ def make_encoder(opt, embeddings):
                           opt.rnn_size, opt.dropout, embeddings)
 
 
-def make_decoder(decoder_type, rnn_type, bidirectional_encoder,
-                 num_layers, hidden_size, input_feed, attn_type,
-                 coverage_attn, context_gate, copy_attn,
-                 cnn_kernel_width, dropout, embeddings):
+def make_decoder(opt, embeddings):
     """
     Decoder dispatcher function.
     Args:
-        decoder_type (string): 'rnn', 'transformer' or 'cnn'.
-        rnn_type (string): 'LSTM' or 'GRU'.
-        bidirectional_encoder(boo): is encoder bidirectional?
-        num_layers (int): number of Decoder layers.
-        hidden_size (int): size of hidden states of a rnn.
-        hidden_size (int): size of hidden states of a rnn.
-        input_feed (int): feed the context vector at each time step to the
-                          decoder(by concating the word embeddings).
-        attn_type (string): the attention type to use:
-                    'dot'(dotprot), 'general'(Luong), or 'mlp'(Bahdanau).
-        coverage_attn (bool): train a coverage attention layer?
-        context_gate (string): type of context gate to use:
-                               'source', 'target', 'both'.
-        copy_attn (bool): train copy attention layer?
-        cnn_kernel_width (int): size of windows in the cnn.
-        dropout (float): dropout probablity.
+        opt: the option in current environment.
         embeddings (Embeddings): vocab embeddings for this Decoder.
     """
-    if decoder_type == "transformer":
-        return TransformerDecoder(num_layers, hidden_size, attn_type,
-                                  copy_attn, dropout, embeddings)
-    elif decoder_type == "cnn":
-        return CNNDecoder(num_layers, hidden_size, attn_type,
-                          copy_attn, cnn_kernel_width,
-                          dropout, embeddings)
-    elif input_feed:
-        return InputFeedRNNDecoder(rnn_type, bidirectional_encoder,
-                                   num_layers, hidden_size,
-                                   attn_type, coverage_attn, context_gate,
-                                   copy_attn, dropout, embeddings)
+    if opt.decoder_type == "transformer":
+        return TransformerDecoder(opt.dec_layers, opt.rnn_size,
+                                  opt.global_attention, opt.copy_attn,
+                                  opt.dropout, embeddings)
+    elif opt.decoder_type == "cnn":
+        return CNNDecoder(opt.dec_layers, opt.rnn_size,
+                          opt.global_attention, opt.copy_attn,
+                          opt.cnn_kernel_width, opt.dropout,
+                          embeddings)
+    elif opt.input_feed:
+        return InputFeedRNNDecoder(opt.rnn_type, opt.brnn,
+                                   opt.dec_layers, opt.rnn_size,
+                                   opt.global_attention,
+                                   opt.coverage_attn,
+                                   opt.context_gate,
+                                   opt.copy_attn,
+                                   opt.dropout,
+                                   embeddings)
     else:
-        return StdRNNDecoder(rnn_type, bidirectional_encoder,
-                             num_layers, hidden_size,
-                             attn_type, coverage_attn, context_gate,
-                             copy_attn, dropout, embeddings)
+        return StdRNNDecoder(opt.rnn_type, opt.brnn,
+                             opt.dec_layers, opt.rnn_size,
+                             opt.global_attention,
+                             opt.coverage_attn,
+                             opt.context_gate,
+                             opt.copy_attn,
+                             opt.dropout,
+                             embeddings)
 
 
 def make_base_model(opt, model_opt, fields, checkpoint=None):
@@ -155,15 +147,7 @@ def make_base_model(opt, model_opt, fields, checkpoint=None):
                                      feats_padding_idx,
                                      len(tgt_vocab),
                                      for_encoder=False)
-    decoder = make_decoder(model_opt.decoder_type, model_opt.rnn_type,
-                           model_opt.brnn, model_opt.dec_layers,
-                           model_opt.rnn_size, model_opt.input_feed,
-                           model_opt.global_attention,
-                           model_opt.coverage_attn,
-                           model_opt.context_gate,
-                           model_opt.copy_attn,
-                           model_opt.cnn_kernel_width,
-                           model_opt.dropout, tgt_embeddings)
+    decoder = make_decoder(model_opt, tgt_embeddings)
 
     # Make NMTModel(= Encoder + Decoder).
     model = NMTModel(encoder, decoder)

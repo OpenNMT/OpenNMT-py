@@ -91,9 +91,6 @@ class RNNDecoderBase(nn.Module):
     def __init__(self, rnn_type, bidirectional_encoder, num_layers,
                  hidden_size, attn_type, coverage_attn, context_gate,
                  copy_attn, dropout, embeddings):
-        """
-        See make_decoder() comment for arguments description.
-        """
         super(RNNDecoderBase, self).__init__()
 
         # Basic attributes.

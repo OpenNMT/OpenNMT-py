@@ -183,9 +183,6 @@ class TransformerDecoder(nn.Module):
     """ Transformer Decoder. """
     def __init__(self, num_layers, hidden_size, attn_type,
                  copy_attn, dropout, embeddings):
-        """
-        See make_decoder() comment for arguments description.
-        """
         super(TransformerDecoder, self).__init__()
 
         # Basic attributes.

@@ -96,9 +96,6 @@ class CNNDecoder(nn.Module):
     """
     def __init__(self, num_layers, hidden_size, attn_type,
                  copy_attn, cnn_kernel_width, dropout, embeddings):
-        """
-        See make_decoder() comment for arguments description.
-        """
         super(CNNDecoder, self).__init__()
 
         # Basic attributes.

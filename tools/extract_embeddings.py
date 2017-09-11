@@ -51,19 +51,7 @@ def main():
                                  feat_padding_idx,
                                  len(tgt_dict),
                                  for_encoder=False)
-    decoder = make_decoder(model_opt.decoder_type,
-                           model_opt.rnn_type,
-                           model_opt.brnn,
-                           model_opt.dec_layers,
-                           model_opt.rnn_size,
-                           model_opt.input_feed,
-                           model_opt.global_attention,
-                           model_opt.coverage_attn,
-                           model_opt.context_gate,
-                           model_opt.copy_attn,
-                           model_opt.cnn_kernel_width,
-                           model_opt.dropout,
-                           embeddings)
+    decoder = make_decoder(model_opt, embeddings)
 
     encoder_embeddings = encoder.word_lut.weight.data.tolist()
     decoder_embeddings = decoder.word_lut.weight.data.tolist()

@@ -119,15 +119,7 @@ class TestModel(unittest.TestCase):
         embeddings = make_embeddings(opt, word_padding_idx,
                                      feats_padding_idx, len(vocab),
                                      for_encoder=False)
-        dec = make_decoder(opt.decoder_type, opt.rnn_type,
-                           opt.brnn, opt.dec_layers,
-                           opt.rnn_size, opt.input_feed,
-                           opt.global_attention,
-                           opt.coverage_attn,
-                           opt.context_gate,
-                           opt.copy_attn,
-                           opt.cnn_kernel_width,
-                           opt.dropout, embeddings)
+        dec = make_decoder(opt, embeddings)
 
         model = onmt.Models.NMTModel(enc, dec)
 
