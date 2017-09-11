@@ -3,6 +3,7 @@ from torch.autograd import Variable
 
 import onmt
 import onmt.Models
+import onmt.ModelConstructor
 import onmt.modules
 import onmt.IO
 
@@ -23,8 +24,8 @@ class Translator(object):
         self._type = model_opt.encoder_type
         self.copy_attn = model_opt.copy_attn
 
-        self.model = onmt.Models.make_base_model(opt, model_opt, self.fields,
-                                                 checkpoint)
+        self.model = onmt.ModelConstructor.make_base_model(
+                            opt, model_opt, self.fields, checkpoint)
         self.model.eval()
         self.model.generator.eval()
 

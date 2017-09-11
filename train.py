@@ -8,6 +8,7 @@ from torch import cuda
 
 import onmt
 import onmt.Models
+import onmt.ModelConstructor
 import onmt.modules
 import opts
 
@@ -249,7 +250,8 @@ def main():
     print(' * maximum batch size. %d' % opt.batch_size)
 
     print('Building model...')
-    model = onmt.Models.make_base_model(opt, model_opt, fields, checkpoint)
+    model = onmt.ModelConstructor.make_base_model(opt, model_opt,
+                                                  fields, checkpoint)
     print(model)
 
     if opt.train_from:

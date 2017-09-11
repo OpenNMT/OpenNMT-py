@@ -1,11 +1,14 @@
 import argparse
 import copy
 import unittest
-import onmt
+
 import torch
-import opts
 from torch.autograd import Variable
 
+import onmt
+import opts
+from onmt.ModelConstructor import make_embeddings, \
+                                  make_decoder
 
 parser = argparse.ArgumentParser(description='train.py')
 opts.model_opts(parser)
@@ -46,9 +49,9 @@ class TestModel(unittest.TestCase):
         '''
         vocab = self.get_vocab()
         feats_padding_idx = []
-        emb = onmt.Models.make_embeddings(
-                    opt, vocab.stoi[onmt.IO.PAD_WORD], feats_padding_idx,
-                    len(vocab), for_encoder=True)
+        emb = make_embeddings(opt, vocab.stoi[onmt.IO.PAD_WORD],
+                              feats_padding_idx, len(vocab),
+                              for_encoder=True)
         test_src, _, __ = self.get_batch(sourceL=sourceL,
                                          bsize=bsize)
         if opt.decoder_type == 'transformer':
@@ -72,12 +75,13 @@ class TestModel(unittest.TestCase):
         '''
         vocab = self.get_vocab()
         feats_padding_idx = []
-        embeddings = onmt.Models.make_embeddings(
-                        opt, vocab.stoi[onmt.IO.PAD_WORD], feats_padding_idx,
-                        len(vocab), for_encoder=True)
+        embeddings = make_embeddings(opt, vocab.stoi[onmt.IO.PAD_WORD],
+                                     feats_padding_idx, len(vocab),
+                                     for_encoder=True)
         enc = onmt.Models.Encoder(opt.encoder_type, opt.brnn,
                                   opt.rnn_type, opt.enc_layers,
-                                  opt.rnn_size, opt.dropout, embeddings)
+                                  opt.rnn_size, opt.dropout,
+                                  embeddings, opt.cnn_kernel_width)
 
         test_src, test_tgt, test_length = self.get_batch(sourceL=sourceL,
                                                          bsize=bsize)
@@ -110,26 +114,26 @@ class TestModel(unittest.TestCase):
         word_padding_idx = vocab.stoi[onmt.IO.PAD_WORD]
         feats_padding_idx = []
 
-        embeddings = onmt.Models.make_embeddings(
-                            opt, word_padding_idx, feats_padding_idx,
-                            len(vocab), for_encoder=True)
+        embeddings = make_embeddings(opt, word_padding_idx,
+                                     feats_padding_idx, len(vocab),
+                                     for_encoder=True)
         enc = onmt.Models.Encoder(opt.encoder_type, opt.brnn,
                                   opt.rnn_type, opt.enc_layers,
                                   opt.rnn_size, opt.dropout,
-                                  embeddings)
+                                  embeddings, opt.cnn_kernel_width)
 
-        embeddings = onmt.Models.make_embeddings(
-                            opt, word_padding_idx, feats_padding_idx,
-                            len(vocab), for_encoder=False)
-        dec = onmt.Models.make_decoder(opt.decoder_type, opt.rnn_type,
-                                       opt.brnn, opt.dec_layers,
-                                       opt.rnn_size, opt.input_feed,
-                                       opt.global_attention,
-                                       opt.coverage_attn,
-                                       opt.context_gate,
-                                       opt.copy_attn,
-                                       opt.cnn_kernel_width,
-                                       opt.dropout, embeddings)
+        embeddings = make_embeddings(opt, word_padding_idx,
+                                     feats_padding_idx, len(vocab),
+                                     for_encoder=False)
+        dec = make_decoder(opt.decoder_type, opt.rnn_type,
+                           opt.brnn, opt.dec_layers,
+                           opt.rnn_size, opt.input_feed,
+                           opt.global_attention,
+                           opt.coverage_attn,
+                           opt.context_gate,
+                           opt.copy_attn,
+                           opt.cnn_kernel_width,
+                           opt.dropout, embeddings)
 
         model = onmt.Models.NMTModel(enc, dec)
 

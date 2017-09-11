@@ -9,7 +9,7 @@ from onmt.modules.StructuredAttention import MatrixTree
 from onmt.modules.Transformer import TransformerEncoder, \
                                      TransformerEncoderLayer, \
                                      TransformerDecoder
-from onmt.modules.Conv2Conv import ConvEncoder, CNNDecoder
+from onmt.modules.Conv2Conv import ConvEncoder, CNNEncoder, CNNDecoder
 from onmt.modules.MultiHeadedAttn import MultiHeadedAttention
 from onmt.modules.StackedRNN import StackedLSTM, StackedGRU
 from onmt.modules.Embeddings import Embeddings
@@ -22,5 +22,5 @@ __all__ = [GlobalAttention, ImageEncoder, CopyGenerator, MultiHeadedAttention,
            TransformerEncoderLayer, TransformerEncoder,
            TransformerDecoder, Embeddings, Elementwise,
            CopyCriterion, MatrixTree, WeightNormConv2d, ConvMultiStepAttention,
-           ConvEncoder, CNNDecoder, StackedLSTM, StackedGRU,
+           ConvEncoder, CNNEncoder, CNNDecoder, StackedLSTM, StackedGRU,
            ContextGateFactory]
