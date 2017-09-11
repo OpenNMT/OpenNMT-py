@@ -146,6 +146,7 @@ class EncoderBase(nn.Module):
 class MeanEncoder(EncoderBase):
     """ A trivial encoder without RNN, just takes mean of as final state. """
     def __init__(self, num_layers, embeddings):
+        super(MeanEncoder, self).__init__()
         self.num_layers = num_layers
         self.embeddings = embeddings
 
@@ -163,10 +164,34 @@ class RNNEncoder(EncoderBase):
     """ The standard RNN encoder. """
     def __init__(self, rnn_type, bidirectional, num_layers,
                  hidden_size, dropout, embeddings):
-        pass
+        super(RNNEncoder, self).__init__()
+
+        num_directions = 2 if bidirectional else 1
+        assert hidden_size % num_directions == 0
+        hidden_size = hidden_size // num_directions
+        self.embeddings = embeddings
+        self.rnn = getattr(nn, rnn_type)(
+                input_size=embeddings.embedding_dim,
+                hidden_size=hidden_size,
+                num_layers=num_layers,
+                dropout=dropout,
+                bidirectional=bidirectional)
 
     def forward(self, input, lengths=None, hidden=None):
-        pass
+        """ See EncoderBase.forward() for description of args and returns."""
+        self._check_args(input, lengths, hidden)
+
+        emb = self.embeddings(input)
+        s_len, batch, emb_dim = emb.size()
+        packed_emb = emb
+        if lengths is not None:
+            # Lengths data is wrapped inside a Variable.
+            lengths = lengths.view(-1).tolist()
+            packed_emb = pack(emb, lengths)
+        outputs, hidden_t = self.rnn(packed_emb, hidden)
+        if lengths:
+            outputs = unpack(outputs)[0]
+        return hidden_t, outputs
 
 
 class RNNDecoderBase(nn.Module):
