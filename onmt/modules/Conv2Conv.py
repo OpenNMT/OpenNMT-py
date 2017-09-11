@@ -95,14 +95,32 @@ class ConvEncoder(nn.Module):
 
 class CNNEncoder(EncoderBase):
     """
-    Encoder bulit on CNN.
+    Encoder built on CNN.
     """
     def __init__(self, num_layers, hidden_size,
                  cnn_kernel_width, dropout, embeddings):
-        pass
+        self.embeddings = embeddings
+        input_size = embeddings.embedding_dim
+        self.linear = nn.Linear(input_size, hidden_size)
+        self.cnn = StackedCNN(num_layers, hidden_size,
+                              cnn_kernel_width, dropout)
 
     def forward(self, input, lengths=None, hidden=None):
-        pass
+        """ See EncoderBase.forward() for description of args and returns."""
+        self._check_args(input, lengths, hidden)
+
+        emb = self.embeddings(input)
+        s_len, batch, emb_dim = emb.size()
+
+        emb = emb.transpose(0, 1).contiguous()
+        emb_reshape = emb.view(emb.size(0) * emb.size(1), -1)
+        emb_remap = self.linear(emb_reshape)
+        emb_remap = emb_remap.view(emb.size(0), emb.size(1), -1)
+        emb_remap = shape_transform(emb_remap)
+        out = self.conv(emb_remap)
+
+        return emb_remap.squeeze(3).transpose(0, 1).contiguous(),\
+            out.squeeze(3).transpose(0, 1).contiguous()
 
 
 class CNNDecoder(nn.Module):
