@@ -47,34 +47,26 @@ def make_embeddings(opt, word_padding_idx, feats_padding_idx,
                       num_feat_embeddings)
 
 
-def make_encoder(encoder_type, bidirectional, rnn_type,
-                 num_layers, hidden_size, cnn_kernel_width,
-                 dropout, embeddings):
+def make_encoder(opt, embeddings):
     """
     Encoder dispatcher function.
     Args:
-        encoder_type (string): rnn, brnn, mean, transformer, or cnn.
-        bidirectional (bool): bidirectional Encoder.
-        rnn_type (string): LSTM or GRU.
-        num_layers (int): number of Encoder layers.
-        hidden_size (int): size of hidden states of a rnn.
-        cnn_kernel_width (int): size of windows in the cnn.
-        dropout (float): dropout probablity.
+        opt: the option in current environment.
         embeddings (Embeddings): vocab embeddings for this Encoder.
     """
-    if encoder_type == "transformer":
-        return TransformerEncoder(num_layers, hidden_size,
-                                  dropout, embeddings)
-    elif encoder_type == "cnn":
-        return CNNEncoder(num_layers, hidden_size,
-                          cnn_kernel_width,
-                          dropout, embeddings)
-    elif encoder_type == "mean":
-        return MeanEncoder(num_layers, embeddings)
+    if opt.encoder_type == "transformer":
+        return TransformerEncoder(opt.enc_layers, opt.rnn_size,
+                                  opt.dropout, embeddings)
+    elif opt.encoder_type == "cnn":
+        return CNNEncoder(opt.enc_layers, opt.rnn_size,
+                          opt.cnn_kernel_width,
+                          opt.dropout, embeddings)
+    elif opt.encoder_type == "mean":
+        return MeanEncoder(opt.enc_layers, embeddings)
     else:
         # "rnn" or "brnn"
-        return RNNEncoder(rnn_type, bidirectional, num_layers,
-                          hidden_size, dropout, embeddings)
+        return RNNEncoder(opt.rnn_type, opt.brnn, opt.dec_layers,
+                          opt.rnn_size, opt.dropout, embeddings)
 
 
 def make_decoder(decoder_type, rnn_type, bidirectional_encoder,
@@ -147,11 +139,7 @@ def make_base_model(opt, model_opt, fields, checkpoint=None):
                     feats_padding_idx, len(src_vocab), for_encoder=True,
                     num_feat_embeddings=num_feat_embeddings)
 
-        encoder = make_encoder(model_opt.encoder_type, model_opt.brnn,
-                               model_opt.rnn_type, model_opt.enc_layers,
-                               model_opt.rnn_size,
-                               model_opt.cnn_kernel_width,
-                               model_opt.dropout, src_embeddings)
+        encoder = make_encoder(model_opt, src_embeddings)
     else:
         encoder = ImageEncoder(model_opt.layers,
                                model_opt.brnn,

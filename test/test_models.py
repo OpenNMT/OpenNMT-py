@@ -78,10 +78,7 @@ class TestModel(unittest.TestCase):
         embeddings = make_embeddings(opt, vocab.stoi[onmt.IO.PAD_WORD],
                                      feats_padding_idx, len(vocab),
                                      for_encoder=True)
-        enc = make_encoder(opt.encoder_type, opt.brnn,
-                           opt.rnn_type, opt.enc_layers,
-                           opt.rnn_size, opt.cnn_kernel_width,
-                           opt.dropout, embeddings)
+        enc = make_encoder(opt, embeddings)
 
         test_src, test_tgt, test_length = self.get_batch(sourceL=sourceL,
                                                          bsize=bsize)
@@ -117,10 +114,7 @@ class TestModel(unittest.TestCase):
         embeddings = make_embeddings(opt, word_padding_idx,
                                      feats_padding_idx, len(vocab),
                                      for_encoder=True)
-        enc = make_encoder(opt.encoder_type, opt.brnn,
-                           opt.rnn_type, opt.enc_layers,
-                           opt.rnn_size, opt.cnn_kernel_width,
-                           opt.dropout, embeddings)
+        enc = make_encoder(opt, embeddings)
 
         embeddings = make_embeddings(opt, word_padding_idx,
                                      feats_padding_idx, len(vocab),

@@ -44,10 +44,7 @@ def main():
                                  feat_padding_idx,
                                  len(src_dict),
                                  for_encoder=True)
-    encoder = make_encoder(model_opt.encoder_type, model_opt.brnn,
-                           model_opt.rnn_type, model_opt.enc_layers,
-                           model_opt.rnn_size, model_opt.cnn_kernel_width,
-                           model_opt.dropout, embeddings)
+    encoder = make_encoder(model_opt, embeddings)
 
     embeddings = make_embeddings(model_opt,
                                  tgt_dict.stoi[onmt.IO.PAD_WORD],
