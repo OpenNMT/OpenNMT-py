@@ -27,7 +27,7 @@ class PositionalEncoding(nn.Module):
 
 class Embeddings(nn.Module):
     """
-    Words embeddings dictionary for Encoder/Decoder.
+    Words embeddings dictionary for encoder/decoder.
 
     Args:
         embedding_dim (int): size of the dictionary of embeddings.

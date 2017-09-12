@@ -40,9 +40,6 @@ class PositionwiseFeedForward(nn.Module):
 
 
 class TransformerEncoderLayer(nn.Module):
-    """
-    The Transformer Decoder from "Attention is All You Need".
-    """
     def __init__(self, size, dropout,
                  head_count=8, hidden_size=2048):
         """
@@ -69,7 +66,9 @@ class TransformerEncoderLayer(nn.Module):
 
 
 class TransformerEncoder(EncoderBase):
-    """ Transformer Encoder. """
+    """
+    The Transformer encoder from "Attention is All You Need".
+    """
     def __init__(self, num_layers, hidden_size,
                  dropout, embeddings):
         super(TransformerEncoder, self).__init__()
@@ -109,9 +108,6 @@ class TransformerEncoder(EncoderBase):
 
 
 class TransformerDecoderLayer(nn.Module):
-    """
-    The Transformer Decoder Layer from "Attetion is all you need".
-    """
     def __init__(self, size, dropout,
                  head_count=8, hidden_size=2048):
         """
@@ -180,7 +176,9 @@ class TransformerDecoderLayer(nn.Module):
 
 
 class TransformerDecoder(nn.Module):
-    """ Transformer Decoder. """
+    """
+    The Transformer decoder from "Attention is All You Need".
+    """
     def __init__(self, num_layers, hidden_size, attn_type,
                  copy_attn, dropout, embeddings):
         super(TransformerDecoder, self).__init__()
@@ -209,16 +207,16 @@ class TransformerDecoder(nn.Module):
         Args:
             input (LongTensor): a sequence of input tokens tensors
                                 of size (len x batch x nfeats).
-            context (FloatTensor): output(tensor sequence) from the Encoder
+            context (FloatTensor): output(tensor sequence) from the encoder
                                 of size (src_len x batch x hidden_size).
-            state (FloatTensor): hidden state from the Encoder RNN for
+            state (FloatTensor): hidden state from the encoder RNN for
                                  initializing the decoder.
         Returns:
-            outputs (FloatTensor): a Tensor sequence of output from the Decoder
+            outputs (FloatTensor): a Tensor sequence of output from the decoder
                                    of shape (len x batch x hidden_size).
-            state (FloatTensor): final hidden state from the Decoder.
+            state (FloatTensor): final hidden state from the decoder.
             attns (dict of (str, FloatTensor)): a dictionary of different
-                                type of attention Tensor from the Decoder
+                                type of attention Tensor from the decoder
                                 of shape (src_len x batch).
         """
         # CHECKS
