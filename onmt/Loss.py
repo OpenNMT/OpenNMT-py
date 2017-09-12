@@ -117,7 +117,7 @@ class Splitter:
                     shards.append({})
                 shards[i][k] = val
 
-        for i, shard in enumerate(shards):
+        for shard in shards:
             yield shard
 
         # Assumed backprop'd
