@@ -81,61 +81,54 @@ class Statistics:
         return Statistics(loss[0], non_padding.sum(), num_correct)
 
 
-class Splitter:
-    """
-    Splitter is a utilty that splits a dictionary of
-    data up into shards and waits for them to be backprop'd.
-    It blocks until all gradients have been computed and then
-    call backward on its inputs.
-    """
-
-    def __init__(self, shard_max, eval=False):
-        self.shard_max = shard_max
-        self.eval = eval
-
-    def split_iter(self, d):
-        """
-        d corresponds to the output of LossCompute.make_loss_batch
-        That is, it's a dictionary whose keys are {'out', 'target',
-        'align', 'coverage', 'attn'} and whose values are
-        """
-        # If eval mode, don't need to split at all
-        if self.eval:
-            yield d
-            return
-
-        # Split each element and make dummy variable.
-        dummies = {}
-        # shards: a list of dictionaries
-        # the indices of shards correspond to 
-        shards = []
-        for k, v in d.items():
-            if v is None:
-                continue
+def filter_gen_state(state):
+    for k, v in state.items():
+        if v is not None:
             if isinstance(v, Variable) and v.requires_grad:
-                dummies[k] = Variable(v.data, requires_grad=True,
-                                      volatile=False)
-            else:
-                dummies[k] = v
-            splits = torch.split(dummies[k], self.shard_max)
+                v = Variable(v.data, requires_grad=True, volatile=False)
+            yield k, v
 
-            for i, val in enumerate(splits):
-                if i >= len(shards):
-                    shards.append({})
-                shards[i][k] = val
 
-        for shard in shards:
-            yield shard
+def generate_shards(state, shard_size, eval=False):
+    """
+    TODO: remove the side effect from this generator function if at all
+    possible.
+    state: 
+        A dictionary which corresponds to the output of
+        LossCompute.make_loss_batch(). In other words, its keys are
+        {'out', 'target', 'align', 'coverage', 'attn'}. The values
+        for those keys are Tensor-like or None.
+    shard_size:
+        The maximum size of the shards yielded by the model
+    eval:
+        If True, only yield the state, nothing else. Otherwise, yield shards.
+    yields:
+        Each yielded shard is a dict.
+    """
+    if eval:
+        yield state
+    else:
+        dummies = dict(filter_gen_state(state))
+        split_state = {k: torch.split(v, shard_size)
+                       for k, v in dummies.items()}
+        # split_state is a dictionary of sequences of tensors
+        # However, we want a sequence of dictionaries of tensors
+        # unzip the dictionary into a sequence of keys and a sequence
+        # of tensor sequences
+        # each element of values corresponds to a key. 
+        keys, values = zip(*split_state.items())
+
+        for shard_tensors in zip(*values):
+            yield dict(zip(keys, shard_tensors))
 
         # Assumed backprop'd
         inputs = []
         grads = []
         for k, v in dummies.items():
             if isinstance(v, Variable) and (v.grad is not None):
-                inputs.append(d[k])
+                inputs.append(state[k])
                 grads.append(v.grad.data)
         torch.autograd.backward(inputs, grads)
-        return
 
 
 class LossCompute:
