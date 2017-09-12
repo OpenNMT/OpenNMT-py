@@ -85,7 +85,6 @@ def train_model(model, train_data, valid_data, fields, optim):
     padding_idx = fields['tgt'].vocab.stoi[onmt.IO.PAD_WORD]
 
     # Define criterion of each GPU.
-    # what attributes of opt does NMTCriterion use?
     if not opt.copy_attn:
         criterion = onmt.Loss.nmt_criterion(
             len(fields['tgt'].vocab), opt.gpuid, padding_idx)
@@ -137,12 +136,12 @@ def train_model(model, train_data, valid_data, fields, optim):
                 # (2) F-prop/B-prob generator in shards for memory
                 # efficiency.
                 batch_stats = onmt.Loss.Statistics()
-                gen_state = closs.makeLossBatch(outputs, batch, attn,
+                gen_state = closs.make_loss_batch(outputs, batch, attn,
                                                 (j, j + trunc_size))
                 for shard in splitter.splitIter(gen_state):
 
                     # Compute loss and backprop shard.
-                    loss, stats = closs.computeLoss(batch=batch,
+                    loss, stats = closs.compute_loss(batch=batch,
                                                     **shard)
                     loss.div(batch.batch_size).backward()
                     batch_stats.update(stats)
