@@ -138,7 +138,7 @@ def train_model(model, train_data, valid_data, fields, optim):
                 batch_stats = onmt.Loss.Statistics()
                 gen_state = closs.make_loss_batch(outputs, batch, attn,
                                                 (j, j + trunc_size))
-                for shard in splitter.splitIter(gen_state):
+                for shard in splitter.split_iter(gen_state):
 
                     # Compute loss and backprop shard.
                     loss, stats = closs.compute_loss(batch=batch,
