@@ -140,7 +140,7 @@ class LossCompute:
         self.epoch = epoch
         self.opt = opt
 
-    def makeLossBatch(self, outputs, batch, attns, range_):
+    def make_loss_batch(self, outputs, batch, attns, range_):
         """Create all the variables that need to be sharded.
         This needs to match compute loss exactly.
         """
@@ -151,7 +151,7 @@ class LossCompute:
                 "coverage": attns.get("coverage"),
                 "attn": attns.get("copy")}
 
-    def computeLoss(self, batch, out, target, attn=None,
+    def compute_loss(self, batch, out, target, attn=None,
                     align=None, coverage=None):
         def bottle(v):
             return v.view(-1, v.size(2))
