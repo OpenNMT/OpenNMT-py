@@ -3,7 +3,7 @@ This file handles the details of the loss function during training.
 
 This includes: loss criterion, training statistics, and memory optimizations.
 """
-
+from __future__ import division
 import time
 import sys
 import math
@@ -44,7 +44,7 @@ class Statistics:
         self.n_correct += stat.n_correct
 
     def accuracy(self):
-        return 100 * (self.n_correct / float(self.n_words))
+        return 100 * (self.n_correct / self.n_words)
 
     def ppl(self):
         return math.exp(min(self.loss / self.n_words, 100))
