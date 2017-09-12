@@ -8,6 +8,7 @@ from torch.autograd import Variable
 import numpy as np
 
 import onmt
+from onmt.Models import EncoderBase
 from onmt.Models import DecoderState
 from onmt.Utils import aeq
 
@@ -38,7 +39,7 @@ class PositionwiseFeedForward(nn.Module):
         return self.layer_norm(output + residual)
 
 
-class TransformerEncoder(nn.Module):
+class TransformerEncoderLayer(nn.Module):
     """
     The Transformer Decoder from "Attention is All You Need".
     """
@@ -53,7 +54,7 @@ class TransformerEncoder(nn.Module):
             head_count(int): the number of head for MultiHeadedAttention.
             hidden_size(int): the second-layer of the PositionwiseFeedForward.
         """
-        super(TransformerEncoder, self).__init__()
+        super(TransformerEncoderLayer, self).__init__()
 
         self.self_attn = onmt.modules.MultiHeadedAttention(
             head_count, size, p=dropout)
@@ -65,6 +66,46 @@ class TransformerEncoder(nn.Module):
         mid, _ = self.self_attn(input, input, input, mask=mask)
         out = self.feed_forward(mid)
         return out
+
+
+class TransformerEncoder(EncoderBase):
+    """ Transformer Encoder. """
+    def __init__(self, num_layers, hidden_size,
+                 dropout, embeddings):
+        super(TransformerEncoder, self).__init__()
+
+        self.num_layers = num_layers
+        self.embeddings = embeddings
+        self.transformer = nn.ModuleList(
+            [TransformerEncoderLayer(hidden_size, dropout)
+             for i in range(num_layers)])
+
+    def forward(self, input, lengths=None, hidden=None):
+        """ See EncoderBase.forward() for description of args and returns."""
+        self._check_args(input, lengths, hidden)
+
+        emb = self.embeddings(input)
+        s_len, n_batch, emb_dim = emb.size()
+
+        out = emb.transpose(0, 1).contiguous()
+        words = input[:, :, 0].transpose(0, 1)
+        # CHECKS
+        out_batch, out_len, _ = out.size()
+        w_batch, w_len = words.size()
+        aeq(out_batch, w_batch)
+        aeq(out_len, w_len)
+        # END CHECKS
+
+        # Make mask.
+        padding_idx = self.embeddings.word_padding_idx
+        mask = words.data.eq(padding_idx).unsqueeze(1) \
+            .expand(w_batch, w_len, w_len)
+
+        # Run the forward pass of every layer of the tranformer.
+        for i in range(self.num_layers):
+            out = self.transformer[i](out, mask)
+
+        return Variable(emb.data), out.transpose(0, 1).contiguous()
 
 
 class TransformerDecoderLayer(nn.Module):
@@ -139,14 +180,9 @@ class TransformerDecoderLayer(nn.Module):
 
 
 class TransformerDecoder(nn.Module):
-    """
-    Transformer Decoder.
-    """
+    """ Transformer Decoder. """
     def __init__(self, num_layers, hidden_size, attn_type,
                  copy_attn, dropout, embeddings):
-        """
-        See make_decoder() comment for arguments description.
-        """
         super(TransformerDecoder, self).__init__()
 
         # Basic attributes.

@@ -6,118 +6,82 @@ from torch.nn.utils.rnn import pad_packed_sequence as unpack
 from torch.nn.utils.rnn import pack_padded_sequence as pack
 
 import onmt
-from onmt.IO import ONMTDataset
 from onmt.Utils import aeq
 
 
-class Encoder(nn.Module):
+class EncoderBase(nn.Module):
     """
-    Encoder recurrent neural network.
+    EncoderBase class for sharing code among various *Encoder.
     """
-
-    def __init__(self, encoder_type, bidirectional, rnn_type,
-                 num_layers, rnn_size, dropout, embeddings,
-                 cnn_kernel_width=3):
-        """
-        Args:
-            encoder_type (string): rnn, brnn, mean, or transformer.
-            bidirectional (bool): bidirectional Encoder.
-            rnn_type (string): LSTM or GRU.
-            num_layers (int): number of Encoder layers.
-            rnn_size (int): size of hidden states of a rnn.
-            dropout (float): dropout probablity.
-            embeddings (Embeddings): vocab embeddings for this Encoder.
-        """
-        super(Encoder, self).__init__()
-
-        # Basic attributes.
-        self.encoder_type = encoder_type
-        self.num_directions = 2 if bidirectional else 1
-        assert rnn_size % self.num_directions == 0
-        self.num_layers = num_layers
-        self.hidden_size = rnn_size // self.num_directions
-        self.embeddings = embeddings
-
-        # Build the Encoder RNN.
-        if self.encoder_type == "transformer":
-            self.transformer = nn.ModuleList(
-                [onmt.modules.TransformerEncoder(self.hidden_size, dropout)
-                 for i in range(self.num_layers)])
-        elif self.encoder_type == "cnn":
-            self.cnn = onmt.modules.ConvEncoder(
-                self.embeddings.embedding_dim, self.hidden_size,
-                self.num_layers, dropout, cnn_kernel_width)
-        else:
-            self.rnn = getattr(nn, rnn_type)(
-                input_size=self.embeddings.embedding_dim,
-                hidden_size=self.hidden_size,
-                num_layers=self.num_layers,
-                dropout=dropout,
-                bidirectional=bidirectional)
-
-    def forward(self, input, lengths=None, hidden=None):
-        """
-        Args:
-            input (LongTensor): len x batch x nfeat
-            lengths (LongTensor): batch
-            hidden: Initial hidden state.
-        Returns:
-            hidden_t (FloatTensor): Pair of layers x batch x rnn_size - final
-                                    Encoder state
-            outputs (FloatTensor):  len x batch x rnn_size -  Memory bank
-        """
-        # CHECKS
+    def _check_args(self, input, lengths=None, hidden=None):
         s_len, n_batch, n_feats = input.size()
         if lengths is not None:
             n_batch_, = lengths.size()
             aeq(n_batch, n_batch_)
-        # END CHECKS
+
+    def forward(self, input, lengths=None, hidden=None):
+        """
+        Args:
+            input (LongTensor): len x batch x nfeat.
+            lengths (LongTensor): batch
+            hidden: Initial hidden state.
+        Returns:
+            hidden_t (Variable): Pair of layers x batch x rnn_size - final
+                                    Encoder state
+            outputs (FloatTensor):  len x batch x rnn_size -  Memory bank
+        """
+        raise NotImplementedError
+
+
+class MeanEncoder(EncoderBase):
+    """ A trivial encoder without RNN, just takes mean of as final state. """
+    def __init__(self, num_layers, embeddings):
+        super(MeanEncoder, self).__init__()
+        self.num_layers = num_layers
+        self.embeddings = embeddings
+
+    def forward(self, input, lengths=None, hidden=None):
+        """ See EncoderBase.forward() for description of args and returns. """
+        self._check_args(input, lengths, hidden)
 
         emb = self.embeddings(input)
-        s_len, n_batch, emb_dim = emb.size()
+        s_len, batch, emb_dim = emb.size()
+        mean = emb.mean(0).expand(self.num_layers, batch, emb_dim)
+        return (mean, mean), emb
 
-        if self.encoder_type == "mean":
-            # No RNN, just take mean as final state.
-            mean = emb.mean(0).expand(self.num_layers, n_batch, emb_dim)
-            return (mean, mean), emb
 
-        elif self.encoder_type == "transformer":
-            # Self-attention tranformer.
-            out = emb.transpose(0, 1).contiguous()
-            words = input[:, :, 0].transpose(0, 1)
-            # CHECKS
-            out_batch, out_len, _ = out.size()
-            w_batch, w_len = words.size()
-            aeq(out_batch, w_batch)
-            aeq(out_len, w_len)
-            # END CHECKS
+class RNNEncoder(EncoderBase):
+    """ The standard RNN encoder. """
+    def __init__(self, rnn_type, bidirectional, num_layers,
+                 hidden_size, dropout, embeddings):
+        super(RNNEncoder, self).__init__()
 
-            # Make mask.
-            padding_idx = self.embeddings.word_padding_idx
-            mask = words.data.eq(padding_idx).unsqueeze(1) \
-                .expand(w_batch, w_len, w_len)
+        num_directions = 2 if bidirectional else 1
+        assert hidden_size % num_directions == 0
+        hidden_size = hidden_size // num_directions
+        self.embeddings = embeddings
+        self.rnn = getattr(nn, rnn_type)(
+                input_size=embeddings.embedding_dim,
+                hidden_size=hidden_size,
+                num_layers=num_layers,
+                dropout=dropout,
+                bidirectional=bidirectional)
 
-            # Run the forward pass of every layer of the tranformer.
-            for i in range(self.num_layers):
-                out = self.transformer[i](out, mask)
+    def forward(self, input, lengths=None, hidden=None):
+        """ See EncoderBase.forward() for description of args and returns."""
+        self._check_args(input, lengths, hidden)
 
-            return Variable(emb.data), out.transpose(0, 1).contiguous()
-        elif self.encoder_type == "cnn":
-            out = emb.transpose(0, 1).contiguous()
-            out, emb_remap = self.cnn(out)
-            return emb_remap.transpose(0, 1).contiguous(),\
-                out.transpose(0, 1).contiguous()
-        else:
-            # Standard RNN encoder.
-            packed_emb = emb
-            if lengths is not None:
-                # Lengths data is wrapped inside a Variable.
-                lengths = lengths.view(-1).tolist()
-                packed_emb = pack(emb, lengths)
-            outputs, hidden_t = self.rnn(packed_emb, hidden)
-            if lengths:
-                outputs = unpack(outputs)[0]
-            return hidden_t, outputs
+        emb = self.embeddings(input)
+        s_len, batch, emb_dim = emb.size()
+        packed_emb = emb
+        if lengths is not None:
+            # Lengths data is wrapped inside a Variable.
+            lengths = lengths.view(-1).tolist()
+            packed_emb = pack(emb, lengths)
+        outputs, hidden_t = self.rnn(packed_emb, hidden)
+        if lengths:
+            outputs = unpack(outputs)[0]
+        return hidden_t, outputs
 
 
 class RNNDecoderBase(nn.Module):
@@ -127,9 +91,6 @@ class RNNDecoderBase(nn.Module):
     def __init__(self, rnn_type, bidirectional_encoder, num_layers,
                  hidden_size, attn_type, coverage_attn, context_gate,
                  copy_attn, dropout, embeddings):
-        """
-        See make_decoder() comment for arguments description.
-        """
         super(RNNDecoderBase, self).__init__()
 
         # Basic attributes.
@@ -396,7 +357,7 @@ class InputFeedRNNDecoder(RNNDecoderBase):
 
 class NMTModel(nn.Module):
     """
-    The seq2seq Encoder + Decoder Neural Machine Translation Model.
+    The Encoder + Decoder Neural Machine Translation Model.
     """
     def __init__(self, encoder, decoder, multigpu=False):
         """
@@ -504,169 +465,3 @@ class RNNDecoderState(DecoderState):
                 for e in self._all]
         self.hidden = tuple(vars[:-1])
         self.input_feed = vars[-1]
-
-
-def make_embeddings(opt, word_padding_idx, feats_padding_idx,
-                    num_word_embeddings, for_encoder,
-                    num_feat_embeddings=[]):
-    """
-    Make an Embeddings instance.
-    Args:
-        opt: command-line options.
-        word_padding_idx(int): padding index for words in the embeddings.
-        feats_padding_idx(int): padding index for a list of features
-                                in the embeddings.
-        num_word_embeddings(int): size of dictionary
-                                 of embedding for words.
-        for_encoder(bool): make Embeddings for Encoder or Decoder?
-        num_feat_embeddings([int]): list of size of dictionary
-                                    of embedding for each feature.
-    """
-    if for_encoder:
-        embedding_dim = opt.src_word_vec_size
-    else:
-        embedding_dim = opt.tgt_word_vec_size
-    return onmt.modules.Embeddings(embedding_dim,
-                                   opt.position_encoding,
-                                   opt.feat_merge,
-                                   opt.feat_vec_exponent,
-                                   opt.feat_vec_size,
-                                   opt.dropout,
-                                   word_padding_idx,
-                                   feats_padding_idx,
-                                   num_word_embeddings,
-                                   num_feat_embeddings)
-
-
-def make_decoder(decoder_type, rnn_type, bidirectional_encoder,
-                 num_layers, hidden_size, input_feed, attn_type,
-                 coverage_attn, context_gate, copy_attn,
-                 cnn_kernel_width, dropout, embeddings):
-    """
-    Decoder dispatcher function.
-    Args:
-        decoder_type (string): 'rnn', 'transformer' or 'cnn'.
-        rnn_type (string): 'LSTM' or 'GRU'.
-        bidirectional_encoder(boo): is encoder bidirectional?
-        num_layers (int): number of Decoder layers.
-        hidden_size (int): size of hidden states of a rnn.
-        input_feed (int): feed the context vector at each time step to the
-                          decoder(by concating the word embeddings).
-        attn_type (string): the attention type to use:
-                    'dot'(dotprot), 'general'(Luong), or 'mlp'(Bahdanau).
-        coverage_attn (bool): train a coverage attention layer?
-        context_gate (string): type of context gate to use:
-                               'source', 'target', 'both'.
-        copy_attn (bool): train copy attention layer?
-        cnn_kernel_width (int): size of windows in the cnn.
-        dropout (float): dropout probablity.
-        embeddings (Embeddings): vocab embeddings for this Decoder.
-    """
-    if decoder_type == "transformer":
-        return onmt.modules.TransformerDecoder(
-                    num_layers, hidden_size, attn_type,
-                    copy_attn, dropout, embeddings)
-
-    elif decoder_type == "cnn":
-        return onmt.modules.CNNDecoder(
-                    num_layers, hidden_size, attn_type,
-                    copy_attn, cnn_kernel_width, dropout, embeddings)
-
-    elif input_feed:
-        return InputFeedRNNDecoder(
-            rnn_type, bidirectional_encoder, num_layers, hidden_size,
-            attn_type, coverage_attn, context_gate,
-            copy_attn, dropout, embeddings)
-
-    else:
-        return StdRNNDecoder(rnn_type, bidirectional_encoder,
-                             num_layers, hidden_size,
-                             attn_type, coverage_attn, context_gate,
-                             copy_attn, dropout, embeddings)
-
-
-def make_base_model(opt, model_opt, fields, checkpoint=None):
-    """
-    Args:
-        opt: the option in current environment.
-        model_opt: the option loaded from checkpoint.
-        fields: `Field` objects for the model.
-        checkpoint: the snapshot model.
-    """
-
-    assert model_opt.model_type in ["text", "img"], \
-        ("Unsupported model type %s" % (model_opt.model_type))
-
-    # Make Encoder.
-    if model_opt.model_type == "text":
-        src_vocab = fields["src"].vocab
-        feature_dicts = ONMTDataset.collect_feature_dicts(fields)
-        feats_padding_idx = [feat_dict.stoi[onmt.IO.PAD_WORD]
-                             for feat_dict in feature_dicts]
-        num_feat_embeddings = [len(feat_dict) for feat_dict in
-                               feature_dicts]
-        src_embeddings = make_embeddings(
-                    model_opt, src_vocab.stoi[onmt.IO.PAD_WORD],
-                    feats_padding_idx, len(src_vocab), for_encoder=True,
-                    num_feat_embeddings=num_feat_embeddings)
-
-        encoder = Encoder(model_opt.encoder_type, model_opt.brnn,
-                          model_opt.rnn_type, model_opt.enc_layers,
-                          model_opt.rnn_size, model_opt.dropout,
-                          src_embeddings, model_opt.cnn_kernel_width)
-    else:
-        encoder = onmt.modules.ImageEncoder(model_opt.layers,
-                                            model_opt.brnn,
-                                            model_opt.rnn_size,
-                                            model_opt.dropout)
-
-    # Make Decoder.
-    tgt_vocab = fields["tgt"].vocab
-    # TODO: prepare for a future where tgt features are possible
-    tgt_embeddings = make_embeddings(
-                    model_opt, tgt_vocab.stoi[onmt.IO.PAD_WORD],
-                    [], len(tgt_vocab), for_encoder=False)
-    decoder = make_decoder(model_opt.decoder_type, model_opt.rnn_type,
-                           model_opt.brnn, model_opt.dec_layers,
-                           model_opt.rnn_size, model_opt.input_feed,
-                           model_opt.global_attention,
-                           model_opt.coverage_attn,
-                           model_opt.context_gate,
-                           model_opt.copy_attn,
-                           model_opt.cnn_kernel_width,
-                           model_opt.dropout, tgt_embeddings)
-
-    # Make NMTModel(= Encoder + Decoder).
-    model = onmt.Models.NMTModel(encoder, decoder)
-
-    # Make Generator.
-    if not model_opt.copy_attn:
-        generator = nn.Sequential(
-            nn.Linear(model_opt.rnn_size, len(fields["tgt"].vocab)),
-            nn.LogSoftmax())
-        if model_opt.share_decoder_embeddings:
-            generator[0].weight = decoder.embeddings.word_lut.weight
-    else:
-        generator = onmt.modules.CopyGenerator(model_opt, fields["src"].vocab,
-                                               fields["tgt"].vocab)
-
-    if checkpoint is not None:
-        print('Loading model')
-        model.load_state_dict(checkpoint['model'])
-        generator.load_state_dict(checkpoint['generator'])
-
-    if hasattr(opt, 'gpuid'):
-        cuda = len(opt.gpuid) >= 1
-    elif hasattr(opt, 'gpu'):
-        cuda = opt.gpu > -1
-    else:
-        cuda = False
-
-    if cuda:
-        model.cuda()
-        generator.cuda()
-    else:
-        model.cpu()
-        generator.cpu()
-    model.generator = generator
-    return model

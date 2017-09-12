@@ -5,6 +5,8 @@ import torch
 import argparse
 
 import onmt.Models
+from onmt.ModelConstructor import make_embeddings, \
+                            make_encoder, make_decoder
 
 parser = argparse.ArgumentParser(description='translate.py')
 
@@ -37,29 +39,19 @@ def main():
     tgt_dict = checkpoint['dicts']['tgt']
     feat_padding_idx = []
 
-    embeddings = onmt.Models.build_embeddings(
-                model_opt, src_dict.stoi[onmt.IO.PAD_WORD],
-                feat_padding_idx, len(src_dict), for_encoder=True)
-    encoder = onmt.Models.Encoder(model_opt.encoder_type, model_opt.brnn,
-                                  model_opt.rnn_type, model_opt.enc_layers,
-                                  model_opt.rnn_size, model_opt.dropout,
-                                  embeddings)
+    embeddings = make_embeddings(model_opt,
+                                 src_dict.stoi[onmt.IO.PAD_WORD],
+                                 feat_padding_idx,
+                                 len(src_dict),
+                                 for_encoder=True)
+    encoder = make_encoder(model_opt, embeddings)
 
-    embeddings = onmt.Models.build_embeddings(
-                model_opt, tgt_dict.stoi[onmt.IO.PAD_WORD],
-                feat_padding_idx, len(tgt_dict), for_encoder=False)
-    decoder = onmt.Models.make_decoder(model_opt.decoder_type,
-                                       model_opt.rnn_type,
-                                       model_opt.brnn,
-                                       model_opt.dec_layers,
-                                       model_opt.rnn_size,
-                                       model_opt.input_feed,
-                                       model_opt.global_attention,
-                                       model_opt.coverage_attn,
-                                       model_opt.context_gate,
-                                       model_opt.copy_attn,
-                                       model_opt.cnn_kernel_width,
-                                       model_opt.dropout, embeddings)
+    embeddings = make_embeddings(model_opt,
+                                 tgt_dict.stoi[onmt.IO.PAD_WORD],
+                                 feat_padding_idx,
+                                 len(tgt_dict),
+                                 for_encoder=False)
+    decoder = make_decoder(model_opt, embeddings)
 
     encoder_embeddings = encoder.word_lut.weight.data.tolist()
     decoder_embeddings = decoder.word_lut.weight.data.tolist()
