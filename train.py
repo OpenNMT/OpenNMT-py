@@ -85,9 +85,10 @@ def train_model(model, train_data, valid_data, fields, optim):
     padding_idx = fields['tgt'].vocab.stoi[onmt.IO.PAD_WORD]
 
     # Define criterion of each GPU.
+    # what attributes of opt does NMTCriterion use?
     if not opt.copy_attn:
-        criterion = onmt.Loss.NMTCriterion(len(fields['tgt'].vocab), opt,
-                                           padding_idx)
+        criterion = onmt.Loss.nmt_criterion(
+            len(fields['tgt'].vocab), opt.gpuid, padding_idx)
     else:
         criterion = onmt.modules.CopyCriterion(len(fields['tgt'].vocab),
                                                opt.copy_attn_force,
