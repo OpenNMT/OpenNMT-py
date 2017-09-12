@@ -15,14 +15,14 @@ from torch.autograd import Variable
 import onmt
 
 
-def NMTCriterion(vocabSize, opt, pad_id):
+def nmt_criterion(vocab_size, gpuid, pad_id):
     """
     Construct the standard NMT Criterion
     """
-    weight = torch.ones(vocabSize)
+    weight = torch.ones(vocab_size)
     weight[pad_id] = 0
     crit = nn.NLLLoss(weight, size_average=False)
-    if opt.gpuid:
+    if gpuid:
         crit.cuda()
     return crit
 
