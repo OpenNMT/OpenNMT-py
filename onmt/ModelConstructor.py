@@ -15,26 +15,28 @@ from onmt.modules import Embeddings, ImageEncoder, CopyGenerator, \
                          CNNEncoder, CNNDecoder
 
 
-def make_embeddings(opt, word_padding_idx, feats_padding_idx,
-                    num_word_embeddings, for_encoder,
-                    num_feat_embeddings=[]):
+def make_embeddings(opt, word_dict, feature_dicts, for_encoder=True):
     """
     Make an Embeddings instance.
     Args:
-        opt: command-line options.
-        word_padding_idx(int): padding index for words in the embeddings.
-        feats_padding_idx(int): padding index for a list of features
-                                in the embeddings.
-        num_word_embeddings(int): size of dictionary
-                                 of embedding for words.
+        opt: the option in current environment.
+        word_dict(Vocab): words dictionary.
+        feature_dicts([Vocab], optional): a list of feature dictionary.
         for_encoder(bool): make Embeddings for encoder or decoder?
-        num_feat_embeddings([int]): list of size of dictionary
-                                    of embedding for each feature.
     """
     if for_encoder:
         embedding_dim = opt.src_word_vec_size
     else:
         embedding_dim = opt.tgt_word_vec_size
+
+    word_padding_idx = word_dict.stoi[onmt.IO.PAD_WORD]
+    num_word_embeddings = len(word_dict)
+
+    feats_padding_idx = [feat_dict.stoi[onmt.IO.PAD_WORD]
+                         for feat_dict in feature_dicts]
+    num_feat_embeddings = [len(feat_dict) for feat_dict in
+                           feature_dicts]
+
     return Embeddings(embedding_dim,
                       opt.position_encoding,
                       opt.feat_merge,
@@ -120,17 +122,10 @@ def make_base_model(opt, model_opt, fields, checkpoint=None):
 
     # Make encoder.
     if model_opt.model_type == "text":
-        src_vocab = fields["src"].vocab
+        src_dict = fields["src"].vocab
         feature_dicts = ONMTDataset.collect_feature_dicts(fields)
-        feats_padding_idx = [feat_dict.stoi[onmt.IO.PAD_WORD]
-                             for feat_dict in feature_dicts]
-        num_feat_embeddings = [len(feat_dict) for feat_dict in
-                               feature_dicts]
-        src_embeddings = make_embeddings(
-                    model_opt, src_vocab.stoi[onmt.IO.PAD_WORD],
-                    feats_padding_idx, len(src_vocab), for_encoder=True,
-                    num_feat_embeddings=num_feat_embeddings)
-
+        src_embeddings = make_embeddings(model_opt, src_dict,
+                                         feature_dicts)
         encoder = make_encoder(model_opt, src_embeddings)
     else:
         encoder = ImageEncoder(model_opt.layers,
@@ -139,14 +134,11 @@ def make_base_model(opt, model_opt, fields, checkpoint=None):
                                model_opt.dropout)
 
     # Make decoder.
-    tgt_vocab = fields["tgt"].vocab
-    # TODO: prepare for a future where tgt features are possible
-    feats_padding_idx = []
-    tgt_embeddings = make_embeddings(model_opt,
-                                     tgt_vocab.stoi[onmt.IO.PAD_WORD],
-                                     feats_padding_idx,
-                                     len(tgt_vocab),
-                                     for_encoder=False)
+    tgt_dict = fields["tgt"].vocab
+    # TODO: prepare for a future where tgt features are possible.
+    feature_dicts = []
+    tgt_embeddings = make_embeddings(model_opt, tgt_dict,
+                                     feature_dicts, for_encoder=False)
     decoder = make_decoder(model_opt, tgt_embeddings)
 
     # Make NMTModel(= encoder + decoder).
