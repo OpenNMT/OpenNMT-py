@@ -93,8 +93,6 @@ def train_model(model, train_data, valid_data, fields, optim):
                                                opt.copy_attn_force,
                                                padding_idx)
 
-    splitter = onmt.Loss.Splitter(opt.max_generator_batches)
-
     train = onmt.IO.OrderedIterator(
         dataset=train_data, batch_size=opt.batch_size,
         device=opt.gpuid[0] if opt.gpuid else -1,
@@ -103,7 +101,7 @@ def train_model(model, train_data, valid_data, fields, optim):
     def train_epoch(epoch):
         closs = onmt.Loss.LossCompute(model.generator, criterion,
                                       fields["tgt"].vocab, train_data,
-                                      epoch, opt)
+                                      epoch, opt.copy_attn)
 
         total_stats = onmt.Loss.Statistics()
         report_stats = onmt.Loss.Statistics()
@@ -136,13 +134,16 @@ def train_model(model, train_data, valid_data, fields, optim):
                 # (2) F-prop/B-prob generator in shards for memory
                 # efficiency.
                 batch_stats = onmt.Loss.Statistics()
+                # make_loss_batch doesn't really need to be a method of
+                # ComputeLoss
                 gen_state = closs.make_loss_batch(outputs, batch, attn,
-                                                (j, j + trunc_size))
-                for shard in splitter.split_iter(gen_state):
+                                                  (j, j + trunc_size))
+                shard_size = opt.max_generator_batches
+                for shard in onmt.Loss.shards(gen_state, shard_size):
 
                     # Compute loss and backprop shard.
                     loss, stats = closs.compute_loss(batch=batch,
-                                                    **shard)
+                                                     **shard)
                     loss.div(batch.batch_size).backward()
                     batch_stats.update(stats)
 
