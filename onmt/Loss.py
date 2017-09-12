@@ -83,7 +83,7 @@ class Statistics:
 
 class Splitter:
     """
-    Spliter is a utilty that splits a dictionary of
+    Splitter is a utilty that splits a dictionary of
     data up into shards and waits for them to be backprop'd.
     It blocks until all gradients have been computed and then
     call backward on its inputs.
@@ -93,7 +93,7 @@ class Splitter:
         self.shard_max = shard_max
         self.eval = eval
 
-    def splitIter(self, d):
+    def split_iter(self, d):
         # If eval mode, don't need to split at all
         if self.eval:
             yield d
@@ -152,7 +152,7 @@ class LossCompute:
                 "attn": attns.get("copy")}
 
     def compute_loss(self, batch, out, target, attn=None,
-                    align=None, coverage=None):
+                     align=None, coverage=None):
         def bottle(v):
             return v.view(-1, v.size(2))
 
@@ -178,6 +178,7 @@ class LossCompute:
             scores_data = bottle(scores_data)
 
             # Correct target is copy when only option.
+            # TODO: replace for loop with masking or boolean indexing
             target = target.data.clone()
             for i in range(target.size(0)):
                 if target[i] == 0 and align.data[i] != 0:
