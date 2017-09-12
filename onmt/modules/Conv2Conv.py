@@ -134,16 +134,16 @@ class CNNDecoder(nn.Module):
         Args:
             input (LongTensor): a sequence of input tokens tensors
                                 of size (len x batch x nfeats).
-            context (FloatTensor): output(tensor sequence) from the Encoder
+            context (FloatTensor): output(tensor sequence) from the encoder
                         CNN of size (src_len x batch x hidden_size).
-            state (FloatTensor): hidden state from the Encoder CNN for
+            state (FloatTensor): hidden state from the encoder CNN for
                                  initializing the decoder.
         Returns:
-            outputs (FloatTensor): a Tensor sequence of output from the Decoder
+            outputs (FloatTensor): a Tensor sequence of output from the decoder
                                    of shape (len x batch x hidden_size).
-            state (FloatTensor): final hidden state from the Decoder.
+            state (FloatTensor): final hidden state from the decoder.
             attns (dict of (str, FloatTensor)): a dictionary of different
-                                type of attention Tensor from the Decoder
+                                type of attention Tensor from the decoder
                                 of shape (src_len x batch).
         """
         # CHECKS

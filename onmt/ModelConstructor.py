@@ -1,6 +1,6 @@
 """
 This file is for models creation, which consults options
-and create each Encoder and Decoder accordingly.
+and creates each encoder and decoder accordingly.
 """
 import torch.nn as nn
 
@@ -27,7 +27,7 @@ def make_embeddings(opt, word_padding_idx, feats_padding_idx,
                                 in the embeddings.
         num_word_embeddings(int): size of dictionary
                                  of embedding for words.
-        for_encoder(bool): make Embeddings for Encoder or Decoder?
+        for_encoder(bool): make Embeddings for encoder or decoder?
         num_feat_embeddings([int]): list of size of dictionary
                                     of embedding for each feature.
     """
@@ -49,10 +49,10 @@ def make_embeddings(opt, word_padding_idx, feats_padding_idx,
 
 def make_encoder(opt, embeddings):
     """
-    Encoder dispatcher function.
+    Various encoder dispatcher function.
     Args:
         opt: the option in current environment.
-        embeddings (Embeddings): vocab embeddings for this Encoder.
+        embeddings (Embeddings): vocab embeddings for this encoder.
     """
     if opt.encoder_type == "transformer":
         return TransformerEncoder(opt.enc_layers, opt.rnn_size,
@@ -71,10 +71,10 @@ def make_encoder(opt, embeddings):
 
 def make_decoder(opt, embeddings):
     """
-    Decoder dispatcher function.
+    Various decoder dispatcher function.
     Args:
         opt: the option in current environment.
-        embeddings (Embeddings): vocab embeddings for this Decoder.
+        embeddings (Embeddings): vocab embeddings for this decoder.
     """
     if opt.decoder_type == "transformer":
         return TransformerDecoder(opt.dec_layers, opt.rnn_size,
@@ -118,7 +118,7 @@ def make_base_model(opt, model_opt, fields, checkpoint=None):
     assert model_opt.model_type in ["text", "img"], \
         ("Unsupported model type %s" % (model_opt.model_type))
 
-    # Make Encoder.
+    # Make encoder.
     if model_opt.model_type == "text":
         src_vocab = fields["src"].vocab
         feature_dicts = ONMTDataset.collect_feature_dicts(fields)
@@ -138,7 +138,7 @@ def make_base_model(opt, model_opt, fields, checkpoint=None):
                                model_opt.rnn_size,
                                model_opt.dropout)
 
-    # Make Decoder.
+    # Make decoder.
     tgt_vocab = fields["tgt"].vocab
     # TODO: prepare for a future where tgt features are possible
     feats_padding_idx = []
@@ -149,7 +149,7 @@ def make_base_model(opt, model_opt, fields, checkpoint=None):
                                      for_encoder=False)
     decoder = make_decoder(model_opt, tgt_embeddings)
 
-    # Make NMTModel(= Encoder + Decoder).
+    # Make NMTModel(= encoder + decoder).
     model = NMTModel(encoder, decoder)
 
     # Make Generator.
@@ -163,7 +163,7 @@ def make_base_model(opt, model_opt, fields, checkpoint=None):
         generator = CopyGenerator(model_opt, fields["src"].vocab,
                                   fields["tgt"].vocab)
 
-    # Load the modle states from checkpoint.
+    # Load the model states from checkpoint.
     if checkpoint is not None:
         print('Loading model')
         model.load_state_dict(checkpoint['model'])
@@ -183,6 +183,7 @@ def make_base_model(opt, model_opt, fields, checkpoint=None):
     else:
         model.cpu()
         generator.cpu()
+
     model.generator = generator
 
     return model

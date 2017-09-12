@@ -12,8 +12,8 @@ class ImageEncoder(nn.Module):
     def __init__(self, num_layers, bidirectional, rnn_size, dropout):
         """
         Args:
-            num_layers (int): number of Encoder layers.
-            bidirectional (bool): bidirectional Encoder.
+            num_layers (int): number of encoder layers.
+            bidirectional (bool): bidirectional encoder.
             rnn_size (int): size of hidden states of the rnn.
             dropout (float): dropout probablity.
         """
