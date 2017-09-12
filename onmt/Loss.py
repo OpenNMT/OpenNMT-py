@@ -89,11 +89,11 @@ def filter_gen_state(state):
             yield k, v
 
 
-def generate_shards(state, shard_size, eval=False):
+def shards(state, shard_size, eval=False):
     """
     TODO: remove the side effect from this generator function if at all
     possible.
-    state: 
+    state:
         A dictionary which corresponds to the output of
         LossCompute.make_loss_batch(). In other words, its keys are
         {'out', 'target', 'align', 'coverage', 'attn'}. The values
@@ -115,19 +115,16 @@ def generate_shards(state, shard_size, eval=False):
         # However, we want a sequence of dictionaries of tensors
         # unzip the dictionary into a sequence of keys and a sequence
         # of tensor sequences
-        # each element of values corresponds to a key. 
+        # each element of values corresponds to a key.
         keys, values = zip(*split_state.items())
 
         for shard_tensors in zip(*values):
             yield dict(zip(keys, shard_tensors))
 
         # Assumed backprop'd
-        inputs = []
-        grads = []
-        for k, v in dummies.items():
-            if isinstance(v, Variable) and (v.grad is not None):
-                inputs.append(state[k])
-                grads.append(v.grad.data)
+        variables = ((state[k], v.grad.data) for k, v in dummies.items()
+                     if isinstance(v, Variable) and v.grad is not None)
+        inputs, grads = zip(*variables)
         torch.autograd.backward(inputs, grads)
 
 
