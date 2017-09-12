@@ -245,7 +245,7 @@ def main():
     # have the structure it does?
     src_features = [fields["src_feat_"+str(j)]
                     for j in range(train.nfeatures)]
-    model_opt = opt # model opt is either the same as opt or it's from checkpoint
+    model_opt = opt
     checkpoint = None
 
     if opt.train_from:
@@ -264,9 +264,9 @@ def main():
     print(' * maximum batch size. %d' % opt.batch_size)
 
     print('Building model...')
-    # Awkward that make_base_model signature takes opt AND model_opt
-    model = onmt.ModelConstructor.make_base_model(opt, model_opt,
-                                                  fields, checkpoint)
+
+    model = onmt.ModelConstructor.make_base_model(model_opt, fields,
+                                                  opt.gpuid, checkpoint)
     if len(opt.gpuid) > 1:
         print('Multi gpu training ', opt.gpuid)
         model = nn.DataParallel(model, device_ids=opt.gpuid, dim=1)
