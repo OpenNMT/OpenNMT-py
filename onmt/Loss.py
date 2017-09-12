@@ -94,6 +94,11 @@ class Splitter:
         self.eval = eval
 
     def split_iter(self, d):
+        """
+        d corresponds to the output of LossCompute.make_loss_batch
+        That is, it's a dictionary whose keys are {'out', 'target',
+        'align', 'coverage', 'attn'} and whose values are
+        """
         # If eval mode, don't need to split at all
         if self.eval:
             yield d
@@ -101,6 +106,8 @@ class Splitter:
 
         # Split each element and make dummy variable.
         dummies = {}
+        # shards: a list of dictionaries
+        # the indices of shards correspond to 
         shards = []
         for k, v in d.items():
             if v is None:
@@ -132,21 +139,22 @@ class Splitter:
 
 
 class LossCompute:
-    def __init__(self, generator, crit, tgt_vocab, dataset, epoch, opt):
+    def __init__(self, generator, crit, tgt_vocab, dataset, epoch, copy_attn):
         self.generator = generator
         self.crit = crit
         self.tgt_vocab = tgt_vocab
         self.dataset = dataset
         self.epoch = epoch
-        self.opt = opt
+        self.copy_attn = copy_attn
 
     def make_loss_batch(self, outputs, batch, attns, range_):
-        """Create all the variables that need to be sharded.
+        """
+        Create all the variables that need to be sharded.
         This needs to match compute loss exactly.
         """
         return {"out": outputs,
                 "target": batch.tgt[range_[0] + 1: range_[1]],
-                "align": None if not self.opt.copy_attn
+                "align": None if not self.copy_attn
                 else batch.alignment[range_[0] + 1: range_[1]],
                 "coverage": attns.get("coverage"),
                 "attn": attns.get("copy")}
@@ -162,7 +170,7 @@ class LossCompute:
         pad = self.tgt_vocab.stoi[onmt.IO.PAD_WORD]
         target = target.view(-1)
 
-        if not self.opt.copy_attn:
+        if not self.copy_attn:
             # Standard generator.
             scores = self.generator(bottle(out))
             loss = self.crit(scores, target)
