@@ -65,7 +65,7 @@ def eval(model, criterion, data, fields):
     stats = onmt.Loss.Statistics()
     model.eval()
     loss = onmt.Loss.LossCompute(model.generator, criterion,
-                                 fields["tgt"].vocab, data, 0, opt)
+                                 fields["tgt"].vocab, data, 0, opt.copy_attn)
     for batch in valid_data:
         _, src_lengths = batch.src
         src = onmt.IO.make_features(batch, 'src')
