@@ -9,7 +9,6 @@ from torch.autograd import Variable
 
 import onmt.modules
 from onmt.modules.WeightNorm import WeightNormConv2d
-from onmt.Models import EncoderBase
 from onmt.Models import DecoderState
 from onmt.Utils import aeq
 
@@ -57,25 +56,21 @@ class StackedCNN(nn.Module):
         return x
 
 
-class CNNEncoder(EncoderBase):
+class CNNEncoder(nn.Module):
     """
     Encoder built on CNN.
+    self, embedding_dim, hidden_size, dropout,
+                 layers, kernel_width
     """
-    def __init__(self, num_layers, hidden_size,
-                 cnn_kernel_width, dropout, embeddings):
+    def __init__(self, input_size, hidden_size, dropout,
+                 num_layers, kernel_width):
         super(CNNEncoder, self).__init__()
 
-        self.embeddings = embeddings
-        input_size = embeddings.embedding_size
         self.linear = nn.Linear(input_size, hidden_size)
         self.cnn = StackedCNN(num_layers, hidden_size,
-                              cnn_kernel_width, dropout)
+                              kernel_width, dropout)
 
-    def forward(self, input, lengths=None, hidden=None):
-        """ See EncoderBase.forward() for description of args and returns."""
-        self._check_args(input, lengths, hidden)
-
-        emb = self.embeddings(input)
+    def forward(self, emb, **kwargs):
         s_len, batch, emb_dim = emb.size()
 
         emb = emb.transpose(0, 1).contiguous()
@@ -85,7 +80,7 @@ class CNNEncoder(EncoderBase):
         emb_remap = shape_transform(emb_remap)
         out = self.cnn(emb_remap)
 
-        return emb_remap.squeeze(3).transpose(0, 1).contiguous(),\
+        return emb_remap.squeeze(3).transpose(0, 1).contiguous(), \
             out.squeeze(3).transpose(0, 1).contiguous()
 
 
