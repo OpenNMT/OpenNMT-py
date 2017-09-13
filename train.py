@@ -71,9 +71,9 @@ def eval(model, criterion, data, fields):
         src = onmt.IO.make_features(batch, 'src')
         tgt = onmt.IO.make_features(batch, 'tgt')
         outputs, attn, _ = model(src, tgt, src_lengths)
-        gen_state = loss.makeLossBatch(outputs, batch, attn,
-                                       (0, batch.tgt.size(0)))
-        _, batch_stats = loss.computeLoss(batch=batch, **gen_state)
+        gen_state = loss.make_loss_batch(
+            outputs, batch, attn, (0, batch.tgt.size(0)))
+        _, batch_stats = loss.compute_loss(batch=batch, **gen_state)
         stats.update(batch_stats)
     model.train()
     return stats
