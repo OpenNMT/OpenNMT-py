@@ -53,13 +53,16 @@ class MeanEncoder(EncoderBase):
 class RNNEncoder(EncoderBase):
     """ The standard RNN encoder. """
     def __init__(self, rnn_type, bidirectional, num_layers,
-                 hidden_size, dropout, embeddings):
+                 hidden_size, no_pack_padded_seq,
+                 dropout, embeddings):
         super(RNNEncoder, self).__init__()
 
         num_directions = 2 if bidirectional else 1
         assert hidden_size % num_directions == 0
         hidden_size = hidden_size // num_directions
         self.embeddings = embeddings
+        self.no_pack_padded_seq = no_pack_padded_seq
+
         self.rnn = getattr(nn, rnn_type)(
                 input_size=embeddings.embedding_size,
                 hidden_size=hidden_size,
@@ -73,14 +76,18 @@ class RNNEncoder(EncoderBase):
 
         emb = self.embeddings(input)
         s_len, batch, emb_dim = emb.size()
+
         packed_emb = emb
-        if lengths is not None:
+        if lengths is not None and not self.no_pack_padded_seq:
             # Lengths data is wrapped inside a Variable.
             lengths = lengths.view(-1).tolist()
             packed_emb = pack(emb, lengths)
+
         outputs, hidden_t = self.rnn(packed_emb, hidden)
-        if lengths:
+
+        if lengths is not None and not self.no_pack_padded_seq:
             outputs = unpack(outputs)[0]
+
         return hidden_t, outputs
 
 

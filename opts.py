@@ -60,6 +60,11 @@ def model_opts(parser):
     parser.add_argument('-rnn_type', type=str, default='LSTM',
                         choices=['LSTM', 'GRU'],
                         help="""The gate type to use in the RNNs""")
+    parser.add_argument('-no_pack_padded_seq', action="store_true",
+                        default=False,
+                        help="""Do not use pytorch's rnn.pack_padded_sequence
+                        to pack rnn input that contains padded sequences of
+                        variable length.""")
     # parser.add_argument('-residual',   action="store_true",
     #                     help="Add residual connections between RNN layers.")
 
