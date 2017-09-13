@@ -107,12 +107,12 @@ def make_decoder(opt, embeddings):
                              embeddings)
 
 
-def make_base_model(model_opt, fields, gpuid, checkpoint=None):
+def make_base_model(model_opt, fields, gpu, checkpoint=None):
     """
     Args:
         model_opt: the option loaded from checkpoint.
         fields: `Field` objects for the model.
-        gpuid: a list of integers, one for each gpu
+        gpu: Boolean: whether to use gpu.
         checkpoint: the snapshot model.
     Returns:
         the NMTModel.
@@ -165,7 +165,7 @@ def make_base_model(model_opt, fields, gpuid, checkpoint=None):
     model.generator = generator
 
     # Make the whole model leverage GPU if indicated to do so.
-    if gpuid:
+    if gpu:
         model.cuda()
     else:
         model.cpu()
