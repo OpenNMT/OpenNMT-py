@@ -53,13 +53,10 @@ class Embeddings(nn.Module):
                  word_vocab_size, feat_vocab_sizes=[]):
         super(Embeddings, self).__init__()
 
-        self.word_padding_idx = word_padding_idx
-
         # Parameters for constructing the word embedding matrix
         vocab_sizes = [word_vocab_size]
         emb_dims = [embedding_dim]
         pad_indices = [word_padding_idx]
-        self.embedding_dim = embedding_dim
 
         # Parameters for additional feature embedding matrices
         # (these have no effect if feat_vocab_sizes is empty)
