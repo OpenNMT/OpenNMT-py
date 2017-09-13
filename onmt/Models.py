@@ -2,86 +2,9 @@ from __future__ import division
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
-from torch.nn.utils.rnn import pack_padded_sequence as pack
-from torch.nn.utils.rnn import pad_packed_sequence as unpack
 
 import onmt
 from onmt.Utils import aeq
-
-
-class EncoderBase(nn.Module):
-    """
-    EncoderBase class for sharing code among various encoder.
-    """
-    def _check_args(self, input, lengths=None, hidden=None):
-        s_len, n_batch, n_feats = input.size()
-        if lengths is not None:
-            n_batch_, = lengths.size()
-            aeq(n_batch, n_batch_)
-
-    def forward(self, input, lengths=None, hidden=None):
-        """
-        Args:
-            input (LongTensor): len x batch x nfeat.
-            lengths (LongTensor): batch
-            hidden: Initial hidden state.
-        Returns:
-            hidden_t (Variable): Pair of layers x batch x rnn_size - final
-                                    encoder state
-            outputs (FloatTensor):  len x batch x rnn_size -  Memory bank
-        """
-        raise NotImplementedError
-
-
-class MeanEncoder(EncoderBase):
-    """ A trivial encoder without RNN, just takes mean as final state. """
-    def __init__(self, num_layers, embeddings):
-        super(MeanEncoder, self).__init__()
-        self.num_layers = num_layers
-        self.embeddings = embeddings
-
-    def forward(self, input, lengths=None, hidden=None):
-        """ See EncoderBase.forward() for description of args and returns. """
-        self._check_args(input, lengths, hidden)
-
-        emb = self.embeddings(input)
-        s_len, batch, emb_dim = emb.size()
-        mean = emb.mean(0).expand(self.num_layers, batch, emb_dim)
-        return (mean, mean), emb
-
-
-class RNNEncoder(EncoderBase):
-    """ The standard RNN encoder. """
-    def __init__(self, rnn_type, bidirectional, num_layers,
-                 hidden_size, dropout, embeddings):
-        super(RNNEncoder, self).__init__()
-
-        num_directions = 2 if bidirectional else 1
-        assert hidden_size % num_directions == 0
-        hidden_size = hidden_size // num_directions
-        self.embeddings = embeddings
-        self.rnn = getattr(nn, rnn_type)(
-                input_size=embeddings.embedding_size,
-                hidden_size=hidden_size,
-                num_layers=num_layers,
-                dropout=dropout,
-                bidirectional=bidirectional)
-
-    def forward(self, input, lengths=None, hidden=None):
-        """ See EncoderBase.forward() for description of args and returns."""
-        self._check_args(input, lengths, hidden)
-
-        emb = self.embeddings(input)
-        s_len, batch, emb_dim = emb.size()
-        packed_emb = emb
-        if lengths is not None:
-            # Lengths data is wrapped inside a Variable.
-            lengths = lengths.view(-1).tolist()
-            packed_emb = pack(emb, lengths)
-        outputs, hidden_t = self.rnn(packed_emb, hidden)
-        if lengths:
-            outputs = unpack(outputs)[0]
-        return hidden_t, outputs
 
 
 class RNNDecoderBase(nn.Module):
