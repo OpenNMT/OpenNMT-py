@@ -6,6 +6,7 @@ import onmt.Models
 import onmt.ModelConstructor
 import onmt.modules
 import onmt.IO
+from onmt.Utils import use_gpu
 
 
 class Translator(object):
@@ -25,7 +26,7 @@ class Translator(object):
         self.copy_attn = model_opt.copy_attn
 
         self.model = onmt.ModelConstructor.make_base_model(
-                            opt, model_opt, self.fields, checkpoint)
+                            model_opt, self.fields, use_gpu(opt), checkpoint)
         self.model.eval()
         self.model.generator.eval()
 
