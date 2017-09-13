@@ -10,6 +10,7 @@ import onmt
 import onmt.Models
 import onmt.ModelConstructor
 import onmt.modules
+from onmt.Utils import use_gpu
 import opts
 
 parser = argparse.ArgumentParser(description='train.py')
@@ -65,15 +66,15 @@ def eval(model, criterion, data, fields):
     stats = onmt.Loss.Statistics()
     model.eval()
     loss = onmt.Loss.LossCompute(model.generator, criterion,
-                                 fields["tgt"].vocab, data, 0, opt)
+                                 fields["tgt"].vocab, data, 0, opt.copy_attn)
     for batch in valid_data:
         _, src_lengths = batch.src
         src = onmt.IO.make_features(batch, 'src')
         tgt = onmt.IO.make_features(batch, 'tgt')
         outputs, attn, _ = model(src, tgt, src_lengths)
-        gen_state = loss.makeLossBatch(outputs, batch, attn,
-                                       (0, batch.tgt.size(0)))
-        _, batch_stats = loss.computeLoss(batch=batch, **gen_state)
+        gen_state = loss.make_loss_batch(
+            outputs, batch, attn, (0, batch.tgt.size(0)))
+        _, batch_stats = loss.compute_loss(batch=batch, **gen_state)
         stats.update(batch_stats)
     model.train()
     return stats
@@ -86,14 +87,12 @@ def train_model(model, train_data, valid_data, fields, optim):
 
     # Define criterion of each GPU.
     if not opt.copy_attn:
-        criterion = onmt.Loss.NMTCriterion(len(fields['tgt'].vocab), opt,
-                                           padding_idx)
+        criterion = onmt.Loss.nmt_criterion(
+            len(fields['tgt'].vocab), opt.gpuid, padding_idx)
     else:
         criterion = onmt.modules.CopyCriterion(len(fields['tgt'].vocab),
                                                opt.copy_attn_force,
                                                padding_idx)
-
-    splitter = onmt.Loss.Splitter(opt.max_generator_batches)
 
     train = onmt.IO.OrderedIterator(
         dataset=train_data, batch_size=opt.batch_size,
@@ -103,7 +102,7 @@ def train_model(model, train_data, valid_data, fields, optim):
     def train_epoch(epoch):
         closs = onmt.Loss.LossCompute(model.generator, criterion,
                                       fields["tgt"].vocab, train_data,
-                                      epoch, opt)
+                                      epoch, opt.copy_attn)
 
         total_stats = onmt.Loss.Statistics()
         report_stats = onmt.Loss.Statistics()
@@ -136,13 +135,16 @@ def train_model(model, train_data, valid_data, fields, optim):
                 # (2) F-prop/B-prob generator in shards for memory
                 # efficiency.
                 batch_stats = onmt.Loss.Statistics()
-                gen_state = closs.makeLossBatch(outputs, batch, attn,
-                                                (j, j + trunc_size))
-                for shard in splitter.splitIter(gen_state):
+                # make_loss_batch doesn't really need to be a method of
+                # ComputeLoss
+                gen_state = closs.make_loss_batch(outputs, batch, attn,
+                                                  (j, j + trunc_size))
+                shard_size = opt.max_generator_batches
+                for shard in onmt.Loss.shards(gen_state, shard_size):
 
                     # Compute loss and backprop shard.
-                    loss, stats = closs.computeLoss(batch=batch,
-                                                    **shard)
+                    loss, stats = closs.compute_loss(batch=batch,
+                                                     **shard)
                     loss.div(batch.batch_size).backward()
                     batch_stats.update(stats)
 
@@ -164,7 +166,7 @@ def train_model(model, train_data, valid_data, fields, optim):
         return total_stats
 
     for epoch in range(opt.start_epoch, opt.epochs + 1):
-        print('')
+        print()
 
         #  (1) train for one epoch on the training set
         train_stats = train_epoch(epoch)
@@ -214,27 +216,43 @@ def check_model_path():
         os.makedirs(model_dirname)
 
 
+def tally_parameters(model):
+    n_params = sum([p.nelement() for p in model.parameters()])
+    print('* number of parameters: %d' % n_params)
+    enc = 0
+    dec = 0
+    for name, param in model.named_parameters():
+        if 'encoder' in name:
+            enc += param.nelement()
+        elif 'decoder' or 'generator' in name:
+            dec += param.nelement()
+    print('encoder: ', enc)
+    print('decoder: ', dec)
+
+
 def main():
-    global opt
     print("Loading data from '%s'" % opt.data)
 
     train = torch.load(opt.data + '.train.pt')
+    valid = torch.load(opt.data + '.valid.pt')
+
     fields = onmt.IO.ONMTDataset.load_fields(
         torch.load(opt.data + '.vocab.pt'))
-    valid = torch.load(opt.data + '.valid.pt')
     fields = dict([(k, f) for (k, f) in fields.items()
                    if k in train.examples[0].__dict__])
+
     train.fields = fields
     valid.fields = fields
+    # TODO: account for target features. Also, why does fields need to
+    # have the structure it does?
     src_features = [fields["src_feat_"+str(j)]
                     for j in range(train.nfeatures)]
     model_opt = opt
     checkpoint = None
-    dict_checkpoint = opt.train_from
 
-    if dict_checkpoint:
-        print('Loading dicts from checkpoint at %s' % dict_checkpoint)
-        checkpoint = torch.load(dict_checkpoint,
+    if opt.train_from:
+        print('Loading dicts from checkpoint at %s' % opt.train_from)
+        checkpoint = torch.load(opt.train_from,
                                 map_location=lambda storage, loc: storage)
         fields = onmt.IO.ONMTDataset.load_fields(checkpoint['vocab'])
         model_opt = checkpoint["opt"]
@@ -242,29 +260,32 @@ def main():
     print(' * vocabulary size. source = %d; target = %d' %
           (len(fields['src'].vocab), len(fields['tgt'].vocab)))
     for j, feat in enumerate(src_features):
-        print(' * src feature %d size = %d' %
-              (j, len(feat.vocab)))
+        print(' * src feature %d size = %d' % (j, len(feat.vocab)))
 
-    print(' * number of training sentences. %d' %
-          len(train))
+    print(' * number of training sentences. %d' % len(train))
     print(' * maximum batch size. %d' % opt.batch_size)
 
     print('Building model...')
-    model = onmt.ModelConstructor.make_base_model(opt, model_opt,
-                                                  fields, checkpoint)
-    print(model)
 
-    if opt.train_from:
-        print('Loading model from checkpoint at %s'
-              % opt.train_from)
-        opt.start_epoch = checkpoint['epoch'] + 1
-
+    model = onmt.ModelConstructor.make_base_model(model_opt, fields,
+                                                  use_gpu(opt), checkpoint)
     if len(opt.gpuid) > 1:
         print('Multi gpu training ', opt.gpuid)
         model = nn.DataParallel(model, device_ids=opt.gpuid, dim=1)
-    #     generator = nn.DataParallel(generator, device_ids=opt.gpuid, dim=0)
+    print(model)
 
-    if not opt.train_from:
+    # Load model from checkpoint or initialize, create optim
+    if opt.train_from:
+        print('Loading model from checkpoint at %s'
+              % opt.train_from)
+        # I don't like reassigning attributes of opt: it's not clear
+        opt.start_epoch = checkpoint['epoch'] + 1
+
+        print('Loading optimizer from checkpoint:')
+        optim = checkpoint['optim']
+        optim.optimizer.load_state_dict(
+            checkpoint['optim'].optimizer.state_dict())
+    else:
         if opt.param_init != 0.0:
             print('Intializing params')
             for p in model.parameters():
@@ -273,36 +294,17 @@ def main():
                                                          opt.fix_word_vecs_enc)
         model.decoder.embeddings.load_pretrained_vectors(opt.pre_word_vecs_dec,
                                                          opt.fix_word_vecs_dec)
-
+        # what members of opt does Optim need?
         optim = onmt.Optim(
             opt.optim, opt.learning_rate, opt.max_grad_norm,
             lr_decay=opt.learning_rate_decay,
             start_decay_at=opt.start_decay_at,
             opt=opt
         )
-    else:
-        print('Loading optimizer from checkpoint:')
-        optim = checkpoint['optim']
-        print(optim)
 
-    if opt.train_from:
-        optim.optimizer.load_state_dict(
-            checkpoint['optim'].optimizer.state_dict())
     optim.set_parameters(model.parameters())
 
-    n_params = sum([p.nelement() for p in model.parameters()])
-    print('* number of parameters: %d' % n_params)
-    enc = 0
-    dec = 0
-    for name, param in model.named_parameters():
-        if 'encoder' in name:
-            enc += param.nelement()
-        elif 'decoder' in name:
-            dec += param.nelement()
-        else:
-            print(name, param.nelement())
-    print('encoder: ', enc)
-    print('decoder: ', dec)
+    tally_parameters(model)
 
     check_model_path()
 

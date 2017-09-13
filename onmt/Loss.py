@@ -3,7 +3,7 @@ This file handles the details of the loss function during training.
 
 This includes: loss criterion, training statistics, and memory optimizations.
 """
-
+from __future__ import division
 import time
 import sys
 import math
@@ -15,14 +15,14 @@ from torch.autograd import Variable
 import onmt
 
 
-def NMTCriterion(vocabSize, opt, pad_id):
+def nmt_criterion(vocab_size, gpuid, pad_id):
     """
     Construct the standard NMT Criterion
     """
-    weight = torch.ones(vocabSize)
+    weight = torch.ones(vocab_size)
     weight[pad_id] = 0
     crit = nn.NLLLoss(weight, size_average=False)
-    if opt.gpuid:
+    if gpuid:
         crit.cuda()
     return crit
 
@@ -44,7 +44,7 @@ class Statistics:
         self.n_correct += stat.n_correct
 
     def accuracy(self):
-        return 100 * (self.n_correct / float(self.n_words))
+        return 100 * (self.n_correct / self.n_words)
 
     def ppl(self):
         return math.exp(min(self.loss / self.n_words, 100))
@@ -81,78 +81,84 @@ class Statistics:
         return Statistics(loss[0], non_padding.sum(), num_correct)
 
 
-class Splitter:
-    """
-    Spliter is a utilty that splits a dictionary of
-    data up into shards and waits for them to be backprop'd.
-    It blocks until all gradients have been computed and then
-    call backward on its inputs.
-    """
-
-    def __init__(self, shard_max, eval=False):
-        self.shard_max = shard_max
-        self.eval = eval
-
-    def splitIter(self, d):
-        # If eval mode, don't need to split at all
-        if self.eval:
-            yield d
-            return
-
-        # Split each element and make dummy variable.
-        dummies = {}
-        shards = []
-        for k, v in d.items():
-            if v is None:
-                continue
+def filter_gen_state(state):
+    for k, v in state.items():
+        if v is not None:
             if isinstance(v, Variable) and v.requires_grad:
-                dummies[k] = Variable(v.data, requires_grad=True,
-                                      volatile=False)
-            else:
-                dummies[k] = v
-            splits = torch.split(dummies[k], self.shard_max)
+                v = Variable(v.data, requires_grad=True, volatile=False)
+            yield k, v
 
-            for i, val in enumerate(splits):
-                if i >= len(shards):
-                    shards.append({})
-                shards[i][k] = val
 
-        for i, shard in enumerate(shards):
-            yield shard
+def shards(state, shard_size, eval=False):
+    """
+    state:
+        A dictionary which corresponds to the output of
+        LossCompute.make_loss_batch(). In other words, its keys are
+        {'out', 'target', 'align', 'coverage', 'attn'}. The values
+        for those keys are Tensor-like or None.
+    shard_size:
+        The maximum size of the shards yielded by the model
+    eval:
+        If True, only yield the state, nothing else. Otherwise, yield shards.
+    yields:
+        Each yielded shard is a dict.
+    side effect:
+        After the last shard, this function does back-propagation.
+    """
+    if eval:
+        yield state
+    else:
+        # non_none: the subdict of the state dictionary where the values
+        # are not None.
+        non_none = dict(filter_gen_state(state))
+
+        # Now, the iteration:
+        # split_state is a dictionary of sequences of tensor-like but we
+        # want a sequence of dictionaries of tensors.
+        # First, unzip the dictionary into a sequence of keys and a
+        # sequence of tensor-like sequences.
+        keys, values = zip(*((k, torch.split(v, shard_size))
+                             for k, v in non_none.items()))
+
+        # Now, yield a dictionary for each shard. The keys are always
+        # the same. values is a sequence of length #keys where each
+        # element is a sequence of length #shards. We want to iterate
+        # over the shards, not over the keys: therefore, the values need
+        # to be re-zipped by shard and then each shard can be paired
+        # with the keys.
+        for shard_tensors in zip(*values):
+            yield dict(zip(keys, shard_tensors))
 
         # Assumed backprop'd
-        inputs = []
-        grads = []
-        for k, v in dummies.items():
-            if isinstance(v, Variable) and (v.grad is not None):
-                inputs.append(d[k])
-                grads.append(v.grad.data)
+        variables = ((state[k], v.grad.data) for k, v in non_none.items()
+                     if isinstance(v, Variable) and v.grad is not None)
+        inputs, grads = zip(*variables)
         torch.autograd.backward(inputs, grads)
-        return
 
 
 class LossCompute:
-    def __init__(self, generator, crit, tgt_vocab, dataset, epoch, opt):
+    def __init__(self, generator, crit, tgt_vocab, dataset, epoch, copy_attn):
         self.generator = generator
         self.crit = crit
         self.tgt_vocab = tgt_vocab
         self.dataset = dataset
         self.epoch = epoch
-        self.opt = opt
+        self.copy_attn = copy_attn
 
-    def makeLossBatch(self, outputs, batch, attns, range_):
-        """Create all the variables that need to be sharded.
+    def make_loss_batch(self, outputs, batch, attns, range_):
+        """
+        Create all the variables that need to be sharded.
         This needs to match compute loss exactly.
         """
         return {"out": outputs,
                 "target": batch.tgt[range_[0] + 1: range_[1]],
-                "align": None if not self.opt.copy_attn
+                "align": None if not self.copy_attn
                 else batch.alignment[range_[0] + 1: range_[1]],
                 "coverage": attns.get("coverage"),
                 "attn": attns.get("copy")}
 
-    def computeLoss(self, batch, out, target, attn=None,
-                    align=None, coverage=None):
+    def compute_loss(self, batch, out, target, attn=None,
+                     align=None, coverage=None):
         def bottle(v):
             return v.view(-1, v.size(2))
 
@@ -162,7 +168,7 @@ class LossCompute:
         pad = self.tgt_vocab.stoi[onmt.IO.PAD_WORD]
         target = target.view(-1)
 
-        if not self.opt.copy_attn:
+        if not self.copy_attn:
             # Standard generator.
             scores = self.generator(bottle(out))
             loss = self.crit(scores, target)
@@ -178,6 +184,7 @@ class LossCompute:
             scores_data = bottle(scores_data)
 
             # Correct target is copy when only option.
+            # TODO: replace for loop with masking or boolean indexing
             target = target.data.clone()
             for i in range(target.size(0)):
                 if target[i] == 0 and align.data[i] != 0:
