@@ -160,7 +160,7 @@ def make_base_model(model_opt, fields, gpuid, checkpoint=None):
         print('Loading model')
         model.load_state_dict(checkpoint['model'])
         generator.load_state_dict(checkpoint['generator'])
-    
+
     # add the generator to the module (does this register the parameter?)
     model.generator = generator
 
