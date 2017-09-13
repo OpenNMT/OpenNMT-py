@@ -1,8 +1,7 @@
 import torch.nn as nn
-from torch.autograd import Variable
 import onmt
 import onmt.modules
-from onmt.modules import aeq
+from onmt.Utils import aeq
 from torch.nn.utils.rnn import pad_packed_sequence as unpack
 from torch.nn.utils.rnn import pack_padded_sequence as pack
 
@@ -24,63 +23,6 @@ class MeanEncoder(nn.Module):
         _, n_batch, emb_dim = emb.size()
         mean = emb.mean(0).expand(self.layers, n_batch, emb_dim)
         return (mean, mean), emb
-
-
-class TransformerEncoder(nn.Module):
-    """
-    Transformer encoder from "Attention is All You Need"
-    for discussion: Move to Transformer.py?
-    """
-    def __init__(self, hidden_size, dropout, num_layers, padding_idx):
-        self.padding_idx = padding_idx
-        super(TransformerEncoder, self).__init__()
-        self.transformer = nn.ModuleList(
-                [onmt.modules.TransformerEncoderLayer(hidden_size, dropout)
-                 for i in range(num_layers)])
-
-    def forward(self, emb, input, **kwargs):
-        """
-        emb: src_len x batch x embedding dimension
-        input (LongTensor): src_len x batch x nfeat
-        """
-        out = emb.transpose(0, 1).contiguous()
-        words = input[:, :, 0].transpose(0, 1)
-        # CHECKS
-        out_batch, out_len, _ = out.size()
-        w_batch, w_len = words.size()
-        aeq(out_batch, w_batch)
-        aeq(out_len, w_len)
-        # END CHECKS
-
-        # Make mask.
-        mask = words.data.eq(self.padding_idx).unsqueeze(1) \
-            .expand(w_batch, w_len, w_len)
-
-        # Run the forward pass of every layer of the tranformer.
-        for tf in self.transformer:
-            out = tf(out, mask)
-
-        # I don't know how Variable(emb.data) varies from emb
-        return Variable(emb.data), out.transpose(0, 1).contiguous()
-
-
-class CNNEncoder(nn.Module):
-    """
-    Convolutional encoder
-    Question: why isn't this behavior implemented in onmt.modules.ConvEncoder?
-    """
-    def __init__(self, embedding_dim, hidden_size, dropout,
-                 layers, kernel_width):
-        super(CNNEncoder, self).__init__()
-        self.cnn = onmt.modules.ConvEncoder(
-                embedding_dim, hidden_size,
-                layers, dropout, kernel_width)
-
-    def forward(self, emb, **kwargs):
-        out = emb.transpose(0, 1).contiguous()
-        out, emb_remap = self.cnn(out)
-        return (emb_remap.transpose(0, 1).contiguous(),
-                out.transpose(0, 1).contiguous())
 
 
 class RNNEncoder(nn.Module):
@@ -140,19 +82,19 @@ class Encoder(nn.Module):
         self.embeddings = embeddings
 
         # Build the Encoder RNN.
-        if self.encoder_type == "mean":
-            self.encoder = MeanEncoder()
-        elif self.encoder_type == "transformer":
-            self.encoder = TransformerEncoder(
+        if encoder_type == "mean":
+            self.encoder = MeanEncoder(num_layers)
+        elif encoder_type == "transformer":
+            self.encoder = onmt.modules.TransformerEncoder(
                 rnn_size, dropout, num_layers,
-                self.embeddings.padding_idx)
-        elif self.encoder_type == "cnn":
-            self.encoder = CNNEncoder(
-                self.embeddings.embedding_dim, rnn_size,
-                self.num_layers, dropout, cnn_kernel_width)
+                self.embeddings.word_padding_idx)
+        elif encoder_type == "cnn":
+            self.encoder = onmt.modules.CNNEncoder(
+                self.embeddings.embedding_size, rnn_size,
+                dropout, num_layers, cnn_kernel_width)
         else:
             self.encoder = RNNEncoder(
-                rnn_type, self.embeddings.embedding_dim, rnn_size,
+                rnn_type, self.embeddings.embedding_size, rnn_size,
                 num_layers, dropout, bidirectional)
 
     def forward(self, input, lengths=None, hidden=None):
@@ -166,12 +108,10 @@ class Encoder(nn.Module):
                                     Encoder state
             outputs (FloatTensor):  len x batch x rnn_size -  Memory bank
         """
-        # CHECKS
         s_len, n_batch, n_feats = input.size()
         if lengths is not None:
             n_batch_, = lengths.size()
             aeq(n_batch, n_batch_)
-        # END CHECKS
 
         emb = self.embeddings(input)
 
