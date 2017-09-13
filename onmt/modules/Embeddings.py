@@ -92,7 +92,7 @@ class Embeddings(nn.Module):
 
         if feat_merge == 'mlp':
             in_dim = sum(emb_dims)
-            out_dim = feat_embedding_dim
+            out_dim = embedding_dim
             mlp = nn.Sequential(BottleLinear(in_dim, out_dim), nn.ReLU())
             self.make_embedding.add_module('mlp', mlp)
 
