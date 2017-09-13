@@ -8,11 +8,10 @@ import onmt
 import onmt.Models
 import onmt.modules
 from onmt.IO import ONMTDataset
-from onmt.Models import NMTModel, MeanEncoder, RNNEncoder, \
-                        StdRNNDecoder, InputFeedRNNDecoder
+from onmt.Models import NMTModel, StdRNNDecoder, InputFeedRNNDecoder
 from onmt.modules import Embeddings, ImageEncoder, CopyGenerator, \
-                         TransformerEncoder, TransformerDecoder, \
-                         CNNEncoder, CNNDecoder
+                         TransformerDecoder, \
+                         CNNDecoder, Encoder
 
 
 def make_embeddings(opt, word_dict, feature_dicts, for_encoder=True):
@@ -56,19 +55,8 @@ def make_encoder(opt, embeddings):
         opt: the option in current environment.
         embeddings (Embeddings): vocab embeddings for this encoder.
     """
-    if opt.encoder_type == "transformer":
-        return TransformerEncoder(opt.enc_layers, opt.rnn_size,
-                                  opt.dropout, embeddings)
-    elif opt.encoder_type == "cnn":
-        return CNNEncoder(opt.enc_layers, opt.rnn_size,
-                          opt.cnn_kernel_width,
-                          opt.dropout, embeddings)
-    elif opt.encoder_type == "mean":
-        return MeanEncoder(opt.enc_layers, embeddings)
-    else:
-        # "rnn" or "brnn"
-        return RNNEncoder(opt.rnn_type, opt.brnn, opt.dec_layers,
-                          opt.rnn_size, opt.dropout, embeddings)
+    return Encoder(opt.encoder_type, opt.brnn, opt.rnn_type, opt.enc_layers,
+                   opt.rnn_size, opt.dropout, embeddings, opt.cnn_kernel_width)
 
 
 def make_decoder(opt, embeddings):

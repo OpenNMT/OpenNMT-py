@@ -8,7 +8,6 @@ from torch.autograd import Variable
 import numpy as np
 
 import onmt
-from onmt.Models import EncoderBase
 from onmt.Models import DecoderState
 from onmt.Utils import aeq
 
@@ -65,27 +64,22 @@ class TransformerEncoderLayer(nn.Module):
         return out
 
 
-class TransformerEncoder(EncoderBase):
+class TransformerEncoder(nn.Module):
     """
-    The Transformer encoder from "Attention is All You Need".
+    Transformer encoder from "Attention is All You Need"
     """
-    def __init__(self, num_layers, hidden_size,
-                 dropout, embeddings):
+    def __init__(self, hidden_size, dropout, num_layers, padding_idx):
+        self.padding_idx = padding_idx
         super(TransformerEncoder, self).__init__()
-
-        self.num_layers = num_layers
-        self.embeddings = embeddings
         self.transformer = nn.ModuleList(
-            [TransformerEncoderLayer(hidden_size, dropout)
-             for i in range(num_layers)])
+                [TransformerEncoderLayer(hidden_size, dropout)
+                 for i in range(num_layers)])
 
-    def forward(self, input, lengths=None, hidden=None):
-        """ See EncoderBase.forward() for description of args and returns."""
-        self._check_args(input, lengths, hidden)
-
-        emb = self.embeddings(input)
-        s_len, n_batch, emb_dim = emb.size()
-
+    def forward(self, emb, input, **kwargs):
+        """
+        emb: src_len x batch x embedding dimension
+        input (LongTensor): src_len x batch x nfeat
+        """
         out = emb.transpose(0, 1).contiguous()
         words = input[:, :, 0].transpose(0, 1)
         # CHECKS
@@ -96,14 +90,14 @@ class TransformerEncoder(EncoderBase):
         # END CHECKS
 
         # Make mask.
-        padding_idx = self.embeddings.word_padding_idx
-        mask = words.data.eq(padding_idx).unsqueeze(1) \
+        mask = words.data.eq(self.padding_idx).unsqueeze(1) \
             .expand(w_batch, w_len, w_len)
 
         # Run the forward pass of every layer of the tranformer.
-        for i in range(self.num_layers):
-            out = self.transformer[i](out, mask)
+        for tf in self.transformer:
+            out = tf(out, mask)
 
+        # I don't know how Variable(emb.data) varies from emb
         return Variable(emb.data), out.transpose(0, 1).contiguous()
 
 
