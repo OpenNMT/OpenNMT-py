@@ -61,7 +61,7 @@ class RNNEncoder(EncoderBase):
         hidden_size = hidden_size // num_directions
         self.embeddings = embeddings
         self.rnn = getattr(nn, rnn_type)(
-                input_size=embeddings.embedding_dim,
+                input_size=embeddings.embedding_size,
                 hidden_size=hidden_size,
                 num_layers=num_layers,
                 dropout=dropout,
@@ -270,7 +270,7 @@ class StdRNNDecoder(RNNDecoderBase):
         """
         Private helper returning the number of expected features.
         """
-        return self.embeddings.embedding_dim
+        return self.embeddings.embedding_size
 
 
 class InputFeedRNNDecoder(RNNDecoderBase):
@@ -352,7 +352,7 @@ class InputFeedRNNDecoder(RNNDecoderBase):
         """
         Using input feed by concatenating input with attention vectors.
         """
-        return self.embeddings.embedding_dim + self.hidden_size
+        return self.embeddings.embedding_size + self.hidden_size
 
 
 class NMTModel(nn.Module):

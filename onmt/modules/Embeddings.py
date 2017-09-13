@@ -59,7 +59,6 @@ class Embeddings(nn.Module):
         vocab_sizes = [word_vocab_size]
         emb_dims = [embedding_dim]
         pad_indices = [word_padding_idx]
-        self.embedding_dim = embedding_dim
 
         # Parameters for additional feature embedding matrices
         # (these have no effect if feat_vocab_sizes is empty)
@@ -67,10 +66,8 @@ class Embeddings(nn.Module):
             feat_dims = [int(vocab ** feat_vec_exponent)
                          for vocab in feat_vocab_sizes]
         else:
-            if feat_merge == 'sum':
-                feat_dim = embedding_dim
-            else:
-                feat_dim = feat_embedding_dim
+            feat_dim = embedding_dim \
+                if feat_merge == 'sum' else feat_embedding_dim
             feat_dims = [feat_dim] * len(feat_vocab_sizes)
         vocab_sizes.extend(feat_vocab_sizes)
         emb_dims.extend(feat_dims)
@@ -85,6 +82,8 @@ class Embeddings(nn.Module):
 
         # The final output size of word + feature vectors. This can vary
         # from the word vector size if and only if features are defined.
+        # This is the attribute you should access if you need to know
+        # how big your embeddings are going to be.
         self.embedding_size = (sum(emb_dims) if feat_merge == 'concat'
                                else embedding_dim)
 
@@ -98,7 +97,7 @@ class Embeddings(nn.Module):
 
         if feat_merge == 'mlp':
             in_dim = sum(emb_dims)
-            out_dim = feat_embedding_dim
+            out_dim = embedding_dim
             mlp = nn.Sequential(BottleLinear(in_dim, out_dim), nn.ReLU())
             self.make_embedding.add_module('mlp', mlp)
 

@@ -66,7 +66,7 @@ class CNNEncoder(EncoderBase):
         super(CNNEncoder, self).__init__()
 
         self.embeddings = embeddings
-        input_size = embeddings.embedding_dim
+        input_size = embeddings.embedding_size
         self.linear = nn.Linear(input_size, hidden_size)
         self.cnn = StackedCNN(num_layers, hidden_size,
                               cnn_kernel_width, dropout)
@@ -107,7 +107,7 @@ class CNNDecoder(nn.Module):
         self.dropout = dropout
 
         # Build the CNN.
-        input_size = self.embeddings.embedding_dim
+        input_size = self.embeddings.embedding_size
         self.linear = nn.Linear(input_size, self.hidden_size)
         self.conv_layers = nn.ModuleList()
         for i in range(self.num_layers):
