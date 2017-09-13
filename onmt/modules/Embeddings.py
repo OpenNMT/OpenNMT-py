@@ -64,10 +64,7 @@ class Embeddings(nn.Module):
             feat_dims = [int(vocab ** feat_vec_exponent)
                          for vocab in feat_vocab_sizes]
         else:
-            if feat_merge == 'sum':
-                feat_dim = embedding_dim
-            else:
-                feat_dim = feat_embedding_dim
+            feat_dim = embedding_dim if feat_merge == 'sum' else feat_embedding_dim
             feat_dims = [feat_dim] * len(feat_vocab_sizes)
         vocab_sizes.extend(feat_vocab_sizes)
         emb_dims.extend(feat_dims)
