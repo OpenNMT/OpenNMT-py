@@ -10,6 +10,7 @@ import onmt
 import onmt.Models
 import onmt.ModelConstructor
 import onmt.modules
+from onmt.Utils import use_gpu
 import opts
 
 parser = argparse.ArgumentParser(description='train.py')
@@ -267,7 +268,7 @@ def main():
     print('Building model...')
 
     model = onmt.ModelConstructor.make_base_model(model_opt, fields,
-                                                  opt.gpuid, checkpoint)
+                                                  use_gpu(opt), checkpoint)
     if len(opt.gpuid) > 1:
         print('Multi gpu training ', opt.gpuid)
         model = nn.DataParallel(model, device_ids=opt.gpuid, dim=1)
