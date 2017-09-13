@@ -47,11 +47,9 @@ class TestModel(unittest.TestCase):
             sourceL: Length of generated input sentence
             bsize: Batchsize of generated input
         '''
-        vocab = self.get_vocab()
-        feats_padding_idx = []
-        emb = make_embeddings(opt, vocab.stoi[onmt.IO.PAD_WORD],
-                              feats_padding_idx, len(vocab),
-                              for_encoder=True)
+        word_dict = self.get_vocab()
+        feature_dicts = []
+        emb = make_embeddings(opt, word_dict, feature_dicts)
         test_src, _, __ = self.get_batch(sourceL=sourceL,
                                          bsize=bsize)
         if opt.decoder_type == 'transformer':
@@ -73,11 +71,9 @@ class TestModel(unittest.TestCase):
             sourceL: Length of generated input sentence
             bsize: Batchsize of generated input
         '''
-        vocab = self.get_vocab()
-        feats_padding_idx = []
-        embeddings = make_embeddings(opt, vocab.stoi[onmt.IO.PAD_WORD],
-                                     feats_padding_idx, len(vocab),
-                                     for_encoder=True)
+        word_dict = self.get_vocab()
+        feature_dicts = []
+        embeddings = make_embeddings(opt, word_dict, feature_dicts)
         enc = make_encoder(opt, embeddings)
 
         test_src, test_tgt, test_length = self.get_batch(sourceL=sourceL,
@@ -107,17 +103,13 @@ class TestModel(unittest.TestCase):
             sourceL: length of input sequence
             bsize: batchsize
         """
-        vocab = self.get_vocab()
-        word_padding_idx = vocab.stoi[onmt.IO.PAD_WORD]
-        feats_padding_idx = []
+        word_dict = self.get_vocab()
+        feature_dicts = []
 
-        embeddings = make_embeddings(opt, word_padding_idx,
-                                     feats_padding_idx, len(vocab),
-                                     for_encoder=True)
+        embeddings = make_embeddings(opt, word_dict, feature_dicts)
         enc = make_encoder(opt, embeddings)
 
-        embeddings = make_embeddings(opt, word_padding_idx,
-                                     feats_padding_idx, len(vocab),
+        embeddings = make_embeddings(opt, word_dict, feature_dicts,
                                      for_encoder=False)
         dec = make_decoder(opt, embeddings)
 

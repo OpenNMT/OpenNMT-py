@@ -2,8 +2,8 @@ from __future__ import division
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
-from torch.nn.utils.rnn import pad_packed_sequence as unpack
 from torch.nn.utils.rnn import pack_padded_sequence as pack
+from torch.nn.utils.rnn import pad_packed_sequence as unpack
 
 import onmt
 from onmt.Utils import aeq
@@ -11,7 +11,7 @@ from onmt.Utils import aeq
 
 class EncoderBase(nn.Module):
     """
-    EncoderBase class for sharing code among various *Encoder.
+    EncoderBase class for sharing code among various encoder.
     """
     def _check_args(self, input, lengths=None, hidden=None):
         s_len, n_batch, n_feats = input.size()
@@ -27,14 +27,14 @@ class EncoderBase(nn.Module):
             hidden: Initial hidden state.
         Returns:
             hidden_t (Variable): Pair of layers x batch x rnn_size - final
-                                    Encoder state
+                                    encoder state
             outputs (FloatTensor):  len x batch x rnn_size -  Memory bank
         """
         raise NotImplementedError
 
 
 class MeanEncoder(EncoderBase):
-    """ A trivial encoder without RNN, just takes mean of as final state. """
+    """ A trivial encoder without RNN, just takes mean as final state. """
     def __init__(self, num_layers, embeddings):
         super(MeanEncoder, self).__init__()
         self.num_layers = num_layers
@@ -61,7 +61,7 @@ class RNNEncoder(EncoderBase):
         hidden_size = hidden_size // num_directions
         self.embeddings = embeddings
         self.rnn = getattr(nn, rnn_type)(
-                input_size=embeddings.embedding_dim,
+                input_size=embeddings.embedding_size,
                 hidden_size=hidden_size,
                 num_layers=num_layers,
                 dropout=dropout,
@@ -86,7 +86,7 @@ class RNNEncoder(EncoderBase):
 
 class RNNDecoderBase(nn.Module):
     """
-    RNN Decoder base class.
+    RNN decoder base class.
     """
     def __init__(self, rnn_type, bidirectional_encoder, num_layers,
                  hidden_size, attn_type, coverage_attn, context_gate,
@@ -134,16 +134,16 @@ class RNNDecoderBase(nn.Module):
         Args:
             input (LongTensor): a sequence of input tokens tensors
                                 of size (len x batch x nfeats).
-            context (FloatTensor): output(tensor sequence) from the Encoder
+            context (FloatTensor): output(tensor sequence) from the encoder
                         RNN of size (src_len x batch x hidden_size).
-            state (FloatTensor): hidden state from the Encoder RNN for
+            state (FloatTensor): hidden state from the encoder RNN for
                                  initializing the decoder.
         Returns:
-            outputs (FloatTensor): a Tensor sequence of output from the Decoder
+            outputs (FloatTensor): a Tensor sequence of output from the decoder
                                    of shape (len x batch x hidden_size).
-            state (FloatTensor): final hidden state from the Decoder.
+            state (FloatTensor): final hidden state from the decoder.
             attns (dict of (str, FloatTensor)): a dictionary of different
-                                type of attention Tensor from the Decoder
+                                type of attention Tensor from the decoder
                                 of shape (src_len x batch).
         """
         # Args Check
@@ -191,7 +191,7 @@ class RNNDecoderBase(nn.Module):
 
 class StdRNNDecoder(RNNDecoderBase):
     """
-    Stardard RNN Decoder, with Attention.
+    Stardard RNN decoder, with Attention.
     Currently no 'coverage_attn' and 'copy_attn' support.
     """
     def _run_forward_pass(self, input, context, state):
@@ -201,18 +201,18 @@ class StdRNNDecoder(RNNDecoderBase):
         Args:
             input (LongTensor): a sequence of input tokens tensors
                                 of size (len x batch x nfeats).
-            context (FloatTensor): output(tensor sequence) from the Encoder
+            context (FloatTensor): output(tensor sequence) from the encoder
                         RNN of size (src_len x batch x hidden_size).
-            state (FloatTensor): hidden state from the Encoder RNN for
+            state (FloatTensor): hidden state from the encoder RNN for
                                  initializing the decoder.
         Returns:
-            hidden (Variable): final hidden state from the Decoder.
+            hidden (Variable): final hidden state from the decoder.
             outputs ([FloatTensor]): an array of output of every time
-                                     step from the Decoder.
+                                     step from the decoder.
             attns (dict of (str, [FloatTensor]): a dictionary of different
                             type of attention Tensor array of every time
-                            step from the Decoder.
-            coverage (FloatTensor, optional): coverage from the Decoder.
+                            step from the decoder.
+            coverage (FloatTensor, optional): coverage from the decoder.
         """
         assert not self._copy  # TODO, no support yet.
         assert not self._coverage  # TODO, no support yet.
@@ -258,7 +258,7 @@ class StdRNNDecoder(RNNDecoderBase):
     def _build_rnn(self, rnn_type, input_size,
                    hidden_size, num_layers, dropout):
         """
-        Private helper for building standard Decoder RNN.
+        Private helper for building standard decoder RNN.
         """
         return getattr(nn, rnn_type)(
             input_size, hidden_size,
@@ -270,12 +270,12 @@ class StdRNNDecoder(RNNDecoderBase):
         """
         Private helper returning the number of expected features.
         """
-        return self.embeddings.embedding_dim
+        return self.embeddings.embedding_size
 
 
 class InputFeedRNNDecoder(RNNDecoderBase):
     """
-    Stardard RNN Decoder, with Input Feed and Attention.
+    Stardard RNN decoder, with Input Feed and Attention.
     """
     def _run_forward_pass(self, input, context, state):
         """
@@ -352,18 +352,18 @@ class InputFeedRNNDecoder(RNNDecoderBase):
         """
         Using input feed by concatenating input with attention vectors.
         """
-        return self.embeddings.embedding_dim + self.hidden_size
+        return self.embeddings.embedding_size + self.hidden_size
 
 
 class NMTModel(nn.Module):
     """
-    The Encoder + Decoder Neural Machine Translation Model.
+    The encoder + decoder Neural Machine Translation Model.
     """
     def __init__(self, encoder, decoder, multigpu=False):
         """
         Args:
-            encoder(Encoder): the Encoder.
-            decoder(*Decoder): the various *Decoder.
+            encoder(*Encoder): the various encoder.
+            decoder(*Decoder): the various decoder.
             multigpu(bool): run parellel on multi-GPU?
         """
         self.multigpu = multigpu
@@ -381,7 +381,7 @@ class NMTModel(nn.Module):
             lengths([int]): an array of the src length.
             dec_state: A decoder state object
         Returns:
-            outputs (FloatTensor): (len x batch x hidden_size): Decoder outputs
+            outputs (FloatTensor): (len x batch x hidden_size): decoder outputs
             attns (FloatTensor): Dictionary of (src_len x batch)
             dec_hidden (FloatTensor): tuple (1 x batch x hidden_size)
                                       Init hidden state
@@ -427,13 +427,13 @@ class RNNDecoderState(DecoderState):
     def __init__(self, context, hidden_size, rnnstate):
         """
         Args:
-            context (FloatTensor): output from the Encoder of size
+            context (FloatTensor): output from the encoder of size
                                    len x batch x rnn_size.
-            hidden_size (int): the size of hidden layer of the Decoder.
-            rnnstate (Variable): final hidden state from the Encoder.
+            hidden_size (int): the size of hidden layer of the decoder.
+            rnnstate (Variable): final hidden state from the encoder.
                 transformed to shape: layers x batch x (directions*dim).
-            input_feed (FloatTensor): output from last layer of the Decoder.
-            coverage (FloatTensor): coverage output from the Decoder.
+            input_feed (FloatTensor): output from last layer of the decoder.
+            coverage (FloatTensor): coverage output from the decoder.
         """
         if not isinstance(rnnstate, tuple):
             self.hidden = (rnnstate,)
