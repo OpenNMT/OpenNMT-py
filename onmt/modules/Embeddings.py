@@ -64,7 +64,8 @@ class Embeddings(nn.Module):
             feat_dims = [int(vocab ** feat_vec_exponent)
                          for vocab in feat_vocab_sizes]
         else:
-            feat_dim = embedding_dim if feat_merge == 'sum' else feat_embedding_dim
+            feat_dim = embedding_dim \
+                if feat_merge == 'sum' else feat_embedding_dim
             feat_dims = [feat_dim] * len(feat_vocab_sizes)
         vocab_sizes.extend(feat_vocab_sizes)
         emb_dims.extend(feat_dims)
@@ -79,6 +80,8 @@ class Embeddings(nn.Module):
 
         # The final output size of word + feature vectors. This can vary
         # from the word vector size if and only if features are defined.
+        # This is the attribute you should access if you need to know
+        # how big your embeddings are going to be.
         self.embedding_size = (sum(emb_dims) if feat_merge == 'concat'
                                else embedding_dim)
 
