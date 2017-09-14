@@ -627,6 +627,9 @@ class SRU(nn.Module):
             ).zero_())
             hidden = [zeros for i in range(self.depth)]
         else:
+            if isinstance(hidden, tuple):
+                # RNNDecoderState wraps hidden as a tuple.
+                hidden = hidden[0]
             assert hidden.dim() == 3    # (depth, batch, n_out*dir_)
             hidden = hidden.chunk(self.depth, 0)
 

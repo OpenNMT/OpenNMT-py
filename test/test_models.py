@@ -206,7 +206,8 @@ tests_ntmodel = [[('rnn_type', 'GRU')],
 
 if onmt.modules.check_sru_requirement():
     """ Only do SRU test if requirment is safisfied. """
-    tests_ntmodel.append([('rnn_type', 'SRU')])
+    # SRU doesn't support input_feed.
+    tests_ntmodel.append([('rnn_type', 'SRU'), ('input_feed', 0)])
 
 for p in tests_ntmodel:
     _add_test(p, 'ntmmodel_forward')
