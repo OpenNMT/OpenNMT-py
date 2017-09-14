@@ -60,12 +60,25 @@ class RNNEncoder(EncoderBase):
         assert hidden_size % num_directions == 0
         hidden_size = hidden_size // num_directions
         self.embeddings = embeddings
-        self.rnn = getattr(nn, rnn_type)(
-                input_size=embeddings.embedding_size,
-                hidden_size=hidden_size,
-                num_layers=num_layers,
-                dropout=dropout,
-                bidirectional=bidirectional)
+        self.no_pack_padded_seq = False
+
+        # Use pytorch version when available.
+        if rnn_type == "SRU":
+            # SRU doesn't support PackedSequence.
+            self.no_pack_padded_seq = True
+            self.rnn = onmt.modules.SRU(
+                    input_size=embeddings.embedding_size,
+                    hidden_size=hidden_size,
+                    num_layers=num_layers,
+                    dropout=dropout,
+                    bidirectional=bidirectional)
+        else:
+            self.rnn = getattr(nn, rnn_type)(
+                    input_size=embeddings.embedding_size,
+                    hidden_size=hidden_size,
+                    num_layers=num_layers,
+                    dropout=dropout,
+                    bidirectional=bidirectional)
 
     def forward(self, input, lengths=None, hidden=None):
         """ See EncoderBase.forward() for description of args and returns."""
@@ -73,14 +86,18 @@ class RNNEncoder(EncoderBase):
 
         emb = self.embeddings(input)
         s_len, batch, emb_dim = emb.size()
+
         packed_emb = emb
-        if lengths is not None:
+        if lengths is not None and not self.no_pack_padded_seq:
             # Lengths data is wrapped inside a Variable.
             lengths = lengths.view(-1).tolist()
             packed_emb = pack(emb, lengths)
+
         outputs, hidden_t = self.rnn(packed_emb, hidden)
-        if lengths:
+
+        if lengths is not None and not self.no_pack_padded_seq:
             outputs = unpack(outputs)[0]
+
         return hidden_t, outputs
 
 
@@ -260,6 +277,13 @@ class StdRNNDecoder(RNNDecoderBase):
         """
         Private helper for building standard decoder RNN.
         """
+        # Use pytorch version when available.
+        if rnn_type == "SRU":
+            return onmt.modules.SRU(
+                    input_size, hidden_size,
+                    num_layers=num_layers,
+                    dropout=dropout)
+
         return getattr(nn, rnn_type)(
             input_size, hidden_size,
             num_layers=num_layers,

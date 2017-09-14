@@ -1,4 +1,4 @@
-# PyOpenNMT: Open-Source Neural Machine Translation
+# OpenNMT-py: Open-Source Neural Machine Translation
 
 This is a [Pytorch](https://github.com/pytorch/pytorch)
 port of [OpenNMT](https://github.com/OpenNMT/OpenNMT),

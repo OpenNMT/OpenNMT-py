@@ -204,5 +204,9 @@ tests_ntmodel = [[('rnn_type', 'GRU')],
                  []
                  ]
 
+if onmt.modules.check_sru_requirement():
+    """ Only do SRU test if requirment is safisfied. """
+    tests_ntmodel.append([('rnn_type', 'SRU')])
+
 for p in tests_ntmodel:
     _add_test(p, 'ntmmodel_forward')

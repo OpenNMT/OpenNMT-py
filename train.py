@@ -37,6 +37,9 @@ opt.brnn = (opt.encoder_type == "brnn")
 if opt.seed > 0:
     torch.manual_seed(opt.seed)
 
+if opt.rnn_type == "SRU" and not opt.gpuid:
+    raise AssertionError("Using SRU requires -gpuid set.")
+
 if torch.cuda.is_available() and not opt.gpuid:
     print("WARNING: You have a CUDA device, should run with -gpuid 0")
 
