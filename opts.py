@@ -17,16 +17,17 @@ def model_opts(parser):
     parser.add_argument('-tgt_word_vec_size', type=int, default=500,
                         help='Tgt word embedding sizes')
 
-    parser.add_argument('-feat_vec_size', type=int, default=20,
-                        help="""When using -feat_merge mlp, feature embedding
-                        sizes will be set to this.""")
     parser.add_argument('-feat_merge', type=str, default='concat',
                         choices=['concat', 'sum', 'mlp'],
                         help='Merge action for the features embeddings')
+    parser.add_argument('-feat_vec_size', type=int, default=-1,
+                        help="""If specified, feature embedding sizes
+                        will be set to this. Otherwise, feat_vec_exponent
+                        will be used.""")
     parser.add_argument('-feat_vec_exponent', type=float, default=0.7,
-                        help="""When using -feat_merge concat, feature embedding
-                        sizes will be set to N^feat_vec_exponent where N is the
-                        number of values the feature takes.""")
+                        help="""If -feat_merge_size is not set, feature
+                        embedding sizes will be set to N^feat_vec_exponent
+                        where N is the number of values the feature takes.""")
     parser.add_argument('-position_encoding', action='store_true',
                         help='Use a sin to mark relative words positions.')
     parser.add_argument('-share_decoder_embeddings', action='store_true',
