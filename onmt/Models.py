@@ -364,6 +364,8 @@ class InputFeedRNNDecoder(RNNDecoderBase):
 
     def _build_rnn(self, rnn_type, input_size,
                    hidden_size, num_layers, dropout):
+        assert not rnn_type == "SRU", "SRU doesn't support input feed! " \
+                "Please set -input_feed 0!"
         if rnn_type == "LSTM":
             stacked_cell = onmt.modules.StackedLSTM
         else:
