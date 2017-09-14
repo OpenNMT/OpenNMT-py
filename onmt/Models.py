@@ -63,12 +63,25 @@ class RNNEncoder(EncoderBase):
         self.embeddings = embeddings
         self.no_pack_padded_seq = no_pack_padded_seq
 
-        self.rnn = getattr(nn, rnn_type)(
-                input_size=embeddings.embedding_size,
-                hidden_size=hidden_size,
-                num_layers=num_layers,
-                dropout=dropout,
-                bidirectional=bidirectional)
+        # Use pytorch version when available.
+        if rnn_type == "SRU":
+            if no_pack_padded_seq is False:
+                raise Exception("'SRU' doesn't support PackedSequence, "
+                                "please set option: -no_pack_padded_seq!")
+
+            self.rnn = onmt.modules.SRU(
+                    input_size=embeddings.embedding_size,
+                    hidden_size=hidden_size,
+                    num_layers=num_layers,
+                    dropout=dropout,
+                    bidirectional=bidirectional)
+        else:
+            self.rnn = getattr(nn, rnn_type)(
+                    input_size=embeddings.embedding_size,
+                    hidden_size=hidden_size,
+                    num_layers=num_layers,
+                    dropout=dropout,
+                    bidirectional=bidirectional)
 
     def forward(self, input, lengths=None, hidden=None):
         """ See EncoderBase.forward() for description of args and returns."""
@@ -267,6 +280,13 @@ class StdRNNDecoder(RNNDecoderBase):
         """
         Private helper for building standard decoder RNN.
         """
+        # Use pytorch version when available.
+        if rnn_type == "SRU":
+            return onmt.modules.SRU(
+                    input_size, hidden_size,
+                    num_layers=num_layers,
+                    dropout=dropout)
+
         return getattr(nn, rnn_type)(
             input_size, hidden_size,
             num_layers=num_layers,

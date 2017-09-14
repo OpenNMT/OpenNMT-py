@@ -1,4 +1,7 @@
 import argparse
+import subprocess
+import os
+import re
 
 
 def model_opts(parser):
@@ -57,8 +60,22 @@ def model_opts(parser):
                         help="""Feed the context vector at each time step as
                         additional input (via concatenation with the word
                         embeddings) to the decoder.""")
+
+    class CheckSRU(argparse.Action):
+        def __init__(self, option_strings, dest, **kwargs):
+            super(CheckSRU, self).__init__(option_strings, dest, **kwargs)
+
+        def __call__(self, parser, namespace, values, option_string=None):
+            print(self.dest)
+            print(values)
+            if values == 'SRU':
+                check_sru_requirement(abort=True)
+            # Check pass, set the args.
+            setattr(namespace, self.dest, values)
+
     parser.add_argument('-rnn_type', type=str, default='LSTM',
-                        choices=['LSTM', 'GRU'],
+                        choices=['LSTM', 'GRU', 'SRU'],
+                        action=CheckSRU,
                         help="""The gate type to use in the RNNs""")
     parser.add_argument('-no_pack_padded_seq', action="store_true",
                         default=False,
@@ -221,6 +238,37 @@ def preprocess_opts(parser):
 def add_md_help_argument(parser):
     parser.add_argument('-md', action=MarkdownHelpAction,
                         help='print Markdown-formatted help text and exit.')
+
+
+# Our current SRU version implements its own cuda-level optimization,
+# so it needs the `cupy` and `pynvrtc` package. It also needs the cuda
+# library path set, e.g.: 'export LD_LIBRARY_PATH=/usr/local/cuda/lib64'.
+def check_sru_requirement(abort=False):
+    """
+    Return True if check pass; if check fails and abort is True,
+    raise an Exception, othereise return False.
+    """
+    try:
+        pip_out = subprocess.Popen(
+            ('pip', 'freeze'), stdout=subprocess.PIPE)
+        subprocess.check_output(('grep', 'cupy\|pynvrtc'),
+                                stdin=pip_out.stdout)
+        pip_out.wait()
+    except subprocess.CalledProcessError:
+        if not abort:
+            return False
+        raise Exception("Using 'SRU' requires 'cupy' and 'pynvrtc' "
+                        "python packages installed.")
+
+    pattern = re.compile(".*cuda/lib.*")
+    ld_path = os.getenv('LD_LIBRARY_PATH', "")
+    if re.match(pattern, ld_path) is None:
+        if not abort:
+            return False
+        raise Exception("Using 'SRU' requires setting the cuda library path, "
+                        "e.g. export LD_LIBRARY_PATH=/usr/local/cuda/lib64.")
+
+    return True
 
 
 # MARKDOWN boilerplate

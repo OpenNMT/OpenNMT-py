@@ -204,5 +204,12 @@ tests_ntmodel = [[('rnn_type', 'GRU')],
                  []
                  ]
 
+if opts.check_sru_requirement():
+    """ Only do SRU test if requirment is safisfied. """
+    # SRU doesn't support PackedSequence, so set
+    # 'no_pack_padded_seq' to True.
+    tests_ntmodel.append(
+        [('rnn_type', 'SRU'), ('no_pack_padded_seq', True)])
+
 for p in tests_ntmodel:
     _add_test(p, 'ntmmodel_forward')
