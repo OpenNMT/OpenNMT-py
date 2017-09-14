@@ -68,8 +68,7 @@ def make_encoder(opt, embeddings):
     else:
         # "rnn" or "brnn"
         return RNNEncoder(opt.rnn_type, opt.brnn, opt.dec_layers,
-                          opt.rnn_size, opt.no_pack_padded_seq,
-                          opt.dropout, embeddings)
+                          opt.rnn_size, opt.dropout, embeddings)
 
 
 def make_decoder(opt, embeddings):

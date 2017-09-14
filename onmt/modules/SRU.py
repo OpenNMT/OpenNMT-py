@@ -5,15 +5,68 @@ TODO: turn to pytorch's implementation when it is available.
 This implementation is adpoted from the author of the paper:
 https://github.com/taolei87/sru/blob/master/cuda_functional.py.
 """
+import subprocess
+import os
+import re
+import argparse
 import torch
 import torch.nn as nn
 from torch.autograd import Function, Variable
-from cupy.cuda import function
-from pynvrtc.compiler import Program
 from collections import namedtuple
 
 
-tmp_ = torch.rand(1, 1).cuda()
+# For command-line option parsing
+class CheckSRU(argparse.Action):
+    def __init__(self, option_strings, dest, **kwargs):
+        super(CheckSRU, self).__init__(option_strings, dest, **kwargs)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        if values == 'SRU':
+            check_sru_requirement(abort=True)
+        # Check pass, set the args.
+        setattr(namespace, self.dest, values)
+
+
+# This SRU version implements its own cuda-level optimization,
+# so it requires that:
+# 1. `cupy` and `pynvrtc` python package installed.
+# 2. pytorch is built with cuda support.
+# 3. library path set: export LD_LIBRARY_PATH=<cuda lib path>.
+def check_sru_requirement(abort=False):
+    """
+    Return True if check pass; if check fails and abort is True,
+    raise an Exception, othereise return False.
+    """
+    # Check 1.
+    try:
+        pip_out = subprocess.Popen(
+            ('pip', 'freeze'), stdout=subprocess.PIPE)
+        subprocess.check_output(('grep', 'cupy\|pynvrtc'),
+                                stdin=pip_out.stdout)
+        pip_out.wait()
+    except subprocess.CalledProcessError:
+        if not abort:
+            return False
+        raise AssertionError("Using SRU requires 'cupy' and 'pynvrtc' "
+                             "python packages installed.")
+
+    # Check 2.
+    if torch.cuda.is_available() is False:
+        if not abort:
+            return False
+        raise AssertionError("Using SRU requires pytorch built with cuda.")
+
+    # Check 3.
+    pattern = re.compile(".*cuda/lib.*")
+    ld_path = os.getenv('LD_LIBRARY_PATH', "")
+    if re.match(pattern, ld_path) is None:
+        if not abort:
+            return False
+        raise AssertionError("Using SRU requires setting cuda lib path, e.g. "
+                             "export LD_LIBRARY_PATH=/usr/local/cuda/lib64.")
+
+    return True
+
 
 SRU_CODE = """
 extern "C" {
@@ -331,17 +384,27 @@ extern "C" {
 }
 """
 
-SRU_PROG = Program(SRU_CODE.encode('utf-8'), 'sru_prog.cu'.encode('utf-8'))
-SRU_PTX = SRU_PROG.compile()
-SRU_MOD = function.Module()
-SRU_MOD.load(bytes(SRU_PTX.encode()))
-SRU_FWD_FUNC = SRU_MOD.get_function('sru_fwd')
-SRU_BWD_FUNC = SRU_MOD.get_function('sru_bwd')
-SRU_BiFWD_FUNC = SRU_MOD.get_function('sru_bi_fwd')
-SRU_BiBWD_FUNC = SRU_MOD.get_function('sru_bi_bwd')
 
-Stream = namedtuple('Stream', ['ptr'])
-SRU_STREAM = Stream(ptr=torch.cuda.current_stream().cuda_stream)
+if check_sru_requirement():
+    from cupy.cuda import function
+    from pynvrtc.compiler import Program
+
+    # This cuda() is important, it sets up device to use.
+    tmp_ = torch.rand(1, 1).cuda()
+
+    sru_prog = Program(SRU_CODE.encode('utf-8'),
+                       'sru_prog.cu'.encode('utf-8'))
+    sru_ptx = sru_prog.compile()
+    sru_mod = function.Module()
+    sru_mod.load(bytes(sru_ptx.encode()))
+
+    SRU_FWD_FUNC = sru_mod.get_function('sru_fwd')
+    SRU_BWD_FUNC = sru_mod.get_function('sru_bwd')
+    SRU_BiFWD_FUNC = sru_mod.get_function('sru_bi_fwd')
+    SRU_BiBWD_FUNC = sru_mod.get_function('sru_bi_bwd')
+
+    stream = namedtuple('Stream', ['ptr'])
+    SRU_STREAM = stream(ptr=torch.cuda.current_stream().cuda_stream)
 
 
 class SRU_Compute(Function):
@@ -529,6 +592,9 @@ class SRU(nn.Module):
     def __init__(self, input_size, hidden_size,
                  num_layers=2, dropout=0, vari_dropout=0,
                  use_tanh=1, bidirectional=False):
+        # An entry check here, will catch on train side and translate side
+        # if requirements are not satisfied.
+        check_sru_requirement(abort=True)
         super(SRU, self).__init__()
         self.n_in = input_size
         self.n_out = hidden_size

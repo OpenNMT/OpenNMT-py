@@ -53,22 +53,19 @@ class MeanEncoder(EncoderBase):
 class RNNEncoder(EncoderBase):
     """ The standard RNN encoder. """
     def __init__(self, rnn_type, bidirectional, num_layers,
-                 hidden_size, no_pack_padded_seq,
-                 dropout, embeddings):
+                 hidden_size, dropout, embeddings):
         super(RNNEncoder, self).__init__()
 
         num_directions = 2 if bidirectional else 1
         assert hidden_size % num_directions == 0
         hidden_size = hidden_size // num_directions
         self.embeddings = embeddings
-        self.no_pack_padded_seq = no_pack_padded_seq
+        self.no_pack_padded_seq = False
 
         # Use pytorch version when available.
         if rnn_type == "SRU":
-            if no_pack_padded_seq is False:
-                raise Exception("'SRU' doesn't support PackedSequence, "
-                                "please set option: -no_pack_padded_seq!")
-
+            # SRU doesn't support PackedSequence.
+            self.no_pack_padded_seq = True
             self.rnn = onmt.modules.SRU(
                     input_size=embeddings.embedding_size,
                     hidden_size=hidden_size,
