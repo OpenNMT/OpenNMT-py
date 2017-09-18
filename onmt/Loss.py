@@ -132,7 +132,7 @@ class Splitter:
 
 
 class LossCompute:
-    def __init__(self, generator, crit, tgt_vocab, dataset, epoch, opt):
+    def __init__(self, generator, crit, tgt_vocab, dataset, epoch, opt, datum_weight=None):
         self.generator = generator
         self.crit = crit
         self.tgt_vocab = tgt_vocab
