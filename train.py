@@ -60,7 +60,8 @@ if opt.exp_host != "":
 def report_func(epoch, batch, num_batches,
                 start_time, lr, report_stats):
     """
-    Called at batch level, conditionally report progress.
+    This is the user-defined batch-level traing progress
+    report function.
     Args:
         epoch(int): current epoch count.
         batch(int): current batch count.
@@ -104,8 +105,8 @@ def make_valid_data_iter(valid_data, opt):
 def make_loss_compute(model, tgt_vocab, dataset, opt):
     """
     This returns user-defined LossCompute object, which is used to
-    compute loss used in validate process. You can implement your own
-    *LossCompute object, by subclassing LossComputeBase.
+    compute loss in train/validate process. You can implement your
+    own *LossCompute class, by subclassing LossComputeBase.
     """
     if opt.copy_attn:
         compute = onmt.modules.CopyGeneratorLossCompute(

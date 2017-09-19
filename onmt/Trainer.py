@@ -1,3 +1,13 @@
+"""
+This is the loadable seq2seq trainer library that is
+in charge of training details, loss compute, and statistics.
+See train.py for a use case of this library.
+
+Note!!! To make this a general library, we implement *only*
+mechanism things here(i.e. what to do), and leave the strategy
+things to users(i.e. how to do it). Also see train.py(one of the
+users of this library) for the strategy things we do.
+"""
 import torch
 import torch.nn as nn
 
@@ -9,6 +19,17 @@ class Trainer(object):
     def __init__(self, model, train_iter, valid_iter,
                  train_loss, valid_loss, optim,
                  trunc_size, shard_size):
+        """
+        Args:
+            model: the seq2seq model.
+            train_iter: the train data iterator.
+            valid_iter: the validate data iterator.
+            train_loss: the train side LossCompute object for computing loss.
+            valid_loss: the valid side LossCompute object for computing loss.
+            optim: the optimizer responsible for lr update.
+            trunc_size: a batch is divided by several truncs of this size.
+            shard_size: compute loss in shards of this size for efficiency.
+        """
         # Basic attributes.
         self.model = model
         self.train_iter = train_iter
@@ -90,6 +111,7 @@ class Trainer(object):
                 outputs, batch, attns, (0, batch.tgt.size(0)))
             _, batch_stats = self.valid_loss(batch, **gen_state)
 
+            # Update statistics.
             stats.update(batch_stats)
 
         # Set model back to training mode.
