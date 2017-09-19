@@ -54,8 +54,8 @@ class Trainer(object):
                                       self.train_data, epoch,
                                       self.copy_attn)
 
-        total_stats = onmt.Loss.Statistics()
-        report_stats = onmt.Loss.Statistics()
+        total_stats = onmt.Statistics()
+        report_stats = onmt.Statistics()
 
         for i, batch in enumerate(self.train_iterator):
             target_size = batch.tgt.size(0)
@@ -84,7 +84,7 @@ class Trainer(object):
 
                 # (2) F-prop/B-prob generator in shards for memory
                 # efficiency.
-                batch_stats = onmt.Loss.Statistics()
+                batch_stats = onmt.Statistics()
                 # make_loss_batch doesn't really need to be a method of
                 # ComputeLoss
                 gen_state = closs.make_loss_batch(outputs, batch, attn,
@@ -112,7 +112,7 @@ class Trainer(object):
                                     total_stats.start_time)
                 if self.exp_host:
                     report_stats.log("progress", self.experiment, self.optim)
-                report_stats = onmt.Loss.Statistics()
+                report_stats = onmt.Statistics()
         return total_stats
 
     def validate(self):
@@ -124,7 +124,7 @@ class Trainer(object):
                                      self.fields["tgt"].vocab,
                                      self.valid_data, 0,
                                      self.copy_attn)
-        stats = onmt.Loss.Statistics()
+        stats = onmt.Statistics()
 
         for batch in self.valid_iterator:
             _, src_lengths = batch.src
