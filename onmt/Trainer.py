@@ -1,3 +1,4 @@
+import torch
 import onmt
 import onmt.modules
 
@@ -14,6 +15,7 @@ class Trainer(object):
         self.fields = fields
         self.optim = optim
         self.batch_size = batch_size
+        self.gpuid = gpuid
         self.copy_attn = copy_attn
         self.truncated_decoder = truncated_decoder
         self.max_generator_batches = max_generator_batches
@@ -139,3 +141,27 @@ class Trainer(object):
     def epoch_step(self, ppl, epoch):
         """ Called for each epoch to update learning rate. """
         return self.optim.updateLearningRate(ppl, epoch)
+
+    def drop_checkpoint(self, opt, epoch, valid_stats):
+        """ Called conditionally each epoch to save a snapshot. """
+        model_state_dict = (self.model.module.state_dict()
+                            if len(self.gpuid) > 1
+                            else self.model.state_dict())
+        # Exclude the 'generator' state.
+        model_state_dict = {k: v for k, v in model_state_dict.items()
+                            if 'generator' not in k}
+        generator_state_dict = (self.model.generator.module.state_dict()
+                                if len(self.gpuid) > 1
+                                else self.model.generator.state_dict())
+        checkpoint = {
+            'model': model_state_dict,
+            'generator': generator_state_dict,
+            'vocab': onmt.IO.ONMTDataset.save_vocab(self.fields),
+            'opt': opt,
+            'epoch': epoch,
+            'optim': self.optim
+        }
+        torch.save(checkpoint,
+                   '%s_acc_%.2f_ppl_%.2f_e%d.pt'
+                   % (opt.save_model, valid_stats.accuracy(),
+                      valid_stats.ppl(), epoch))
