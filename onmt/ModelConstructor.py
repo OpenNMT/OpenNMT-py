@@ -112,8 +112,9 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
     Args:
         model_opt: the option loaded from checkpoint.
         fields: `Field` objects for the model.
-        gpu: Boolean: whether to use gpu.
-        checkpoint: the snapshot model.
+        gpu(bool): whether to use gpu.
+        checkpoint: the model gnerated by train phase, or a resumed snapshot
+                    model from a stopped training.
     Returns:
         the NMTModel.
     """
@@ -155,11 +156,20 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
         generator = CopyGenerator(model_opt, fields["src"].vocab,
                                   fields["tgt"].vocab)
 
-    # Load the model states from checkpoint.
+    # Load the model states from checkpoint or initialize them.
     if checkpoint is not None:
-        print('Loading model')
+        print('Loading model parameters.')
         model.load_state_dict(checkpoint['model'])
         generator.load_state_dict(checkpoint['generator'])
+    else:
+        if model_opt.param_init != 0.0:
+            print('Intializing parameters.')
+            for p in model.parameters():
+                p.data.uniform_(-model_opt.param_init, model_opt.param_init)
+        model.encoder.embeddings.load_pretrained_vectors(
+                model_opt.pre_word_vecs_enc, model_opt.fix_word_vecs_enc)
+        model.decoder.embeddings.load_pretrained_vectors(
+                model_opt.pre_word_vecs_dec, model_opt.fix_word_vecs_dec)
 
     # add the generator to the module (does this register the parameter?)
     model.generator = generator
