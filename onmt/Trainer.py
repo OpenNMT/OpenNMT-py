@@ -1,11 +1,13 @@
 import torch
+import torch.nn as nn
+
 import onmt
 import onmt.modules
 
 
 class Trainer(object):
     def __init__(self, model, train_iter, valid_iter,
-                 train_loss, valid_loss, optim, gpuid,
+                 train_loss, valid_loss, optim,
                  truncated_decoder, max_generator_batches):
         # Basic attributes.
         self.model = model
@@ -14,7 +16,6 @@ class Trainer(object):
         self.train_loss = train_loss
         self.valid_loss = valid_loss
         self.optim = optim
-        self.gpuid = gpuid
         self.truncated_decoder = truncated_decoder
         self.max_generator_batches = max_generator_batches
 
@@ -109,17 +110,19 @@ class Trainer(object):
         """ Called for each epoch to update learning rate. """
         return self.optim.updateLearningRate(ppl, epoch)
 
-    def drop_checkpoint(self, opt, epoch, valid_stats, fields):
+    def drop_checkpoint(self, opt, epoch, fields, valid_stats):
         """ Called conditionally each epoch to save a snapshot. """
-        model_state_dict = (self.model.module.state_dict()
-                            if len(self.gpuid) > 1
-                            else self.model.state_dict())
-        # Exclude the 'generator' state.
+        real_model = (self.model.module
+                      if isinstance(self.model, nn.DataParallel)
+                      else self.model)
+        real_generator = (real_model.generator.module
+                          if isinstance(real_model.generator, nn.DataParallel)
+                          else real_model.generator)
+
+        model_state_dict = real_model.state_dict()
         model_state_dict = {k: v for k, v in model_state_dict.items()
                             if 'generator' not in k}
-        generator_state_dict = (self.model.generator.module.state_dict()
-                                if len(self.gpuid) > 1
-                                else self.model.generator.state_dict())
+        generator_state_dict = real_generator.state_dict()
         checkpoint = {
             'model': model_state_dict,
             'generator': generator_state_dict,

@@ -137,7 +137,6 @@ def train_model(model, train_data, valid_data, fields, optim, opt):
 
     trainer = onmt.Trainer(model, train_iter, valid_iter,
                            train_loss, valid_loss, optim,
-                           opt.gpuid,
                            opt.truncated_decoder,
                            opt.max_generator_batches)
 
@@ -164,7 +163,7 @@ def train_model(model, train_data, valid_data, fields, optim, opt):
 
         # 5. Drop a checkpoint if needed.
         if epoch >= opt.start_checkpoint_at:
-            trainer.drop_checkpoint(opt, epoch, valid_stats, fields)
+            trainer.drop_checkpoint(opt, epoch, fields, valid_stats)
 
 
 def check_save_model_path():
@@ -249,7 +248,7 @@ def build_optim(model, checkpoint):
 
 def main():
 
-    # Load train and validage data.
+    # Load train and validate data.
     print("Loading train and validate data from '%s'" % opt.data)
     train = torch.load(opt.data + '.train.pt')
     valid = torch.load(opt.data + '.valid.pt')
