@@ -9,7 +9,7 @@ import onmt.Models
 import onmt.modules
 from onmt.IO import ONMTDataset
 from onmt.Models import NMTModel, MeanEncoder, RNNEncoder, \
-                        StdRNNDecoder, InputFeedRNNDecoder
+                        SRURNNDecoder, StdRNNDecoder, InputFeedRNNDecoder
 from onmt.modules import Embeddings, ImageEncoder, CopyGenerator, \
                          TransformerEncoder, TransformerDecoder, \
                          CNNEncoder, CNNDecoder
@@ -96,6 +96,15 @@ def make_decoder(opt, embeddings):
                                    opt.copy_attn,
                                    opt.dropout,
                                    embeddings)
+    elif opt.rnn_type == "SRU":
+        return SRURNNDecoder(opt.rnn_type, opt.brnn,
+                             opt.dec_layers, opt.rnn_size,
+                             opt.global_attention,
+                             opt.coverage_attn,
+                             opt.context_gate,
+                             opt.copy_attn,
+                             opt.dropout,
+                             embeddings)
     else:
         return StdRNNDecoder(opt.rnn_type, opt.brnn,
                              opt.dec_layers, opt.rnn_size,
