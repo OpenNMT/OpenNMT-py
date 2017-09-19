@@ -44,6 +44,9 @@ class Trainer(object):
             device=gpuid[0] if gpuid else -1,
             train=False, sort=True)
 
+        # Set model in training mode.
+        self.model.train()
+
     def train(self, epoch):
         """ Called for each epoch to train. """
         closs = onmt.Loss.LossCompute(self.model.generator, self.criterion,
