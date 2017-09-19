@@ -109,6 +109,10 @@ def make_gen_state(output, batch, attns, range_, copy_attn=None):
     Create generator state for use in sharded loss computation.
     This needs to match compute_loss exactly.
     """
+    if copy_attn and getattr(batch, 'alignment', None) is None:
+        raise AssertionError("using -copy_attn you need to pass in "
+                             "-dynamic_dict during preprocess stage.")
+
     return {"output": output,
             "target": batch.tgt[range_[0] + 1: range_[1]],
             "copy_attn": attns.get("copy"),
