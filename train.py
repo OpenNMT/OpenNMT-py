@@ -136,9 +136,11 @@ def train_model(model, train_data, valid_data, fields, optim, opt):
                                    valid_data, opt)
 
     trunc_size = opt.truncated_decoder  # Badly named...
+    shard_size = opt.max_generator_batches
+
     trainer = onmt.Trainer(model, train_iter, valid_iter,
                            train_loss, valid_loss, optim,
-                           trunc_size, opt.max_generator_batches)
+                           trunc_size, shard_size)
 
     for epoch in range(opt.start_epoch, opt.epochs + 1):
         print('')

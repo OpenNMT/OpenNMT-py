@@ -8,7 +8,7 @@ import onmt.modules
 class Trainer(object):
     def __init__(self, model, train_iter, valid_iter,
                  train_loss, valid_loss, optim,
-                 trunc_size, max_generator_batches):
+                 trunc_size, shard_size):
         # Basic attributes.
         self.model = model
         self.train_iter = train_iter
@@ -17,7 +17,7 @@ class Trainer(object):
         self.valid_loss = valid_loss
         self.optim = optim
         self.trunc_size = trunc_size
-        self.max_generator_batches = max_generator_batches
+        self.shard_size = shard_size
 
         # Set model in training mode.
         self.model.train()
@@ -55,8 +55,7 @@ class Trainer(object):
                 # ComputeLoss
                 gen_state = self.train_loss.make_loss_batch(
                         outputs, batch, attn, (j, j + trunc_size))
-                shard_size = self.max_generator_batches
-                for shard in onmt.Loss.shards(gen_state, shard_size):
+                for shard in onmt.Loss.shards(gen_state, self.shard_size):
 
                     # Compute loss and backprop shard.
                     loss, stats = self.train_loss.compute_loss(
@@ -64,7 +63,7 @@ class Trainer(object):
                     loss.div(batch.batch_size).backward()
                     batch_stats.update(stats)
 
-                # (3) Update the parameters and statistics.
+                # 4. Update the parameters and statistics.
                 self.optim.step()
                 total_stats.update(batch_stats)
                 report_stats.update(batch_stats)
