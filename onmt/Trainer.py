@@ -4,14 +4,12 @@ import onmt.modules
 
 
 class Trainer(object):
-    def __init__(self, model, train_data, valid_data, train_iter,
-                 valid_iter, train_loss, valid_loss, fields, optim,
-                 batch_size, gpuid, copy_attn, copy_attn_force,
+    def __init__(self, model, train_iter, valid_iter,
+                 train_loss, valid_loss, fields, optim,
+                 batch_size, gpuid,
                  truncated_decoder, max_generator_batches):
         # Basic attributes.
         self.model = model
-        self.train_data = train_data
-        self.valid_data = valid_data
         self.train_iter = train_iter
         self.valid_iter = valid_iter
         self.train_loss = train_loss
@@ -20,7 +18,6 @@ class Trainer(object):
         self.optim = optim
         self.batch_size = batch_size
         self.gpuid = gpuid
-        self.copy_attn = copy_attn
         self.truncated_decoder = truncated_decoder
         self.max_generator_batches = max_generator_batches
 
