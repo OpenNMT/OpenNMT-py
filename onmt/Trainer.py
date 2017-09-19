@@ -8,7 +8,7 @@ import onmt.modules
 class Trainer(object):
     def __init__(self, model, train_iter, valid_iter,
                  train_loss, valid_loss, optim,
-                 truncated_decoder, max_generator_batches):
+                 trunc_size, max_generator_batches):
         # Basic attributes.
         self.model = model
         self.train_iter = train_iter
@@ -16,7 +16,7 @@ class Trainer(object):
         self.train_loss = train_loss
         self.valid_loss = valid_loss
         self.optim = optim
-        self.truncated_decoder = truncated_decoder
+        self.trunc_size = trunc_size
         self.max_generator_batches = max_generator_batches
 
         # Set model in training mode.
@@ -29,6 +29,8 @@ class Trainer(object):
 
         for i, batch in enumerate(self.train_iter):
             target_size = batch.tgt.size(0)
+            # Truncated BPTT
+            trunc_size = self.trunc_size if self.trunc_size else target_size
 
             dec_state = None
             _, src_lengths = batch.src
@@ -36,10 +38,6 @@ class Trainer(object):
             src = onmt.IO.make_features(batch, 'src')
             tgt = onmt.IO.make_features(batch, 'tgt')
             report_stats.n_src_words += src_lengths.sum()
-
-            # Truncated BPTT
-            trunc_size = self.truncated_decoder if self.truncated_decoder \
-                else target_size
 
             for j in range(0, target_size-1, trunc_size):
                 # 1. Create truncated target.

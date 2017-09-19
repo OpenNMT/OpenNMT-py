@@ -135,10 +135,10 @@ def train_model(model, train_data, valid_data, fields, optim, opt):
     valid_loss = make_loss_compute(model, fields["tgt"].vocab,
                                    valid_data, opt)
 
+    trunc_size = opt.truncated_decoder  # Badly named...
     trainer = onmt.Trainer(model, train_iter, valid_iter,
                            train_loss, valid_loss, optim,
-                           opt.truncated_decoder,
-                           opt.max_generator_batches)
+                           trunc_size, opt.max_generator_batches)
 
     for epoch in range(opt.start_epoch, opt.epochs + 1):
         print('')
