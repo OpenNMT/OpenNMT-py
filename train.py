@@ -137,7 +137,7 @@ def train_model(model, train_data, valid_data, fields, optim, opt):
 
     trainer = onmt.Trainer(model, train_iter, valid_iter,
                            train_loss, valid_loss, optim,
-                           opt.batch_size, opt.gpuid,
+                           opt.gpuid,
                            opt.truncated_decoder,
                            opt.max_generator_batches)
 

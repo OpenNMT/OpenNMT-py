@@ -5,8 +5,7 @@ import onmt.modules
 
 class Trainer(object):
     def __init__(self, model, train_iter, valid_iter,
-                 train_loss, valid_loss, optim,
-                 batch_size, gpuid,
+                 train_loss, valid_loss, optim, gpuid,
                  truncated_decoder, max_generator_batches):
         # Basic attributes.
         self.model = model
@@ -15,7 +14,6 @@ class Trainer(object):
         self.train_loss = train_loss
         self.valid_loss = valid_loss
         self.optim = optim
-        self.batch_size = batch_size
         self.gpuid = gpuid
         self.truncated_decoder = truncated_decoder
         self.max_generator_batches = max_generator_batches
@@ -43,17 +41,15 @@ class Trainer(object):
                 else target_size
 
             for j in range(0, target_size-1, trunc_size):
-                # (1) Create truncated target.
+                # 1. Create truncated target.
                 tgt = tgt[j: j + trunc_size]
 
-                # (2) F-prop all but generator.
-
-                # Main training loop
+                # 2. F-prop all but generator.
                 self.model.zero_grad()
                 outputs, attn, dec_state = \
                     self.model(src, tgt, src_lengths, dec_state)
 
-                # (2) F-prop/B-prob generator in shards for memory
+                # 3. F-prop/B-prob generator in shards for memory
                 # efficiency.
                 batch_stats = onmt.Statistics()
                 # make_loss_batch doesn't really need to be a method of
