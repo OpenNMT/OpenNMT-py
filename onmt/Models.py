@@ -297,6 +297,12 @@ class StdRNNDecoder(RNNDecoderBase):
         return self.embeddings.embedding_size
 
 
+class SRURNNDecoder(StdRNNDecoder):
+    def init_decoder_state(self, src, context, enc_hidden):
+        # The encoder hidden is already layers x batch x (directions*dim)
+        return RNNDecoderState(context, self.hidden_size, enc_hidden)
+
+
 class InputFeedRNNDecoder(RNNDecoderBase):
     """
     Stardard RNN decoder, with Input Feed and Attention.
