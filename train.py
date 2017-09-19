@@ -80,8 +80,8 @@ def train_model(model, train_data, valid_data, fields, optim):
 
         # 3. Log to remote server.
         if opt.exp_host:
-            train_stats.log("train", experiment, optim)
-            valid_stats.log("valid", experiment, optim)
+            train_stats.log("train", experiment, optim.lr)
+            valid_stats.log("valid", experiment, optim.lr)
 
         # 4. Update the learning rate
         trainer.epoch_step(valid_stats.ppl(), epoch)

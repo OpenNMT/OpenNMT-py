@@ -111,7 +111,8 @@ class Trainer(object):
                 report_stats.output(epoch, i+1, len(self.train_iterator),
                                     total_stats.start_time)
                 if self.exp_host:
-                    report_stats.log("progress", self.experiment, self.optim)
+                    report_stats.log("progress", self.experiment,
+                                     self.optim.lr)
                 report_stats = onmt.Statistics()
         return total_stats
 
