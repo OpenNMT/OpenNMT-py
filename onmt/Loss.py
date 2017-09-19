@@ -79,12 +79,11 @@ def shards(state, shard_size, eval=False):
 
 
 class LossCompute(object):
-    def __init__(self, generator, crit, tgt_vocab, dataset, epoch, copy_attn):
+    def __init__(self, generator, crit, tgt_vocab, dataset, copy_attn):
         self.generator = generator
         self.crit = crit
         self.tgt_vocab = tgt_vocab
         self.dataset = dataset
-        self.epoch = epoch
         self.copy_attn = copy_attn
 
     def make_loss_batch(self, outputs, batch, attns, range_):

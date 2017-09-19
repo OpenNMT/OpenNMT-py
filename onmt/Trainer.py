@@ -38,7 +38,7 @@ class Trainer(object):
         """ Called for each epoch to train. """
         closs = onmt.Loss.LossCompute(self.model.generator, self.criterion,
                                       self.fields["tgt"].vocab,
-                                      self.train_data, epoch,
+                                      self.train_data,
                                       self.copy_attn)
 
         total_stats = onmt.Statistics()
@@ -109,7 +109,7 @@ class Trainer(object):
 
         loss = onmt.Loss.LossCompute(self.model.generator, self.criterion,
                                      self.fields["tgt"].vocab,
-                                     self.valid_data, 0,
+                                     self.valid_data,
                                      self.copy_attn)
         stats = onmt.Statistics()
 
