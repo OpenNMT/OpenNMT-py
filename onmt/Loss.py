@@ -1,7 +1,7 @@
 """
 This file handles the details of the loss function during training.
 
-This includes: loss criterion and memory optimizations.
+This includes: loss computation and memory optimizations(shard).
 """
 from __future__ import division
 import torch
@@ -9,6 +9,98 @@ import torch.nn as nn
 from torch.autograd import Variable
 
 import onmt
+
+
+class LossComputeBase(nn.Module):
+    """
+    This is the loss criterion base class. Users can implement their own
+    loss computation strategy by making subclass of this one.
+    Users need to implement the compute_loss() method.
+    We inherits from nn.Module to leverage the cuda behavior.
+    """
+    def __init__(self, generator, tgt_vocab):
+        super(LossComputeBase, self).__init__()
+        self.generator = generator
+        self.tgt_vocab = tgt_vocab
+        self.padding_idx = tgt_vocab.stoi[onmt.IO.PAD_WORD]
+
+    def forward(self, batch, output, target, **kwargs):
+        """
+        Compute the loss. Subclass must define the compute_loss().
+        Args:
+            batch: the current batch.
+            output: the predict output from the model.
+            target: the validate target to compare output with.
+            **kwargs: additional info for computing loss.
+        """
+        # Need to simplify this interface.
+        return self.compute_loss(batch, output, target, **kwargs)
+
+    def sharded_compute_loss(self, batch, output, attns,
+                             cur_trunc, trunc_size, shard_size):
+        """
+        Compute the loss in shards for efficiency.
+        """
+        batch_stats = onmt.Statistics()
+        range_ = (cur_trunc, cur_trunc + trunc_size)
+        gen_state = make_gen_state(output, batch, attns, range_,
+                                   self.copy_attn)
+
+        for shard in shards(gen_state, shard_size):
+            loss, stats = self.compute_loss(batch, **shard)
+            loss.div(batch.batch_size).backward()
+            batch_stats.update(stats)
+
+        return batch_stats
+
+    def stats(self, loss, scores, target):
+        """
+        Compute and return a Statistics object.
+
+        Args:
+            loss(Tensor): the loss computed by the loss criterion.
+            scores(Tensor): a sequence of predict output with scores.
+        """
+        pred = scores.max(1)[1]
+        non_padding = target.ne(self.padding_idx)
+        num_correct = pred.eq(target) \
+                          .masked_select(non_padding) \
+                          .sum()
+        return onmt.Statistics(loss[0], non_padding.sum(), num_correct)
+
+    def bottle(self, v):
+        return v.view(-1, v.size(2))
+
+    def unbottle(self, v, batch_size):
+        return v.view(-1, batch_size, v.size(1))
+
+
+class NMTLossCompute(LossComputeBase):
+    """
+    Standard NMT Loss Computation.
+    """
+    def __init__(self, generator, tgt_vocab):
+        super(NMTLossCompute, self).__init__(generator, tgt_vocab)
+
+        self.copy_attn = False
+        weight = torch.ones(len(tgt_vocab))
+        weight[self.padding_idx] = 0
+        self.criterion = nn.NLLLoss(weight, size_average=False)
+
+    def compute_loss(self, batch, output, target, **kwargs):
+        """ See base class for args description. """
+        scores = self.generator(self.bottle(output))
+        scores_data = scores.data.clone()
+
+        target = target.view(-1)
+        target_data = target.data.clone()
+
+        loss = self.criterion(scores, target)
+        loss_data = loss.data.clone()
+
+        stats = self.stats(loss_data, scores_data, target_data)
+
+        return loss, stats
 
 
 def nmt_criterion(vocab_size, gpuid, pad_id):
@@ -21,6 +113,19 @@ def nmt_criterion(vocab_size, gpuid, pad_id):
     if gpuid:
         crit.cuda()
     return crit
+
+
+def make_gen_state(output, batch, attns, range_, copy_attn=None):
+    """
+    Create generator state for use in sharded loss computation.
+    This needs to match compute_loss exactly.
+    """
+    return {"output": output,
+            "target": batch.tgt[range_[0] + 1: range_[1]],
+            "align": None if not copy_attn
+            else batch.alignment[range_[0] + 1: range_[1]],
+            "coverage": attns.get("coverage"),
+            "copy_attn": attns.get("copy")}
 
 
 def filter_gen_state(state):
