@@ -8,8 +8,6 @@ import codecs
 import onmt.IO
 import opts
 from weights.weighted_dataset import ONMTWeightedDataset
-# from onmt.IO import PAD_WORD, UNK, BOS_WORD, EOS_WORD, __getstate__, __setstate__, extract_features, merge_vocabs, \
-#     make_features, join_dicts, OrderedIterator, ONMTDataset, load_image_libs
 
 
 def preprocess_args(parser):
@@ -22,7 +20,8 @@ def preprocess_args(parser):
     parser.add_argument('-config', help="Read options from this file")
 
     parser.add_argument('-data_type', default="text",
-                        help="Type of the source input. Options are [text|img].")
+                        help="Type of the source input." +
+                             "Options are [text|img].")
     parser.add_argument('-data_img_dir', default=".",
                         help="Location of source images")
 
@@ -69,7 +68,7 @@ def create_dw_datasets():
     with open(weight_val_file, 'w') as destination:
         with open(source_val_file, 'r') as origin:
             for line in origin:
-                destination.write(str(random.random())+ "\n")
+                destination.write(str(random.random()) + "\n")
     return weight_train_file, weight_val_file
 
 
@@ -93,7 +92,6 @@ def test_create_datasets(weight_train_file, weight_val_file):
     opt = parser.parse_args()
     # torch.manual_seed(opt.seed)
 
-
     print('Preparing training ...')
     with codecs.open(opt.train_src, "r", "utf-8") as src_file:
         src_line = src_file.readline().strip().split()
@@ -101,13 +99,15 @@ def test_create_datasets(weight_train_file, weight_val_file):
 
     fields = ONMTWeightedDataset.get_fields(nFeatures)
     print("Building Training...")
-    train = ONMTWeightedDataset(opt.train_src, opt.train_tgt, fields, opt, dw_path=opt.train_dw)
+    train = ONMTWeightedDataset(opt.train_src, opt.train_tgt,
+                                fields, opt, dw_path=opt.train_dw)
     print("Building Vocab...")
     ONMTWeightedDataset.build_vocab(train, opt)
     print(train)
 
     print("Building Valid...")
-    valid = ONMTWeightedDataset(opt.valid_src, opt.valid_tgt, fields, opt, dw_path=opt.valid_dw)
+    valid = ONMTWeightedDataset(opt.valid_src, opt.valid_tgt,
+                                fields, opt, dw_path=opt.valid_dw)
     print("Saving train/valid/fields")
 
     # Can't save fields, so remove/reconstruct at training time.
@@ -220,7 +220,9 @@ def check_model_path(opt):
 
 
 if __name__ == "__main__":
-    # Due to bypassing argsparse, its either the first two lines or the last two. All of them together would fail.
+    # Due to bypassing argsparse, its either the first two lines or
+    # the last two. All of them together would fail.
+
     # Test ONMT dataset creation
     # weight_train_file, weight_val_file = create_dw_datasets()
     # train_path = test_create_datasets(weight_train_file, weight_val_file)

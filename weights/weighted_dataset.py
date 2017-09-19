@@ -4,8 +4,8 @@ from collections import Counter, defaultdict
 import torch
 import torchtext.data
 import torchtext.vocab
-from onmt.IO import PAD_WORD, UNK, BOS_WORD, EOS_WORD, __getstate__, __setstate__, join_dicts, ONMTDataset, \
-    load_image_libs
+from onmt.IO import PAD_WORD, BOS_WORD, EOS_WORD, __getstate__, __setstate__, \
+    join_dicts, ONMTDataset
 
 torchtext.vocab.Vocab.__getstate__ = __getstate__
 torchtext.vocab.Vocab.__setstate__ = __setstate__
@@ -75,7 +75,9 @@ class ONMTWeightedDataset(ONMTDataset):
         # src and tgt features and alignment information.
         if tgt_examples and dw_path:
             examples = [join_dicts(src, tgt, dw)
-                        for src, tgt, dw in zip(src_examples, tgt_examples, dw_examples)]
+                        for src, tgt, dw in zip(src_examples,
+                                                tgt_examples,
+                                                dw_examples)]
         elif tgt_examples:
             examples = [join_dicts(src, tgt)
                         for src, tgt in zip(src_examples, tgt_examples)]
@@ -98,7 +100,7 @@ class ONMTWeightedDataset(ONMTDataset):
                 if "tgt" in example:
                     tgt = example["tgt"]
                     mask = torch.LongTensor(
-                            [0] + [src_vocab.stoi[w] for w in tgt] + [0])
+                        [0] + [src_vocab.stoi[w] for w in tgt] + [0])
                     example["alignment"] = mask
 
         keys = examples[0].keys()
@@ -177,3 +179,9 @@ class ONMTWeightedDataset(ONMTDataset):
             fields[k].vocab = v
         return fields
 
+
+def load_image_libs():
+    "Conditional import of torch image libs."
+    global Image, transforms
+    from PIL import Image
+    from torchvision import transforms
