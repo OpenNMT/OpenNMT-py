@@ -135,3 +135,7 @@ class Trainer(object):
         self.model.train()
 
         return stats
+
+    def epoch_step(self, ppl, epoch):
+        """ Called for each epoch to update learning rate. """
+        return self.optim.updateLearningRate(ppl, epoch)
