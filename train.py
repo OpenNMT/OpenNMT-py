@@ -120,7 +120,7 @@ def make_loss_compute(model, tgt_vocab, dataset, opt):
     return compute
 
 
-def train_model(model, train_data, valid_data, fields, optim, opt):
+def train_model(model, train_data, valid_data, fields, optim):
 
     train_iter = make_train_data_iter(train_data, opt)
     valid_iter = make_valid_data_iter(valid_data, opt)
@@ -281,7 +281,7 @@ def main():
     optim = build_optim(model, checkpoint)
 
     # Do training.
-    train_model(model, train, valid, fields, optim, model_opt)
+    train_model(model, train, valid, fields, optim)
 
 
 if __name__ == "__main__":
