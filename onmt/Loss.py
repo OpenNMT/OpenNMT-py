@@ -1,7 +1,8 @@
 """
 This file handles the details of the loss function during training.
 
-This includes: loss computation and memory optimizations(shard).
+This includes: LossComputeBase and the standard NMTLossCompute, and
+               sharded loss compute stuff.
 """
 from __future__ import division
 import torch
@@ -103,18 +104,6 @@ class NMTLossCompute(LossComputeBase):
         return loss, stats
 
 
-def nmt_criterion(vocab_size, gpuid, pad_id):
-    """
-    Standard NMT Loss Criterion.
-    """
-    weight = torch.ones(vocab_size)
-    weight[pad_id] = 0
-    crit = nn.NLLLoss(weight, size_average=False)
-    if gpuid:
-        crit.cuda()
-    return crit
-
-
 def make_gen_state(output, batch, attns, range_, copy_attn=None):
     """
     Create generator state for use in sharded loss computation.
@@ -122,10 +111,10 @@ def make_gen_state(output, batch, attns, range_, copy_attn=None):
     """
     return {"output": output,
             "target": batch.tgt[range_[0] + 1: range_[1]],
+            "copy_attn": attns.get("copy"),
             "align": None if not copy_attn
             else batch.alignment[range_[0] + 1: range_[1]],
-            "coverage": attns.get("coverage"),
-            "copy_attn": attns.get("copy")}
+            "coverage": attns.get("coverage")}
 
 
 def filter_gen_state(state):
@@ -138,15 +127,14 @@ def filter_gen_state(state):
 
 def shards(state, shard_size, eval=False):
     """
-    state:
-        A dictionary which corresponds to the output of
-        LossCompute.make_loss_batch(). In other words, its keys are
-        {'out', 'target', 'align', 'coverage', 'attn'}. The values
-        for those keys are Tensor-like or None.
-    shard_size:
-        The maximum size of the shards yielded by the model
-    eval:
-        If True, only yield the state, nothing else. Otherwise, yield shards.
+    Args:
+        state: A dictionary which corresponds to the output of
+               make_gen_state(). The values for those keys are
+               Tensor-like or None.
+        shard_size: The maximum size of the shards yielded by the model.
+        eval: If True, only yield the state, nothing else.
+              Otherwise, yield shards.
+
     yields:
         Each yielded shard is a dict.
     side effect:
@@ -181,77 +169,3 @@ def shards(state, shard_size, eval=False):
                      if isinstance(v, Variable) and v.grad is not None)
         inputs, grads = zip(*variables)
         torch.autograd.backward(inputs, grads)
-
-
-class LossCompute(object):
-    """
-    This is the loss criterion object, wrapping around the normal pytorch
-    *Loss criterion or user-defined criterion, with some project specified
-    attributes like copy attention, etc.
-    """
-    def __init__(self, generator, crit, tgt_vocab, dataset, copy_attn):
-        self.generator = generator
-        self.crit = crit
-        self.tgt_vocab = tgt_vocab
-        self.dataset = dataset
-        self.copy_attn = copy_attn
-
-    def make_loss_batch(self, outputs, batch, attns, range_):
-        """
-        Create all the variables that need to be sharded.
-        This needs to match compute loss exactly.
-        """
-        return {"out": outputs,
-                "target": batch.tgt[range_[0] + 1: range_[1]],
-                "align": None if not self.copy_attn
-                else batch.alignment[range_[0] + 1: range_[1]],
-                "coverage": attns.get("coverage"),
-                "attn": attns.get("copy")}
-
-    def compute_loss(self, batch, out, target, attn=None,
-                     align=None, coverage=None):
-        def bottle(v):
-            return v.view(-1, v.size(2))
-
-        def unbottle(v):
-            return v.view(-1, batch.batch_size, v.size(1))
-
-        pad = self.tgt_vocab.stoi[onmt.IO.PAD_WORD]
-        target = target.view(-1)
-
-        if not self.copy_attn:
-            # Standard generator.
-            scores = self.generator(bottle(out))
-            loss = self.crit(scores, target)
-            scores_data = scores.data.clone()
-            target = target.data.clone()
-        else:
-            align = align.view(-1)
-            scores = self.generator(bottle(out), bottle(attn), batch.src_map)
-            loss = self.crit(scores, align, target)
-            scores_data = scores.data.clone()
-            scores_data = self.dataset.collapse_copy_scores(
-                unbottle(scores_data), batch, self.tgt_vocab)
-            scores_data = bottle(scores_data)
-
-            # Correct target is copy when only option.
-            # TODO: replace for loop with masking or boolean indexing
-            target = target.data.clone()
-            for i in range(target.size(0)):
-                if target[i] == 0 and align.data[i] != 0:
-                    target[i] = align.data[i] + len(self.tgt_vocab)
-
-        # Coverage loss term.
-        ppl = loss.data.clone()
-
-        stats = self.score(ppl, scores_data, target, pad)
-
-        return loss, stats
-
-    def score(self, loss, scores, targ, pad):
-        pred = scores.max(1)[1]
-        non_padding = targ.ne(pad)
-        num_correct = pred.eq(targ) \
-                          .masked_select(non_padding) \
-                          .sum()
-        return onmt.Statistics(loss[0], non_padding.sum(), num_correct)

@@ -101,28 +101,22 @@ def make_valid_data_iter(valid_data, opt):
                 train=False, sort=True)
 
 
-def make_loss_criterion(tgt_vocab, opt):
-    """
-    This returns user-defined callable loss criterion object, which
-    is used to calcualate loss used in validate process. When implement
-    your criterion object, make sure it implements __call__ to be called
-    for calcualating loss.
-    """
-    padding_idx = tgt_vocab.stoi[onmt.IO.PAD_WORD]
-    if not opt.copy_attn:
-        criterion = onmt.Loss.nmt_criterion(
-            len(tgt_vocab), opt.gpuid, padding_idx)
-    else:
-        criterion = onmt.modules.CopyCriterion(
-            len(tgt_vocab), opt.copy_attn_force, padding_idx)
-
-    return criterion
-
-
 def make_loss_compute(model, tgt_vocab, dataset, opt):
-    criterion = make_loss_criterion(tgt_vocab, opt)
-    return onmt.Loss.LossCompute(model.generator, criterion,
-                                 tgt_vocab, dataset, opt.copy_attn)
+    """
+    This returns user-defined LossCompute object, which is used to
+    compute loss used in validate process. You can implement your own
+    *LossCompute object, by subclassing LossComputeBase.
+    """
+    if opt.copy_attn:
+        compute = onmt.modules.CopyGeneratorLossCompute(
+            model.generator, tgt_vocab, dataset, opt.copy_attn_force)
+    else:
+        compute = onmt.Loss.NMTLossCompute(model.generator, tgt_vocab)
+
+    if use_gpu(opt):
+        compute.cuda()
+
+    return compute
 
 
 def train_model(model, train_data, valid_data, fields, optim, opt):

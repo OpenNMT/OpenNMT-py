@@ -48,7 +48,7 @@ class CopyGenerator(nn.Module):
         return torch.cat([out_prob, copy_prob], 1)
 
 
-class CopyCriterion(object):
+class CopyGeneratorCriterion(object):
     def __init__(self, vocab_size, force_copy, pad, eps=1e-20):
         self.force_copy = force_copy
         self.eps = eps
@@ -87,20 +87,18 @@ class CopyGeneratorLossCompute(onmt.Loss.LossComputeBase):
         self.dataset = dataset
         self.copy_attn = True
         self.force_copy = force_copy
-        self.criterion = CopyCriterion(len(tgt_vocab), force_copy,
-                                       self.padding_idx)
+        self.criterion = CopyGeneratorCriterion(len(tgt_vocab), force_copy,
+                                                self.padding_idx)
 
-    def compute_loss(self, batch, output, target, align,
-                     coverage, copy_attn):
+    def compute_loss(self, batch, output, target, copy_attn, align):
         """
         Compute the loss. The args must match Loss.make_gen_state().
         Args:
             batch: the current batch.
             output: the predict output from the model.
             target: the validate target to compare output with.
-            align: the align info.
-            coverage: the coverage attention value.
             copy_attn: the copy attention value.
+            align: the align info.
         """
         target = target.view(-1)
         align = align.view(-1)

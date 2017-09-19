@@ -45,23 +45,13 @@ class Trainer(object):
 
                 # 2. F-prop all but generator.
                 self.model.zero_grad()
-                outputs, attn, dec_state = \
+                outputs, attns, dec_state = \
                     self.model(src, tgt, src_lengths, dec_state)
 
-                # 3. F-prop/B-prob generator in shards for memory
-                # efficiency.
-                batch_stats = onmt.Statistics()
-                # make_loss_batch doesn't really need to be a method of
-                # ComputeLoss
-                gen_state = self.train_loss.make_loss_batch(
-                        outputs, batch, attn, (j, j + trunc_size))
-                for shard in onmt.Loss.shards(gen_state, self.shard_size):
-
-                    # Compute loss and backprop shard.
-                    loss, stats = self.train_loss.compute_loss(
-                            batch=batch, **shard)
-                    loss.div(batch.batch_size).backward()
-                    batch_stats.update(stats)
+                # 3. Compute loss in shards for memory efficiency.
+                batch_stats = self.train_loss.sharded_compute_loss(
+                        batch, outputs, attns, j,
+                        trunc_size, self.shard_size)
 
                 # 4. Update the parameters and statistics.
                 self.optim.step()
@@ -82,7 +72,7 @@ class Trainer(object):
 
     def validate(self):
         """ Called for each epoch to validate. """
-        # Set model in eval mode.
+        # Set model in validating mode.
         self.model.eval()
 
         stats = onmt.Statistics()
@@ -91,14 +81,18 @@ class Trainer(object):
             _, src_lengths = batch.src
             src = onmt.IO.make_features(batch, 'src')
             tgt = onmt.IO.make_features(batch, 'tgt')
-            outputs, attn, _ = self.model(src, tgt, src_lengths)
-            gen_state = self.valid_loss.make_loss_batch(
-                outputs, batch, attn, (0, batch.tgt.size(0)))
-            _, batch_stats = self.valid_loss.compute_loss(
-                        batch=batch, **gen_state)
+
+            # F-prop through the model.
+            outputs, attns, _ = self.model(src, tgt, src_lengths)
+
+            # Compute loss.
+            gen_state = onmt.Loss.make_gen_state(
+                outputs, batch, attns, (0, batch.tgt.size(0)))
+            _, batch_stats = self.valid_loss(batch, **gen_state)
+
             stats.update(batch_stats)
 
-        # Set model back to train mode.
+        # Set model back to training mode.
         self.model.train()
 
         return stats
