@@ -101,13 +101,42 @@ def make_valid_data_iter(valid_data, opt):
                 train=False, sort=True)
 
 
+def make_loss_criterion(tgt_vocab, opt):
+    """
+    This returns user-defined callable loss criterion object, which
+    is used to calcualate loss used in validate process. When implement
+    your criterion object, make sure it implements __call__ to be called
+    for calcualating loss.
+    """
+    padding_idx = tgt_vocab.stoi[onmt.IO.PAD_WORD]
+    if not opt.copy_attn:
+        criterion = onmt.Loss.nmt_criterion(
+            len(tgt_vocab), opt.gpuid, padding_idx)
+    else:
+        criterion = onmt.modules.CopyCriterion(
+            len(tgt_vocab), opt.copy_attn_force, padding_idx)
+
+    return criterion
+
+
+def make_loss_compute(model, tgt_vocab, dataset, opt):
+    criterion = make_loss_criterion(tgt_vocab, opt)
+    return onmt.Loss.LossCompute(model.generator, criterion,
+                                 tgt_vocab, dataset, opt.copy_attn)
+
+
 def train_model(model, train_data, valid_data, fields, optim, opt):
 
     train_iter = make_train_data_iter(train_data, opt)
     valid_iter = make_valid_data_iter(valid_data, opt)
 
+    train_loss = make_loss_compute(model, fields["tgt"].vocab,
+                                   train_data, opt)
+    valid_loss = make_loss_compute(model, fields["tgt"].vocab,
+                                   valid_data, opt)
+
     trainer = onmt.Trainer(model, train_data, valid_data, train_iter,
-                           valid_iter, fields, optim,
+                           valid_iter, train_loss, valid_loss, fields, optim,
                            opt.batch_size, opt.gpuid, opt.copy_attn,
                            opt.copy_attn_force, opt.truncated_decoder,
                            opt.max_generator_batches)

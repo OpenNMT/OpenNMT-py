@@ -13,7 +13,7 @@ import onmt
 
 def nmt_criterion(vocab_size, gpuid, pad_id):
     """
-    Construct the standard NMT Criterion
+    Standard NMT Loss Criterion.
     """
     weight = torch.ones(vocab_size)
     weight[pad_id] = 0
@@ -79,6 +79,11 @@ def shards(state, shard_size, eval=False):
 
 
 class LossCompute(object):
+    """
+    This is the loss criterion object, wrapping around the normal pytorch
+    *Loss criterion or user-defined criterion, with some project specified
+    attributes like copy attention, etc.
+    """
     def __init__(self, generator, crit, tgt_vocab, dataset, copy_attn):
         self.generator = generator
         self.crit = crit

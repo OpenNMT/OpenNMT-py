@@ -5,7 +5,7 @@ import onmt.modules
 
 class Trainer(object):
     def __init__(self, model, train_data, valid_data, train_iter,
-                 valid_iter, fields, optim,
+                 valid_iter, train_loss, valid_loss, fields, optim,
                  batch_size, gpuid, copy_attn, copy_attn_force,
                  truncated_decoder, max_generator_batches):
         # Basic attributes.
@@ -14,6 +14,8 @@ class Trainer(object):
         self.valid_data = valid_data
         self.train_iter = train_iter
         self.valid_iter = valid_iter
+        self.train_loss = train_loss
+        self.valid_loss = valid_loss
         self.fields = fields
         self.optim = optim
         self.batch_size = batch_size
@@ -22,25 +24,11 @@ class Trainer(object):
         self.truncated_decoder = truncated_decoder
         self.max_generator_batches = max_generator_batches
 
-        # Define criterion.
-        padding_idx = fields['tgt'].vocab.stoi[onmt.IO.PAD_WORD]
-        if not copy_attn:
-            self.criterion = onmt.Loss.nmt_criterion(
-                len(fields['tgt'].vocab), gpuid, padding_idx)
-        else:
-            self.criterion = onmt.modules.CopyCriterion(
-                len(fields['tgt'].vocab), copy_attn_force, padding_idx)
-
         # Set model in training mode.
         self.model.train()
 
     def train(self, epoch, report_func=None):
         """ Called for each epoch to train. """
-        closs = onmt.Loss.LossCompute(self.model.generator, self.criterion,
-                                      self.fields["tgt"].vocab,
-                                      self.train_data,
-                                      self.copy_attn)
-
         total_stats = onmt.Statistics()
         report_stats = onmt.Statistics()
 
@@ -74,14 +62,14 @@ class Trainer(object):
                 batch_stats = onmt.Statistics()
                 # make_loss_batch doesn't really need to be a method of
                 # ComputeLoss
-                gen_state = closs.make_loss_batch(outputs, batch, attn,
-                                                  (j, j + trunc_size))
+                gen_state = self.train_loss.make_loss_batch(
+                        outputs, batch, attn, (j, j + trunc_size))
                 shard_size = self.max_generator_batches
                 for shard in onmt.Loss.shards(gen_state, shard_size):
 
                     # Compute loss and backprop shard.
-                    loss, stats = closs.compute_loss(batch=batch,
-                                                     **shard)
+                    loss, stats = self.train_loss.compute_loss(
+                            batch=batch, **shard)
                     loss.div(batch.batch_size).backward()
                     batch_stats.update(stats)
 
@@ -107,10 +95,6 @@ class Trainer(object):
         # Set model in eval mode.
         self.model.eval()
 
-        loss = onmt.Loss.LossCompute(self.model.generator, self.criterion,
-                                     self.fields["tgt"].vocab,
-                                     self.valid_data,
-                                     self.copy_attn)
         stats = onmt.Statistics()
 
         for batch in self.valid_iter:
@@ -118,9 +102,10 @@ class Trainer(object):
             src = onmt.IO.make_features(batch, 'src')
             tgt = onmt.IO.make_features(batch, 'tgt')
             outputs, attn, _ = self.model(src, tgt, src_lengths)
-            gen_state = loss.make_loss_batch(
+            gen_state = self.valid_loss.make_loss_batch(
                 outputs, batch, attn, (0, batch.tgt.size(0)))
-            _, batch_stats = loss.compute_loss(batch=batch, **gen_state)
+            _, batch_stats = self.valid_loss.compute_loss(
+                        batch=batch, **gen_state)
             stats.update(batch_stats)
 
         # Set model back to train mode.
