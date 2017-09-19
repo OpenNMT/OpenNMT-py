@@ -4,13 +4,16 @@ import onmt.modules
 
 
 class Trainer(object):
-    def __init__(self, model, train_data, valid_data, fields, optim,
+    def __init__(self, model, train_data, valid_data, train_iter,
+                 valid_iter, fields, optim,
                  batch_size, gpuid, copy_attn, copy_attn_force,
                  truncated_decoder, max_generator_batches):
         # Basic attributes.
         self.model = model
         self.train_data = train_data
         self.valid_data = valid_data
+        self.train_iter = train_iter
+        self.valid_iter = valid_iter
         self.fields = fields
         self.optim = optim
         self.batch_size = batch_size
@@ -28,18 +31,6 @@ class Trainer(object):
             self.criterion = onmt.modules.CopyCriterion(
                 len(fields['tgt'].vocab), copy_attn_force, padding_idx)
 
-        # Create a train data iterator.
-        self.train_iterator = onmt.IO.OrderedIterator(
-            dataset=train_data, batch_size=batch_size,
-            device=gpuid[0] if gpuid else -1,
-            repeat=False)
-
-        # Create a validate data iterator.
-        self.valid_iterator = onmt.IO.OrderedIterator(
-            dataset=valid_data, batch_size=batch_size,
-            device=gpuid[0] if gpuid else -1,
-            train=False, sort=True)
-
         # Set model in training mode.
         self.model.train()
 
@@ -53,7 +44,7 @@ class Trainer(object):
         total_stats = onmt.Statistics()
         report_stats = onmt.Statistics()
 
-        for i, batch in enumerate(self.train_iterator):
+        for i, batch in enumerate(self.train_iter):
             target_size = batch.tgt.size(0)
 
             dec_state = None
@@ -104,7 +95,7 @@ class Trainer(object):
                     dec_state.detach()
 
             if report_func is not None:
-                report_func(epoch, i, len(self.train_iterator),
+                report_func(epoch, i, len(self.train_iter),
                             total_stats.start_time, self.optim.lr,
                             report_stats)
                 report_stats = onmt.Statistics()
@@ -122,7 +113,7 @@ class Trainer(object):
                                      self.copy_attn)
         stats = onmt.Statistics()
 
-        for batch in self.valid_iterator:
+        for batch in self.valid_iter:
             _, src_lengths = batch.src
             src = onmt.IO.make_features(batch, 'src')
             tgt = onmt.IO.make_features(batch, 'tgt')

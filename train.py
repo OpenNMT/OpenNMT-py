@@ -75,9 +75,39 @@ def report_func(epoch, batch, num_batches,
             report_stats.log("progress", experiment, lr)
 
 
-def train_model(model, train_data, valid_data, fields, optim):
+def make_train_data_iter(train_data, opt):
+    """
+    This returns user-defined train data iterator for the trainer
+    to iterate over during each train epoch. We implement simple
+    ordered iterator strategy here, but more sophisticated strategy
+    like curriculum learning is ok too.
+    """
+    return onmt.IO.OrderedIterator(
+                dataset=train_data, batch_size=opt.batch_size,
+                device=opt.gpuid[0] if opt.gpuid else -1,
+                repeat=False)
 
-    trainer = onmt.Trainer(model, train_data, valid_data, fields, optim,
+
+def make_valid_data_iter(valid_data, opt):
+    """
+    This returns user-defined validate data iterator for the trainer
+    to iterate over during each validate epoch. We implement simple
+    ordered iterator strategy here, but more sophisticated strategy
+    is ok too.
+    """
+    return onmt.IO.OrderedIterator(
+                dataset=valid_data, batch_size=opt.batch_size,
+                device=opt.gpuid[0] if opt.gpuid else -1,
+                train=False, sort=True)
+
+
+def train_model(model, train_data, valid_data, fields, optim, opt):
+
+    train_iter = make_train_data_iter(train_data, opt)
+    valid_iter = make_valid_data_iter(valid_data, opt)
+
+    trainer = onmt.Trainer(model, train_data, valid_data, train_iter,
+                           valid_iter, fields, optim,
                            opt.batch_size, opt.gpuid, opt.copy_attn,
                            opt.copy_attn_force, opt.truncated_decoder,
                            opt.max_generator_batches)
@@ -226,7 +256,7 @@ def main():
     optim = build_optim(model, checkpoint)
 
     # Do training.
-    train_model(model, train, valid, fields, optim)
+    train_model(model, train, valid, fields, optim, model_opt)
 
 
 if __name__ == "__main__":
