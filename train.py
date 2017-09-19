@@ -10,7 +10,7 @@ import onmt
 import onmt.Models
 import onmt.ModelConstructor
 import onmt.modules
-from onmt.Utils import use_gpu
+from onmt.Utils import aeq, use_gpu
 import opts
 
 parser = argparse.ArgumentParser(description='train.py')
@@ -244,8 +244,8 @@ def main():
     valid.fields = fields
     # TODO: account for target features. Also, why does fields need to
     # have the structure it does?
-    src_features = [fields["src_feat_"+str(j)]
-                    for j in range(train.nfeatures)]
+    src_features = onmt.IO.ONMTDataset.collect_features(fields)
+    aeq(len(src_features), train.nfeatures)
     model_opt = opt
     checkpoint = None
 
