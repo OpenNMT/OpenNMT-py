@@ -5,7 +5,7 @@ import onmt.modules
 
 class Trainer(object):
     def __init__(self, model, train_iter, valid_iter,
-                 train_loss, valid_loss, fields, optim,
+                 train_loss, valid_loss, optim,
                  batch_size, gpuid,
                  truncated_decoder, max_generator_batches):
         # Basic attributes.
@@ -14,7 +14,6 @@ class Trainer(object):
         self.valid_iter = valid_iter
         self.train_loss = train_loss
         self.valid_loss = valid_loss
-        self.fields = fields
         self.optim = optim
         self.batch_size = batch_size
         self.gpuid = gpuid
@@ -114,7 +113,7 @@ class Trainer(object):
         """ Called for each epoch to update learning rate. """
         return self.optim.updateLearningRate(ppl, epoch)
 
-    def drop_checkpoint(self, opt, epoch, valid_stats):
+    def drop_checkpoint(self, opt, epoch, valid_stats, fields):
         """ Called conditionally each epoch to save a snapshot. """
         model_state_dict = (self.model.module.state_dict()
                             if len(self.gpuid) > 1
@@ -128,7 +127,7 @@ class Trainer(object):
         checkpoint = {
             'model': model_state_dict,
             'generator': generator_state_dict,
-            'vocab': onmt.IO.ONMTDataset.save_vocab(self.fields),
+            'vocab': onmt.IO.ONMTDataset.save_vocab(fields),
             'opt': opt,
             'epoch': epoch,
             'optim': self.optim

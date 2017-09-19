@@ -136,7 +136,7 @@ def train_model(model, train_data, valid_data, fields, optim, opt):
                                    valid_data, opt)
 
     trainer = onmt.Trainer(model, train_iter, valid_iter,
-                           train_loss, valid_loss, fields, optim,
+                           train_loss, valid_loss, optim,
                            opt.batch_size, opt.gpuid,
                            opt.truncated_decoder,
                            opt.max_generator_batches)
@@ -164,7 +164,7 @@ def train_model(model, train_data, valid_data, fields, optim, opt):
 
         # 5. Drop a checkpoint if needed.
         if epoch >= opt.start_checkpoint_at:
-            trainer.drop_checkpoint(opt, epoch, valid_stats)
+            trainer.drop_checkpoint(opt, epoch, valid_stats, fields)
 
 
 def check_save_model_path():
