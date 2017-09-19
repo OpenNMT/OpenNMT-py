@@ -8,11 +8,59 @@ mechanism things here(i.e. what to do), and leave the strategy
 things to users(i.e. how to do it). Also see train.py(one of the
 users of this library) for the strategy things we do.
 """
+import time
+import sys
+import math
 import torch
 import torch.nn as nn
 
 import onmt
 import onmt.modules
+
+
+class Statistics(object):
+    """
+    Train/validate loss statistics.
+    """
+    def __init__(self, loss=0, n_words=0, n_correct=0):
+        self.loss = loss
+        self.n_words = n_words
+        self.n_correct = n_correct
+        self.n_src_words = 0
+        self.start_time = time.time()
+
+    def update(self, stat):
+        self.loss += stat.loss
+        self.n_words += stat.n_words
+        self.n_correct += stat.n_correct
+
+    def accuracy(self):
+        return 100 * (self.n_correct / self.n_words)
+
+    def ppl(self):
+        return math.exp(min(self.loss / self.n_words, 100))
+
+    def elapsed_time(self):
+        return time.time() - self.start_time
+
+    def output(self, epoch, batch, n_batches, start):
+        t = self.elapsed_time()
+        print(("Epoch %2d, %5d/%5d; acc: %6.2f; ppl: %6.2f; " +
+               "%3.0f src tok/s; %3.0f tgt tok/s; %6.0f s elapsed") %
+              (epoch, batch,  n_batches,
+               self.accuracy(),
+               self.ppl(),
+               self.n_src_words / (t + 1e-5),
+               self.n_words / (t + 1e-5),
+               time.time() - start))
+        sys.stdout.flush()
+
+    def log(self, prefix, experiment, optim):
+        t = self.elapsed_time()
+        experiment.add_scalar_value(prefix + "_ppl", self.ppl())
+        experiment.add_scalar_value(prefix + "_accuracy", self.accuracy())
+        experiment.add_scalar_value(prefix + "_tgtper",  self.n_words / t)
+        experiment.add_scalar_value(prefix + "_lr", optim.lr)
 
 
 class Trainer(object):
@@ -45,8 +93,8 @@ class Trainer(object):
 
     def train(self, epoch, report_func=None):
         """ Called for each epoch to train. """
-        total_stats = onmt.Statistics()
-        report_stats = onmt.Statistics()
+        total_stats = Statistics()
+        report_stats = Statistics()
 
         for i, batch in enumerate(self.train_iter):
             target_size = batch.tgt.size(0)
@@ -87,7 +135,7 @@ class Trainer(object):
                 report_func(epoch, i, len(self.train_iter),
                             total_stats.start_time, self.optim.lr,
                             report_stats)
-                report_stats = onmt.Statistics()
+                report_stats = Statistics()
 
         return total_stats
 
@@ -96,7 +144,7 @@ class Trainer(object):
         # Set model in validating mode.
         self.model.eval()
 
-        stats = onmt.Statistics()
+        stats = Statistics()
 
         for batch in self.valid_iter:
             _, src_lengths = batch.src
