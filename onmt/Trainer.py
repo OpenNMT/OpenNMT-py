@@ -6,8 +6,7 @@ import onmt.modules
 class Trainer(object):
     def __init__(self, model, train_data, valid_data, fields, optim,
                  batch_size, gpuid, copy_attn, copy_attn_force,
-                 truncated_decoder, max_generator_batches,
-                 report_every, exp_host, experiment):
+                 truncated_decoder, max_generator_batches):
         # Basic attributes.
         self.model = model
         self.train_data = train_data
@@ -19,9 +18,6 @@ class Trainer(object):
         self.copy_attn = copy_attn
         self.truncated_decoder = truncated_decoder
         self.max_generator_batches = max_generator_batches
-        self.report_every = report_every
-        self.exp_host = exp_host
-        self.experiment = experiment
 
         # Define criterion.
         padding_idx = fields['tgt'].vocab.stoi[onmt.IO.PAD_WORD]
@@ -47,7 +43,7 @@ class Trainer(object):
         # Set model in training mode.
         self.model.train()
 
-    def train(self, epoch):
+    def train(self, epoch, report_func=None):
         """ Called for each epoch to train. """
         closs = onmt.Loss.LossCompute(self.model.generator, self.criterion,
                                       self.fields["tgt"].vocab,
@@ -107,13 +103,12 @@ class Trainer(object):
                 if dec_state is not None:
                     dec_state.detach()
 
-            if i % self.report_every == -1 % self.report_every:
-                report_stats.output(epoch, i+1, len(self.train_iterator),
-                                    total_stats.start_time)
-                if self.exp_host:
-                    report_stats.log("progress", self.experiment,
-                                     self.optim.lr)
+            if report_func is not None:
+                report_func(epoch, i, len(self.train_iterator),
+                            total_stats.start_time, self.optim.lr,
+                            report_stats)
                 report_stats = onmt.Statistics()
+
         return total_stats
 
     def validate(self):

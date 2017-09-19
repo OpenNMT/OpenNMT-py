@@ -57,19 +57,36 @@ if opt.exp_host != "":
     experiment = cc.create_experiment(opt.exp)
 
 
+def report_func(epoch, batch, num_batches,
+                start_time, lr, report_stats):
+    """
+    Called at batch level, conditionally report progress.
+    Args:
+        epoch(int): current epoch count.
+        batch(int): current batch count.
+        num_batches(int): total number of batches.
+        start_time(float): last report time.
+        lr(float): current learning rate.
+        report_stats(Statistics): a Statistics instance.
+    """
+    if batch % opt.report_every == -1 % opt.report_every:
+        report_stats.output(epoch, batch+1, num_batches, start_time)
+        if opt.exp_host:
+            report_stats.log("progress", experiment, lr)
+
+
 def train_model(model, train_data, valid_data, fields, optim):
 
     trainer = onmt.Trainer(model, train_data, valid_data, fields, optim,
                            opt.batch_size, opt.gpuid, opt.copy_attn,
                            opt.copy_attn_force, opt.truncated_decoder,
-                           opt.max_generator_batches,
-                           opt.report_every, opt.exp_host, experiment)
+                           opt.max_generator_batches)
 
     for epoch in range(opt.start_epoch, opt.epochs + 1):
         print('')
 
         # 1. Train for one epoch on the training set.
-        train_stats = trainer.train(epoch)
+        train_stats = trainer.train(epoch, report_func)
         print('Train perplexity: %g' % train_stats.ppl())
         print('Train accuracy: %g' % train_stats.accuracy())
 
