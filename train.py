@@ -15,10 +15,6 @@ import opts
 
 parser = argparse.ArgumentParser(description='train.py')
 
-# Data and loading options
-parser.add_argument('-data', required=True,
-                    help='Path to the *-train.pt file from preprocess.py')
-
 # opts.py
 opts.add_md_help_argument(parser)
 opts.model_opts(parser)
