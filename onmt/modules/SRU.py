@@ -454,7 +454,7 @@ class SRU_Compute(Function):
         if x.dim() == 2:
             last_hidden = c
         elif self.bidirectional:
-            last_hidden = torch.cat((c[-1, :, :d], c[0, :, d:]), dim=1)
+            last_hidden = torch.stack((c[-1, :, :d], c[0, :, d:]))
         else:
             last_hidden = c[-1]
         return h, last_hidden
@@ -475,7 +475,7 @@ class SRU_Compute(Function):
         init_ = x.new(ncols).zero_() if init is None else init
         grad_u = u.new(*u.size())
         grad_bias = x.new(2, batch, d*bidir)
-        grad_init = x.new(batch, d*bidir)
+        grad_init = x.new(*init_.size())
 
         # For DEBUG
         # if x.dim() == 3
@@ -640,4 +640,9 @@ class SRU(nn.Module):
             output = h
             lstc.append(c)
 
-        return output, torch.stack(lstc)
+        if self.bidirectional:
+            # -> (layers*directions) x batch x dim
+            fh = torch.cat(lstc)
+        else:
+            fh = torch.stack(lstc)
+        return output, fh
