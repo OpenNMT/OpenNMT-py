@@ -96,6 +96,11 @@ def model_opts(parser):
 
 
 def train_opts(parser):
+    # Model loading/saving options
+    parser.add_argument('-data', required=True,
+                        help="""Path prefix to the ".train.pt" and
+                        ".valid.pt" file path from preprocess.py""")
+
     parser.add_argument('-save_model', default='model',
                         help="""Model filename (the model will be saved as
                         <save_model>_epochN_PPL.pt where PPL is the

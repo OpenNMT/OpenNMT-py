@@ -14,7 +14,8 @@ parser = argparse.ArgumentParser(description='train.py')
 opts.model_opts(parser)
 opts.train_opts(parser)
 
-opt = parser.parse_known_args()[0]
+# -data option is required, but not used in this test, so dummy.
+opt = parser.parse_known_args(['-data', 'dummy'])[0]
 print(opt)
 
 

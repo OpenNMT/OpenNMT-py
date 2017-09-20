@@ -263,10 +263,11 @@ class ONMTDataset(torchtext.data.Dataset):
         return vocab
 
     @staticmethod
-    def collect_features(fields):
+    def collect_features(fields, side="src"):
+        assert side in ["src", "tgt"]
         feats = []
         for j in count():
-            key = "src_feat_" + str(j)
+            key = side + "_feat_" + str(j)
             if key not in fields:
                 break
             feats.append(key)

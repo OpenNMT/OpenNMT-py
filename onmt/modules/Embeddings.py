@@ -14,13 +14,17 @@ class PositionalEncoding(nn.Module):
         pe = pe * div_term.expand_as(pe)
         pe[:, 0::2] = torch.sin(pe[:, 0::2])
         pe[:, 1::2] = torch.cos(pe[:, 1::2])
-        pe = Variable(pe.unsqueeze(1))
+        pe = pe.unsqueeze(1)
         super(PositionalEncoding, self).__init__()
         self.register_buffer('pe', pe)
         self.dropout = nn.Dropout(p=dropout)
 
     def forward(self, emb):
-        emb = emb + self.pe[:emb.size(0), :1, :emb.size(2)].expand_as(emb)
+        # We must wrap the self.pe in Variable to compute, not the other
+        # way - unwrap emb(i.e. emb.data). Otherwise the computation
+        # wouldn't be watched to build the compute graph.
+        emb = emb + Variable(self.pe[:emb.size(0), :1, :emb.size(2)]
+                             .expand_as(emb), requires_grad=False)
         emb = self.dropout(emb)
         return emb
 
