@@ -9,7 +9,7 @@ import torch
 import onmt
 import onmt.IO
 import opts
-from itertools import zip_longest
+from itertools import zip_longest, takewhile
 
 parser = argparse.ArgumentParser(description='translate.py')
 opts.add_md_help_argument(parser)
@@ -65,6 +65,13 @@ def report_score(name, score_total, words_total):
         name, math.exp(-score_total/words_total)))
 
 
+def get_src_words(src_indices, index2str):
+    words = []
+    raw_words = (index2str[i] for i in src_indices)
+    words = takewhile(lambda w: w != onmt.IO.PAD_WORD, raw_words)
+    return " ".join(words)
+
+
 def main():
     opt = parser.parse_args()
 
@@ -111,39 +118,37 @@ def main():
                 (sent.squeeze(1) for sent in src.split(1, dim=1)))
 
         for pred_sents, gold_sent, pred_score, gold_score, src_sent in z_batch:
+            n_best_preds = [" ".join(pred) for pred in pred_sents[:opt.n_best]]
             count += 1
-            for n in range(opt.n_best):
-                out_file.write(" ".join(pred_sents[n]) + '\n')
+            out_file.write('\n'.join(n_best_preds))
+            out_file.write('\n')
             out_file.flush()
 
             if opt.verbose:
-                words = []
-                for f in src_sent:
-                    word = translator.fields["src"].vocab.itos[f]
-                    if word == onmt.IO.PAD_WORD:
-                        break
-                    words.append(word)
+                words = get_src_words(
+                    src_sent, translator.fields["src"].vocab.itos)
 
                 os.write(1, bytes('\nSENT %d: %s\n' %
-                                  (count, " ".join(words)), 'UTF-8'))
+                                  (count, words), 'UTF-8'))
 
                 index += 1
+                best_pred = n_best_preds[0]
+                best_score = pred_score[0]
                 os.write(1, bytes('PRED %d: %s\n' %
-                                  (count, " ".join(pred_sents[0])), 'UTF-8'))
-                print("PRED SCORE: %.4f" % pred_score[0])
+                                  (count, best_pred), 'UTF-8'))
+                print("PRED SCORE: %.4f" % best_score)
 
                 if opt.tgt:
-                    tgtSent = ' '.join(gold_sent)
+                    tgt_sent = ' '.join(gold_sent)
                     os.write(1, bytes('GOLD %d: %s\n' %
-                             (count, tgtSent), 'UTF-8'))
+                             (count, tgt_sent), 'UTF-8'))
                     print("GOLD SCORE: %.4f" % gold_score)
 
                 if opt.n_best > 1:
                     print('\nBEST HYP:')
-                    for n in range(opt.n_best):
-                        os.write(1, bytes("[%.4f] %s\n" % (pred_score[n],
-                                 " ".join(pred_sents[n])),
-                            'UTF-8'))
+                    for score, sent in zip(pred_score, n_best_preds):
+                        os.write(1, bytes("[%.4f] %s\n" % (score, sent),
+                                 'UTF-8'))
 
     report_score('PRED', pred_score_total, pred_words_total)
     if opt.tgt:
