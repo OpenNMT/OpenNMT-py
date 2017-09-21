@@ -110,7 +110,7 @@ class ONMTDataset(torchtext.data.Dataset):
         return -len(ex.src)
 
     def __init__(self, src_path, tgt_path, fields, opt,
-                 src_img_dir=None, **kwargs):
+                 src_img_dir=None, dw_path=None, **kwargs):
         """
         Create a TranslationDataset given paths and fields.
 
@@ -120,6 +120,8 @@ class ONMTDataset(torchtext.data.Dataset):
         fields:
         src_img_dir: if not None, uses images instead of text for the
                      source. TODO: finish
+        dw_path: location of datum-weights or None. If it exists, it
+                  must be the same length as source and target.
         """
         if src_img_dir:
             self.type_ = "img"
@@ -146,11 +148,31 @@ class ONMTDataset(torchtext.data.Dataset):
         else:
             tgt_examples = None
 
+        # datum-weights
+        if tgt_path and dw_path:
+            # dw_examples = [{"dw": 1} for _ in tgt_data]
+            # dw_truncate = 0
+            # dw_data = self._read_corpus_file(dw_path, dw_truncate)
+            with codecs.open(dw_path, "r", "utf-8") as corpus_file:
+                # lines = (line.split() for line in corpus_file)
+                dw_data = [float(line) for line in corpus_file]
+
+            assert len(src_data) == len(dw_data), \
+                "Len src and dw do not match"
+            dw_examples = [{"dw": dw} for dw in dw_data]
+        else:
+            dw_examples = None
+
         # examples: one for each src line or (src, tgt) line pair.
         # Each element is a dictionary whose keys represent at minimum
         # the src tokens and their indices and potentially also the
         # src and tgt features and alignment information.
-        if tgt_examples:
+        if tgt_examples and dw_path:
+            examples = [join_dicts(src, tgt, dw)
+                        for src, tgt, dw in zip(src_examples,
+                                                tgt_examples,
+                                                dw_examples)]
+        elif tgt_examples:
             examples = [join_dicts(src, tgt)
                         for src, tgt in zip(src_examples, tgt_examples)]
         else:
@@ -172,7 +194,7 @@ class ONMTDataset(torchtext.data.Dataset):
                 if "tgt" in example:
                     tgt = example["tgt"]
                     mask = torch.LongTensor(
-                            [0] + [src_vocab.stoi[w] for w in tgt] + [0])
+                        [0] + [src_vocab.stoi[w] for w in tgt] + [0])
                     example["alignment"] = mask
 
         keys = examples[0].keys()
@@ -300,6 +322,9 @@ class ONMTDataset(torchtext.data.Dataset):
         fields["tgt"] = torchtext.data.Field(
             init_token=BOS_WORD, eos_token=EOS_WORD,
             pad_token=PAD_WORD)
+
+        # Added datum weight field
+        fields["dw"] = torchtext.data.Field()
 
         def make_src(data, _):
             src_size = max([t.size(0) for t in data])

@@ -14,6 +14,8 @@ opt.train_src = 'data/src-train.txt'
 opt.train_tgt = 'data/tgt-train.txt'
 opt.valid_src = 'data/src-val.txt'
 opt.valid_tgt = 'data/tgt-val.txt'
+opt.train_dw = 'data/dw-train.txt'
+opt.valid_dw = 'data/dw-val.txt'
 print(opt)
 
 
@@ -83,6 +85,8 @@ test_databuild = [[],
                   [('share_vocab', True)],
                   [('dynamic_dict', True),
                    ('share_vocab', True)],
+                  [('train_dw', 'data/dw-train.txt'),
+                   ('valid_dw', 'data/dw-val.txt')]
                   ]
 
 for p in test_databuild:
