@@ -129,9 +129,10 @@ class ONMTDataset(torchtext.data.Dataset):
         if self.type_ == "text":
             self.src_vocabs = []
             src_truncate = 0 if opt is None else opt.src_seq_length_trunc
+            src_point = next(self._read_corpus_file(src_path, src_truncate))
+            self.nfeatures = src_point[2]
             src_data = self._read_corpus_file(src_path, src_truncate)
             src_examples = self._construct_examples(src_data, "src")
-            self.nfeatures = src_data[0][2]
         else:
             # TODO finish this.
             if not transforms:
@@ -140,8 +141,8 @@ class ONMTDataset(torchtext.data.Dataset):
         if tgt_path:
             tgt_truncate = 0 if opt is None else opt.tgt_seq_length_trunc
             tgt_data = self._read_corpus_file(tgt_path, tgt_truncate)
-            assert len(src_data) == len(tgt_data), \
-                "Len src and tgt do not match"
+            # assert len(src_data) == len(tgt_data), \
+            #     "Len src and tgt do not match"
             tgt_examples = self._construct_examples(tgt_data, "tgt")
         else:
             tgt_examples = None
@@ -151,14 +152,12 @@ class ONMTDataset(torchtext.data.Dataset):
         # the src tokens and their indices and potentially also the
         # src and tgt features and alignment information.
         if tgt_examples:
-            examples = [join_dicts(src, tgt)
-                        for src, tgt in zip(src_examples, tgt_examples)]
+            examples = (join_dicts(src, tgt)
+                        for src, tgt in zip(src_examples, tgt_examples))
         else:
             examples = src_examples
-        for i, example in enumerate(examples):
-            example["indices"] = i
 
-        if opt is None or opt.dynamic_dict:
+        def dynamic_dict(examples):
             for example in examples:
                 src = example["src"]
                 src_vocab = torchtext.vocab.Vocab(Counter(src))
@@ -172,18 +171,26 @@ class ONMTDataset(torchtext.data.Dataset):
                     mask = torch.LongTensor(
                             [0] + [src_vocab.stoi[w] for w in tgt] + [0])
                     example["alignment"] = mask
+                yield example
 
-        keys = examples[0].keys()
-        fields = [(k, fields[k]) for k in keys]
-        examples = [torchtext.data.Example.fromlist([ex[k] for k in keys],
-                                                    fields)
-                    for ex in examples]
+        if opt is None or opt.dynamic_dict:
+            examples = dynamic_dict(examples)
+
+        def construct_final(examples):
+            for i, ex in enumerate(examples):
+                if i == 0:
+                    keys = ex.keys()
+                    field = [(k, fields[k])
+                             for k in (list(keys) + ["indices"])]
+                yield torchtext.data.Example.fromlist(
+                    [ex[k] for k in keys] + [i],
+                    field)
 
         def filter_pred(example):
             return 0 < len(example.src) <= opt.src_seq_length \
                 and 0 < len(example.tgt) <= opt.tgt_seq_length
 
-        super(ONMTDataset, self).__init__(examples, fields,
+        super(ONMTDataset, self).__init__(construct_final(examples), fields,
                                           filter_pred if opt is not None
                                           else None)
 
@@ -198,11 +205,11 @@ class ONMTDataset(torchtext.data.Dataset):
             lines = (line.split() for line in corpus_file)
             if truncate:
                 lines = (line[:truncate] for line in lines)
-            return [extract_features(line) for line in lines]
+            for line in lines:
+                yield extract_features(line)
 
     def _construct_examples(self, lines, side):
         assert side in ["src", "tgt"]
-        examples = []
         for line in lines:
             words, feats, _ = line
             example_dict = {side: words}
@@ -210,8 +217,7 @@ class ONMTDataset(torchtext.data.Dataset):
                 prefix = side + "_feat_"
                 example_dict.update((prefix + str(j), f)
                                     for j, f in enumerate(feats))
-            examples.append(example_dict)
-        return examples
+            yield example_dict
 
     def __getstate__(self):
         return self.__dict__
