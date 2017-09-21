@@ -58,10 +58,10 @@ parser.add_argument('-share_vocab', action='store_true',
                     help="Share source and target vocabulary")
 
 
-def reportScore(name, scoreTotal, wordsTotal):
+def report_score(name, score_total, words_total):
     print("%s AVG SCORE: %.4f, %s PPL: %.4f" % (
-        name, scoreTotal / wordsTotal,
-        name, math.exp(-scoreTotal/wordsTotal)))
+        name, score_total / words_total,
+        name, math.exp(-score_total/words_total)))
 
 
 def main():
@@ -140,9 +140,9 @@ def main():
                                  " ".join(predBatch[b][n])),
                             'UTF-8'))
 
-    reportScore('PRED', predScoreTotal, predWordsTotal)
+    report_score('PRED', predScoreTotal, predWordsTotal)
     if opt.tgt:
-        reportScore('GOLD', goldScoreTotal, goldWordsTotal)
+        report_score('GOLD', goldScoreTotal, goldWordsTotal)
 
     if opt.dump_beam:
         json.dump(translator.beam_accum,
