@@ -8,6 +8,7 @@ from torch.autograd import Variable
 import numpy as np
 
 import onmt
+from onmt.Models import EncoderBase
 from onmt.Models import DecoderState
 from onmt.Utils import aeq
 
@@ -38,10 +39,7 @@ class PositionwiseFeedForward(nn.Module):
         return self.layer_norm(output + residual)
 
 
-class TransformerEncoder(nn.Module):
-    """
-    The Transformer Decoder from "Attention is All You Need".
-    """
+class TransformerEncoderLayer(nn.Module):
     def __init__(self, size, dropout,
                  head_count=8, hidden_size=2048):
         """
@@ -53,7 +51,7 @@ class TransformerEncoder(nn.Module):
             head_count(int): the number of head for MultiHeadedAttention.
             hidden_size(int): the second-layer of the PositionwiseFeedForward.
         """
-        super(TransformerEncoder, self).__init__()
+        super(TransformerEncoderLayer, self).__init__()
 
         self.self_attn = onmt.modules.MultiHeadedAttention(
             head_count, size, p=dropout)
@@ -67,10 +65,49 @@ class TransformerEncoder(nn.Module):
         return out
 
 
+class TransformerEncoder(EncoderBase):
+    """
+    The Transformer encoder from "Attention is All You Need".
+    """
+    def __init__(self, num_layers, hidden_size,
+                 dropout, embeddings):
+        super(TransformerEncoder, self).__init__()
+
+        self.num_layers = num_layers
+        self.embeddings = embeddings
+        self.transformer = nn.ModuleList(
+            [TransformerEncoderLayer(hidden_size, dropout)
+             for i in range(num_layers)])
+
+    def forward(self, input, lengths=None, hidden=None):
+        """ See EncoderBase.forward() for description of args and returns."""
+        self._check_args(input, lengths, hidden)
+
+        emb = self.embeddings(input)
+        s_len, n_batch, emb_dim = emb.size()
+
+        out = emb.transpose(0, 1).contiguous()
+        words = input[:, :, 0].transpose(0, 1)
+        # CHECKS
+        out_batch, out_len, _ = out.size()
+        w_batch, w_len = words.size()
+        aeq(out_batch, w_batch)
+        aeq(out_len, w_len)
+        # END CHECKS
+
+        # Make mask.
+        padding_idx = self.embeddings.word_padding_idx
+        mask = words.data.eq(padding_idx).unsqueeze(1) \
+            .expand(w_batch, w_len, w_len)
+
+        # Run the forward pass of every layer of the tranformer.
+        for i in range(self.num_layers):
+            out = self.transformer[i](out, mask)
+
+        return Variable(emb.data), out.transpose(0, 1).contiguous()
+
+
 class TransformerDecoderLayer(nn.Module):
-    """
-    The Transformer Decoder Layer from "Attetion is all you need".
-    """
     def __init__(self, size, dropout,
                  head_count=8, hidden_size=2048):
         """
@@ -140,13 +177,10 @@ class TransformerDecoderLayer(nn.Module):
 
 class TransformerDecoder(nn.Module):
     """
-    Transformer Decoder.
+    The Transformer decoder from "Attention is All You Need".
     """
     def __init__(self, num_layers, hidden_size, attn_type,
                  copy_attn, dropout, embeddings):
-        """
-        See make_decoder() comment for arguments description.
-        """
         super(TransformerDecoder, self).__init__()
 
         # Basic attributes.
@@ -173,16 +207,16 @@ class TransformerDecoder(nn.Module):
         Args:
             input (LongTensor): a sequence of input tokens tensors
                                 of size (len x batch x nfeats).
-            context (FloatTensor): output(tensor sequence) from the Encoder
+            context (FloatTensor): output(tensor sequence) from the encoder
                                 of size (src_len x batch x hidden_size).
-            state (FloatTensor): hidden state from the Encoder RNN for
+            state (FloatTensor): hidden state from the encoder RNN for
                                  initializing the decoder.
         Returns:
-            outputs (FloatTensor): a Tensor sequence of output from the Decoder
+            outputs (FloatTensor): a Tensor sequence of output from the decoder
                                    of shape (len x batch x hidden_size).
-            state (FloatTensor): final hidden state from the Decoder.
+            state (FloatTensor): final hidden state from the decoder.
             attns (dict of (str, FloatTensor)): a dictionary of different
-                                type of attention Tensor from the Decoder
+                                type of attention Tensor from the decoder
                                 of shape (src_len x batch).
         """
         # CHECKS

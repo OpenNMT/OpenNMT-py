@@ -1,4 +1,5 @@
 import argparse
+from onmt.modules.SRU import CheckSRU
 
 
 def model_opts(parser):
@@ -17,16 +18,17 @@ def model_opts(parser):
     parser.add_argument('-tgt_word_vec_size', type=int, default=500,
                         help='Tgt word embedding sizes')
 
-    parser.add_argument('-feat_vec_size', type=int, default=20,
-                        help="""When using -feat_merge mlp, feature embedding
-                        sizes will be set to this.""")
     parser.add_argument('-feat_merge', type=str, default='concat',
                         choices=['concat', 'sum', 'mlp'],
                         help='Merge action for the features embeddings')
+    parser.add_argument('-feat_vec_size', type=int, default=-1,
+                        help="""If specified, feature embedding sizes
+                        will be set to this. Otherwise, feat_vec_exponent
+                        will be used.""")
     parser.add_argument('-feat_vec_exponent', type=float, default=0.7,
-                        help="""When using -feat_merge concat, feature embedding
-                        sizes will be set to N^feat_vec_exponent where N is the
-                        number of values the feature takes.""")
+                        help="""If -feat_merge_size is not set, feature
+                        embedding sizes will be set to N^feat_vec_exponent
+                        where N is the number of values the feature takes.""")
     parser.add_argument('-position_encoding', action='store_true',
                         help='Use a sin to mark relative words positions.')
     parser.add_argument('-share_decoder_embeddings', action='store_true',
@@ -57,8 +59,10 @@ def model_opts(parser):
                         help="""Feed the context vector at each time step as
                         additional input (via concatenation with the word
                         embeddings) to the decoder.""")
+
     parser.add_argument('-rnn_type', type=str, default='LSTM',
-                        choices=['LSTM', 'GRU'],
+                        choices=['LSTM', 'GRU', 'SRU'],
+                        action=CheckSRU,
                         help="""The gate type to use in the RNNs""")
     # parser.add_argument('-residual',   action="store_true",
     #                     help="Add residual connections between RNN layers.")
@@ -92,6 +96,11 @@ def model_opts(parser):
 
 
 def train_opts(parser):
+    # Model loading/saving options
+    parser.add_argument('-data', required=True,
+                        help="""Path prefix to the ".train.pt" and
+                        ".valid.pt" file path from preprocess.py""")
+
     parser.add_argument('-save_model', default='model',
                         help="""Model filename (the model will be saved as
                         <save_model>_epochN_PPL.pt where PPL is the
