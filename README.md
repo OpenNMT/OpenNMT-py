@@ -35,18 +35,21 @@ The following OpenNMT features are implemented:
 - multi-layer bidirectional RNNs with attention and dropout
 - data preprocessing
 - saving and loading from checkpoints
-- inference (translation) with batching and beam search
-- multi-GPU
-
-Beta Features:
+- Inference (translation) with batching and beam search
 - Context gate
 - Multiple source and target RNN (lstm/gru) types and attention (dotprod/mlp) types
-- Image-to-text processing
-- Source word features
-- "Attention is all you need"
 - TensorBoard/Crayon logging
-- Copy, coverage, and structured attention
+- Source word features
 
+Beta Features (committed):
+- multi-GPU
+- Image-to-text processing
+- "Attention is all you need"
+- Copy, coverage
+- Structured attention
+- Conv2Conv convolution model
+- SRU "RNNs faster than CNN" paper
+- Inference time loss functions.
 
 ## Quickstart
 
