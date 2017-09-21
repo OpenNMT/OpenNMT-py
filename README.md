@@ -16,6 +16,7 @@ Table of Contents
   * [Features](#features)
   * [Quickstart](#quickstart)
   * [Advanced](#advanced)
+  * [Citation](#citation)
  
 ## Requirements
 
@@ -159,6 +160,8 @@ The following pretrained models can be downloaded and used with translate.py (Th
 
 
 ## Citation
+
+[OpenNMT technical report](https://doi.org/10.18653/v1/P17-4012)
 
 ```
 @inproceedings{opennmt,
