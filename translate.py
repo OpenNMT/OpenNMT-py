@@ -76,39 +76,40 @@ def main():
         torch.cuda.set_device(opt.gpu)
     translator = onmt.Translator(opt, dummy_opt.__dict__)
     outF = codecs.open(opt.output, 'w', 'utf-8')
-    predScoreTotal, predWordsTotal, goldScoreTotal, goldWordsTotal = 0, 0, 0, 0
+    pred_score_total, pred_words_total = 0, 0
+    gold_score_total, gold_words_total = 0, 0
     count = 0
     if opt.dump_beam != "":
         import json
         translator.initBeamAccum()
     data = onmt.IO.ONMTDataset(opt.src, opt.tgt, translator.fields, None)
 
-    testData = onmt.IO.OrderedIterator(
+    test_data = onmt.IO.OrderedIterator(
         dataset=data, device=opt.gpu,
         batch_size=opt.batch_size, train=False, sort=False,
         shuffle=False)
 
     index = 0
-    for batch in testData:
-        predBatch, goldBatch, predScore, goldScore, attn, src \
+    for batch in test_data:
+        pred_batch, gold_batch, pred_score, gold_score, attn, src \
             = translator.translate(batch, data)
-        predScoreTotal += sum(score[0] for score in predScore)
-        predWordsTotal += sum(len(x[0]) for x in predBatch)
+        pred_score_total += sum(score[0] for score in pred_score)
+        pred_words_total += sum(len(x[0]) for x in pred_batch)
         if opt.tgt:
-            goldScoreTotal += sum(goldScore)
-            goldWordsTotal += sum(len(x) for x in batch.tgt[1:])
+            gold_score_total += sum(gold_score)
+            gold_words_total += sum(len(x) for x in batch.tgt[1:])
 
-        for b in range(len(predBatch)):
+        for b in range(len(pred_batch)):
             count += 1
             try:
                 # python2 (should be the same)
                 for n in range(opt.n_best):
                     outF.write(" ".join([i
-                               for i in predBatch[b][n]]) + '\n')
+                               for i in pred_batch[b][n]]) + '\n')
             except AttributeError:
                 # python3: can't do .decode on a str object
                 for n in range(opt.n_best):
-                    outF.write(" ".join(predBatch[b][n]) + '\n')
+                    outF.write(" ".join(pred_batch[b][n]) + '\n')
             outF.flush()
 
             if opt.verbose:
@@ -124,25 +125,25 @@ def main():
 
                 index += 1
                 os.write(1, bytes('PRED %d: %s\n' %
-                                  (count, " ".join(predBatch[b][0])), 'UTF-8'))
-                print("PRED SCORE: %.4f" % predScore[b][0])
+                                  (count, " ".join(pred_batch[b][0])), 'UTF-8'))
+                print("PRED SCORE: %.4f" % pred_score[b][0])
 
                 if opt.tgt:
-                    tgtSent = ' '.join(goldBatch[b])
+                    tgtSent = ' '.join(gold_batch[b])
                     os.write(1, bytes('GOLD %d: %s\n' %
                              (count, tgtSent), 'UTF-8'))
-                    print("GOLD SCORE: %.4f" % goldScore[b])
+                    print("GOLD SCORE: %.4f" % gold_score[b])
 
                 if opt.n_best > 1:
                     print('\nBEST HYP:')
                     for n in range(opt.n_best):
-                        os.write(1, bytes("[%.4f] %s\n" % (predScore[b][n],
-                                 " ".join(predBatch[b][n])),
+                        os.write(1, bytes("[%.4f] %s\n" % (pred_score[b][n],
+                                 " ".join(pred_batch[b][n])),
                             'UTF-8'))
 
-    report_score('PRED', predScoreTotal, predWordsTotal)
+    report_score('PRED', pred_score_total, pred_words_total)
     if opt.tgt:
-        report_score('GOLD', goldScoreTotal, goldWordsTotal)
+        report_score('GOLD', gold_score_total, gold_words_total)
 
     if opt.dump_beam:
         json.dump(translator.beam_accum,
