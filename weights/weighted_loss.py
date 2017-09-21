@@ -4,9 +4,66 @@ import math
 
 import torch
 import torch.nn as nn
+from torch.nn.modules.loss import NLLLoss, _assert_no_grad
 from torch.autograd import Variable
 
 import onmt
+
+"""
+extend onmt/IO.py to be able to add a property to the targets (the weight), since it's only usefull in training, and it's closely paired with it's value
+extend onmt/Loss.py so that i would return a different crit form the actual, crit = nn.NLLLoss(weight, size_average=False)
+if there are no datum-weights, it would return crit = nn.NLLLoss(weight, size_average=False, datum_weights=False)
+
+crit returns just a VAR?
+def loss_function(recon_x, x, mu, logvar):
+    BCE = reconstruction_function(recon_x, x)
+
+    # see Appendix B from VAE paper:
+    # Kingma and Welling. Auto-Encoding Variational Bayes. ICLR, 2014
+    # https://arxiv.org/abs/1312.6114
+    # 0.5 * sum(1 + log(sigma^2) - mu^2 - sigma^2)
+    KLD_element = mu.pow(2).add_(logvar.exp()).mul_(-1).add_(1).add_(logvar)
+    KLD = torch.sum(KLD_element).mul_(-0.5)
+
+    return BCE + KLD
+"""
+
+
+class DatumWeightedNLLloss(NLLLoss):
+    def __init__(self, weight=None, size_average=True, ignore_index=-100, datum_average=False):
+        super(NLLLoss, self).__init__(weight, size_average)
+        self.ignore_index = ignore_index
+        self.datum_average = datum_average
+
+    def forward(self, input, target, datum_weights=None):
+        _assert_no_grad(target)
+        weights = self._buffers["weight"]
+
+        # for each word (row) in input, i want the n-th value,
+        # where n is the value of target[row], meaning the
+        # probability of choosing that cat from the model
+        conf_logprobs = -torch.squeeze(input.gather(1, target.long().view(-1,1)))
+
+        # for each word (row) in target, i want the value of
+        # the weight associated with the cat target[row]
+        cat_weights = torch.index_select(weights, 0, target.data.long()).float()
+
+        # Now i produce the weighted prod.
+        weighted = conf_logprobs.data * cat_weights
+
+        # do i have datum weights?
+        if datum_weights is not None:
+            weighted *= datum_weights
+
+        result = weighted.sum()
+        if self.size_average:
+            result /= cat_weights.sum()
+
+        if self.datum_average:
+            result /= datum_weights.sum()
+
+        return result
+
 
 
 def DatumWeightedNMTCriterion(vocabSize, opt, pad_id):
