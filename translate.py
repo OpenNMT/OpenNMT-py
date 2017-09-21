@@ -9,7 +9,7 @@ import torch
 import onmt
 import onmt.IO
 import opts
-from itertools import zip_longest, takewhile
+from itertools import zip_longest, takewhile, count
 
 parser = argparse.ArgumentParser(description='translate.py')
 opts.add_md_help_argument(parser)
@@ -86,7 +86,6 @@ def main():
     out_file = codecs.open(opt.output, 'w', 'utf-8')
     pred_score_total, pred_words_total = 0, 0
     gold_score_total, gold_words_total = 0, 0
-    count = 0
     if opt.dump_beam != "":
         import json
         translator.initBeamAccum()
@@ -97,7 +96,7 @@ def main():
         batch_size=opt.batch_size, train=False, sort=False,
         shuffle=False)
 
-    index = 0
+    counter = count(1)
     for batch in test_data:
         pred_batch, gold_batch, pred_scores, gold_scores, attn, src \
             = translator.translate(batch, data)
@@ -119,32 +118,31 @@ def main():
 
         for pred_sents, gold_sent, pred_score, gold_score, src_sent in z_batch:
             n_best_preds = [" ".join(pred) for pred in pred_sents[:opt.n_best]]
-            count += 1
             out_file.write('\n'.join(n_best_preds))
             out_file.write('\n')
             out_file.flush()
 
             if opt.verbose:
+                sent_number = next(counter)
                 words = get_src_words(
                     src_sent, translator.fields["src"].vocab.itos)
 
                 os.write(1, bytes('\nSENT %d: %s\n' %
-                                  (count, words), 'UTF-8'))
+                                  (sent_number, words), 'UTF-8'))
 
-                index += 1
                 best_pred = n_best_preds[0]
                 best_score = pred_score[0]
                 os.write(1, bytes('PRED %d: %s\n' %
-                                  (count, best_pred), 'UTF-8'))
+                                  (sent_number, best_pred), 'UTF-8'))
                 print("PRED SCORE: %.4f" % best_score)
 
                 if opt.tgt:
                     tgt_sent = ' '.join(gold_sent)
                     os.write(1, bytes('GOLD %d: %s\n' %
-                             (count, tgt_sent), 'UTF-8'))
+                             (sent_number, tgt_sent), 'UTF-8'))
                     print("GOLD SCORE: %.4f" % gold_score)
 
-                if opt.n_best > 1:
+                if len(n_best_preds) > 1:
                     print('\nBEST HYP:')
                     for score, sent in zip(pred_score, n_best_preds):
                         os.write(1, bytes("[%.4f] %s\n" % (score, sent),
