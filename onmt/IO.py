@@ -165,8 +165,6 @@ class ONMTDataset(torchtext.data.Dataset):
                 self.src_vocabs.append(src_vocab)
                 # mapping source tokens to indices in the dynamic dict
                 src_map = torch.LongTensor([src_vocab.stoi[w] for w in src])
-
-                self.src_vocabs.append(src_vocab)
                 example["src_map"] = src_map
 
                 if "tgt" in example:
