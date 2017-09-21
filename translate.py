@@ -75,7 +75,7 @@ def main():
     if opt.cuda:
         torch.cuda.set_device(opt.gpu)
     translator = onmt.Translator(opt, dummy_opt.__dict__)
-    outF = codecs.open(opt.output, 'w', 'utf-8')
+    out_file = codecs.open(opt.output, 'w', 'utf-8')
     pred_score_total, pred_words_total = 0, 0
     gold_score_total, gold_words_total = 0, 0
     count = 0
@@ -101,16 +101,9 @@ def main():
 
         for b in range(len(pred_batch)):
             count += 1
-            try:
-                # python2 (should be the same)
-                for n in range(opt.n_best):
-                    outF.write(" ".join([i
-                               for i in pred_batch[b][n]]) + '\n')
-            except AttributeError:
-                # python3: can't do .decode on a str object
-                for n in range(opt.n_best):
-                    outF.write(" ".join(pred_batch[b][n]) + '\n')
-            outF.flush()
+            for n in range(opt.n_best):
+                out_file.write(" ".join(pred_batch[b][n]) + '\n')
+            out_file.flush()
 
             if opt.verbose:
                 words = []
