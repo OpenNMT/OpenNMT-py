@@ -5,7 +5,7 @@ port of [OpenNMT](https://github.com/OpenNMT/OpenNMT),
 an open-source (MIT) neural machine translation system. It is designed to be research friendly to try out new ideas in translation, summary, image-to-text, morphology, and many other domains.
 
 
-OpenNMT-py is run as a collaborative open-source project. It is currently maintained by [Sasha Rush](@srush) (Cambridge, MA), [Ben Peters](@bpopeters) (Saarbrücken), and [Jianyu Zhan](@jianyuzhan) (Shenzhen). The original code was written by Adam Lehrer. Codebase is nearing a stable 0.1 version. We currently recommend forking if you want stable code.
+OpenNMT-py is run as a collaborative open-source project. It is currently maintained by [Sasha Rush](http://github.com/srush) (Cambridge, MA), [Ben Peters](http://github.com/bpopeters) (Saarbrücken), and [Jianyu Zhan](http://github.com/jianyuzhan) (Shenzhen). The original code was written by [Adam Lehrer](http://github.com/adamlehrer) (NYC). Codebase is nearing a stable 0.1 version. We currently recommend forking if you want stable code.
 
 We love contributions. Please consult the Issues page for any [Contributions Welcome](https://github.com/OpenNMT/OpenNMT-py/issues?q=is%3Aissue+is%3Aopen+label%3A%22contributions+welcome%22) tagged post. 
 
