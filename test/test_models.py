@@ -1,17 +1,21 @@
 import argparse
 import copy
 import unittest
-import onmt
+
 import torch
-import opts
 from torch.autograd import Variable
 
+import onmt
+import opts
+from onmt.ModelConstructor import make_embeddings, \
+                            make_encoder, make_decoder
 
 parser = argparse.ArgumentParser(description='train.py')
 opts.model_opts(parser)
 opts.train_opts(parser)
 
-opt = parser.parse_known_args()[0]
+# -data option is required, but not used in this test, so dummy.
+opt = parser.parse_known_args(['-data', 'dummy'])[0]
 print(opt)
 
 
@@ -44,11 +48,9 @@ class TestModel(unittest.TestCase):
             sourceL: Length of generated input sentence
             bsize: Batchsize of generated input
         '''
-        vocab = self.get_vocab()
-        feats_padding_idx = []
-        emb = onmt.Models.make_embeddings(
-                    opt, vocab.stoi[onmt.IO.PAD_WORD], feats_padding_idx,
-                    len(vocab), for_encoder=True)
+        word_dict = self.get_vocab()
+        feature_dicts = []
+        emb = make_embeddings(opt, word_dict, feature_dicts)
         test_src, _, __ = self.get_batch(sourceL=sourceL,
                                          bsize=bsize)
         if opt.decoder_type == 'transformer':
@@ -70,14 +72,10 @@ class TestModel(unittest.TestCase):
             sourceL: Length of generated input sentence
             bsize: Batchsize of generated input
         '''
-        vocab = self.get_vocab()
-        feats_padding_idx = []
-        embeddings = onmt.Models.make_embeddings(
-                        opt, vocab.stoi[onmt.IO.PAD_WORD], feats_padding_idx,
-                        len(vocab), for_encoder=True)
-        enc = onmt.Models.Encoder(opt.encoder_type, opt.brnn,
-                                  opt.rnn_type, opt.enc_layers,
-                                  opt.rnn_size, opt.dropout, embeddings)
+        word_dict = self.get_vocab()
+        feature_dicts = []
+        embeddings = make_embeddings(opt, word_dict, feature_dicts)
+        enc = make_encoder(opt, embeddings)
 
         test_src, test_tgt, test_length = self.get_batch(sourceL=sourceL,
                                                          bsize=bsize)
@@ -106,30 +104,15 @@ class TestModel(unittest.TestCase):
             sourceL: length of input sequence
             bsize: batchsize
         """
-        vocab = self.get_vocab()
-        word_padding_idx = vocab.stoi[onmt.IO.PAD_WORD]
-        feats_padding_idx = []
+        word_dict = self.get_vocab()
+        feature_dicts = []
 
-        embeddings = onmt.Models.make_embeddings(
-                            opt, word_padding_idx, feats_padding_idx,
-                            len(vocab), for_encoder=True)
-        enc = onmt.Models.Encoder(opt.encoder_type, opt.brnn,
-                                  opt.rnn_type, opt.enc_layers,
-                                  opt.rnn_size, opt.dropout,
-                                  embeddings)
+        embeddings = make_embeddings(opt, word_dict, feature_dicts)
+        enc = make_encoder(opt, embeddings)
 
-        embeddings = onmt.Models.make_embeddings(
-                            opt, word_padding_idx, feats_padding_idx,
-                            len(vocab), for_encoder=False)
-        dec = onmt.Models.make_decoder(opt.decoder_type, opt.rnn_type,
-                                       opt.brnn, opt.dec_layers,
-                                       opt.rnn_size, opt.input_feed,
-                                       opt.global_attention,
-                                       opt.coverage_attn,
-                                       opt.context_gate,
-                                       opt.copy_attn,
-                                       opt.cnn_kernel_width,
-                                       opt.dropout, embeddings)
+        embeddings = make_embeddings(opt, word_dict, feature_dicts,
+                                     for_encoder=False)
+        dec = make_decoder(opt, embeddings)
 
         model = onmt.Models.NMTModel(enc, dec)
 
@@ -221,6 +204,11 @@ tests_ntmodel = [[('rnn_type', 'GRU')],
                   ('encoder_type', 'cnn')],
                  []
                  ]
+
+if onmt.modules.check_sru_requirement():
+    """ Only do SRU test if requirment is safisfied. """
+    # SRU doesn't support input_feed.
+    tests_ntmodel.append([('rnn_type', 'SRU'), ('input_feed', 0)])
 
 for p in tests_ntmodel:
     _add_test(p, 'ntmmodel_forward')
