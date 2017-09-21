@@ -9,7 +9,11 @@ import torch
 import onmt
 import onmt.IO
 import opts
-from itertools import zip_longest, takewhile, count
+from itertools import takewhile, count
+try:
+    from itertools import zip_longest
+except ImportError:
+    from itertools import izip_longest as zip_longest
 
 parser = argparse.ArgumentParser(description='translate.py')
 opts.add_md_help_argument(parser)
