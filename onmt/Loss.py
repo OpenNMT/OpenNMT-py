@@ -8,6 +8,7 @@ from __future__ import division
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
+from torch.nn.modules.loss import NLLLoss, _assert_no_grad
 
 import onmt
 
@@ -102,6 +103,79 @@ class NMTLossCompute(LossComputeBase):
         stats = self.stats(loss_data, scores_data, target_data)
 
         return loss, stats
+
+
+class NMTLossComputeDatumWeighted(LossComputeBase):
+    """
+    Standard NMT Loss Computation.
+    """
+    def __init__(self, generator, tgt_vocab):
+        super(NMTLossComputeDatumWeighted, self).__init__(generator, tgt_vocab)
+
+        self.copy_attn = False
+        weight = torch.ones(len(tgt_vocab))
+        weight[self.padding_idx] = 0
+        self.criterion = DatumWeightedNLLCriterion(weight, size_average=False)
+
+    def compute_loss(self, batch, output, target, datum_weights=None, **kwargs):
+        """ See base class for args description. """
+        scores = self.generator(self.bottle(output))
+        scores_data = scores.data.clone()
+
+        target = target.view(-1)
+        target_data = target.data.clone()
+
+        loss = self.criterion(scores, target, datum_weights)
+        loss_data = loss.data.clone()
+
+        stats = self.stats(loss_data, scores_data, target_data)
+
+        return loss, stats
+
+
+class DatumWeightedNLLCriterion(NLLLoss):
+    def __init__(self, weight=None, size_average=True, ignore_index=-100, datum_average=False):
+        super(NLLLoss, self).__init__(weight, size_average)
+        self.ignore_index = ignore_index
+        self.datum_average = datum_average
+
+    @staticmethod
+    def _assert_no_grad(variable):
+        assert not variable.requires_grad, \
+            "nn criterions don't compute the gradient w.r.t. targets - please " \
+            "mark these variables as volatile or not requiring gradients"
+
+    def forward(self, input, target, datum_weights=None):
+        self._assert_no_grad(target)
+        weights = self._buffers["weight"].double()
+
+        # for each word (row) in input, i want the n-th value,
+        # where n is the value of target[row], meaning the
+        # probability of choosing that cat from the model
+        conf_logprobs = -torch.squeeze(input.gather(1, target.long().view(-1,1))).double()
+
+        # for each word (row) in target, i want the value of
+        # the weight associated with the cat target[row]
+        cat_weights = torch.index_select(weights, 0, target.data.long()).double()
+
+        # Now i produce the weighted prod.
+        weighted = conf_logprobs.data.double() * cat_weights.double()
+
+        # do i have datum weights?
+        if datum_weights is not None:
+            weighted *= datum_weights.double()
+
+        # weighted.reduce()
+        result = weighted.sum()
+        divisors = 1
+        if self.size_average:
+            divisors *= cat_weights.sum()
+
+        if self.datum_average:
+            divisors *= datum_weights.sum()
+
+        result /= torch.DoubleTensor([divisors])
+        return torch.autograd.Variable(result.float())
 
 
 def make_gen_state(output, batch, attns, range_, copy_attn=None):
