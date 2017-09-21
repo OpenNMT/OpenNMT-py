@@ -156,3 +156,21 @@ The following pretrained models can be downloaded and used with translate.py (Th
 
 - [onmt_model_en_de_200k](https://drive.google.com/file/d/0B6N7tANPyVeBWE9WazRYaUd2QTg/view?usp=sharing): An English-German translation model based on the 200k sentence dataset at [OpenNMT/IntegrationTesting](https://github.com/OpenNMT/IntegrationTesting/tree/master/data). Perplexity: 20.
 - onmt_model_en_fr_b1M (coming soon): An English-French model trained on benchmark-1M. Perplexity: 4.85.
+
+
+## Citation
+
+```
+@inproceedings{opennmt,
+  author    = {Guillaume Klein and
+               Yoon Kim and
+               Yuntian Deng and
+               Jean Senellart and
+               Alexander M. Rush},
+  title     = {OpenNMT: Open-Source Toolkit for Neural Machine Translation},
+  booktitle = {Proc. ACL},
+  year      = {2017},
+  url       = {https://doi.org/10.18653/v1/P17-4012},
+  doi       = {10.18653/v1/P17-4012}
+}
+```
