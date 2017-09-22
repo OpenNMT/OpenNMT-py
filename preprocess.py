@@ -61,12 +61,12 @@ def main():
 
     fields = onmt.IO.ONMTDataset.get_fields(nFeatures)
     print("Building Training...")
-    train = onmt.IO.ONMTDataset(opt.train_src, opt.train_tgt, fields, opt)
+    train = onmt.IO.ONMTDataset(opt.train_src, opt.train_tgt, fields, opt, dw_path=opt.train_dw)
     print("Building Vocab...")
     onmt.IO.ONMTDataset.build_vocab(train, opt)
 
     print("Building Valid...")
-    valid = onmt.IO.ONMTDataset(opt.valid_src, opt.valid_tgt, fields, opt)
+    valid = onmt.IO.ONMTDataset(opt.valid_src, opt.valid_tgt, fields, opt, dw_path=opt.valid_dw)
     print("Saving train/valid/fields")
 
     # Can't save fields, so remove/reconstruct at training time.

@@ -104,6 +104,22 @@ class NMTLossCompute(LossComputeBase):
 
         return loss, stats
 
+    # TODO should the weights be used to affect "num_correct"?
+    def stats(self, loss, scores, target):
+        """
+        Compute and return a Statistics object.
+
+        Args:
+            loss(Tensor): the loss computed by the loss criterion.
+            scores(Tensor): a sequence of predict output with scores.
+        """
+        pred = scores.max(1)[1]
+        non_padding = target.ne(self.padding_idx)
+        num_correct = pred.eq(target) \
+                          .masked_select(non_padding) \
+                          .sum()
+        return onmt.Statistics(loss[0], non_padding.sum(), num_correct)
+
 
 class NMTLossComputeDatumWeighted(LossComputeBase):
     """
@@ -111,21 +127,28 @@ class NMTLossComputeDatumWeighted(LossComputeBase):
     """
     def __init__(self, generator, tgt_vocab):
         super(NMTLossComputeDatumWeighted, self).__init__(generator, tgt_vocab)
-
         self.copy_attn = False
         weight = torch.ones(len(tgt_vocab))
         weight[self.padding_idx] = 0
         self.criterion = DatumWeightedNLLCriterion(weight, size_average=False)
 
-    def compute_loss(self, batch, output, target, datum_weights=None, **kwargs):
+    def compute_loss(self, batch, output, target, **kwargs):
         """ See base class for args description. """
         scores = self.generator(self.bottle(output))
         scores_data = scores.data.clone()
 
+        # since i have only one value per target, i'll need to cope with target
+        if len(target.size()) > 1 and "dw" in kwargs:
+            tgt_dims = target.size()[1]
+            dw_for_view = torch.stack([kwargs["dw"] for _ in range(tgt_dims)], 1)
+
         target = target.view(-1)
         target_data = target.data.clone()
 
-        loss = self.criterion(scores, target, datum_weights)
+        dw_for_view = dw_for_view.view(-1)
+        dw_for_view_data = dw_for_view.data.clone()
+
+        loss = self.criterion(scores, target, datum_weights=dw_for_view)
         loss_data = loss.data.clone()
 
         stats = self.stats(loss_data, scores_data, target_data)
@@ -147,35 +170,35 @@ class DatumWeightedNLLCriterion(NLLLoss):
 
     def forward(self, input, target, datum_weights=None):
         self._assert_no_grad(target)
-        weights = self._buffers["weight"].double()
+        weights = self._buffers["weight"]
 
         # for each word (row) in input, i want the n-th value,
         # where n is the value of target[row], meaning the
         # probability of choosing that cat from the model
-        conf_logprobs = -torch.squeeze(input.gather(1, target.long().view(-1,1))).double()
+        conf_logprobs = -torch.squeeze(input.gather(1, target.view(-1,1)))
 
         # for each word (row) in target, i want the value of
         # the weight associated with the cat target[row]
-        cat_weights = torch.index_select(weights, 0, target.data.long()).double()
+        cat_weights = torch.autograd.Variable(torch.index_select(weights, 0, target.data))
 
         # Now i produce the weighted prod.
-        weighted = conf_logprobs.data.double() * cat_weights.double()
+        weighted = conf_logprobs * cat_weights
 
         # do i have datum weights?
         if datum_weights is not None:
-            weighted *= datum_weights.double()
+            weighted = weighted * datum_weights
 
-        # weighted.reduce()
         result = weighted.sum()
-        divisors = 1
+        divisors = torch.autograd.Variable(torch.FloatTensor([1.0]))
         if self.size_average:
-            divisors *= cat_weights.sum()
+            divisors = divisors * cat_weights.sum()
 
         if self.datum_average:
-            divisors *= datum_weights.sum()
+            divisors = divisors * datum_weights.sum()
 
-        result /= torch.DoubleTensor([divisors])
-        return torch.autograd.Variable(result.float())
+        # divisors = torch.autograd.Variable(torch.FloatTensor([divisors]))
+        result = result / divisors
+        return result
 
 
 def make_gen_state(output, batch, attns, range_, copy_attn=None):
@@ -187,12 +210,15 @@ def make_gen_state(output, batch, attns, range_, copy_attn=None):
         raise AssertionError("using -copy_attn you need to pass in "
                              "-dynamic_dict during preprocess stage.")
 
+    use_dw = hasattr(batch, "dw")
     return {"output": output,
             "target": batch.tgt[range_[0] + 1: range_[1]],
             "copy_attn": attns.get("copy"),
             "align": None if not copy_attn
             else batch.alignment[range_[0] + 1: range_[1]],
-            "coverage": attns.get("coverage")}
+            "coverage": attns.get("coverage"),
+            "dw": None if not use_dw
+            else batch.dw[range_[0] + 1: range_[1]]}
 
 
 def filter_gen_state(state):

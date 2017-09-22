@@ -93,6 +93,9 @@ def model_opts(parser):
                         help='Train a coverage attention layer.')
     parser.add_argument('-lambda_coverage', type=float, default=1,
                         help='Lambda value for coverage.')
+    parser.add_argument('-loss_func', default='nmt',
+                        choices=['nmt', 'datum_weighted', 'copy_attn'],
+                        help='Loss Function to be used')
 
 
 def train_opts(parser):

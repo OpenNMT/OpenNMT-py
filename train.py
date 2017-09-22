@@ -108,11 +108,14 @@ def make_loss_compute(model, tgt_vocab, dataset, opt):
     compute loss in train/validate process. You can implement your
     own *LossCompute class, by subclassing LossComputeBase.
     """
-    if opt.copy_attn:
+    if opt.loss_func == "copy_attn":
         compute = onmt.modules.CopyGeneratorLossCompute(
             model.generator, tgt_vocab, dataset, opt.copy_attn_force)
-    else:
+    if opt.loss_func == "nmt":
         compute = onmt.Loss.NMTLossCompute(model.generator, tgt_vocab)
+    if opt.loss_func == "datum_weighted":
+        compute = onmt.Loss.NMTLossComputeDatumWeighted(
+            model.generator, tgt_vocab)
 
     if use_gpu(opt):
         compute.cuda()

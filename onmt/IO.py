@@ -324,7 +324,9 @@ class ONMTDataset(torchtext.data.Dataset):
             pad_token=PAD_WORD)
 
         # Added datum weight field
-        fields["dw"] = torchtext.data.Field()
+        fields["dw"] = torchtext.data.Field(
+            use_vocab=False, tensor_type=torch.FloatTensor,
+            sequential=False)
 
         def make_src(data, _):
             src_size = max([t.size(0) for t in data])
