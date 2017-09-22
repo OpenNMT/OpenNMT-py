@@ -176,12 +176,14 @@ class ONMTDataset(torchtext.data.Dataset):
         if opt is None or opt.dynamic_dict:
             examples = dynamic_dict(examples)
 
+        # Peek at the first to see which fields are used.
+        ex = next(examples)
+        keys = ex.keys()
+        field = [(k, fields[k])
+                 for k in (list(keys) + ["indices"])]
+
         def construct_final(examples):
             for i, ex in enumerate(examples):
-                if i == 0:
-                    keys = ex.keys()
-                    field = [(k, fields[k])
-                             for k in (list(keys) + ["indices"])]
                 yield torchtext.data.Example.fromlist(
                     [ex[k] for k in keys] + [i],
                     field)
@@ -190,9 +192,11 @@ class ONMTDataset(torchtext.data.Dataset):
             return 0 < len(example.src) <= opt.src_seq_length \
                 and 0 < len(example.tgt) <= opt.tgt_seq_length
 
-        super(ONMTDataset, self).__init__(construct_final(examples), fields,
-                                          filter_pred if opt is not None
-                                          else None)
+        super(ONMTDataset, self).__init__(
+            construct_final(chain([ex], examples)),
+            fields,
+            filter_pred if opt is not None
+            else None)
 
     def _read_corpus_file(self, path, truncate):
         """
