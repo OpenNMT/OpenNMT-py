@@ -138,7 +138,7 @@ class ONMTDataset(torchtext.data.Dataset):
             if not transforms:
                 load_image_libs()
 
-        if tgt_path:
+        if tgt_path is not None:
             tgt_truncate = 0 if opt is None else opt.tgt_seq_length_trunc
             tgt_data = self._read_corpus_file(tgt_path, tgt_truncate)
             # assert len(src_data) == len(tgt_data), \
@@ -151,7 +151,7 @@ class ONMTDataset(torchtext.data.Dataset):
         # Each element is a dictionary whose keys represent at minimum
         # the src tokens and their indices and potentially also the
         # src and tgt features and alignment information.
-        if tgt_examples:
+        if tgt_examples is not None:
             examples = (join_dicts(src, tgt)
                         for src, tgt in zip(src_examples, tgt_examples))
         else:
@@ -179,14 +179,14 @@ class ONMTDataset(torchtext.data.Dataset):
         # Peek at the first to see which fields are used.
         ex = next(examples)
         keys = ex.keys()
-        field = [(k, fields[k])
-                 for k in (list(keys) + ["indices"])]
+        fields = [(k, fields[k])
+                  for k in (list(keys) + ["indices"])]
 
         def construct_final(examples):
             for i, ex in enumerate(examples):
                 yield torchtext.data.Example.fromlist(
                     [ex[k] for k in keys] + [i],
-                    field)
+                    fields)
 
         def filter_pred(example):
             return 0 < len(example.src) <= opt.src_seq_length \
