@@ -8,7 +8,7 @@ from __future__ import division
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
-from torch.nn.modules.loss import NLLLoss, _assert_no_grad
+from torch.nn.modules.loss import NLLLoss
 
 import onmt
 
@@ -140,13 +140,14 @@ class NMTLossComputeDatumWeighted(LossComputeBase):
         # since i have only one value per target, i'll need to cope with target
         if len(target.size()) > 1 and "dw" in kwargs:
             tgt_dims = target.size()[1]
-            dw_for_view = torch.stack([kwargs["dw"] for _ in range(tgt_dims)], 1)
+            dw_for_view = torch.stack([kwargs["dw"] for _ in range(tgt_dims)],
+                                      1)
 
         target = target.view(-1)
         target_data = target.data.clone()
 
         dw_for_view = dw_for_view.view(-1)
-        dw_for_view_data = dw_for_view.data.clone()
+        # dw_for_view_data = dw_for_view.data.clone()
 
         loss = self.criterion(scores, target, datum_weights=dw_for_view)
         loss_data = loss.data.clone()
@@ -157,7 +158,8 @@ class NMTLossComputeDatumWeighted(LossComputeBase):
 
 
 class DatumWeightedNLLCriterion(NLLLoss):
-    def __init__(self, weight=None, size_average=True, ignore_index=-100, datum_average=False):
+    def __init__(self, weight=None, size_average=True, ignore_index=-100,
+                 datum_average=False):
         super(NLLLoss, self).__init__(weight, size_average)
         self.ignore_index = ignore_index
         self.datum_average = datum_average
@@ -165,8 +167,9 @@ class DatumWeightedNLLCriterion(NLLLoss):
     @staticmethod
     def _assert_no_grad(variable):
         assert not variable.requires_grad, \
-            "nn criterions don't compute the gradient w.r.t. targets - please " \
-            "mark these variables as volatile or not requiring gradients"
+            "nn criterions don't compute the gradient w.r.t. targets - " \
+            "please mark these variables as volatile or not requiring" \
+            "gradients"
 
     def forward(self, input, target, datum_weights=None):
         self._assert_no_grad(target)
@@ -175,11 +178,12 @@ class DatumWeightedNLLCriterion(NLLLoss):
         # for each word (row) in input, i want the n-th value,
         # where n is the value of target[row], meaning the
         # probability of choosing that cat from the model
-        conf_logprobs = -torch.squeeze(input.gather(1, target.view(-1,1)))
+        conf_logprobs = -torch.squeeze(input.gather(1, target.view(-1, 1)))
 
         # for each word (row) in target, i want the value of
         # the weight associated with the cat target[row]
-        cat_weights = torch.autograd.Variable(torch.index_select(weights, 0, target.data))
+        cat_weights = torch.autograd.Variable(
+            torch.index_select(weights, 0, target.data))
 
         # Now i produce the weighted prod.
         weighted = conf_logprobs * cat_weights
