@@ -29,7 +29,8 @@ torchtext.vocab.Vocab.__setstate__ = __setstate__
 
 def extract_features(tokens):
     "Given a list of token separate out words and features (if any)."
-
+    if not tokens:
+        return [], [], -1
     split_tokens = [token.split(u"￨") for token in tokens]
     split_tokens = [token for token in split_tokens if token[0]]
     token_size = len(split_tokens[0])
@@ -210,8 +211,7 @@ class ONMTDataset(torchtext.data.Dataset):
             if truncate:
                 lines = (line[:truncate] for line in lines)
             for line in lines:
-                if line:
-                    yield extract_features(line)
+                yield extract_features(line)
 
     def _construct_examples(self, lines, side):
         assert side in ["src", "tgt"]
