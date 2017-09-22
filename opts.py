@@ -201,11 +201,11 @@ def preprocess_opts(parser):
     parser.add_argument('-tgt_words_min_frequency', type=int, default=0)
 
     # Truncation options
-    parser.add_argument('-src_seq_length', type=int, default=50,
+    parser.add_argument('-src_seq_length', type=int, default=1000,
                         help="Maximum source sequence length")
     parser.add_argument('-src_seq_length_trunc', type=int, default=0,
                         help="Truncate source sequence length.")
-    parser.add_argument('-tgt_seq_length', type=int, default=50,
+    parser.add_argument('-tgt_seq_length', type=int, default=1000,
                         help="Maximum target sequence length to keep.")
     parser.add_argument('-tgt_seq_length_trunc', type=int, default=0,
                         help="Truncate target sequence length.")
