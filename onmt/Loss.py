@@ -121,26 +121,28 @@ class NMTLossCompute(LossComputeBase):
         return onmt.Statistics(loss[0], non_padding.sum(), num_correct)
 
 
-class NMTLossComputeDatumWeighted(LossComputeBase):
+class DatumWeightedNMTLossCompute(LossComputeBase):
     """
-    Standard NMT Loss Computation.
+    An extension of the Standard NMT Loss Computation that
+    includes the possibility to use independent weights for
+    every datum
     """
     def __init__(self, generator, tgt_vocab):
-        super(NMTLossComputeDatumWeighted, self).__init__(generator, tgt_vocab)
+        super(DatumWeightedNMTLossCompute, self).__init__(generator, tgt_vocab)
         self.copy_attn = False
         weight = torch.ones(len(tgt_vocab))
         weight[self.padding_idx] = 0
         self.criterion = DatumWeightedNLLCriterion(weight, size_average=False)
 
-    def compute_loss(self, batch, output, target, **kwargs):
+    def compute_loss(self, batch, output, target, dw):
         """ See base class for args description. """
         scores = self.generator(self.bottle(output))
         scores_data = scores.data.clone()
 
         # since i have only one value per target, i'll need to cope with target
-        if len(target.size()) > 1 and "dw" in kwargs:
+        if len(target.size()) > 1:
             tgt_dims = target.size()[1]
-            dw_for_view = torch.stack([kwargs["dw"] for _ in range(tgt_dims)],
+            dw_for_view = torch.stack([dw for _ in range(tgt_dims)],
                                       1)
 
         target = target.view(-1)
@@ -164,8 +166,7 @@ class DatumWeightedNLLCriterion(NLLLoss):
         self.ignore_index = ignore_index
         self.datum_average = datum_average
 
-    @staticmethod
-    def _assert_no_grad(variable):
+    def _assert_no_grad(self, variable):
         assert not variable.requires_grad, \
             "nn criterions don't compute the gradient w.r.t. targets - " \
             "please mark these variables as volatile or not requiring" \

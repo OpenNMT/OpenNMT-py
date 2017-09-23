@@ -114,7 +114,7 @@ def make_loss_compute(model, tgt_vocab, dataset, opt):
     if opt.loss_func == "nmt":
         compute = onmt.Loss.NMTLossCompute(model.generator, tgt_vocab)
     if opt.loss_func == "datum_weighted":
-        compute = onmt.Loss.NMTLossComputeDatumWeighted(
+        compute = onmt.Loss.DatumWeightedNMTLossCompute(
             model.generator, tgt_vocab)
 
     if use_gpu(opt):
