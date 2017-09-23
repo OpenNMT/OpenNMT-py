@@ -158,8 +158,8 @@ class ONMTDataset(torchtext.data.Dataset):
                 # lines = (line.split() for line in corpus_file)
                 dw_data = [float(line) for line in corpus_file]
 
-            assert len(src_data) == len(dw_data), \
-                "Len src and dw do not match"
+            # assert len(src_data) == len(dw_data), \
+            #     "Len src and dw do not match"
             dw_examples = [{"dw": dw} for dw in dw_data]
         else:
             dw_examples = None
