@@ -2,9 +2,12 @@
 
 This is a [Pytorch](https://github.com/pytorch/pytorch)
 port of [OpenNMT](https://github.com/OpenNMT/OpenNMT),
-an open-source (MIT) neural machine translation system. Full documentation is available [here](http://opennmt.net/OpenNMT-py).
+an open-source (MIT) neural machine translation system. It is designed to be research friendly to try out new ideas in translation, summary, image-to-text, morphology, and many other domains.
 
-This code is still in heavy development (pre-version 0.1). We recommend forking if you want a stable version.
+
+OpenNMT-py is run as a collaborative open-source project. It is currently maintained by [Sasha Rush](http://github.com/srush) (Cambridge, MA), [Ben Peters](http://github.com/bpopeters) (Saarbrücken), and [Jianyu Zhan](http://github.com/jianyuzhan) (Shenzhen). The original code was written by [Adam Lehrer](http://github.com/adamlehrer) (NYC). Codebase is nearing a stable 0.1 version. We currently recommend forking if you want stable code.
+
+We love contributions. Please consult the Issues page for any [Contributions Welcome](https://github.com/OpenNMT/OpenNMT-py/issues?q=is%3Aissue+is%3Aopen+label%3A%22contributions+welcome%22) tagged post. 
 
 <center style="padding: 40px"><img width="70%" src="http://opennmt.github.io/simple-attn.png" /></center>
 
@@ -16,6 +19,7 @@ Table of Contents
   * [Features](#features)
   * [Quickstart](#quickstart)
   * [Advanced](#advanced)
+  * [Citation](#citation)
  
 ## Requirements
 
@@ -31,18 +35,21 @@ The following OpenNMT features are implemented:
 - multi-layer bidirectional RNNs with attention and dropout
 - data preprocessing
 - saving and loading from checkpoints
-- inference (translation) with batching and beam search
-- multi-GPU
-
-Beta Features:
+- Inference (translation) with batching and beam search
 - Context gate
 - Multiple source and target RNN (lstm/gru) types and attention (dotprod/mlp) types
-- Image-to-text processing
-- Source word features
-- "Attention is all you need"
 - TensorBoard/Crayon logging
-- Copy, coverage, and structured attention
+- Source word features
 
+Beta Features (committed):
+- multi-GPU
+- Image-to-text processing
+- "Attention is all you need"
+- Copy, coverage
+- Structured attention
+- Conv2Conv convolution model
+- SRU "RNNs faster than CNN" paper
+- Inference time loss functions.
 
 ## Quickstart
 
@@ -156,3 +163,23 @@ The following pretrained models can be downloaded and used with translate.py (Th
 
 - [onmt_model_en_de_200k](https://drive.google.com/file/d/0B6N7tANPyVeBWE9WazRYaUd2QTg/view?usp=sharing): An English-German translation model based on the 200k sentence dataset at [OpenNMT/IntegrationTesting](https://github.com/OpenNMT/IntegrationTesting/tree/master/data). Perplexity: 20.
 - onmt_model_en_fr_b1M (coming soon): An English-French model trained on benchmark-1M. Perplexity: 4.85.
+
+
+## Citation
+
+[OpenNMT technical report](https://doi.org/10.18653/v1/P17-4012)
+
+```
+@inproceedings{opennmt,
+  author    = {Guillaume Klein and
+               Yoon Kim and
+               Yuntian Deng and
+               Jean Senellart and
+               Alexander M. Rush},
+  title     = {OpenNMT: Open-Source Toolkit for Neural Machine Translation},
+  booktitle = {Proc. ACL},
+  year      = {2017},
+  url       = {https://doi.org/10.18653/v1/P17-4012},
+  doi       = {10.18653/v1/P17-4012}
+}
+```
