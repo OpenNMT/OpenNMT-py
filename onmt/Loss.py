@@ -104,22 +104,6 @@ class NMTLossCompute(LossComputeBase):
 
         return loss, stats
 
-    # TODO should the weights be used to affect "num_correct"?
-    def stats(self, loss, scores, target):
-        """
-        Compute and return a Statistics object.
-
-        Args:
-            loss(Tensor): the loss computed by the loss criterion.
-            scores(Tensor): a sequence of predict output with scores.
-        """
-        pred = scores.max(1)[1]
-        non_padding = target.ne(self.padding_idx)
-        num_correct = pred.eq(target) \
-                          .masked_select(non_padding) \
-                          .sum()
-        return onmt.Statistics(loss[0], non_padding.sum(), num_correct)
-
 
 class DatumWeightedNMTLossCompute(LossComputeBase):
     """
