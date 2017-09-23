@@ -121,12 +121,20 @@ class ONMTDataset(torchtext.data.Dataset):
         src_img_dir: if not None, uses images instead of text for the
                      source. TODO: finish
         """
-        if src_img_dir:
-            self.type_ = "img"
-        else:
-            self.type_ = "text"
+        # The point of this constructor is to take the src_path, tgt_path,
+        # fields, and opt arguments and use them to create the examples
+        # and fields necessary for the parent class. The parent class
+        # only defines __getitem__, __len__, __iter__, __getattr__, and
+        # classmethods for creating splits of the Dataset and downloading
+        # data. This class doesn't override any of those methods. Its only
+        # non-private, non-static methods are __getstate__, __setstate__,
+        # __reduce_ex__ (a self-conscious hack), and collapse_copy_scores.
+        # The rest are either helpers for the constructor (so they're not
+        # involved in external behavior) or are static methods (so they
+        # could, and perhaps should, be moved outside the class definition).
 
-        if self.type_ == "text":
+        if src_img_dir is None:
+            # text data
             self.src_vocabs = []
             src_truncate = 0 if opt is None else opt.src_seq_length_trunc
             src_point = next(self._read_corpus_file(src_path, src_truncate))
@@ -134,6 +142,7 @@ class ONMTDataset(torchtext.data.Dataset):
             src_data = self._read_corpus_file(src_path, src_truncate)
             src_examples = self._construct_examples(src_data, "src")
         else:
+            # img data. Should this be handled in the same class?
             # TODO finish this.
             if not transforms:
                 load_image_libs()
@@ -234,7 +243,8 @@ class ONMTDataset(torchtext.data.Dataset):
         return super(ONMTDataset, self).__reduce_ex__()
 
     def collapse_copy_scores(self, scores, batch, tgt_vocab):
-        """Given scores from an expanded dictionary
+        """
+        Given scores from an expanded dictionary
         corresponeding to a batch, sums together copies,
         with a dictionary word when it is ambigious.
         """
