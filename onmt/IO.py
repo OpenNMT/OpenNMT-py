@@ -254,7 +254,10 @@ class ONMTDataset(torchtext.data.Dataset):
         "Sort in reverse size order"
         return -len(ex.src)
 
-    def __init__(self, src_path, tgt_path, fields, opt,
+    def __init__(self, src_path, tgt_path, fields,
+                 src_seq_length=0, tgt_seq_length=0,
+                 src_seq_length_trunc=0, tgt_seq_length_trunc=0,
+                 use_filter_pred=True, dynamic_dict=True,
                  src_img_dir=None, **kwargs):
         """
         Create a translation dataset given paths and fields.
@@ -284,7 +287,7 @@ class ONMTDataset(torchtext.data.Dataset):
         # self.src_vocabs: mutated in dynamic_dict, used in
         # collapse_copy_scores and in Translator.py
         self.src_vocabs = []
-        src_truncate = 0 if opt is None else opt.src_seq_length_trunc
+        src_truncate = src_seq_length_trunc
 
         src_examples = read_corpus_file(src_path, src_truncate, "src")
         (_, src_feats), src_examples = peek(src_examples)
@@ -294,7 +297,7 @@ class ONMTDataset(torchtext.data.Dataset):
         # if tgt_path exists, then we need to do the same thing as we did
         # for the source data
         if tgt_path is not None:
-            tgt_truncate = 0 if opt is None else opt.tgt_seq_length_trunc
+            tgt_truncate = tgt_seq_length_trunc
             tgt_examples = read_corpus_file(tgt_path, tgt_truncate, "tgt")
             (_, tgt_feats), tgt_examples = peek(tgt_examples)
             tgt_examples = (ex for ex, nfeats in tgt_examples)
@@ -313,7 +316,7 @@ class ONMTDataset(torchtext.data.Dataset):
         else:
             examples = src_examples
 
-        if opt is None or opt.dynamic_dict:
+        if dynamic_dict:
             examples = self.dynamic_dict(examples)
 
         # Peek at the first to see which fields are used.
@@ -326,14 +329,14 @@ class ONMTDataset(torchtext.data.Dataset):
                         for ex_values in example_values)
 
         def filter_pred(example):
-            return 0 < len(example.src) <= opt.src_seq_length \
-                and 0 < len(example.tgt) <= opt.tgt_seq_length
+            return 0 < len(example.src) <= src_seq_length \
+                and 0 < len(example.tgt) <= tgt_seq_length
 
         super(ONMTDataset, self).__init__(
             out_examples,
             fields,
-            filter_pred if opt is not None
-            else None)
+            filter_pred if use_filter_pred else None
+        )
 
     def dynamic_dict(self, examples):
         for example in examples:
