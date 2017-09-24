@@ -28,7 +28,7 @@ class TestModel(unittest.TestCase):
     # Helper to generate a vocabulary
 
     def get_vocab(self):
-        src = onmt.IO.ONMTDataset.get_fields()["src"]
+        src = onmt.IO.get_fields()["src"]
         src.build_vocab([])
         return src.vocab
 
