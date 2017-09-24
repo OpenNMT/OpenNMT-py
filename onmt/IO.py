@@ -63,6 +63,26 @@ def extract_features(tokens):
     return words, features, token_size - 1
 
 
+def read_corpus_file(path, truncate, side):
+    """
+    path: location of a src or tgt file
+    truncate: maximum sequence length (0 for unlimited)
+    yields: (word, features, nfeat) triples for each line
+    """
+    with codecs.open(path, "r", "utf-8") as corpus_file:
+        for i, line in enumerate(corpus_file):
+            line = line.split()
+            if truncate:
+                line = line[:truncate]
+            words, feats, n_feats = extract_features(line)
+            example_dict = {side: words, "indices": i}
+            if feats:
+                prefix = side + "_feat_"
+                example_dict.update((prefix + str(j), f)
+                                    for j, f in enumerate(feats))
+            yield example_dict, n_feats
+
+
 def merge_vocabs(vocabs, vocab_size=None):
     """
     Merge individual vocabularies (assumed to be generated from disjoint
@@ -172,7 +192,7 @@ def build_vocab(train, opt):
     fields = train.fields
     fields["src"].build_vocab(train, max_size=opt.src_vocab_size,
                               min_freq=opt.src_words_min_frequency)
-    for j in range(train.nfeatures):
+    for j in range(train.n_src_feats):
         fields["src_feat_" + str(j)].build_vocab(train)
     fields["tgt"].build_vocab(train, max_size=opt.tgt_vocab_size,
                               min_freq=opt.tgt_words_min_frequency)
@@ -195,6 +215,17 @@ def join_dicts(*args):
     return dict(chain(*[d.items() for d in args]))
 
 
+def peek(seq):
+    """
+    sequence: an iterator
+    returns: the first thing returned by calling next() on the iterator
+        and an iterator created by re-chaining that value to the beginning
+        of the iterator.
+    """
+    first = next(seq)
+    return first, chain([first], seq)
+
+
 class OrderedIterator(torchtext.data.Iterator):
     def create_batches(self):
         if self.train:
@@ -210,7 +241,13 @@ class OrderedIterator(torchtext.data.Iterator):
 
 
 class ONMTDataset(torchtext.data.Dataset):
-    """Defines a dataset for machine translation."""
+    """
+    Defines a dataset for machine translation.
+    An ONMTDataset is a collection that supports iteration over its
+    examples. The parent class supports indexing as well, but future
+    developments here may make that difficult (lazy iteration over
+    examples because of large datasets, for example).
+    """
 
     @staticmethod
     def sort_key(ex):
@@ -220,26 +257,27 @@ class ONMTDataset(torchtext.data.Dataset):
     def __init__(self, src_path, tgt_path, fields, opt,
                  src_img_dir=None, **kwargs):
         """
-        Create a TranslationDataset given paths and fields.
+        Create a translation dataset given paths and fields.
 
         src_path: location of source-side data
-        tgt_path: location of target-side data or None. If it exists, it
-                  source and target data must be the same length.
-        fields:
-        src_img_dir: if not None, uses images instead of text for the
-                     source. TODO: finish
+        tgt_path: location of target-side data or None. If should be the
+            same length as the source-side data if it exists, but
+            at present this is not checked.
+        fields: a dictionary. keys are things like 'src', 'tgt', 'src_map',
+            and 'alignment'
+        src_img_dir: raises an error if not None because images are not
+            supported yet.
+
+        Initializes an ONMTDataset object with the following attributes:
+        self.examples (might be a generator, might be a list, hard to say):
+            A sequence of torchtext Example objects.
+        self.fields (dict):
+            A dictionary associating str keys with Field objects. Does not
+            necessarily have the same keys as the input fields.
+
+        A dataset basically supports iteration over all the examples it
+        contains.
         """
-        # The point of this constructor is to take the src_path, tgt_path,
-        # fields, and opt arguments and use them to create the examples
-        # and fields necessary for the parent class. The parent class
-        # only defines __getitem__, __len__, __iter__, __getattr__, and
-        # classmethods for creating splits of the Dataset and downloading
-        # data. This class doesn't override any of those methods. Its only
-        # non-private, non-static methods are __getstate__, __setstate__,
-        # __reduce_ex__ (a self-conscious hack), and collapse_copy_scores.
-        # The rest are either helpers for the constructor (so they're not
-        # involved in external behavior) or are static methods (so they
-        # could, and perhaps should, be moved outside the class definition).
 
         assert src_img_dir is None, "img data is not finished"
 
@@ -248,21 +286,21 @@ class ONMTDataset(torchtext.data.Dataset):
         self.src_vocabs = []
         src_truncate = 0 if opt is None else opt.src_seq_length_trunc
 
-        # self.nfeatures: used in an assertion in train.py and in the
-        # build_vocab staticmethod below. There is nothing similar for
-        # target features.
-        src_point = next(self._read_corpus_file(src_path, src_truncate))
-        self.nfeatures = src_point[2]
-        src_data = self._read_corpus_file(src_path, src_truncate)
-        src_examples = self._construct_examples(src_data, "src")
+        src_examples = read_corpus_file(src_path, src_truncate, "src")
+        (_, src_feats), src_examples = peek(src_examples)
+        src_examples = (ex for ex, nfeats in src_examples)
+        self.n_src_feats = src_feats
 
+        # if tgt_path exists, then we need to do the same thing as we did
+        # for the source data
         if tgt_path is not None:
             tgt_truncate = 0 if opt is None else opt.tgt_seq_length_trunc
-            tgt_data = self._read_corpus_file(tgt_path, tgt_truncate)
-            # assert len(src_data) == len(tgt_data), \
-            #     "Len src and tgt do not match"
-            tgt_examples = self._construct_examples(tgt_data, "tgt")
+            tgt_examples = read_corpus_file(tgt_path, tgt_truncate, "tgt")
+            (_, tgt_feats), tgt_examples = peek(tgt_examples)
+            tgt_examples = (ex for ex, nfeats in tgt_examples)
+            self.n_tgt_feats = tgt_feats
         else:
+            self.n_tgt_feats = 0
             tgt_examples = None
 
         # examples: one for each src line or (src, tgt) line pair.
@@ -275,76 +313,43 @@ class ONMTDataset(torchtext.data.Dataset):
         else:
             examples = src_examples
 
-        def dynamic_dict(examples):
-            for example in examples:
-                src = example["src"]
-                src_vocab = torchtext.vocab.Vocab(Counter(src))
-                self.src_vocabs.append(src_vocab)
-                # mapping source tokens to indices in the dynamic dict
-                src_map = torch.LongTensor([src_vocab.stoi[w] for w in src])
-                example["src_map"] = src_map
-
-                if "tgt" in example:
-                    tgt = example["tgt"]
-                    mask = torch.LongTensor(
-                            [0] + [src_vocab.stoi[w] for w in tgt] + [0])
-                    example["alignment"] = mask
-                yield example
-
         if opt is None or opt.dynamic_dict:
-            examples = dynamic_dict(examples)
+            examples = self.dynamic_dict(examples)
 
         # Peek at the first to see which fields are used.
-        ex = next(examples)
+        ex, examples = peek(examples)
         keys = ex.keys()
-        fields = [(k, fields[k])
-                  for k in (list(keys) + ["indices"])]
 
-        def construct_final(examples):
-            """
-            examples: Empirically, this is an iterator.
-            generates torchtext.data.Example instances for each
-            element of examples.
-            """
-            for i, ex in enumerate(examples):
-                yield torchtext.data.Example.fromlist(
-                    [ex[k] for k in keys] + [i],
-                    fields)
+        fields = [(k, fields[k]) for k in keys]
+        example_values = ([ex[k] for k in keys] for ex in examples)
+        out_examples = (torchtext.data.Example.fromlist(ex_values, fields)
+                        for ex_values in example_values)
 
         def filter_pred(example):
             return 0 < len(example.src) <= opt.src_seq_length \
                 and 0 < len(example.tgt) <= opt.tgt_seq_length
 
         super(ONMTDataset, self).__init__(
-            construct_final(chain([ex], examples)),
+            out_examples,
             fields,
             filter_pred if opt is not None
             else None)
 
-    def _read_corpus_file(self, path, truncate):
-        """
-        path: location of a src or tgt file
-        truncate: maximum sequence length (0 for unlimited)
+    def dynamic_dict(self, examples):
+        for example in examples:
+            src = example["src"]
+            src_vocab = torchtext.vocab.Vocab(Counter(src))
+            self.src_vocabs.append(src_vocab)
+            # mapping source tokens to indices in the dynamic dict
+            src_map = torch.LongTensor([src_vocab.stoi[w] for w in src])
+            example["src_map"] = src_map
 
-        returns: (word, features, nfeat) triples for each line
-        """
-        with codecs.open(path, "r", "utf-8") as corpus_file:
-            lines = (line.split() for line in corpus_file)
-            if truncate:
-                lines = (line[:truncate] for line in lines)
-            for line in lines:
-                yield extract_features(line)
-
-    def _construct_examples(self, lines, side):
-        assert side in ["src", "tgt"]
-        for line in lines:
-            words, feats, _ = line
-            example_dict = {side: words}
-            if feats:
-                prefix = side + "_feat_"
-                example_dict.update((prefix + str(j), f)
-                                    for j, f in enumerate(feats))
-            yield example_dict
+            if "tgt" in example:
+                tgt = example["tgt"]
+                mask = torch.LongTensor(
+                        [0] + [src_vocab.stoi[w] for w in tgt] + [0])
+                example["alignment"] = mask
+            yield example
 
     def __getstate__(self):
         return self.__dict__
