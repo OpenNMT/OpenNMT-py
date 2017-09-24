@@ -25,17 +25,21 @@ class TestData(unittest.TestCase):
     def dataset_build(self, opt):
         fields = onmt.IO.get_fields()
 
-        train = onmt.IO.ONMTDataset(opt.train_src,
-                                    opt.train_tgt,
-                                    fields,
-                                    opt)
+        train = onmt.IO.ONMTDataset(
+            opt.train_src, opt.train_tgt, fields,
+            opt.src_seq_length, opt.tgt_seq_length,
+            src_seq_length_trunc=opt.src_seq_length_trunc,
+            tgt_seq_length_trunc=opt.tgt_seq_length_trunc,
+            dynamic_dict=opt.dynamic_dict)
 
         onmt.IO.build_vocab(train, opt)
 
-        onmt.IO.ONMTDataset(opt.valid_src,
-                            opt.valid_tgt,
-                            fields,
-                            opt)
+        onmt.IO.ONMTDataset(
+            opt.valid_src, opt.valid_tgt, fields,
+            opt.src_seq_length, opt.tgt_seq_length,
+            src_seq_length_trunc=opt.src_seq_length_trunc,
+            tgt_seq_length_trunc=opt.tgt_seq_length_trunc,
+            dynamic_dict=opt.dynamic_dict)
 
 
 def _add_test(paramSetting, methodname):
