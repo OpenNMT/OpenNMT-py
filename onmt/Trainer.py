@@ -75,7 +75,7 @@ class Trainer(object):
             valid_iter: the validate data iterator.
             train_loss: the train side LossCompute object for computing loss.
             valid_loss: the valid side LossCompute object for computing loss.
-            trunc_size: a batch is divided by several truncs of this size.
+            trunc_size: a batch is divided into several truncs of this size.
             shard_size: compute loss in shards of this size for efficiency.
         """
         # Basic attributes.
@@ -92,7 +92,7 @@ class Trainer(object):
         self.model.train()
 
     def train(self, epoch, report_func=None):
-        """ Called for each epoch to train. """
+        """ Called at each epoch to train. """
         total_stats = Statistics()
         report_stats = Statistics()
 
@@ -140,7 +140,7 @@ class Trainer(object):
         return total_stats
 
     def validate(self):
-        """ Called for each epoch to validate. """
+        """ Called at each epoch to validate. """
         # Set model in validating mode.
         self.model.eval()
 
@@ -168,13 +168,13 @@ class Trainer(object):
         return stats
 
     def epoch_step(self, ppl, epoch):
-        """ Called for each epoch to update learning rate.
+        """ Called at each epoch to update learning rate.
         We only do it, model_controller takes care of how to do it.
         """
         self.model_controller.epoch_step(ppl, epoch)
 
     def _batch_step(self):
-        """ Called for each batch to update parameters and lr.
+        """ Called at each batch to update parameters and lr.
         We only do it, model_controller takes care of how to do it.
         """
         self.model_controller.lr_step_noam()
@@ -182,7 +182,7 @@ class Trainer(object):
         self.model_controller.optimizer.step()
 
     def drop_checkpoint(self, opt, epoch, fields, valid_stats):
-        """ Called conditionally each epoch to save a snapshot. """
+        """ Called conditionally at each epoch to save a snapshot. """
         real_model = (self.model.module
                       if isinstance(self.model, nn.DataParallel)
                       else self.model)
