@@ -46,6 +46,7 @@ class ModelController(object):
         """ Setup lr_schedulers for updating lr. """
         assert self.optimizer is not None
 
+        self.lr_update_verbose = opt.lr_update_verbose
         if opt.decay_method == 'noam':
             # 1. Batch level lr update: using 'noam' method.
             def batch_lr(step):
@@ -75,20 +76,19 @@ class ModelController(object):
         else:
             # 2. Epoch level lr update: starting from epoch 'start_decay_at'
             #    onward. lr_scheduler is cubersome for this, we do it manually.
-            self.lr_decay = opt.learning_rate_decay
             self.start_decay_at = opt.start_decay_at
+            self.lr_decay = opt.learning_rate_decay
 
             # 3. Epoch level lr update: only when perplexity increases at this
             #    epoch. A negative threshold to allow equalness.
             self.lr_ppl_scheduler = lr_scheduler.ReduceLROnPlateau(
                 self.optimizer, 'min', factor=self.lr_decay,
-                threshold=-1e-4, threshold_mode='abs',
-                patience=0, verbose=True)
+                threshold=-1e-4, threshold_mode='abs', patience=0)
 
     def setup_grad_norm_clip(self, max_grad_norm):
         self.max_grad_norm = max_grad_norm
 
-    def lr_step_noam(self, verbose=True):
+    def lr_step_noam(self):
         """ lr update step for noam decay logic."""
         if getattr(self, 'lr_noam_scheduler', None) is None:
             return
@@ -96,28 +96,31 @@ class ModelController(object):
         # lr_noam_scheduler is based on initial lr(its stored base_lr).
         self.lr_noam_scheduler.step()
         step = self.lr_noam_scheduler.last_epoch
-        if verbose:
+        if self.lr_update_verbose:
             print("Step %d: noam update, new lr: %.6f" % (step, self.lr))
 
         # For resuming from train_from.
         self.optimizer.state['last_lr_steps'] = step
 
-    def lr_step_start_decay_at(self, epoch, verbose=True):
+    def lr_step_start_decay_at(self, epoch):
         """ lr update step for the 'start_decay_at' logic. """
+        if getattr(self, 'start_decay_at', None) is None:
+            return
+
         if epoch >= self.start_decay_at:
             self.lr = self.lr * self.lr_decay
-            if verbose:
+            if self.lr_update_verbose:
                 print("Epoch %d: start_decay_at threshold update, "
                       "new lr: %.6f" % (epoch, self.lr))
 
-    def lr_step_ppl(self, ppl, epoch, verbose=True):
+    def lr_step_ppl(self, ppl, epoch):
         """ lr update step for 'ppl doesn't decrease this epoch' logic. """
         if getattr(self, 'lr_ppl_scheduler', None) is None:
             return
 
         old_lr = self.lr
         self.lr_ppl_scheduler.step(ppl, epoch)
-        if verbose and not self.lr == old_lr:
+        if self.lr_update_verbose and not old_lr == self.lr:
             print("Epoch %d: update lr because ppl doesn't decrease this "
                   "epoch, new lr: %.6f" % (epoch, self.lr))
 

@@ -182,6 +182,9 @@ def train_opts(parser):
     parser.add_argument('-warmup_steps', type=int, default=4000,
                         help="""Number of warmup steps for custom decay.""")
 
+    parser.add_argument('-lr_update_verbose', action='store_true',
+                        help="print verbose info of learning rate update.")
+
     parser.add_argument('-report_every', type=int, default=50,
                         help="Print stats at this interval.")
     parser.add_argument('-exp_host', type=str, default="",
