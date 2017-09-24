@@ -120,7 +120,7 @@ def make_loss_compute(model, tgt_vocab, dataset, opt):
     return compute
 
 
-def train_model(model, train_data, valid_data, fields, optim):
+def train_model(model, model_controller, train_data, valid_data, fields):
 
     train_iter = make_train_data_iter(train_data, opt)
     valid_iter = make_valid_data_iter(valid_data, opt)
@@ -133,8 +133,9 @@ def train_model(model, train_data, valid_data, fields, optim):
     trunc_size = opt.truncated_decoder  # Badly named...
     shard_size = opt.max_generator_batches
 
-    trainer = onmt.Trainer(model, train_iter, valid_iter,
-                           train_loss, valid_loss, optim,
+    trainer = onmt.Trainer(model, model_controller,
+                           train_iter, valid_iter,
+                           train_loss, valid_loss,
                            trunc_size, shard_size)
 
     for epoch in range(opt.start_epoch, opt.epochs + 1):
@@ -152,10 +153,10 @@ def train_model(model, train_data, valid_data, fields, optim):
 
         # 3. Log to remote server.
         if opt.exp_host:
-            train_stats.log("train", experiment, optim.lr)
-            valid_stats.log("valid", experiment, optim.lr)
+            train_stats.log("train", experiment, trainer.model_controller.lr)
+            valid_stats.log("valid", experiment, trainer.model_controller.lr)
 
-        # 4. Update the learning rate
+        # 4. Update the learning rate.
         trainer.epoch_step(valid_stats.ppl(), epoch)
 
         # 5. Drop a checkpoint if needed.
@@ -212,6 +213,10 @@ def collect_features(train, fields):
 
 
 def build_model(model_opt, opt, fields, checkpoint):
+    # model_opt is the same as opt in non-train_from case.
+    # In 'train_from' case, we use current environment opt for determine
+    # gpu behaviors only. It doesn't make sense to change model settings
+    # for a resumed training.
     print('Building model...')
     model = onmt.ModelConstructor.make_base_model(model_opt, fields,
                                                   use_gpu(opt), checkpoint)
@@ -223,24 +228,19 @@ def build_model(model_opt, opt, fields, checkpoint):
     return model
 
 
-def build_optim(model, checkpoint):
-    if opt.train_from:
-        print('Loading optimizer from checkpoint.')
-        optim = checkpoint['optim']
-        optim.optimizer.load_state_dict(
-            checkpoint['optim'].optimizer.state_dict())
-    else:
-        # what members of opt does Optim need?
-        optim = onmt.Optim(
-            opt.optim, opt.learning_rate, opt.max_grad_norm,
-            lr_decay=opt.learning_rate_decay,
-            start_decay_at=opt.start_decay_at,
-            opt=opt
-        )
+def build_model_controller(model, model_opt, checkpoint):
+    """
+    Model controller takes care of model dynamics, like bp optimizer,
+    learning rate update, gradient norm clip, etc.
+    """
+    controller = onmt.ModelController(model)
 
-    optim.set_parameters(model.parameters())
+    controller.setup_optimizer(model_opt.optim, model_opt.learning_rate,
+                               checkpoint)
+    controller.setup_lr_scheduler(model_opt, checkpoint)
+    controller.setup_grad_norm_clip(model_opt.max_grad_norm)
 
-    return optim
+    return controller
 
 
 def main():
@@ -277,11 +277,11 @@ def main():
     tally_parameters(model)
     check_save_model_path()
 
-    # Build optimizer.
-    optim = build_optim(model, checkpoint)
+    # Build model controller, which controls model dynamics.
+    model_controller = build_model_controller(model, model_opt, checkpoint)
 
     # Do training.
-    train_model(model, train, valid, fields, optim)
+    train_model(model, model_controller, train, valid, fields)
 
 
 if __name__ == "__main__":
