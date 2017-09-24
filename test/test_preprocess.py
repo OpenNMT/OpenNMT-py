@@ -30,8 +30,7 @@ class TestData(unittest.TestCase):
                                     fields,
                                     opt)
 
-        onmt.IO.ONMTDataset.build_vocab(train,
-                                        opt)
+        onmt.IO.build_vocab(train, opt)
 
         onmt.IO.ONMTDataset(opt.valid_src,
                             opt.valid_tgt,
