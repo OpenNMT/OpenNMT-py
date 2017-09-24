@@ -57,12 +57,22 @@ def main():
 
     fields = onmt.IO.get_fields(n_features)
     print("Building Training...")
-    train = onmt.IO.ONMTDataset(opt.train_src, opt.train_tgt, fields, opt)
+    train = onmt.IO.ONMTDataset(
+        opt.train_src, opt.train_tgt, fields,
+        opt.src_seq_length, opt.tgt_seq_length,
+        src_seq_length_trunc=opt.src_seq_length_trunc,
+        tgt_seq_length_trunc=opt.tgt_seq_length_trunc,
+        dynamic_dict=opt.dynamic_dict)
     print("Building Vocab...")
     onmt.IO.build_vocab(train, opt)
 
     print("Building Valid...")
-    valid = onmt.IO.ONMTDataset(opt.valid_src, opt.valid_tgt, fields, opt)
+    valid = onmt.IO.ONMTDataset(
+        opt.train_src, opt.train_tgt, fields,
+        opt.src_seq_length, opt.tgt_seq_length,
+        src_seq_length_trunc=opt.src_seq_length_trunc,
+        tgt_seq_length_trunc=opt.tgt_seq_length_trunc,
+        dynamic_dict=opt.dynamic_dict)
     print("Saving train/valid/fields")
 
     # Can't save fields, so remove/reconstruct at training time.
