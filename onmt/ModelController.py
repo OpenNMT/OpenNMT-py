@@ -9,7 +9,8 @@ class ModelController(object):
     """
     This class contains stuff that is in charge of the dynamic control of
     the seq2seq model, i.e. the optimizer, the learning rate update, and
-    the grad norm normalization, etc.
+    the grad norm clip, etc. If you update how lr update logic works,
+    please update test/test_lr_update.py accordingly.
     """
     def __init__(self, model):
         self.model = model
