@@ -206,7 +206,7 @@ def collect_features(train, fields):
     # TODO: account for target features.
     # Also, why does fields need to have the structure it does?
     src_features = onmt.IO.collect_features(fields)
-    aeq(len(src_features), train.nfeatures)
+    aeq(len(src_features), train.n_src_feats)
 
     return src_features
 
