@@ -93,7 +93,9 @@ def main():
     if opt.dump_beam != "":
         import json
         translator.initBeamAccum()
-    data = onmt.IO.ONMTDataset(opt.src, opt.tgt, translator.fields, None)
+    data = onmt.IO.ONMTDataset(
+        opt.src, opt.tgt, translator.fields,
+        use_filter_pred=False)
 
     test_data = onmt.IO.OrderedIterator(
         dataset=data, device=opt.gpu,
