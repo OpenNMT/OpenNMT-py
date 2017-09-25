@@ -270,7 +270,7 @@ def main():
     # Collect features.
     src_features = collect_features(train, fields)
     for j, feat in enumerate(src_features):
-        print(' * src feature %d size = %d' % (j, len(feat.vocab)))
+        print(' * src feature %d size = %d' % (j, len(fields[feat].vocab)))
 
     # Build model.
     model = build_model(model_opt, opt, fields, checkpoint)

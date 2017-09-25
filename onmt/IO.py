@@ -51,7 +51,8 @@ def collect_features(fields, side="src"):
 
 def extract_features(tokens):
     "Given a list of token separate out words and features (if any)."
-
+    if not tokens:
+        return [], [], -1
     split_tokens = [token.split(u"￨") for token in tokens]
     split_tokens = [token for token in split_tokens if token[0]]
     token_size = len(split_tokens[0])
