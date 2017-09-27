@@ -142,7 +142,7 @@ python preprocess.py -train_src data/multi30k/train.en.atok -train_tgt data/mult
 ### 2) Train the model.
 
 ```bash
-python train.py -data data/multi30k.atok.low.train.pt -save_model multi30k_model -gpuid 0
+python train.py -data data/multi30k.atok.low -save_model multi30k_model -gpuid 0
 ```
 
 ### 3) Translate sentences.
