@@ -106,12 +106,12 @@ class Trainer(object):
             _, src_lengths = batch.src
 
             src = onmt.IO.make_features(batch, 'src')
-            tgt = onmt.IO.make_features(batch, 'tgt')
+            tgt_outer = onmt.IO.make_features(batch, 'tgt')
             report_stats.n_src_words += src_lengths.sum()
 
             for j in range(0, target_size-1, trunc_size):
                 # 1. Create truncated target.
-                tgt = tgt[j: j + trunc_size]
+                tgt = tgt_outer[j: j + trunc_size]
 
                 # 2. F-prop all but generator.
                 self.model.zero_grad()
