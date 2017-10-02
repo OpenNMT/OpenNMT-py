@@ -142,13 +142,13 @@ python preprocess.py -train_src data/multi30k/train.en.atok -train_tgt data/mult
 ### 2) Train the model.
 
 ```bash
-python train.py -data data/multi30k.atok.low.train.pt -save_model multi30k_model -gpuid 0
+python train.py -data data/multi30k.atok.low -save_model multi30k_model -gpuid 0
 ```
 
 ### 3) Translate sentences.
 
 ```bash
-python translate.py -gpu 0 -model multi30k_model_e13_*.pt -src data/multi30k/test.en.atok -tgt data/multi30k/test.de.atok -replace_unk -verbose -output multi30k.test.pred.atok
+python translate.py -gpu 0 -model multi30k_model_*_e13.pt -src data/multi30k/test.en.atok -tgt data/multi30k/test.de.atok -replace_unk -verbose -output multi30k.test.pred.atok
 ```
 
 ### 4) Evaluate.
