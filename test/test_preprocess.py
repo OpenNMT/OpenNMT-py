@@ -5,7 +5,6 @@ import onmt
 import opts
 import torchtext
 
-
 from collections import Counter
 
 
