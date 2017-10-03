@@ -136,13 +136,15 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
 
     # Make decoder.
     tgt_dict = fields["tgt"].vocab
-    if model_opt.share_embeddings:
-        tgt_embeddings = src_embeddings
-    else:
-        # TODO: prepare for a future where tgt features are possible.
-        feature_dicts = []
-        tgt_embeddings = make_embeddings(model_opt, tgt_dict,
-                                         feature_dicts, for_encoder=False)
+
+    # TODO: prepare for a future where tgt features are possible.
+    feature_dicts = []
+    tgt_embeddings = make_embeddings(model_opt, tgt_dict,
+                                     feature_dicts, for_encoder=False)
+
+    # Share the embedding matrix - preprocess with share_vocab required
+    # if model_opt.share_embeddings:
+    #     tgt_embeddings = src_embeddings
     decoder = make_decoder(model_opt, tgt_embeddings)
 
     # Make NMTModel(= encoder + decoder).
