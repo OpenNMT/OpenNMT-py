@@ -136,7 +136,6 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
 
     # Make decoder.
     tgt_dict = fields["tgt"].vocab
-
     # TODO: prepare for a future where tgt features are possible.
     feature_dicts = []
     tgt_embeddings = make_embeddings(model_opt, tgt_dict,
