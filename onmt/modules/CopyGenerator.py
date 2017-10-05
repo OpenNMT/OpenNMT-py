@@ -90,7 +90,7 @@ class CopyGeneratorLossCompute(onmt.Loss.LossComputeBase):
         self.criterion = CopyGeneratorCriterion(len(tgt_vocab), force_copy,
                                                 self.padding_idx)
 
-    def compute_loss(self, batch, output, target, copy_attn, align):
+    def compute_loss(self, batch, output, target, copy_attn, align, **kwargs):
         """
         Compute the loss. The args must match Loss.make_gen_state().
         Args:
