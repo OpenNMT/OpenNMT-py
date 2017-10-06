@@ -144,6 +144,7 @@ def collect_feature_dicts(fields):
 def get_fields(n_features=0):
     fields = {}
     fields["src"] = ONMTField(
+        init_token=BOS_WORD, eos_token=EOS_WORD,
         pad_token=PAD_WORD,
         include_lengths=True)
 
@@ -152,7 +153,8 @@ def get_fields(n_features=0):
 
     for j in range(n_features):
         fields["src_feat_"+str(j)] = \
-            ONMTField(pad_token=PAD_WORD)
+            ONMTField(init_token=BOS_WORD, eos_token=EOS_WORD,
+                      pad_token=PAD_WORD)
 
     fields["tgt"] = ONMTField(
         init_token=BOS_WORD, eos_token=EOS_WORD,
