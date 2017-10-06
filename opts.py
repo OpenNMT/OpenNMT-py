@@ -33,6 +33,9 @@ def model_opts(parser):
                         help='Use a sin to mark relative words positions.')
     parser.add_argument('-share_decoder_embeddings', action='store_true',
                         help='Share the word and out embeddings for decoder.')
+    parser.add_argument('-share_embeddings', action='store_true',
+                        help="""Share the word embeddings between encoder
+                         and decoder.""")
 
     # RNN Options
     parser.add_argument('-encoder_type', type=str, default='rnn',

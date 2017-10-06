@@ -3,6 +3,9 @@ import copy
 import unittest
 import onmt
 import opts
+import torchtext
+
+from collections import Counter
 
 
 parser = argparse.ArgumentParser(description='preprocess.py')
@@ -40,6 +43,17 @@ class TestData(unittest.TestCase):
             src_seq_length_trunc=opt.src_seq_length_trunc,
             tgt_seq_length_trunc=opt.tgt_seq_length_trunc,
             dynamic_dict=opt.dynamic_dict)
+
+    def test_merge_vocab(self):
+        va = torchtext.vocab.Vocab(Counter('abbccc'))
+        vb = torchtext.vocab.Vocab(Counter('eeabbcccf'))
+
+        merged = onmt.IO.merge_vocabs([va, vb], 2)
+
+        self.assertEqual(Counter({'c': 6, 'b': 4, 'a': 2, 'e': 2, 'f': 1}),
+                         merged.freqs)
+        self.assertEqual(6, len(merged.itos))
+        self.assertTrue('b' in merged.itos)
 
 
 def _add_test(paramSetting, methodname):

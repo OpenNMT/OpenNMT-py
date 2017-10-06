@@ -139,6 +139,11 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
     feature_dicts = []
     tgt_embeddings = make_embeddings(model_opt, tgt_dict,
                                      feature_dicts, for_encoder=False)
+
+    # Share the embedding matrix - preprocess with share_vocab required
+    if model_opt.share_embeddings:
+        tgt_embeddings.word_lut.weight = src_embeddings.word_lut.weight
+
     decoder = make_decoder(model_opt, tgt_embeddings)
 
     # Make NMTModel(= encoder + decoder).
