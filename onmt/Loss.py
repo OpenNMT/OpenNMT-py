@@ -25,17 +25,16 @@ class LossComputeBase(nn.Module):
         self.tgt_vocab = tgt_vocab
         self.padding_idx = tgt_vocab.stoi[onmt.IO.PAD_WORD]
 
-    def forward(self, batch, output, target, **kwargs):
+    def compute_loss(self, batch, output, target, **kwargs):
         """
-        Compute the loss. Subclass must define the compute_loss().
+        Compute the loss. Subclass must define this method.
         Args:
             batch: the current batch.
             output: the predict output from the model.
             target: the validate target to compare output with.
-            **kwargs: additional info for computing loss.
+            **kwargs(optional): additional info for computing loss.
         """
-        # Need to simplify this interface.
-        return self.compute_loss(batch, output, target, **kwargs)
+        return NotImplementedError
 
     def sharded_compute_loss(self, batch, output, attns,
                              cur_trunc, trunc_size, shard_size):
