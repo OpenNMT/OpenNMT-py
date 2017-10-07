@@ -116,8 +116,7 @@ def make_gen_state(output, batch, attns, range_, copy_attn=None):
             "target": batch.tgt[range_[0] + 1: range_[1]],
             "copy_attn": attns.get("copy"),
             "align": None if not copy_attn
-            else batch.alignment[range_[0] + 1: range_[1]],
-            "coverage": attns.get("coverage")}
+            else batch.alignment[range_[0] + 1: range_[1]]}
 
 
 def filter_gen_state(state):
