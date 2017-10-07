@@ -156,8 +156,8 @@ class Trainer(object):
             outputs, attns, _ = self.model(src, tgt, src_lengths)
 
             # Compute loss.
-            _, batch_stats = self.valid_loss.monolithic_compute_loss(
-                    outputs, batch, attns)
+            batch_stats = self.valid_loss.monolithic_compute_loss(
+                    batch, outputs, attns)
 
             # Update statistics.
             stats.update(batch_stats)

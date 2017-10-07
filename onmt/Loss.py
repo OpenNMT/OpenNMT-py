@@ -16,7 +16,7 @@ class LossComputeBase(nn.Module):
     """
     This is the loss criterion base class. Users can implement their own
     loss computation strategy by making subclass of this one.
-    Users need to implement the compute_loss() method.
+    Users need to implement the compute_loss() and make_shard_state() methods.
     We inherits from nn.Module to leverage the cuda behavior.
     """
     def __init__(self, generator, tgt_vocab):
@@ -24,6 +24,20 @@ class LossComputeBase(nn.Module):
         self.generator = generator
         self.tgt_vocab = tgt_vocab
         self.padding_idx = tgt_vocab.stoi[onmt.IO.PAD_WORD]
+
+    def make_shard_state(self, batch, output, range_, attns=None):
+        """
+        Make shard state dictionary for shards() to return iterable
+        shards for efficient loss computation. Subclass must define
+        this method to match its own compute_loss() interface.
+        Args:
+            batch: the current batch.
+            output: the predict output from the model.
+            range_: the range of examples for computing, the whole
+                    batch or a trunc of it?
+            attns: the attns dictionary returned from the model.
+        """
+        return NotImplementedError
 
     def compute_loss(self, batch, output, target, **kwargs):
         """
@@ -36,14 +50,15 @@ class LossComputeBase(nn.Module):
         """
         return NotImplementedError
 
-    def monolithic_compute_loss(self, output, batch, attns):
+    def monolithic_compute_loss(self, batch, output, attns):
         """
         Compute the loss monolithically, not dividing into shards.
         """
         range_ = (0, batch.tgt.size(0))
-        gen_state = make_gen_state(output, batch, attns, range_,
-                                   self.copy_attn)
-        return self.compute_loss(batch, **gen_state)
+        shard_state = self.make_shard_state(batch, output, range_, attns)
+        _, batch_stats = self.compute_loss(batch, **shard_state)
+
+        return batch_stats
 
     def sharded_compute_loss(self, batch, output, attns,
                              cur_trunc, trunc_size, shard_size):
@@ -52,10 +67,9 @@ class LossComputeBase(nn.Module):
         """
         batch_stats = onmt.Statistics()
         range_ = (cur_trunc, cur_trunc + trunc_size)
-        gen_state = make_gen_state(output, batch, attns, range_,
-                                   self.copy_attn)
+        shard_state = self.make_shard_state(batch, output, range_, attns)
 
-        for shard in shards(gen_state, shard_size):
+        for shard in shards(shard_state, shard_size):
             loss, stats = self.compute_loss(batch, **shard)
             loss.div(batch.batch_size).backward()
             batch_stats.update(stats)
@@ -91,12 +105,18 @@ class NMTLossCompute(LossComputeBase):
     def __init__(self, generator, tgt_vocab):
         super(NMTLossCompute, self).__init__(generator, tgt_vocab)
 
-        self.copy_attn = False
         weight = torch.ones(len(tgt_vocab))
         weight[self.padding_idx] = 0
         self.criterion = nn.NLLLoss(weight, size_average=False)
 
-    def compute_loss(self, batch, output, target, **kwargs):
+    def make_shard_state(self, batch, output, range_, attns=None):
+        """ See base class for args description. """
+        return {
+            "output": output,
+            "target": batch.tgt[range_[0] + 1: range_[1]],
+        }
+
+    def compute_loss(self, batch, output, target):
         """ See base class for args description. """
         scores = self.generator(self.bottle(output))
         scores_data = scores.data.clone()
@@ -112,23 +132,7 @@ class NMTLossCompute(LossComputeBase):
         return loss, stats
 
 
-def make_gen_state(output, batch, attns, range_, copy_attn=None):
-    """
-    Create generator state for use in sharded loss computation.
-    This needs to match compute_loss exactly.
-    """
-    if copy_attn and getattr(batch, 'alignment', None) is None:
-        raise AssertionError("using -copy_attn you need to pass in "
-                             "-dynamic_dict during preprocess stage.")
-
-    return {"output": output,
-            "target": batch.tgt[range_[0] + 1: range_[1]],
-            "copy_attn": attns.get("copy"),
-            "align": None if not copy_attn
-            else batch.alignment[range_[0] + 1: range_[1]]}
-
-
-def filter_gen_state(state):
+def filter_shard_state(state):
     for k, v in state.items():
         if v is not None:
             if isinstance(v, Variable) and v.requires_grad:
@@ -140,15 +144,16 @@ def shards(state, shard_size, eval=False):
     """
     Args:
         state: A dictionary which corresponds to the output of
-               make_gen_state(). The values for those keys are
-               Tensor-like or None.
+               *LossCompute.make_shard_state(). The values for
+               those keys are Tensor-like or None.
         shard_size: The maximum size of the shards yielded by the model.
         eval: If True, only yield the state, nothing else.
               Otherwise, yield shards.
 
-    yields:
+    Yields:
         Each yielded shard is a dict.
-    side effect:
+
+    Side effect:
         After the last shard, this function does back-propagation.
     """
     if eval:
@@ -156,10 +161,10 @@ def shards(state, shard_size, eval=False):
     else:
         # non_none: the subdict of the state dictionary where the values
         # are not None.
-        non_none = dict(filter_gen_state(state))
+        non_none = dict(filter_shard_state(state))
 
         # Now, the iteration:
-        # split_state is a dictionary of sequences of tensor-like but we
+        # state is a dictionary of sequences of tensor-like but we
         # want a sequence of dictionaries of tensors.
         # First, unzip the dictionary into a sequence of keys and a
         # sequence of tensor-like sequences.
