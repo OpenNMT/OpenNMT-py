@@ -156,12 +156,8 @@ class Trainer(object):
             outputs, attns, _ = self.model(src, tgt, src_lengths)
 
             # Compute loss.
-            copy_attn = (attns.get("copy") is not None)
-            gen_state = onmt.Loss.make_gen_state(
-                outputs, batch, attns, (0, batch.tgt.size(0)),
-                copy_attn=copy_attn)
-            _, batch_stats = self.valid_loss.compute_loss(
-                    batch, **gen_state)
+            _, batch_stats = self.valid_loss.monolithic_compute_loss(
+                    outputs, batch, attns)
 
             # Update statistics.
             stats.update(batch_stats)

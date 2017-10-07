@@ -36,6 +36,15 @@ class LossComputeBase(nn.Module):
         """
         return NotImplementedError
 
+    def monolithic_compute_loss(self, output, batch, attns):
+        """
+        Compute the loss monolithically, not dividing into shards.
+        """
+        range_ = (0, batch.tgt.size(0))
+        gen_state = make_gen_state(output, batch, attns, range_,
+                                   self.copy_attn)
+        return self.compute_loss(batch, **gen_state)
+
     def sharded_compute_loss(self, batch, output, attns,
                              cur_trunc, trunc_size, shard_size):
         """
