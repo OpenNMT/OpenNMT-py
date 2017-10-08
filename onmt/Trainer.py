@@ -56,12 +56,12 @@ class Statistics(object):
                time.time() - start))
         sys.stdout.flush()
 
-    def log(self, prefix, experiment, optim):
+    def log(self, prefix, experiment, lr):
         t = self.elapsed_time()
         experiment.add_scalar_value(prefix + "_ppl", self.ppl())
         experiment.add_scalar_value(prefix + "_accuracy", self.accuracy())
         experiment.add_scalar_value(prefix + "_tgtper",  self.n_words / t)
-        experiment.add_scalar_value(prefix + "_lr", optim.lr)
+        experiment.add_scalar_value(prefix + "_lr", lr)
 
 
 class Trainer(object):
