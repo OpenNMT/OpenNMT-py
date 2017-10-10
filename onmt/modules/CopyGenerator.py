@@ -85,14 +85,26 @@ class CopyGeneratorLossCompute(onmt.Loss.LossComputeBase):
         super(CopyGeneratorLossCompute, self).__init__(generator, tgt_vocab)
 
         self.dataset = dataset
-        self.copy_attn = True
         self.force_copy = force_copy
         self.criterion = CopyGeneratorCriterion(len(tgt_vocab), force_copy,
                                                 self.padding_idx)
 
-    def compute_loss(self, batch, output, target, copy_attn, align, **kwargs):
+    def make_shard_state(self, batch, output, range_, attns):
+        """ See base class for args description. """
+        if getattr(batch, "alignment", None) is None:
+            raise AssertionError("using -copy_attn you need to pass in "
+                                 "-dynamic_dict during preprocess stage.")
+
+        return {
+            "output": output,
+            "target": batch.tgt[range_[0] + 1: range_[1]],
+            "copy_attn": attns.get("copy"),
+            "align": batch.alignment[range_[0] + 1: range_[1]]
+        }
+
+    def compute_loss(self, batch, output, target, copy_attn, align):
         """
-        Compute the loss. The args must match Loss.make_gen_state().
+        Compute the loss. The args must match self.make_shard_state().
         Args:
             batch: the current batch.
             output: the predict output from the model.
