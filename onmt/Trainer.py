@@ -65,27 +65,26 @@ class Statistics(object):
 
 
 class Trainer(object):
-    def __init__(self, model, train_iter, valid_iter,
-                 train_loss, valid_loss, optim,
-                 trunc_size, shard_size):
+    def __init__(self, model, model_controller, train_iter, valid_iter,
+                 train_loss, valid_loss, trunc_size, shard_size):
         """
         Args:
             model: the seq2seq model.
+            model_controller: taking care of optimizer, lr update, etc.
             train_iter: the train data iterator.
             valid_iter: the validate data iterator.
             train_loss: the train side LossCompute object for computing loss.
             valid_loss: the valid side LossCompute object for computing loss.
-            optim: the optimizer responsible for lr update.
-            trunc_size: a batch is divided by several truncs of this size.
+            trunc_size: a batch is divided into several truncs of this size.
             shard_size: compute loss in shards of this size for efficiency.
         """
         # Basic attributes.
         self.model = model
+        self.model_controller = model_controller
         self.train_iter = train_iter
         self.valid_iter = valid_iter
         self.train_loss = train_loss
         self.valid_loss = valid_loss
-        self.optim = optim
         self.trunc_size = trunc_size
         self.shard_size = shard_size
 
@@ -93,7 +92,7 @@ class Trainer(object):
         self.model.train()
 
     def train(self, epoch, report_func=None):
-        """ Called for each epoch to train. """
+        """ Called at each epoch to train. """
         total_stats = Statistics()
         report_stats = Statistics()
 
@@ -124,7 +123,7 @@ class Trainer(object):
                         trunc_size, self.shard_size)
 
                 # 4. Update the parameters and statistics.
-                self.optim.step()
+                self._batch_step()
                 total_stats.update(batch_stats)
                 report_stats.update(batch_stats)
 
@@ -134,14 +133,14 @@ class Trainer(object):
 
             if report_func is not None:
                 report_func(epoch, i, len(self.train_iter),
-                            total_stats.start_time, self.optim.lr,
-                            report_stats)
+                            total_stats.start_time,
+                            self.model_controller.lr, report_stats)
                 report_stats = Statistics()
 
         return total_stats
 
     def validate(self):
-        """ Called for each epoch to validate. """
+        """ Called at each epoch to validate. """
         # Set model in validating mode.
         self.model.eval()
 
@@ -168,11 +167,21 @@ class Trainer(object):
         return stats
 
     def epoch_step(self, ppl, epoch):
-        """ Called for each epoch to update learning rate. """
-        return self.optim.updateLearningRate(ppl, epoch)
+        """ Called at each epoch to update learning rate.
+        We only do it, model_controller takes care of how to do it.
+        """
+        self.model_controller.epoch_step(ppl, epoch)
+
+    def _batch_step(self):
+        """ Called at each batch to update parameters and lr.
+        We only do it, model_controller takes care of how to do it.
+        """
+        self.model_controller.lr_step_noam()
+        self.model_controller.grad_norm_clip()
+        self.model_controller.optimizer.step()
 
     def drop_checkpoint(self, opt, epoch, fields, valid_stats):
-        """ Called conditionally each epoch to save a snapshot. """
+        """ Called conditionally at each epoch to save a snapshot. """
         real_model = (self.model.module
                       if isinstance(self.model, nn.DataParallel)
                       else self.model)
@@ -184,13 +193,14 @@ class Trainer(object):
         model_state_dict = {k: v for k, v in model_state_dict.items()
                             if 'generator' not in k}
         generator_state_dict = real_generator.state_dict()
+        optimizer_state_dict = self.model_controller.optimizer.state_dict()
         checkpoint = {
             'model': model_state_dict,
             'generator': generator_state_dict,
             'vocab': onmt.IO.ONMTDataset.save_vocab(fields),
             'opt': opt,
             'epoch': epoch,
-            'optim': self.optim
+            'optimizer': optimizer_state_dict
         }
         torch.save(checkpoint,
                    '%s_acc_%.2f_ppl_%.2f_e%d.pt'
