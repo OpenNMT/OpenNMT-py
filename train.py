@@ -1,6 +1,7 @@
 from __future__ import division
 
 import os
+import sys
 import argparse
 import torch
 import torch.nn as nn
@@ -43,6 +44,10 @@ if opt.gpuid:
     cuda.set_device(opt.gpuid[0])
     if opt.seed > 0:
         torch.cuda.manual_seed(opt.seed)
+
+if len(opt.gpuid) > 1:
+    sys.stderr.write("Sorry, multigpu isn't supported yet, coming soon!\n")
+    sys.exit(1)
 
 
 # Set up the Crayon logging server.
@@ -216,7 +221,7 @@ def build_model(model_opt, opt, fields, checkpoint):
     model = onmt.ModelConstructor.make_base_model(model_opt, fields,
                                                   use_gpu(opt), checkpoint)
     if len(opt.gpuid) > 1:
-        print('Multi gpu training ', opt.gpuid)
+        print('Multi gpu training: ', opt.gpuid)
         model = nn.DataParallel(model, device_ids=opt.gpuid, dim=1)
     print(model)
 
