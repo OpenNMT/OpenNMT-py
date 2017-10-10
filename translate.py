@@ -19,6 +19,12 @@ parser = argparse.ArgumentParser(description='translate.py')
 opts.add_md_help_argument(parser)
 opts.translate_opts(parser)
 
+opt = parser.parse_args()
+if opt.batch_size != 1:
+    print("WARNING: -batch_size isn't supported currently, "
+          "we set it to 1 for now!")
+    opt.batch_size = 1
+
 
 def report_score(name, score_total, words_total):
     print("%s AVG SCORE: %.4f, %s PPL: %.4f" % (
@@ -34,7 +40,6 @@ def get_src_words(src_indices, index2str):
 
 
 def main():
-    opt = parser.parse_args()
 
     dummy_parser = argparse.ArgumentParser(description='train.py')
     opts.model_opts(dummy_parser)
