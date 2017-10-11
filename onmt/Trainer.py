@@ -133,10 +133,9 @@ class Trainer(object):
                     dec_state.detach()
 
             if report_func is not None:
-                report_func(epoch, i, len(self.train_iter),
-                            total_stats.start_time, self.optim.lr,
-                            report_stats)
-                report_stats = Statistics()
+                report_stats = report_func(
+                        epoch, i, len(self.train_iter),
+                        total_stats.start_time, self.optim.lr, report_stats)
 
         return total_stats
 

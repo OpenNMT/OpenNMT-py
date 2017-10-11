@@ -67,18 +67,24 @@ def report_func(epoch, batch, num_batches,
     """
     This is the user-defined batch-level traing progress
     report function.
+
     Args:
         epoch(int): current epoch count.
         batch(int): current batch count.
         num_batches(int): total number of batches.
         start_time(float): last report time.
         lr(float): current learning rate.
-        report_stats(Statistics): a Statistics instance.
+        report_stats(Statistics): old Statistics instance.
+    Returns:
+        report_stats(Statistics): updated Statistics instance.
     """
     if batch % opt.report_every == -1 % opt.report_every:
         report_stats.output(epoch, batch+1, num_batches, start_time)
         if opt.exp_host:
             report_stats.log("progress", experiment, lr)
+        report_stats = onmt.Statistics()
+
+    return report_stats
 
 
 def make_train_data_iter(train_data, opt):
