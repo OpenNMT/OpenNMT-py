@@ -6,6 +6,7 @@ This implementation is adpoted from the author of the paper:
 https://github.com/taolei87/sru/blob/master/cuda_functional.py.
 """
 import subprocess
+import platform
 import os
 import re
 import argparse
@@ -39,11 +40,14 @@ def check_sru_requirement(abort=False):
     """
     # Check 1.
     try:
-        pip_out = subprocess.Popen(
-            ('pip', 'freeze'), stdout=subprocess.PIPE)
-        subprocess.check_output(('grep', 'cupy\|pynvrtc'),
-                                stdin=pip_out.stdout)
-        pip_out.wait()
+        if platform.system() == 'Windows':
+            subprocess.check_output('pip freeze | findstr cupy', shell=True)
+            subprocess.check_output('pip freeze | findstr pynvrtc',
+                                    shell=True)
+        else:  # Unix-like systems
+            subprocess.check_output('pip freeze | grep -w cupy', shell=True)
+            subprocess.check_output('pip freeze | grep -w pynvrtc',
+                                    shell=True)
     except subprocess.CalledProcessError:
         if not abort:
             return False
