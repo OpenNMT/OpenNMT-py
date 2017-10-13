@@ -1,7 +1,7 @@
 from __future__ import division
 from builtins import bytes
 import os
-import argparse
+import configargparse
 import math
 import codecs
 import torch
@@ -15,9 +15,11 @@ try:
 except ImportError:
     from itertools import izip_longest as zip_longest
 
-parser = argparse.ArgumentParser(description='translate.py')
+parser = configargparse.ArgumentParser(description='translate.py')
 opts.add_md_help_argument(parser)
+opts.config_opts(parser)
 opts.translate_opts(parser)
+
 
 opt = parser.parse_args()
 if opt.batch_size != 1:
@@ -41,7 +43,7 @@ def get_src_words(src_indices, index2str):
 
 def main():
 
-    dummy_parser = argparse.ArgumentParser(description='train.py')
+    dummy_parser = configargparse.ArgumentParser(description='train.py')
     opts.model_opts(dummy_parser)
     dummy_opt = dummy_parser.parse_known_args([])[0]
 

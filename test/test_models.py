@@ -1,4 +1,4 @@
-import argparse
+import configargparse
 import copy
 import unittest
 
@@ -10,7 +10,7 @@ import opts
 from onmt.ModelConstructor import make_embeddings, \
                             make_encoder, make_decoder
 
-parser = argparse.ArgumentParser(description='train.py')
+parser = configargparse.ArgumentParser(description='train.py')
 opts.model_opts(parser)
 opts.train_opts(parser)
 

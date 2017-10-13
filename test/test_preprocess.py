@@ -1,4 +1,4 @@
-import argparse
+import configargparse
 import copy
 import unittest
 import onmt
@@ -8,7 +8,7 @@ import torchtext
 from collections import Counter
 
 
-parser = argparse.ArgumentParser(description='preprocess.py')
+parser = configargparse.ArgumentParser(description='preprocess.py')
 opts.preprocess_opts(parser)
 
 opt = parser.parse_known_args()[0]

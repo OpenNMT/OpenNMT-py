@@ -2,7 +2,7 @@ from __future__ import division
 
 import os
 import sys
-import argparse
+import configargparse
 import torch
 import torch.nn as nn
 from torch import cuda
@@ -14,10 +14,11 @@ import onmt.modules
 from onmt.Utils import aeq, use_gpu
 import opts
 
-parser = argparse.ArgumentParser(description='train.py')
+parser = configargparse.ArgumentParser(description='train.py')
 
 # opts.py
 opts.add_md_help_argument(parser)
+opts.config_opts(parser)
 opts.model_opts(parser)
 opts.train_opts(parser)
 
