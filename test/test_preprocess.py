@@ -11,13 +11,20 @@ from collections import Counter
 parser = configargparse.ArgumentParser(description='preprocess.py')
 opts.preprocess_opts(parser)
 
-opt = parser.parse_known_args()[0]
+defaultopts = [
+    '-train_src', 'data/src-train.txt',
+    '-train_tgt', 'data/tgt-train.txt',
+    '-valid_src', 'data/src-val.txt',
+    '-valid_tgt', 'data/tgt-val.txt',
+    '-save_data', 'data/save'
+]
+opt = parser.parse_known_args(defaultopts)[0]
 
-opt.train_src = 'data/src-train.txt'
-opt.train_tgt = 'data/tgt-train.txt'
-opt.valid_src = 'data/src-val.txt'
-opt.valid_tgt = 'data/tgt-val.txt'
-print(opt)
+# opt.train_src = 'data/src-train.txt'
+# opt.train_tgt = 'data/tgt-train.txt'
+# opt.valid_src = 'data/src-val.txt'
+# opt.valid_tgt = 'data/tgt-val.txt'
+# print(opt)
 
 
 class TestData(unittest.TestCase):
