@@ -2,3 +2,4 @@ six
 tqdm
 torchtext
 future
+configargparse
