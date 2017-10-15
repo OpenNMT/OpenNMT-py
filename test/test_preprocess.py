@@ -52,7 +52,7 @@ class TestData(unittest.TestCase):
 
         self.assertEqual(Counter({'c': 6, 'b': 4, 'a': 2, 'e': 2, 'f': 1}),
                          merged.freqs)
-        self.assertEqual(9, len(merged.itos))
+        self.assertEqual(6, len(merged.itos))
         self.assertTrue('b' in merged.itos)
 
 
