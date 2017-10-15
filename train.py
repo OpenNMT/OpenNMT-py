@@ -1,6 +1,7 @@
 from __future__ import division
 
 import os
+import sys
 import argparse
 import torch
 import torch.nn as nn
@@ -44,6 +45,10 @@ if opt.gpuid:
     if opt.seed > 0:
         torch.cuda.manual_seed(opt.seed)
 
+if len(opt.gpuid) > 1:
+    sys.stderr.write("Sorry, multigpu isn't supported yet, coming soon!\n")
+    sys.exit(1)
+
 
 # Set up the Crayon logging server.
 if opt.exp_host != "":
@@ -62,18 +67,24 @@ def report_func(epoch, batch, num_batches,
     """
     This is the user-defined batch-level traing progress
     report function.
+
     Args:
         epoch(int): current epoch count.
         batch(int): current batch count.
         num_batches(int): total number of batches.
         start_time(float): last report time.
         lr(float): current learning rate.
-        report_stats(Statistics): a Statistics instance.
+        report_stats(Statistics): old Statistics instance.
+    Returns:
+        report_stats(Statistics): updated Statistics instance.
     """
     if batch % opt.report_every == -1 % opt.report_every:
         report_stats.output(epoch, batch+1, num_batches, start_time)
         if opt.exp_host:
             report_stats.log("progress", experiment, lr)
+        report_stats = onmt.Statistics()
+
+    return report_stats
 
 
 def make_train_data_iter(train_data, opt):
@@ -216,7 +227,7 @@ def build_model(model_opt, opt, fields, checkpoint):
     model = onmt.ModelConstructor.make_base_model(model_opt, fields,
                                                   use_gpu(opt), checkpoint)
     if len(opt.gpuid) > 1:
-        print('Multi gpu training ', opt.gpuid)
+        print('Multi gpu training: ', opt.gpuid)
         model = nn.DataParallel(model, device_ids=opt.gpuid, dim=1)
     print(model)
 

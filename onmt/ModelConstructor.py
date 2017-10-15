@@ -167,15 +167,17 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
         generator.load_state_dict(checkpoint['generator'])
     else:
         if model_opt.param_init != 0.0:
-            print('Intializing parameters.')
+            print('Intializing model parameters.')
             for p in model.parameters():
+                p.data.uniform_(-model_opt.param_init, model_opt.param_init)
+            for p in generator.parameters():
                 p.data.uniform_(-model_opt.param_init, model_opt.param_init)
         model.encoder.embeddings.load_pretrained_vectors(
                 model_opt.pre_word_vecs_enc, model_opt.fix_word_vecs_enc)
         model.decoder.embeddings.load_pretrained_vectors(
                 model_opt.pre_word_vecs_dec, model_opt.fix_word_vecs_dec)
 
-    # add the generator to the module (does this register the parameter?)
+    # Add generator to model (this registers it as parameter of model).
     model.generator = generator
 
     # Make the whole model leverage GPU if indicated to do so.

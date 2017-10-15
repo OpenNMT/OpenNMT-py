@@ -56,12 +56,12 @@ class Statistics(object):
                time.time() - start))
         sys.stdout.flush()
 
-    def log(self, prefix, experiment, optim):
+    def log(self, prefix, experiment, lr):
         t = self.elapsed_time()
         experiment.add_scalar_value(prefix + "_ppl", self.ppl())
         experiment.add_scalar_value(prefix + "_accuracy", self.accuracy())
         experiment.add_scalar_value(prefix + "_tgtper",  self.n_words / t)
-        experiment.add_scalar_value(prefix + "_lr", optim.lr)
+        experiment.add_scalar_value(prefix + "_lr", lr)
 
 
 class Trainer(object):
@@ -133,10 +133,9 @@ class Trainer(object):
                     dec_state.detach()
 
             if report_func is not None:
-                report_func(epoch, i, len(self.train_iter),
-                            total_stats.start_time, self.optim.lr,
-                            report_stats)
-                report_stats = Statistics()
+                report_stats = report_func(
+                        epoch, i, len(self.train_iter),
+                        total_stats.start_time, self.optim.lr, report_stats)
 
         return total_stats
 
@@ -156,11 +155,8 @@ class Trainer(object):
             outputs, attns, _ = self.model(src, tgt, src_lengths)
 
             # Compute loss.
-            copy_attn = (attns.get("copy") is not None)
-            gen_state = onmt.Loss.make_gen_state(
-                outputs, batch, attns, (0, batch.tgt.size(0)),
-                copy_attn=copy_attn)
-            _, batch_stats = self.valid_loss(batch, **gen_state)
+            batch_stats = self.valid_loss.monolithic_compute_loss(
+                    batch, outputs, attns)
 
             # Update statistics.
             stats.update(batch_stats)
