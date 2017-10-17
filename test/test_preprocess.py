@@ -26,7 +26,7 @@ class TestData(unittest.TestCase):
         self.opt = opt
 
     def dataset_build(self, opt):
-        fields = onmt.IO.get_fields()
+        fields = onmt.IO.get_fields(0, 0)
 
         train = onmt.IO.ONMTDataset(
             opt.train_src, opt.train_tgt, fields,
