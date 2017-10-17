@@ -11,24 +11,31 @@ def model_opts(parser):
     parser.add_argument('-model_type', default='text',
                         help="Type of encoder to use. Options are [text|img].")
     # Embedding Options
-    parser.add_argument('-word_vec_size', type=int, default=-1,
-                        help='Word embedding for both.')
-    parser.add_argument('-src_word_vec_size', type=int, default=500,
-                        help='Src word embedding sizes')
-    parser.add_argument('-tgt_word_vec_size', type=int, default=500,
-                        help='Tgt word embedding sizes')
+    parser.add_argument('-word_vec_size', type=int, default=0,
+                        help="""Shared word embedding size. If set, this
+                        overrides -src_word_vec_size and
+                        -tgt_word_vec_size.""")
+    parser.add_argument('-src_word_vec_size', type=int, default=[500],
+                        nargs='+',
+                        help="""List of source embedding sizes:
+                        word[ feat1[ feat2[ ...] ] ].""")
+    parser.add_argument('-tgt_word_vec_size', type=int, default=[500],
+                        nargs='+',
+                        help="""List of source embedding sizes:
+                        word[ feat1[ feat2[ ...] ] ].""")
 
     parser.add_argument('-feat_merge', type=str, default='concat',
                         choices=['concat', 'sum', 'mlp'],
                         help='Merge action for the features embeddings')
-    parser.add_argument('-feat_vec_size', type=int, default=-1,
-                        help="""If specified, feature embedding sizes
-                        will be set to this. Otherwise, feat_vec_exponent
-                        will be used.""")
+    parser.add_argument('-feat_vec_size', type=int, default=20,
+                        help="""When features embedding sizes are not set
+                        and using -feat_merge sum, this is the common
+                        embedding size of the features.""")
     parser.add_argument('-feat_vec_exponent', type=float, default=0.7,
-                        help="""If -feat_merge_size is not set, feature
-                        embedding sizes will be set to N^feat_vec_exponent
-                        where N is the number of values the feature takes.""")
+                        help="""When features embedding sizes are not set
+                        and using -feat_merge concat, their dimension will
+                        be set to N^feat_vec_exponent where N is the number
+                        of values the feature takes.""")
     parser.add_argument('-position_encoding', action='store_true',
                         help='Use a sin to mark relative words positions.')
     parser.add_argument('-share_decoder_embeddings', action='store_true',
