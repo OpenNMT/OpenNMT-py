@@ -145,29 +145,33 @@ def collect_feature_dicts(fields):
     return feature_dicts
 
 
-def get_fields(n_features=0):
+def get_fields(n_src_features, n_tgt_features):
     """
-    n_features: the number of source features to create Field objects for.
+    n_src_features: the number of source features to create Field objects for.
+    n_tgt_features: the number of target features to create Field objects for.
     returns: A dictionary whose keys are strings and whose values are the
             corresponding Field objects.
     """
     fields = {}
     fields["src"] = torchtext.data.Field(
-        init_token=BOS_WORD, eos_token=EOS_WORD,
         pad_token=PAD_WORD,
         include_lengths=True)
 
     # fields = [("src_img", torchtext.data.Field(
     #     include_lengths=True))]
 
-    for j in range(n_features):
+    for j in range(n_src_features):
         fields["src_feat_"+str(j)] = \
-            torchtext.data.Field(init_token=BOS_WORD, eos_token=EOS_WORD,
-                                 pad_token=PAD_WORD)
+            torchtext.data.Field(pad_token=PAD_WORD)
 
     fields["tgt"] = torchtext.data.Field(
         init_token=BOS_WORD, eos_token=EOS_WORD,
         pad_token=PAD_WORD)
+
+    for j in range(n_tgt_features):
+        fields["tgt_feat_"+str(j)] = \
+            torchtext.data.Field(init_token=BOS_WORD, eos_token=EOS_WORD,
+                                 pad_token=PAD_WORD)
 
     def make_src(data, _):
         src_size = max([t.size(0) for t in data])
