@@ -22,9 +22,9 @@ opts.model_opts(parser)
 opts.train_opts(parser)
 
 opt = parser.parse_args()
-if opt.word_vec_size != -1:
-    opt.src_word_vec_size = opt.word_vec_size
-    opt.tgt_word_vec_size = opt.word_vec_size
+if opt.word_vec_size > 0:
+    opt.src_word_vec_size = [opt.word_vec_size]
+    opt.tgt_word_vec_size = [opt.word_vec_size]
 
 if opt.layers != -1:
     opt.enc_layers = opt.layers
