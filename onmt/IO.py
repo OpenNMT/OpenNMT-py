@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import codecs
-from collections import Counter, defaultdict, OrderedDict
-from itertools import chain, count, takewhile
+from collections import Counter, defaultdict
+from itertools import chain, count
 
 import torch
 import torchtext.data
@@ -50,7 +50,11 @@ def collect_features(fields, side="src"):
 
 
 def extract_features(tokens):
-    "Given a list of token separate out words and features (if any)."
+    """
+    tokens: A list of tokens, where each token consists of a word,
+            optionally followed by u"￨"-delimited features.
+    returns: A sequence of words, A sequence of features, and
+    """
     if not tokens:
         return [], [], -1
     split_tokens = [token.split(u"￨") for token in tokens]
@@ -96,9 +100,9 @@ def merge_vocabs(vocabs, vocab_size=None):
         `torchtext.vocab.Vocab`
     """
     merged = sum([vocab.freqs for vocab in vocabs], Counter())
-    return ONMTVocab(merged,
-                     specials=[PAD_WORD, BOS_WORD, EOS_WORD],
-                     max_size=vocab_size)
+    return torchtext.vocab.Vocab(merged,
+                                 specials=[PAD_WORD, BOS_WORD, EOS_WORD],
+                                 max_size=vocab_size)
 
 
 def make_features(batch, side):
@@ -142,8 +146,13 @@ def collect_feature_dicts(fields):
 
 
 def get_fields(n_features=0):
+    """
+    n_features: the number of source features to create Field objects for.
+    returns: A dictionary whose keys are strings and whose values are the
+            corresponding Field objects.
+    """
     fields = {}
-    fields["src"] = ONMTField(
+    fields["src"] = torchtext.data.Field(
         init_token=BOS_WORD, eos_token=EOS_WORD,
         pad_token=PAD_WORD,
         include_lengths=True)
@@ -153,10 +162,10 @@ def get_fields(n_features=0):
 
     for j in range(n_features):
         fields["src_feat_"+str(j)] = \
-            ONMTField(init_token=BOS_WORD, eos_token=EOS_WORD,
-                      pad_token=PAD_WORD)
+            torchtext.data.Field(init_token=BOS_WORD, eos_token=EOS_WORD,
+                                 pad_token=PAD_WORD)
 
-    fields["tgt"] = ONMTField(
+    fields["tgt"] = torchtext.data.Field(
         init_token=BOS_WORD, eos_token=EOS_WORD,
         pad_token=PAD_WORD)
 
@@ -169,7 +178,7 @@ def get_fields(n_features=0):
                 alignment[j, i, t] = 1
         return alignment
 
-    fields["src_map"] = ONMTField(
+    fields["src_map"] = torchtext.data.Field(
         use_vocab=False, tensor_type=torch.FloatTensor,
         postprocessing=make_src, sequential=False)
 
@@ -180,11 +189,11 @@ def get_fields(n_features=0):
             alignment[:sent.size(0), i] = sent
         return alignment
 
-    fields["alignment"] = ONMTField(
+    fields["alignment"] = torchtext.data.Field(
         use_vocab=False, tensor_type=torch.LongTensor,
         postprocessing=make_tgt, sequential=False)
 
-    fields["indices"] = ONMTField(
+    fields["indices"] = torchtext.data.Field(
         use_vocab=False, tensor_type=torch.LongTensor,
         sequential=False)
 
@@ -199,8 +208,6 @@ def build_vocab(train, opt):
         fields["src_feat_" + str(j)].build_vocab(train)
     fields["tgt"].build_vocab(train, max_size=opt.tgt_vocab_size,
                               min_freq=opt.tgt_words_min_frequency)
-    # print(Counter(fields["src"].vocab.itos).most_common(10))
-    # print(Counter(fields["tgt"].vocab.itos).most_common(10))
 
     # Merge the input and output vocabularies.
     if opt.share_vocab:
@@ -229,75 +236,6 @@ def peek(seq):
     """
     first = next(seq)
     return first, chain([first], seq)
-
-
-class ONMTVocab(torchtext.vocab.Vocab):
-    def __init__(self, counter, max_size=None, min_freq=1, specials=['<pad>'],
-                 vectors=None):
-        """Create a Vocab object from a collections.Counter.
-        Arguments:
-            counter: collections.Counter object holding the frequencies of
-                each value found in the data.
-            max_size: The maximum size of the vocabulary, or None for no
-                maximum. Default: None.
-            min_freq: The minimum frequency needed to include a token in the
-                vocabulary. Values less than 1 will be set to 1. Default: 1.
-            specials: The list of special tokens (e.g., padding or eos) that
-                will be prepended to the vocabulary in addition to an <unk>
-                token. Default: ['<pad>']
-            vectors: one of either the available pretrained vectors
-                or custom pretrained vectors (see Vocab.load_vectors);
-                or a list of aforementioned vectors
-        """
-        self.freqs = counter.copy()  # no longer clear if copying necessary
-        min_freq = max(min_freq, 1)
-
-        self.itos = ['<unk>'] + specials
-        if max_size is not None:
-            max_size += len(self.itos)
-        usable_freqs = takewhile(lambda w_freq: w_freq[1] >= min_freq,
-                                 self.freqs.most_common(max_size))
-        self.itos.extend(word for word, freq in usable_freqs)
-        # NOTE: elements in itos are no long secondarily sorted by
-
-        self.stoi = defaultdict(lambda: UNK)
-        self.stoi.update({tok: i for i, tok in enumerate(self.itos)})
-
-        self.vectors = None
-        if vectors is not None:
-            self.load_vectors(vectors)
-
-
-class ONMTField(torchtext.data.Field):
-
-    def build_vocab(self, *args, **kwargs):
-        """Construct the Vocab object for this field from one or more datasets.
-        Arguments:
-            Positional arguments: Dataset objects or other iterable data
-                sources from which to construct the Vocab object that
-                represents the set of possible values for this field. If
-                a Dataset object is provided, all columns corresponding
-                to this field are used; individual columns can also be
-                provided directly.
-            Remaining keyword arguments: Passed to the constructor of Vocab.
-        """
-        counter = Counter()
-        sources = []
-        for arg in args:
-            if isinstance(arg, torchtext.data.Dataset):
-                sources += [getattr(arg, name) for name, field in
-                            arg.fields.items() if field is self]
-            else:
-                sources.append(arg)
-        for data in sources:
-            for x in data:
-                if not self.sequential:
-                    x = [x]
-                counter.update(x)
-        specials = list(OrderedDict.fromkeys(
-            tok for tok in [self.pad_token, self.init_token, self.eos_token]
-            if tok is not None))
-        self.vocab = ONMTVocab(counter, specials=specials, **kwargs)
 
 
 class OrderedIterator(torchtext.data.Iterator):
