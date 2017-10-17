@@ -34,7 +34,11 @@ class Embeddings(nn.Module):
     Words embeddings dictionary for encoder/decoder.
 
     Args:
-        word_vec_size (int): size of the dictionary of embeddings.
+        word_vec_sizes ([int]): the list of dimension sizes for the words
+                    and features. If the length of word_vec_sizes is 1 but
+                    features are present, then feature vector sizes will
+                    be determined with either feat_vec_exponent or
+                    feat_vec_size, depending on the feat_merge option.
         position_encoding (bool): use a sin to mark relative words positions.
         feat_merge (string): merge action for the features embeddings:
                     concat, sum or mlp.
@@ -51,29 +55,36 @@ class Embeddings(nn.Module):
         feat_vocab_sizes ([int], optional): list of size of dictionary
                                     of embeddings for each feature.
     """
-    def __init__(self, word_vec_size, position_encoding, feat_merge,
+    def __init__(self, word_vec_sizes, position_encoding, feat_merge,
                  feat_vec_exponent, feat_vec_size, dropout,
                  word_padding_idx, feat_padding_idx,
                  word_vocab_size, feat_vocab_sizes=[]):
+        assert len(word_vec_sizes) == len(feat_vocab_sizes) + 1 or \
+            len(word_vec_sizes) == 1
 
         self.word_padding_idx = word_padding_idx
 
+        word_vec_size = word_vec_sizes[0]
+
         # Dimensions and padding for constructing the word embedding matrix
+        emb_dims = word_vec_sizes
         vocab_sizes = [word_vocab_size]
-        emb_dims = [word_vec_size]
         pad_indices = [word_padding_idx]
 
         # Dimensions and padding for feature embedding matrices
         # (these have no effect if feat_vocab_sizes is empty)
-        if feat_merge == 'sum':
-            feat_dims = [word_vec_size] * len(feat_vocab_sizes)
-        elif feat_vec_size > 0:
-            feat_dims = [feat_vec_size] * len(feat_vocab_sizes)
-        else:
-            feat_dims = [int(vocab ** feat_vec_exponent)
-                         for vocab in feat_vocab_sizes]
+        # TODO:
+        if len(word_vec_sizes) == 1:
+            if feat_merge == 'concat':
+                feat_dims = [int(vocab ** feat_vec_exponent)
+                             for vocab in feat_vocab_sizes]
+            elif feat_merge == 'mlp':
+                feat_dims = [feat_vec_size] * len(feat_vocab_sizes)
+            else:
+                # sum case
+                feat_dims = word_vec_sizes * len(feat_vocab_sizes)
+            emb_dims.extend(feat_dims)
         vocab_sizes.extend(feat_vocab_sizes)
-        emb_dims.extend(feat_dims)
         pad_indices.extend(feat_padding_idx)
 
         # The embedding matrix look-up tables. The first look-up table
