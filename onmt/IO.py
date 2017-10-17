@@ -29,8 +29,9 @@ torchtext.vocab.Vocab.__setstate__ = __setstate__
 
 def load_fields(vocab):
     vocab = dict(vocab)
-    fields = get_fields(
-        len(collect_features(vocab)))
+    n_src_features = len(collect_features(vocab, 'src'))
+    n_tgt_features = len(collect_features(vocab, 'tgt'))
+    fields = get_fields(n_src_features, n_tgt_features)
     for k, v in vocab.items():
         # Hack. Can't pickle defaultdict :(
         v.stoi = defaultdict(lambda: 0, v.stoi)
@@ -135,10 +136,11 @@ def save_vocab(fields):
     return vocab
 
 
-def collect_feature_dicts(fields):
+def collect_feature_dicts(fields, side):
+    assert side in ['src', 'tgt']
     feature_dicts = []
     for j in count():
-        key = "src_feat_" + str(j)
+        key = side + "_feat_" + str(j)
         if key not in fields:
             break
         feature_dicts.append(fields[key].vocab)
@@ -205,6 +207,9 @@ def get_fields(n_src_features, n_tgt_features):
 
 
 def build_vocab(train, opt):
+    """
+    train: an ONMTDataset
+    """
     fields = train.fields
     fields["src"].build_vocab(train, max_size=opt.src_vocab_size,
                               min_freq=opt.src_words_min_frequency)
@@ -212,6 +217,8 @@ def build_vocab(train, opt):
         fields["src_feat_" + str(j)].build_vocab(train)
     fields["tgt"].build_vocab(train, max_size=opt.tgt_vocab_size,
                               min_freq=opt.tgt_words_min_frequency)
+    for j in range(train.n_tgt_feats):
+        fields["tgt_feat_" + str(j)].build_vocab(train)
 
     # Merge the input and output vocabularies.
     if opt.share_vocab:
