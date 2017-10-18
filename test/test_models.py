@@ -56,10 +56,12 @@ class TestModel(unittest.TestCase):
         if opt.decoder_type == 'transformer':
             input = torch.cat([test_src, test_src], 0)
             res = emb(input)
-            compare_to = torch.zeros(sourceL * 2, bsize, opt.src_word_vec_size)
+            compare_to = torch.zeros(
+                sourceL * 2, bsize, opt.src_word_vec_size[0])
         else:
             res = emb(test_src)
-            compare_to = torch.zeros(sourceL, bsize, opt.src_word_vec_size)
+            compare_to = torch.zeros(
+                sourceL, bsize, opt.src_word_vec_size[0])
 
         self.assertEqual(res.size(), compare_to.size())
 
@@ -179,16 +181,16 @@ tests_ntmodel = [[('rnn_type', 'GRU')],
                  [('input_feed', 0)],
                  [('decoder_type', 'transformer'),
                   ('encoder_type', 'transformer'),
-                  ('src_word_vec_size', 16),
-                  ('tgt_word_vec_size', 16),
+                  ('src_word_vec_size', [16]),
+                  ('tgt_word_vec_size', [16]),
                   ('rnn_size', 16)],
                  # [('encoder_type', 'transformer'),
                  #  ('word_vec_size', 16),
                  #  ('rnn_size', 16)],
                  [('decoder_type', 'transformer'),
                   ('encoder_type', 'transformer'),
-                  ('src_word_vec_size', 16),
-                  ('tgt_word_vec_size', 16),
+                  ('src_word_vec_size', [16]),
+                  ('tgt_word_vec_size', [16]),
                   ('rnn_size', 16),
                   ('position_encoding', True)],
                  [('coverage_attn', True)],
