@@ -71,7 +71,7 @@ def main():
 
     print("Building Valid...")
     valid = onmt.IO.ONMTDataset(
-        opt.train_src, opt.train_tgt, fields,
+        opt.valid_src, opt.valid_tgt, fields,
         opt.src_seq_length, opt.tgt_seq_length,
         src_seq_length_trunc=opt.src_seq_length_trunc,
         tgt_seq_length_trunc=opt.tgt_seq_length_trunc,
