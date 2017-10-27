@@ -110,7 +110,7 @@ def make_valid_data_iter(valid_data, opt):
     return onmt.IO.OrderedIterator(
                 dataset=valid_data, batch_size=opt.batch_size,
                 device=opt.gpuid[0] if opt.gpuid else -1,
-                train=False, sort=True)
+                train=False, sort=True, sort_within_batch=False)
 
 
 def make_loss_compute(model, tgt_vocab, dataset, opt):
