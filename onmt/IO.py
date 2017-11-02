@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import os
 import codecs
 from collections import Counter, defaultdict
 from itertools import chain, count
@@ -68,7 +69,7 @@ def make_features(batch, side):
         A sequence of src/tgt tensors with optional feature tensors
         of size (len x batch).
     """
-    assert side in ['src', 'tgt']
+    assert side in ['src', 'tgt', 'src_img']
     if isinstance(batch.__dict__[side], tuple):
         data = batch.__dict__[side][0]
     else:
@@ -77,7 +78,10 @@ def make_features(batch, side):
     features = sorted(batch.__dict__[k]
                       for k in batch.__dict__ if feat_start in k)
     levels = [data] + features
-    return torch.cat([level.unsqueeze(2) for level in levels], 2)
+    if 'img' in side:
+        return levels[0]
+    else:
+        return torch.cat([level.unsqueeze(2) for level in levels], 2)
 
 
 def join_dicts(*args):
@@ -108,10 +112,14 @@ class ONMTDataset(torchtext.data.Dataset):
     @staticmethod
     def sort_key(ex):
         "Sort in reverse size order"
-        return -len(ex.src)
+        if hasattr(ex, 'src'):
+            return -len(ex.src)
+        elif hasattr(ex, 'tgt'):
+            return -len(ex.tgt)
+        else:
+            return 0
 
-    def __init__(self, src_path, tgt_path, fields, opt,
-                 src_img_dir=None, **kwargs):
+    def __init__(self, src_path, tgt_path, fields, opt, **kwargs):
         """
         Create a TranslationDataset given paths and fields.
 
@@ -119,25 +127,26 @@ class ONMTDataset(torchtext.data.Dataset):
         tgt_path: location of target-side data or None. If it exists, it
                   source and target data must be the same length.
         fields:
-        src_img_dir: if not None, uses images instead of text for the
-                     source. TODO: finish
         """
-        if src_img_dir:
-            self.type_ = "img"
-        else:
-            self.type_ = "text"
+        self.data_type_ = opt.data_type
 
-        if self.type_ == "text":
+        if self.data_type_ == "text":
             self.src_vocabs = []
             src_truncate = 0 if opt is None else opt.src_seq_length_trunc
             src_point = next(self._read_corpus_file(src_path, src_truncate))
             self.nfeatures = src_point[2]
             src_data = self._read_corpus_file(src_path, src_truncate)
             src_examples = self._construct_examples(src_data, "src")
-        else:
+        elif self.data_type_ == "img":
             # TODO finish this.
-            if not transforms:
-                load_image_libs()
+            data_img_dir = opt.data_img_dir
+            assert os.path.exists(data_img_dir), ('opt.data_img_dir must be set a valid'
+                                                  ' directory if data_type is img')
+            load_image_libs()
+
+            src_data = self._read_img_file(src_path, data_img_dir)
+            src_examples = self._construct_img_examples(src_data, "src_img")
+            self.nfeatures = 0
 
         if tgt_path is not None:
             tgt_truncate = 0 if opt is None else opt.tgt_seq_length_trunc
@@ -185,12 +194,15 @@ class ONMTDataset(torchtext.data.Dataset):
 
         def construct_final(examples):
             for i, ex in enumerate(examples):
+                a= torchtext.data.Example.fromlist(
+                    [ex[k] for k in keys] + [i],
+                    fields)
                 yield torchtext.data.Example.fromlist(
                     [ex[k] for k in keys] + [i],
                     fields)
 
         def filter_pred(example):
-            return 0 < len(example.src) <= opt.src_seq_length \
+            return (not hasattr(example, 'src') or 0 < len(example.src) <= opt.src_seq_length) \
                 and 0 < len(example.tgt) <= opt.tgt_seq_length
 
         super(ONMTDataset, self).__init__(
@@ -213,6 +225,27 @@ class ONMTDataset(torchtext.data.Dataset):
             for line in lines:
                 yield extract_features(line)
 
+    def _read_img_file(self, path, data_img_dir, truncate=None):
+        """
+        path: location of a src file containing image paths
+        data_img_dir: location of source images
+        truncate: maximum img size (0 for unlimited)
+
+        returns: image for each line
+        """
+        with codecs.open(path, "r", "utf-8") as corpus_file:
+            for line in corpus_file:
+                img_path = os.path.join(data_img_dir, line.strip())
+                if not os.path.exists(img_path):
+                    img_path = line
+                if not os.path.exists(img_path):
+                    continue
+                img = transforms.ToTensor()(Image.open(img_path))
+                if truncate:
+                    if img.size(1) > truncate[0] or img.size(2) > truncate[1]:
+                        continue
+                yield img
+
     def _construct_examples(self, lines, side):
         assert side in ["src", "tgt"]
         for line in lines:
@@ -222,6 +255,11 @@ class ONMTDataset(torchtext.data.Dataset):
                 prefix = side + "_feat_"
                 example_dict.update((prefix + str(j), f)
                                     for j, f in enumerate(feats))
+            yield example_dict
+
+    def _construct_img_examples(self, lines, side):
+        for line in lines:
+            example_dict = {side: line}
             yield example_dict
 
     def __getstate__(self):
@@ -252,10 +290,11 @@ class ONMTDataset(torchtext.data.Dataset):
         return scores
 
     @staticmethod
-    def load_fields(vocab):
+    def load_fields(vocab, data_type='text'):
         vocab = dict(vocab)
         fields = ONMTDataset.get_fields(
-            len(ONMTDataset.collect_features(vocab)))
+            len(ONMTDataset.collect_features(vocab)),
+            data_type=data_type)
         for k, v in vocab.items():
             # Hack. Can't pickle defaultdict :(
             v.stoi = defaultdict(lambda: 0, v.stoi)
@@ -293,14 +332,25 @@ class ONMTDataset(torchtext.data.Dataset):
         return feature_dicts
 
     @staticmethod
-    def get_fields(nFeatures=0):
+    def get_fields(nFeatures=0, data_type='text'):
         fields = {}
         fields["src"] = torchtext.data.Field(
             pad_token=PAD_WORD,
             include_lengths=True)
 
-        # fields = [("src_img", torchtext.data.Field(
-        #     include_lengths=True))]
+        def make_img(data, _):
+            c = data[0].size(0)
+            h = max([t.size(1) for t in data])
+            w = max([t.size(2) for t in data])
+            imgs = torch.zeros(len(data), c, h, w)
+            for i, img in enumerate(data):
+                imgs[i, :, 0:img.size(1), 0:img.size(2)] = img
+            return imgs
+
+        if data_type == 'img':
+            fields["src_img"] = torchtext.data.Field(
+                use_vocab=False, tensor_type=torch.FloatTensor,
+                postprocessing=make_img, sequential=False)
 
         for j in range(nFeatures):
             fields["src_feat_"+str(j)] = \
@@ -343,15 +393,16 @@ class ONMTDataset(torchtext.data.Dataset):
     @staticmethod
     def build_vocab(train, opt):
         fields = train.fields
-        fields["src"].build_vocab(train, max_size=opt.src_vocab_size,
-                                  min_freq=opt.src_words_min_frequency)
+        if "src" in fields:
+            fields["src"].build_vocab(train, max_size=opt.src_vocab_size,
+                                      min_freq=opt.src_words_min_frequency)
         for j in range(train.nfeatures):
             fields["src_feat_" + str(j)].build_vocab(train)
         fields["tgt"].build_vocab(train, max_size=opt.tgt_vocab_size,
                                   min_freq=opt.tgt_words_min_frequency)
 
         # Merge the input and output vocabularies.
-        if opt.share_vocab:
+        if opt.share_vocab and "src" in fields:
             # `tgt_vocab_size` is ignored when sharing vocabularies
             merged_vocab = merge_vocabs(
                 [fields["src"].vocab, fields["tgt"].vocab],

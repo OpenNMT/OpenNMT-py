@@ -103,11 +103,14 @@ class Trainer(object):
             trunc_size = self.trunc_size if self.trunc_size else target_size
 
             dec_state = None
-            _, src_lengths = batch.src
-
-            src = onmt.IO.make_features(batch, 'src')
+            if hasattr(batch, 'src'):
+                _, src_lengths = batch.src
+                report_stats.n_src_words += src_lengths.sum()
+                src = onmt.IO.make_features(batch, 'src')
+            elif hasattr(batch, 'src_img'):
+                src = onmt.IO.make_features(batch, 'src_img')
+                src_lengths = None
             tgt_outer = onmt.IO.make_features(batch, 'tgt')
-            report_stats.n_src_words += src_lengths.sum()
 
             for j in range(0, target_size-1, trunc_size):
                 # 1. Create truncated target.
@@ -147,8 +150,12 @@ class Trainer(object):
         stats = Statistics()
 
         for batch in self.valid_iter:
-            _, src_lengths = batch.src
-            src = onmt.IO.make_features(batch, 'src')
+            if hasattr(batch, 'src'):
+                _, src_lengths = batch.src
+                src = onmt.IO.make_features(batch, 'src')
+            elif hasattr(batch, 'src_img'):
+                src = onmt.IO.make_features(batch, 'src_img')
+                src_lengths = None
             tgt = onmt.IO.make_features(batch, 'tgt')
 
             # F-prop through the model.

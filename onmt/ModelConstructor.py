@@ -129,7 +129,8 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
                                          feature_dicts)
         encoder = make_encoder(model_opt, src_embeddings)
     else:
-        encoder = ImageEncoder(model_opt.layers,
+        print (model_opt)
+        encoder = ImageEncoder(model_opt.enc_layers,
                                model_opt.brnn,
                                model_opt.rnn_size,
                                model_opt.dropout)
@@ -173,10 +174,12 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
                 p.data.uniform_(-model_opt.param_init, model_opt.param_init)
             for p in generator.parameters():
                 p.data.uniform_(-model_opt.param_init, model_opt.param_init)
-        model.encoder.embeddings.load_pretrained_vectors(
-                model_opt.pre_word_vecs_enc, model_opt.fix_word_vecs_enc)
-        model.decoder.embeddings.load_pretrained_vectors(
-                model_opt.pre_word_vecs_dec, model_opt.fix_word_vecs_dec)
+        if hasattr(model.encoder, 'embeddings'):
+            model.encoder.embeddings.load_pretrained_vectors(
+                    model_opt.pre_word_vecs_enc, model_opt.fix_word_vecs_enc)
+        if hasattr(model.decoder, 'embeddings'):
+            model.decoder.embeddings.load_pretrained_vectors(
+                    model_opt.pre_word_vecs_dec, model_opt.fix_word_vecs_dec)
 
     # Add generator to model (this registers it as parameter of model).
     model.generator = generator

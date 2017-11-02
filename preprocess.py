@@ -50,12 +50,16 @@ torch.manual_seed(opt.seed)
 
 
 def main():
-    print('Preparing training ...')
-    with codecs.open(opt.train_src, "r", "utf-8") as src_file:
-        src_line = src_file.readline().strip().split()
-        _, _, nFeatures = onmt.IO.extract_features(src_line)
+    if opt.data_type == 'text':
+        print('Preparing training ...')
+        with codecs.open(opt.train_src, "r", "utf-8") as src_file:
+            src_line = src_file.readline().strip().split()
+            _, _, nFeatures = onmt.IO.extract_features(src_line)
 
-    fields = onmt.IO.ONMTDataset.get_fields(nFeatures)
+        fields = onmt.IO.ONMTDataset.get_fields(nFeatures)
+    elif opt.data_type == 'img':
+        fields = onmt.IO.ONMTDataset.get_fields(data_type='img')
+
     print("Building Training...")
     train = onmt.IO.ONMTDataset(opt.train_src, opt.train_tgt, fields, opt)
     print("Building Vocab...")

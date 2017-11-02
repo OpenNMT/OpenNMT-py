@@ -195,9 +195,9 @@ def tally_parameters(model):
     print('decoder: ', dec)
 
 
-def load_fields(train, valid, checkpoint):
+def load_fields(train, valid, checkpoint, model_type):
     fields = onmt.IO.ONMTDataset.load_fields(
-                torch.load(opt.data + '.vocab.pt'))
+                torch.load(opt.data + '.vocab.pt'), model_type)
     fields = dict([(k, f) for (k, f) in fields.items()
                   if k in train.examples[0].__dict__])
     train.fields = fields
@@ -207,8 +207,12 @@ def load_fields(train, valid, checkpoint):
         print('Loading vocab from checkpoint at %s.' % opt.train_from)
         fields = onmt.IO.ONMTDataset.load_fields(checkpoint['vocab'])
 
-    print(' * vocabulary size. source = %d; target = %d' %
-          (len(fields['src'].vocab), len(fields['tgt'].vocab)))
+    if 'src' in fields and 'tgt' in fields:
+        print(' * vocabulary size. source = %d; target = %d' %
+              (len(fields['src'].vocab), len(fields['tgt'].vocab)))
+    elif 'tgt' in fields:
+        print(' * vocabulary size. target = %d' %
+              (len(fields['tgt'].vocab)))
 
     return fields
 
@@ -276,7 +280,7 @@ def main():
         model_opt = opt
 
     # Load fields generated from preprocess phase.
-    fields = load_fields(train, valid, checkpoint)
+    fields = load_fields(train, valid, checkpoint, opt.model_type)
 
     # Collect features.
     src_features = collect_features(train, fields)
