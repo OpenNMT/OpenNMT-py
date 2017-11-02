@@ -17,7 +17,7 @@ parser.add_argument('-config', help="Read options from this file")
 
 parser.add_argument('-data_type', default="text",
                     help="Type of the source input. Options are [text|img].")
-parser.add_argument('-data_img_dir', default=".",
+parser.add_argument('-src_img_dir', default=".",
                     help="Location of source images")
 
 parser.add_argument('-train_src', required=True,

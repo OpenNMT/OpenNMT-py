@@ -128,7 +128,13 @@ class ONMTDataset(torchtext.data.Dataset):
                   source and target data must be the same length.
         fields:
         """
-        self.data_type_ = opt.data_type
+        if not hasattr(opt, 'data_type'):
+            if opt.src_img_dir != '':
+                self.data_type_ = 'img'
+            else:
+                self.data_type_ = 'text'
+        else:
+            self.data_type_ = opt.data_type
 
         if self.data_type_ == "text":
             self.src_vocabs = []
@@ -139,12 +145,12 @@ class ONMTDataset(torchtext.data.Dataset):
             src_examples = self._construct_examples(src_data, "src")
         elif self.data_type_ == "img":
             # TODO finish this.
-            data_img_dir = opt.data_img_dir
-            assert os.path.exists(data_img_dir), ('opt.data_img_dir must be set a valid'
+            src_img_dir = opt.src_img_dir
+            assert os.path.exists(src_img_dir), ('opt.src_img_dir must be set a valid'
                                                   ' directory if data_type is img')
             load_image_libs()
 
-            src_data = self._read_img_file(src_path, data_img_dir)
+            src_data = self._read_img_file(src_path, src_img_dir)
             src_examples = self._construct_img_examples(src_data, "src_img")
             self.nfeatures = 0
 
@@ -203,7 +209,7 @@ class ONMTDataset(torchtext.data.Dataset):
 
         def filter_pred(example):
             return (not hasattr(example, 'src') or 0 < len(example.src) <= opt.src_seq_length) \
-                and 0 < len(example.tgt) <= opt.tgt_seq_length
+                and (not hasattr(example, 'tgt') or 0 < len(example.tgt) <= opt.tgt_seq_length)
 
         super(ONMTDataset, self).__init__(
             construct_final(chain([ex], examples)),
@@ -225,17 +231,17 @@ class ONMTDataset(torchtext.data.Dataset):
             for line in lines:
                 yield extract_features(line)
 
-    def _read_img_file(self, path, data_img_dir, truncate=None):
+    def _read_img_file(self, path, src_img_dir, truncate=None):
         """
         path: location of a src file containing image paths
-        data_img_dir: location of source images
+        src_img_dir: location of source images
         truncate: maximum img size (0 for unlimited)
 
         returns: image for each line
         """
         with codecs.open(path, "r", "utf-8") as corpus_file:
             for line in corpus_file:
-                img_path = os.path.join(data_img_dir, line.strip())
+                img_path = os.path.join(src_img_dir, line.strip())
                 if not os.path.exists(img_path):
                     img_path = line
                 if not os.path.exists(img_path):

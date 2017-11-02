@@ -13,9 +13,14 @@ class Translator(object):
     def __init__(self, opt, dummy_opt={}):
         # Add in default model arguments, possibly added since training.
         self.opt = opt
+        if opt.src_img_dir != '':
+            data_type = 'img'
+        else:
+            data_type = 'text'
         checkpoint = torch.load(opt.model,
                                 map_location=lambda storage, loc: storage)
-        self.fields = onmt.IO.ONMTDataset.load_fields(checkpoint['vocab'])
+        self.fields = onmt.IO.ONMTDataset.load_fields(checkpoint['vocab'],
+                                                      data_type=data_type)
 
         model_opt = checkpoint['opt']
         for arg in dummy_opt:
@@ -52,7 +57,7 @@ class Translator(object):
                 tokens = tokens[:-1]
                 break
 
-        if self.opt.replace_unk and attn is not None:
+        if self.opt.replace_unk and (attn is not None) and (src is not None):
             for i in range(len(tokens)):
                 if tokens[i] == vocab.itos[onmt.IO.UNK]:
                     _, maxIndex = attn[i].max(0)
@@ -92,8 +97,12 @@ class Translator(object):
         batch_size = batch.batch_size
 
         # (1) Run the encoder on the src.
-        _, src_lengths = batch.src
-        src = onmt.IO.make_features(batch, 'src')
+        if hasattr(batch, 'src'):
+            _, src_lengths = batch.src
+            src = onmt.IO.make_features(batch, 'src')
+        elif hasattr(batch, 'src_img'):
+            src = onmt.IO.make_features(batch, 'src_img')
+            src_lengths = None
         encStates, context = self.model.encoder(src, src_lengths)
         decStates = self.model.decoder.init_decoder_state(
                                         src, context, encStates)
@@ -105,8 +114,11 @@ class Translator(object):
 
         # Repeat everything beam_size times.
         context = rvar(context.data)
-        src = rvar(src.data)
-        srcMap = rvar(batch.src_map.data)
+        #src = rvar(src.data)
+        if hasattr(batch, 'src_map'):
+            srcMap = rvar(batch.src_map.data)
+        else:
+            srcMap = None
         decStates.repeat_beam_size_times(beam_size)
         scorer = None
         # scorer=onmt.GNMTGlobalScorer(0.3, 0.4)
@@ -207,17 +219,23 @@ class Translator(object):
 
         #  (3) convert indexes to words
         predBatch, goldBatch = [], []
-        src = batch.src[0].data.index_select(1, perm)
+        if hasattr(batch, 'src'):
+            src = batch.src[0].data.index_select(1, perm)
+        else:
+            src = None
         if self.opt.tgt:
             tgt = batch.tgt.data.index_select(1, perm)
         for b in range(batch_size):
-            src_vocab = data.src_vocabs[inds[b]]
+            if hasattr(batch, 'src'):
+                src_vocab = data.src_vocabs[inds[b]]
+            else:
+                src_vocab = None
             predBatch.append(
-                [self.buildTargetTokens(pred[b][n], src[:, b],
+                [self.buildTargetTokens(pred[b][n], src[:, b] if src is not None else None,
                                         attn[b][n], src_vocab)
                  for n in range(self.opt.n_best)])
             if self.opt.tgt:
                 goldBatch.append(
-                    self.buildTargetTokens(tgt[1:, b], src[:, b],
+                    self.buildTargetTokens(tgt[1:, b], src[:, b] if src is not None else None,
                                            None, None))
         return predBatch, goldBatch, predScore, goldScore, attn, src

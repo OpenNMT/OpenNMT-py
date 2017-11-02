@@ -55,7 +55,8 @@ def main():
     if opt.dump_beam != "":
         import json
         translator.initBeamAccum()
-    data = onmt.IO.ONMTDataset(opt.src, opt.tgt, translator.fields, None)
+    
+    data = onmt.IO.ONMTDataset(opt.src, opt.tgt, translator.fields, opt)
 
     test_data = onmt.IO.OrderedIterator(
         dataset=data, device=opt.gpu,
@@ -77,10 +78,14 @@ def main():
         # sentence in the batch. It has to be zip_longest instead of
         # plain-old zip because the gold_batch has length 0 if the target
         # is not included.
+        if hasattr(batch, 'src'):
+            sents = src.split(1, dim=1)
+        else:
+            sents = [torch.Tensor(1,1) for i in range(len(pred_scores))]
         z_batch = zip_longest(
                 pred_batch, gold_batch,
                 pred_scores, gold_scores,
-                (sent.squeeze(1) for sent in src.split(1, dim=1)))
+                (sent.squeeze(1) for sent in sents))
 
         for pred_sents, gold_sent, pred_score, gold_score, src_sent in z_batch:
             n_best_preds = [" ".join(pred) for pred in pred_sents[:opt.n_best]]
@@ -90,8 +95,11 @@ def main():
 
             if opt.verbose:
                 sent_number = next(counter)
-                words = get_src_words(
-                    src_sent, translator.fields["src"].vocab.itos)
+                if hasattr(batch, 'src'):
+                    words = get_src_words(
+                        src_sent, translator.fields["src"].vocab.itos)
+                else:
+                    words = ''
 
                 os.write(1, bytes('\nSENT %d: %s\n' %
                                   (sent_number, words), 'UTF-8'))
