@@ -569,7 +569,7 @@ class SRU(nn.Module):
         self.out_size = hidden_size*2 if bidirectional else hidden_size
 
         for i in range(num_layers):
-            l = SRUCell(
+            sru_cell = SRUCell(
                 n_in=self.n_in if i == 0 else self.out_size,
                 n_out=self.n_out,
                 dropout=dropout if i+1 != num_layers else 0,
@@ -578,7 +578,7 @@ class SRU(nn.Module):
                 use_tanh=use_tanh,
                 use_relu=use_relu,
             )
-            self.rnn_lst.append(l)
+            self.rnn_lst.append(sru_cell)
 
     def set_bias(self, bias_val=0):
         for l in self.rnn_lst:
