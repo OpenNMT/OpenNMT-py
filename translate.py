@@ -18,7 +18,7 @@ except ImportError:
     from itertools import izip_longest as zip_longest
 
 parser = argparse.ArgumentParser(description='translate.py',
-                                 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 opts.add_md_help_argument(parser)
 opts.translate_opts(parser)
 
