@@ -9,7 +9,8 @@ import onmt
 import onmt.IO
 import opts
 
-parser = argparse.ArgumentParser(description='preprocess.py',
+parser = argparse.ArgumentParser(
+    description='preprocess.py',
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 opts.add_md_help_argument(parser)
 
