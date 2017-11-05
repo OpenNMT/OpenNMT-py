@@ -70,7 +70,7 @@ def model_opts(parser):
     # parser.add_argument('-residual',   action="store_true",
     #                     help="Add residual connections between RNN layers.")
 
-    parser.add_argument('-brnn', action="store_true",
+    parser.add_argument('-brnn', action=DeprecateAction,
                         help="Deprecated, use `encoder_type`.")
     parser.add_argument('-brnn_merge', default='concat',
                         choices=['concat', 'sum'],
@@ -331,3 +331,14 @@ class MarkdownHelpAction(argparse.Action):
         parser.formatter_class = MarkdownHelpFormatter
         parser.print_help()
         parser.exit()
+
+
+class DeprecateAction(argparse.Action):
+    def __init__(self, option_strings, dest, help=None, **kwargs):
+        super(DeprecateAction, self).__init__(option_strings, dest, nargs=0,
+                                              help=help, **kwargs)
+
+    def __call__(self, parser, namespace, values, flag_name):
+        help = self.help if self.help is not None else ""
+        msg = "Flag '%s' is deprecated. %s" % (flag_name, help)
+        raise argparse.ArgumentTypeError(msg)
