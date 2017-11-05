@@ -17,7 +17,7 @@ from onmt.Utils import aeq, use_gpu
 import opts
 
 parser = argparse.ArgumentParser(description='train.py',
-                                 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
 # opts.py
 opts.add_md_help_argument(parser)
