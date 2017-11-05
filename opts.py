@@ -197,8 +197,7 @@ def train_opts(parser):
                         help="""Truncated bptt.""")
     # learning rate
     parser.add_argument('-learning_rate', type=float, default=1.0,
-                        help="""Starting learning rate. If adagrad/adadelta/adam
-                        is used, then this is the global learning rate.
+                        help="""Starting learning rate.
                         Recommended settings: sgd = 1, adagrad = 0.1,
                         adadelta = 1, adam = 0.001""")
     parser.add_argument('-learning_rate_decay', type=float, default=0.5,
