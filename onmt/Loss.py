@@ -119,15 +119,13 @@ class NMTLossCompute(LossComputeBase):
     def compute_loss(self, batch, output, target):
         """ See base class for args description. """
         scores = self.generator(self.bottle(output))
-        scores_data = scores.data.clone()
 
         target = target.view(-1)
-        target_data = target.data.clone()
 
         loss = self.criterion(scores, target)
         loss_data = loss.data.clone()
 
-        stats = self.stats(loss_data, scores_data, target_data)
+        stats = self.stats(loss_data, scores.data, target.data)
 
         return loss, stats
 
