@@ -200,7 +200,7 @@ def tally_parameters(model):
 
 
 def load_fields(train, valid, checkpoint):
-    fields = onmt.IO.ONMTDataset.load_fields(
+    fields = onmt.IO.load_fields(
                 torch.load(opt.data + '.vocab.pt'))
     fields = dict([(k, f) for (k, f) in fields.items()
                   if k in train.examples[0].__dict__])
@@ -209,7 +209,7 @@ def load_fields(train, valid, checkpoint):
 
     if opt.train_from:
         print('Loading vocab from checkpoint at %s.' % opt.train_from)
-        fields = onmt.IO.ONMTDataset.load_fields(checkpoint['vocab'])
+        fields = onmt.IO.load_fields(checkpoint['vocab'])
 
     print(' * vocabulary size. source = %d; target = %d' %
           (len(fields['src'].vocab), len(fields['tgt'].vocab)))
@@ -220,8 +220,8 @@ def load_fields(train, valid, checkpoint):
 def collect_features(train, fields):
     # TODO: account for target features.
     # Also, why does fields need to have the structure it does?
-    src_features = onmt.IO.ONMTDataset.collect_features(fields)
-    aeq(len(src_features), train.nfeatures)
+    src_features = onmt.IO.collect_features(fields)
+    aeq(len(src_features), train.n_src_feats)
 
     return src_features
 
