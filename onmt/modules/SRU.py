@@ -389,7 +389,7 @@ class SRU_Compute(Function):
         k_ = k // 2 if self.bidirectional else k
         ncols = batch * d * bidir
         thread_per_block = min(512, ncols)
-        num_block = (ncols-1)/thread_per_block+1
+        num_block = (ncols-1) // thread_per_block+1
 
         init_ = x.new(ncols).zero_() if init is None else init
         size = (length, batch, d*bidir) if x.dim() == 3 else (batch, d*bidir)
@@ -438,7 +438,7 @@ class SRU_Compute(Function):
         k_ = k//2 if self.bidirectional else k
         ncols = batch*d*bidir
         thread_per_block = min(512, ncols)
-        num_block = (ncols-1)/thread_per_block+1
+        num_block = (ncols-1) // thread_per_block+1
 
         init_ = x.new(ncols).zero_() if init is None else init
         grad_u = u.new(*u.size())
