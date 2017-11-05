@@ -22,31 +22,6 @@ Federal Master Trainer and Senior Instructor of the Italian Federation of Aerobi
 &quot; Two soldiers came up to me and told me that if I refuse to sleep with them , they will kill me . They beat me and ripped my clothes .
 ```
 
-After running the preprocessing, the following files are generated:
-
-* `demo.src.dict`: Dictionary of source vocab to index mappings.
-* `demo.tgt.dict`: Dictionary of target vocab to index mappings.
-* `demo.train.pt`: serialized PyTorch file containing vocabulary, training and validation data
-
-The `*.dict` files are needed to check or reuse the vocabularies. These files are simple human-readable dictionaries.
-
-```text
-$ head -n 10 data/demo.src.dict
-<blank> 1
-<unk> 2
-<s> 3
-</s> 4
-It 5
-is 6
-not 7
-acceptable 8
-that 9
-, 10
-with 11
-```
-
-Internally the system never touches the words themselves, but uses these indices.
-
 ## Step 2: Train the model
 
 ```bash
