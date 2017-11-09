@@ -6,14 +6,14 @@ ONMT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
 #======= EXPERIMENT SETUP ======
 # Activate python environment if needed
-# source ~/.bashrc
+source ~/.bashrc
 # source activate py3
 
 # update these variables
 NAME="run1"
-OUT="./onmt-runs"
+OUT="onmt-runs/$NAME"
 
-DATA=""
+DATA="$ONMT/onmt-runs/data"
 TRAIN_SRC=$DATA/*train.src
 TRAIN_TGT=$DATA/*train.tgt
 VALID_SRC=$DATA/*dev.src
@@ -22,7 +22,7 @@ TEST_SRC=$DATA/*test.src
 TEST_TGT=$DATA/*test.tgt
 
 BPE="" # default
-BPE="src+tgt" # src, tgt, src+tgt
+BPE="src" # src, tgt, src+tgt
 
 # applicable only when BPE="src" or "src+tgt"
 BPE_SRC_OPS=10000
@@ -31,9 +31,31 @@ BPE_SRC_OPS=10000
 BPE_TGT_OPS=10000
 
 GPUARG="" # default
-GPUARG="-gpuid 0"
+GPUARG="0"
+
 
 #====== EXPERIMENT BEGIN ======
+
+# Check if input exists
+for f in $TRAIN_SRC $TRAIN_TGT $VALID_SRC $VALID_TGT $TEST_SRC $TEST_TGT; do
+    if [[ ! -f "$f" ]]; then
+        echo "Input File $f doesnt exist. Please fix the paths"
+        exit 1
+    fi
+done
+
+function lines_check {
+    l1=`wc -l $1`
+    l2=`wc -l $2`
+    if [[ $l1 != $l2 ]]; then
+        echo "ERROR: Record counts doesnt match between: $1 and $2"
+        exit 2
+    fi
+}
+lines_check $TRAIN_SRC $TRAIN_TGT
+lines_check $VALID_SRC $VALID_TGT
+lines_check $TEST_SRC $TEST_TGT
+
 
 echo "Output dir = $OUT"
 [ -d $OUT ] || mkdir -p $OUT
@@ -41,7 +63,10 @@ echo "Output dir = $OUT"
 [ -d $OUT/models ] || mkdir $OUT/models
 [ -d $OUT/test ] || mkdir -p  $OUT/test
 
+
+echo "Step 1a: Preprocess inputs"
 if [[ "$BPE" == *"src"* ]]; then
+    echo "BPE on source"
     # Here we could use more  monolingual data
     $ONMT/tools/learn_bpe.py -s $BPE_SRC_OPS < $TRAIN_SRC > $OUT/data/bpe-codes.src
 
@@ -49,29 +74,31 @@ if [[ "$BPE" == *"src"* ]]; then
     $ONMT/tools/apply_bpe.py -c $OUT/data/bpe-codes.src <  $VALID_SRC > $OUT/data/valid.src
     $ONMT/tools/apply_bpe.py -c $OUT/data/bpe-codes.src <  $TEST_SRC > $OUT/data/test.src
 else
-    ln -s $TRAIN_SRC $OUT/data/train.src
-    ln -s $VALID_SRC $OUT/data/valid.src
-    ln -s $TEST_SRC $OUT/data/test.src
+    ln -sf $TRAIN_SRC $OUT/data/train.src
+    ln -sf $VALID_SRC $OUT/data/valid.src
+    ln -sf $TEST_SRC $OUT/data/test.src
 fi
 
 
 if [[ "$BPE" == *"tgt"* ]]; then
+    echo "BPE on target"
     # Here we could use more  monolingual data
     $ONMT/tools/learn_bpe.py -s $BPE_SRC_OPS < $TRAIN_TGT > $OUT/data/bpe-codes.tgt
 
     $ONMT/tools/apply_bpe.py -c $OUT/data/bpe-codes.tgt <  $TRAIN_TGT > $OUT/data/train.tgt
     $ONMT/tools/apply_bpe.py -c $OUT/data/bpe-codes.tgt <  $VALID_TGT > $OUT/data/valid.tgt
-    $ONMT/tools/apply_bpe.py -c $OUT/data/bpe-codes.tgt <  $TEST_TGT > $OUT/data/test.tgt
+    #$ONMT/tools/apply_bpe.py -c $OUT/data/bpe-codes.tgt <  $TEST_TGT > $OUT/data/test.tgt
+    # We dont touch the test References, No BPE on them!
+    ln -sf $TEST_TGT $OUT/data/test.tgt
 else
-    ln -s $TRAIN_TGT $OUT/data/train.tgt
-    ln -s $VALID_TGT $OUT/data/valid.tgt
-    ln -s $TEST_TGT $OUT/data/test.tgt
+    ln -sf $TRAIN_TGT $OUT/data/train.tgt
+    ln -sf $VALID_TGT $OUT/data/valid.tgt
+    ln -sf $TEST_TGT $OUT/data/test.tgt
 fi
 
 
-# Disable training
 #: <<EOF
-echo "Step1: preprocess"
+echo "Step 1b: Preprocess"
 python $ONMT/preprocess.py \
     -train_src $OUT/data/train.src \
     -train_tgt $OUT/data/train.tgt \
@@ -79,32 +106,58 @@ python $ONMT/preprocess.py \
     -valid_tgt $OUT/data/valid.tgt \
     -save_data $OUT/data/processed
 
-echo "Step2: Train"
-python $ONMT/train.py -data $OUT/data/processed -save_model $OUT/models/$NAME "$GPUARG"
+
+echo "Step 2: Train"
+GPU_OPTS=""
+if [[ ! -z $GPUARG ]]; then
+    GPU_OPTS="-gpuid $GPUARG"
+fi
+CMD="python $ONMT/train.py -data $OUT/data/processed -save_model $OUT/models/$NAME $GPU_OPTS"
+echo "Training command :: $CMD"
+eval "$CMD"
 
 #EOF
 
 # select a model with high accuracy and low perplexity
-# TODO: currently using linear scale, maybe not the best
+# TODO: currently using linear scale, maybe not be the best
 model=`ls $OUT/models/*.pt| awk -F '_' 'BEGIN{maxv=-1000000} {score=$(NF-3)-$(NF-1); if (score > maxv) {maxv=score; max=$0}}  END{ print max}'`
 echo "Chosen Model = $model"
+if [[ -z "$model" ]]; then
+    echo "Model not found. Looked in $OUT/models/"
+    exit 1
+fi
+
+GPU_OPTS=""
+if [ ! -z $GPUARG ]; then
+    GPU_OPTS="-gpu $GPUARG"
+fi
 
 echo "Step 3a: Translate Test"
-python $ONMT/translate.py -model $model -src $TEST_SRC -output $OUT/test/test.out  -replace_unk  -verbose "$GPUARG" > $OUT/test/test.log
+python $ONMT/translate.py -model $model \
+    -src $OUT/data/test.src \
+    -output $OUT/test/test.out \
+    -replace_unk  -verbose $GPU_OPTS > $OUT/test/test.log
 
 echo "Step 3b: Translate Dev"
-python $ONMT/translate.py -model $model -src $DEV_SRC -output $OUT/test/dev.out  -replace_unk -verbose "$GPUARG" > $OUT/test/dev.log
+python $ONMT/translate.py -model $model \
+    -src $OUT/data/valid.src \
+    -output $OUT/test/valid.out \
+    -replace_unk -verbose $GPU_OPTS > $OUT/test/valid.log
 
 if [[ "$BPE" == *"tgt"* ]]; then
-    echo "ERROR:: BPE undo for target is pending. BLEU is incorrect"
+    echo "BPE decoding/detokenising target to match with references"
+    mv $OUT/test/test.out{,.bpe}
+    mv $OUT/test/valid.out{,.bpe} 
+    cat $OUT/test/valid.out.bpe | sed -E 's/(@@ )|(@@ ?$)//g' > $OUT/test/valid.out
+    cat $OUT/test/test.out.bpe | sed -E 's/(@@ )|(@@ ?$)//g' > $OUT/test/test.out
 fi
 
 echo "Step 4a: Evaluate Test"
-$ONMT/tools/multi-bleu-detok.perl $TEST_TGT < $OUT/test/test.out > $OUT/test/test.tc.bleu
-$ONMT/tools/multi-bleu-detok.perl -lc $TEST_TGT < $OUT/test/test.out > $OUT/test/test.lc.bleu
+$ONMT/tools/multi-bleu-detok.perl $OUT/data/test.tgt < $OUT/test/test.out > $OUT/test/test.tc.bleu
+$ONMT/tools/multi-bleu-detok.perl -lc $OUT/data/test.tgt < $OUT/test/test.out > $OUT/test/test.lc.bleu
 
 echo "Step 4b: Evaluate Dev"
-$ONMT/tools/multi-bleu-detok.perl $DEV_TGT < $OUT/test/dev.out > $OUT/test/dev.tc.bleu
-$ONMT/tools/multi-bleu-detok.perl -lc $DEV_TGT < $OUT/test/dev.out > $OUT/test/dev.lc.bleu
+$ONMT/tools/multi-bleu-detok.perl $OUT/data/valid.tgt < $OUT/test/valid.out > $OUT/test/valid.tc.bleu
+$ONMT/tools/multi-bleu-detok.perl -lc $OUT/data/valid.tgt < $OUT/test/valid.out > $OUT/test/valid.lc.bleu
 
 #===== EXPERIMENT END ======
