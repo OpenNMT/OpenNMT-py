@@ -29,11 +29,11 @@ torchtext.vocab.Vocab.__getstate__ = __getstate__
 torchtext.vocab.Vocab.__setstate__ = __setstate__
 
 
-def load_fields(vocab):
+def load_fields(vocab, data_type="text"):
     vocab = dict(vocab)
     n_src_features = len(collect_features(vocab, 'src'))
     n_tgt_features = len(collect_features(vocab, 'tgt'))
-    fields = get_fields(n_src_features, n_tgt_features)
+    fields = get_fields(data_type, n_src_features, n_tgt_features)
     for k, v in vocab.items():
         # Hack. Can't pickle defaultdict :(
         v.stoi = defaultdict(lambda: 0, v.stoi)
@@ -498,46 +498,4 @@ class ONMTDataset(torchtext.data.Dataset):
                     scores[:, b, ti] += scores[:, b, offset + i]
                     scores[:, b, offset + i].fill_(1e-20)
         return scores
-
-    @staticmethod
-    def load_fields(vocab, data_type='text'):
-        vocab = dict(vocab)
-        fields = ONMTDataset.get_fields(
-            len(ONMTDataset.collect_features(vocab)),
-            data_type=data_type)
-        for k, v in vocab.items():
-            # Hack. Can't pickle defaultdict :(
-            v.stoi = defaultdict(lambda: 0, v.stoi)
-            fields[k].vocab = v
-        return fields
-
-    @staticmethod
-    def save_vocab(fields):
-        vocab = []
-        for k, f in fields.items():
-            if 'vocab' in f.__dict__:
-                f.vocab.stoi = dict(f.vocab.stoi)
-                vocab.append((k, f.vocab))
-        return vocab
-
-    @staticmethod
-    def collect_features(fields, side="src"):
-        assert side in ["src", "tgt"]
-        feats = []
-        for j in count():
-            key = side + "_feat_" + str(j)
-            if key not in fields:
-                break
-            feats.append(key)
-        return feats
-
-    @staticmethod
-    def collect_feature_dicts(fields):
-        feature_dicts = []
-        for j in count():
-            key = "src_feat_" + str(j)
-            if key not in fields:
-                break
-            feature_dicts.append(fields[key].vocab)
-        return feature_dicts
 
