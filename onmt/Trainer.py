@@ -193,7 +193,7 @@ class Trainer(object):
         checkpoint = {
             'model': model_state_dict,
             'generator': generator_state_dict,
-            'vocab': onmt.IO.ONMTDataset.save_vocab(fields),
+            'vocab': onmt.IO.save_vocab(fields),
             'opt': opt,
             'epoch': epoch,
             'optim': self.optim

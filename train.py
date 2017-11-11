@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from __future__ import division
 
 import os
@@ -14,7 +16,9 @@ import onmt.modules
 from onmt.Utils import aeq, use_gpu
 import opts
 
-parser = argparse.ArgumentParser(description='train.py')
+parser = argparse.ArgumentParser(
+    description='train.py',
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
 # opts.py
 opts.add_md_help_argument(parser)
@@ -205,7 +209,7 @@ def load_fields(train, valid, checkpoint, model_type):
 
     if opt.train_from:
         print('Loading vocab from checkpoint at %s.' % opt.train_from)
-        fields = onmt.IO.ONMTDataset.load_fields(checkpoint['vocab'])
+        fields = onmt.IO.load_fields(checkpoint['vocab'])
 
     if 'src' in fields and 'tgt' in fields:
         print(' * vocabulary size. source = %d; target = %d' %
@@ -220,8 +224,8 @@ def load_fields(train, valid, checkpoint, model_type):
 def collect_features(train, fields):
     # TODO: account for target features.
     # Also, why does fields need to have the structure it does?
-    src_features = onmt.IO.ONMTDataset.collect_features(fields)
-    aeq(len(src_features), train.nfeatures)
+    src_features = onmt.IO.collect_features(fields)
+    aeq(len(src_features), train.n_src_feats)
 
     return src_features
 

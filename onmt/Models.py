@@ -242,7 +242,10 @@ class StdRNNDecoder(RNNDecoderBase):
         emb = self.embeddings(input)
 
         # Run the forward pass of the RNN.
-        rnn_output, hidden = self.rnn(emb, state.hidden)
+        if isinstance(self.rnn, nn.GRU):
+            rnn_output, hidden = self.rnn(emb, state.hidden[0])
+        else:
+            rnn_output, hidden = self.rnn(emb, state.hidden)
         # Result Check
         input_len, input_batch, _ = input.size()
         output_len, output_batch, _ = rnn_output.size()

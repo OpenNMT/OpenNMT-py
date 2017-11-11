@@ -29,8 +29,35 @@ torchtext.vocab.Vocab.__getstate__ = __getstate__
 torchtext.vocab.Vocab.__setstate__ = __setstate__
 
 
+def load_fields(vocab):
+    vocab = dict(vocab)
+    n_src_features = len(collect_features(vocab, 'src'))
+    n_tgt_features = len(collect_features(vocab, 'tgt'))
+    fields = get_fields(n_src_features, n_tgt_features)
+    for k, v in vocab.items():
+        # Hack. Can't pickle defaultdict :(
+        v.stoi = defaultdict(lambda: 0, v.stoi)
+        fields[k].vocab = v
+    return fields
+
+
+def collect_features(fields, side="src"):
+    assert side in ["src", "tgt"]
+    feats = []
+    for j in count():
+        key = side + "_feat_" + str(j)
+        if key not in fields:
+            break
+        feats.append(key)
+    return feats
+
+
 def extract_features(tokens):
-    "Given a list of token separate out words and features (if any)."
+    """
+    tokens: A list of tokens, where each token consists of a word,
+            optionally followed by u"￨"-delimited features.
+    returns: A sequence of words, A sequence of features, and
+    """
     if not tokens:
         return [], [], -1
     split_tokens = [token.split(u"￨") for token in tokens]
@@ -42,6 +69,26 @@ def extract_features(tokens):
     words = words_and_features[0]
     features = words_and_features[1:]
     return words, features, token_size - 1
+
+
+def read_corpus_file(path, truncate, side):
+    """
+    path: location of a src or tgt file
+    truncate: maximum sequence length (0 for unlimited)
+    yields: (word, features, nfeat) triples for each line
+    """
+    with codecs.open(path, "r", "utf-8") as corpus_file:
+        for i, line in enumerate(corpus_file):
+            line = line.split()
+            if truncate:
+                line = line[:truncate]
+            words, feats, n_feats = extract_features(line)
+            example_dict = {side: words, "indices": i}
+            if feats:
+                prefix = side + "_feat_"
+                example_dict.update((prefix + str(j), f)
+                                    for j, f in enumerate(feats))
+            yield example_dict, n_feats
 
 
 def merge_vocabs(vocabs, vocab_size=None):
@@ -85,12 +132,126 @@ def make_features(batch, side):
         return torch.cat([level.unsqueeze(2) for level in levels], 2)
 
 
+def save_vocab(fields):
+    vocab = []
+    for k, f in fields.items():
+        if 'vocab' in f.__dict__:
+            f.vocab.stoi = dict(f.vocab.stoi)
+            vocab.append((k, f.vocab))
+    return vocab
+
+
+def collect_feature_dicts(fields, side):
+    assert side in ['src', 'tgt']
+    feature_dicts = []
+    for j in count():
+        key = side + "_feat_" + str(j)
+        if key not in fields:
+            break
+        feature_dicts.append(fields[key].vocab)
+    return feature_dicts
+
+
+def get_fields(n_src_features, n_tgt_features):
+    """
+    n_src_features: the number of source features to create Field objects for.
+    n_tgt_features: the number of target features to create Field objects for.
+    returns: A dictionary whose keys are strings and whose values are the
+            corresponding Field objects.
+    """
+    fields = {}
+    fields["src"] = torchtext.data.Field(
+        pad_token=PAD_WORD,
+        include_lengths=True)
+
+    # fields = [("src_img", torchtext.data.Field(
+    #     include_lengths=True))]
+
+    for j in range(n_src_features):
+        fields["src_feat_"+str(j)] = \
+            torchtext.data.Field(pad_token=PAD_WORD)
+
+    fields["tgt"] = torchtext.data.Field(
+        init_token=BOS_WORD, eos_token=EOS_WORD,
+        pad_token=PAD_WORD)
+
+    for j in range(n_tgt_features):
+        fields["tgt_feat_"+str(j)] = \
+            torchtext.data.Field(init_token=BOS_WORD, eos_token=EOS_WORD,
+                                 pad_token=PAD_WORD)
+
+    def make_src(data, _):
+        src_size = max([t.size(0) for t in data])
+        src_vocab_size = max([t.max() for t in data]) + 1
+        alignment = torch.zeros(src_size, len(data), src_vocab_size)
+        for i, sent in enumerate(data):
+            for j, t in enumerate(sent):
+                alignment[j, i, t] = 1
+        return alignment
+
+    fields["src_map"] = torchtext.data.Field(
+        use_vocab=False, tensor_type=torch.FloatTensor,
+        postprocessing=make_src, sequential=False)
+
+    def make_tgt(data, _):
+        tgt_size = max([t.size(0) for t in data])
+        alignment = torch.zeros(tgt_size, len(data)).long()
+        for i, sent in enumerate(data):
+            alignment[:sent.size(0), i] = sent
+        return alignment
+
+    fields["alignment"] = torchtext.data.Field(
+        use_vocab=False, tensor_type=torch.LongTensor,
+        postprocessing=make_tgt, sequential=False)
+
+    fields["indices"] = torchtext.data.Field(
+        use_vocab=False, tensor_type=torch.LongTensor,
+        sequential=False)
+
+    return fields
+
+
+def build_vocab(train, opt):
+    """
+    train: an ONMTDataset
+    """
+    fields = train.fields
+    fields["src"].build_vocab(train, max_size=opt.src_vocab_size,
+                              min_freq=opt.src_words_min_frequency)
+    for j in range(train.n_src_feats):
+        fields["src_feat_" + str(j)].build_vocab(train)
+    fields["tgt"].build_vocab(train, max_size=opt.tgt_vocab_size,
+                              min_freq=opt.tgt_words_min_frequency)
+    for j in range(train.n_tgt_feats):
+        fields["tgt_feat_" + str(j)].build_vocab(train)
+
+    # Merge the input and output vocabularies.
+    if opt.share_vocab:
+        # `tgt_vocab_size` is ignored when sharing vocabularies
+        merged_vocab = merge_vocabs(
+            [fields["src"].vocab, fields["tgt"].vocab],
+            vocab_size=opt.src_vocab_size)
+        fields["src"].vocab = merged_vocab
+        fields["tgt"].vocab = merged_vocab
+
+
 def join_dicts(*args):
     """
     args: dictionaries with disjoint keys
     returns: a single dictionary that has the union of these keys
     """
     return dict(chain(*[d.items() for d in args]))
+
+
+def peek(seq):
+    """
+    sequence: an iterator
+    returns: the first thing returned by calling next() on the iterator
+        and an iterator created by re-chaining that value to the beginning
+        of the iterator.
+    """
+    first = next(seq)
+    return first, chain([first], seq)
 
 
 class OrderedIterator(torchtext.data.Iterator):
@@ -108,7 +269,13 @@ class OrderedIterator(torchtext.data.Iterator):
 
 
 class ONMTDataset(torchtext.data.Dataset):
-    """Defines a dataset for machine translation."""
+    """
+    Defines a dataset for machine translation.
+    An ONMTDataset is a collection that supports iteration over its
+    examples. The parent class supports indexing as well, but future
+    developments here may make that difficult (lazy iteration over
+    examples because of large datasets, for example).
+    """
 
     @staticmethod
     def sort_key(ex):
@@ -120,49 +287,65 @@ class ONMTDataset(torchtext.data.Dataset):
         else:
             return 0
 
-    def __init__(self, src_path, tgt_path, fields, opt, **kwargs):
+    def __init__(self, data_type, src_path, tgt_path, fields,
+                 src_seq_length=0, tgt_seq_length=0,
+                 src_seq_length_trunc=0, tgt_seq_length_trunc=0,
+                 use_filter_pred=True, dynamic_dict=True,
+                 src_img_dir=None, **kwargs):
         """
-        Create a TranslationDataset given paths and fields.
+        Create a translation dataset given paths and fields.
 
         src_path: location of source-side data
-        tgt_path: location of target-side data or None. If it exists, it
-                  source and target data must be the same length.
-        fields:
-        """
-        if not hasattr(opt, 'data_type'):
-            if opt.src_img_dir != '':
-                self.data_type_ = 'img'
-            else:
-                self.data_type_ = 'text'
-        else:
-            self.data_type_ = opt.data_type
+        tgt_path: location of target-side data or None. If should be the
+            same length as the source-side data if it exists, but
+            at present this is not checked.
+        fields: a dictionary. keys are things like 'src', 'tgt', 'src_map',
+            and 'alignment'
+        src_img_dir: raises an error if not None because images are not
+            supported yet.
 
-        if self.data_type_ == "text":
+        Initializes an ONMTDataset object with the following attributes:
+        self.examples (might be a generator, might be a list, hard to say):
+            A sequence of torchtext Example objects.
+        self.fields (dict):
+            A dictionary associating str keys with Field objects. Does not
+            necessarily have the same keys as the input fields.
+
+        A dataset basically supports iteration over all the examples it
+        contains.
+        """
+
+        self.data_type = data_type
+
+        if self.data_type == "text":
+            # self.src_vocabs: mutated in dynamic_dict, used in
+            # collapse_copy_scores and in Translator.py
             self.src_vocabs = []
-            src_truncate = 0 if opt is None else opt.src_seq_length_trunc
-            src_point = next(self._read_corpus_file(src_path, src_truncate))
-            self.nfeatures = src_point[2]
-            src_data = self._read_corpus_file(src_path, src_truncate)
-            src_examples = self._construct_examples(src_data, "src")
-        elif self.data_type_ == "img":
-            # TODO finish this.
-            src_img_dir = opt.src_img_dir
+            src_truncate = src_seq_length_trunc
+
+            src_examples = read_corpus_file(src_path, src_truncate, "src")
+            (_, src_feats), src_examples = peek(src_examples)
+            src_examples = (ex for ex, nfeats in src_examples)
+            self.n_src_feats = src_feats
+        elif self.data_type == "img":
             assert os.path.exists(src_img_dir), ('opt.src_img_dir must be set a valid'
                                                   ' directory if data_type is img')
             load_image_libs()
 
             src_data = self._read_img_file(src_path, src_img_dir)
             src_examples = self._construct_img_examples(src_data, "src")
-            
-            self.nfeatures = 0
+            self.n_src_feats = 0
 
+        # if tgt_path exists, then we need to do the same thing as we did
+        # for the source data
         if tgt_path is not None:
-            tgt_truncate = 0 if opt is None else opt.tgt_seq_length_trunc
-            tgt_data = self._read_corpus_file(tgt_path, tgt_truncate)
-            # assert len(src_data) == len(tgt_data), \
-            #     "Len src and tgt do not match"
-            tgt_examples = self._construct_examples(tgt_data, "tgt")
+            tgt_truncate = tgt_seq_length_trunc
+            tgt_examples = read_corpus_file(tgt_path, tgt_truncate, "tgt")
+            (_, tgt_feats), tgt_examples = peek(tgt_examples)
+            tgt_examples = (ex for ex, nfeats in tgt_examples)
+            self.n_tgt_feats = tgt_feats
         else:
+            self.n_tgt_feats = 0
             tgt_examples = None
 
         # examples: one for each src line or (src, tgt) line pair.
@@ -175,46 +358,28 @@ class ONMTDataset(torchtext.data.Dataset):
         else:
             examples = src_examples
 
-        def dynamic_dict(examples):
-            for example in examples:
-                src = example["src"]
-                src_vocab = torchtext.vocab.Vocab(Counter(src))
-                self.src_vocabs.append(src_vocab)
-                # mapping source tokens to indices in the dynamic dict
-                src_map = torch.LongTensor([src_vocab.stoi[w] for w in src])
-                example["src_map"] = src_map
-
-                if "tgt" in example:
-                    tgt = example["tgt"]
-                    mask = torch.LongTensor(
-                            [0] + [src_vocab.stoi[w] for w in tgt] + [0])
-                    example["alignment"] = mask
-                yield example
-
-        if opt is None or opt.dynamic_dict:
-            examples = dynamic_dict(examples)
+        if dynamic_dict:
+            examples = self.dynamic_dict(examples)
 
         # Peek at the first to see which fields are used.
-        ex = next(examples)
+        ex, examples = peek(examples)
         keys = ex.keys()
-        fields = [(k, fields[k]) if k in fields else (k, None)
-                  for k in (list(keys) + ["indices"])]
 
-        def construct_final(examples):
-            for i, ex in enumerate(examples):
-                yield self._construct_example_fromlist(
-                    [ex[k] for k in keys] + [i],
-                    fields)
+        fields = [(k, fields[k]) if k in fields else (k, None)
+                  for k in keys]
+        example_values = ([ex[k] for k in keys] for ex in examples)
+        out_examples = (torchtext.data.Example.fromlist(ex_values, fields)
+                        for ex_values in example_values)
 
         def filter_pred(example):
-            return (not hasattr(example, 'src') or 0 < len(example.src) <= opt.src_seq_length) \
-                and (not hasattr(example, 'tgt') or 0 < len(example.tgt) <= opt.tgt_seq_length)
+            return (not hasattr(example, 'src') or 0 < len(example.src) <= src_seq_length) \
+                and (not hasattr(example, 'tgt') or 0 < len(example.tgt) <= tgt_seq_length)
 
         super(ONMTDataset, self).__init__(
-            construct_final(chain([ex], examples)),
+            out_examples,
             fields,
-            filter_pred if opt is not None
-            else None)
+            filter_pred if use_filter_pred else None
+        )
 
     def _construct_example_fromlist(self, data, fields):
         ex = torchtext.data.Example()
@@ -272,6 +437,22 @@ class ONMTDataset(torchtext.data.Dataset):
                                     for j, f in enumerate(feats))
             yield example_dict
 
+    def dynamic_dict(self, examples):
+        for example in examples:
+            src = example["src"]
+            src_vocab = torchtext.vocab.Vocab(Counter(src))
+            self.src_vocabs.append(src_vocab)
+            # mapping source tokens to indices in the dynamic dict
+            src_map = torch.LongTensor([src_vocab.stoi[w] for w in src])
+            example["src_map"] = src_map
+
+            if "tgt" in example:
+                tgt = example["tgt"]
+                mask = torch.LongTensor(
+                        [0] + [src_vocab.stoi[w] for w in tgt] + [0])
+                example["alignment"] = mask
+            yield example
+
     def _construct_img_examples(self, items, side):
         for img_path,img_data in items:
             example_dict = {side+'_img': img_data, side+'_path': img_path}
@@ -288,7 +469,8 @@ class ONMTDataset(torchtext.data.Dataset):
         return super(ONMTDataset, self).__reduce_ex__()
 
     def collapse_copy_scores(self, scores, batch, tgt_vocab):
-        """Given scores from an expanded dictionary
+        """
+        Given scores from an expanded dictionary
         corresponeding to a batch, sums together copies,
         with a dictionary word when it is ambigious.
         """

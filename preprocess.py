@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import argparse
@@ -8,7 +9,9 @@ import onmt
 import onmt.IO
 import opts
 
-parser = argparse.ArgumentParser(description='preprocess.py')
+parser = argparse.ArgumentParser(
+    description='preprocess.py',
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 opts.add_md_help_argument(parser)
 
 
@@ -50,27 +53,41 @@ torch.manual_seed(opt.seed)
 
 
 def main():
+    print('Preparing training ...')
     if opt.data_type == 'text':
-        print('Preparing training ...')
         with codecs.open(opt.train_src, "r", "utf-8") as src_file:
             src_line = src_file.readline().strip().split()
-            _, _, nFeatures = onmt.IO.extract_features(src_line)
-
-        fields = onmt.IO.ONMTDataset.get_fields(nFeatures)
+            _, _, n_src_features = onmt.IO.extract_features(src_line)
     elif opt.data_type == 'img':
-        fields = onmt.IO.ONMTDataset.get_fields(data_type='img')
+        n_src_features = 0
+
+    with codecs.open(opt.train_tgt, "r", "utf-8") as tgt_file:
+        tgt_line = tgt_file.readline().strip().split()
+        _, _, n_tgt_features = onmt.IO.extract_features(tgt_line)
+
+    fields = onmt.IO.get_fields(n_src_features, n_tgt_features, data_type=opt.data_type)
 
     print("Building Training...")
-    train = onmt.IO.ONMTDataset(opt.train_src, opt.train_tgt, fields, opt)
+    train = onmt.IO.ONMTDataset(
+        opt.train_src, opt.train_tgt, fields,
+        opt.src_seq_length, opt.tgt_seq_length,
+        src_seq_length_trunc=opt.src_seq_length_trunc,
+        tgt_seq_length_trunc=opt.tgt_seq_length_trunc,
+        dynamic_dict=opt.dynamic_dict)
     print("Building Vocab...")
-    onmt.IO.ONMTDataset.build_vocab(train, opt)
+    onmt.IO.build_vocab(train, opt)
 
     print("Building Valid...")
-    valid = onmt.IO.ONMTDataset(opt.valid_src, opt.valid_tgt, fields, opt)
+    valid = onmt.IO.ONMTDataset(
+        opt.valid_src, opt.valid_tgt, fields,
+        opt.src_seq_length, opt.tgt_seq_length,
+        src_seq_length_trunc=opt.src_seq_length_trunc,
+        tgt_seq_length_trunc=opt.tgt_seq_length_trunc,
+        dynamic_dict=opt.dynamic_dict)
     print("Saving train/valid/fields")
 
     # Can't save fields, so remove/reconstruct at training time.
-    torch.save(onmt.IO.ONMTDataset.save_vocab(fields),
+    torch.save(onmt.IO.save_vocab(fields),
                open(opt.save_data + '.vocab.pt', 'wb'))
     train.fields = []
     valid.fields = []

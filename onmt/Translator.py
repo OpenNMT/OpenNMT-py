@@ -13,14 +13,10 @@ class Translator(object):
     def __init__(self, opt, dummy_opt={}):
         # Add in default model arguments, possibly added since training.
         self.opt = opt
-        if opt.src_img_dir != '':
-            data_type = 'img'
-        else:
-            data_type = 'text'
         checkpoint = torch.load(opt.model,
                                 map_location=lambda storage, loc: storage)
         self.fields = onmt.IO.ONMTDataset.load_fields(checkpoint['vocab'],
-                                                      data_type=data_type)
+                                                      data_type=opt.data_type)
 
         model_opt = checkpoint['opt']
         for arg in dummy_opt:
