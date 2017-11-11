@@ -128,7 +128,6 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
                                          feature_dicts)
         encoder = make_encoder(model_opt, src_embeddings)
     else:
-        print (model_opt)
         encoder = ImageEncoder(model_opt.enc_layers,
                                model_opt.brnn,
                                model_opt.rnn_size,
