@@ -99,7 +99,8 @@ def main():
                     words = get_src_words(
                         src_sent, translator.fields["src"].vocab.itos)
                 else:
-                    words = ''
+                    index = batch.indices.data[0]
+                    words = test_data.dataset.examples[index].src_path
 
                 os.write(1, bytes('\nSENT %d: %s\n' %
                                   (sent_number, words), 'UTF-8'))

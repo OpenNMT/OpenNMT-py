@@ -2,6 +2,7 @@
 
 import os
 import codecs
+import six
 from collections import Counter, defaultdict
 from itertools import chain, count
 
@@ -151,7 +152,8 @@ class ONMTDataset(torchtext.data.Dataset):
             load_image_libs()
 
             src_data = self._read_img_file(src_path, src_img_dir)
-            src_examples = self._construct_img_examples(src_data, "src_img")
+            src_examples = self._construct_img_examples(src_data, "src")
+            
             self.nfeatures = 0
 
         if tgt_path is not None:
@@ -195,15 +197,12 @@ class ONMTDataset(torchtext.data.Dataset):
         # Peek at the first to see which fields are used.
         ex = next(examples)
         keys = ex.keys()
-        fields = [(k, fields[k])
+        fields = [(k, fields[k]) if k in fields else (k, None)
                   for k in (list(keys) + ["indices"])]
 
         def construct_final(examples):
             for i, ex in enumerate(examples):
-                a= torchtext.data.Example.fromlist(
-                    [ex[k] for k in keys] + [i],
-                    fields)
-                yield torchtext.data.Example.fromlist(
+                yield self._construct_example_fromlist(
                     [ex[k] for k in keys] + [i],
                     fields)
 
@@ -216,6 +215,17 @@ class ONMTDataset(torchtext.data.Dataset):
             fields,
             filter_pred if opt is not None
             else None)
+
+    def _construct_example_fromlist(self, data, fields):
+        ex = torchtext.data.Example()
+        for (name, field), val in zip(fields, data):
+            if field is not None:
+                if isinstance(val, six.string_types):
+                    val = val.rstrip('\n')
+                setattr(ex, name, field.preprocess(val))
+            else:
+                setattr(ex, name, val)
+        return ex
 
     def _read_corpus_file(self, path, truncate):
         """
@@ -244,13 +254,12 @@ class ONMTDataset(torchtext.data.Dataset):
                 img_path = os.path.join(src_img_dir, line.strip())
                 if not os.path.exists(img_path):
                     img_path = line
-                if not os.path.exists(img_path):
-                    continue
+                assert os.path.exists(img_path), 'img path %s not found'%(line.strip())
                 img = transforms.ToTensor()(Image.open(img_path))
                 if truncate:
                     if img.size(1) > truncate[0] or img.size(2) > truncate[1]:
                         continue
-                yield img
+                yield line.strip(),img
 
     def _construct_examples(self, lines, side):
         assert side in ["src", "tgt"]
@@ -263,9 +272,9 @@ class ONMTDataset(torchtext.data.Dataset):
                                     for j, f in enumerate(feats))
             yield example_dict
 
-    def _construct_img_examples(self, lines, side):
-        for line in lines:
-            example_dict = {side: line}
+    def _construct_img_examples(self, items, side):
+        for img_path,img_data in items:
+            example_dict = {side+'_img': img_data, side+'_path': img_path}
             yield example_dict
 
     def __getstate__(self):
