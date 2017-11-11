@@ -151,9 +151,9 @@ def collect_feature_dicts(fields, side):
         feature_dicts.append(fields[key].vocab)
     return feature_dicts
 
-
-def get_fields(n_src_features, n_tgt_features):
+def get_fields(data_type, n_src_features, n_tgt_features):
     """
+    data_type: type of the source input. Options are [text|img].
     n_src_features: the number of source features to create Field objects for.
     n_tgt_features: the number of target features to create Field objects for.
     returns: A dictionary whose keys are strings and whose values are the
@@ -164,8 +164,18 @@ def get_fields(n_src_features, n_tgt_features):
         pad_token=PAD_WORD,
         include_lengths=True)
 
-    # fields = [("src_img", torchtext.data.Field(
-    #     include_lengths=True))]
+    if data_type == 'img':
+        def make_img(data, _):
+            c = data[0].size(0)
+            h = max([t.size(1) for t in data])
+            w = max([t.size(2) for t in data])
+            imgs = torch.zeros(len(data), c, h, w)
+            for i, img in enumerate(data):
+                imgs[i, :, 0:img.size(1), 0:img.size(2)] = img
+            return imgs
+        fields["src_img"] = torchtext.data.Field(
+            use_vocab=False, tensor_type=torch.FloatTensor,
+            postprocessing=make_img, sequential=False)
 
     for j in range(n_src_features):
         fields["src_feat_"+str(j)] = \
@@ -216,8 +226,9 @@ def build_vocab(train, opt):
     train: an ONMTDataset
     """
     fields = train.fields
-    fields["src"].build_vocab(train, max_size=opt.src_vocab_size,
-                              min_freq=opt.src_words_min_frequency)
+    if "src" in fields:
+        fields["src"].build_vocab(train, max_size=opt.src_vocab_size,
+                                  min_freq=opt.src_words_min_frequency)
     for j in range(train.n_src_feats):
         fields["src_feat_" + str(j)].build_vocab(train)
     fields["tgt"].build_vocab(train, max_size=opt.tgt_vocab_size,
@@ -226,7 +237,7 @@ def build_vocab(train, opt):
         fields["tgt_feat_" + str(j)].build_vocab(train)
 
     # Merge the input and output vocabularies.
-    if opt.share_vocab:
+    if opt.share_vocab and "src" in fields:
         # `tgt_vocab_size` is ignored when sharing vocabularies
         merged_vocab = merge_vocabs(
             [fields["src"].vocab, fields["tgt"].vocab],
@@ -328,9 +339,11 @@ class ONMTDataset(torchtext.data.Dataset):
             src_examples = (ex for ex, nfeats in src_examples)
             self.n_src_feats = src_feats
         elif self.data_type == "img":
-            assert os.path.exists(src_img_dir), ('opt.src_img_dir must be set a valid'
-                                                  ' directory if data_type is img')
-            load_image_libs()
+            assert (src_img_dir is not None) and os.path.exists(src_img_dir), \
+                   'src_img_dir must be set a valid directory if data_type is img'
+            global Image, transforms
+            from PIL import Image
+            from torchvision import transforms
 
             src_data = self._read_img_file(src_path, src_img_dir)
             src_examples = self._construct_img_examples(src_data, "src")
@@ -528,88 +541,3 @@ class ONMTDataset(torchtext.data.Dataset):
             feature_dicts.append(fields[key].vocab)
         return feature_dicts
 
-    @staticmethod
-    def get_fields(nFeatures=0, data_type='text'):
-        fields = {}
-        fields["src"] = torchtext.data.Field(
-            pad_token=PAD_WORD,
-            include_lengths=True)
-
-        def make_img(data, _):
-            c = data[0].size(0)
-            h = max([t.size(1) for t in data])
-            w = max([t.size(2) for t in data])
-            imgs = torch.zeros(len(data), c, h, w)
-            for i, img in enumerate(data):
-                imgs[i, :, 0:img.size(1), 0:img.size(2)] = img
-            return imgs
-
-        if data_type == 'img':
-            fields["src_img"] = torchtext.data.Field(
-                use_vocab=False, tensor_type=torch.FloatTensor,
-                postprocessing=make_img, sequential=False)
-
-        for j in range(nFeatures):
-            fields["src_feat_"+str(j)] = \
-                torchtext.data.Field(pad_token=PAD_WORD)
-
-        fields["tgt"] = torchtext.data.Field(
-            init_token=BOS_WORD, eos_token=EOS_WORD,
-            pad_token=PAD_WORD)
-
-        def make_src(data, _):
-            src_size = max([t.size(0) for t in data])
-            src_vocab_size = max([t.max() for t in data]) + 1
-            alignment = torch.zeros(src_size, len(data), src_vocab_size)
-            for i, sent in enumerate(data):
-                for j, t in enumerate(sent):
-                    alignment[j, i, t] = 1
-            return alignment
-
-        fields["src_map"] = torchtext.data.Field(
-            use_vocab=False, tensor_type=torch.FloatTensor,
-            postprocessing=make_src, sequential=False)
-
-        def make_tgt(data, _):
-            tgt_size = max([t.size(0) for t in data])
-            alignment = torch.zeros(tgt_size, len(data)).long()
-            for i, sent in enumerate(data):
-                alignment[:sent.size(0), i] = sent
-            return alignment
-
-        fields["alignment"] = torchtext.data.Field(
-            use_vocab=False, tensor_type=torch.LongTensor,
-            postprocessing=make_tgt, sequential=False)
-
-        fields["indices"] = torchtext.data.Field(
-            use_vocab=False, tensor_type=torch.LongTensor,
-            sequential=False)
-
-        return fields
-
-    @staticmethod
-    def build_vocab(train, opt):
-        fields = train.fields
-        if "src" in fields:
-            fields["src"].build_vocab(train, max_size=opt.src_vocab_size,
-                                      min_freq=opt.src_words_min_frequency)
-        for j in range(train.nfeatures):
-            fields["src_feat_" + str(j)].build_vocab(train)
-        fields["tgt"].build_vocab(train, max_size=opt.tgt_vocab_size,
-                                  min_freq=opt.tgt_words_min_frequency)
-
-        # Merge the input and output vocabularies.
-        if opt.share_vocab and "src" in fields:
-            # `tgt_vocab_size` is ignored when sharing vocabularies
-            merged_vocab = merge_vocabs(
-                [fields["src"].vocab, fields["tgt"].vocab],
-                vocab_size=opt.src_vocab_size)
-            fields["src"].vocab = merged_vocab
-            fields["tgt"].vocab = merged_vocab
-
-
-def load_image_libs():
-    "Conditional import of torch image libs."
-    global Image, transforms
-    from PIL import Image
-    from torchvision import transforms
