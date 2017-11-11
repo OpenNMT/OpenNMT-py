@@ -15,8 +15,8 @@ class Translator(object):
         self.opt = opt
         checkpoint = torch.load(opt.model,
                                 map_location=lambda storage, loc: storage)
-        self.fields = onmt.IO.ONMTDataset.load_fields(checkpoint['vocab'],
-                                                      data_type=opt.data_type)
+        self.fields = onmt.IO.load_fields(checkpoint['vocab'],
+                                                      data_type=opt.model_type)
 
         model_opt = checkpoint['opt']
         for arg in dummy_opt:

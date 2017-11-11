@@ -264,6 +264,17 @@ def peek(seq):
     first = next(seq)
     return first, chain([first], seq)
 
+def _construct_example_fromlist(data, fields):
+    ex = torchtext.data.Example()
+    for (name, field), val in zip(fields, data):
+        if field is not None:
+            if isinstance(val, six.string_types):
+                val = val.rstrip('\n')
+            setattr(ex, name, field.preprocess(val))
+        else:
+            setattr(ex, name, val)
+    return ex
+
 
 class OrderedIterator(torchtext.data.Iterator):
     def create_batches(self):
@@ -371,8 +382,9 @@ class ONMTDataset(torchtext.data.Dataset):
         else:
             examples = src_examples
 
-        if dynamic_dict:
-            examples = self.dynamic_dict(examples)
+        if self.data_type == "text":
+            if dynamic_dict:
+                examples = self.dynamic_dict(examples)
 
         # Peek at the first to see which fields are used.
         ex, examples = peek(examples)
@@ -381,7 +393,7 @@ class ONMTDataset(torchtext.data.Dataset):
         fields = [(k, fields[k]) if k in fields else (k, None)
                   for k in keys]
         example_values = ([ex[k] for k in keys] for ex in examples)
-        out_examples = (torchtext.data.Example.fromlist(ex_values, fields)
+        out_examples = (_construct_example_fromlist(ex_values, fields)
                         for ex_values in example_values)
 
         def filter_pred(example):
@@ -391,19 +403,8 @@ class ONMTDataset(torchtext.data.Dataset):
         super(ONMTDataset, self).__init__(
             out_examples,
             fields,
-            filter_pred if use_filter_pred else None
+            filter_pred if use_filter_pred else lambda x:True
         )
-
-    def _construct_example_fromlist(self, data, fields):
-        ex = torchtext.data.Example()
-        for (name, field), val in zip(fields, data):
-            if field is not None:
-                if isinstance(val, six.string_types):
-                    val = val.rstrip('\n')
-                setattr(ex, name, field.preprocess(val))
-            else:
-                setattr(ex, name, val)
-        return ex
 
     def _read_corpus_file(self, path, truncate):
         """
@@ -428,7 +429,7 @@ class ONMTDataset(torchtext.data.Dataset):
         returns: image for each line
         """
         with codecs.open(path, "r", "utf-8") as corpus_file:
-            for line in corpus_file:
+            for i,line in enumerate(corpus_file):
                 img_path = os.path.join(src_img_dir, line.strip())
                 if not os.path.exists(img_path):
                     img_path = line
@@ -437,7 +438,7 @@ class ONMTDataset(torchtext.data.Dataset):
                 if truncate:
                     if img.size(1) > truncate[0] or img.size(2) > truncate[1]:
                         continue
-                yield line.strip(),img
+                yield line.strip(),img,i
 
     def _construct_examples(self, lines, side):
         assert side in ["src", "tgt"]
@@ -467,8 +468,8 @@ class ONMTDataset(torchtext.data.Dataset):
             yield example
 
     def _construct_img_examples(self, items, side):
-        for img_path,img_data in items:
-            example_dict = {side+'_img': img_data, side+'_path': img_path}
+        for img_path,img_data,i in items:
+            example_dict = {side+'_img': img_data, side+'_path': img_path, 'indices':i}
             yield example_dict
 
     def __getstate__(self):

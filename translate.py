@@ -60,9 +60,9 @@ def main():
         import json
         translator.initBeamAccum()
 
-    data = onmt.IO.ONMTDataset(
+    data = onmt.IO.ONMTDataset(opt.model_type,
         opt.src, opt.tgt, translator.fields,
-        opt.data_type, use_filter_pred=False)
+        src_img_dir=opt.src_img_dir, use_filter_pred=False)
 
     test_data = onmt.IO.OrderedIterator(
         dataset=data, device=opt.gpu,
