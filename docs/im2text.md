@@ -35,14 +35,10 @@ python train.py -model_type img -data data/im2text/demo -save_model demo-model -
 3) Translate the images.
 
 ```
-th src/train.lua -phase test -gpu_id 1 -load_model -model_dir model \
--image_dir data/images -data_path data/test.txt \
--output_dir results \
--batch_size 2 -beam_size 5 \
--max_num_tokens 500 -max_image_width 800 -max_image_height 800
+python translate.py -model_type img -model demo-model_acc_x_ppl_x_e13.pt -src_img_dir data/im2text/images -src data/im2text/src-test.txt -output pred.txt -gpu 0 -verbose
 ```
 
-The above dataset is sampled from the [processed-im2latex-100k-dataset](http://lstm.seas.harvard.edu/latex/processed-im2latex-100k-dataset.tgz). We provide a trained model [[link]](http://lstm.seas.harvard.edu/latex/model_latest) on this dataset.
+The above dataset is sampled from the [processed-im2latex-100k-dataset](http://lstm.seas.harvard.edu/latex/py-processed-im2latex-100k-dataset.tgz). We provide a trained model [[link]](http://lstm.seas.harvard.edu/latex/py-model.pt) on this dataset.
 
 ## Data Format
 
