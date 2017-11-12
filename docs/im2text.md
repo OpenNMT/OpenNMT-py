@@ -42,9 +42,9 @@ The above dataset is sampled from the [processed-im2latex-100k-dataset](http://l
 
 ## Data Format
 
-* `-image_dir`: The directory containing the images. Since images of the same size can be batched together, we suggest padding images of similar sizes to the same size in order to facilitate training.
+* `-src_image_dir`: The directory containing the images. Since images of the same size can be batched together, we suggest padding images of similar sizes to the same size in order to facilitate training.
 
-* `-label_path`: The file storing the tokenized labels, one label per line. It shall look like:
+* `-train_tgt`: The file storing the tokenized labels, one label per line. It shall look like:
 ```
 <label0_token0> <label0_token1> ... <label0_tokenN0>
 <label1_token0> <label1_token1> ... <label1_tokenN1>
@@ -52,18 +52,10 @@ The above dataset is sampled from the [processed-im2latex-100k-dataset](http://l
 ...
 ```
 
-* `-data_path`: The file storing the image-label pairs. Each line starts with the path of the image (relative to `image_dir`), followed by the index of the label in `label_path` (index counts from 0). At test time, the label indexes can be omitted.
+* `-train_src`: The file storing the paths of the images (relative to `src_image_dir`).
 ```
-<image0_path> <label_index0>
-<image1_path> <label_index1>
-<image2_path> <label_index2>
+<image0_path>
+<image1_path>
+<image2_path>
 ...
 ```
-
-* `-vocab_file`: The vocabulary file. Each line corresponds to a token. The tokens not in `vocab_file` will be considered unknown (UNK).
-
-
-## Options
-
-For a complete set of options, run `th src/train.lua -h`.
-
