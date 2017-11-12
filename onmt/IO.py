@@ -151,6 +151,7 @@ def collect_feature_dicts(fields, side):
         feature_dicts.append(fields[key].vocab)
     return feature_dicts
 
+
 def get_fields(data_type, n_src_features, n_tgt_features):
     """
     data_type: type of the source input. Options are [text|img].
@@ -264,6 +265,7 @@ def peek(seq):
     first = next(seq)
     return first, chain([first], seq)
 
+
 def _construct_example_fromlist(data, fields):
     ex = torchtext.data.Example()
     for (name, field), val in zip(fields, data):
@@ -351,7 +353,7 @@ class ONMTDataset(torchtext.data.Dataset):
             self.n_src_feats = src_feats
         elif self.data_type == "img":
             assert (src_img_dir is not None) and os.path.exists(src_img_dir), \
-                   'src_img_dir must be set a valid directory if data_type is img'
+                   'src_img_dir must be a valid directory if data_type is img'
             global Image, transforms
             from PIL import Image
             from torchvision import transforms
@@ -397,13 +399,15 @@ class ONMTDataset(torchtext.data.Dataset):
                         for ex_values in example_values)
 
         def filter_pred(example):
-            return (not hasattr(example, 'src') or 0 < len(example.src) <= src_seq_length) \
-                and (not hasattr(example, 'tgt') or 0 < len(example.tgt) <= tgt_seq_length)
+            return (not hasattr(example, 'src')
+                    or 0 < len(example.src) <= src_seq_length) \
+               and (not hasattr(example, 'tgt')
+                    or 0 < len(example.tgt) <= tgt_seq_length)
 
         super(ONMTDataset, self).__init__(
             out_examples,
             fields,
-            filter_pred if use_filter_pred else lambda x:True
+            filter_pred if use_filter_pred else lambda x: True
         )
 
     def _read_corpus_file(self, path, truncate):
@@ -429,16 +433,17 @@ class ONMTDataset(torchtext.data.Dataset):
         returns: image for each line
         """
         with codecs.open(path, "r", "utf-8") as corpus_file:
-            for i,line in enumerate(corpus_file):
+            for i, line in enumerate(corpus_file):
                 img_path = os.path.join(src_img_dir, line.strip())
                 if not os.path.exists(img_path):
                     img_path = line
-                assert os.path.exists(img_path), 'img path %s not found'%(line.strip())
+                assert os.path.exists(img_path), \
+                    'img path %s not found' % (line.strip())
                 img = transforms.ToTensor()(Image.open(img_path))
                 if truncate:
                     if img.size(1) > truncate[0] or img.size(2) > truncate[1]:
                         continue
-                yield line.strip(),img,i
+                yield line.strip(), img, i
 
     def _construct_examples(self, lines, side):
         assert side in ["src", "tgt"]
@@ -468,8 +473,10 @@ class ONMTDataset(torchtext.data.Dataset):
             yield example
 
     def _construct_img_examples(self, items, side):
-        for img_path,img_data,i in items:
-            example_dict = {side+'_img': img_data, side+'_path': img_path, 'indices':i}
+        for img_path, img_data, i in items:
+            example_dict = {side+'_img': img_data,
+                            side+'_path': img_path,
+                            'indices': i}
             yield example_dict
 
     def __getstate__(self):
@@ -499,4 +506,3 @@ class ONMTDataset(torchtext.data.Dataset):
                     scores[:, b, ti] += scores[:, b, offset + i]
                     scores[:, b, offset + i].fill_(1e-20)
         return scores
-

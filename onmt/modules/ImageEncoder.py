@@ -3,6 +3,7 @@ import torch.nn.functional as F
 import torch
 from torch.autograd import Variable
 
+
 class ImageEncoder(nn.Module):
     """
     Encoder recurrent neural network for Images.

@@ -69,23 +69,23 @@ def main():
 
     print("Building Training...")
     train = onmt.IO.ONMTDataset(opt.data_type,
-        opt.train_src, opt.train_tgt, fields,
-        opt.src_seq_length, opt.tgt_seq_length,
-        src_seq_length_trunc=opt.src_seq_length_trunc,
-        tgt_seq_length_trunc=opt.tgt_seq_length_trunc,
-        dynamic_dict=opt.dynamic_dict,
-        src_img_dir=opt.src_img_dir)
+                                opt.train_src, opt.train_tgt, fields,
+                                opt.src_seq_length, opt.tgt_seq_length,
+                                src_seq_length_trunc=opt.src_seq_length_trunc,
+                                tgt_seq_length_trunc=opt.tgt_seq_length_trunc,
+                                dynamic_dict=opt.dynamic_dict,
+                                src_img_dir=opt.src_img_dir)
     print("Building Vocab...")
     onmt.IO.build_vocab(train, opt)
 
     print("Building Valid...")
     valid = onmt.IO.ONMTDataset(opt.data_type,
-        opt.valid_src, opt.valid_tgt, fields,
-        opt.src_seq_length, opt.tgt_seq_length,
-        src_seq_length_trunc=opt.src_seq_length_trunc,
-        tgt_seq_length_trunc=opt.tgt_seq_length_trunc,
-        dynamic_dict=opt.dynamic_dict,
-        src_img_dir=opt.src_img_dir)
+                                opt.valid_src, opt.valid_tgt, fields,
+                                opt.src_seq_length, opt.tgt_seq_length,
+                                src_seq_length_trunc=opt.src_seq_length_trunc,
+                                tgt_seq_length_trunc=opt.tgt_seq_length_trunc,
+                                dynamic_dict=opt.dynamic_dict,
+                                src_img_dir=opt.src_img_dir)
     print("Saving train/valid/fields")
 
     # Can't save fields, so remove/reconstruct at training time.

@@ -61,8 +61,9 @@ def main():
         translator.initBeamAccum()
 
     data = onmt.IO.ONMTDataset(opt.model_type,
-        opt.src, opt.tgt, translator.fields,
-        src_img_dir=opt.src_img_dir, use_filter_pred=False)
+                               opt.src, opt.tgt, translator.fields,
+                               src_img_dir=opt.src_img_dir,
+                               use_filter_pred=False)
 
     test_data = onmt.IO.OrderedIterator(
         dataset=data, device=opt.gpu,
@@ -87,7 +88,7 @@ def main():
         if hasattr(batch, 'src'):
             sents = src.split(1, dim=1)
         else:
-            sents = [torch.Tensor(1,1) for i in range(len(pred_scores))]
+            sents = [torch.Tensor(1, 1) for i in range(len(pred_scores))]
         z_batch = zip_longest(
                 pred_batch, gold_batch,
                 pred_scores, gold_scores,

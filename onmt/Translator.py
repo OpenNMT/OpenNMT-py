@@ -16,7 +16,7 @@ class Translator(object):
         checkpoint = torch.load(opt.model,
                                 map_location=lambda storage, loc: storage)
         self.fields = onmt.IO.load_fields(checkpoint['vocab'],
-                                                      data_type=opt.model_type)
+                                          data_type=opt.model_type)
 
         model_opt = checkpoint['opt']
         for arg in dummy_opt:
@@ -110,7 +110,6 @@ class Translator(object):
 
         # Repeat everything beam_size times.
         context = rvar(context.data)
-        #src = rvar(src.data)
         if hasattr(batch, 'src_map'):
             srcMap = rvar(batch.src_map.data)
         else:
@@ -227,11 +226,13 @@ class Translator(object):
             else:
                 src_vocab = None
             predBatch.append(
-                [self.buildTargetTokens(pred[b][n], src[:, b] if src is not None else None,
+                [self.buildTargetTokens(pred[b][n], src[:, b]
+                                        if src is not None else None,
                                         attn[b][n], src_vocab)
                  for n in range(self.opt.n_best)])
             if self.opt.tgt:
                 goldBatch.append(
-                    self.buildTargetTokens(tgt[1:, b], src[:, b] if src is not None else None,
+                    self.buildTargetTokens(tgt[1:, b], src[:, b]
+                                           if src is not None else None,
                                            None, None))
         return predBatch, goldBatch, predScore, goldScore, attn, src
