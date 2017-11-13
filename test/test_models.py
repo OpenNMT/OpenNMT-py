@@ -16,7 +16,6 @@ opts.train_opts(parser)
 
 # -data option is required, but not used in this test, so dummy.
 opt = parser.parse_known_args(['-data', 'dummy'])[0]
-print(opt)
 
 
 class TestModel(unittest.TestCase):
@@ -28,7 +27,7 @@ class TestModel(unittest.TestCase):
     # Helper to generate a vocabulary
 
     def get_vocab(self):
-        src = onmt.IO.get_fields(0, 0)["src"]
+        src = onmt.IO.get_fields("text", 0, 0)["src"]
         src.build_vocab([])
         return src.vocab
 

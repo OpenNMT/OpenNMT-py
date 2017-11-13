@@ -17,7 +17,6 @@ opt.train_src = 'data/src-train.txt'
 opt.train_tgt = 'data/tgt-train.txt'
 opt.valid_src = 'data/src-val.txt'
 opt.valid_tgt = 'data/tgt-val.txt'
-print(opt)
 
 
 class TestData(unittest.TestCase):
@@ -26,10 +25,10 @@ class TestData(unittest.TestCase):
         self.opt = opt
 
     def dataset_build(self, opt):
-        fields = onmt.IO.get_fields(0, 0)
+        fields = onmt.IO.get_fields("text", 0, 0)
 
         train = onmt.IO.ONMTDataset(
-            opt.train_src, opt.train_tgt, fields,
+            "text", opt.train_src, opt.train_tgt, fields,
             opt.src_seq_length, opt.tgt_seq_length,
             src_seq_length_trunc=opt.src_seq_length_trunc,
             tgt_seq_length_trunc=opt.tgt_seq_length_trunc,
@@ -38,7 +37,7 @@ class TestData(unittest.TestCase):
         onmt.IO.build_vocab(train, opt)
 
         onmt.IO.ONMTDataset(
-            opt.valid_src, opt.valid_tgt, fields,
+            "text", opt.valid_src, opt.valid_tgt, fields,
             opt.src_seq_length, opt.tgt_seq_length,
             src_seq_length_trunc=opt.src_seq_length_trunc,
             tgt_seq_length_trunc=opt.tgt_seq_length_trunc,
