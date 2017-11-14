@@ -197,11 +197,11 @@ class RNNDecoderBase(nn.Module):
         return h
 
     def init_decoder_state(self, src, context, enc_hidden):
-        if isinstance(enc_hidden, tuple):  # GRU
+        if isinstance(enc_hidden, tuple):  # LSTM
             return RNNDecoderState(context, self.hidden_size,
                                    tuple([self._fix_enc_hidden(enc_hidden[i])
                                          for i in range(len(enc_hidden))]))
-        else:  # LSTM
+        else:  # GRU
             return RNNDecoderState(context, self.hidden_size,
                                    self._fix_enc_hidden(enc_hidden))
 
