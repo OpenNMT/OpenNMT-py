@@ -117,7 +117,7 @@ def make_features(batch, side):
         A sequence of src/tgt tensors with optional feature tensors
         of size (len x batch).
     """
-    assert side in ['src', 'tgt', 'src_img']
+    assert side in ['src', 'tgt', 'src_img', 'src_audio']
     if isinstance(batch.__dict__[side], tuple):
         data = batch.__dict__[side][0]
     else:
@@ -127,6 +127,8 @@ def make_features(batch, side):
                       for k in batch.__dict__ if feat_start in k)
     levels = [data] + features
     if 'img' in side:
+        return levels[0]
+    elif 'audio' in side:
         return levels[0]
     else:
         return torch.cat([level.unsqueeze(2) for level in levels], 2)
@@ -154,7 +156,7 @@ def collect_feature_dicts(fields, side):
 
 def get_fields(data_type, n_src_features, n_tgt_features):
     """
-    data_type: type of the source input. Options are [text|img].
+    data_type: type of the source input. Options are [text|img|audio].
     n_src_features: the number of source features to create Field objects for.
     n_tgt_features: the number of target features to create Field objects for.
     returns: A dictionary whose keys are strings and whose values are the
@@ -177,6 +179,17 @@ def get_fields(data_type, n_src_features, n_tgt_features):
         fields["src_img"] = torchtext.data.Field(
             use_vocab=False, tensor_type=torch.FloatTensor,
             postprocessing=make_img, sequential=False)
+    elif data_type == 'audio':
+        def make_audio(data, _):
+            nfft = data[0].size(0)
+            t = max([t.size(1) for t in data])
+            sounds = torch.zeros(len(data), 1, nfft, t)
+            for i, spect in enumerate(data):
+                sounds[i, :, :, 0:spect.size(1)] = spect
+            return sounds
+        fields["src_audio"] = torchtext.data.Field(
+            use_vocab=False, tensor_type=torch.FloatTensor,
+            postprocessing=make_audio, sequential=False)
 
     for j in range(n_src_features):
         fields["src_feat_"+str(j)] = \
@@ -315,7 +328,9 @@ class ONMTDataset(torchtext.data.Dataset):
                  src_seq_length=0, tgt_seq_length=0,
                  src_seq_length_trunc=0, tgt_seq_length_trunc=0,
                  use_filter_pred=True, dynamic_dict=True,
-                 src_img_dir=None, **kwargs):
+                 src_img_dir=None, src_audio_dir=None, sample_rate=0,
+                 window_size=0, window_stride=0, window=None,
+                 normalize_audio=True, **kwargs):
         """
         Create a translation dataset given paths and fields.
 
@@ -325,8 +340,8 @@ class ONMTDataset(torchtext.data.Dataset):
             at present this is not checked.
         fields: a dictionary. keys are things like 'src', 'tgt', 'src_map',
             and 'alignment'
-        src_img_dir: raises an error if not None because images are not
-            supported yet.
+        src_img_dir: source image directory.
+        src_audio_dir: source audio directory.
 
         Initializes an ONMTDataset object with the following attributes:
         self.examples (might be a generator, might be a list, hard to say):
@@ -360,6 +375,24 @@ class ONMTDataset(torchtext.data.Dataset):
 
             src_data = self._read_img_file(src_path, src_img_dir)
             src_examples = self._construct_img_examples(src_data, "src")
+            self.n_src_feats = 0
+        elif self.data_type == "audio":
+            assert (src_audio_dir is not None) and \
+                   os.path.exists(src_audio_dir), \
+                   """src_audio_dir must be a valid directory
+                   if data_type is audio"""
+            global torchaudio, librosa, np
+            import torchaudio
+            import librosa
+            import numpy as np
+
+            self.sample_rate = sample_rate
+            self.window_size = window_size
+            self.window_stride = window_stride
+            self.window = window
+            self.normalize_audio = normalize_audio
+            src_data = self._read_audio_file(src_path, src_audio_dir)
+            src_examples = self._construct_audio_examples(src_data, "src")
             self.n_src_feats = 0
 
         # if tgt_path exists, then we need to do the same thing as we did
@@ -441,9 +474,51 @@ class ONMTDataset(torchtext.data.Dataset):
                     'img path %s not found' % (line.strip())
                 img = transforms.ToTensor()(Image.open(img_path))
                 if truncate:
-                    if img.size(1) > truncate[0] or img.size(2) > truncate[1]:
-                        continue
+                    assert False, 'truncate not implemented yet!'
                 yield line.strip(), img, i
+
+    def _read_audio_file(self, path, src_audio_dir, truncate=None):
+        """
+        path: location of a src file containing audio paths
+        src_audio_dir: location of source audio files
+        truncate: maximum audio length (0 for unlimited)
+
+        returns: image for each line
+        """
+        with codecs.open(path, "r", "utf-8") as corpus_file:
+            for i, line in enumerate(corpus_file):
+                audio_path = os.path.join(src_audio_dir, line.strip())
+                if not os.path.exists(audio_path):
+                    audio_path = line
+                assert os.path.exists(audio_path), \
+                    'audio path %s not found' % (line.strip())
+                sound, sample_rate = torchaudio.load(audio_path)
+                assert sample_rate == self.sample_rate, \
+                    'Sample rate of %s != -sample_rate (%d vs %d)' \
+                    % (audio_path, sample_rate, self.sample_rate)
+                sound = sound.numpy()
+                if len(sound.shape) > 1:
+                    if sound.shape[1] == 1:
+                        sound = sound.squeeze()
+                    else:
+                        sound = sound.mean(axis=1)  # average multiple channels
+                n_fft = int(sample_rate * self.window_size)
+                win_length = n_fft
+                hop_length = int(sample_rate * self.window_stride)
+                # STFT
+                D = librosa.stft(sound, n_fft=n_fft, hop_length=hop_length,
+                                 win_length=win_length, window=self.window)
+                spect, _ = librosa.magphase(D)
+                spect = np.log1p(spect)
+                spect = torch.FloatTensor(spect)
+                if self.normalize_audio:
+                    mean = spect.mean()
+                    std = spect.std()
+                    spect.add_(-mean)
+                    spect.div_(std)
+                if truncate:
+                    assert False, 'truncate not implemented yet!'
+                yield line.strip(), spect, i
 
     def _construct_examples(self, lines, side):
         assert side in ["src", "tgt"]
@@ -476,6 +551,13 @@ class ONMTDataset(torchtext.data.Dataset):
         for img_path, img_data, i in items:
             example_dict = {side+'_img': img_data,
                             side+'_path': img_path,
+                            'indices': i}
+            yield example_dict
+
+    def _construct_audio_examples(self, items, side):
+        for audio_path, audio_data, i in items:
+            example_dict = {side+'_audio': audio_data,
+                            side+'_path': audio_path,
                             'indices': i}
             yield example_dict
 

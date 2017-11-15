@@ -99,6 +99,9 @@ class Translator(object):
         elif hasattr(batch, 'src_img'):
             src = onmt.IO.make_features(batch, 'src_img')
             src_lengths = None
+        elif hasattr(batch, 'src_audio'):
+            src = onmt.IO.make_features(batch, 'src_audio')
+            src_lengths = None
         encStates, context = self.model.encoder(src, src_lengths)
         decStates = self.model.decoder.init_decoder_state(
                                         src, context, encStates)

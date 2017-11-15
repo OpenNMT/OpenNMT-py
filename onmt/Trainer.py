@@ -110,6 +110,9 @@ class Trainer(object):
             elif hasattr(batch, 'src_img'):
                 src = onmt.IO.make_features(batch, 'src_img')
                 src_lengths = None
+            elif hasattr(batch, 'src_audio'):
+                src = onmt.IO.make_features(batch, 'src_audio')
+                src_lengths = None
             tgt_outer = onmt.IO.make_features(batch, 'tgt')
 
             for j in range(0, target_size-1, trunc_size):
@@ -155,6 +158,9 @@ class Trainer(object):
                 src = onmt.IO.make_features(batch, 'src')
             elif hasattr(batch, 'src_img'):
                 src = onmt.IO.make_features(batch, 'src_img')
+                src_lengths = None
+            elif hasattr(batch, 'src_audio'):
+                src = onmt.IO.make_features(batch, 'src_audio')
                 src_lengths = None
             tgt = onmt.IO.make_features(batch, 'tgt')
 

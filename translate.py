@@ -63,6 +63,11 @@ def main():
     data = onmt.IO.ONMTDataset(opt.model_type,
                                opt.src, opt.tgt, translator.fields,
                                src_img_dir=opt.src_img_dir,
+                               src_audio_dir=opt.src_audio_dir,
+                               sample_rate=opt.sample_rate,
+                               window_size=opt.window_size,
+                               window_stride=opt.window_stride,
+                               window=opt.window,
                                use_filter_pred=False)
 
     test_data = onmt.IO.OrderedIterator(
