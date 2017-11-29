@@ -87,7 +87,9 @@ def model_opts(parser):
                         help="""The attention type to use:
                         dotprot or general (Luong) or MLP (Bahdanau)""")
 
-    # Genenerator and loss options.
+    # Generator and loss options.
+    parser.add_argument('-pointer_gen', action="store_true",
+                        help='Use Pointer Generator')
     parser.add_argument('-copy_attn', action="store_true",
                         help='Train copy attention layer.')
     parser.add_argument('-copy_attn_force', action="store_true",
