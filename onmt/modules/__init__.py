@@ -4,7 +4,8 @@ from onmt.modules.Gate import ContextGateFactory
 from onmt.modules.GlobalAttention import GlobalAttention
 from onmt.modules.ConvMultiStepAttention import ConvMultiStepAttention
 from onmt.modules.ImageEncoder import ImageEncoder
-from onmt.modules.CopyGenerator import CopyGenerator, CopyGeneratorLossCompute
+from onmt.modules.CopyGenerator import CopyGenerator, \
+    CopyGeneratorLossCompute
 from onmt.modules.StructuredAttention import MatrixTree
 from onmt.modules.Transformer import TransformerEncoder, TransformerDecoder
 from onmt.modules.Conv2Conv import CNNEncoder, CNNDecoder
