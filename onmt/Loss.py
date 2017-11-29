@@ -25,7 +25,8 @@ class LossComputeBase(nn.Module):
         self.tgt_vocab = tgt_vocab
         self.padding_idx = tgt_vocab.stoi[onmt.IO.PAD_WORD]
 
-    def make_shard_state(self, batch, output, range_, attns=None):
+    def make_shard_state(self, batch, output, range_, attns=None,
+                         rnn_outputs=None, src_emb=None):
         """
         Make shard state dictionary for shards() to return iterable
         shards for efficient loss computation. Subclass must define
@@ -50,24 +51,29 @@ class LossComputeBase(nn.Module):
         """
         return NotImplementedError
 
-    def monolithic_compute_loss(self, batch, output, attns):
+    def monolithic_compute_loss(self, batch, output, attns,
+                                rnn_outputs, src_emb):
         """
         Compute the loss monolithically, not dividing into shards.
         """
         range_ = (0, batch.tgt.size(0))
-        shard_state = self.make_shard_state(batch, output, range_, attns)
+        shard_state = self.make_shard_state(batch, output, range_, attns,
+                                            rnn_outputs, src_emb)
         _, batch_stats = self.compute_loss(batch, **shard_state)
 
         return batch_stats
 
     def sharded_compute_loss(self, batch, output, attns,
-                             cur_trunc, trunc_size, shard_size):
+                             cur_trunc, trunc_size, shard_size,
+                             rnn_outputs, src_emb,
+                             ):
         """
         Compute the loss in shards for efficiency.
         """
         batch_stats = onmt.Statistics()
         range_ = (cur_trunc, cur_trunc + trunc_size)
-        shard_state = self.make_shard_state(batch, output, range_, attns)
+        shard_state = self.make_shard_state(batch, output, range_, attns,
+                                            rnn_outputs, src_emb)
 
         for shard in shards(shard_state, shard_size):
             loss, stats = self.compute_loss(batch, **shard)
@@ -109,7 +115,8 @@ class NMTLossCompute(LossComputeBase):
         weight[self.padding_idx] = 0
         self.criterion = nn.NLLLoss(weight, size_average=False)
 
-    def make_shard_state(self, batch, output, range_, attns=None):
+    def make_shard_state(self, batch, output, range_,
+                         attns=None, rnn_outputs=None, src_emb=None):
         """ See base class for args description. """
         return {
             "output": output,

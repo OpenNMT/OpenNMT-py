@@ -94,7 +94,8 @@ def make_decoder(opt, embeddings):
                                    opt.context_gate,
                                    opt.copy_attn,
                                    opt.dropout,
-                                   embeddings)
+                                   embeddings,
+                                   opt.pointer_gen)
     else:
         return StdRNNDecoder(opt.rnn_type, opt.brnn,
                              opt.dec_layers, opt.rnn_size,
@@ -103,7 +104,8 @@ def make_decoder(opt, embeddings):
                              opt.context_gate,
                              opt.copy_attn,
                              opt.dropout,
-                             embeddings)
+                             embeddings,
+                             opt.pointer_gen)
 
 
 def make_base_model(model_opt, fields, gpu, checkpoint=None):
@@ -150,15 +152,16 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
     model = NMTModel(encoder, decoder)
 
     # Make Generator.
-    if not model_opt.copy_attn:
+    if not model_opt.copy_attn and not model_opt.pointer_gen:
         generator = nn.Sequential(
             nn.Linear(model_opt.rnn_size, len(fields["tgt"].vocab)),
             nn.LogSoftmax())
         if model_opt.share_decoder_embeddings:
             generator[0].weight = decoder.embeddings.word_lut.weight
     else:
+        assert model_opt.copy_attn != model_opt.pointer_gen
         generator = CopyGenerator(model_opt, fields["src"].vocab,
-                                  fields["tgt"].vocab)
+                                  fields["tgt"].vocab, model_opt.pointer_gen)
 
     # Load the model states from checkpoint or initialize them.
     if checkpoint is not None:
