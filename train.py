@@ -175,7 +175,7 @@ def train_model(model, train_data, valid_data, fields, optim):
 
         # 5. Drop a checkpoint if needed.
         if epoch >= opt.start_checkpoint_at:
-            trainer.drop_checkpoint(opt, epoch, fields, valid_stats)
+            trainer.drop_checkpoint(model.opt, epoch, fields, valid_stats)
 
 
 def check_save_model_path():
