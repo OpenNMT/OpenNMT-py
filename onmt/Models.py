@@ -107,7 +107,7 @@ class RNNDecoderBase(nn.Module):
     """
     def __init__(self, rnn_type, bidirectional_encoder, num_layers,
                  hidden_size, attn_type, coverage_attn, context_gate,
-                 copy_attn, dropout, embeddings):
+                 copy_attn, dropout, embeddings, pointer_gen):
         super(RNNDecoderBase, self).__init__()
 
         # Basic attributes.
@@ -117,6 +117,7 @@ class RNNDecoderBase(nn.Module):
         self.hidden_size = hidden_size
         self.embeddings = embeddings
         self.dropout = nn.Dropout(dropout)
+        self.pointer_gen = pointer_gen
 
         # Build the RNN.
         self.rnn = self._build_rnn(rnn_type, self._input_size, hidden_size,
@@ -138,11 +139,14 @@ class RNNDecoderBase(nn.Module):
         )
 
         # Set up a separated copy attention layer, if needed.
+        assert not (copy_attn and pointer_gen)
         self._copy = False
         if copy_attn:
             self.copy_attn = onmt.modules.GlobalAttention(
                 hidden_size, attn_type=attn_type
             )
+            self._copy = True
+        if pointer_gen:
             self._copy = True
 
     def forward(self, input, context, state):
@@ -171,7 +175,7 @@ class RNNDecoderBase(nn.Module):
         # END Args Check
 
         # Run the forward pass of the RNN.
-        hidden, outputs, attns, coverage = \
+        hidden, outputs, attns, coverage, rnn_output, emb = \
             self._run_forward_pass(input, context, state)
 
         # Update the state with the result.
@@ -182,10 +186,15 @@ class RNNDecoderBase(nn.Module):
 
         # Concatenates sequence of tensors along a new dimension.
         outputs = torch.stack(outputs)
+        rnn_output = torch.stack(rnn_output)
         for k in attns:
             attns[k] = torch.stack(attns[k])
 
-        return outputs, state, attns
+        return (
+            outputs, state, attns,
+            # pointer_gen
+            rnn_output, emb
+        )
 
     def _fix_enc_hidden(self, h):
         """
@@ -318,8 +327,9 @@ class InputFeedRNNDecoder(RNNDecoderBase):
 
         # Initialize local and return variables.
         outputs = []
+        rnn_outputs = []
         attns = {"std": []}
-        if self._copy:
+        if self._copy and not self.pointer_gen:
             attns["copy"] = []
         if self._coverage:
             attns["coverage"] = []
@@ -348,6 +358,7 @@ class InputFeedRNNDecoder(RNNDecoderBase):
             else:
                 output = self.dropout(attn_output)
             outputs += [output]
+            rnn_outputs += [rnn_output]
             attns["std"] += [attn]
 
             # Update the coverage attention.
@@ -357,13 +368,17 @@ class InputFeedRNNDecoder(RNNDecoderBase):
                 attns["coverage"] += [coverage]
 
             # Run the forward pass of the copy attention layer.
-            if self._copy:
+            if self._copy and not self.pointer_gen:
                 _, copy_attn = self.copy_attn(output,
                                               context.transpose(0, 1))
                 attns["copy"] += [copy_attn]
 
         # Return result.
-        return hidden, outputs, attns, coverage
+        return (
+            hidden, outputs, attns, coverage,
+            # pointer_gen
+            rnn_outputs, emb,
+        )
 
     def _build_rnn(self, rnn_type, input_size,
                    hidden_size, num_layers, dropout):
@@ -419,14 +434,13 @@ class NMTModel(nn.Module):
         tgt = tgt[:-1]  # exclude last target from inputs
         enc_hidden, context = self.encoder(src, lengths)
         enc_state = self.decoder.init_decoder_state(src, context, enc_hidden)
-        out, dec_state, attns = self.decoder(tgt, context,
-                                             enc_state if dec_state is None
-                                             else dec_state)
+        out, dec_state, attns, rnn_outputs, src_emb = self.decoder(
+            tgt, context, enc_state if dec_state is None else dec_state)
         if self.multigpu:
             # Not yet supported on multi-gpu
             dec_state = None
             attns = None
-        return out, attns, dec_state
+        return out, attns, dec_state, rnn_outputs, src_emb
 
 
 class DecoderState(object):

@@ -24,6 +24,7 @@ class Translator(object):
 
         self._type = model_opt.encoder_type
         self.copy_attn = model_opt.copy_attn
+        self.pointer_gen = model_opt.pointer_gen
 
         self.model = onmt.ModelConstructor.make_base_model(
                             model_opt, self.fields, use_gpu(opt), checkpoint)
@@ -74,7 +75,7 @@ class Translator(object):
         #  (i.e. log likelihood) of the target under the model
         tt = torch.cuda if self.opt.cuda else torch
         goldScores = tt.FloatTensor(batch.batch_size).fill_(0)
-        decOut, decStates, attn = self.model.decoder(
+        decOut, decStates, attn, decRNNOut, srcEmb = self.model.decoder(
             tgt_in, context, decStates)
 
         tgt_pad = self.fields["tgt"].vocab.stoi[onmt.IO.PAD_WORD]
@@ -136,7 +137,7 @@ class Translator(object):
 
             # Turn any copied words to UNKs
             # 0 is unk
-            if self.copy_attn:
+            if self.copy_attn or self.pointer_gen:
                 inp = inp.masked_fill(
                     inp.gt(len(self.fields["tgt"].vocab) - 1), 0)
 
@@ -145,20 +146,30 @@ class Translator(object):
             inp = inp.unsqueeze(2)
 
             # Run one step.
-            decOut, decStates, attn = \
+            decOut, decStates, attn, decRNNOut, srcEmb = \
                 self.model.decoder(inp, context, decStates)
             decOut = decOut.squeeze(0)
             # decOut: beam x rnn_size
+            decRNNOut = decRNNOut.squeeze(0)
+            srcEmb = srcEmb.squeeze(0)
 
             # (b) Compute a vector of batch*beam word scores.
-            if not self.copy_attn:
+            if not self.copy_attn and not self.pointer_gen:
                 out = self.model.generator.forward(decOut).data
                 out = unbottle(out)
                 # beam x tgt_vocab
             else:
-                out = self.model.generator.forward(decOut,
-                                                   attn["copy"].squeeze(0),
-                                                   srcMap)
+                if not self.pointer_gen:
+                    generator_attention = attn["copy"].squeeze(0)
+                else:
+                    generator_attention = attn["std"].squeeze(0)
+                out = self.model.generator.forward(
+                    decOut,
+                    generator_attention,
+                    srcMap,
+                    decRNNOut,
+                    srcEmb,
+                )
                 # beam x (tgt_vocab + extra_vocab)
                 out = dataset.collapse_copy_scores(
                     unbottle(out.data),

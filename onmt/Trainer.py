@@ -115,13 +115,14 @@ class Trainer(object):
 
                 # 2. F-prop all but generator.
                 self.model.zero_grad()
-                outputs, attns, dec_state = \
+                outputs, attns, dec_state, rnn_outputs, src_emb = \
                     self.model(src, tgt, src_lengths, dec_state)
 
                 # 3. Compute loss in shards for memory efficiency.
                 batch_stats = self.train_loss.sharded_compute_loss(
-                        batch, outputs, attns, j,
-                        trunc_size, self.shard_size)
+                        batch, outputs, attns, j, trunc_size, self.shard_size,
+                        rnn_outputs, src_emb,
+                )
 
                 # 4. Update the parameters and statistics.
                 self.optim.step()
@@ -152,11 +153,12 @@ class Trainer(object):
             tgt = onmt.IO.make_features(batch, 'tgt')
 
             # F-prop through the model.
-            outputs, attns, _ = self.model(src, tgt, src_lengths)
+            outputs, attns, _, rnn_outputs, src_emb = \
+                self.model(src, tgt, src_lengths)
 
             # Compute loss.
             batch_stats = self.valid_loss.monolithic_compute_loss(
-                    batch, outputs, attns)
+                batch, outputs, attns, rnn_outputs, src_emb)
 
             # Update statistics.
             stats.update(batch_stats)
