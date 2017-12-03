@@ -73,9 +73,9 @@ Validation files are required and used to evaluate the convergence of the traini
 
 After running the preprocessing, the following files are generated:
 
-* `demo.src.dict`: Dictionary of source vocab to index mappings.
-* `demo.tgt.dict`: Dictionary of target vocab to index mappings.
-* `demo.train.pt`: serialized PyTorch file containing vocabulary, training and validation data
+* `demo.train.pt`: serialized PyTorch file containing training data
+* `demo.valid.pt`: serialized PyTorch file containing validation data
+* `demo.vocab.pt`: serialized PyTorch file containing vocabulary data
 
 
 Internally the system never touches the words themselves, but uses these indices.
