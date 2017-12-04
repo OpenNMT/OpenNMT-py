@@ -187,6 +187,11 @@ def train_opts(parser):
     parser.add_argument('-optim', default='sgd',
                         choices=['sgd', 'adagrad', 'adadelta', 'adam'],
                         help="""Optimization method.""")
+    parser.add_argument('-adagrad_accumulator_init', type=float, default=0,
+                        help="""Initializes the accumulator values in adagrad.
+                        Mirrors the initial_accumulator_value option
+                        in the tensorflow adagrad (use 0.1 for their default).
+                        """)
     parser.add_argument('-max_grad_norm', type=float, default=5,
                         help="""If the norm of the gradient vector exceeds this,
                         renormalize it to have the norm equal to
