@@ -30,6 +30,10 @@ class Translator(object):
         self.model.eval()
         self.model.generator.eval()
 
+        # Length + Coverage Penalty
+        self.alpha = opt.alpha
+        self.beta = opt.beta
+
         # for debugging
         self.beam_accum = None
 
@@ -105,11 +109,11 @@ class Translator(object):
 
         # Repeat everything beam_size times.
         context = rvar(context.data)
+        context_lengths = src_lengths.repeat(beam_size)
         src = rvar(src.data)
         srcMap = rvar(batch.src_map.data)
         decStates.repeat_beam_size_times(beam_size)
-        scorer = None
-        # scorer=onmt.GNMTGlobalScorer(0.3, 0.4)
+        scorer = onmt.GNMTGlobalScorer(self.alpha, self.beta)
         beam = [onmt.Beam(beam_size, n_best=self.opt.n_best,
                           cuda=self.opt.cuda,
                           vocab=self.fields["tgt"].vocab,
@@ -145,8 +149,8 @@ class Translator(object):
             inp = inp.unsqueeze(2)
 
             # Run one step.
-            decOut, decStates, attn = \
-                self.model.decoder(inp, context, decStates)
+            decOut, decStates, attn = self.model.decoder(
+                inp, context, decStates, context_lengths=context_lengths)
             decOut = decOut.squeeze(0)
             # decOut: beam x rnn_size
 
