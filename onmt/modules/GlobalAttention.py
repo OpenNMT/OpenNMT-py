@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 from onmt.modules.UtilClass import BottleLinear
-from onmt.Utils import aeq, sequence_mask
+from onmt.Utils import aeq
 
 
 class GlobalAttention(nn.Module):
@@ -59,9 +59,13 @@ class GlobalAttention(nn.Module):
 
         self.sm = nn.Softmax()
         self.tanh = nn.Tanh()
+        self.mask = None
 
         if coverage:
             self.linear_cover = nn.Linear(1, dim, bias=False)
+
+    def applyMask(self, mask):
+        self.mask = mask
 
     def score(self, h_t, h_s):
         """
@@ -101,11 +105,10 @@ class GlobalAttention(nn.Module):
 
             return self.v(wquh.view(-1, dim)).view(tgt_batch, tgt_len, src_len)
 
-    def forward(self, input, context, context_lengths=None, coverage=None):
+    def forward(self, input, context, coverage=None):
         """
         input (FloatTensor): batch x tgt_len x dim: decoder's rnn's output.
         context (FloatTensor): batch x src_len x dim: src hidden states
-        context_lengths (LongTensor): the source context lengths.
         coverage (FloatTensor): None (not supported yet)
         """
 
@@ -126,6 +129,11 @@ class GlobalAttention(nn.Module):
             aeq(batch, batch_)
             aeq(sourceL, sourceL_)
 
+        if self.mask is not None:
+            beam_, batch_, sourceL_ = self.mask.size()
+            aeq(batch, batch_*beam_)
+            aeq(sourceL, sourceL_)
+
         if coverage is not None:
             cover = coverage.view(-1).unsqueeze(1)
             context += self.linear_cover(cover).view_as(context)
@@ -134,10 +142,9 @@ class GlobalAttention(nn.Module):
         # compute attention scores, as in Luong et al.
         align = self.score(input, context)
 
-        if context_lengths is not None:
-            mask = sequence_mask(context_lengths)
-            mask = mask.unsqueeze(1)  # Make it broadcastable.
-            align.data.masked_fill_(1 - mask, -float('inf'))
+        if self.mask is not None:
+            mask_ = self.mask.view(batch, 1, sourceL)  # make it broardcastable
+            align.data.masked_fill_(mask_, -float('inf'))
 
         # Softmax to normalize attention weights
         align_vectors = self.sm(align.view(batch*targetL, sourceL))
