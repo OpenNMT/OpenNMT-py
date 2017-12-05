@@ -187,6 +187,11 @@ def train_opts(parser):
     parser.add_argument('-optim', default='sgd',
                         choices=['sgd', 'adagrad', 'adadelta', 'adam'],
                         help="""Optimization method.""")
+    parser.add_argument('-adagrad_accumulator_init', type=float, default=0,
+                        help="""Initializes the accumulator values in adagrad.
+                        Mirrors the initial_accumulator_value option
+                        in the tensorflow adagrad (use 0.1 for their default).
+                        """)
     parser.add_argument('-max_grad_norm', type=float, default=5,
                         help="""If the norm of the gradient vector exceeds this,
                         renormalize it to have the norm equal to
@@ -285,6 +290,13 @@ def translate_opts(parser):
                         help="Create dynamic dictionaries")
     parser.add_argument('-share_vocab', action='store_true',
                         help="Share source and target vocabulary")
+    # Alpha and Beta values for Google Length + Coverage penalty
+    # Described here: https://arxiv.org/pdf/1609.08144.pdf, Section 7
+    parser.add_argument('-alpha', type=float, default=0.,
+                        help="""Google NMT length penalty parameter
+                        (higher = longer generation)""")
+    parser.add_argument('-beta', type=float, default=-0.,
+                        help="""Coverage penalty parameter""")
 
 
 def add_md_help_argument(parser):
