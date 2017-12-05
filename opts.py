@@ -200,13 +200,13 @@ def train_opts(parser):
                         help="Dropout probability; applied in LSTM stacks.")
     parser.add_argument('-truncated_decoder', type=int, default=0,
                         help="""Truncated bptt.""")
-    parser.add_argument('-beta1', type=float, default=0.9,
+    parser.add_argument('-adam_beta1', type=float, default=0.9,
                         help="""The beta1 parameter used by Adam.
                         Almost without exception a value of 0.9 is used in
                         the literature, seemingly giving good results,
                         so we would discourage changing this value from
                         the default without due consideration.""")
-    parser.add_argument('-beta2', type=float, default=0.999,
+    parser.add_argument('-adam_beta2', type=float, default=0.999,
                         help="""The beta2 parameter used by Adam.
                         Typically a value of 0.999 is recommended, as this is
                         the value suggested by the original paper describing
