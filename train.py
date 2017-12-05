@@ -250,6 +250,7 @@ def build_optim(model, checkpoint):
             opt.optim, opt.learning_rate, opt.max_grad_norm,
             lr_decay=opt.learning_rate_decay,
             start_decay_at=opt.start_decay_at,
+            adagrad_accum=opt.adagrad_accumulator_init,
             opt=opt
         )
 
