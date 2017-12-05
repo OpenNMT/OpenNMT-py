@@ -10,6 +10,10 @@ class Optim(object):
             self.optimizer = optim.SGD(self.params, lr=self.lr)
         elif self.method == 'adagrad':
             self.optimizer = optim.Adagrad(self.params, lr=self.lr)
+            for group in self.optimizer.param_groups:
+                for p in group['params']:
+                    self.optimizer.state[p]['sum'] = self.optimizer\
+                        .state[p]['sum'].fill_(self.adagrad_accum)
         elif self.method == 'adadelta':
             self.optimizer = optim.Adadelta(self.params, lr=self.lr)
         elif self.method == 'adam':
@@ -21,6 +25,7 @@ class Optim(object):
     def __init__(self, method, lr, max_grad_norm,
                  lr_decay=1, start_decay_at=None,
                  beta1=0.9, beta2=0.98,
+                 adagrad_accum=0.0,
                  opt=None):
         self.last_ppl = None
         self.lr = lr
@@ -31,6 +36,7 @@ class Optim(object):
         self.start_decay = False
         self._step = 0
         self.betas = [beta1, beta2]
+        self.adagrad_accum = adagrad_accum
         self.opt = opt
 
     def _setRate(self, lr):
