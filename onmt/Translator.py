@@ -109,6 +109,7 @@ class Translator(object):
 
         # Repeat everything beam_size times.
         context = rvar(context.data)
+        context_lengths = src_lengths.repeat(beam_size)
         src = rvar(src.data)
         srcMap = rvar(batch.src_map.data)
         decStates.repeat_beam_size_times(beam_size)
@@ -148,8 +149,8 @@ class Translator(object):
             inp = inp.unsqueeze(2)
 
             # Run one step.
-            decOut, decStates, attn = \
-                self.model.decoder(inp, context, decStates)
+            decOut, decStates, attn = self.model.decoder(
+                inp, context, decStates, context_lengths=context_lengths)
             decOut = decOut.squeeze(0)
             # decOut: beam x rnn_size
 
