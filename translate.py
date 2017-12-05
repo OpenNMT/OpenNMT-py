@@ -24,6 +24,10 @@ opts.add_md_help_argument(parser)
 opts.translate_opts(parser)
 
 opt = parser.parse_args()
+if opt.batch_size != 1:
+    print("WARNING: -batch_size isn't supported currently, "
+          "we set it to 1 for now!")
+    opt.batch_size = 1
 
 
 def report_score(name, score_total, words_total):

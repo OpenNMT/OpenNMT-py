@@ -145,7 +145,7 @@ class RNNDecoderBase(nn.Module):
             )
             self._copy = True
 
-    def forward(self, input, context, state, context_lengths=None):
+    def forward(self, input, context, state):
         """
         Forward through the decoder.
         Args:
@@ -155,7 +155,6 @@ class RNNDecoderBase(nn.Module):
                         RNN of size (src_len x batch x hidden_size).
             state (FloatTensor): hidden state from the encoder RNN for
                                  initializing the decoder.
-            context_lengths (LongTensor): the source context lengths.
         Returns:
             outputs (FloatTensor): a Tensor sequence of output from the decoder
                                    of shape (len x batch x hidden_size).
@@ -172,8 +171,8 @@ class RNNDecoderBase(nn.Module):
         # END Args Check
 
         # Run the forward pass of the RNN.
-        hidden, outputs, attns, coverage = self._run_forward_pass(
-            input, context, state, context_lengths=context_lengths)
+        hidden, outputs, attns, coverage = \
+            self._run_forward_pass(input, context, state)
 
         # Update the state with the result.
         final_output = outputs[-1]
@@ -212,7 +211,7 @@ class StdRNNDecoder(RNNDecoderBase):
     Stardard RNN decoder, with Attention.
     Currently no 'coverage_attn' and 'copy_attn' support.
     """
-    def _run_forward_pass(self, input, context, state, context_lengths=None):
+    def _run_forward_pass(self, input, context, state):
         """
         Private helper for running the specific RNN forward pass.
         Must be overriden by all subclasses.
@@ -223,7 +222,6 @@ class StdRNNDecoder(RNNDecoderBase):
                         RNN of size (src_len x batch x hidden_size).
             state (FloatTensor): hidden state from the encoder RNN for
                                  initializing the decoder.
-            context_lengths (LongTensor): the source context lengths.
         Returns:
             hidden (Variable): final hidden state from the decoder.
             outputs ([FloatTensor]): an array of output of every time
@@ -258,8 +256,7 @@ class StdRNNDecoder(RNNDecoderBase):
         # Calculate the attention.
         attn_outputs, attn_scores = self.attn(
             rnn_output.transpose(0, 1).contiguous(),  # (output_len, batch, d)
-            context.transpose(0, 1),                  # (contxt_len, batch, d)
-            context_lengths=context_lengths
+            context.transpose(0, 1)                   # (contxt_len, batch, d)
         )
         attns["std"] = attn_scores
 
@@ -307,7 +304,7 @@ class InputFeedRNNDecoder(RNNDecoderBase):
     """
     Stardard RNN decoder, with Input Feed and Attention.
     """
-    def _run_forward_pass(self, input, context, state, context_lengths=None):
+    def _run_forward_pass(self, input, context, state):
         """
         See StdRNNDecoder._run_forward_pass() for description
         of arguments and return values.
@@ -341,10 +338,8 @@ class InputFeedRNNDecoder(RNNDecoderBase):
             emb_t = torch.cat([emb_t, output], 1)
 
             rnn_output, hidden = self.rnn(emb_t, hidden)
-            attn_output, attn = self.attn(
-                rnn_output,
-                context.transpose(0, 1),
-                context_lengths=context_lengths)
+            attn_output, attn = self.attn(rnn_output,
+                                          context.transpose(0, 1))
             if self.context_gate is not None:
                 output = self.context_gate(
                     emb_t, rnn_output, attn_output
