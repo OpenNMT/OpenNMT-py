@@ -415,7 +415,6 @@ class NMTModel(nn.Module):
             dec_hidden (FloatTensor): tuple (1 x batch x hidden_size)
                                       Init hidden state
         """
-        src = src
         tgt = tgt[:-1]  # exclude last target from inputs
         enc_hidden, context = self.encoder(src, lengths)
         enc_state = self.decoder.init_decoder_state(src, context, enc_hidden)
