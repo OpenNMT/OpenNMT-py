@@ -96,6 +96,8 @@ def model_opts(parser):
                         help='Train a coverage attention layer.')
     parser.add_argument('-lambda_coverage', type=float, default=1,
                         help='Lambda value for coverage.')
+    parser.add_argument('-softmaxes_mixture', type=int, default=1,
+                        help='Number of softmaxes mixtures [Yang 2017]')
 
 
 def preprocess_opts(parser):

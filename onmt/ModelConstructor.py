@@ -11,7 +11,7 @@ from onmt.Models import NMTModel, MeanEncoder, RNNEncoder, \
                         StdRNNDecoder, InputFeedRNNDecoder
 from onmt.modules import Embeddings, ImageEncoder, CopyGenerator, \
                          TransformerEncoder, TransformerDecoder, \
-                         CNNEncoder, CNNDecoder
+                         CNNEncoder, CNNDecoder, SoftmaxesMixtureGenerator
 
 
 def make_embeddings(opt, word_dict, feature_dicts, for_encoder=True):
@@ -106,6 +106,31 @@ def make_decoder(opt, embeddings):
                              embeddings)
 
 
+def make_generator(model_opt, fields, decoder):
+
+    src_vocab = fields["src"].vocab
+    tgt_vocab = fields["tgt"].vocab
+
+    # copy attention
+    if model_opt.copy_attn:
+        return CopyGenerator(model_opt, src_vocab, tgt_vocab)
+
+    # softmax mixtures
+    if model_opt.softmaxes_mixture > 1:
+        generator = SoftmaxesMixtureGenerator(model_opt, len(tgt_vocab))
+        if model_opt.share_decoder_embeddings:
+            generator.linear_final.weight = decoder.embeddings.word_lut.weight
+        return generator
+
+    # simple generator
+    generator = nn.Sequential(
+        nn.Linear(model_opt.rnn_size, len(tgt_vocab)),
+        nn.LogSoftmax())
+    if model_opt.share_decoder_embeddings:
+        generator[0].weight = decoder.embeddings.word_lut.weight
+    return generator
+
+
 def make_base_model(model_opt, fields, gpu, checkpoint=None):
     """
     Args:
@@ -150,15 +175,7 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
     model = NMTModel(encoder, decoder)
 
     # Make Generator.
-    if not model_opt.copy_attn:
-        generator = nn.Sequential(
-            nn.Linear(model_opt.rnn_size, len(fields["tgt"].vocab)),
-            nn.LogSoftmax())
-        if model_opt.share_decoder_embeddings:
-            generator[0].weight = decoder.embeddings.word_lut.weight
-    else:
-        generator = CopyGenerator(model_opt, fields["src"].vocab,
-                                  fields["tgt"].vocab)
+    generator = make_generator(model_opt, fields, decoder)
 
     # Load the model states from checkpoint or initialize them.
     if checkpoint is not None:
