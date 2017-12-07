@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from __future__ import division
-from builtins import bytes
+from six.moves.builtins import bytes
 import os
 import argparse
 import math
@@ -12,10 +12,9 @@ import onmt
 import onmt.IO
 import opts
 from itertools import takewhile, count
-try:
-    from itertools import zip_longest
-except ImportError:
-    from itertools import izip_longest as zip_longest
+
+from six.moves import zip_longest
+from six.moves import zip
 
 parser = argparse.ArgumentParser(
     description='translate.py',
