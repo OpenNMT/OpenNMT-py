@@ -201,7 +201,7 @@ class TransformerDecoder(nn.Module):
                 hidden_size, attn_type=attn_type)
             self._copy = True
 
-    def forward(self, input, context, state):
+    def forward(self, input, context, state, context_lengths=None):
         """
         Forward through the TransformerDecoder.
         Args:
@@ -211,6 +211,9 @@ class TransformerDecoder(nn.Module):
                                 of size (src_len x batch x hidden_size).
             state (FloatTensor): hidden state from the encoder RNN for
                                  initializing the decoder.
+            context_lengths (LongTensor): the source context lengths, this is
+                                          not used for TransformerDecoder, but
+                                          for interface compatibility.
         Returns:
             outputs (FloatTensor): a Tensor sequence of output from the decoder
                                    of shape (len x batch x hidden_size).

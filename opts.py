@@ -198,6 +198,11 @@ def train_opts(parser):
     parser.add_argument('-optim', default='sgd',
                         choices=['sgd', 'adagrad', 'adadelta', 'adam'],
                         help="""Optimization method.""")
+    parser.add_argument('-adagrad_accumulator_init', type=float, default=0,
+                        help="""Initializes the accumulator values in adagrad.
+                        Mirrors the initial_accumulator_value option
+                        in the tensorflow adagrad (use 0.1 for their default).
+                        """)
     parser.add_argument('-max_grad_norm', type=float, default=5,
                         help="""If the norm of the gradient vector exceeds this,
                         renormalize it to have the norm equal to
@@ -206,6 +211,24 @@ def train_opts(parser):
                         help="Dropout probability; applied in LSTM stacks.")
     parser.add_argument('-truncated_decoder', type=int, default=0,
                         help="""Truncated bptt.""")
+    parser.add_argument('-adam_beta1', type=float, default=0.9,
+                        help="""The beta1 parameter used by Adam.
+                        Almost without exception a value of 0.9 is used in
+                        the literature, seemingly giving good results,
+                        so we would discourage changing this value from
+                        the default without due consideration.""")
+    parser.add_argument('-adam_beta2', type=float, default=0.999,
+                        help="""The beta2 parameter used by Adam.
+                        Typically a value of 0.999 is recommended, as this is
+                        the value suggested by the original paper describing
+                        Adam, and is also the value adopted in other frameworks
+                        such as Tensorflow and Kerras, i.e. see:
+                        https://www.tensorflow.org/api_docs/python/tf/train/AdamOptimizer
+                        https://keras.io/optimizers/ .
+                        Whereas recently the paper "Attention is All You Need"
+                        suggested a value of 0.98 for beta2, this parameter may
+                        not work well for normal models / default
+                        baselines.""")
     # learning rate
     parser.add_argument('-learning_rate', type=float, default=1.0,
                         help="""Starting learning rate.
@@ -297,6 +320,13 @@ def translate_opts(parser):
                         help='Window stride for spectrogram in seconds')
     parser.add_argument('-window', default='hamming',
                         help='Window type for spectrogram generation')
+    # Alpha and Beta values for Google Length + Coverage penalty
+    # Described here: https://arxiv.org/pdf/1609.08144.pdf, Section 7
+    parser.add_argument('-alpha', type=float, default=0.,
+                        help="""Google NMT length penalty parameter
+                        (higher = longer generation)""")
+    parser.add_argument('-beta', type=float, default=-0.,
+                        help="""Coverage penalty parameter""")
 
 
 def add_md_help_argument(parser):
