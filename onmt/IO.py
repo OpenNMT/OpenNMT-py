@@ -121,8 +121,8 @@ def make_features(batch, side):
     else:
         data = batch.__dict__[side]
     feat_start = side + "_feat_"
-    features = sorted(batch.__dict__[k]
-                      for k in batch.__dict__ if feat_start in k)
+    keys = sorted([k for k in batch.__dict__ if feat_start in k])
+    features = [batch.__dict__[k] for k in keys]
     levels = [data] + features
     return torch.cat([level.unsqueeze(2) for level in levels], 2)
 
