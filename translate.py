@@ -32,7 +32,6 @@ def report_score(name, score_total, words_total):
 
 
 def get_src_words(src_indices, index2str):
-    words = []
     raw_words = (index2str[i] for i in src_indices)
     words = takewhile(lambda w: w != onmt.IO.PAD_WORD, raw_words)
     return " ".join(words)
