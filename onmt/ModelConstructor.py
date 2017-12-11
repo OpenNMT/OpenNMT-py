@@ -155,6 +155,7 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
 
     # Make NMTModel(= encoder + decoder).
     model = NMTModel(encoder, decoder)
+    model.model_type = model_opt.model_type
 
     # Make Generator.
     if not model_opt.copy_attn:

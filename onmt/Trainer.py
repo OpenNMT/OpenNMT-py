@@ -202,7 +202,8 @@ class Trainer(object):
             'vocab': onmt.IO.save_vocab(fields),
             'opt': opt,
             'epoch': epoch,
-            'optim': self.optim
+            'optim': self.optim,
+            'model_type': self.model.model_type
         }
         torch.save(checkpoint,
                    '%s_acc_%.2f_ppl_%.2f_e%d.pt'

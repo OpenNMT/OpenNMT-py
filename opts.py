@@ -266,9 +266,6 @@ def train_opts(parser):
 def translate_opts(parser):
     parser.add_argument('-model', required=True,
                         help='Path to model .pt file')
-    parser.add_argument('-model_type', default='text',
-                        help="""Type of encoder to use. Options are
-                        [text|img|audio].""")
     parser.add_argument('-src',   required=True,
                         help="""Source sequence to decode (one line per
                         sequence)""")

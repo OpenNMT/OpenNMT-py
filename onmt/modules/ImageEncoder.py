@@ -94,12 +94,8 @@ class ImageEncoder(nn.Module):
         for row in range(input.size(2)):
             inp = input[:, :, row, :].transpose(0, 2)\
                                      .transpose(1, 2)
-            if input.is_cuda:
-                pos_emb = self.pos_lut(
-                    Variable(torch.cuda.LongTensor(batchSize).fill_(row)))
-            else:
-                pos_emb = self.pos_lut(
-                    Variable(torch.LongTensor(batchSize).fill_(row)))
+            row_vec = torch.Tensor(batchSize).type_as(input).long().fill_(row)
+            pos_emb = self.pos_lut(Variable(row_vec))
             with_pos = torch.cat(
                 (pos_emb.view(1, pos_emb.size(0), pos_emb.size(1)), inp), 0)
             outputs, hidden_t = self.rnn(with_pos)
