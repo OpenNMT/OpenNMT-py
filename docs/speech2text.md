@@ -8,7 +8,12 @@ The model is an attention-based encoder-decoder model. Given raw audio, we first
 
 To get started, we provide a toy speech-to-text example. We assume that the working directory is `OpenNMT-py` throughout this document.
 
-Im2Text consists of three commands:
+0) Download the data.
+
+```
+wget -O data/speech.tgz http://lstm.seas.harvard.edu/latex/speech.tgz; tar zxf data/speech.tgz -C data/
+```
+
 
 1) Preprocess the data.
 

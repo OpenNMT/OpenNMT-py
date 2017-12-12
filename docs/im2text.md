@@ -18,7 +18,13 @@ The paper (https://arxiv.org/pdf/1609.04938.pdf) provides more technical details
 
 To get started, we provide a toy Math-to-LaTex example. We assume that the working directory is `OpenNMT-py` throughout this document.
 
-Im2Text consists of three commands:
+Im2Text consists of four commands:
+
+0) Download the data.
+
+```
+wget -O data/im2text.tgz http://lstm.seas.harvard.edu/latex/im2text.tgz; tar zxf data/im2text.tgz -C data/
+```
 
 1) Preprocess the data.
 
