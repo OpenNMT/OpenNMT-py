@@ -93,9 +93,9 @@ class TestModel(unittest.TestCase):
         self.assertEqual(type(outputs), torch.autograd.Variable)
         self.assertEqual(type(outputs.data), torch.FloatTensor)
 
-    def ntmmodel_forward(self, opt, sourceL=3, bsize=1):
+    def nmtmodel_forward(self, opt, sourceL=3, bsize=1):
         """
-        Creates a ntmmodel with a custom opt function.
+        Creates a nmtmodel with a custom opt function.
         Forwards a testbatch anc checks output size.
 
         Args:
@@ -173,41 +173,41 @@ tests_encoder = [[],
 for p in tests_encoder:
     _add_test(p, 'encoder_forward')
 
-tests_ntmodel = [[('rnn_type', 'GRU')],
-                 [('layers', 10)],
-                 [('input_feed', 0)],
-                 [('decoder_type', 'transformer'),
-                  ('encoder_type', 'transformer'),
-                  ('src_word_vec_size', 16),
-                  ('tgt_word_vec_size', 16),
-                  ('rnn_size', 16)],
-                 # [('encoder_type', 'transformer'),
-                 #  ('word_vec_size', 16),
-                 #  ('rnn_size', 16)],
-                 [('decoder_type', 'transformer'),
-                  ('encoder_type', 'transformer'),
-                  ('src_word_vec_size', 16),
-                  ('tgt_word_vec_size', 16),
-                  ('rnn_size', 16),
-                  ('position_encoding', True)],
-                 [('coverage_attn', True)],
-                 [('copy_attn', True)],
-                 [('global_attention', 'mlp')],
-                 [('context_gate', 'both')],
-                 [('context_gate', 'target')],
-                 [('context_gate', 'source')],
-                 [('encoder_type', "brnn"),
-                  ('brnn_merge', 'sum')],
-                 [('encoder_type', "brnn")],
-                 [('decoder_type', 'cnn'),
-                  ('encoder_type', 'cnn')],
-                 []
-                 ]
+tests_nmtmodel = [[('rnn_type', 'GRU')],
+                  [('layers', 10)],
+                  [('input_feed', 0)],
+                  [('decoder_type', 'transformer'),
+                   ('encoder_type', 'transformer'),
+                   ('src_word_vec_size', 16),
+                   ('tgt_word_vec_size', 16),
+                   ('rnn_size', 16)],
+                  # [('encoder_type', 'transformer'),
+                  #  ('word_vec_size', 16),
+                  #  ('rnn_size', 16)],
+                  [('decoder_type', 'transformer'),
+                   ('encoder_type', 'transformer'),
+                   ('src_word_vec_size', 16),
+                   ('tgt_word_vec_size', 16),
+                   ('rnn_size', 16),
+                   ('position_encoding', True)],
+                  [('coverage_attn', True)],
+                  [('copy_attn', True)],
+                  [('global_attention', 'mlp')],
+                  [('context_gate', 'both')],
+                  [('context_gate', 'target')],
+                  [('context_gate', 'source')],
+                  [('encoder_type', "brnn"),
+                   ('brnn_merge', 'sum')],
+                  [('encoder_type', "brnn")],
+                  [('decoder_type', 'cnn'),
+                   ('encoder_type', 'cnn')],
+                  [],
+                  ]
 
 if onmt.modules.check_sru_requirement():
     """ Only do SRU test if requirment is safisfied. """
     # SRU doesn't support input_feed.
-    tests_ntmodel.append([('rnn_type', 'SRU'), ('input_feed', 0)])
+    tests_nmtmodel.append([('rnn_type', 'SRU'), ('input_feed', 0)])
 
-for p in tests_ntmodel:
-    _add_test(p, 'ntmmodel_forward')
+for p in tests_nmtmodel:
+    _add_test(p, 'nmtmodel_forward')
