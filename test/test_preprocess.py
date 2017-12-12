@@ -13,6 +13,7 @@ opts.preprocess_opts(parser)
 
 opt = parser.parse_known_args()[0]
 
+opt.data_type = 'text'
 opt.train_src = 'data/src-train.txt'
 opt.train_tgt = 'data/tgt-train.txt'
 opt.valid_src = 'data/src-val.txt'
