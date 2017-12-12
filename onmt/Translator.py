@@ -16,7 +16,7 @@ class Translator(object):
         checkpoint = torch.load(opt.model,
                                 map_location=lambda storage, loc: storage)
         self.fields = onmt.IO.load_fields(checkpoint['vocab'],
-                                          data_type=checkpoint.model_type)
+                                          data_type=opt.data_type)
 
         model_opt = checkpoint['opt']
         for arg in dummy_opt:
@@ -92,23 +92,25 @@ class Translator(object):
             goldScores += scores
         return goldScores
 
-    def translateBatch(self, batch, dataset):
+    def translateBatch(self, batch, data):
         beam_size = self.opt.beam_size
         batch_size = batch.batch_size
 
         # (1) Run the encoder on the src.
-        if hasattr(batch, 'src'):
+        data_type = data.data_type
+        src = onmt.IO.make_features(batch, 'src', data_type)
+        if data_type == 'text':
             _, src_lengths = batch.src
-            src = onmt.IO.make_features(batch, 'src')
-        elif hasattr(batch, 'src_img'):
-            src = onmt.IO.make_features(batch, 'src_img')
-            src_lengths = None
-        elif hasattr(batch, 'src_audio'):
-            src = onmt.IO.make_features(batch, 'src_audio')
+        else:
             src_lengths = None
         encStates, context = self.model.encoder(src, src_lengths)
         decStates = self.model.decoder.init_decoder_state(
                                         src, context, encStates)
+
+        if src_lengths is None:
+            src_lengths = torch.Tensor(batch_size).type_as(context.data)\
+                                                  .long()\
+                                                  .fill_(context.size(0))
 
         #  (1b) Initialize for the decoder.
         def var(a): return Variable(a, volatile=True)
@@ -174,7 +176,7 @@ class Translator(object):
                                                    attn["copy"].squeeze(0),
                                                    srcMap)
                 # beam x (tgt_vocab + extra_vocab)
-                out = dataset.collapse_copy_scores(
+                out = data.collapse_copy_scores(
                     unbottle(out.data),
                     batch, self.fields["tgt"].vocab)
                 # beam x tgt_vocab
@@ -188,7 +190,7 @@ class Translator(object):
                 decStates.beam_update(j, b.getCurrentOrigin(), beam_size)
 
         if "tgt" in batch.__dict__:
-            allGold = self._runTarget(batch, dataset)
+            allGold = self._runTarget(batch, data)
         else:
             allGold = [0] * batch_size
 
@@ -223,14 +225,15 @@ class Translator(object):
 
         #  (3) convert indexes to words
         predBatch, goldBatch = [], []
-        if hasattr(batch, 'src'):
+        data_type = data.data_type
+        if data_type == 'text':
             src = batch.src[0].data.index_select(1, perm)
         else:
             src = None
         if self.opt.tgt:
             tgt = batch.tgt.data.index_select(1, perm)
         for b in range(batch_size):
-            if hasattr(batch, 'src'):
+            if data_type == 'text':
                 src_vocab = data.src_vocabs[inds[b]]
             else:
                 src_vocab = None

@@ -35,7 +35,7 @@ python train.py -model_type img -data data/im2text/demo -save_model demo-model -
 3) Translate the images.
 
 ```
-python translate.py -model_type img -model demo-model_acc_x_ppl_x_e13.pt -src_img_dir data/im2text/images -src data/im2text/src-test.txt -output pred.txt -gpu 0 -verbose
+python translate.py -data_type img -model demo-model_acc_x_ppl_x_e13.pt -src_img_dir data/im2text/images -src data/im2text/src-test.txt -output pred.txt -gpu 0 -verbose
 ```
 
 The above dataset is sampled from the [processed-im2latex-100k-dataset](http://lstm.seas.harvard.edu/latex/py-processed-im2latex-100k-dataset.tgz). We provide a trained model [[link]](http://lstm.seas.harvard.edu/latex/py-model.pt) on this dataset.

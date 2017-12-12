@@ -67,7 +67,7 @@ class Statistics(object):
 class Trainer(object):
     def __init__(self, model, train_iter, valid_iter,
                  train_loss, valid_loss, optim,
-                 trunc_size, shard_size):
+                 trunc_size, shard_size, data_type='text'):
         """
         Args:
             model: the seq2seq model.
@@ -78,6 +78,7 @@ class Trainer(object):
             optim: the optimizer responsible for lr update.
             trunc_size: a batch is divided by several truncs of this size.
             shard_size: compute loss in shards of this size for efficiency.
+            data_type: type of the source input. Options are [text|img].
         """
         # Basic attributes.
         self.model = model
@@ -88,6 +89,8 @@ class Trainer(object):
         self.optim = optim
         self.trunc_size = trunc_size
         self.shard_size = shard_size
+        self.model_type = self.model.model_type
+        self.data_type = data_type
 
         # Set model in training mode.
         self.model.train()
@@ -103,16 +106,13 @@ class Trainer(object):
             trunc_size = self.trunc_size if self.trunc_size else target_size
 
             dec_state = None
-            if hasattr(batch, 'src'):
+            src = onmt.IO.make_features(batch, 'src', self.data_type)
+            if self.data_type == 'text':
                 _, src_lengths = batch.src
                 report_stats.n_src_words += src_lengths.sum()
-                src = onmt.IO.make_features(batch, 'src')
-            elif hasattr(batch, 'src_img'):
-                src = onmt.IO.make_features(batch, 'src_img')
+            else:
                 src_lengths = None
-            elif hasattr(batch, 'src_audio'):
-                src = onmt.IO.make_features(batch, 'src_audio')
-                src_lengths = None
+
             tgt_outer = onmt.IO.make_features(batch, 'tgt')
 
             for j in range(0, target_size-1, trunc_size):
@@ -153,15 +153,12 @@ class Trainer(object):
         stats = Statistics()
 
         for batch in self.valid_iter:
-            if hasattr(batch, 'src'):
+            src = onmt.IO.make_features(batch, 'src', self.data_type)
+            if self.data_type == 'text':
                 _, src_lengths = batch.src
-                src = onmt.IO.make_features(batch, 'src')
-            elif hasattr(batch, 'src_img'):
-                src = onmt.IO.make_features(batch, 'src_img')
+            else:
                 src_lengths = None
-            elif hasattr(batch, 'src_audio'):
-                src = onmt.IO.make_features(batch, 'src_audio')
-                src_lengths = None
+
             tgt = onmt.IO.make_features(batch, 'tgt')
 
             # F-prop through the model.
@@ -203,7 +200,6 @@ class Trainer(object):
             'opt': opt,
             'epoch': epoch,
             'optim': self.optim,
-            'model_type': self.model.model_type
         }
         torch.save(checkpoint,
                    '%s_acc_%.2f_ppl_%.2f_e%d.pt'

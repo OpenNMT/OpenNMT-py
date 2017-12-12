@@ -264,6 +264,8 @@ def train_opts(parser):
 
 
 def translate_opts(parser):
+    parser.add_argument('-data_type', default="text",
+                        help="Type of the source input. Options: [text|img].")
     parser.add_argument('-model', required=True,
                         help='Path to model .pt file')
     parser.add_argument('-src',   required=True,

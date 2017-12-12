@@ -56,7 +56,7 @@ def main():
         import json
         translator.initBeamAccum()
 
-    data = onmt.IO.ONMTDataset(opt.model_type,
+    data = onmt.IO.ONMTDataset(opt.data_type,
                                opt.src, opt.tgt, translator.fields,
                                src_img_dir=opt.src_img_dir,
                                src_audio_dir=opt.src_audio_dir,
@@ -65,6 +65,7 @@ def main():
                                window_stride=opt.window_stride,
                                window=opt.window,
                                use_filter_pred=False)
+    data_type = data.data_type
 
     test_data = onmt.IO.OrderedIterator(
         dataset=data, device=opt.gpu,
@@ -86,16 +87,18 @@ def main():
         # sentence in the batch. It has to be zip_longest instead of
         # plain-old zip because the gold_batch has length 0 if the target
         # is not included.
-        if hasattr(batch, 'src'):
+        if data_type == 'text':
             sents = src.split(1, dim=1)
         else:
             sents = [torch.Tensor(1, 1) for i in range(len(pred_scores))]
-        z_batch = zip_longest(
+        z_batch = zip_longest(range(
+                len(pred_scores)),
                 pred_batch, gold_batch,
                 pred_scores, gold_scores,
                 (sent.squeeze(1) for sent in sents))
 
-        for pred_sents, gold_sent, pred_score, gold_score, src_sent in z_batch:
+        for i, pred_sents, gold_sent, pred_score, gold_score, src_sent\
+                in z_batch:
             n_best_preds = [" ".join(pred) for pred in pred_sents[:opt.n_best]]
             out_file.write('\n'.join(n_best_preds))
             out_file.write('\n')
@@ -103,11 +106,11 @@ def main():
 
             if opt.verbose:
                 sent_number = next(counter)
-                if hasattr(batch, 'src'):
+                if data_type == 'text':
                     words = get_src_words(
                         src_sent, translator.fields["src"].vocab.itos)
                 else:
-                    index = batch.indices.data[0]
+                    index = batch.indices.data[i]
                     words = test_data.dataset.examples[index].src_path
 
                 os.write(1, bytes('\nSENT %d: %s\n' %
