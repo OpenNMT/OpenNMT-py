@@ -16,6 +16,8 @@ import onmt.modules
 from onmt.Utils import aeq, use_gpu
 import opts
 
+import random
+
 parser = argparse.ArgumentParser(
     description='train.py',
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -36,6 +38,7 @@ if opt.layers != -1:
 
 opt.brnn = (opt.encoder_type == "brnn")
 if opt.seed > 0:
+    random.seed(opt.seed)
     torch.manual_seed(opt.seed)
 
 if opt.rnn_type == "SRU" and not opt.gpuid:

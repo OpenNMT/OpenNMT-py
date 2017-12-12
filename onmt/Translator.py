@@ -123,7 +123,7 @@ class Translator(object):
         # Repeat everything beam_size times.
         context = rvar(context.data)
         context_lengths = src_lengths.repeat(beam_size)
-        if hasattr(batch, 'src_map'):
+        if data_type == 'text':
             srcMap = rvar(batch.src_map.data)
         else:
             srcMap = None

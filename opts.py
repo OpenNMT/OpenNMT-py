@@ -308,7 +308,7 @@ def translate_opts(parser):
                         help="Create dynamic dictionaries")
     parser.add_argument('-share_vocab', action='store_true',
                         help="Share source and target vocabulary")
-    # Options most relevant to speech
+    # Options most relevant to speech.
     parser.add_argument('-sample_rate', type=int, default=16000,
                         help="Sample rate.")
     parser.add_argument('-window_size', type=float, default=.02,
