@@ -6,9 +6,7 @@ python:
 install:
   - sudo apt-get update
   # dependencies for torchaudio
-  - sudo apt-get install sox libsox-dev libsox-fmt-all
-  # dependencies for PIL
-  - sudo apt-get install libjpeg libjpeg-dev libfreetype6 libfreetype6-dev zlib1g-dev
+  - sudo apt-get install -y sox libsox-dev libsox-fmt-all
   - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
