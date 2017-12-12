@@ -91,46 +91,55 @@ def read_corpus_file(path, truncate, side):
             yield example_dict, n_feats
 
 
-def read_img_file(path, src_img_dir, side, truncate=None):
+def read_img_file(path, src_dir, side, truncate=None):
     """
     path: location of a src file containing image paths
-    src_img_dir: location of source images
-    truncate: maximum img size (0 for unlimited)
+    src_dir: location of source images
+    truncate: maximum img size ((0,0) for unlimited)
 
     returns: image for each line
     """
-    assert not truncate, 'truncate not implemented yet!'
     with codecs.open(path, "r", "utf-8") as corpus_file:
-        for i, line in enumerate(corpus_file):
-            img_path = os.path.join(src_img_dir, line.strip())
+        index = 0
+        for line in corpus_file:
+            img_path = os.path.join(src_dir, line.strip())
             if not os.path.exists(img_path):
                 img_path = line
             assert os.path.exists(img_path), \
                 'img path %s not found' % (line.strip())
             img = transforms.ToTensor()(Image.open(img_path))
+            if truncate and truncate != (0, 0):
+                if not (img.size(1) <= truncate[0]
+                        and img.size(2) <= truncate[1]):
+                    continue
             example_dict = {side: img,
                             side+'_path': line.strip(),
-                            'indices': i}
+                            'indices': index}
+            index += 1
             yield example_dict
 
 
-def read_audio_file(path, src_audio_dir, sample_rate, window_size,
+def read_audio_file(path, src_dir, side, sample_rate, window_size,
                     window_stride, window, normalize_audio, truncate=None):
     """
     path: location of a src file containing audio paths
-    src_audio_dir: location of source audio files
-    truncate: maximum audio length (0 for unlimited)
+    src_dir: location of source audio files
+    truncate: maximum audio length (0 or None for unlimited)
 
     returns: image for each line
     """
     with codecs.open(path, "r", "utf-8") as corpus_file:
-        for i, line in enumerate(corpus_file):
-            audio_path = os.path.join(src_audio_dir, line.strip())
+        index = 0
+        for line in corpus_file:
+            audio_path = os.path.join(src_dir, line.strip())
             if not os.path.exists(audio_path):
                 audio_path = line
             assert os.path.exists(audio_path), \
                 'audio path %s not found' % (line.strip())
             sound, sample_rate = torchaudio.load(audio_path)
+            if truncate and truncate > 0:
+                if sound.size(0) > truncate:
+                    continue
             assert sample_rate == sample_rate, \
                 'Sample rate of %s != -sample_rate (%d vs %d)' \
                 % (audio_path, sample_rate, sample_rate)
@@ -154,9 +163,11 @@ def read_audio_file(path, src_audio_dir, sample_rate, window_size,
                 std = spect.std()
                 spect.add_(-mean)
                 spect.div_(std)
-            if truncate:
-                assert False, 'truncate not implemented yet!'
-            yield line.strip(), spect, i
+            example_dict = {side: spect,
+                            side + '_path': line.strip(),
+                            'indices': index}
+            index += 1
+            yield example_dict
 
 
 def merge_vocabs(vocabs, vocab_size=None):
@@ -254,7 +265,7 @@ def get_fields(data_type, n_src_features, n_tgt_features):
             for i, spect in enumerate(data):
                 sounds[i, :, :, 0:spect.size(1)] = spect
             return sounds
-        fields["src_audio"] = torchtext.data.Field(
+        fields["src"] = torchtext.data.Field(
             use_vocab=False, tensor_type=torch.FloatTensor,
             postprocessing=make_audio, sequential=False)
 
@@ -394,8 +405,8 @@ class ONMTDataset(torchtext.data.Dataset):
                  src_seq_length=0, tgt_seq_length=0,
                  src_seq_length_trunc=0, tgt_seq_length_trunc=0,
                  use_filter_pred=True, dynamic_dict=True,
-                 src_img_dir=None, src_audio_dir=None, sample_rate=0,
-                 window_size=0, window_stride=0, window=None,
+                 src_dir=None, sample_rate=0, window_size=0,
+                 window_stride=0, window=None,
                  normalize_audio=True, **kwargs):
         """
         Create a translation dataset given paths and fields.
@@ -406,8 +417,7 @@ class ONMTDataset(torchtext.data.Dataset):
             at present this is not checked.
         fields: a dictionary. keys are things like 'src', 'tgt', 'src_map',
             and 'alignment'
-        src_img_dir: source image directory.
-        src_audio_dir: source audio directory.
+        src_dir: source directory for storing images or audio.
 
         Initializes an ONMTDataset object with the following attributes:
         self.examples (might be a generator, might be a list, hard to say):
@@ -433,18 +443,17 @@ class ONMTDataset(torchtext.data.Dataset):
             src_examples = (ex for ex, nfeats in src_examples)
             self.n_src_feats = src_feats
         elif self.data_type == "img":
-            assert (src_img_dir is not None) and os.path.exists(src_img_dir), \
-                   'src_img_dir must be a valid directory if data_type is img'
+            assert (src_dir is not None) and os.path.exists(src_dir),\
+                   'src_dir must be a valid directory if data_type is img'
             global Image, transforms
             from PIL import Image
             from torchvision import transforms
 
-            src_examples = read_img_file(src_path, src_img_dir, "src")
+            src_examples = read_img_file(src_path, src_dir, "src")
             self.n_src_feats = 0
         elif self.data_type == "audio":
-            assert (src_audio_dir is not None) and \
-                   os.path.exists(src_audio_dir), \
-                   """src_audio_dir must be a valid directory
+            assert (src_dir is not None) and os.path.exists(src_dir),\
+                   """src_dir must be a valid directory
                    if data_type is audio"""
             global torchaudio, librosa, np
             import torchaudio
@@ -456,8 +465,10 @@ class ONMTDataset(torchtext.data.Dataset):
             self.window_stride = window_stride
             self.window = window
             self.normalize_audio = normalize_audio
-            src_data = self._read_audio_file(src_path, src_audio_dir)
-            src_examples = self._construct_audio_examples(src_data, "src")
+            src_examples = read_audio_file(src_path, src_dir, "src",
+                                           sample_rate, window_size,
+                                           window_stride, window,
+                                           normalize_audio)
             self.n_src_feats = 0
 
         # if tgt_path exists, then we need to do the same thing as we did
@@ -527,13 +538,6 @@ class ONMTDataset(torchtext.data.Dataset):
                         [0] + [src_vocab.stoi[w] for w in tgt] + [0])
                 example["alignment"] = mask
             yield example
-
-    def _construct_audio_examples(self, items, side):
-        for audio_path, audio_data, i in items:
-            example_dict = {side+'_audio': audio_data,
-                            side+'_path': audio_path,
-                            'indices': i}
-            yield example_dict
 
     def __getstate__(self):
         return self.__dict__

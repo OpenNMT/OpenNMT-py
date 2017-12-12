@@ -58,8 +58,7 @@ def main():
 
     data = onmt.IO.ONMTDataset(opt.data_type,
                                opt.src, opt.tgt, translator.fields,
-                               src_img_dir=opt.src_img_dir,
-                               src_audio_dir=opt.src_audio_dir,
+                               src_dir=opt.src_dir,
                                sample_rate=opt.sample_rate,
                                window_size=opt.window_size,
                                window_stride=opt.window_stride,
@@ -74,7 +73,7 @@ def main():
 
     counter = count(1)
     for batch in test_data:
-        pred_batch, gold_batch, pred_scores, gold_scores, attn, src \
+        pred_batch, gold_batch, pred_scores, gold_scores, attn, src, indices\
             = translator.translate(batch, data)
         pred_score_total += sum(score[0] for score in pred_scores)
         pred_words_total += sum(len(x[0]) for x in pred_batch)
@@ -91,13 +90,12 @@ def main():
             sents = src.split(1, dim=1)
         else:
             sents = [torch.Tensor(1, 1) for i in range(len(pred_scores))]
-        z_batch = zip_longest(range(
-                len(pred_scores)),
+        z_batch = zip_longest(
                 pred_batch, gold_batch,
                 pred_scores, gold_scores,
-                (sent.squeeze(1) for sent in sents))
+                (sent.squeeze(1) for sent in sents), indices)
 
-        for i, pred_sents, gold_sent, pred_score, gold_score, src_sent\
+        for pred_sents, gold_sent, pred_score, gold_score, src_sent, index\
                 in z_batch:
             n_best_preds = [" ".join(pred) for pred in pred_sents[:opt.n_best]]
             out_file.write('\n'.join(n_best_preds))
@@ -110,7 +108,6 @@ def main():
                     words = get_src_words(
                         src_sent, translator.fields["src"].vocab.itos)
                 else:
-                    index = batch.indices.data[i]
                     words = test_data.dataset.examples[index].src_path
 
                 os.write(1, bytes('\nSENT %d: %s\n' %

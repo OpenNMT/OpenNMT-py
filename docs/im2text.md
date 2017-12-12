@@ -23,7 +23,7 @@ Im2Text consists of three commands:
 1) Preprocess the data.
 
 ```
-python preprocess.py -data_type img -src_img_dir data/im2text/images/ -train_src data/im2text/src-train.txt -train_tgt data/im2text/tgt-train.txt -valid_src data/im2text/src-val.txt -valid_tgt data/im2text/tgt-val.txt -save_data data/im2text/demo
+python preprocess.py -data_type img -src_dir data/im2text/images/ -train_src data/im2text/src-train.txt -train_tgt data/im2text/tgt-train.txt -valid_src data/im2text/src-val.txt -valid_tgt data/im2text/tgt-val.txt -save_data data/im2text/demo
 ```
 
 2) Train the model.
@@ -35,14 +35,14 @@ python train.py -model_type img -data data/im2text/demo -save_model demo-model -
 3) Translate the images.
 
 ```
-python translate.py -data_type img -model demo-model_acc_x_ppl_x_e13.pt -src_img_dir data/im2text/images -src data/im2text/src-test.txt -output pred.txt -gpu 0 -verbose
+python translate.py -data_type img -model demo-model_acc_x_ppl_x_e13.pt -src_dir data/im2text/images -src data/im2text/src-test.txt -output pred.txt -gpu 0 -verbose
 ```
 
 The above dataset is sampled from the [processed-im2latex-100k-dataset](http://lstm.seas.harvard.edu/latex/py-processed-im2latex-100k-dataset.tgz). We provide a trained model [[link]](http://lstm.seas.harvard.edu/latex/py-model.pt) on this dataset.
 
 ## Data Format
 
-* `-src_image_dir`: The directory containing the images. Since images of the same size can be batched together, we suggest padding images of similar sizes to the same size in order to facilitate training.
+* `-src_dir`: The directory containing the images.
 
 * `-train_tgt`: The file storing the tokenized labels, one label per line. It shall look like:
 ```
@@ -52,7 +52,7 @@ The above dataset is sampled from the [processed-im2latex-100k-dataset](http://l
 ...
 ```
 
-* `-train_src`: The file storing the paths of the images (relative to `src_image_dir`).
+* `-train_src`: The file storing the paths of the images (relative to `src_dir`).
 ```
 <image0_path>
 <image1_path>

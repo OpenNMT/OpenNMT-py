@@ -271,10 +271,8 @@ def translate_opts(parser):
     parser.add_argument('-src',   required=True,
                         help="""Source sequence to decode (one line per
                         sequence)""")
-    parser.add_argument('-src_img_dir',   default="",
-                        help='Source image directory')
-    parser.add_argument('-src_audio_dir',   default="",
-                        help='Source audio directory')
+    parser.add_argument('-src_dir',   default="",
+                        help='Source directory for image or audio files')
     parser.add_argument('-tgt',
                         help='True target sequence (optional)')
     parser.add_argument('-output', default='pred.txt',

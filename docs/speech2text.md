@@ -1,0 +1,54 @@
+# Im2Text
+
+A deep learning-based approach to learning the speech-to-text conversion, built on top of the <a href="http://opennmt.net/">OpenNMT</a> system.
+
+The model is an attention-based encoder-decoder model. Given raw audio, we first apply short-time Fourier transform (STFT), then apply Convolutional Neural Networks to get the source features. Based on this source representation, we use an LSTM decoder with attention to produce the text character by character.
+
+## Quick Start
+
+To get started, we provide a toy speech-to-text example. We assume that the working directory is `OpenNMT-py` throughout this document.
+
+Im2Text consists of three commands:
+
+1) Preprocess the data.
+
+```
+python preprocess.py -data_type audio -src_dir data/speech/an4_dataset -train_src data/speech/src-train.txt -train_tgt data/speech/tgt-train.txt -valid_src data/speech/src-val.txt -valid_tgt data/speech/tgt-val.txt -save_data data/speech/demo
+```
+
+2) Train the model.
+
+```
+python train.py -model_type audio -src_dir data/speech/an4_dataset -data data/speech/demo -save_model demo-model -gpuid 0 -batch_size 16 -max_grad_norm 20 -learning_rate 0.1 -learning_rate_decay 0.98 -epochs 60
+```
+
+3) Translate the speechs.
+
+```
+python translate.py -data_type audio -model demo-model_acc_x_ppl_x_e13.pt -src_dir data/speech/an4_dataset -src data/im2text/src-test.txt -output pred.txt -gpu 0 -verbose
+```
+
+
+## Data Format
+
+* `-src_dir`: The directory containing the speechs.
+
+* `-train_tgt`: The file storing the tokenized labels, one label per line. It shall look like:
+```
+<label0_token0> <label0_token1> ... <label0_tokenN0>
+<label1_token0> <label1_token1> ... <label1_tokenN1>
+<label2_token0> <label2_token1> ... <label2_tokenN2>
+...
+```
+
+* `-train_src`: The file storing the paths of the speechs (relative to `src_dir`).
+```
+<speech0_path>
+<speech1_path>
+<speech2_path>
+...
+```
+
+## Acknowledgement
+
+Our preprocessing and encoder is adapted from [deepspeech.pytorch](https://github.com/SeanNaren/deepspeech.pytorch).

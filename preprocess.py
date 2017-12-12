@@ -20,10 +20,8 @@ parser.add_argument('-config', help="Read options from this file")
 
 parser.add_argument('-data_type', default="text",
                     help="Type of the source input. Options are [text|img].")
-parser.add_argument('-src_img_dir', default="",
-                    help="Location of source images")
-parser.add_argument('-src_audio_dir',   default="",
-                    help='Source audio directory')
+parser.add_argument('-src_dir', default="",
+                    help="Source directory for image or audio files.")
 
 parser.add_argument('-train_src', required=True,
                     help="Path to the training source data")
@@ -78,8 +76,7 @@ def main():
                                 src_seq_length_trunc=opt.src_seq_length_trunc,
                                 tgt_seq_length_trunc=opt.tgt_seq_length_trunc,
                                 dynamic_dict=opt.dynamic_dict,
-                                src_img_dir=opt.src_img_dir,
-                                src_audio_dir=opt.src_audio_dir,
+                                src_dir=opt.src_dir,
                                 sample_rate=opt.sample_rate,
                                 window_size=opt.window_size,
                                 window_stride=opt.window_stride,
@@ -94,8 +91,7 @@ def main():
                                 src_seq_length_trunc=opt.src_seq_length_trunc,
                                 tgt_seq_length_trunc=opt.tgt_seq_length_trunc,
                                 dynamic_dict=opt.dynamic_dict,
-                                src_img_dir=opt.src_img_dir,
-                                src_audio_dir=opt.src_audio_dir,
+                                src_dir=opt.src_dir,
                                 sample_rate=opt.sample_rate,
                                 window_size=opt.window_size,
                                 window_stride=opt.window_stride,

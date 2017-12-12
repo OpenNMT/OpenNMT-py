@@ -65,9 +65,12 @@ class Translator(object):
         return tokens
 
     def _runTarget(self, batch, data):
-
-        _, src_lengths = batch.src
-        src = onmt.IO.make_features(batch, 'src')
+        data_type = data.data_type
+        if data_type == 'text':
+            _, src_lengths = batch.src
+        else:
+            src_lengths = None
+        src = onmt.IO.make_features(batch, 'src', data_type)
         tgt_in = onmt.IO.make_features(batch, 'tgt')[:-1]
 
         #  (1) run the encoder on the src
@@ -217,7 +220,7 @@ class Translator(object):
         #  (2) translate
         pred, predScore, attn, goldScore = self.translateBatch(batch, data)
         assert(len(goldScore) == len(pred))
-        pred, predScore, attn, goldScore, i = list(zip(
+        pred, predScore, attn, goldScore, indices = list(zip(
             *sorted(zip(pred, predScore, attn, goldScore,
                         batch.indices.data),
                     key=lambda x: x[-1])))
@@ -247,4 +250,4 @@ class Translator(object):
                     self.buildTargetTokens(tgt[1:, b], src[:, b]
                                            if src is not None else None,
                                            None, None))
-        return predBatch, goldBatch, predScore, goldScore, attn, src
+        return predBatch, goldBatch, predScore, goldScore, attn, src, indices
