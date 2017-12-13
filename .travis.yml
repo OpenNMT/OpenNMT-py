@@ -5,8 +5,6 @@ python:
 
 before_install:
   - sudo apt-get update
-  # dependencies for torchaudio
-  - sudo apt-get install -y sox libsox-dev libsox-fmt-all
   - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
@@ -20,15 +18,18 @@ before_install:
   - source activate test-environment
   # use requirements.txt for dependencies
   - pip install -r requirements.txt
+  # dependencies for im2text
   - pip install Pillow
-  - pip install git+https://github.com/pytorch/audio
+  # dependencies for speech2text
+  - sudo apt-get install -y sox libsox-dev libsox-fmt-all
+  - pip install librosa git+https://github.com/pytorch/audio
 
 install:
   - python setup.py install
 
 script:
   - python -m unittest discover
-  - wget -O /tmp/im2text.tgz http://lstm.seas.harvard.edu/latex/im2text.tgz; tar zxf /tmp/im2text.tgz -C /tmp/
+  - wget -O /tmp/im2text.tgz http://lstm.seas.harvard.edu/latex/im2text_small.tgz; tar zxf /tmp/im2text_small.tgz -C /tmp/
   - wget -O /tmp/speech.tgz http://lstm.seas.harvard.edu/latex/speech.tgz; tar zxf /tmp/speech.tgz -C /tmp/
   - wget -O /tmp/test_model_speech.pt http://lstm.seas.harvard.edu/latex/test_model_speech.pt
   - wget -O /tmp/test_model_im2text.pt http://lstm.seas.harvard.edu/latex/test_model_im2text.pt
@@ -52,6 +53,8 @@ script:
   - head /tmp/speech/src-val.txt > /tmp/speech/src-val-head.txt; head /tmp/speech/tgt-val.txt > /tmp/speech/tgt-val-head.txt; python preprocess.py -data_type audio -src_dir /tmp/speech/an4_dataset -train_src /tmp/speech/src-val-head.txt -train_tgt /tmp/speech/tgt-val-head.txt -valid_src /tmp/speech/src-val-head.txt -valid_tgt /tmp/speech/tgt-val-head.txt -save_data /tmp/speech/q; python train.py -model_type audio -data /tmp/speech/q -rnn_size 2 -batch_size 10 -word_vec_size 5 -report_every 5 -rnn_size 10 -epochs 1
   # test nmt translation
   - python translate.py -model test/test_model2.pt  -src  data/morph/src.valid  -verbose -batch_size 10 -beam_size 10 -tgt data/morph/tgt.valid -out /tmp/trans; diff  data/morph/tgt.valid /tmp/trans
+  # test tool
+  - PYTHONPATH=$PYTHONPATH:. python tools/extract_embeddings.py -model test/test_model.pt
 matrix:
   include:
     - env: LINT_CHECK
