@@ -23,10 +23,9 @@ class AudioEncoder(nn.Module):
 
         self.layer1 = nn.Conv2d(1,   32, kernel_size=(41, 11),
                                 padding=(0, 10), stride=(2, 2))
+        self.batch_norm1 = nn.BatchNorm2d(32)
         self.layer2 = nn.Conv2d(32,  32, kernel_size=(21, 11),
                                 padding=(0, 0), stride=(2, 1))
-
-        self.batch_norm1 = nn.BatchNorm2d(32)
         self.batch_norm2 = nn.BatchNorm2d(32)
 
         input_size = int(math.floor((sample_rate * window_size) / 2) + 1)
