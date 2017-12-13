@@ -29,18 +29,17 @@ def main():
     opts.model_opts(dummy_parser)
     dummy_opt = dummy_parser.parse_known_args([])[0]
     opt = parser.parse_args()
-    checkpoint = torch.load(opt.model)
     opt.cuda = opt.gpu > -1
     if opt.cuda:
         torch.cuda.set_device(opt.gpu)
 
+    # Add in default model arguments, possibly added since training.
+    checkpoint = torch.load(opt.model,
+                            map_location=lambda storage, loc: storage)
     model_opt = checkpoint['opt']
     src_dict = checkpoint['vocab'][1][1]
     tgt_dict = checkpoint['vocab'][0][1]
 
-    # Add in default model arguments, possibly added since training.
-    checkpoint = torch.load(opt.model,
-                            map_location=lambda storage, loc: storage)
     fields = onmt.IO.load_fields(checkpoint['vocab'])
 
     model_opt = checkpoint['opt']

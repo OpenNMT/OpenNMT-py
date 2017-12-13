@@ -29,7 +29,7 @@ install:
 
 script:
   - python -m unittest discover
-  - wget -O /tmp/im2text.tgz http://lstm.seas.harvard.edu/latex/im2text_small.tgz; tar zxf /tmp/im2text_small.tgz -C /tmp/
+  - wget -O /tmp/im2text.tgz http://lstm.seas.harvard.edu/latex/im2text_small.tgz; tar zxf /tmp/im2text.tgz -C /tmp/
   - wget -O /tmp/speech.tgz http://lstm.seas.harvard.edu/latex/speech.tgz; tar zxf /tmp/speech.tgz -C /tmp/
   - wget -O /tmp/test_model_speech.pt http://lstm.seas.harvard.edu/latex/test_model_speech.pt
   - wget -O /tmp/test_model_im2text.pt http://lstm.seas.harvard.edu/latex/test_model_im2text.pt
