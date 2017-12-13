@@ -1,4 +1,4 @@
-# Im2Text
+# Image to Text
 
 A deep learning-based approach to learning the image-to-text conversion, built on top of the <a href="http://opennmt.net/">OpenNMT</a> system. It is completely data-driven, hence can be used for a variety of image-to-text problems, such as image captioning, optical character recognition and LaTeX decompilation. 
 
@@ -12,7 +12,12 @@ The goal is to infer the LaTeX source that can be compiled to such an image:
  d s _ { 1 1 } ^ { 2 } = d x ^ { + } d x ^ { - } + l _ { p } ^ { 9 } \frac { p _ { - } } { r ^ { 7 } } \delta ( x ^ { - } ) d x ^ { - } d x ^ { - } + d x _ { 1 } ^ { 2 } + \; \cdots \; + d x _ { 9 } ^ { 2 } 
 ```
 
-The paper (https://arxiv.org/pdf/1609.04938.pdf) provides more technical details of this model.
+The paper [[What You Get Is What You See: A Visual Markup Decompiler]](https://arxiv.org/pdf/1609.04938.pdf) provides more technical details of this model.
+
+## Dependencies
+
+* `torchvision`: `conda install torchvision`
+* `Pillow`: `pip install Pillow`
 
 ## Quick Start
 
@@ -23,7 +28,7 @@ Im2Text consists of four commands:
 0) Download the data.
 
 ```
-wget -O data/im2text.tgz http://lstm.seas.harvard.edu/latex/im2text.tgz; tar zxf data/im2text.tgz -C data/
+wget -O data/im2text.tgz http://lstm.seas.harvard.edu/latex/im2text_small.tgz; tar zxf data/im2text.tgz -C data/
 ```
 
 1) Preprocess the data.
@@ -44,9 +49,9 @@ python train.py -model_type img -data data/im2text/demo -save_model demo-model -
 python translate.py -data_type img -model demo-model_acc_x_ppl_x_e13.pt -src_dir data/im2text/images -src data/im2text/src-test.txt -output pred.txt -gpu 0 -verbose
 ```
 
-The above dataset is sampled from the [processed-im2latex-100k-dataset](http://lstm.seas.harvard.edu/latex/py-processed-im2latex-100k-dataset.tgz). We provide a trained model [[link]](http://lstm.seas.harvard.edu/latex/py-model.pt) on this dataset.
+The above dataset is sampled from the [im2latex-100k-dataset](http://lstm.seas.harvard.edu/latex/im2text.tgz). We provide a trained model [[link]](http://lstm.seas.harvard.edu/latex/py-model.pt) on this dataset.
 
-## Data Format
+## Options
 
 * `-src_dir`: The directory containing the images.
 

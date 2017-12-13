@@ -95,9 +95,9 @@ def read_img_file(path, src_dir, side, truncate=None):
     """
     path: location of a src file containing image paths
     src_dir: location of source images
-    truncate: maximum img size ((0,0) for unlimited)
-
-    returns: image for each line
+    side: 'src' or 'tgt'
+    truncate: maximum img size ((0,0) or None for unlimited)
+    yields: a dictionary containing image data, path and index for each line
     """
     with codecs.open(path, "r", "utf-8") as corpus_file:
         index = 0
@@ -124,6 +124,12 @@ def read_audio_file(path, src_dir, side, sample_rate, window_size,
     """
     path: location of a src file containing audio paths
     src_dir: location of source audio files
+    side: 'src' or 'tgt'
+    sample_rate: sample_rate
+    window_size: window size for spectrogram in seconds
+    window_stride: window stride for spectrogram in seconds
+    window: window type for spectrogram generation
+    normalize_audio: subtract spectrogram by mean and divide by std or not
     truncate: maximum audio length (0 or None for unlimited)
 
     returns: image for each line
