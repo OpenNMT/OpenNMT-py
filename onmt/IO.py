@@ -2,7 +2,6 @@
 
 import os
 import codecs
-import six
 from collections import Counter, defaultdict
 from itertools import chain, count
 
@@ -79,7 +78,7 @@ def read_corpus_file(path, truncate, side):
     """
     with codecs.open(path, "r", "utf-8") as corpus_file:
         for i, line in enumerate(corpus_file):
-            line = line.split()
+            line = line.strip().split()
             if truncate:
                 line = line[:truncate]
             words, feats, n_feats = extract_features(line)
@@ -367,8 +366,6 @@ def _construct_example_fromlist(data, fields):
     ex = torchtext.data.Example()
     for (name, field), val in zip(fields, data):
         if field is not None:
-            if isinstance(val, six.string_types):
-                val = val.rstrip('\n')
             setattr(ex, name, field.preprocess(val))
         else:
             setattr(ex, name, val)
