@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from __future__ import division
-from builtins import bytes
+from six.moves.builtins import bytes
 import os
 import argparse
 import math
@@ -12,10 +12,9 @@ import onmt
 import onmt.IO
 import opts
 from itertools import takewhile, count
-try:
-    from itertools import zip_longest
-except ImportError:
-    from itertools import izip_longest as zip_longest
+
+from six.moves import zip_longest
+from six.moves import zip
 
 parser = argparse.ArgumentParser(
     description='translate.py',
@@ -33,7 +32,6 @@ def report_score(name, score_total, words_total):
 
 
 def get_src_words(src_indices, index2str):
-    words = []
     raw_words = (index2str[i] for i in src_indices)
     words = takewhile(lambda w: w != onmt.IO.PAD_WORD, raw_words)
     return " ".join(words)

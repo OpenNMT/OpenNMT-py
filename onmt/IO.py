@@ -69,6 +69,20 @@ def extract_features(tokens):
     return words, features, token_size - 1
 
 
+def sents2feats(lines, max_len, side):
+    for i, line in enumerate(lines):
+        line = line.strip().split()
+        if max_len:
+            line = line[:max_len]
+        words, feats, n_feats = extract_features(line)
+        example_dict = {side: words, "indices": i}
+        if feats:
+            prefix = side + "_feat_"
+            example_dict.update((prefix + str(j), f)
+                                for j, f in enumerate(feats))
+        yield example_dict, n_feats
+
+
 def read_corpus_file(path, truncate, side):
     """
     path: location of a src or tgt file
@@ -76,17 +90,7 @@ def read_corpus_file(path, truncate, side):
     yields: (word, features, nfeat) triples for each line
     """
     with codecs.open(path, "r", "utf-8") as corpus_file:
-        for i, line in enumerate(corpus_file):
-            line = line.split()
-            if truncate:
-                line = line[:truncate]
-            words, feats, n_feats = extract_features(line)
-            example_dict = {side: words, "indices": i}
-            if feats:
-                prefix = side + "_feat_"
-                example_dict.update((prefix + str(j), f)
-                                    for j, f in enumerate(feats))
-            yield example_dict, n_feats
+        return sents2feats(corpus_file, truncate, side)
 
 
 def merge_vocabs(vocabs, vocab_size=None):
@@ -281,7 +285,8 @@ class ONMTDataset(torchtext.data.Dataset):
                  src_seq_length=0, tgt_seq_length=0,
                  src_seq_length_trunc=0, tgt_seq_length_trunc=0,
                  use_filter_pred=True, dynamic_dict=True,
-                 src_img_dir=None, **kwargs):
+                 src_img_dir=None, read_from_file=False,
+                 **kwargs):
         """
         Create a translation dataset given paths and fields.
 
@@ -312,7 +317,11 @@ class ONMTDataset(torchtext.data.Dataset):
         self.src_vocabs = []
         src_truncate = src_seq_length_trunc
 
-        src_examples = read_corpus_file(src_path, src_truncate, "src")
+        if read_from_file:
+            src_examples = read_corpus_file(src_path, src_truncate, "src")
+        else:
+            src_examples = sents2feats(src_path, src_truncate, "src")
+
         (_, src_feats), src_examples = peek(src_examples)
         src_examples = (ex for ex, nfeats in src_examples)
         self.n_src_feats = src_feats
@@ -321,7 +330,11 @@ class ONMTDataset(torchtext.data.Dataset):
         # for the source data
         if tgt_path is not None:
             tgt_truncate = tgt_seq_length_trunc
-            tgt_examples = read_corpus_file(tgt_path, tgt_truncate, "tgt")
+            if read_from_file:
+                tgt_examples = read_corpus_file(tgt_path, tgt_truncate, "tgt")
+            else:
+                tgt_examples = sents2feats(tgt_path, tgt_truncate, "tgt")
+
             (_, tgt_feats), tgt_examples = peek(tgt_examples)
             tgt_examples = (ex for ex, nfeats in tgt_examples)
             self.n_tgt_feats = tgt_feats
