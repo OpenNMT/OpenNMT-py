@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import os
 import codecs
 from collections import Counter, defaultdict
 from itertools import chain, count
@@ -27,11 +28,11 @@ torchtext.vocab.Vocab.__getstate__ = __getstate__
 torchtext.vocab.Vocab.__setstate__ = __setstate__
 
 
-def load_fields(vocab):
+def load_fields(vocab, data_type="text"):
     vocab = dict(vocab)
     n_src_features = len(collect_features(vocab, 'src'))
     n_tgt_features = len(collect_features(vocab, 'tgt'))
-    fields = get_fields(n_src_features, n_tgt_features)
+    fields = get_fields(data_type, n_src_features, n_tgt_features)
     for k, v in vocab.items():
         # Hack. Can't pickle defaultdict :(
         v.stoi = defaultdict(lambda: 0, v.stoi)
@@ -77,7 +78,7 @@ def read_corpus_file(path, truncate, side):
     """
     with codecs.open(path, "r", "utf-8") as corpus_file:
         for i, line in enumerate(corpus_file):
-            line = line.split()
+            line = line.strip().split()
             if truncate:
                 line = line[:truncate]
             words, feats, n_feats = extract_features(line)
@@ -87,6 +88,91 @@ def read_corpus_file(path, truncate, side):
                 example_dict.update((prefix + str(j), f)
                                     for j, f in enumerate(feats))
             yield example_dict, n_feats
+
+
+def read_img_file(path, src_dir, side, truncate=None):
+    """
+    path: location of a src file containing image paths
+    src_dir: location of source images
+    side: 'src' or 'tgt'
+    truncate: maximum img size ((0,0) or None for unlimited)
+    yields: a dictionary containing image data, path and index for each line
+    """
+    with codecs.open(path, "r", "utf-8") as corpus_file:
+        index = 0
+        for line in corpus_file:
+            img_path = os.path.join(src_dir, line.strip())
+            if not os.path.exists(img_path):
+                img_path = line
+            assert os.path.exists(img_path), \
+                'img path %s not found' % (line.strip())
+            img = transforms.ToTensor()(Image.open(img_path))
+            if truncate and truncate != (0, 0):
+                if not (img.size(1) <= truncate[0]
+                        and img.size(2) <= truncate[1]):
+                    continue
+            example_dict = {side: img,
+                            side+'_path': line.strip(),
+                            'indices': index}
+            index += 1
+            yield example_dict
+
+
+def read_audio_file(path, src_dir, side, sample_rate, window_size,
+                    window_stride, window, normalize_audio, truncate=None):
+    """
+    path: location of a src file containing audio paths
+    src_dir: location of source audio files
+    side: 'src' or 'tgt'
+    sample_rate: sample_rate
+    window_size: window size for spectrogram in seconds
+    window_stride: window stride for spectrogram in seconds
+    window: window type for spectrogram generation
+    normalize_audio: subtract spectrogram by mean and divide by std or not
+    truncate: maximum audio length (0 or None for unlimited)
+
+    returns: image for each line
+    """
+    with codecs.open(path, "r", "utf-8") as corpus_file:
+        index = 0
+        for line in corpus_file:
+            audio_path = os.path.join(src_dir, line.strip())
+            if not os.path.exists(audio_path):
+                audio_path = line
+            assert os.path.exists(audio_path), \
+                'audio path %s not found' % (line.strip())
+            sound, sample_rate = torchaudio.load(audio_path)
+            if truncate and truncate > 0:
+                if sound.size(0) > truncate:
+                    continue
+            assert sample_rate == sample_rate, \
+                'Sample rate of %s != -sample_rate (%d vs %d)' \
+                % (audio_path, sample_rate, sample_rate)
+            sound = sound.numpy()
+            if len(sound.shape) > 1:
+                if sound.shape[1] == 1:
+                    sound = sound.squeeze()
+                else:
+                    sound = sound.mean(axis=1)  # average multiple channels
+            n_fft = int(sample_rate * window_size)
+            win_length = n_fft
+            hop_length = int(sample_rate * window_stride)
+            # STFT
+            D = librosa.stft(sound, n_fft=n_fft, hop_length=hop_length,
+                             win_length=win_length, window=window)
+            spect, _ = librosa.magphase(D)
+            spect = np.log1p(spect)
+            spect = torch.FloatTensor(spect)
+            if normalize_audio:
+                mean = spect.mean()
+                std = spect.std()
+                spect.add_(-mean)
+                spect.div_(std)
+            example_dict = {side: spect,
+                            side + '_path': line.strip(),
+                            'indices': index}
+            index += 1
+            yield example_dict
 
 
 def merge_vocabs(vocabs, vocab_size=None):
@@ -106,11 +192,12 @@ def merge_vocabs(vocabs, vocab_size=None):
                                  max_size=vocab_size)
 
 
-def make_features(batch, side):
+def make_features(batch, side, data_type='text'):
     """
     Args:
         batch (Variable): a batch of source or target data.
         side (str): for source or for target.
+        data_type (str): type of the source input. Options are [text|img].
     Returns:
         A sequence of src/tgt tensors with optional feature tensors
         of size (len x batch).
@@ -124,7 +211,10 @@ def make_features(batch, side):
     keys = sorted([k for k in batch.__dict__ if feat_start in k])
     features = [batch.__dict__[k] for k in keys]
     levels = [data] + features
-    return torch.cat([level.unsqueeze(2) for level in levels], 2)
+    if data_type == 'text':
+        return torch.cat([level.unsqueeze(2) for level in levels], 2)
+    else:
+        return levels[0]
 
 
 def save_vocab(fields):
@@ -147,20 +237,42 @@ def collect_feature_dicts(fields, side):
     return feature_dicts
 
 
-def get_fields(n_src_features, n_tgt_features):
+def get_fields(data_type, n_src_features, n_tgt_features):
     """
+    data_type: type of the source input. Options are [text|img|audio].
     n_src_features: the number of source features to create Field objects for.
     n_tgt_features: the number of target features to create Field objects for.
     returns: A dictionary whose keys are strings and whose values are the
             corresponding Field objects.
     """
     fields = {}
-    fields["src"] = torchtext.data.Field(
-        pad_token=PAD_WORD,
-        include_lengths=True)
-
-    # fields = [("src_img", torchtext.data.Field(
-    #     include_lengths=True))]
+    if data_type == 'text':
+        fields["src"] = torchtext.data.Field(
+            pad_token=PAD_WORD,
+            include_lengths=True)
+    elif data_type == 'img':
+        def make_img(data, _):
+            c = data[0].size(0)
+            h = max([t.size(1) for t in data])
+            w = max([t.size(2) for t in data])
+            imgs = torch.zeros(len(data), c, h, w)
+            for i, img in enumerate(data):
+                imgs[i, :, 0:img.size(1), 0:img.size(2)] = img
+            return imgs
+        fields["src"] = torchtext.data.Field(
+            use_vocab=False, tensor_type=torch.FloatTensor,
+            postprocessing=make_img, sequential=False)
+    elif data_type == 'audio':
+        def make_audio(data, _):
+            nfft = data[0].size(0)
+            t = max([t.size(1) for t in data])
+            sounds = torch.zeros(len(data), 1, nfft, t)
+            for i, spect in enumerate(data):
+                sounds[i, :, :, 0:spect.size(1)] = spect
+            return sounds
+        fields["src"] = torchtext.data.Field(
+            use_vocab=False, tensor_type=torch.FloatTensor,
+            postprocessing=make_audio, sequential=False)
 
     for j in range(n_src_features):
         fields["src_feat_"+str(j)] = \
@@ -211,23 +323,24 @@ def build_vocab(train, opt):
     train: an ONMTDataset
     """
     fields = train.fields
-    fields["src"].build_vocab(train, max_size=opt.src_vocab_size,
-                              min_freq=opt.src_words_min_frequency)
-    for j in range(train.n_src_feats):
-        fields["src_feat_" + str(j)].build_vocab(train)
     fields["tgt"].build_vocab(train, max_size=opt.tgt_vocab_size,
                               min_freq=opt.tgt_words_min_frequency)
     for j in range(train.n_tgt_feats):
         fields["tgt_feat_" + str(j)].build_vocab(train)
+    if opt.data_type == 'text':
+        fields["src"].build_vocab(train, max_size=opt.src_vocab_size,
+                                  min_freq=opt.src_words_min_frequency)
+        for j in range(train.n_src_feats):
+            fields["src_feat_" + str(j)].build_vocab(train)
 
-    # Merge the input and output vocabularies.
-    if opt.share_vocab:
-        # `tgt_vocab_size` is ignored when sharing vocabularies
-        merged_vocab = merge_vocabs(
-            [fields["src"].vocab, fields["tgt"].vocab],
-            vocab_size=opt.src_vocab_size)
-        fields["src"].vocab = merged_vocab
-        fields["tgt"].vocab = merged_vocab
+        # Merge the input and output vocabularies.
+        if opt.share_vocab:
+            # `tgt_vocab_size` is ignored when sharing vocabularies
+            merged_vocab = merge_vocabs(
+                [fields["src"].vocab, fields["tgt"].vocab],
+                vocab_size=opt.src_vocab_size)
+            fields["src"].vocab = merged_vocab
+            fields["tgt"].vocab = merged_vocab
 
 
 def join_dicts(*args):
@@ -247,6 +360,16 @@ def peek(seq):
     """
     first = next(seq)
     return first, chain([first], seq)
+
+
+def _construct_example_fromlist(data, fields):
+    ex = torchtext.data.Example()
+    for (name, field), val in zip(fields, data):
+        if field is not None:
+            setattr(ex, name, field.preprocess(val))
+        else:
+            setattr(ex, name, val)
+    return ex
 
 
 class OrderedIterator(torchtext.data.Iterator):
@@ -272,16 +395,22 @@ class ONMTDataset(torchtext.data.Dataset):
     examples because of large datasets, for example).
     """
 
-    @staticmethod
-    def sort_key(ex):
+    def sort_key(self, ex):
         "Sort in reverse size order"
-        return -len(ex.src)
+        if self.data_type == 'text':
+            return -len(ex.src)
+        elif self.data_type == 'img':
+            return (-ex.src.size(2), -ex.src.size(1))
+        elif self.data_type == 'audio':
+            return -ex.src.size(1)
 
-    def __init__(self, src_path, tgt_path, fields,
+    def __init__(self, data_type, src_path, tgt_path, fields,
                  src_seq_length=0, tgt_seq_length=0,
                  src_seq_length_trunc=0, tgt_seq_length_trunc=0,
                  use_filter_pred=True, dynamic_dict=True,
-                 src_img_dir=None, **kwargs):
+                 src_dir=None, sample_rate=0, window_size=0,
+                 window_stride=0, window=None,
+                 normalize_audio=True, **kwargs):
         """
         Create a translation dataset given paths and fields.
 
@@ -291,8 +420,7 @@ class ONMTDataset(torchtext.data.Dataset):
             at present this is not checked.
         fields: a dictionary. keys are things like 'src', 'tgt', 'src_map',
             and 'alignment'
-        src_img_dir: raises an error if not None because images are not
-            supported yet.
+        src_dir: source directory for storing images or audio.
 
         Initializes an ONMTDataset object with the following attributes:
         self.examples (might be a generator, might be a list, hard to say):
@@ -305,17 +433,46 @@ class ONMTDataset(torchtext.data.Dataset):
         contains.
         """
 
-        assert src_img_dir is None, "img data is not finished"
+        self.data_type = data_type
 
-        # self.src_vocabs: mutated in dynamic_dict, used in
-        # collapse_copy_scores and in Translator.py
-        self.src_vocabs = []
-        src_truncate = src_seq_length_trunc
+        if self.data_type == "text":
+            # self.src_vocabs: mutated in dynamic_dict, used in
+            # collapse_copy_scores and in Translator.py
+            self.src_vocabs = []
+            src_truncate = src_seq_length_trunc
 
-        src_examples = read_corpus_file(src_path, src_truncate, "src")
-        (_, src_feats), src_examples = peek(src_examples)
-        src_examples = (ex for ex, nfeats in src_examples)
-        self.n_src_feats = src_feats
+            src_examples = read_corpus_file(src_path, src_truncate, "src")
+            (_, src_feats), src_examples = peek(src_examples)
+            src_examples = (ex for ex, nfeats in src_examples)
+            self.n_src_feats = src_feats
+        elif self.data_type == "img":
+            assert (src_dir is not None) and os.path.exists(src_dir),\
+                   'src_dir must be a valid directory if data_type is img'
+            global Image, transforms
+            from PIL import Image
+            from torchvision import transforms
+
+            src_examples = read_img_file(src_path, src_dir, "src")
+            self.n_src_feats = 0
+        elif self.data_type == "audio":
+            assert (src_dir is not None) and os.path.exists(src_dir),\
+                   """src_dir must be a valid directory
+                   if data_type is audio"""
+            global torchaudio, librosa, np
+            import torchaudio
+            import librosa
+            import numpy as np
+
+            self.sample_rate = sample_rate
+            self.window_size = window_size
+            self.window_stride = window_stride
+            self.window = window
+            self.normalize_audio = normalize_audio
+            src_examples = read_audio_file(src_path, src_dir, "src",
+                                           sample_rate, window_size,
+                                           window_stride, window,
+                                           normalize_audio)
+            self.n_src_feats = 0
 
         # if tgt_path exists, then we need to do the same thing as we did
         # for the source data
@@ -339,26 +496,34 @@ class ONMTDataset(torchtext.data.Dataset):
         else:
             examples = src_examples
 
-        if dynamic_dict:
-            examples = self.dynamic_dict(examples)
+        if self.data_type == "text":
+            if dynamic_dict:
+                examples = self.dynamic_dict(examples)
 
         # Peek at the first to see which fields are used.
         ex, examples = peek(examples)
         keys = ex.keys()
 
-        fields = [(k, fields[k]) for k in keys]
+        fields = [(k, fields[k]) if k in fields else (k, None)
+                  for k in keys]
         example_values = ([ex[k] for k in keys] for ex in examples)
-        out_examples = (torchtext.data.Example.fromlist(ex_values, fields)
+        out_examples = (_construct_example_fromlist(ex_values, fields)
                         for ex_values in example_values)
 
         def filter_pred(example):
-            return 0 < len(example.src) <= src_seq_length \
-                and 0 < len(example.tgt) <= tgt_seq_length
+            if data_type == 'text':
+                return 0 < len(example.src) <= src_seq_length \
+                   and 0 < len(example.tgt) <= tgt_seq_length
+            else:
+                if tgt_examples is not None:
+                    return 0 < len(example.tgt) <= tgt_seq_length
+                else:
+                    return True
 
         super(ONMTDataset, self).__init__(
             out_examples,
             fields,
-            filter_pred if use_filter_pred else None
+            filter_pred if use_filter_pred else lambda x: True
         )
 
     def dynamic_dict(self, examples):
@@ -404,10 +569,3 @@ class ONMTDataset(torchtext.data.Dataset):
                     scores[:, b, ti] += scores[:, b, offset + i]
                     scores[:, b, offset + i].fill_(1e-20)
         return scores
-
-
-def load_image_libs():
-    "Conditional import of torch image libs."
-    global Image, transforms
-    from PIL import Image
-    from torchvision import transforms

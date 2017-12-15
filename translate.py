@@ -52,9 +52,16 @@ def main():
     if opt.dump_beam != "":
         import json
         translator.initBeamAccum()
-    data = onmt.IO.ONMTDataset(
-        opt.src, opt.tgt, translator.fields,
-        use_filter_pred=False)
+
+    data = onmt.IO.ONMTDataset(opt.data_type,
+                               opt.src, opt.tgt, translator.fields,
+                               src_dir=opt.src_dir,
+                               sample_rate=opt.sample_rate,
+                               window_size=opt.window_size,
+                               window_stride=opt.window_stride,
+                               window=opt.window,
+                               use_filter_pred=False)
+    data_type = data.data_type
 
     test_data = onmt.IO.OrderedIterator(
         dataset=data, device=opt.gpu,
@@ -63,7 +70,7 @@ def main():
 
     counter = count(1)
     for batch in test_data:
-        pred_batch, gold_batch, pred_scores, gold_scores, attn, src \
+        pred_batch, gold_batch, pred_scores, gold_scores, attn, src, indices\
             = translator.translate(batch, data)
         pred_score_total += sum(score[0] for score in pred_scores)
         pred_words_total += sum(len(x[0]) for x in pred_batch)
@@ -76,12 +83,17 @@ def main():
         # sentence in the batch. It has to be zip_longest instead of
         # plain-old zip because the gold_batch has length 0 if the target
         # is not included.
+        if data_type == 'text':
+            sents = src.split(1, dim=1)
+        else:
+            sents = [torch.Tensor(1, 1) for i in range(len(pred_scores))]
         z_batch = zip_longest(
                 pred_batch, gold_batch,
                 pred_scores, gold_scores,
-                (sent.squeeze(1) for sent in src.split(1, dim=1)))
+                (sent.squeeze(1) for sent in sents), indices)
 
-        for pred_sents, gold_sent, pred_score, gold_score, src_sent in z_batch:
+        for pred_sents, gold_sent, pred_score, gold_score, src_sent, index\
+                in z_batch:
             n_best_preds = [" ".join(pred) for pred in pred_sents[:opt.n_best]]
             out_file.write('\n'.join(n_best_preds))
             out_file.write('\n')
@@ -89,8 +101,11 @@ def main():
 
             if opt.verbose:
                 sent_number = next(counter)
-                words = get_src_words(
-                    src_sent, translator.fields["src"].vocab.itos)
+                if data_type == 'text':
+                    words = get_src_words(
+                        src_sent, translator.fields["src"].vocab.itos)
+                else:
+                    words = test_data.dataset.examples[index].src_path
 
                 output = '\nSENT {}: {}\n'.format(sent_number, words)
                 os.write(1, output.encode('utf-8'))

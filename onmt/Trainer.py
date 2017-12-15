@@ -67,7 +67,7 @@ class Statistics(object):
 class Trainer(object):
     def __init__(self, model, train_iter, valid_iter,
                  train_loss, valid_loss, optim,
-                 trunc_size, shard_size):
+                 trunc_size, shard_size, data_type='text'):
         """
         Args:
             model: the seq2seq model.
@@ -78,6 +78,7 @@ class Trainer(object):
             optim: the optimizer responsible for lr update.
             trunc_size: a batch is divided by several truncs of this size.
             shard_size: compute loss in shards of this size for efficiency.
+            data_type: type of the source input. Options are [text|img].
         """
         # Basic attributes.
         self.model = model
@@ -88,6 +89,8 @@ class Trainer(object):
         self.optim = optim
         self.trunc_size = trunc_size
         self.shard_size = shard_size
+        self.model_type = self.model.model_type
+        self.data_type = data_type
 
         # Set model in training mode.
         self.model.train()
@@ -103,11 +106,14 @@ class Trainer(object):
             trunc_size = self.trunc_size if self.trunc_size else target_size
 
             dec_state = None
-            _, src_lengths = batch.src
+            src = onmt.IO.make_features(batch, 'src', self.data_type)
+            if self.data_type == 'text':
+                _, src_lengths = batch.src
+                report_stats.n_src_words += src_lengths.sum()
+            else:
+                src_lengths = None
 
-            src = onmt.IO.make_features(batch, 'src')
             tgt_outer = onmt.IO.make_features(batch, 'tgt')
-            report_stats.n_src_words += src_lengths.sum()
 
             for j in range(0, target_size-1, trunc_size):
                 # 1. Create truncated target.
@@ -147,8 +153,12 @@ class Trainer(object):
         stats = Statistics()
 
         for batch in self.valid_iter:
-            _, src_lengths = batch.src
-            src = onmt.IO.make_features(batch, 'src')
+            src = onmt.IO.make_features(batch, 'src', self.data_type)
+            if self.data_type == 'text':
+                _, src_lengths = batch.src
+            else:
+                src_lengths = None
+
             tgt = onmt.IO.make_features(batch, 'tgt')
 
             # F-prop through the model.
@@ -189,7 +199,7 @@ class Trainer(object):
             'vocab': onmt.IO.save_vocab(fields),
             'opt': opt,
             'epoch': epoch,
-            'optim': self.optim
+            'optim': self.optim,
         }
         torch.save(checkpoint,
                    '%s_acc_%.2f_ppl_%.2f_e%d.pt'

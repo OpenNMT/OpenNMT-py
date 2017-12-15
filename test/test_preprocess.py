@@ -13,11 +13,11 @@ opts.preprocess_opts(parser)
 
 opt = parser.parse_known_args()[0]
 
+opt.data_type = 'text'
 opt.train_src = 'data/src-train.txt'
 opt.train_tgt = 'data/tgt-train.txt'
 opt.valid_src = 'data/src-val.txt'
 opt.valid_tgt = 'data/tgt-val.txt'
-print(opt)
 
 
 class TestData(unittest.TestCase):
@@ -26,23 +26,29 @@ class TestData(unittest.TestCase):
         self.opt = opt
 
     def dataset_build(self, opt):
-        fields = onmt.IO.get_fields(0, 0)
+        fields = onmt.IO.get_fields("text", 0, 0)
 
         train = onmt.IO.ONMTDataset(
-            opt.train_src, opt.train_tgt, fields,
+            opt.data_type, opt.train_src, opt.train_tgt, fields,
             opt.src_seq_length, opt.tgt_seq_length,
             src_seq_length_trunc=opt.src_seq_length_trunc,
             tgt_seq_length_trunc=opt.tgt_seq_length_trunc,
-            dynamic_dict=opt.dynamic_dict)
+            dynamic_dict=opt.dynamic_dict,
+            src_dir=opt.src_dir, sample_rate=opt.sample_rate,
+            window_size=opt.window_size, window_stride=opt.window_stride,
+            window=opt.window)
 
         onmt.IO.build_vocab(train, opt)
 
         onmt.IO.ONMTDataset(
-            opt.valid_src, opt.valid_tgt, fields,
+            opt.data_type, opt.valid_src, opt.valid_tgt, fields,
             opt.src_seq_length, opt.tgt_seq_length,
             src_seq_length_trunc=opt.src_seq_length_trunc,
             tgt_seq_length_trunc=opt.tgt_seq_length_trunc,
-            dynamic_dict=opt.dynamic_dict)
+            dynamic_dict=opt.dynamic_dict,
+            src_dir=opt.src_dir, sample_rate=opt.sample_rate,
+            window_size=opt.window_size, window_stride=opt.window_stride,
+            window=opt.window)
 
     def test_merge_vocab(self):
         va = torchtext.vocab.Vocab(Counter('abbccc'))
@@ -103,4 +109,28 @@ test_databuild = [[],
                   ]
 
 for p in test_databuild:
+    _add_test(p, 'dataset_build')
+
+# Test image preprocessing
+for p in test_databuild:
+    p.append(('data_type', 'img'))
+    p.append(('src_dir', '/tmp/im2text/images'))
+    p.append(('train_src', '/tmp/im2text/src-train-head.txt'))
+    p.append(('train_tgt', '/tmp/im2text/tgt-train-head.txt'))
+    p.append(('valid_src', '/tmp/im2text/src-val-head.txt'))
+    p.append(('valid_tgt', '/tmp/im2text/tgt-val-head.txt'))
+    _add_test(p, 'dataset_build')
+
+# Test audio preprocessing
+for p in test_databuild:
+    p.append(('data_type', 'audio'))
+    p.append(('src_dir', '/tmp/speech/an4_dataset'))
+    p.append(('train_src', '/tmp/speech/src-train-head.txt'))
+    p.append(('train_tgt', '/tmp/speech/tgt-train-head.txt'))
+    p.append(('valid_src', '/tmp/speech/src-val-head.txt'))
+    p.append(('valid_tgt', '/tmp/speech/tgt-val-head.txt'))
+    p.append(('sample_rate', 16000))
+    p.append(('window_size', 0.04))
+    p.append(('window_stride', 0.02))
+    p.append(('window', 'hamming'))
     _add_test(p, 'dataset_build')

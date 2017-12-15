@@ -44,6 +44,7 @@ The following OpenNMT features are implemented:
 Beta Features (committed):
 - multi-GPU
 - Image-to-text processing
+- Speech-to-text processing
 - "Attention is all you need"
 - Copy, coverage
 - Structured attention

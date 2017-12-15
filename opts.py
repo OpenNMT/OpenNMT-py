@@ -9,7 +9,8 @@ def model_opts(parser):
     """
     # Model options
     parser.add_argument('-model_type', default='text',
-                        help="Type of encoder to use. Options are [text|img].")
+                        help="""Type of encoder to use. Options are
+                        [text|img|audio].""")
     # Embedding Options
     parser.add_argument('-word_vec_size', type=int, default=-1,
                         help='Word embedding for both.')
@@ -129,6 +130,16 @@ def preprocess_opts(parser):
     parser.add_argument('-share_vocab', action='store_true',
                         help="Share source and target vocabulary")
 
+    # Options most relevant to speech
+    parser.add_argument('-sample_rate', type=int, default=16000,
+                        help="Sample rate.")
+    parser.add_argument('-window_size', type=float, default=.02,
+                        help="Window size for spectrogram in seconds.")
+    parser.add_argument('-window_stride', type=float, default=.01,
+                        help="Window stride for spectrogram in seconds.")
+    parser.add_argument('-window', default='hamming',
+                        help="Window type for spectrogram generation.")
+
 
 def train_opts(parser):
     # Model loading/saving options
@@ -245,16 +256,23 @@ def train_opts(parser):
                         help="Send logs to this crayon server.")
     parser.add_argument('-exp', type=str, default="",
                         help="Name of the experiment for logging.")
+    # Options most relevant to speech
+    parser.add_argument('-sample_rate', type=int, default=16000,
+                        help="Sample rate.")
+    parser.add_argument('-window_size', type=float, default=.02,
+                        help="Window size for spectrogram in seconds.")
 
 
 def translate_opts(parser):
+    parser.add_argument('-data_type', default="text",
+                        help="Type of the source input. Options: [text|img].")
     parser.add_argument('-model', required=True,
                         help='Path to model .pt file')
     parser.add_argument('-src',   required=True,
                         help="""Source sequence to decode (one line per
                         sequence)""")
-    parser.add_argument('-src_img_dir',   default="",
-                        help='Source image directory')
+    parser.add_argument('-src_dir',   default="",
+                        help='Source directory for image or audio files')
     parser.add_argument('-tgt',
                         help='True target sequence (optional)')
     parser.add_argument('-output', default='pred.txt',
@@ -290,6 +308,15 @@ def translate_opts(parser):
                         help="Create dynamic dictionaries")
     parser.add_argument('-share_vocab', action='store_true',
                         help="Share source and target vocabulary")
+    # Options most relevant to speech.
+    parser.add_argument('-sample_rate', type=int, default=16000,
+                        help="Sample rate.")
+    parser.add_argument('-window_size', type=float, default=.02,
+                        help='Window size for spectrogram in seconds')
+    parser.add_argument('-window_stride', type=float, default=.01,
+                        help='Window stride for spectrogram in seconds')
+    parser.add_argument('-window', default='hamming',
+                        help='Window type for spectrogram generation')
     # Alpha and Beta values for Google Length + Coverage penalty
     # Described here: https://arxiv.org/pdf/1609.08144.pdf, Section 7
     parser.add_argument('-alpha', type=float, default=0.,

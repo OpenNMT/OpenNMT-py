@@ -1,7 +1,6 @@
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
-import torch.cuda
 from torch.autograd import Variable
 
 
@@ -90,13 +89,13 @@ class ImageEncoder(nn.Module):
         input = F.relu(self.batch_norm3(self.layer6(input)), True)
 
         # # (batch_size, 512, H, W)
-        # # (batch_size, H, W, 512)
         all_outputs = []
         for row in range(input.size(2)):
             inp = input[:, :, row, :].transpose(0, 2)\
                                      .transpose(1, 2)
-            pos_emb = self.pos_lut(
-                Variable(torch.cuda.LongTensor(batchSize).fill_(row)))
+            row_vec = torch.Tensor(batchSize).type_as(inp.data)\
+                                             .long().fill_(row)
+            pos_emb = self.pos_lut(Variable(row_vec))
             with_pos = torch.cat(
                 (pos_emb.view(1, pos_emb.size(0), pos_emb.size(1)), inp), 0)
             outputs, hidden_t = self.rnn(with_pos)

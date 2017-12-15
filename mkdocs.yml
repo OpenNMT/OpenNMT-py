@@ -66,5 +66,7 @@ pages:
   #     - "tools/rest_translation_server.lua": options/rest_server.md
   #     - "tools/embeddings.lua": options/embeddings.md
   # - Extensions: extensions.md
+  - "Image to Text": im2text.md
+  - "Speech to Text": speech2text.md
   - References: references.md
   # - "Common issues": issues.md
