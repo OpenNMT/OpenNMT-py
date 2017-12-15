@@ -110,7 +110,7 @@ def main():
                 if len(n_best_preds) > 1:
                     print('\nBEST HYP:')
                     for score, sent in zip(pred_score, n_best_preds):
-                        output = "{:.4f} {}\n".format(score, sent)
+                        output = "[{:.4f}] {}\n".format(score, sent)
                         os.write(1, output.encode('utf-8'))
 
     report_score('PRED', pred_score_total, pred_words_total)
