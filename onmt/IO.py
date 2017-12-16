@@ -239,17 +239,20 @@ def collect_feature_dicts(fields, side):
 
 def get_fields(data_type, n_src_features, n_tgt_features):
     """
-    data_type: type of the source input. Options are [text|img|audio].
-    n_src_features: the number of source features to create Field objects for.
-    n_tgt_features: the number of target features to create Field objects for.
-    returns: A dictionary whose keys are strings and whose values are the
-            corresponding Field objects.
+    Args:
+        data_type: type of the source input. Options are [text|img|audio].
+        n_src_features: the number of source features to create Field for.
+        n_tgt_features: the number of target features to create Field for.
+    Returns:
+        A dictionary whose keys are strings and whose values are the
+        corresponding Field objects.
     """
     fields = {}
     if data_type == 'text':
         fields["src"] = torchtext.data.Field(
             pad_token=PAD_WORD,
             include_lengths=True)
+
     elif data_type == 'img':
         def make_img(data, _):
             c = data[0].size(0)
@@ -259,9 +262,11 @@ def get_fields(data_type, n_src_features, n_tgt_features):
             for i, img in enumerate(data):
                 imgs[i, :, 0:img.size(1), 0:img.size(2)] = img
             return imgs
+
         fields["src"] = torchtext.data.Field(
             use_vocab=False, tensor_type=torch.FloatTensor,
             postprocessing=make_img, sequential=False)
+
     elif data_type == 'audio':
         def make_audio(data, _):
             nfft = data[0].size(0)
@@ -270,6 +275,7 @@ def get_fields(data_type, n_src_features, n_tgt_features):
             for i, spect in enumerate(data):
                 sounds[i, :, :, 0:spect.size(1)] = spect
             return sounds
+
         fields["src"] = torchtext.data.Field(
             use_vocab=False, tensor_type=torch.FloatTensor,
             postprocessing=make_audio, sequential=False)
@@ -318,27 +324,40 @@ def get_fields(data_type, n_src_features, n_tgt_features):
     return fields
 
 
-def build_vocab(train, opt):
+def build_vocab(train, data_type, share_vocab,
+                src_vocab_size, src_words_min_frequency,
+                tgt_vocab_size, tgt_words_min_frequency):
     """
-    train: an ONMTDataset
+    Args:
+        train: an ONMTDataset.
+        data_type: "text", "img" or "audio"?
+        share_vocab(bool): share source and target vocabulary?
+        src_vocab_size(int): size of the source vocabulary.
+        src_words_min_frequency(int): the minimum frequency needed to
+                include a source word in the vocabulary.
+        tgt_vocab_size(int): size of the target vocabulary.
+        tgt_words_min_frequency(int): the minimum frequency needed to
+                include a target word in the vocabulary.
     """
     fields = train.fields
-    fields["tgt"].build_vocab(train, max_size=opt.tgt_vocab_size,
-                              min_freq=opt.tgt_words_min_frequency)
+
+    fields["tgt"].build_vocab(train, max_size=tgt_vocab_size,
+                              min_freq=tgt_words_min_frequency)
     for j in range(train.n_tgt_feats):
         fields["tgt_feat_" + str(j)].build_vocab(train)
-    if opt.data_type == 'text':
-        fields["src"].build_vocab(train, max_size=opt.src_vocab_size,
-                                  min_freq=opt.src_words_min_frequency)
+
+    if data_type == 'text':
+        fields["src"].build_vocab(train, max_size=src_vocab_size,
+                                  min_freq=src_words_min_frequency)
         for j in range(train.n_src_feats):
             fields["src_feat_" + str(j)].build_vocab(train)
 
         # Merge the input and output vocabularies.
-        if opt.share_vocab:
+        if share_vocab:
             # `tgt_vocab_size` is ignored when sharing vocabularies
             merged_vocab = merge_vocabs(
                 [fields["src"].vocab, fields["tgt"].vocab],
-                vocab_size=opt.src_vocab_size)
+                vocab_size=src_vocab_size)
             fields["src"].vocab = merged_vocab
             fields["tgt"].vocab = merged_vocab
 
