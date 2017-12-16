@@ -12,40 +12,8 @@ import opts
 parser = argparse.ArgumentParser(
     description='preprocess.py',
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
 opts.add_md_help_argument(parser)
-
-
-# **Preprocess Options**
-parser.add_argument('-config', help="Read options from this file")
-
-parser.add_argument('-data_type', default="text",
-                    help="Type of the source input. Options are [text|img].")
-parser.add_argument('-src_dir', default="",
-                    help="Source directory for image or audio files.")
-
-parser.add_argument('-train_src', required=True,
-                    help="Path to the training source data")
-parser.add_argument('-train_tgt', required=True,
-                    help="Path to the training target data")
-parser.add_argument('-valid_src', required=True,
-                    help="Path to the validation source data")
-parser.add_argument('-valid_tgt', required=True,
-                    help="Path to the validation target data")
-
-parser.add_argument('-save_data', required=True,
-                    help="Output file for the prepared data")
-
-parser.add_argument('-src_vocab',
-                    help="Path to an existing source vocabulary")
-parser.add_argument('-tgt_vocab',
-                    help="Path to an existing target vocabulary")
-parser.add_argument('-features_vocabs_prefix', type=str, default='',
-                    help="Path prefix to existing features vocabularies")
-parser.add_argument('-seed', type=int, default=3435,
-                    help="Random seed")
-parser.add_argument('-report_every', type=int, default=100000,
-                    help="Report status every this many sentences")
-
 opts.preprocess_opts(parser)
 
 opt = parser.parse_args()
