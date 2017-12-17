@@ -1,325 +1,214 @@
 <!--- This file was automatically generated. Do not modify it manually but use the docs/options/generate.sh script instead. -->
 
-# train.py:
-
-```
-usage: train.py [-h] [-md] -data DATA [-save_model SAVE_MODEL]
-                [-train_from_state_dict TRAIN_FROM_STATE_DICT]
-                [-train_from TRAIN_FROM] [-layers LAYERS] [-rnn_size RNN_SIZE]
-                [-word_vec_size WORD_VEC_SIZE]
-                [-feature_vec_size FEATURE_VEC_SIZE] [-input_feed INPUT_FEED]
-                [-rnn_type {LSTM,GRU}] [-brnn] [-brnn_merge BRNN_MERGE]
-                [-copy_attn] [-coverage_attn] [-encoder_layer ENCODER_LAYER]
-                [-decoder_layer DECODER_LAYER]
-                [-context_gate {source,target,both}]
-                [-encoder_type ENCODER_TYPE] [-batch_size BATCH_SIZE]
-                [-max_generator_batches MAX_GENERATOR_BATCHES]
-                [-epochs EPOCHS] [-start_epoch START_EPOCH]
-                [-param_init PARAM_INIT] [-optim OPTIM]
-                [-max_grad_norm MAX_GRAD_NORM] [-dropout DROPOUT]
-                [-position_encoding] [-share_decoder_embeddings] [-curriculum]
-                [-extra_shuffle] [-truncated_decoder TRUNCATED_DECODER]
-                [-learning_rate LEARNING_RATE]
-                [-learning_rate_decay LEARNING_RATE_DECAY]
-                [-start_decay_at START_DECAY_AT]
-                [-start_checkpoint_at START_CHECKPOINT_AT]
-                [-decay_method DECAY_METHOD] [-warmup_steps WARMUP_STEPS]
-                [-pre_word_vecs_enc PRE_WORD_VECS_ENC]
-                [-pre_word_vecs_dec PRE_WORD_VECS_DEC] [-gpus GPUS [GPUS ...]]
-                [-log_interval LOG_INTERVAL] [-log_server LOG_SERVER]
-                [-experiment_name EXPERIMENT_NAME] [-seed SEED]
-
-```
-
+train.py
+:
 train.py
 
-## **optional arguments**:
-### **-h, --help** 
+### **Model-Embeddings**:
+* **-word_vec_size [-1]** 
+Word embedding for both.
 
-```
-show this help message and exit
-```
+* **-src_word_vec_size [500]** 
+Src word embedding sizes
 
-### **-md** 
+* **-tgt_word_vec_size [500]** 
+Tgt word embedding sizes
 
-```
-print Markdown-formatted help text and exit.
-```
+* **-feat_merge [concat]** 
+Merge action for the features embeddings
 
-### **-data DATA** 
+* **-feat_vec_size [-1]** 
+If specified, feature embedding sizes will be set to this. Otherwise,
+feat_vec_exponent will be used.
 
-```
-Path to the *-train.pt file from preprocess.py
-```
+* **-feat_vec_exponent [0.7]** 
+If -feat_merge_size is not set, feature embedding sizes will be set to
+N^feat_vec_exponent where N is the number of values the feature takes.
 
-### **-save_model SAVE_MODEL** 
+* **-position_encoding ** 
+Use a sin to mark relative words positions.
 
-```
-Model filename (the model will be saved as <save_model>_epochN_PPL.pt where PPL
-is the validation perplexity
-```
+* **-share_decoder_embeddings ** 
+Share the word and out embeddings for decoder.
 
-### **-train_from_state_dict TRAIN_FROM_STATE_DICT** 
+* **-share_embeddings ** 
+Share the word embeddings between encoder and decoder.
 
-```
-If training from a checkpoint then this is the path to the pretrained model's
-state_dict.
-```
+### **Model- Encoder-Decoder**:
+* **-model_type [text]** 
+Type of encoder to use. Options are [text|img|audio].
 
-### **-train_from TRAIN_FROM** 
+* **-encoder_type [rnn]** 
+Type of encoder layer to use.
 
-```
-If training from a checkpoint then this is the path to the pretrained model.
-```
+* **-decoder_type [rnn]** 
+Type of decoder layer to use.
 
-### **-layers LAYERS** 
+* **-layers [-1]** 
+Number of layers in enc/dec.
 
-```
-Number of layers in the LSTM encoder/decoder
-```
+* **-enc_layers [2]** 
+Number of layers in the encoder
 
-### **-rnn_size RNN_SIZE** 
+* **-dec_layers [2]** 
+Number of layers in the decoder
 
-```
+* **-cnn_kernel_width [3]** 
+Size of windows in the cnn, the kernel_size is (cnn_kernel_width, 1) in conv
+layer
+
+* **-rnn_size [500]** 
 Size of LSTM hidden states
-```
 
-### **-word_vec_size WORD_VEC_SIZE** 
-
-```
-Word embedding sizes
-```
-
-### **-feature_vec_size FEATURE_VEC_SIZE** 
-
-```
-Feature vec sizes
-```
-
-### **-input_feed INPUT_FEED** 
-
-```
+* **-input_feed [1]** 
 Feed the context vector at each time step as additional input (via concatenation
 with the word embeddings) to the decoder.
-```
 
-### **-rnn_type {LSTM,GRU}** 
-
-```
+* **-rnn_type [LSTM]** 
 The gate type to use in the RNNs
-```
 
-### **-brnn** 
+* **-brnn ** 
+Deprecated, use `encoder_type`.
 
-```
-Use a bidirectional encoder
-```
+* **-brnn_merge [concat]** 
+Merge action for the bidir hidden states
 
-### **-brnn_merge BRNN_MERGE** 
+* **-context_gate ** 
+Type of context gate to use. Do not select for no context gate.
 
-```
-Merge action for the bidirectional hidden states: [concat|sum]
-```
+### **Model- Attention**:
+* **-global_attention [general]** 
+The attention type to use: dotprod or general (Luong) or MLP (Bahdanau)
 
-### **-copy_attn** 
-
-```
+* **-copy_attn ** 
 Train copy attention layer.
-```
 
-### **-coverage_attn** 
+* **-copy_attn_force ** 
+When available, train to copy.
 
-```
+* **-coverage_attn ** 
 Train a coverage attention layer.
-```
 
-### **-encoder_layer ENCODER_LAYER** 
+* **-lambda_coverage [1]** 
+Lambda value for coverage.
 
-```
-Type of encoder layer to use. Options: [rnn|mean|transformer]
-```
+### **General**:
+* **-data ** 
+Path prefix to the ".train.pt" and ".valid.pt" file path from preprocess.py
 
-### **-decoder_layer DECODER_LAYER** 
+* **-save_model [model]** 
+Model filename (the model will be saved as <save_model>_epochN_PPL.pt where PPL
+is the validation perplexity
 
-```
-Type of decoder layer to use. [rnn|transformer]
-```
+* **-gpuid ** 
+Use CUDA on the listed devices.
 
-### **-context_gate {source,target,both}** 
+* **-seed [-1]** 
+Random seed used for the experiments reproducibility.
 
-```
-Type of context gate to use [source|target|both]. Do not select for no context
-gate.
-```
-
-### **-encoder_type ENCODER_TYPE** 
-
-```
-Type of encoder to use. Options are [text|img].
-```
-
-### **-batch_size BATCH_SIZE** 
-
-```
-Maximum batch size
-```
-
-### **-max_generator_batches MAX_GENERATOR_BATCHES** 
-
-```
-Maximum batches of words in a sequence to run the generator on in parallel.
-Higher is faster, but uses more memory.
-```
-
-### **-epochs EPOCHS** 
-
-```
-Number of training epochs
-```
-
-### **-start_epoch START_EPOCH** 
-
-```
+### **Initialization**:
+* **-start_epoch [1]** 
 The epoch from which to start
-```
 
-### **-param_init PARAM_INIT** 
-
-```
+* **-param_init [0.1]** 
 Parameters are initialized over uniform distribution with support (-param_init,
 param_init). Use 0 to not use initialization
-```
 
-### **-optim OPTIM** 
+* **-train_from ** 
+If training from a checkpoint then this is the path to the pretrained model's
+state_dict.
 
-```
-Optimization method. [sgd|adagrad|adadelta|adam]
-```
-
-### **-max_grad_norm MAX_GRAD_NORM** 
-
-```
-If the norm of the gradient vector exceeds this, renormalize it to have the norm
-equal to max_grad_norm
-```
-
-### **-dropout DROPOUT** 
-
-```
-Dropout probability; applied between LSTM stacks.
-```
-
-### **-position_encoding** 
-
-```
-Use a sinusoid to mark relative words positions.
-```
-
-### **-share_decoder_embeddings** 
-
-```
-Share the word and softmax embeddings for decoder.
-```
-
-### **-curriculum** 
-
-```
-For this many epochs, order the minibatches based on source sequence length.
-Sometimes setting this to 1 will increase convergence speed.
-```
-
-### **-extra_shuffle** 
-
-```
-By default only shuffle mini-batch order; when true, shuffle and re-assign mini-
-batches
-```
-
-### **-truncated_decoder TRUNCATED_DECODER** 
-
-```
-Truncated bptt.
-```
-
-### **-learning_rate LEARNING_RATE** 
-
-```
-Starting learning rate. If adagrad/adadelta/adam is used, then this is the
-global learning rate. Recommended settings: sgd = 1, adagrad = 0.1, adadelta =
-1, adam = 0.001
-```
-
-### **-learning_rate_decay LEARNING_RATE_DECAY** 
-
-```
-If update_learning_rate, decay learning rate by this much if (i) perplexity does
-not decrease on the validation set or (ii) epoch has gone past start_decay_at
-```
-
-### **-start_decay_at START_DECAY_AT** 
-
-```
-Start decaying every epoch after and including this epoch
-```
-
-### **-start_checkpoint_at START_CHECKPOINT_AT** 
-
-```
-Start checkpointing every epoch after and including this epoch
-```
-
-### **-decay_method DECAY_METHOD** 
-
-```
-Use a custom learning rate decay [|noam]
-```
-
-### **-warmup_steps WARMUP_STEPS** 
-
-```
-Number of warmup steps for custom decay.
-```
-
-### **-pre_word_vecs_enc PRE_WORD_VECS_ENC** 
-
-```
+* **-pre_word_vecs_enc ** 
 If a valid path is specified, then this will load pretrained word embeddings on
 the encoder side. See README for specific formatting instructions.
-```
 
-### **-pre_word_vecs_dec PRE_WORD_VECS_DEC** 
-
-```
+* **-pre_word_vecs_dec ** 
 If a valid path is specified, then this will load pretrained word embeddings on
 the decoder side. See README for specific formatting instructions.
-```
 
-### **-gpus GPUS [GPUS ...]** 
+* **-fix_word_vecs_enc ** 
+Fix word embeddings on the encoder side.
 
-```
-Use CUDA on the listed devices.
-```
+* **-fix_word_vecs_dec ** 
+Fix word embeddings on the encoder side.
 
-### **-log_interval LOG_INTERVAL** 
+### **Optimization- Type**:
+* **-batch_size [64]** 
+Maximum batch size
 
-```
+* **-max_generator_batches [32]** 
+Maximum batches of words in a sequence to run the generator on in parallel.
+Higher is faster, but uses more memory.
+
+* **-epochs [13]** 
+Number of training epochs
+
+* **-optim [sgd]** 
+Optimization method.
+
+* **-adagrad_accumulator_init ** 
+Initializes the accumulator values in adagrad. Mirrors the
+initial_accumulator_value option in the tensorflow adagrad (use 0.1 for their
+default).
+
+* **-max_grad_norm [5]** 
+If the norm of the gradient vector exceeds this, renormalize it to have the norm
+equal to max_grad_norm
+
+* **-dropout [0.3]** 
+Dropout probability; applied in LSTM stacks.
+
+* **-truncated_decoder ** 
+Truncated bptt.
+
+* **-adam_beta1 [0.9]** 
+The beta1 parameter used by Adam. Almost without exception a value of 0.9 is
+used in the literature, seemingly giving good results, so we would discourage
+changing this value from the default without due consideration.
+
+* **-adam_beta2 [0.999]** 
+The beta2 parameter used by Adam. Typically a value of 0.999 is recommended, as
+this is the value suggested by the original paper describing Adam, and is also
+the value adopted in other frameworks such as Tensorflow and Kerras, i.e. see:
+https://www.tensorflow.org/api_docs/python/tf/train/AdamOptimizer
+https://keras.io/optimizers/ . Whereas recently the paper "Attention is All You
+Need" suggested a value of 0.98 for beta2, this parameter may not work well for
+normal models / default baselines.
+
+### **Optimization- Rate**:
+* **-learning_rate [1.0]** 
+Starting learning rate. Recommended settings: sgd = 1, adagrad = 0.1, adadelta =
+1, adam = 0.001
+
+* **-learning_rate_decay [0.5]** 
+If update_learning_rate, decay learning rate by this much if (i) perplexity does
+not decrease on the validation set or (ii) epoch has gone past start_decay_at
+
+* **-start_decay_at [8]** 
+Start decaying every epoch after and including this epoch
+
+* **-start_checkpoint_at ** 
+Start checkpointing every epoch after and including this epoch
+
+* **-decay_method ** 
+Use a custom decay rate.
+
+* **-warmup_steps [4000]** 
+Number of warmup steps for custom decay.
+
+### **Logging**:
+* **-report_every [50]** 
 Print stats at this interval.
-```
 
-### **-log_server LOG_SERVER** 
-
-```
+* **-exp_host ** 
 Send logs to this crayon server.
-```
 
-### **-experiment_name EXPERIMENT_NAME** 
-
-```
+* **-exp ** 
 Name of the experiment for logging.
-```
 
-### **-seed SEED** 
+### **Speech**:
+* **-sample_rate [16000]** 
+Sample rate.
 
-```
-Random seed used for the experiments reproducibility.
-```
+* **-window_size [0.02]** 
+Window size for spectrogram in seconds.

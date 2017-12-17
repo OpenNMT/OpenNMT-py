@@ -1,116 +1,84 @@
 <!--- This file was automatically generated. Do not modify it manually but use the docs/options/generate.sh script instead. -->
 
-# translate.py:
-
-```
-usage: translate.py [-h] [-md] -model MODEL -src SRC
-                    [-src_img_dir SRC_IMG_DIR] [-tgt TGT] [-output OUTPUT]
-                    [-beam_size BEAM_SIZE] [-batch_size BATCH_SIZE]
-                    [-max_sent_length MAX_SENT_LENGTH] [-replace_unk]
-                    [-verbose] [-attn_debug] [-dump_beam DUMP_BEAM]
-                    [-n_best N_BEST] [-gpu GPU]
-
-```
-
+translate.py
+:
 translate.py
 
-## **optional arguments**:
-### **-h, --help** 
-
-```
-show this help message and exit
-```
-
-### **-md** 
-
-```
-print Markdown-formatted help text and exit.
-```
-
-### **-model MODEL** 
-
-```
+### **Model**:
+* **-model ** 
 Path to model .pt file
-```
 
-### **-src SRC** 
+### **Data**:
+* **-data_type [text]** 
+Type of the source input. Options: [text|img].
 
-```
+* **-src ** 
 Source sequence to decode (one line per sequence)
-```
 
-### **-src_img_dir SRC_IMG_DIR** 
+* **-src_dir ** 
+Source directory for image or audio files
 
-```
-Source image directory
-```
-
-### **-tgt TGT** 
-
-```
+* **-tgt ** 
 True target sequence (optional)
-```
 
-### **-output OUTPUT** 
-
-```
+* **-output [pred.txt]** 
 Path to output the predictions (each line will be the decoded sequence
-```
 
-### **-beam_size BEAM_SIZE** 
+* **-dynamic_dict ** 
+Create dynamic dictionaries
 
-```
+* **-share_vocab ** 
+Share source and target vocabulary
+
+### **Beam**:
+* **-beam_size [5]** 
 Beam size
-```
 
-### **-batch_size BATCH_SIZE** 
+* **-alpha ** 
+Google NMT length penalty parameter (higher = longer generation)
 
-```
-Batch size
-```
+* **-beta ** 
+Coverage penalty parameter
 
-### **-max_sent_length MAX_SENT_LENGTH** 
-
-```
+* **-max_sent_length [100]** 
 Maximum sentence length.
-```
 
-### **-replace_unk** 
-
-```
+* **-replace_unk ** 
 Replace the generated UNK tokens with the source token that had highest
 attention weight. If phrase_table is provided, it will lookup the identified
-source token and give the corresponding target token. If it is not provided (or
+source token and give the corresponding target token. If it is not provided(or
 the identified source token does not exist in the table) then it will copy the
 source token
-```
 
-### **-verbose** 
-
-```
+### **Logging**:
+* **-verbose ** 
 Print scores and predictions for each sentence
-```
 
-### **-attn_debug** 
-
-```
+* **-attn_debug ** 
 Print best attn for each word
-```
 
-### **-dump_beam DUMP_BEAM** 
-
-```
+* **-dump_beam ** 
 File to dump beam information to.
-```
 
-### **-n_best N_BEST** 
-
-```
+* **-n_best [1]** 
 If verbose is set, will output the n_best decoded sentences
-```
 
-### **-gpu GPU** 
+### **Efficiency**:
+* **-batch_size [30]** 
+Batch size
 
-```
+* **-gpu [-1]** 
 Device to run on
-```
+
+### **Speech**:
+* **-sample_rate [16000]** 
+Sample rate.
+
+* **-window_size [0.02]** 
+Window size for spectrogram in seconds
+
+* **-window_stride [0.01]** 
+Window stride for spectrogram in seconds
+
+* **-window [hamming]** 
+Window type for spectrogram generation

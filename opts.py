@@ -7,352 +7,386 @@ def model_opts(parser):
     These options are passed to the construction of the model.
     Be careful with these as they will be used during translation.
     """
-    # Model options
-    parser.add_argument('-model_type', default='text',
-                        help="""Type of encoder to use. Options are
-                        [text|img|audio].""")
-    # Embedding Options
-    parser.add_argument('-word_vec_size', type=int, default=-1,
-                        help='Word embedding for both.')
-    parser.add_argument('-src_word_vec_size', type=int, default=500,
-                        help='Src word embedding sizes')
-    parser.add_argument('-tgt_word_vec_size', type=int, default=500,
-                        help='Tgt word embedding sizes')
 
-    parser.add_argument('-feat_merge', type=str, default='concat',
-                        choices=['concat', 'sum', 'mlp'],
-                        help='Merge action for the features embeddings')
-    parser.add_argument('-feat_vec_size', type=int, default=-1,
-                        help="""If specified, feature embedding sizes
-                        will be set to this. Otherwise, feat_vec_exponent
-                        will be used.""")
-    parser.add_argument('-feat_vec_exponent', type=float, default=0.7,
-                        help="""If -feat_merge_size is not set, feature
-                        embedding sizes will be set to N^feat_vec_exponent
-                        where N is the number of values the feature takes.""")
-    parser.add_argument('-position_encoding', action='store_true',
-                        help='Use a sin to mark relative words positions.')
-    parser.add_argument('-share_decoder_embeddings', action='store_true',
-                        help='Share the word and out embeddings for decoder.')
-    parser.add_argument('-share_embeddings', action='store_true',
-                        help="""Share the word embeddings between encoder
-                         and decoder.""")
+    # Embedding Options
+    group = parser.add_argument_group('Model-Embeddings')
+    group.add_argument('-word_vec_size', type=int, default=-1,
+                       help='Word embedding for both.')
+    group.add_argument('-src_word_vec_size', type=int, default=500,
+                       help='Src word embedding sizes')
+    group.add_argument('-tgt_word_vec_size', type=int, default=500,
+                       help='Tgt word embedding sizes')
+
+    group.add_argument('-feat_merge', type=str, default='concat',
+                       choices=['concat', 'sum', 'mlp'],
+                       help='Merge action for the features embeddings')
+    group.add_argument('-feat_vec_size', type=int, default=-1,
+                       help="""If specified, feature embedding sizes
+                       will be set to this. Otherwise, feat_vec_exponent
+                       will be used.""")
+    group.add_argument('-feat_vec_exponent', type=float, default=0.7,
+                       help="""If -feat_merge_size is not set, feature
+                       embedding sizes will be set to N^feat_vec_exponent
+                       where N is the number of values the feature takes.""")
+    group.add_argument('-position_encoding', action='store_true',
+                       help='Use a sin to mark relative words positions.')
+    group.add_argument('-share_decoder_embeddings', action='store_true',
+                       help='Share the word and out embeddings for decoder.')
+    group.add_argument('-share_embeddings', action='store_true',
+                       help="""Share the word embeddings between encoder
+                       and decoder.""")
 
     # RNN Options
-    parser.add_argument('-encoder_type', type=str, default='rnn',
-                        choices=['rnn', 'brnn', 'mean', 'transformer', 'cnn'],
-                        help="""Type of encoder layer to use.""")
-    parser.add_argument('-decoder_type', type=str, default='rnn',
-                        choices=['rnn', 'transformer', 'cnn'],
-                        help='Type of decoder layer to use.')
+    group = parser.add_argument_group('Model- Encoder-Decoder')
+    group.add_argument('-model_type', default='text',
+                       help="""Type of encoder to use. Options are
+                       [text|img|audio].""")
 
-    parser.add_argument('-layers', type=int, default=-1,
-                        help='Number of layers in enc/dec.')
-    parser.add_argument('-enc_layers', type=int, default=2,
-                        help='Number of layers in the encoder')
-    parser.add_argument('-dec_layers', type=int, default=2,
-                        help='Number of layers in the decoder')
+    group.add_argument('-encoder_type', type=str, default='rnn',
+                       choices=['rnn', 'brnn', 'mean', 'transformer', 'cnn'],
+                       help="""Type of encoder layer to use.""")
+    group.add_argument('-decoder_type', type=str, default='rnn',
+                       choices=['rnn', 'transformer', 'cnn'],
+                       help='Type of decoder layer to use.')
 
-    parser.add_argument('-cnn_kernel_width', type=int, default=3,
-                        help="""Size of windows in the cnn, the kernel_size is
-                         (cnn_kernel_width, 1) in conv layer""")
+    group.add_argument('-layers', type=int, default=-1,
+                       help='Number of layers in enc/dec.')
+    group.add_argument('-enc_layers', type=int, default=2,
+                       help='Number of layers in the encoder')
+    group.add_argument('-dec_layers', type=int, default=2,
+                       help='Number of layers in the decoder')
 
-    parser.add_argument('-rnn_size', type=int, default=500,
-                        help='Size of LSTM hidden states')
-    parser.add_argument('-input_feed', type=int, default=1,
-                        help="""Feed the context vector at each time step as
-                        additional input (via concatenation with the word
-                        embeddings) to the decoder.""")
+    group.add_argument('-cnn_kernel_width', type=int, default=3,
+                       help="""Size of windows in the cnn, the kernel_size is
+                       (cnn_kernel_width, 1) in conv layer""")
 
-    parser.add_argument('-rnn_type', type=str, default='LSTM',
-                        choices=['LSTM', 'GRU', 'SRU'],
-                        action=CheckSRU,
-                        help="""The gate type to use in the RNNs""")
-    # parser.add_argument('-residual',   action="store_true",
+    group.add_argument('-rnn_size', type=int, default=500,
+                       help='Size of LSTM hidden states')
+    group.add_argument('-input_feed', type=int, default=1,
+                       help="""Feed the context vector at each time step as
+                       additional input (via concatenation with the word
+                       embeddings) to the decoder.""")
+
+    group.add_argument('-rnn_type', type=str, default='LSTM',
+                       choices=['LSTM', 'GRU', 'SRU'],
+                       action=CheckSRU,
+                       help="""The gate type to use in the RNNs""")
+    # group.add_argument('-residual',   action="store_true",
     #                     help="Add residual connections between RNN layers.")
 
-    parser.add_argument('-brnn', action=DeprecateAction,
-                        help="Deprecated, use `encoder_type`.")
-    parser.add_argument('-brnn_merge', default='concat',
-                        choices=['concat', 'sum'],
-                        help="Merge action for the bidir hidden states")
+    group.add_argument('-brnn', action=DeprecateAction,
+                       help="Deprecated, use `encoder_type`.")
+    group.add_argument('-brnn_merge', default='concat',
+                       choices=['concat', 'sum'],
+                       help="Merge action for the bidir hidden states")
 
-    parser.add_argument('-context_gate', type=str, default=None,
-                        choices=['source', 'target', 'both'],
-                        help="""Type of context gate to use.
-                        Do not select for no context gate.""")
+    group.add_argument('-context_gate', type=str, default=None,
+                       choices=['source', 'target', 'both'],
+                       help="""Type of context gate to use.
+                       Do not select for no context gate.""")
 
     # Attention options
-    parser.add_argument('-global_attention', type=str, default='general',
-                        choices=['dot', 'general', 'mlp'],
-                        help="""The attention type to use:
-                        dotprot or general (Luong) or MLP (Bahdanau)""")
+    group = parser.add_argument_group('Model- Attention')
+    group.add_argument('-global_attention', type=str, default='general',
+                       choices=['dot', 'general', 'mlp'],
+                       help="""The attention type to use:
+                       dotprod or general (Luong) or MLP (Bahdanau)""")
 
     # Genenerator and loss options.
-    parser.add_argument('-copy_attn', action="store_true",
-                        help='Train copy attention layer.')
-    parser.add_argument('-copy_attn_force', action="store_true",
-                        help='When available, train to copy.')
-    parser.add_argument('-coverage_attn', action="store_true",
-                        help='Train a coverage attention layer.')
-    parser.add_argument('-lambda_coverage', type=float, default=1,
-                        help='Lambda value for coverage.')
+    group.add_argument('-copy_attn', action="store_true",
+                       help='Train copy attention layer.')
+    group.add_argument('-copy_attn_force', action="store_true",
+                       help='When available, train to copy.')
+    group.add_argument('-coverage_attn', action="store_true",
+                       help='Train a coverage attention layer.')
+    group.add_argument('-lambda_coverage', type=float, default=1,
+                       help='Lambda value for coverage.')
 
 
 def preprocess_opts(parser):
     # Data options
-    parser.add_argument('-data_type', default="text",
-                        help="""Type of the source input.
-                        Options are [text|img].""")
+    group = parser.add_argument_group('Data')
+    group.add_argument('-data_type', default="text",
+                       help="""Type of the source input.
+                       Options are [text|img].""")
+    
+    group.add_argument('-train_src', required=True,
+                       help="Path to the training source data")
+    group.add_argument('-train_tgt', required=True,
+                       help="Path to the training target data")
+    group.add_argument('-valid_src', required=True,
+                       help="Path to the validation source data")
+    group.add_argument('-valid_tgt', required=True,
+                       help="Path to the validation target data")
 
-    parser.add_argument('-train_src', required=True,
-                        help="Path to the training source data")
-    parser.add_argument('-train_tgt', required=True,
-                        help="Path to the training target data")
-    parser.add_argument('-valid_src', required=True,
-                        help="Path to the validation source data")
-    parser.add_argument('-valid_tgt', required=True,
-                        help="Path to the validation target data")
+    group.add_argument('-src_dir', default="",
+                       help="Source directory for image or audio files.")
 
-    parser.add_argument('-src_dir', default="",
-                        help="Source directory for image or audio files.")
-
-    parser.add_argument('-save_data', required=True,
-                        help="Output file for the prepared data")
+    group.add_argument('-save_data', required=True,
+                       help="Output file for the prepared data")
 
     # Dictionary options, for text corpus
-    parser.add_argument('-src_vocab',
-                        help="Path to an existing source vocabulary")
-    parser.add_argument('-tgt_vocab',
-                        help="Path to an existing target vocabulary")
-    parser.add_argument('-features_vocabs_prefix', type=str, default='',
-                        help="Path prefix to existing features vocabularies")
-    parser.add_argument('-src_vocab_size', type=int, default=50000,
-                        help="Size of the source vocabulary")
-    parser.add_argument('-tgt_vocab_size', type=int, default=50000,
-                        help="Size of the target vocabulary")
 
-    parser.add_argument('-src_words_min_frequency', type=int, default=0)
-    parser.add_argument('-tgt_words_min_frequency', type=int, default=0)
+    group = parser.add_argument_group('Vocab')
+    group.add_argument('-src_vocab',
+                       help="Path to an existing source vocabulary")
+    group.add_argument('-tgt_vocab',
+                       help="Path to an existing target vocabulary")
+    group.add_argument('-features_vocabs_prefix', type=str, default='',
+                       help="Path prefix to existing features vocabularies")
+    group.add_argument('-src_vocab_size', type=int, default=50000,
+                       help="Size of the source vocabulary")
+    group.add_argument('-tgt_vocab_size', type=int, default=50000,
+                       help="Size of the target vocabulary")
 
-    parser.add_argument('-dynamic_dict', action='store_true',
-                        help="Create dynamic dictionaries")
-    parser.add_argument('-share_vocab', action='store_true',
-                        help="Share source and target vocabulary")
+    group.add_argument('-src_words_min_frequency', type=int, default=0)
+    group.add_argument('-tgt_words_min_frequency', type=int, default=0)
+    
+    group.add_argument('-dynamic_dict', action='store_true',
+                       help="Create dynamic dictionaries")
+    group.add_argument('-share_vocab', action='store_true',
+                       help="Share source and target vocabulary")
 
     # Truncation options, for text corpus
-    parser.add_argument('-src_seq_length', type=int, default=50,
-                        help="Maximum source sequence length")
-    parser.add_argument('-src_seq_length_trunc', type=int, default=0,
-                        help="Truncate source sequence length.")
-    parser.add_argument('-tgt_seq_length', type=int, default=50,
-                        help="Maximum target sequence length to keep.")
-    parser.add_argument('-tgt_seq_length_trunc', type=int, default=0,
-                        help="Truncate target sequence length.")
-
-    # Options most relevant to speech
-    parser.add_argument('-sample_rate', type=int, default=16000,
-                        help="Sample rate.")
-    parser.add_argument('-window_size', type=float, default=.02,
-                        help="Window size for spectrogram in seconds.")
-    parser.add_argument('-window_stride', type=float, default=.01,
-                        help="Window stride for spectrogram in seconds.")
-    parser.add_argument('-window', default='hamming',
-                        help="Window type for spectrogram generation.")
+    group = parser.add_argument_group('Pruning')
+    group.add_argument('-src_seq_length', type=int, default=50,
+                       help="Maximum source sequence length")
+    group.add_argument('-src_seq_length_trunc', type=int, default=0,
+                       help="Truncate source sequence length.")
+    group.add_argument('-tgt_seq_length', type=int, default=50,
+                       help="Maximum target sequence length to keep.")
+    group.add_argument('-tgt_seq_length_trunc', type=int, default=0,
+                       help="Truncate target sequence length.")
+    group.add_argument('-lower', action='store_true', help='lowercase data')    
 
     # Data processing options
-    parser.add_argument('-shuffle', type=int, default=1,
-                        help="Shuffle data")
-    parser.add_argument('-lower', action='store_true', help='lowercase data')
-    parser.add_argument('-seed', type=int, default=3435,
-                        help="Random seed")
-    parser.add_argument('-report_every', type=int, default=100000,
-                        help="Report status every this many sentences")
+    group = parser.add_argument_group('Random')
+    group.add_argument('-shuffle', type=int, default=1,
+                       help="Shuffle data")
+    group.add_argument('-seed', type=int, default=3435,
+                       help="Random seed")
+
+    group = parser.add_argument_group('Logging')
+    group.add_argument('-report_every', type=int, default=100000,
+                       help="Report status every this many sentences")
+    
+    # Options most relevant to speech
+    group = parser.add_argument_group('Speech')
+    group.add_argument('-sample_rate', type=int, default=16000,
+                       help="Sample rate.")
+    group.add_argument('-window_size', type=float, default=.02,
+                       help="Window size for spectrogram in seconds.")
+    group.add_argument('-window_stride', type=float, default=.01,
+                       help="Window stride for spectrogram in seconds.")
+    group.add_argument('-window', default='hamming',
+                       help="Window type for spectrogram generation.")
 
 
 def train_opts(parser):
     # Model loading/saving options
-    parser.add_argument('-data', required=True,
-                        help="""Path prefix to the ".train.pt" and
-                        ".valid.pt" file path from preprocess.py""")
 
-    parser.add_argument('-save_model', default='model',
-                        help="""Model filename (the model will be saved as
-                        <save_model>_epochN_PPL.pt where PPL is the
-                        validation perplexity""")
-    parser.add_argument('-train_from', default='', type=str,
-                        help="""If training from a checkpoint then this is the
-                        path to the pretrained model's state_dict.""")
+    group = parser.add_argument_group('General')
+    group.add_argument('-data', required=True,
+                       help="""Path prefix to the ".train.pt" and
+                       ".valid.pt" file path from preprocess.py""")
+
+    group.add_argument('-save_model', default='model',
+                       help="""Model filename (the model will be saved as
+                       <save_model>_epochN_PPL.pt where PPL is the
+                       validation perplexity""")
     # GPU
-    parser.add_argument('-gpuid', default=[], nargs='+', type=int,
-                        help="Use CUDA on the listed devices.")
-    parser.add_argument('-seed', type=int, default=-1,
-                        help="""Random seed used for the experiments
-                        reproducibility.""")
+    group.add_argument('-gpuid', default=[], nargs='+', type=int,
+                       help="Use CUDA on the listed devices.")
 
+    group.add_argument('-seed', type=int, default=-1,
+                       help="""Random seed used for the experiments
+                       reproducibility.""")
+    
     # Init options
-    parser.add_argument('-start_epoch', type=int, default=1,
-                        help='The epoch from which to start')
-    parser.add_argument('-param_init', type=float, default=0.1,
-                        help="""Parameters are initialized over uniform distribution
-                        with support (-param_init, param_init).
-                        Use 0 to not use initialization""")
+    group = parser.add_argument_group('Initialization')
+    group.add_argument('-start_epoch', type=int, default=1,
+                       help='The epoch from which to start')
+    group.add_argument('-param_init', type=float, default=0.1,
+                       help="""Parameters are initialized over uniform distribution
+                       with support (-param_init, param_init).
+                       Use 0 to not use initialization""")
+    group.add_argument('-train_from', default='', type=str,
+                       help="""If training from a checkpoint then this is the
+                       path to the pretrained model's state_dict.""")
 
     # Pretrained word vectors
-    parser.add_argument('-pre_word_vecs_enc',
-                        help="""If a valid path is specified, then this will load
-                        pretrained word embeddings on the encoder side.
-                        See README for specific formatting instructions.""")
-    parser.add_argument('-pre_word_vecs_dec',
-                        help="""If a valid path is specified, then this will load
-                        pretrained word embeddings on the decoder side.
-                        See README for specific formatting instructions.""")
+    group.add_argument('-pre_word_vecs_enc',
+                       help="""If a valid path is specified, then this will load
+                       pretrained word embeddings on the encoder side.
+                       See README for specific formatting instructions.""")
+    group.add_argument('-pre_word_vecs_dec',
+                       help="""If a valid path is specified, then this will load
+                       pretrained word embeddings on the decoder side.
+                       See README for specific formatting instructions.""")
     # Fixed word vectors
-    parser.add_argument('-fix_word_vecs_enc',
-                        action='store_true',
-                        help="Fix word embeddings on the encoder side.")
-    parser.add_argument('-fix_word_vecs_dec',
-                        action='store_true',
-                        help="Fix word embeddings on the encoder side.")
+    group.add_argument('-fix_word_vecs_enc',
+                       action='store_true',
+                       help="Fix word embeddings on the encoder side.")
+    group.add_argument('-fix_word_vecs_dec',
+                       action='store_true',
+                       help="Fix word embeddings on the encoder side.")
 
     # Optimization options
-    parser.add_argument('-batch_size', type=int, default=64,
-                        help='Maximum batch size')
-    parser.add_argument('-max_generator_batches', type=int, default=32,
-                        help="""Maximum batches of words in a sequence to run
+    group = parser.add_argument_group('Optimization- Type')
+    group.add_argument('-batch_size', type=int, default=64,
+                       help='Maximum batch size')
+    group.add_argument('-max_generator_batches', type=int, default=32,
+                       help="""Maximum batches of words in a sequence to run
                         the generator on in parallel. Higher is faster, but
                         uses more memory.""")
-    parser.add_argument('-epochs', type=int, default=13,
-                        help='Number of training epochs')
-    parser.add_argument('-optim', default='sgd',
-                        choices=['sgd', 'adagrad', 'adadelta', 'adam'],
-                        help="""Optimization method.""")
-    parser.add_argument('-adagrad_accumulator_init', type=float, default=0,
-                        help="""Initializes the accumulator values in adagrad.
-                        Mirrors the initial_accumulator_value option
-                        in the tensorflow adagrad (use 0.1 for their default).
-                        """)
-    parser.add_argument('-max_grad_norm', type=float, default=5,
-                        help="""If the norm of the gradient vector exceeds this,
-                        renormalize it to have the norm equal to
-                        max_grad_norm""")
-    parser.add_argument('-dropout', type=float, default=0.3,
-                        help="Dropout probability; applied in LSTM stacks.")
-    parser.add_argument('-truncated_decoder', type=int, default=0,
-                        help="""Truncated bptt.""")
-    parser.add_argument('-adam_beta1', type=float, default=0.9,
-                        help="""The beta1 parameter used by Adam.
-                        Almost without exception a value of 0.9 is used in
-                        the literature, seemingly giving good results,
-                        so we would discourage changing this value from
-                        the default without due consideration.""")
-    parser.add_argument('-adam_beta2', type=float, default=0.999,
-                        help="""The beta2 parameter used by Adam.
-                        Typically a value of 0.999 is recommended, as this is
-                        the value suggested by the original paper describing
-                        Adam, and is also the value adopted in other frameworks
-                        such as Tensorflow and Kerras, i.e. see:
-                        https://www.tensorflow.org/api_docs/python/tf/train/AdamOptimizer
-                        https://keras.io/optimizers/ .
-                        Whereas recently the paper "Attention is All You Need"
-                        suggested a value of 0.98 for beta2, this parameter may
-                        not work well for normal models / default
-                        baselines.""")
+    group.add_argument('-epochs', type=int, default=13,
+                       help='Number of training epochs')
+    group.add_argument('-optim', default='sgd',
+                       choices=['sgd', 'adagrad', 'adadelta', 'adam'],
+                       help="""Optimization method.""")
+    group.add_argument('-adagrad_accumulator_init', type=float, default=0,
+                       help="""Initializes the accumulator values in adagrad.
+                       Mirrors the initial_accumulator_value option
+                       in the tensorflow adagrad (use 0.1 for their default).
+                       """)
+    group.add_argument('-max_grad_norm', type=float, default=5,
+                       help="""If the norm of the gradient vector exceeds this,
+                       renormalize it to have the norm equal to
+                       max_grad_norm""")
+    group.add_argument('-dropout', type=float, default=0.3,
+                       help="Dropout probability; applied in LSTM stacks.")
+    group.add_argument('-truncated_decoder', type=int, default=0,
+                       help="""Truncated bptt.""")
+    group.add_argument('-adam_beta1', type=float, default=0.9,
+                       help="""The beta1 parameter used by Adam.
+                       Almost without exception a value of 0.9 is used in
+                       the literature, seemingly giving good results,
+                       so we would discourage changing this value from
+                       the default without due consideration.""")
+    group.add_argument('-adam_beta2', type=float, default=0.999,
+                       help="""The beta2 parameter used by Adam.
+                       Typically a value of 0.999 is recommended, as this is
+                       the value suggested by the original paper describing
+                       Adam, and is also the value adopted in other frameworks
+                       such as Tensorflow and Kerras, i.e. see:
+                       https://www.tensorflow.org/api_docs/python/tf/train/AdamOptimizer
+                       https://keras.io/optimizers/ .
+                       Whereas recently the paper "Attention is All You Need"
+                       suggested a value of 0.98 for beta2, this parameter may
+                       not work well for normal models / default
+                       baselines.""")
     # learning rate
-    parser.add_argument('-learning_rate', type=float, default=1.0,
-                        help="""Starting learning rate.
-                        Recommended settings: sgd = 1, adagrad = 0.1,
-                        adadelta = 1, adam = 0.001""")
-    parser.add_argument('-learning_rate_decay', type=float, default=0.5,
-                        help="""If update_learning_rate, decay learning rate by
-                        this much if (i) perplexity does not decrease on the
-                        validation set or (ii) epoch has gone past
-                        start_decay_at""")
-    parser.add_argument('-start_decay_at', type=int, default=8,
-                        help="""Start decaying every epoch after and including this
-                        epoch""")
-    parser.add_argument('-start_checkpoint_at', type=int, default=0,
-                        help="""Start checkpointing every epoch after and including
-                        this epoch""")
-    parser.add_argument('-decay_method', type=str, default="",
-                        choices=['noam'], help="Use a custom decay rate.")
-    parser.add_argument('-warmup_steps', type=int, default=4000,
-                        help="""Number of warmup steps for custom decay.""")
+    group = parser.add_argument_group('Optimization- Rate')
+    group.add_argument('-learning_rate', type=float, default=1.0,
+                       help="""Starting learning rate.
+                       Recommended settings: sgd = 1, adagrad = 0.1,
+                       adadelta = 1, adam = 0.001""")
+    group.add_argument('-learning_rate_decay', type=float, default=0.5,
+                       help="""If update_learning_rate, decay learning rate by
+                       this much if (i) perplexity does not decrease on the
+                       validation set or (ii) epoch has gone past
+                       start_decay_at""")
+    group.add_argument('-start_decay_at', type=int, default=8,
+                       help="""Start decaying every epoch after and including this
+                       epoch""")
+    group.add_argument('-start_checkpoint_at', type=int, default=0,
+                       help="""Start checkpointing every epoch after and including
+                       this epoch""")
+    group.add_argument('-decay_method', type=str, default="",
+                       choices=['noam'], help="Use a custom decay rate.")
+    group.add_argument('-warmup_steps', type=int, default=4000,
+                       help="""Number of warmup steps for custom decay.""")
 
-    parser.add_argument('-report_every', type=int, default=50,
-                        help="Print stats at this interval.")
-    parser.add_argument('-exp_host', type=str, default="",
-                        help="Send logs to this crayon server.")
-    parser.add_argument('-exp', type=str, default="",
-                        help="Name of the experiment for logging.")
+    group = parser.add_argument_group('Logging')
+    group.add_argument('-report_every', type=int, default=50,
+                       help="Print stats at this interval.")
+    group.add_argument('-exp_host', type=str, default="",
+                       help="Send logs to this crayon server.")
+    group.add_argument('-exp', type=str, default="",
+                       help="Name of the experiment for logging.")
+
+    group = parser.add_argument_group('Speech')
     # Options most relevant to speech
-    parser.add_argument('-sample_rate', type=int, default=16000,
-                        help="Sample rate.")
-    parser.add_argument('-window_size', type=float, default=.02,
-                        help="Window size for spectrogram in seconds.")
+    group.add_argument('-sample_rate', type=int, default=16000,
+                       help="Sample rate.")
+    group.add_argument('-window_size', type=float, default=.02,
+                       help="Window size for spectrogram in seconds.")
 
 
 def translate_opts(parser):
-    parser.add_argument('-data_type', default="text",
-                        help="Type of the source input. Options: [text|img].")
-    parser.add_argument('-model', required=True,
-                        help='Path to model .pt file')
-    parser.add_argument('-src',   required=True,
-                        help="""Source sequence to decode (one line per
-                        sequence)""")
-    parser.add_argument('-src_dir',   default="",
-                        help='Source directory for image or audio files')
-    parser.add_argument('-tgt',
-                        help='True target sequence (optional)')
-    parser.add_argument('-output', default='pred.txt',
-                        help="""Path to output the predictions (each line will
-                        be the decoded sequence""")
-    parser.add_argument('-beam_size',  type=int, default=5,
-                        help='Beam size')
-    parser.add_argument('-batch_size', type=int, default=30,
-                        help='Batch size')
-    parser.add_argument('-max_sent_length', type=int, default=100,
-                        help='Maximum sentence length.')
-    parser.add_argument('-replace_unk', action="store_true",
-                        help="""Replace the generated UNK tokens with the
-                        source token that had highest attention weight. If
-                        phrase_table is provided, it will lookup the
-                        identified source token and give the corresponding
-                        target token. If it is not provided(or the identified
-                        source token does not exist in the table) then it
-                        will copy the source token""")
-    parser.add_argument('-verbose', action="store_true",
-                        help='Print scores and predictions for each sentence')
-    parser.add_argument('-attn_debug', action="store_true",
-                        help='Print best attn for each word')
-    parser.add_argument('-dump_beam', type=str, default="",
-                        help='File to dump beam information to.')
-    parser.add_argument('-n_best', type=int, default=1,
-                        help="""If verbose is set, will output the n_best
-                        decoded sentences""")
-    parser.add_argument('-gpu', type=int, default=-1,
-                        help="Device to run on")
+    group = parser.add_argument_group('Model')
+    group.add_argument('-model', required=True,
+                       help='Path to model .pt file')
+    
+    group = parser.add_argument_group('Data')
+    group.add_argument('-data_type', default="text",
+                       help="Type of the source input. Options: [text|img].")
+
+    group.add_argument('-src',   required=True,
+                       help="""Source sequence to decode (one line per
+                       sequence)""")
+    group.add_argument('-src_dir',   default="",
+                       help='Source directory for image or audio files')
+    group.add_argument('-tgt',
+                       help='True target sequence (optional)')
+    group.add_argument('-output', default='pred.txt',
+                       help="""Path to output the predictions (each line will
+                       be the decoded sequence""")
     # Options most relevant to summarization.
-    parser.add_argument('-dynamic_dict', action='store_true',
-                        help="Create dynamic dictionaries")
-    parser.add_argument('-share_vocab', action='store_true',
-                        help="Share source and target vocabulary")
-    # Options most relevant to speech.
-    parser.add_argument('-sample_rate', type=int, default=16000,
-                        help="Sample rate.")
-    parser.add_argument('-window_size', type=float, default=.02,
-                        help='Window size for spectrogram in seconds')
-    parser.add_argument('-window_stride', type=float, default=.01,
-                        help='Window stride for spectrogram in seconds')
-    parser.add_argument('-window', default='hamming',
-                        help='Window type for spectrogram generation')
+    group.add_argument('-dynamic_dict', action='store_true',
+                       help="Create dynamic dictionaries")
+    group.add_argument('-share_vocab', action='store_true',
+                       help="Share source and target vocabulary")
+
+    group = parser.add_argument_group('Beam')
+    group.add_argument('-beam_size',  type=int, default=5,
+                       help='Beam size')
+
     # Alpha and Beta values for Google Length + Coverage penalty
     # Described here: https://arxiv.org/pdf/1609.08144.pdf, Section 7
-    parser.add_argument('-alpha', type=float, default=0.,
-                        help="""Google NMT length penalty parameter
+    group.add_argument('-alpha', type=float, default=0.,
+                       help="""Google NMT length penalty parameter
                         (higher = longer generation)""")
-    parser.add_argument('-beta', type=float, default=-0.,
-                        help="""Coverage penalty parameter""")
+    group.add_argument('-beta', type=float, default=-0.,
+                       help="""Coverage penalty parameter""")
+    group.add_argument('-max_sent_length', type=int, default=100,
+                       help='Maximum sentence length.')
+    group.add_argument('-replace_unk', action="store_true",
+                       help="""Replace the generated UNK tokens with the
+                       source token that had highest attention weight. If
+                       phrase_table is provided, it will lookup the
+                       identified source token and give the corresponding
+                       target token. If it is not provided(or the identified
+                       source token does not exist in the table) then it
+                       will copy the source token""")
+
+    group = parser.add_argument_group('Logging')
+    group.add_argument('-verbose', action="store_true",
+                       help='Print scores and predictions for each sentence')
+    group.add_argument('-attn_debug', action="store_true",
+                       help='Print best attn for each word')
+    group.add_argument('-dump_beam', type=str, default="",
+                       help='File to dump beam information to.')
+    group.add_argument('-n_best', type=int, default=1,
+                       help="""If verbose is set, will output the n_best
+                       decoded sentences""")
+
+    group = parser.add_argument_group('Efficiency')
+    group.add_argument('-batch_size', type=int, default=30,
+                       help='Batch size')
+    group.add_argument('-gpu', type=int, default=-1,
+                       help="Device to run on")
+    
+    # Options most relevant to speech.
+    group = parser.add_argument_group('Speech')
+    group.add_argument('-sample_rate', type=int, default=16000,
+                       help="Sample rate.")
+    group.add_argument('-window_size', type=float, default=.02,
+                       help='Window size for spectrogram in seconds')
+    group.add_argument('-window_stride', type=float, default=.01,
+                       help='Window stride for spectrogram in seconds')
+    group.add_argument('-window', default='hamming',
+                       help='Window type for spectrogram generation')
 
 
 def add_md_help_argument(parser):
@@ -377,27 +411,27 @@ class MarkdownHelpFormatter(argparse.HelpFormatter):
     """
 
     def _format_usage(self, usage, actions, groups, prefix):
-        usage_text = super(MarkdownHelpFormatter, self)._format_usage(
-            usage, actions, groups, prefix)
-        return '\n```\n%s\n```\n\n' % usage_text
+        return ""
 
     def format_help(self):
-        self._root_section.heading = '# %s' % self._prog
+        print(self._prog)
+        self._root_section.heading = ''
         return super(MarkdownHelpFormatter, self).format_help()
 
     def start_section(self, heading):
-        super(MarkdownHelpFormatter, self).start_section('## **%s**' % heading)
+        super(MarkdownHelpFormatter, self)\
+            .start_section('### **%s**' % heading)
 
     def _format_action(self, action):
+        if action.dest == "help" or action.dest == "md":
+            return ""
         lines = []
-        action_header = self._format_action_invocation(action)
-        lines.append('### **%s** ' % action_header)
+        lines.append('* **-%s %s** ' % (action.dest,
+                                        "[%s]" % action.default
+                                        if action.default else ""))
         if action.help:
-            lines.append('')
-            lines.append('```')
             help_text = self._expand_help(action)
             lines.extend(self._split_lines(help_text, 80))
-            lines.append('```')
         lines.extend(['', ''])
         return '\n'.join(lines)
 

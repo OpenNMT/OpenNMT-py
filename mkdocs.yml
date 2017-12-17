@@ -30,10 +30,14 @@ markdown_extensions:
 
 pages:
   - Overview: index.md
-  - Installation: installation.md
-  - Quickstart: quickstart.md
-  - "Extended Example": extended.md
-    
+  - "Examples":
+      - Quickstart: quickstart.md
+      - "Translation": extended.md
+      - "Summarization": Summarization.md
+      - "Image-to-Text": im2text.md
+      - "Speech-to-Text": speech2text.md
+
+  - FAQ: FAQ.md
   # - Data:
   #     - Preparation: data/preparation.md
   #     - "Word features": data/word_features.md
@@ -57,6 +61,8 @@ pages:
       - "preprocess.py": options/preprocess.md
       - "train.py": options/train.md
       - "translate.py": options/translate.md
+
+  - Contributing: CONTRIBUTORS.md
   #     - "tag.lua": options/tag.md
   #     - "tools/build_vocab.lua": options/build_vocab.md
   #     - "tools/release_model.lua": options/release_model.md
@@ -66,7 +72,5 @@ pages:
   #     - "tools/rest_translation_server.lua": options/rest_server.md
   #     - "tools/embeddings.lua": options/embeddings.md
   # - Extensions: extensions.md
-  - "Image to Text": im2text.md
-  - "Speech to Text": speech2text.md
-  - References: references.md
+  # - References: references.md
   # - "Common issues": issues.md
