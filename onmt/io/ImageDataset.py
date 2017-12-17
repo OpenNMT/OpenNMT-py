@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
 import os
+import codecs
 
 from onmt.io import ONMTDatasetBase, _make_example, \
-                    _join_dicts, _peek, _construct_example_fromlist, \
-                    _read_img_file
+                    _join_dicts, _peek, _construct_example_fromlist
 
 
 class ImageDataset(ONMTDatasetBase):
@@ -76,3 +76,34 @@ class ImageDataset(ONMTDatasetBase):
         filter_pred = filter_pred if use_filter_pred else lambda x: True
 
         return out_examples, out_fields, filter_pred
+
+
+def _read_img_file(path, src_dir, side, truncate=None):
+    """
+    Args:
+        path: location of a src file containing image paths
+        src_dir: location of source images
+        side: 'src' or 'tgt'
+        truncate: maximum img size ((0,0) or None for unlimited)
+
+    Yields:
+        a dictionary containing image data, path and index for each line.
+    """
+    with codecs.open(path, "r", "utf-8") as corpus_file:
+        index = 0
+        for line in corpus_file:
+            img_path = os.path.join(src_dir, line.strip())
+            if not os.path.exists(img_path):
+                img_path = line
+            assert os.path.exists(img_path), \
+                'img path %s not found' % (line.strip())
+            img = transforms.ToTensor()(Image.open(img_path))
+            if truncate and truncate != (0, 0):
+                if not (img.size(1) <= truncate[0]
+                        and img.size(2) <= truncate[1]):
+                    continue
+            example_dict = {side: img,
+                            side+'_path': line.strip(),
+                            'indices': index}
+            index += 1
+            yield example_dict
