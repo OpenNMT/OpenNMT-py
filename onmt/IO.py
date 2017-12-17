@@ -353,6 +353,23 @@ def _read_text_file(path, truncate, side):
             yield example_dict, n_feats
 
 
+def _make_example(path, truncate, side):
+    """
+    Process the text corpus into (examples, num_feats) tuple.
+    """
+    assert side in ['src', 'tgt']
+
+    if path is None:
+        return (None, 0)
+
+    examples = _read_text_file(path, truncate, side)
+    (_, num_feats), examples = _peek(examples)
+
+    out_examples = (ex for ex, nfeats in examples)
+
+    return (out_examples, num_feats)
+
+
 def _read_img_file(path, src_dir, side, truncate=None):
     """
     Args:
@@ -542,22 +559,13 @@ class TextDataset(ONMTDatasetBase):
         # collapse_copy_scores and in Translator.py
         self.src_vocabs = []
 
-        src_examples = _read_text_file(src_path, src_seq_length_trunc, "src")
-        (_, src_feats), src_examples = _peek(src_examples)
-        src_examples = (ex for ex, nfeats in src_examples)
-        self.n_src_feats = src_feats
+        # Process the corpus into examples, and extract number of features,
+        # if any. Note tgt_path might be None.
+        src_examples, self.n_src_feats = \
+            _make_example(src_path, src_seq_length_trunc, "src")
 
-        # If tgt_path exists, then we need to do the same thing as we did
-        # for the source data
-        if tgt_path is not None:
-            tgt_examples = _read_text_file(tgt_path, tgt_seq_length_trunc,
-                                           "tgt")
-            (_, tgt_feats), tgt_examples = _peek(tgt_examples)
-            tgt_examples = (ex for ex, nfeats in tgt_examples)
-            self.n_tgt_feats = tgt_feats
-        else:
-            tgt_examples = None
-            self.n_tgt_feats = 0
+        tgt_examples, self.n_tgt_feats = \
+            _make_example(tgt_path, tgt_seq_length_trunc, "tgt")
 
         # examples: one for each src line or (src, tgt) line pair.
         # Each element is a dictionary whose keys represent at minimum
@@ -643,18 +651,13 @@ class ImageDataset(ONMTDatasetBase):
         from PIL import Image
         from torchvision import transforms
 
+        # Process the source image corpus into examples, and process
+        # the target text corpus into examples, if tgt_path is not None.
         src_examples = _read_img_file(src_path, src_dir, "src")
         self.n_src_feats = 0
 
-        if tgt_path is not None:
-            tgt_examples = _read_text_file(tgt_path, tgt_seq_length_trunc,
-                                           "tgt")
-            (_, tgt_feats), tgt_examples = _peek(tgt_examples)
-            tgt_examples = (ex for ex, nfeats in tgt_examples)
-            self.n_tgt_feats = tgt_feats
-        else:
-            tgt_examples = None
-            self.n_tgt_feats = 0
+        tgt_examples, self.n_tgt_feats = \
+            _make_example(tgt_path, tgt_seq_length_trunc, "tgt")
 
         if tgt_examples is not None:
             examples = (_join_dicts(src, tgt)
@@ -735,21 +738,16 @@ class AudioDataset(ONMTDatasetBase):
         self.window = window
         self.normalize_audio = normalize_audio
 
+        # Process the source audio corpus into examples, and process
+        # the target text corpus into examples, if tgt_path is not None.
         src_examples = _read_audio_file(src_path, src_dir, "src",
                                         sample_rate, window_size,
                                         window_stride, window,
                                         normalize_audio)
         self.n_src_feats = 0
 
-        if tgt_path is not None:
-            tgt_examples = _read_text_file(tgt_path, tgt_seq_length_trunc,
-                                           "tgt")
-            (_, tgt_feats), tgt_examples = _peek(tgt_examples)
-            tgt_examples = (ex for ex, nfeats in tgt_examples)
-            self.n_tgt_feats = tgt_feats
-        else:
-            self.n_tgt_feats = 0
-            tgt_examples = None
+        tgt_examples, self.n_tgt_feats = \
+            _make_example(tgt_path, tgt_seq_length_trunc, "tgt")
 
         if tgt_examples is not None:
             examples = (_join_dicts(src, tgt)
