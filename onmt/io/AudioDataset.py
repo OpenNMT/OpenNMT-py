@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 
 import os
+import codecs
+import torch
 
 from onmt.io import ONMTDatasetBase, _make_example, \
-                    _join_dicts, _peek, _construct_example_fromlist, \
-                    _read_audio_file
+                    _join_dicts, _peek, _construct_example_fromlist
 
 
 class AudioDataset(ONMTDatasetBase):
@@ -95,3 +96,62 @@ class AudioDataset(ONMTDatasetBase):
         filter_pred = filter_pred if use_filter_pred else lambda x: True
 
         return out_examples, out_fields, filter_pred
+
+
+def _read_audio_file(path, src_dir, side, sample_rate, window_size,
+                     window_stride, window, normalize_audio, truncate=None):
+    """
+    Args:
+        path: location of a src file containing audio paths.
+        src_dir: location of source audio files.
+        side: 'src' or 'tgt'.
+        sample_rate: sample_rate.
+        window_size: window size for spectrogram in seconds.
+        window_stride: window stride for spectrogram in seconds.
+        window: window type for spectrogram generation.
+        normalize_audio: subtract spectrogram by mean and divide by std or not
+        truncate: maximum audio length (0 or None for unlimited).
+
+    Yields:
+        image for each line.
+    """
+    with codecs.open(path, "r", "utf-8") as corpus_file:
+        index = 0
+        for line in corpus_file:
+            audio_path = os.path.join(src_dir, line.strip())
+            if not os.path.exists(audio_path):
+                audio_path = line
+            assert os.path.exists(audio_path), \
+                'audio path %s not found' % (line.strip())
+            sound, sample_rate = torchaudio.load(audio_path)
+            if truncate and truncate > 0:
+                if sound.size(0) > truncate:
+                    continue
+            assert sample_rate == sample_rate, \
+                'Sample rate of %s != -sample_rate (%d vs %d)' \
+                % (audio_path, sample_rate, sample_rate)
+            sound = sound.numpy()
+            if len(sound.shape) > 1:
+                if sound.shape[1] == 1:
+                    sound = sound.squeeze()
+                else:
+                    sound = sound.mean(axis=1)  # average multiple channels
+            n_fft = int(sample_rate * window_size)
+            win_length = n_fft
+            hop_length = int(sample_rate * window_stride)
+            # STFT
+            D = librosa.stft(sound, n_fft=n_fft, hop_length=hop_length,
+                             win_length=win_length, window=window)
+            spect, _ = librosa.magphase(D)
+            spect = np.log1p(spect)
+            spect = torch.FloatTensor(spect)
+            if normalize_audio:
+                mean = spect.mean()
+                std = spect.std()
+                spect.add_(-mean)
+                spect.div_(std)
+            example_dict = {side: spect,
+                            side + '_path': line.strip(),
+                            'indices': index}
+            index += 1
+            yield example_dict
