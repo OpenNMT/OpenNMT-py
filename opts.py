@@ -100,7 +100,33 @@ def model_opts(parser):
 
 
 def preprocess_opts(parser):
-    # Dictionary Options
+    # Data options
+    parser.add_argument('-data_type', default="text",
+                        help="""Type of the source input.
+                        Options are [text|img].""")
+
+    parser.add_argument('-train_src', required=True,
+                        help="Path to the training source data")
+    parser.add_argument('-train_tgt', required=True,
+                        help="Path to the training target data")
+    parser.add_argument('-valid_src', required=True,
+                        help="Path to the validation source data")
+    parser.add_argument('-valid_tgt', required=True,
+                        help="Path to the validation target data")
+
+    parser.add_argument('-src_dir', default="",
+                        help="Source directory for image or audio files.")
+
+    parser.add_argument('-save_data', required=True,
+                        help="Output file for the prepared data")
+
+    # Dictionary options, for text corpus
+    parser.add_argument('-src_vocab',
+                        help="Path to an existing source vocabulary")
+    parser.add_argument('-tgt_vocab',
+                        help="Path to an existing target vocabulary")
+    parser.add_argument('-features_vocabs_prefix', type=str, default='',
+                        help="Path prefix to existing features vocabularies")
     parser.add_argument('-src_vocab_size', type=int, default=50000,
                         help="Size of the source vocabulary")
     parser.add_argument('-tgt_vocab_size', type=int, default=50000,
@@ -109,7 +135,12 @@ def preprocess_opts(parser):
     parser.add_argument('-src_words_min_frequency', type=int, default=0)
     parser.add_argument('-tgt_words_min_frequency', type=int, default=0)
 
-    # Truncation options
+    parser.add_argument('-dynamic_dict', action='store_true',
+                        help="Create dynamic dictionaries")
+    parser.add_argument('-share_vocab', action='store_true',
+                        help="Share source and target vocabulary")
+
+    # Truncation options, for text corpus
     parser.add_argument('-src_seq_length', type=int, default=50,
                         help="Maximum source sequence length")
     parser.add_argument('-src_seq_length_trunc', type=int, default=0,
@@ -118,17 +149,6 @@ def preprocess_opts(parser):
                         help="Maximum target sequence length to keep.")
     parser.add_argument('-tgt_seq_length_trunc', type=int, default=0,
                         help="Truncate target sequence length.")
-
-    # Data processing options
-    parser.add_argument('-shuffle', type=int, default=1,
-                        help="Shuffle data")
-    parser.add_argument('-lower', action='store_true', help='lowercase data')
-
-    # Options most relevant to summarization
-    parser.add_argument('-dynamic_dict', action='store_true',
-                        help="Create dynamic dictionaries")
-    parser.add_argument('-share_vocab', action='store_true',
-                        help="Share source and target vocabulary")
 
     # Options most relevant to speech
     parser.add_argument('-sample_rate', type=int, default=16000,
@@ -139,6 +159,15 @@ def preprocess_opts(parser):
                         help="Window stride for spectrogram in seconds.")
     parser.add_argument('-window', default='hamming',
                         help="Window type for spectrogram generation.")
+
+    # Data processing options
+    parser.add_argument('-shuffle', type=int, default=1,
+                        help="Shuffle data")
+    parser.add_argument('-lower', action='store_true', help='lowercase data')
+    parser.add_argument('-seed', type=int, default=3435,
+                        help="Random seed")
+    parser.add_argument('-report_every', type=int, default=100000,
+                        help="Report status every this many sentences")
 
 
 def train_opts(parser):

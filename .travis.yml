@@ -20,7 +20,7 @@ before_install:
   - pip install -r requirements.txt
   # dependencies for im2text
   - pip install Pillow
-  - conda install torchvision
+  - conda install torchvision==0.1.8
   # dependencies for speech2text
   - sudo apt-get install -y sox libsox-dev libsox-fmt-all
   - pip install librosa git+https://github.com/pytorch/audio

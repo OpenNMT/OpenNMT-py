@@ -53,14 +53,14 @@ def main():
         import json
         translator.initBeamAccum()
 
-    data = onmt.IO.ONMTDataset(opt.data_type,
-                               opt.src, opt.tgt, translator.fields,
-                               src_dir=opt.src_dir,
-                               sample_rate=opt.sample_rate,
-                               window_size=opt.window_size,
-                               window_stride=opt.window_stride,
-                               window=opt.window,
-                               use_filter_pred=False)
+    data = onmt.IO.build_dataset(translator.fields, opt.data_type,
+                                 opt.src, opt.tgt,
+                                 src_dir=opt.src_dir,
+                                 sample_rate=opt.sample_rate,
+                                 window_size=opt.window_size,
+                                 window_stride=opt.window_stride,
+                                 window=opt.window,
+                                 use_filter_pred=False)
     data_type = data.data_type
 
     test_data = onmt.IO.OrderedIterator(
