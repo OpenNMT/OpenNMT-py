@@ -34,6 +34,7 @@
 
 from recommonmark.parser import CommonMarkParser
 import sphinx_rtd_theme
+
 source_parsers = {
         '.md': CommonMarkParser,
     }
@@ -43,8 +44,8 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.mathjax',
               'sphinx.ext.viewcode',
               'sphinx.ext.githubpages',
-              'sphinx.ext.napoleon']
-
+              'sphinx.ext.napoleon',
+              'sphinxcontrib.mermaid']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['.templates']
@@ -97,6 +98,9 @@ todo_include_todos = False
 # a list of builtin themes.
 #
 
+
+# html_theme = 'sphinx_materialdesign_theme'
+# html_theme_path = [sphinx_materialdesign_theme.get_path()]
 html_theme = "sphinx_rtd_theme"
 html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 

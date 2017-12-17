@@ -1,10 +1,7 @@
-onmt\.modules package
+onmt\.modules
 =====================
 
-Submodules
-----------
-
-onmt\.modules\.AudioEncoder module
+onmt\.modules\.AudioEncoder
 ----------------------------------
 
 .. automodule:: onmt.modules.AudioEncoder
@@ -12,7 +9,7 @@ onmt\.modules\.AudioEncoder module
     :undoc-members:
     :show-inheritance:
 
-onmt\.modules\.Conv2Conv module
+onmt\.modules\.Conv2Conv 
 -------------------------------
 
 .. automodule:: onmt.modules.Conv2Conv
@@ -20,15 +17,8 @@ onmt\.modules\.Conv2Conv module
     :undoc-members:
     :show-inheritance:
 
-onmt\.modules\.ConvMultiStepAttention module
---------------------------------------------
 
-.. automodule:: onmt.modules.ConvMultiStepAttention
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-onmt\.modules\.CopyGenerator module
+onmt\.modules\.CopyGenerator
 -----------------------------------
 
 .. automodule:: onmt.modules.CopyGenerator
@@ -36,7 +26,7 @@ onmt\.modules\.CopyGenerator module
     :undoc-members:
     :show-inheritance:
 
-onmt\.modules\.Embeddings module
+onmt\.modules\.Embeddings 
 --------------------------------
 
 .. automodule:: onmt.modules.Embeddings
@@ -44,7 +34,7 @@ onmt\.modules\.Embeddings module
     :undoc-members:
     :show-inheritance:
 
-onmt\.modules\.Gate module
+onmt\.modules\.Gate 
 --------------------------
 
 .. automodule:: onmt.modules.Gate
@@ -52,7 +42,7 @@ onmt\.modules\.Gate module
     :undoc-members:
     :show-inheritance:
 
-onmt\.modules\.GlobalAttention module
+onmt\.modules\.GlobalAttention 
 -------------------------------------
 
 .. automodule:: onmt.modules.GlobalAttention
@@ -60,7 +50,7 @@ onmt\.modules\.GlobalAttention module
     :undoc-members:
     :show-inheritance:
 
-onmt\.modules\.ImageEncoder module
+onmt\.modules\.ImageEncoder 
 ----------------------------------
 
 .. automodule:: onmt.modules.ImageEncoder
@@ -68,7 +58,7 @@ onmt\.modules\.ImageEncoder module
     :undoc-members:
     :show-inheritance:
 
-onmt\.modules\.MultiHeadedAttn module
+onmt\.modules\.MultiHeadedAttn
 -------------------------------------
 
 .. automodule:: onmt.modules.MultiHeadedAttn
@@ -76,7 +66,7 @@ onmt\.modules\.MultiHeadedAttn module
     :undoc-members:
     :show-inheritance:
 
-onmt\.modules\.SRU module
+onmt\.modules\.SRU 
 -------------------------
 
 .. automodule:: onmt.modules.SRU
@@ -84,7 +74,7 @@ onmt\.modules\.SRU module
     :undoc-members:
     :show-inheritance:
 
-onmt\.modules\.StackedRNN module
+onmt\.modules\.StackedRNN 
 --------------------------------
 
 .. automodule:: onmt.modules.StackedRNN
@@ -92,7 +82,7 @@ onmt\.modules\.StackedRNN module
     :undoc-members:
     :show-inheritance:
 
-onmt\.modules\.StructuredAttention module
+onmt\.modules\.StructuredAttention 
 -----------------------------------------
 
 .. automodule:: onmt.modules.StructuredAttention
@@ -100,7 +90,7 @@ onmt\.modules\.StructuredAttention module
     :undoc-members:
     :show-inheritance:
 
-onmt\.modules\.Transformer module
+onmt\.modules\.Transformer 
 ---------------------------------
 
 .. automodule:: onmt.modules.Transformer
@@ -108,15 +98,8 @@ onmt\.modules\.Transformer module
     :undoc-members:
     :show-inheritance:
 
-onmt\.modules\.UtilClass module
--------------------------------
 
-.. automodule:: onmt.modules.UtilClass
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-onmt\.modules\.WeightNorm module
+onmt\.modules\.WeightNorm 
 --------------------------------
 
 .. automodule:: onmt.modules.WeightNorm
@@ -125,10 +108,3 @@ onmt\.modules\.WeightNorm module
     :show-inheritance:
 
 
-Module contents
----------------
-
-.. automodule:: onmt.modules
-    :members:
-    :undoc-members:
-    :show-inheritance:
