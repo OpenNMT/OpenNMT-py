@@ -1,17 +1,7 @@
 onmt package
 ============
 
-Subpackages
------------
-
-.. toctree::
-
-    onmt.modules
-
-Submodules
-----------
-
-onmt\.Beam module
+onmt\.Beam 
 -----------------
 
 .. automodule:: onmt.Beam
@@ -19,15 +9,8 @@ onmt\.Beam module
     :undoc-members:
     :show-inheritance:
 
-onmt\.IO module
----------------
 
-.. automodule:: onmt.IO
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-onmt\.Loss module
+onmt\.Loss 
 -----------------
 
 .. automodule:: onmt.Loss
@@ -35,15 +18,8 @@ onmt\.Loss module
     :undoc-members:
     :show-inheritance:
 
-onmt\.ModelConstructor module
------------------------------
 
-.. automodule:: onmt.ModelConstructor
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-onmt\.Models module
+onmt\.Models
 -------------------
 
 .. automodule:: onmt.Models
@@ -51,7 +27,7 @@ onmt\.Models module
     :undoc-members:
     :show-inheritance:
 
-onmt\.Optim module
+onmt\.Optim 
 ------------------
 
 .. automodule:: onmt.Optim
@@ -59,7 +35,7 @@ onmt\.Optim module
     :undoc-members:
     :show-inheritance:
 
-onmt\.Trainer module
+onmt\.Trainer
 --------------------
 
 .. automodule:: onmt.Trainer
@@ -67,27 +43,4 @@ onmt\.Trainer module
     :undoc-members:
     :show-inheritance:
 
-onmt\.Translator module
------------------------
 
-.. automodule:: onmt.Translator
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-onmt\.Utils module
-------------------
-
-.. automodule:: onmt.Utils
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
-Module contents
----------------
-
-.. automodule:: onmt
-    :members:
-    :undoc-members:
-    :show-inheritance:
