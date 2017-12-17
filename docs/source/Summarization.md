@@ -1,4 +1,4 @@
-# Summarization Experiment Description
+# Example: Summarization 
 
 This document describes how to replicate summarization experiments on the CNNDM and gigaword datasets using OpenNMT-py. 
 In the following, we assume access to a tokenized form of the corpus split into train/valid/test set.

@@ -1,4 +1,4 @@
-# Image to Text
+# Example: Image to Text
 
 A deep learning-based approach to learning the image-to-text conversion, built on top of the <a href="http://opennmt.net/">OpenNMT</a> system. It is completely data-driven, hence can be used for a variety of image-to-text problems, such as image captioning, optical character recognition and LaTeX decompilation. 
 
@@ -14,12 +14,12 @@ The goal is to infer the LaTeX source that can be compiled to such an image:
 
 The paper [[What You Get Is What You See: A Visual Markup Decompiler]](https://arxiv.org/pdf/1609.04938.pdf) provides more technical details of this model.
 
-## Dependencies
+### Dependencies
 
 * `torchvision`: `conda install torchvision`
 * `Pillow`: `pip install Pillow`
 
-## Quick Start
+### Quick Start
 
 To get started, we provide a toy Math-to-LaTex example. We assume that the working directory is `OpenNMT-py` throughout this document.
 
@@ -51,7 +51,7 @@ python translate.py -data_type img -model demo-model_acc_x_ppl_x_e13.pt -src_dir
 
 The above dataset is sampled from the [im2latex-100k-dataset](http://lstm.seas.harvard.edu/latex/im2text.tgz). We provide a trained model [[link]](http://lstm.seas.harvard.edu/latex/py-model.pt) on this dataset.
 
-## Options
+### Options
 
 * `-src_dir`: The directory containing the images.
 

@@ -1,4 +1,9 @@
-## Step 1: Preprocess the data
+
+
+# Quickstart
+
+
+### Step 1: Preprocess the data
 
 ```bash
 python preprocess.py -train_src data/src-train.txt -train_tgt data/tgt-train.txt -valid_src data/src-val.txt -valid_tgt data/tgt-val.txt -save_data data/demo
@@ -22,7 +27,7 @@ Federal Master Trainer and Senior Instructor of the Italian Federation of Aerobi
 &quot; Two soldiers came up to me and told me that if I refuse to sleep with them , they will kill me . They beat me and ripped my clothes .
 ```
 
-## Step 2: Train the model
+### Step 2: Train the model
 
 ```bash
 python train.py -data data/demo.train.pt -save_model demo-model 
@@ -33,7 +38,7 @@ and a save file.  This will run the default model, which consists of a
 2-layer LSTM with 500 hidden units on both the encoder/decoder. You
 can also add `-gpuid 1` to use (say) GPU 1.
 
-## Step 3: Translate
+### Step 3: Translate
 
 ```bash
 python translate.py -model demo-model_epochX_PPL.pt -src data/src-test.txt -output pred.txt -replace_unk -verbose
