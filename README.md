@@ -14,7 +14,7 @@ We love contributions. Please consult the Issues page for any [Contributions Wel
 
 Table of Contents
 =================
-
+  * [Full Documentation](http://opennmt.net/OpenNMT-py/)
   * [Requirements](#requirements)
   * [Features](#features)
   * [Quickstart](#quickstart)
@@ -32,29 +32,28 @@ pip install -r requirements.txt
 
 The following OpenNMT features are implemented:
 
-- multi-layer bidirectional RNNs with attention and dropout
-- data preprocessing
-- saving and loading from checkpoints
-- Inference (translation) with batching and beam search
-- Context gate
-- Multiple source and target RNN (lstm/gru) types and attention (dotprod/mlp) types
-- TensorBoard/Crayon logging
-- Source word features
-- Pretrained Embeddings
-
+- [data preprocessing](http://opennmt.net/OpenNMT-py/options/preprocess/)
+- [Inference (translation) with batching and beam search](http://opennmt.net/OpenNMT-py/options/translate/)
+- [Multiple source and target RNN (lstm/gru) types and attention (dotprod/mlp) types](http://opennmt.net/OpenNMT-py/options/train/#model-encoder-decoder)
+- [TensorBoard/Crayon logging](http://opennmt.net/OpenNMT-py/options/train/#logging)
+- [Source word features](http://opennmt.net/OpenNMT-py/options/train/#model-embeddings)
+- [Pretrained Embeddings](http://opennmt.net/OpenNMT-py/FAQ/#how-do-i-use-pretrained-embeddings-eg-glove)
+- [Copy and Coverage Attention](http://opennmt.net/OpenNMT-py/options/train/#model-attention)
+- [Image-to-text processing](http://opennmt.net/OpenNMT-py/im2text/)
+- [Speech-to-text processing](http://opennmt.net/OpenNMT-py/speech2text/)
 
 Beta Features (committed):
 - multi-GPU
-- Image-to-text processing
-- Speech-to-text processing
-- "Attention is all you need"
-- Copy, coverage
+- ["Attention is all you need"](http://opennmt.net/OpenNMT-py/FAQ/#how-do-i-use-the-transformer-model)
 - Structured attention
-- Conv2Conv convolution model
+- [Conv2Conv convolution model]
 - SRU "RNNs faster than CNN" paper
 - Inference time loss functions.
 
 ## Quickstart
+
+[Full Documentation](http://opennmt.net/OpenNMT-py/)
+
 
 ### Step 1: Preprocess the data
 
