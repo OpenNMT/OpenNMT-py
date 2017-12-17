@@ -16,6 +16,8 @@ import onmt.modules
 from onmt.Utils import aeq, use_gpu
 import opts
 
+import random
+
 parser = argparse.ArgumentParser(
     description='train.py',
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -36,6 +38,7 @@ if opt.layers != -1:
 
 opt.brnn = (opt.encoder_type == "brnn")
 if opt.seed > 0:
+    random.seed(opt.seed)
     torch.manual_seed(opt.seed)
 
 if opt.rnn_type == "SRU" and not opt.gpuid:
@@ -135,22 +138,21 @@ def make_loss_compute(model, tgt_vocab, dataset, opt):
     return compute
 
 
-def train_model(model, train_data, valid_data, fields, optim, model_opt):
-
-    train_iter = make_train_data_iter(train_data, opt)
-    valid_iter = make_valid_data_iter(valid_data, opt)
+def train_model(model, train, valid, fields, optim, model_opt):
+    train_iter = make_train_data_iter(train, opt)
+    valid_iter = make_valid_data_iter(valid, opt)
 
     train_loss = make_loss_compute(model, fields["tgt"].vocab,
-                                   train_data, opt)
+                                   train, opt)
     valid_loss = make_loss_compute(model, fields["tgt"].vocab,
-                                   valid_data, opt)
+                                   valid, opt)
 
     trunc_size = opt.truncated_decoder  # Badly named...
     shard_size = opt.max_generator_batches
 
     trainer = onmt.Trainer(model, train_iter, valid_iter,
                            train_loss, valid_loss, optim,
-                           trunc_size, shard_size)
+                           trunc_size, shard_size, train.data_type)
 
     for epoch in range(opt.start_epoch, opt.epochs + 1):
         print('')
@@ -200,8 +202,9 @@ def tally_parameters(model):
 
 
 def load_fields(train, valid, checkpoint):
+    data_type = train.data_type
     fields = onmt.IO.load_fields(
-                torch.load(opt.data + '.vocab.pt'))
+                torch.load(opt.data + '.vocab.pt'), data_type)
     fields = dict([(k, f) for (k, f) in fields.items()
                   if k in train.examples[0].__dict__])
     train.fields = fields
@@ -209,10 +212,14 @@ def load_fields(train, valid, checkpoint):
 
     if opt.train_from:
         print('Loading vocab from checkpoint at %s.' % opt.train_from)
-        fields = onmt.IO.load_fields(checkpoint['vocab'])
+        fields = onmt.IO.load_fields(checkpoint['vocab'], data_type)
 
-    print(' * vocabulary size. source = %d; target = %d' %
-          (len(fields['src'].vocab), len(fields['tgt'].vocab)))
+    if data_type == 'text':
+        print(' * vocabulary size. source = %d; target = %d' %
+              (len(fields['src'].vocab), len(fields['tgt'].vocab)))
+    else:
+        print(' * vocabulary size. target = %d' %
+              (len(fields['tgt'].vocab)))
 
     return fields
 
@@ -250,6 +257,9 @@ def build_optim(model, checkpoint):
             opt.optim, opt.learning_rate, opt.max_grad_norm,
             lr_decay=opt.learning_rate_decay,
             start_decay_at=opt.start_decay_at,
+            beta1=opt.adam_beta1,
+            beta2=opt.adam_beta2,
+            adagrad_accum=opt.adagrad_accumulator_init,
             opt=opt
         )
 

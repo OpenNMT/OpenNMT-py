@@ -128,7 +128,7 @@ class CNNDecoder(nn.Module):
                 hidden_size, attn_type=attn_type)
             self._copy = True
 
-    def forward(self, input, context, state):
+    def forward(self, input, context, state, context_lengths=None):
         """
         Forward through the CNNDecoder.
         Args:
@@ -138,6 +138,8 @@ class CNNDecoder(nn.Module):
                         CNN of size (src_len x batch x hidden_size).
             state (FloatTensor): hidden state from the encoder CNN for
                                  initializing the decoder.
+            context_lengths (LongTensor): the source context lengths, this is
+                    not used for CNNDecoder, but for interface compatibility.
         Returns:
             outputs (FloatTensor): a Tensor sequence of output from the decoder
                                    of shape (len x batch x hidden_size).

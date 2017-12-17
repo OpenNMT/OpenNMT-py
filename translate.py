@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-from __future__ import division
-from builtins import bytes
+from __future__ import division, unicode_literals
 import os
 import argparse
 import math
@@ -12,10 +11,9 @@ import onmt
 import onmt.IO
 import opts
 from itertools import takewhile, count
-try:
-    from itertools import zip_longest
-except ImportError:
-    from itertools import izip_longest as zip_longest
+
+from six.moves import zip_longest
+from six.moves import zip
 
 parser = argparse.ArgumentParser(
     description='translate.py',
@@ -24,10 +22,6 @@ opts.add_md_help_argument(parser)
 opts.translate_opts(parser)
 
 opt = parser.parse_args()
-if opt.batch_size != 1:
-    print("WARNING: -batch_size isn't supported currently, "
-          "we set it to 1 for now!")
-    opt.batch_size = 1
 
 
 def report_score(name, score_total, words_total):
@@ -37,7 +31,6 @@ def report_score(name, score_total, words_total):
 
 
 def get_src_words(src_indices, index2str):
-    words = []
     raw_words = (index2str[i] for i in src_indices)
     words = takewhile(lambda w: w != onmt.IO.PAD_WORD, raw_words)
     return " ".join(words)
@@ -59,9 +52,16 @@ def main():
     if opt.dump_beam != "":
         import json
         translator.initBeamAccum()
-    data = onmt.IO.ONMTDataset(
-        opt.src, opt.tgt, translator.fields,
-        use_filter_pred=False)
+
+    data = onmt.IO.build_dataset(translator.fields, opt.data_type,
+                                 opt.src, opt.tgt,
+                                 src_dir=opt.src_dir,
+                                 sample_rate=opt.sample_rate,
+                                 window_size=opt.window_size,
+                                 window_stride=opt.window_stride,
+                                 window=opt.window,
+                                 use_filter_pred=False)
+    data_type = data.data_type
 
     test_data = onmt.IO.OrderedIterator(
         dataset=data, device=opt.gpu,
@@ -70,7 +70,7 @@ def main():
 
     counter = count(1)
     for batch in test_data:
-        pred_batch, gold_batch, pred_scores, gold_scores, attn, src \
+        pred_batch, gold_batch, pred_scores, gold_scores, attn, src, indices\
             = translator.translate(batch, data)
         pred_score_total += sum(score[0] for score in pred_scores)
         pred_words_total += sum(len(x[0]) for x in pred_batch)
@@ -83,12 +83,17 @@ def main():
         # sentence in the batch. It has to be zip_longest instead of
         # plain-old zip because the gold_batch has length 0 if the target
         # is not included.
+        if data_type == 'text':
+            sents = src.split(1, dim=1)
+        else:
+            sents = [torch.Tensor(1, 1) for i in range(len(pred_scores))]
         z_batch = zip_longest(
                 pred_batch, gold_batch,
                 pred_scores, gold_scores,
-                (sent.squeeze(1) for sent in src.split(1, dim=1)))
+                (sent.squeeze(1) for sent in sents), indices)
 
-        for pred_sents, gold_sent, pred_score, gold_score, src_sent in z_batch:
+        for pred_sents, gold_sent, pred_score, gold_score, src_sent, index\
+                in z_batch:
             n_best_preds = [" ".join(pred) for pred in pred_sents[:opt.n_best]]
             out_file.write('\n'.join(n_best_preds))
             out_file.write('\n')
@@ -96,29 +101,32 @@ def main():
 
             if opt.verbose:
                 sent_number = next(counter)
-                words = get_src_words(
-                    src_sent, translator.fields["src"].vocab.itos)
+                if data_type == 'text':
+                    words = get_src_words(
+                        src_sent, translator.fields["src"].vocab.itos)
+                else:
+                    words = test_data.dataset.examples[index].src_path
 
-                os.write(1, bytes('\nSENT %d: %s\n' %
-                                  (sent_number, words), 'UTF-8'))
+                output = '\nSENT {}: {}\n'.format(sent_number, words)
+                os.write(1, output.encode('utf-8'))
 
                 best_pred = n_best_preds[0]
                 best_score = pred_score[0]
-                os.write(1, bytes('PRED %d: %s\n' %
-                                  (sent_number, best_pred), 'UTF-8'))
-                print("PRED SCORE: %.4f" % best_score)
+                output = 'PRED {}: {}\n'.format(sent_number, best_pred)
+                os.write(1, output.encode('utf-8'))
+                print("PRED SCORE: {:.4f}".format(best_score))
 
                 if opt.tgt:
                     tgt_sent = ' '.join(gold_sent)
-                    os.write(1, bytes('GOLD %d: %s\n' %
-                             (sent_number, tgt_sent), 'UTF-8'))
-                    print("GOLD SCORE: %.4f" % gold_score)
+                    output = 'GOLD {}: {}\n'.format(sent_number, tgt_sent)
+                    os.write(1, output.encode('utf-8'))
+                    print("GOLD SCORE: {:.4f}".format(gold_score))
 
                 if len(n_best_preds) > 1:
                     print('\nBEST HYP:')
                     for score, sent in zip(pred_score, n_best_preds):
-                        os.write(1, bytes("[%.4f] %s\n" % (score, sent),
-                                 'UTF-8'))
+                        output = "[{:.4f}] {}\n".format(score, sent)
+                        os.write(1, output.encode('utf-8'))
 
     report_score('PRED', pred_score_total, pred_words_total)
     if opt.tgt:

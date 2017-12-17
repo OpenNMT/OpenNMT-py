@@ -1,4 +1,4 @@
-[MkDocs](http://www.mkdocs.org/) is used to generate the documentation at http://opennmt.net/OpenNMT/.
+[MkDocs](http://www.mkdocs.org/) is used to generate the documentation at http://opennmt.net/OpenNMT-py/.
 
 If you want to visualize and deploy the documentation, continue reading the next sections.
 

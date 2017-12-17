@@ -9,7 +9,8 @@ def model_opts(parser):
     """
     # Model options
     parser.add_argument('-model_type', default='text',
-                        help="Type of encoder to use. Options are [text|img].")
+                        help="""Type of encoder to use. Options are
+                        [text|img|audio].""")
     # Embedding Options
     parser.add_argument('-word_vec_size', type=int, default=-1,
                         help='Word embedding for both.')
@@ -99,7 +100,33 @@ def model_opts(parser):
 
 
 def preprocess_opts(parser):
-    # Dictionary Options
+    # Data options
+    parser.add_argument('-data_type', default="text",
+                        help="""Type of the source input.
+                        Options are [text|img].""")
+
+    parser.add_argument('-train_src', required=True,
+                        help="Path to the training source data")
+    parser.add_argument('-train_tgt', required=True,
+                        help="Path to the training target data")
+    parser.add_argument('-valid_src', required=True,
+                        help="Path to the validation source data")
+    parser.add_argument('-valid_tgt', required=True,
+                        help="Path to the validation target data")
+
+    parser.add_argument('-src_dir', default="",
+                        help="Source directory for image or audio files.")
+
+    parser.add_argument('-save_data', required=True,
+                        help="Output file for the prepared data")
+
+    # Dictionary options, for text corpus
+    parser.add_argument('-src_vocab',
+                        help="Path to an existing source vocabulary")
+    parser.add_argument('-tgt_vocab',
+                        help="Path to an existing target vocabulary")
+    parser.add_argument('-features_vocabs_prefix', type=str, default='',
+                        help="Path prefix to existing features vocabularies")
     parser.add_argument('-src_vocab_size', type=int, default=50000,
                         help="Size of the source vocabulary")
     parser.add_argument('-tgt_vocab_size', type=int, default=50000,
@@ -108,7 +135,12 @@ def preprocess_opts(parser):
     parser.add_argument('-src_words_min_frequency', type=int, default=0)
     parser.add_argument('-tgt_words_min_frequency', type=int, default=0)
 
-    # Truncation options
+    parser.add_argument('-dynamic_dict', action='store_true',
+                        help="Create dynamic dictionaries")
+    parser.add_argument('-share_vocab', action='store_true',
+                        help="Share source and target vocabulary")
+
+    # Truncation options, for text corpus
     parser.add_argument('-src_seq_length', type=int, default=50,
                         help="Maximum source sequence length")
     parser.add_argument('-src_seq_length_trunc', type=int, default=0,
@@ -118,16 +150,24 @@ def preprocess_opts(parser):
     parser.add_argument('-tgt_seq_length_trunc', type=int, default=0,
                         help="Truncate target sequence length.")
 
+    # Options most relevant to speech
+    parser.add_argument('-sample_rate', type=int, default=16000,
+                        help="Sample rate.")
+    parser.add_argument('-window_size', type=float, default=.02,
+                        help="Window size for spectrogram in seconds.")
+    parser.add_argument('-window_stride', type=float, default=.01,
+                        help="Window stride for spectrogram in seconds.")
+    parser.add_argument('-window', default='hamming',
+                        help="Window type for spectrogram generation.")
+
     # Data processing options
     parser.add_argument('-shuffle', type=int, default=1,
                         help="Shuffle data")
     parser.add_argument('-lower', action='store_true', help='lowercase data')
-
-    # Options most relevant to summarization
-    parser.add_argument('-dynamic_dict', action='store_true',
-                        help="Create dynamic dictionaries")
-    parser.add_argument('-share_vocab', action='store_true',
-                        help="Share source and target vocabulary")
+    parser.add_argument('-seed', type=int, default=3435,
+                        help="Random seed")
+    parser.add_argument('-report_every', type=int, default=100000,
+                        help="Report status every this many sentences")
 
 
 def train_opts(parser):
@@ -187,6 +227,11 @@ def train_opts(parser):
     parser.add_argument('-optim', default='sgd',
                         choices=['sgd', 'adagrad', 'adadelta', 'adam'],
                         help="""Optimization method.""")
+    parser.add_argument('-adagrad_accumulator_init', type=float, default=0,
+                        help="""Initializes the accumulator values in adagrad.
+                        Mirrors the initial_accumulator_value option
+                        in the tensorflow adagrad (use 0.1 for their default).
+                        """)
     parser.add_argument('-max_grad_norm', type=float, default=5,
                         help="""If the norm of the gradient vector exceeds this,
                         renormalize it to have the norm equal to
@@ -195,6 +240,24 @@ def train_opts(parser):
                         help="Dropout probability; applied in LSTM stacks.")
     parser.add_argument('-truncated_decoder', type=int, default=0,
                         help="""Truncated bptt.""")
+    parser.add_argument('-adam_beta1', type=float, default=0.9,
+                        help="""The beta1 parameter used by Adam.
+                        Almost without exception a value of 0.9 is used in
+                        the literature, seemingly giving good results,
+                        so we would discourage changing this value from
+                        the default without due consideration.""")
+    parser.add_argument('-adam_beta2', type=float, default=0.999,
+                        help="""The beta2 parameter used by Adam.
+                        Typically a value of 0.999 is recommended, as this is
+                        the value suggested by the original paper describing
+                        Adam, and is also the value adopted in other frameworks
+                        such as Tensorflow and Kerras, i.e. see:
+                        https://www.tensorflow.org/api_docs/python/tf/train/AdamOptimizer
+                        https://keras.io/optimizers/ .
+                        Whereas recently the paper "Attention is All You Need"
+                        suggested a value of 0.98 for beta2, this parameter may
+                        not work well for normal models / default
+                        baselines.""")
     # learning rate
     parser.add_argument('-learning_rate', type=float, default=1.0,
                         help="""Starting learning rate.
@@ -222,16 +285,23 @@ def train_opts(parser):
                         help="Send logs to this crayon server.")
     parser.add_argument('-exp', type=str, default="",
                         help="Name of the experiment for logging.")
+    # Options most relevant to speech
+    parser.add_argument('-sample_rate', type=int, default=16000,
+                        help="Sample rate.")
+    parser.add_argument('-window_size', type=float, default=.02,
+                        help="Window size for spectrogram in seconds.")
 
 
 def translate_opts(parser):
+    parser.add_argument('-data_type', default="text",
+                        help="Type of the source input. Options: [text|img].")
     parser.add_argument('-model', required=True,
                         help='Path to model .pt file')
     parser.add_argument('-src',   required=True,
                         help="""Source sequence to decode (one line per
                         sequence)""")
-    parser.add_argument('-src_img_dir',   default="",
-                        help='Source image directory')
+    parser.add_argument('-src_dir',   default="",
+                        help='Source directory for image or audio files')
     parser.add_argument('-tgt',
                         help='True target sequence (optional)')
     parser.add_argument('-output', default='pred.txt',
@@ -267,6 +337,22 @@ def translate_opts(parser):
                         help="Create dynamic dictionaries")
     parser.add_argument('-share_vocab', action='store_true',
                         help="Share source and target vocabulary")
+    # Options most relevant to speech.
+    parser.add_argument('-sample_rate', type=int, default=16000,
+                        help="Sample rate.")
+    parser.add_argument('-window_size', type=float, default=.02,
+                        help='Window size for spectrogram in seconds')
+    parser.add_argument('-window_stride', type=float, default=.01,
+                        help='Window stride for spectrogram in seconds')
+    parser.add_argument('-window', default='hamming',
+                        help='Window type for spectrogram generation')
+    # Alpha and Beta values for Google Length + Coverage penalty
+    # Described here: https://arxiv.org/pdf/1609.08144.pdf, Section 7
+    parser.add_argument('-alpha', type=float, default=0.,
+                        help="""Google NMT length penalty parameter
+                        (higher = longer generation)""")
+    parser.add_argument('-beta', type=float, default=-0.,
+                        help="""Coverage penalty parameter""")
 
 
 def add_md_help_argument(parser):

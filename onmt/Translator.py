@@ -15,7 +15,8 @@ class Translator(object):
         self.opt = opt
         checkpoint = torch.load(opt.model,
                                 map_location=lambda storage, loc: storage)
-        self.fields = onmt.IO.load_fields(checkpoint['vocab'])
+        self.fields = onmt.IO.load_fields(checkpoint['vocab'],
+                                          data_type=opt.data_type)
 
         model_opt = checkpoint['opt']
         for arg in dummy_opt:
@@ -29,6 +30,10 @@ class Translator(object):
                             model_opt, self.fields, use_gpu(opt), checkpoint)
         self.model.eval()
         self.model.generator.eval()
+
+        # Length + Coverage Penalty
+        self.alpha = opt.alpha
+        self.beta = opt.beta
 
         # for debugging
         self.beam_accum = None
@@ -52,7 +57,7 @@ class Translator(object):
                 tokens = tokens[:-1]
                 break
 
-        if self.opt.replace_unk and attn is not None:
+        if self.opt.replace_unk and (attn is not None) and (src is not None):
             for i in range(len(tokens)):
                 if tokens[i] == vocab.itos[onmt.IO.UNK]:
                     _, maxIndex = attn[i].max(0)
@@ -60,9 +65,12 @@ class Translator(object):
         return tokens
 
     def _runTarget(self, batch, data):
-
-        _, src_lengths = batch.src
-        src = onmt.IO.make_features(batch, 'src')
+        data_type = data.data_type
+        if data_type == 'text':
+            _, src_lengths = batch.src
+        else:
+            src_lengths = None
+        src = onmt.IO.make_features(batch, 'src', data_type)
         tgt_in = onmt.IO.make_features(batch, 'tgt')[:-1]
 
         #  (1) run the encoder on the src
@@ -75,7 +83,7 @@ class Translator(object):
         tt = torch.cuda if self.opt.cuda else torch
         goldScores = tt.FloatTensor(batch.batch_size).fill_(0)
         decOut, decStates, attn = self.model.decoder(
-            tgt_in, context, decStates)
+            tgt_in, context, decStates, context_lengths=src_lengths)
 
         tgt_pad = self.fields["tgt"].vocab.stoi[onmt.IO.PAD_WORD]
         for dec, tgt in zip(decOut, batch.tgt[1:].data):
@@ -87,16 +95,25 @@ class Translator(object):
             goldScores += scores
         return goldScores
 
-    def translateBatch(self, batch, dataset):
+    def translateBatch(self, batch, data):
         beam_size = self.opt.beam_size
         batch_size = batch.batch_size
 
         # (1) Run the encoder on the src.
-        _, src_lengths = batch.src
-        src = onmt.IO.make_features(batch, 'src')
+        data_type = data.data_type
+        src = onmt.IO.make_features(batch, 'src', data_type)
+        if data_type == 'text':
+            _, src_lengths = batch.src
+        else:
+            src_lengths = None
         encStates, context = self.model.encoder(src, src_lengths)
         decStates = self.model.decoder.init_decoder_state(
                                         src, context, encStates)
+
+        if src_lengths is None:
+            src_lengths = torch.Tensor(batch_size).type_as(context.data)\
+                                                  .long()\
+                                                  .fill_(context.size(0))
 
         #  (1b) Initialize for the decoder.
         def var(a): return Variable(a, volatile=True)
@@ -105,11 +122,13 @@ class Translator(object):
 
         # Repeat everything beam_size times.
         context = rvar(context.data)
-        src = rvar(src.data)
-        srcMap = rvar(batch.src_map.data)
+        context_lengths = src_lengths.repeat(beam_size)
+        if data_type == 'text':
+            srcMap = rvar(batch.src_map.data)
+        else:
+            srcMap = None
         decStates.repeat_beam_size_times(beam_size)
-        scorer = None
-        # scorer=onmt.GNMTGlobalScorer(0.3, 0.4)
+        scorer = onmt.GNMTGlobalScorer(self.alpha, self.beta)
         beam = [onmt.Beam(beam_size, n_best=self.opt.n_best,
                           cuda=self.opt.cuda,
                           vocab=self.fields["tgt"].vocab,
@@ -145,8 +164,8 @@ class Translator(object):
             inp = inp.unsqueeze(2)
 
             # Run one step.
-            decOut, decStates, attn = \
-                self.model.decoder(inp, context, decStates)
+            decOut, decStates, attn = self.model.decoder(
+                inp, context, decStates, context_lengths=context_lengths)
             decOut = decOut.squeeze(0)
             # decOut: beam x rnn_size
 
@@ -160,7 +179,7 @@ class Translator(object):
                                                    attn["copy"].squeeze(0),
                                                    srcMap)
                 # beam x (tgt_vocab + extra_vocab)
-                out = dataset.collapse_copy_scores(
+                out = data.collapse_copy_scores(
                     unbottle(out.data),
                     batch, self.fields["tgt"].vocab)
                 # beam x tgt_vocab
@@ -168,11 +187,13 @@ class Translator(object):
 
             # (c) Advance each beam.
             for j, b in enumerate(beam):
-                b.advance(out[:, j],  unbottle(attn["std"]).data[:, j])
+                b.advance(
+                    out[:, j],
+                    unbottle(attn["std"]).data[:, j, :context_lengths[j]])
                 decStates.beam_update(j, b.getCurrentOrigin(), beam_size)
 
         if "tgt" in batch.__dict__:
-            allGold = self._runTarget(batch, dataset)
+            allGold = self._runTarget(batch, data)
         else:
             allGold = [0] * batch_size
 
@@ -199,7 +220,7 @@ class Translator(object):
         #  (2) translate
         pred, predScore, attn, goldScore = self.translateBatch(batch, data)
         assert(len(goldScore) == len(pred))
-        pred, predScore, attn, goldScore, i = list(zip(
+        pred, predScore, attn, goldScore, indices = list(zip(
             *sorted(zip(pred, predScore, attn, goldScore,
                         batch.indices.data),
                     key=lambda x: x[-1])))
@@ -207,17 +228,26 @@ class Translator(object):
 
         #  (3) convert indexes to words
         predBatch, goldBatch = [], []
-        src = batch.src[0].data.index_select(1, perm)
+        data_type = data.data_type
+        if data_type == 'text':
+            src = batch.src[0].data.index_select(1, perm)
+        else:
+            src = None
         if self.opt.tgt:
             tgt = batch.tgt.data.index_select(1, perm)
         for b in range(batch_size):
-            src_vocab = data.src_vocabs[inds[b]]
+            if data_type == 'text':
+                src_vocab = data.src_vocabs[inds[b]]
+            else:
+                src_vocab = None
             predBatch.append(
-                [self.buildTargetTokens(pred[b][n], src[:, b],
+                [self.buildTargetTokens(pred[b][n], src[:, b]
+                                        if src is not None else None,
                                         attn[b][n], src_vocab)
                  for n in range(self.opt.n_best)])
             if self.opt.tgt:
                 goldBatch.append(
-                    self.buildTargetTokens(tgt[1:, b], src[:, b],
+                    self.buildTargetTokens(tgt[1:, b], src[:, b]
+                                           if src is not None else None,
                                            None, None))
-        return predBatch, goldBatch, predScore, goldScore, attn, src
+        return predBatch, goldBatch, predScore, goldScore, attn, src, indices

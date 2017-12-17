@@ -11,7 +11,7 @@ from onmt.Models import NMTModel, MeanEncoder, RNNEncoder, \
                         StdRNNDecoder, InputFeedRNNDecoder
 from onmt.modules import Embeddings, ImageEncoder, CopyGenerator, \
                          TransformerEncoder, TransformerDecoder, \
-                         CNNEncoder, CNNDecoder
+                         CNNEncoder, CNNDecoder, AudioEncoder
 
 
 def make_embeddings(opt, word_dict, feature_dicts, for_encoder=True):
@@ -117,7 +117,7 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
     Returns:
         the NMTModel.
     """
-    assert model_opt.model_type in ["text", "img"], \
+    assert model_opt.model_type in ["text", "img", "audio"], \
         ("Unsupported model type %s" % (model_opt.model_type))
 
     # Make encoder.
@@ -127,11 +127,18 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
         src_embeddings = make_embeddings(model_opt, src_dict,
                                          feature_dicts)
         encoder = make_encoder(model_opt, src_embeddings)
-    else:
-        encoder = ImageEncoder(model_opt.layers,
+    elif model_opt.model_type == "img":
+        encoder = ImageEncoder(model_opt.enc_layers,
                                model_opt.brnn,
                                model_opt.rnn_size,
                                model_opt.dropout)
+    elif model_opt.model_type == "audio":
+        encoder = AudioEncoder(model_opt.enc_layers,
+                               model_opt.brnn,
+                               model_opt.rnn_size,
+                               model_opt.dropout,
+                               model_opt.sample_rate,
+                               model_opt.window_size)
 
     # Make decoder.
     tgt_dict = fields["tgt"].vocab
@@ -148,6 +155,7 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
 
     # Make NMTModel(= encoder + decoder).
     model = NMTModel(encoder, decoder)
+    model.model_type = model_opt.model_type
 
     # Make Generator.
     if not model_opt.copy_attn:
@@ -172,10 +180,12 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
                 p.data.uniform_(-model_opt.param_init, model_opt.param_init)
             for p in generator.parameters():
                 p.data.uniform_(-model_opt.param_init, model_opt.param_init)
-        model.encoder.embeddings.load_pretrained_vectors(
-                model_opt.pre_word_vecs_enc, model_opt.fix_word_vecs_enc)
-        model.decoder.embeddings.load_pretrained_vectors(
-                model_opt.pre_word_vecs_dec, model_opt.fix_word_vecs_dec)
+        if hasattr(model.encoder, 'embeddings'):
+            model.encoder.embeddings.load_pretrained_vectors(
+                    model_opt.pre_word_vecs_enc, model_opt.fix_word_vecs_enc)
+        if hasattr(model.decoder, 'embeddings'):
+            model.decoder.embeddings.load_pretrained_vectors(
+                    model_opt.pre_word_vecs_dec, model_opt.fix_word_vecs_dec)
 
     # Add generator to model (this registers it as parameter of model).
     model.generator = generator

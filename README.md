@@ -44,6 +44,7 @@ The following OpenNMT features are implemented:
 Beta Features (committed):
 - multi-GPU
 - Image-to-text processing
+- Speech-to-text processing
 - "Attention is all you need"
 - Copy, coverage
 - Structured attention
@@ -73,9 +74,9 @@ Validation files are required and used to evaluate the convergence of the traini
 
 After running the preprocessing, the following files are generated:
 
-* `demo.src.dict`: Dictionary of source vocab to index mappings.
-* `demo.tgt.dict`: Dictionary of target vocab to index mappings.
-* `demo.train.pt`: serialized PyTorch file containing vocabulary, training and validation data
+* `demo.train.pt`: serialized PyTorch file containing training data
+* `demo.valid.pt`: serialized PyTorch file containing validation data
+* `demo.vocab.pt`: serialized PyTorch file containing vocabulary data
 
 
 Internally the system never touches the words themselves, but uses these indices.
@@ -156,6 +157,9 @@ python translate.py -gpu 0 -model multi30k_model_*_e13.pt -src data/multi30k/tes
 ```bash
 perl tools/multi-bleu.perl data/multi30k/test.de.atok < multi30k.test.pred.atok
 ```
+## Pretrained embeddings (e.g. GloVe)
+
+Go to tutorial: [How to use GloVe pre-trained embeddings in OpenNMT-py](http://forum.opennmt.net/t/how-to-use-glove-pre-trained-embeddings-in-opennmt-py/1011)
 
 ## Pretrained Models
 
