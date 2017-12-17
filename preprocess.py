@@ -6,7 +6,7 @@ import codecs
 import torch
 
 import onmt
-import onmt.IO
+import onmt.io
 import opts
 
 
@@ -40,7 +40,7 @@ def get_num_features(side, opt):
     if data_file is not None:
         with codecs.open(data_file, "r", "utf-8") as df:
             f_line = df.readline().strip().split()
-            _, _, n_features = onmt.IO.extract_features(f_line)
+            _, _, n_features = onmt.io.extract_features(f_line)
     else:
         n_features = 0
 
@@ -57,7 +57,7 @@ def build_dataset(corpus_type, fields, opt):
         src_corpus = opt.valid_src
         tgt_corpus = opt.valid_tgt
 
-    dataset = onmt.IO.build_dataset(
+    dataset = onmt.io.build_dataset(
                 fields, opt.data_type, src_corpus, tgt_corpus,
                 src_dir=opt.src_dir,
                 src_seq_length=opt.src_seq_length,
@@ -79,13 +79,13 @@ def main():
     print('Preparing for training ...')
     n_src_features = get_num_features('src', opt)
     n_tgt_features = get_num_features('tgt', opt)
-    fields = onmt.IO.get_fields(opt.data_type, n_src_features, n_tgt_features)
+    fields = onmt.io.get_fields(opt.data_type, n_src_features, n_tgt_features)
 
     print("Building training data...")
     train = build_dataset('train', fields, opt)
 
     print("Building vocabulary...")
-    onmt.IO.build_vocab(train, opt.data_type, opt.share_vocab,
+    onmt.io.build_vocab(train, opt.data_type, opt.share_vocab,
                         opt.src_vocab_size,
                         opt.src_words_min_frequency,
                         opt.tgt_vocab_size,
@@ -96,7 +96,7 @@ def main():
 
     print("Saving train/valid/vocab...")
     # Can't save fields, so remove/reconstruct at training time.
-    torch.save(onmt.IO.save_vocab(fields),
+    torch.save(onmt.io.save_vocab(fields),
                open(opt.save_data + '.vocab.pt', 'wb'))
     train.fields = []
     valid.fields = []

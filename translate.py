@@ -8,7 +8,7 @@ import codecs
 import torch
 
 import onmt
-import onmt.IO
+import onmt.io
 import opts
 from itertools import takewhile, count
 
@@ -32,7 +32,7 @@ def report_score(name, score_total, words_total):
 
 def get_src_words(src_indices, index2str):
     raw_words = (index2str[i] for i in src_indices)
-    words = takewhile(lambda w: w != onmt.IO.PAD_WORD, raw_words)
+    words = takewhile(lambda w: w != onmt.io.PAD_WORD, raw_words)
     return " ".join(words)
 
 
@@ -53,7 +53,7 @@ def main():
         import json
         translator.initBeamAccum()
 
-    data = onmt.IO.build_dataset(translator.fields, opt.data_type,
+    data = onmt.io.build_dataset(translator.fields, opt.data_type,
                                  opt.src, opt.tgt,
                                  src_dir=opt.src_dir,
                                  sample_rate=opt.sample_rate,
@@ -63,7 +63,7 @@ def main():
                                  use_filter_pred=False)
     data_type = data.data_type
 
-    test_data = onmt.IO.OrderedIterator(
+    test_data = onmt.io.OrderedIterator(
         dataset=data, device=opt.gpu,
         batch_size=opt.batch_size, train=False, sort=False,
         shuffle=False)

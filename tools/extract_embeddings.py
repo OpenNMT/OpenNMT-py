@@ -3,6 +3,7 @@ import torch
 import argparse
 import opts
 import onmt
+import onmt.io
 from onmt.Utils import use_gpu
 
 parser = argparse.ArgumentParser(description='translate.py')
@@ -40,7 +41,7 @@ def main():
     src_dict = checkpoint['vocab'][1][1]
     tgt_dict = checkpoint['vocab'][0][1]
 
-    fields = onmt.IO.load_fields(checkpoint['vocab'])
+    fields = onmt.io.load_fields(checkpoint['vocab'])
 
     model_opt = checkpoint['opt']
     for arg in dummy_opt.__dict__:

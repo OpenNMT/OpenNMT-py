@@ -4,6 +4,7 @@ import torch
 import torch.cuda
 
 import onmt
+import onmt.io
 from onmt.Utils import aeq
 
 
@@ -32,7 +33,7 @@ class CopyGenerator(nn.Module):
 
         # Original probabilities.
         logits = self.linear(hidden)
-        logits[:, self.tgt_dict.stoi[onmt.IO.PAD_WORD]] = -float('inf')
+        logits[:, self.tgt_dict.stoi[onmt.io.PAD_WORD]] = -float('inf')
         prob = F.softmax(logits)
 
         # Probability of copying p(z=1) batch.

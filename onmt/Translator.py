@@ -5,7 +5,7 @@ import onmt
 import onmt.Models
 import onmt.ModelConstructor
 import onmt.modules
-import onmt.IO
+import onmt.io
 from onmt.Utils import use_gpu
 
 
@@ -15,7 +15,7 @@ class Translator(object):
         self.opt = opt
         checkpoint = torch.load(opt.model,
                                 map_location=lambda storage, loc: storage)
-        self.fields = onmt.IO.load_fields(checkpoint['vocab'],
+        self.fields = onmt.io.load_fields(checkpoint['vocab'],
                                           data_type=opt.data_type)
 
         model_opt = checkpoint['opt']
@@ -53,13 +53,13 @@ class Translator(object):
                 tokens.append(vocab.itos[tok])
             else:
                 tokens.append(copy_vocab.itos[tok - len(vocab)])
-            if tokens[-1] == onmt.IO.EOS_WORD:
+            if tokens[-1] == onmt.io.EOS_WORD:
                 tokens = tokens[:-1]
                 break
 
         if self.opt.replace_unk and (attn is not None) and (src is not None):
             for i in range(len(tokens)):
-                if tokens[i] == vocab.itos[onmt.IO.UNK]:
+                if tokens[i] == vocab.itos[onmt.io.UNK]:
                     _, maxIndex = attn[i].max(0)
                     tokens[i] = self.fields["src"].vocab.itos[src[maxIndex[0]]]
         return tokens
@@ -70,8 +70,8 @@ class Translator(object):
             _, src_lengths = batch.src
         else:
             src_lengths = None
-        src = onmt.IO.make_features(batch, 'src', data_type)
-        tgt_in = onmt.IO.make_features(batch, 'tgt')[:-1]
+        src = onmt.io.make_features(batch, 'src', data_type)
+        tgt_in = onmt.io.make_features(batch, 'tgt')[:-1]
 
         #  (1) run the encoder on the src
         encStates, context = self.model.encoder(src, src_lengths)
@@ -85,7 +85,7 @@ class Translator(object):
         decOut, decStates, attn = self.model.decoder(
             tgt_in, context, decStates, context_lengths=src_lengths)
 
-        tgt_pad = self.fields["tgt"].vocab.stoi[onmt.IO.PAD_WORD]
+        tgt_pad = self.fields["tgt"].vocab.stoi[onmt.io.PAD_WORD]
         for dec, tgt in zip(decOut, batch.tgt[1:].data):
             # Log prob of each word.
             out = self.model.generator.forward(dec)
@@ -101,7 +101,7 @@ class Translator(object):
 
         # (1) Run the encoder on the src.
         data_type = data.data_type
-        src = onmt.IO.make_features(batch, 'src', data_type)
+        src = onmt.io.make_features(batch, 'src', data_type)
         if data_type == 'text':
             _, src_lengths = batch.src
         else:

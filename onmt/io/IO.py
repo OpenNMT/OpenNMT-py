@@ -40,17 +40,6 @@ def load_fields(vocab, data_type="text"):
     return fields
 
 
-def collect_features(fields, side="src"):
-    assert side in ["src", "tgt"]
-    feats = []
-    for j in count():
-        key = side + "_feat_" + str(j)
-        if key not in fields:
-            break
-        feats.append(key)
-    return feats
-
-
 def extract_features(tokens):
     """
     Args:
@@ -125,15 +114,26 @@ def save_vocab(fields):
     return vocab
 
 
-def collect_feature_dicts(fields, side):
-    assert side in ['src', 'tgt']
-    feature_dicts = []
+def collect_features(fields, side="src"):
+    assert side in ["src", "tgt"]
+    feats = []
     for j in count():
         key = side + "_feat_" + str(j)
         if key not in fields:
             break
-        feature_dicts.append(fields[key].vocab)
-    return feature_dicts
+        feats.append(key)
+    return feats
+
+
+def collect_feature_vocabs(fields, side):
+    assert side in ['src', 'tgt']
+    feature_vocabs = []
+    for j in count():
+        key = side + "_feat_" + str(j)
+        if key not in fields:
+            break
+        feature_vocabs.append(fields[key].vocab)
+    return feature_vocabs
 
 
 def get_fields(data_type, n_src_features, n_tgt_features):

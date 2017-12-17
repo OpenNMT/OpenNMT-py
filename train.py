@@ -5,18 +5,20 @@ from __future__ import division
 import os
 import sys
 import argparse
+import random
+
 import torch
 import torch.nn as nn
 from torch import cuda
 
 import onmt
+import onmt.io
 import onmt.Models
 import onmt.ModelConstructor
 import onmt.modules
 from onmt.Utils import aeq, use_gpu
 import opts
 
-import random
 
 parser = argparse.ArgumentParser(
     description='train.py',
@@ -101,7 +103,7 @@ def make_train_data_iter(train_data, opt):
     ordered iterator strategy here, but more sophisticated strategy
     like curriculum learning is ok too.
     """
-    return onmt.IO.OrderedIterator(
+    return onmt.io.OrderedIterator(
                 dataset=train_data, batch_size=opt.batch_size,
                 device=opt.gpuid[0] if opt.gpuid else -1,
                 repeat=False)
@@ -114,7 +116,7 @@ def make_valid_data_iter(valid_data, opt):
     ordered iterator strategy here, but more sophisticated strategy
     is ok too.
     """
-    return onmt.IO.OrderedIterator(
+    return onmt.io.OrderedIterator(
                 dataset=valid_data, batch_size=opt.batch_size,
                 device=opt.gpuid[0] if opt.gpuid else -1,
                 train=False, sort=True)
@@ -204,7 +206,7 @@ def tally_parameters(model):
 
 def load_fields(train, valid, checkpoint):
     data_type = train.data_type
-    fields = onmt.IO.load_fields(
+    fields = onmt.io.load_fields(
                 torch.load(opt.data + '.vocab.pt'), data_type)
     fields = dict([(k, f) for (k, f) in fields.items()
                   if k in train.examples[0].__dict__])
@@ -213,7 +215,7 @@ def load_fields(train, valid, checkpoint):
 
     if opt.train_from:
         print('Loading vocab from checkpoint at %s.' % opt.train_from)
-        fields = onmt.IO.load_fields(checkpoint['vocab'], data_type)
+        fields = onmt.io.load_fields(checkpoint['vocab'], data_type)
 
     if data_type == 'text':
         print(' * vocabulary size. source = %d; target = %d' %
@@ -228,7 +230,7 @@ def load_fields(train, valid, checkpoint):
 def collect_features(train, fields):
     # TODO: account for target features.
     # Also, why does fields need to have the structure it does?
-    src_features = onmt.IO.collect_features(fields)
+    src_features = onmt.io.collect_features(fields)
     aeq(len(src_features), train.n_src_feats)
 
     return src_features
