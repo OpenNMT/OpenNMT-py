@@ -5,6 +5,7 @@ from onmt.io.IO import PAD_WORD, BOS_WORD, EOS_WORD, UNK, \
                        build_dataset, build_vocab, save_vocab, \
                        merge_vocabs, OrderedIterator
 from onmt.io.TextDataset import TextDataset
+from onmt.io.ImageDataset import ImageDataset
 
 
 __all__ = [PAD_WORD, BOS_WORD, EOS_WORD, UNK,
@@ -13,4 +14,4 @@ __all__ = [PAD_WORD, BOS_WORD, EOS_WORD, UNK,
            load_fields, get_fields,
            build_dataset, build_vocab, save_vocab,
            merge_vocabs, OrderedIterator,
-           TextDataset]
+           TextDataset, ImageDataset]
