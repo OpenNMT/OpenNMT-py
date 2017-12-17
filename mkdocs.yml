@@ -20,7 +20,6 @@ extra_css:
   - css/extra.css
 
 markdown_extensions:
-  - math
   - sane_lists
   - def_list
   - fenced_code

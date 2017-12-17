@@ -1,15 +1,15 @@
-# Speech to Text
+# Example: Speech to Text
 
 A deep learning-based approach to learning the speech-to-text conversion, built on top of the <a href="http://opennmt.net/">OpenNMT</a> system.
 
 Given raw audio, we first apply short-time Fourier transform (STFT), then apply Convolutional Neural Networks to get the source features. Based on this source representation, we use an LSTM decoder with attention to produce the text character by character.
 
-## Dependencies
+### Dependencies
 
 * `torchaudio`: `sudo apt-get install -y sox libsox-dev libsox-fmt-all; pip install git+https://github.com/pytorch/audio`
 * `librosa`: `pip install librosa`
 
-## Quick Start
+### Quick Start
 
 To get started, we provide a toy speech-to-text example. We assume that the working directory is `OpenNMT-py` throughout this document.
 
@@ -39,7 +39,7 @@ python translate.py -data_type audio -model demo-model_acc_x_ppl_x_e13.pt -src_d
 ```
 
 
-## Options
+### Options
 
 * `-src_dir`: The directory containing the audio files.
 
@@ -64,6 +64,6 @@ python translate.py -data_type audio -model demo-model_acc_x_ppl_x_e13.pt -src_d
 * `window_stride`: Window stride for spectrogram in seconds. Default: 0.01.
 * `window`: Window type for spectrogram generation. Default: hamming.
 
-## Acknowledgement
+### Acknowledgement
 
 Our preprocessing and CNN encoder is adapted from [deepspeech.pytorch](https://github.com/SeanNaren/deepspeech.pytorch).

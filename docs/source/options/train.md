@@ -1,21 +1,33 @@
 <!--- This file was automatically generated. Do not modify it manually but use the docs/options/generate.sh script instead. -->
 
 train.py
-:
+# Options: train.py:
 train.py
 
 ### **Model-Embeddings**:
-* **-word_vec_size [-1]** 
-Word embedding for both.
-
 * **-src_word_vec_size [500]** 
-Src word embedding sizes
+Word embedding size for src.
 
 * **-tgt_word_vec_size [500]** 
-Tgt word embedding sizes
+Word embedding size for tgt.
 
+* **-word_vec_size [-1]** 
+Word embedding size for src and tgt.
+
+* **-share_decoder_embeddings []** 
+Use a shared weight matrix for the input and output word embeddings in the
+decoder.
+
+* **-share_embeddings []** 
+Share the word embeddings between encoder and decoder. Need to use shared
+dictionary for this option.
+
+* **-position_encoding []** 
+Use a sin to mark relative words positions. Necessary for non-RNN style models.
+
+### **Model-Embedding Features**:
 * **-feat_merge [concat]** 
-Merge action for the features embeddings
+Merge action for incorporating features embeddings. Options [concat|sum|mlp].
 
 * **-feat_vec_size [-1]** 
 If specified, feature embedding sizes will be set to this. Otherwise,
@@ -25,24 +37,18 @@ feat_vec_exponent will be used.
 If -feat_merge_size is not set, feature embedding sizes will be set to
 N^feat_vec_exponent where N is the number of values the feature takes.
 
-* **-position_encoding ** 
-Use a sin to mark relative words positions.
-
-* **-share_decoder_embeddings ** 
-Share the word and out embeddings for decoder.
-
-* **-share_embeddings ** 
-Share the word embeddings between encoder and decoder.
-
 ### **Model- Encoder-Decoder**:
 * **-model_type [text]** 
-Type of encoder to use. Options are [text|img|audio].
+Type of source model to use. Allows the system to incorporate non-text inputs.
+Options are [text|img|audio].
 
 * **-encoder_type [rnn]** 
-Type of encoder layer to use.
+Type of encoder layer to use. Non-RNN layers are experimental. Options are
+[rnn|brnn|mean|transformer|cnn].
 
 * **-decoder_type [rnn]** 
-Type of decoder layer to use.
+Type of decoder layer to use. Non-RNN layers are experimental. Options are
+[rnn|transformer|cnn].
 
 * **-layers [-1]** 
 Number of layers in enc/dec.
@@ -53,12 +59,12 @@ Number of layers in the encoder
 * **-dec_layers [2]** 
 Number of layers in the decoder
 
+* **-rnn_size [500]** 
+Size of rnn hidden states
+
 * **-cnn_kernel_width [3]** 
 Size of windows in the cnn, the kernel_size is (cnn_kernel_width, 1) in conv
 layer
-
-* **-rnn_size [500]** 
-Size of LSTM hidden states
 
 * **-input_feed [1]** 
 Feed the context vector at each time step as additional input (via concatenation
@@ -67,40 +73,40 @@ with the word embeddings) to the decoder.
 * **-rnn_type [LSTM]** 
 The gate type to use in the RNNs
 
-* **-brnn ** 
+* **-brnn []** 
 Deprecated, use `encoder_type`.
 
 * **-brnn_merge [concat]** 
 Merge action for the bidir hidden states
 
-* **-context_gate ** 
+* **-context_gate []** 
 Type of context gate to use. Do not select for no context gate.
 
 ### **Model- Attention**:
 * **-global_attention [general]** 
 The attention type to use: dotprod or general (Luong) or MLP (Bahdanau)
 
-* **-copy_attn ** 
+* **-copy_attn []** 
 Train copy attention layer.
 
-* **-copy_attn_force ** 
+* **-copy_attn_force []** 
 When available, train to copy.
 
-* **-coverage_attn ** 
+* **-coverage_attn []** 
 Train a coverage attention layer.
 
 * **-lambda_coverage [1]** 
 Lambda value for coverage.
 
 ### **General**:
-* **-data ** 
+* **-data []** 
 Path prefix to the ".train.pt" and ".valid.pt" file path from preprocess.py
 
 * **-save_model [model]** 
 Model filename (the model will be saved as <save_model>_epochN_PPL.pt where PPL
 is the validation perplexity
 
-* **-gpuid ** 
+* **-gpuid []** 
 Use CUDA on the listed devices.
 
 * **-seed [-1]** 
@@ -114,22 +120,22 @@ The epoch from which to start
 Parameters are initialized over uniform distribution with support (-param_init,
 param_init). Use 0 to not use initialization
 
-* **-train_from ** 
+* **-train_from []** 
 If training from a checkpoint then this is the path to the pretrained model's
 state_dict.
 
-* **-pre_word_vecs_enc ** 
+* **-pre_word_vecs_enc []** 
 If a valid path is specified, then this will load pretrained word embeddings on
 the encoder side. See README for specific formatting instructions.
 
-* **-pre_word_vecs_dec ** 
+* **-pre_word_vecs_dec []** 
 If a valid path is specified, then this will load pretrained word embeddings on
 the decoder side. See README for specific formatting instructions.
 
-* **-fix_word_vecs_enc ** 
+* **-fix_word_vecs_enc []** 
 Fix word embeddings on the encoder side.
 
-* **-fix_word_vecs_dec ** 
+* **-fix_word_vecs_dec []** 
 Fix word embeddings on the encoder side.
 
 ### **Optimization- Type**:
@@ -146,7 +152,7 @@ Number of training epochs
 * **-optim [sgd]** 
 Optimization method.
 
-* **-adagrad_accumulator_init ** 
+* **-adagrad_accumulator_init []** 
 Initializes the accumulator values in adagrad. Mirrors the
 initial_accumulator_value option in the tensorflow adagrad (use 0.1 for their
 default).
@@ -158,7 +164,7 @@ equal to max_grad_norm
 * **-dropout [0.3]** 
 Dropout probability; applied in LSTM stacks.
 
-* **-truncated_decoder ** 
+* **-truncated_decoder []** 
 Truncated bptt.
 
 * **-adam_beta1 [0.9]** 
@@ -187,10 +193,10 @@ not decrease on the validation set or (ii) epoch has gone past start_decay_at
 * **-start_decay_at [8]** 
 Start decaying every epoch after and including this epoch
 
-* **-start_checkpoint_at ** 
+* **-start_checkpoint_at []** 
 Start checkpointing every epoch after and including this epoch
 
-* **-decay_method ** 
+* **-decay_method []** 
 Use a custom decay rate.
 
 * **-warmup_steps [4000]** 
@@ -200,10 +206,10 @@ Number of warmup steps for custom decay.
 * **-report_every [50]** 
 Print stats at this interval.
 
-* **-exp_host ** 
+* **-exp_host []** 
 Send logs to this crayon server.
 
-* **-exp ** 
+* **-exp []** 
 Name of the experiment for logging.
 
 ### **Speech**:

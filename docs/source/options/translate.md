@@ -1,49 +1,49 @@
 <!--- This file was automatically generated. Do not modify it manually but use the docs/options/generate.sh script instead. -->
 
 translate.py
-:
+# Options: translate.py:
 translate.py
 
 ### **Model**:
-* **-model ** 
+* **-model []** 
 Path to model .pt file
 
 ### **Data**:
 * **-data_type [text]** 
 Type of the source input. Options: [text|img].
 
-* **-src ** 
+* **-src []** 
 Source sequence to decode (one line per sequence)
 
-* **-src_dir ** 
+* **-src_dir []** 
 Source directory for image or audio files
 
-* **-tgt ** 
+* **-tgt []** 
 True target sequence (optional)
 
 * **-output [pred.txt]** 
 Path to output the predictions (each line will be the decoded sequence
 
-* **-dynamic_dict ** 
+* **-dynamic_dict []** 
 Create dynamic dictionaries
 
-* **-share_vocab ** 
+* **-share_vocab []** 
 Share source and target vocabulary
 
 ### **Beam**:
 * **-beam_size [5]** 
 Beam size
 
-* **-alpha ** 
+* **-alpha []** 
 Google NMT length penalty parameter (higher = longer generation)
 
-* **-beta ** 
+* **-beta []** 
 Coverage penalty parameter
 
 * **-max_sent_length [100]** 
 Maximum sentence length.
 
-* **-replace_unk ** 
+* **-replace_unk []** 
 Replace the generated UNK tokens with the source token that had highest
 attention weight. If phrase_table is provided, it will lookup the identified
 source token and give the corresponding target token. If it is not provided(or
@@ -51,13 +51,13 @@ the identified source token does not exist in the table) then it will copy the
 source token
 
 ### **Logging**:
-* **-verbose ** 
+* **-verbose []** 
 Print scores and predictions for each sentence
 
-* **-attn_debug ** 
+* **-attn_debug []** 
 Print best attn for each word
 
-* **-dump_beam ** 
+* **-dump_beam []** 
 File to dump beam information to.
 
 * **-n_best [1]** 

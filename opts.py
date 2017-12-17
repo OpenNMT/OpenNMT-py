@@ -426,7 +426,7 @@ class MarkdownHelpFormatter(argparse.HelpFormatter):
 
     def format_help(self):
         print(self._prog)
-        self._root_section.heading = ''
+        self._root_section.heading = '# Options: %s' % self._prog
         return super(MarkdownHelpFormatter, self).format_help()
 
     def start_section(self, heading):
@@ -439,7 +439,7 @@ class MarkdownHelpFormatter(argparse.HelpFormatter):
         lines = []
         lines.append('* **-%s %s** ' % (action.dest,
                                         "[%s]" % action.default
-                                        if action.default else ""))
+                                        if action.default else "[]"))
         if action.help:
             help_text = self._expand_help(action)
             lines.extend(self._split_lines(help_text, 80))

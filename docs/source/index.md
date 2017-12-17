@@ -1,3 +1,12 @@
+
+.. toctree::
+:maxdepth: 2
+
+index.md
+quickstart.md
+extended.md
+
+
 This portal provides a detailled documentation of the OpenNMT toolkit. It describes how to use the PyTorch project and how it works.
 
 

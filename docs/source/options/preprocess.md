@@ -1,39 +1,39 @@
 <!--- This file was automatically generated. Do not modify it manually but use the docs/options/generate.sh script instead. -->
 
 preprocess.py
-:
+# Options: preprocess.py:
 preprocess.py
 
 ### **Data**:
 * **-data_type [text]** 
 Type of the source input. Options are [text|img].
 
-* **-train_src ** 
+* **-train_src []** 
 Path to the training source data
 
-* **-train_tgt ** 
+* **-train_tgt []** 
 Path to the training target data
 
-* **-valid_src ** 
+* **-valid_src []** 
 Path to the validation source data
 
-* **-valid_tgt ** 
+* **-valid_tgt []** 
 Path to the validation target data
 
-* **-src_dir ** 
+* **-src_dir []** 
 Source directory for image or audio files.
 
-* **-save_data ** 
+* **-save_data []** 
 Output file for the prepared data
 
 ### **Vocab**:
-* **-src_vocab ** 
+* **-src_vocab []** 
 Path to an existing source vocabulary
 
-* **-tgt_vocab ** 
+* **-tgt_vocab []** 
 Path to an existing target vocabulary
 
-* **-features_vocabs_prefix ** 
+* **-features_vocabs_prefix []** 
 Path prefix to existing features vocabularies
 
 * **-src_vocab_size [50000]** 
@@ -42,30 +42,30 @@ Size of the source vocabulary
 * **-tgt_vocab_size [50000]** 
 Size of the target vocabulary
 
-* **-src_words_min_frequency ** 
+* **-src_words_min_frequency []** 
 
-* **-tgt_words_min_frequency ** 
+* **-tgt_words_min_frequency []** 
 
-* **-dynamic_dict ** 
+* **-dynamic_dict []** 
 Create dynamic dictionaries
 
-* **-share_vocab ** 
+* **-share_vocab []** 
 Share source and target vocabulary
 
 ### **Pruning**:
 * **-src_seq_length [50]** 
 Maximum source sequence length
 
-* **-src_seq_length_trunc ** 
+* **-src_seq_length_trunc []** 
 Truncate source sequence length.
 
 * **-tgt_seq_length [50]** 
 Maximum target sequence length to keep.
 
-* **-tgt_seq_length_trunc ** 
+* **-tgt_seq_length_trunc []** 
 Truncate target sequence length.
 
-* **-lower ** 
+* **-lower []** 
 lowercase data
 
 ### **Random**:
