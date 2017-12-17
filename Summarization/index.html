@@ -15,7 +15,7 @@
     
     
       
-        <title>Translation - OpenNMT-py</title>
+        <title>Summarization - OpenNMT-py</title>
       
     
     
@@ -81,7 +81,7 @@
                 </span>
               
             
-            Translation
+            Summarization
           
         </span>
       </div>
@@ -233,6 +233,18 @@
           
           
 
+
+  <li class="md-nav__item">
+    <a href="../extended/" title="Translation" class="md-nav__link">
+      Translation
+    </a>
+  </li>
+
+        
+          
+          
+          
+
   
 
 
@@ -240,54 +252,78 @@
     
     <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="toc">
     
+      
+    
     
       <label class="md-nav__link md-nav__link--active" for="toc">
-        Translation
+        Summarization
       </label>
     
-    <a href="./" title="Translation" class="md-nav__link md-nav__link--active">
-      Translation
+    <a href="./" title="Summarization" class="md-nav__link md-nav__link--active">
+      Summarization
     </a>
     
       
 <nav class="md-nav md-nav--secondary">
   
   
+    
+  
   
     <label class="md-nav__title" for="toc">Table of contents</label>
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0-download-the-data" title="0) Download the data." class="md-nav__link">
-    0) Download the data.
+  <a href="#preprocessing-the-data" title="Preprocessing the data" class="md-nav__link">
+    Preprocessing the data
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#1-preprocess-the-data" title="1) Preprocess the data." class="md-nav__link">
-    1) Preprocess the data.
+  <a href="#training" title="Training" class="md-nav__link">
+    Training
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#2-train-the-model" title="2) Train the model." class="md-nav__link">
-    2) Train the model.
+  <a href="#inference" title="Inference" class="md-nav__link">
+    Inference
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-translate-sentences" title="3) Translate sentences." class="md-nav__link">
-    3) Translate sentences.
+  <a href="#evaluation" title="Evaluation" class="md-nav__link">
+    Evaluation
   </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cnndm" title="CNNDM" class="md-nav__link">
+    CNNDM
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gigaword" title="Gigaword" class="md-nav__link">
+    Gigaword
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#4-evaluate" title="4) Evaluate." class="md-nav__link">
-    4) Evaluate.
+  <a href="#references" title="References" class="md-nav__link">
+    References
   </a>
   
 </li>
@@ -298,18 +334,6 @@
   
 </nav>
     
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../Summarization/" title="Summarization" class="md-nav__link">
-      Summarization
-    </a>
   </li>
 
         
@@ -440,41 +464,63 @@
 <nav class="md-nav md-nav--secondary">
   
   
+    
+  
   
     <label class="md-nav__title" for="toc">Table of contents</label>
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0-download-the-data" title="0) Download the data." class="md-nav__link">
-    0) Download the data.
+  <a href="#preprocessing-the-data" title="Preprocessing the data" class="md-nav__link">
+    Preprocessing the data
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#1-preprocess-the-data" title="1) Preprocess the data." class="md-nav__link">
-    1) Preprocess the data.
+  <a href="#training" title="Training" class="md-nav__link">
+    Training
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#2-train-the-model" title="2) Train the model." class="md-nav__link">
-    2) Train the model.
+  <a href="#inference" title="Inference" class="md-nav__link">
+    Inference
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-translate-sentences" title="3) Translate sentences." class="md-nav__link">
-    3) Translate sentences.
+  <a href="#evaluation" title="Evaluation" class="md-nav__link">
+    Evaluation
   </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cnndm" title="CNNDM" class="md-nav__link">
+    CNNDM
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gigaword" title="Gigaword" class="md-nav__link">
+    Gigaword
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#4-evaluate" title="4) Evaluate." class="md-nav__link">
-    4) Evaluate.
+  <a href="#references" title="References" class="md-nav__link">
+    References
   </a>
   
 </li>
@@ -493,41 +539,70 @@
             <article class="md-content__inner md-typeset">
               
                 
-                  <a href="https://github.com/OpenNMT/OpenNMT-py/edit/master/docs/extended.md" title="Edit this page" class="md-icon md-content__icon">edit</a>
+                  <a href="https://github.com/OpenNMT/OpenNMT-py/edit/master/docs/Summarization.md" title="Edit this page" class="md-icon md-content__icon">edit</a>
                 
                 
-                  <h1>Translation</h1>
-                
-                <p>The example below uses the Moses tokenizer (http://www.statmt.org/moses/) to prepare the data and the moses BLEU script for evaluation. This example if for training for the WMT'16 Multimodal Translation task (http://www.statmt.org/wmt16/multimodal-task.html).</p>
-<h3 id="0-download-the-data">0) Download the data.<a class="headerlink" href="#0-download-the-data" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>mkdir -p data/multi30k
-wget http://www.quest.dcs.shef.ac.uk/wmt16_files_mmt/training.tar.gz <span class="o">&amp;&amp;</span>  tar -xf training.tar.gz -C data/multi30k <span class="o">&amp;&amp;</span> rm training.tar.gz
-wget http://www.quest.dcs.shef.ac.uk/wmt16_files_mmt/validation.tar.gz <span class="o">&amp;&amp;</span> tar -xf validation.tar.gz -C data/multi30k <span class="o">&amp;&amp;</span> rm validation.tar.gz
-wget http://www.quest.dcs.shef.ac.uk/wmt17_files_mmt/mmt_task1_test2016.tar.gz <span class="o">&amp;&amp;</span> tar -xf mmt_task1_test2016.tar.gz -C data/multi30k <span class="o">&amp;&amp;</span> rm mmt_task1_test2016.tar.gz
+                <h1 id="summarization-experiment-description">Summarization Experiment Description<a class="headerlink" href="#summarization-experiment-description" title="Permanent link">&para;</a></h1>
+<p>This document describes how to replicate summarization experiments on the CNNDM and gigaword datasets using OpenNMT-py. 
+In the following, we assume access to a tokenized form of the corpus split into train/valid/test set.</p>
+<p>An example article-title pair from Gigaword should look like this: </p>
+<p><strong>Input</strong>
+<em>australia 's current account deficit shrunk by a record #.## billion dollars -lrb- #.## billion us -rrb- in the june quarter due to soaring commodity prices , figures released monday showed .</em></p>
+<p><strong>Output</strong>
+<em>australian current account deficit narrows sharply</em></p>
+<h3 id="preprocessing-the-data">Preprocessing the data<a class="headerlink" href="#preprocessing-the-data" title="Permanent link">&para;</a></h3>
+<p>Since we are using copy-attention [1] in the model, we need to preprocess the dataset such that source and target are aligned and use the same dictionary. This is achieved by using the options <code>dynamic_dict</code> and <code>share_vocab</code>. 
+We additionally turn off truncation of the source to ensure that inputs longer than 50 words are not truncated. 
+For CNNDM we follow See et al. [2] and additionally truncate the source length at 400 tokens and the target at 100.  </p>
+<p><strong>command used</strong>: </p>
+<p>(1) CNNDM</p>
+<p><code>python preprocess.py -train_src data/cnndm/train.txt.src -train_tgt data/cnn-no-sent-tag/train.txt.tgt -valid_src data/cnndm/val.txt.src -valid_tgt data/cnn-no-sent-tag/val.txt.tgt -save_data data/cnn-no-sent-tag/cnndm -src_seq_length 10000 -tgt_seq_length 10000 -src_seq_length_trunc 400 -tgt_seq_length_trunc 100 -dynamic_dict -share_vocab</code></p>
+<p>(2) Gigaword</p>
+<p><code>python preprocess.py -train_src data/giga/train.article.txt -train_tgt data/giga/train.title.txt -valid_src data/giga/valid.article.txt -valid_tgt data/giga/valid.title.txt -save_data data/giga/giga -src_seq_length 10000 -dynamic_dict -share_vocab</code></p>
+<h3 id="training">Training<a class="headerlink" href="#training" title="Permanent link">&para;</a></h3>
+<p>The training procedure described in this section for the most part follows parameter choices and implementation similar to that of See et al. [2].  As mentioned above, we use copy attention as a mechanism for the model to decide whether to either generate a new word or to copy from the source (<code>copy_attn</code>).
+A notable difference to See's model is that we are using the attention mechanism introduced by Bahdanau et al. [3] (<code>global_attention mlp</code>) instead of that by Luong et al. [4] (<code>global_attention dot</code>). Both options typically perform very similar to each other with Luong attention often having a slight advantage.
+We are using using a 128-dimensional word-embedding, and 512-dimensional 1 layer LSTM. On the encoder side, we use a bidirectional LSTM (<code>brnn</code>), which means that the 512 dimensions are split into 256 dimensions per direction.
+We also share the word embeddings between encoder and decoder (<code>share_embeddings</code>). This option drastically reduces the number of parameters the model has to learn. However, we found only minimal impact on performance of a model without this option. </p>
+<p>For the training procedure, we are using SGD with an initial learning rate of 1 for a total of 16 epochs. In most cases, the lowest validation perplexity is achieved around epoch 10-12. We also use OpenNMT's default learning rate decay, which halves the learning rate after every epoch once the validation perplexity increased after an epoch (or after epoch 8). 
+Alternative training procedures such as adam with initial learning rate 0.001 converge faster than sgd, but achieve slightly worse. We additionally set the maximum norm of the gradient to 2, and renormalize if the gradient norm exceeds this value. </p>
+<p><strong>commands used</strong>: </p>
+<p>(1) CNNDM</p>
+<p><code>python train.py -save_model logs/notag_sgd3 -data data/cnn-no-sent-tag/CNNDM -copy_attn -global_attention mlp -word_vec_size 128 -rnn_size 256 -layers 1 -brnn -epochs 16 -seed 777 -batch_size 32 -max_grad_norm 2 -share_embeddings -gpuid 0 -start_checkpoint_at 9</code></p>
+<p>(2) Gigaword</p>
+<p><code>python train.py -save_model logs/giga_sgd3_512 -data data/giga/giga -copy_attn -global_attention mlp -word_vec_size 128 -rnn_size 512 -layers 1 -brnn -epochs 16 -seed 777 -batch_size 32 -max_grad_norm 2 -share_embeddings -gpuid 0 -start_checkpoint_at 9</code></p>
+<h3 id="inference">Inference<a class="headerlink" href="#inference" title="Permanent link">&para;</a></h3>
+<p>During inference, we use beam-search with a beam-size of 10. 
+We additionally use the <code>replace_unk</code> option which replaces generated <code>&lt;UNK&gt;</code> tokens with the source token of highest attention. This acts as safety-net should the copy attention fail which should learn to copy such words.</p>
+<p><strong>commands used</strong>: </p>
+<p>(1) CNNDM</p>
+<p><code>python translate.py -gpu 2 -batch_size 1 -model logs/notag_try3_acc_49.29_ppl_14.62_e16.pt -src data/cnndm/test.txt.src -output sgd3_out.txt -beam_size 10 -replace_unk</code></p>
+<p>(2) Gigaword</p>
+<p><code>python translate.py -gpu 2 -batch_size 1 -model logs/giga_sgd3_512_acc_51.10_ppl_12.04_e16.pt -src data/giga/test.article.txt -output giga_sgd3.out.txt -beam_size 10 -replace_unk</code></p>
+<h3 id="evaluation">Evaluation<a class="headerlink" href="#evaluation" title="Permanent link">&para;</a></h3>
+<h4 id="cnndm">CNNDM<a class="headerlink" href="#cnndm" title="Permanent link">&para;</a></h4>
+<p>To evaluate the ROUGE scores on CNNDM, we extended the pyrouge wrapper with additional evaluations such as the amount of repeated n-grams (typically found in models with copy attention), found <a href="https://github.com/falcondai/pyrouge/">here</a>. </p>
+<p>It can be run with the following command:</p>
+<p><code>python baseline.py -s sgd3_out.txt -t ~/datasets/cnn-dailymail/sent-tagged/test.txt.tgt -m no_sent_tag -r</code></p>
+<p>Note that the <code>no_sent_tag</code> option strips tags around sentences - when a sentence previously was <code>&lt;s&gt; w w w w . &lt;/s&gt;</code>, it becomes <code>w w w w .</code>.</p>
+<h4 id="gigaword">Gigaword<a class="headerlink" href="#gigaword" title="Permanent link">&para;</a></h4>
+<p>For evaluation of large test sets such as Gigaword, we use the a parallel python wrapper around ROUGE, found <a href="https://github.com/pltrdy/files2rouge">here</a>.</p>
+<p><strong>command used</strong>: 
+<code>files2rouge giga_sgd3.out.txt test.title.txt --verbose</code></p>
+<p>Running the commands above should yield the following scores:</p>
+<div class="codehilite"><pre><span></span>ROUGE-1 (F): 0.352127
+ROUGE-2 (F): 0.173109
+ROUGE-3 (F): 0.098244
+ROUGE-L (F): 0.327742
+ROUGE-S4 (F): 0.155524
 </pre></div>
 
 
-<h3 id="1-preprocess-the-data">1) Preprocess the data.<a class="headerlink" href="#1-preprocess-the-data" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span><span class="c1"># Delete the last line of val and training files.</span>
-<span class="k">for</span> l in en de<span class="p">;</span> <span class="k">do</span> <span class="k">for</span> f in data/multi30k/*.<span class="nv">$l</span><span class="p">;</span> <span class="k">do</span> <span class="k">if</span> <span class="o">[[</span> <span class="s2">&quot;</span><span class="nv">$f</span><span class="s2">&quot;</span> !<span class="o">=</span> *<span class="s2">&quot;test&quot;</span>* <span class="o">]]</span><span class="p">;</span> <span class="k">then</span> sed -i <span class="s2">&quot;</span>$<span class="s2"> d&quot;</span> <span class="nv">$f</span><span class="p">;</span> <span class="k">fi</span><span class="p">;</span>  <span class="k">done</span><span class="p">;</span> <span class="k">done</span>
-<span class="k">for</span> l in en de<span class="p">;</span> <span class="k">do</span> <span class="k">for</span> f in data/multi30k/*.<span class="nv">$l</span><span class="p">;</span> <span class="k">do</span> perl tools/tokenizer.perl -a -no-escape -l <span class="nv">$l</span> -q  &lt; <span class="nv">$f</span> &gt; <span class="nv">$f</span>.atok<span class="p">;</span> <span class="k">done</span><span class="p">;</span> <span class="k">done</span>
-python preprocess.py -train_src data/multi30k/train.en.atok -train_tgt data/multi30k/train.de.atok -valid_src data/multi30k/val.en.atok -valid_tgt data/multi30k/val.de.atok -save_data data/multi30k.atok.low -lower
-</pre></div>
-
-
-<h3 id="2-train-the-model">2) Train the model.<a class="headerlink" href="#2-train-the-model" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>python train.py -data data/multi30k.atok.low -save_model multi30k_model -gpuid <span class="m">0</span>
-</pre></div>
-
-
-<h3 id="3-translate-sentences">3) Translate sentences.<a class="headerlink" href="#3-translate-sentences" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>python translate.py -gpu <span class="m">0</span> -model multi30k_model_*_e13.pt -src data/multi30k/test.en.atok -tgt data/multi30k/test.de.atok -replace_unk -verbose -output multi30k.test.pred.atok
-</pre></div>
-
-
-<h3 id="4-evaluate">4) Evaluate.<a class="headerlink" href="#4-evaluate" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>perl tools/multi-bleu.perl data/multi30k/test.de.atok &lt; multi30k.test.pred.atok
-</pre></div>
+<h3 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h3>
+<p>[1] Vinyals, O., Fortunato, M. and Jaitly, N., 2015. Pointer Network. NIPS</p>
+<p>[2] See, A., Liu, P.J. and Manning, C.D., 2017. Get To The Point: Summarization with Pointer-Generator Networks. ACL</p>
+<p>[3] Bahdanau, D., Cho, K. and Bengio, Y., 2014. Neural machine translation by jointly learning to align and translate. ICLR</p>
+<p>[4] Luong, M.T., Pham, H. and Manning, C.D., 2015. Effective approaches to attention-based neural machine translation. EMNLP</p>
                 
                   
                 
@@ -546,7 +621,7 @@ python preprocess.py -train_src data/multi30k/train.en.atok -train_tgt data/mult
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../quickstart/" title="Quickstart" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../extended/" title="Translation" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -555,19 +630,19 @@ python preprocess.py -train_src data/multi30k/train.en.atok -train_tgt data/mult
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Quickstart
+                Translation
               </span>
             </div>
           </a>
         
         
-          <a href="../Summarization/" title="Summarization" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../im2text/" title="Image-to-Text" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                Summarization
+                Image-to-Text
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">

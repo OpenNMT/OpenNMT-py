@@ -1,6 +1,6 @@
 
 <!DOCTYPE html>
-<html class="no-js">
+<html lang="en" class="no-js">
   <head>
     
       <meta charset="utf-8">
@@ -11,7 +11,7 @@
       
         <link rel="shortcut icon" href="../assets/images/favicon.png">
       
-      <meta name="generator" content="mkdocs-0.16.3, mkdocs-material-1.5.5">
+      <meta name="generator" content="mkdocs-0.16.3, mkdocs-material-1.6.4">
     
     
       
@@ -19,10 +19,10 @@
       
     
     
-      <script src="../assets/javascripts/modernizr-56ade86843.js"></script>
+      <script src="../assets/javascripts/modernizr-1df76c4e58.js"></script>
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/application-b1a1975878.css">
+      <link rel="stylesheet" href="../assets/stylesheets/application-e2807e330f.css">
       
     
     
@@ -76,6 +76,10 @@
           
             
               
+                <span class="md-header-nav__parent">
+                  Examples
+                </span>
+              
             
             Quickstart
           
@@ -86,7 +90,7 @@
           <label class="md-icon md-icon--search md-header-nav__button" for="search"></label>
           
 <div class="md-search" data-md-component="search">
-  <div class="md-search__overlay"></div>
+  <label class="md-search__overlay" for="search"></label>
   <div class="md-search__inner">
     <form class="md-search__form" name="search">
       <input type="text" class="md-search__input" name="query" required placeholder="Search" accesskey="s" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query">
@@ -196,17 +200,26 @@
       
       
 
+  
 
-  <li class="md-nav__item">
-    <a href="../installation/" title="Installation" class="md-nav__link">
-      Installation
-    </a>
-  </li>
 
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
     
-      
-      
-      
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2" checked>
+    
+    <label class="md-nav__link" for="nav-2">
+      Examples
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-2">
+        Examples
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
 
   
 
@@ -261,6 +274,59 @@
     
   </li>
 
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../extended/" title="Translation" class="md-nav__link">
+      Translation
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../Summarization/" title="Summarization" class="md-nav__link">
+      Summarization
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../im2text/" title="Image-to-Text" class="md-nav__link">
+      Image-to-Text
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../speech2text/" title="Speech-to-Text" class="md-nav__link">
+      Speech-to-Text
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
     
       
       
@@ -268,8 +334,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../extended/" title="Extended Example" class="md-nav__link">
-      Extended Example
+    <a href="../FAQ/" title="FAQ" class="md-nav__link">
+      FAQ
     </a>
   </li>
 
@@ -281,13 +347,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5" type="checkbox" id="nav-5">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4">
     
-    <label class="md-nav__link" for="nav-5">
+    <label class="md-nav__link" for="nav-4">
       Reference: Options
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
-      <label class="md-nav__title" for="nav-5">
+      <label class="md-nav__title" for="nav-4">
         Reference: Options
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -340,8 +406,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../references/" title="References" class="md-nav__link">
-      References
+    <a href="../CONTRIBUTORS/" title="Contributing" class="md-nav__link">
+      Contributing
     </a>
   </li>
 
@@ -425,29 +491,6 @@ Federal Master Trainer and Senior Instructor of the Italian Federation of Aerobi
 </pre></div>
 
 
-<p>After running the preprocessing, the following files are generated:</p>
-<ul>
-<li><code>demo.src.dict</code>: Dictionary of source vocab to index mappings.</li>
-<li><code>demo.tgt.dict</code>: Dictionary of target vocab to index mappings.</li>
-<li><code>demo.train.pt</code>: serialized PyTorch file containing vocabulary, training and validation data</li>
-</ul>
-<p>The <code>*.dict</code> files are needed to check or reuse the vocabularies. These files are simple human-readable dictionaries.</p>
-<div class="codehilite"><pre><span></span>$ head -n 10 data/demo.src.dict
-&lt;blank&gt; 1
-&lt;unk&gt; 2
-&lt;s&gt; 3
-&lt;/s&gt; 4
-It 5
-is 6
-not 7
-acceptable 8
-that 9
-, 10
-with 11
-</pre></div>
-
-
-<p>Internally the system never touches the words themselves, but uses these indices.</p>
 <h2 id="step-2-train-the-model">Step 2: Train the model<a class="headerlink" href="#step-2-train-the-model" title="Permanent link">&para;</a></h2>
 <div class="codehilite"><pre><span></span>python train.py -data data/demo.train.pt -save_model demo-model 
 </pre></div>
@@ -456,7 +499,7 @@ with 11
 <p>The main train command is quite simple. Minimally it takes a data file
 and a save file.  This will run the default model, which consists of a
 2-layer LSTM with 500 hidden units on both the encoder/decoder. You
-can also add <code>-gpus 1</code> to use (say) GPU 1.</p>
+can also add <code>-gpuid 1</code> to use (say) GPU 1.</p>
 <h2 id="step-3-translate">Step 3: Translate<a class="headerlink" href="#step-3-translate" title="Permanent link">&para;</a></h2>
 <div class="codehilite"><pre><span></span>python translate.py -model demo-model_epochX_PPL.pt -src data/src-test.txt -output pred.txt -replace_unk -verbose
 </pre></div>
@@ -485,7 +528,7 @@ can also add <code>-gpus 1</code> to use (say) GPU 1.</p>
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../installation/" title="Installation" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href=".." title="Overview" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -494,19 +537,19 @@ can also add <code>-gpus 1</code> to use (say) GPU 1.</p>
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Installation
+                Overview
               </span>
             </div>
           </a>
         
         
-          <a href="../extended/" title="Extended Example" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../extended/" title="Translation" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                Extended Example
+                Translation
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">
@@ -546,7 +589,7 @@ can also add <code>-gpus 1</code> to use (say) GPU 1.</p>
       
     </div>
     
-      <script src="../assets/javascripts/application-ad1183cb07.js"></script>
+      <script src="../assets/javascripts/application-06a3e72efd.js"></script>
       <script>app.initialize({url:{base:".."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_HTMLorMML"></script>

@@ -1,6 +1,6 @@
 
 <!DOCTYPE html>
-<html class="no-js">
+<html lang="en" class="no-js">
   <head>
     
       <meta charset="utf-8">
@@ -11,7 +11,7 @@
       
         <link rel="shortcut icon" href="../../assets/images/favicon.png">
       
-      <meta name="generator" content="mkdocs-0.16.3, mkdocs-material-1.5.5">
+      <meta name="generator" content="mkdocs-0.16.3, mkdocs-material-1.6.4">
     
     
       
@@ -19,10 +19,10 @@
       
     
     
-      <script src="../../assets/javascripts/modernizr-56ade86843.js"></script>
+      <script src="../../assets/javascripts/modernizr-1df76c4e58.js"></script>
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/application-b1a1975878.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/application-e2807e330f.css">
       
     
     
@@ -90,7 +90,7 @@
           <label class="md-icon md-icon--search md-header-nav__button" for="search"></label>
           
 <div class="md-search" data-md-component="search">
-  <div class="md-search__overlay"></div>
+  <label class="md-search__overlay" for="search"></label>
   <div class="md-search__inner">
     <form class="md-search__form" name="search">
       <input type="text" class="md-search__input" name="query" required placeholder="Search" accesskey="s" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query">
@@ -201,16 +201,23 @@
       
 
 
-  <li class="md-nav__item">
-    <a href="../../installation/" title="Installation" class="md-nav__link">
-      Installation
-    </a>
-  </li>
-
+  <li class="md-nav__item md-nav__item--nested">
     
-      
-      
-      
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2">
+    
+    <label class="md-nav__link" for="nav-2">
+      Examples
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-2">
+        Examples
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
 
 
   <li class="md-nav__item">
@@ -219,6 +226,59 @@
     </a>
   </li>
 
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../extended/" title="Translation" class="md-nav__link">
+      Translation
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Summarization/" title="Summarization" class="md-nav__link">
+      Summarization
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../im2text/" title="Image-to-Text" class="md-nav__link">
+      Image-to-Text
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../speech2text/" title="Speech-to-Text" class="md-nav__link">
+      Speech-to-Text
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
     
       
       
@@ -226,8 +286,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../extended/" title="Extended Example" class="md-nav__link">
-      Extended Example
+    <a href="../../FAQ/" title="FAQ" class="md-nav__link">
+      FAQ
     </a>
   </li>
 
@@ -241,13 +301,13 @@
 
   <li class="md-nav__item md-nav__item--active md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5" type="checkbox" id="nav-5" checked>
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4" checked>
     
-    <label class="md-nav__link" for="nav-5">
+    <label class="md-nav__link" for="nav-4">
       Reference: Options
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
-      <label class="md-nav__title" for="nav-5">
+      <label class="md-nav__title" for="nav-4">
         Reference: Options
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -288,8 +348,6 @@
     
     <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="toc">
     
-      
-    
     
       <label class="md-nav__link md-nav__link--active" for="toc">
         translate.py
@@ -303,113 +361,49 @@
 <nav class="md-nav md-nav--secondary">
   
   
-    
-  
   
     <label class="md-nav__title" for="toc">Table of contents</label>
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#optional-arguments" title="optional arguments:" class="md-nav__link">
-    optional arguments:
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#-h-help" title="-h, --help" class="md-nav__link">
-    -h, --help
+  <a href="#model" title="Model:" class="md-nav__link">
+    Model:
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#-md" title="-md" class="md-nav__link">
-    -md
+      
+        <li class="md-nav__item">
+  <a href="#data" title="Data:" class="md-nav__link">
+    Data:
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#-model-model" title="-model MODEL" class="md-nav__link">
-    -model MODEL
+      
+        <li class="md-nav__item">
+  <a href="#beam" title="Beam:" class="md-nav__link">
+    Beam:
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#-src-src" title="-src SRC" class="md-nav__link">
-    -src SRC
+      
+        <li class="md-nav__item">
+  <a href="#logging" title="Logging:" class="md-nav__link">
+    Logging:
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#-tgt-tgt" title="-tgt TGT" class="md-nav__link">
-    -tgt TGT
+      
+        <li class="md-nav__item">
+  <a href="#efficiency" title="Efficiency:" class="md-nav__link">
+    Efficiency:
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#-output-output" title="-output OUTPUT" class="md-nav__link">
-    -output OUTPUT
+      
+        <li class="md-nav__item">
+  <a href="#speech" title="Speech:" class="md-nav__link">
+    Speech:
   </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-beam_size-beam_size" title="-beam_size BEAM_SIZE" class="md-nav__link">
-    -beam_size BEAM_SIZE
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-batch_size-batch_size" title="-batch_size BATCH_SIZE" class="md-nav__link">
-    -batch_size BATCH_SIZE
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-max_sent_length-max_sent_length" title="-max_sent_length MAX_SENT_LENGTH" class="md-nav__link">
-    -max_sent_length MAX_SENT_LENGTH
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-replace_unk" title="-replace_unk" class="md-nav__link">
-    -replace_unk
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-verbose" title="-verbose" class="md-nav__link">
-    -verbose
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-n_best-n_best" title="-n_best N_BEST" class="md-nav__link">
-    -n_best N_BEST
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-gpu-gpu" title="-gpu GPU" class="md-nav__link">
-    -gpu GPU
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -433,8 +427,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../references/" title="References" class="md-nav__link">
-      References
+    <a href="../../CONTRIBUTORS/" title="Contributing" class="md-nav__link">
+      Contributing
     </a>
   </li>
 
@@ -453,113 +447,49 @@
 <nav class="md-nav md-nav--secondary">
   
   
-    
-  
   
     <label class="md-nav__title" for="toc">Table of contents</label>
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#optional-arguments" title="optional arguments:" class="md-nav__link">
-    optional arguments:
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#-h-help" title="-h, --help" class="md-nav__link">
-    -h, --help
+  <a href="#model" title="Model:" class="md-nav__link">
+    Model:
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#-md" title="-md" class="md-nav__link">
-    -md
+      
+        <li class="md-nav__item">
+  <a href="#data" title="Data:" class="md-nav__link">
+    Data:
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#-model-model" title="-model MODEL" class="md-nav__link">
-    -model MODEL
+      
+        <li class="md-nav__item">
+  <a href="#beam" title="Beam:" class="md-nav__link">
+    Beam:
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#-src-src" title="-src SRC" class="md-nav__link">
-    -src SRC
+      
+        <li class="md-nav__item">
+  <a href="#logging" title="Logging:" class="md-nav__link">
+    Logging:
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#-tgt-tgt" title="-tgt TGT" class="md-nav__link">
-    -tgt TGT
+      
+        <li class="md-nav__item">
+  <a href="#efficiency" title="Efficiency:" class="md-nav__link">
+    Efficiency:
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#-output-output" title="-output OUTPUT" class="md-nav__link">
-    -output OUTPUT
+      
+        <li class="md-nav__item">
+  <a href="#speech" title="Speech:" class="md-nav__link">
+    Speech:
   </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-beam_size-beam_size" title="-beam_size BEAM_SIZE" class="md-nav__link">
-    -beam_size BEAM_SIZE
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-batch_size-batch_size" title="-batch_size BATCH_SIZE" class="md-nav__link">
-    -batch_size BATCH_SIZE
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-max_sent_length-max_sent_length" title="-max_sent_length MAX_SENT_LENGTH" class="md-nav__link">
-    -max_sent_length MAX_SENT_LENGTH
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-replace_unk" title="-replace_unk" class="md-nav__link">
-    -replace_unk
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-verbose" title="-verbose" class="md-nav__link">
-    -verbose
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-n_best-n_best" title="-n_best N_BEST" class="md-nav__link">
-    -n_best N_BEST
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-gpu-gpu" title="-gpu GPU" class="md-nav__link">
-    -gpu GPU
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -580,86 +510,125 @@
                   <a href="https://github.com/OpenNMT/OpenNMT-py/edit/master/docs/options/translate.md" title="Edit this page" class="md-icon md-content__icon">edit</a>
                 
                 
+                  <h1>translate.py</h1>
+                
                 <!--- This file was automatically generated. Do not modify it manually but use the docs/options/generate.sh script instead. -->
 
-<h1 id="translatepy">translate.py:<a class="headerlink" href="#translatepy" title="Permanent link">&para;</a></h1>
-<div class="codehilite"><pre><span></span>usage: translate.py [-h] [-md] -model MODEL -src SRC [-tgt TGT]
-                    [-output OUTPUT] [-beam_size BEAM_SIZE]
-                    [-batch_size BATCH_SIZE]
-                    [-max_sent_length MAX_SENT_LENGTH] [-replace_unk]
-                    [-verbose] [-n_best N_BEST] [-gpu GPU]
-</pre></div>
-
-
-<p>translate.py</p>
-<h2 id="optional-arguments"><strong>optional arguments</strong>:<a class="headerlink" href="#optional-arguments" title="Permanent link">&para;</a></h2>
-<h3 id="-h-help"><strong>-h, --help</strong><a class="headerlink" href="#-h-help" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>show this help message and exit
-</pre></div>
-
-
-<h3 id="-md"><strong>-md</strong><a class="headerlink" href="#-md" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>print Markdown-formatted help text and exit.
-</pre></div>
-
-
-<h3 id="-model-model"><strong>-model MODEL</strong><a class="headerlink" href="#-model-model" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>Path to model .pt file
-</pre></div>
-
-
-<h3 id="-src-src"><strong>-src SRC</strong><a class="headerlink" href="#-src-src" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>Source sequence to decode (one line per sequence)
-</pre></div>
-
-
-<h3 id="-tgt-tgt"><strong>-tgt TGT</strong><a class="headerlink" href="#-tgt-tgt" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>True target sequence (optional)
-</pre></div>
-
-
-<h3 id="-output-output"><strong>-output OUTPUT</strong><a class="headerlink" href="#-output-output" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>Path to output the predictions (each line will be the decoded sequence
-</pre></div>
-
-
-<h3 id="-beam_size-beam_size"><strong>-beam_size BEAM_SIZE</strong><a class="headerlink" href="#-beam_size-beam_size" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>Beam size
-</pre></div>
-
-
-<h3 id="-batch_size-batch_size"><strong>-batch_size BATCH_SIZE</strong><a class="headerlink" href="#-batch_size-batch_size" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>Batch size
-</pre></div>
-
-
-<h3 id="-max_sent_length-max_sent_length"><strong>-max_sent_length MAX_SENT_LENGTH</strong><a class="headerlink" href="#-max_sent_length-max_sent_length" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>Maximum sentence length.
-</pre></div>
-
-
-<h3 id="-replace_unk"><strong>-replace_unk</strong><a class="headerlink" href="#-replace_unk" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>Replace the generated UNK tokens with the source token that had the highest
+<p>translate.py
+:
+translate.py</p>
+<h3 id="model"><strong>Model</strong>:<a class="headerlink" href="#model" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>-model </strong> 
+Path to model .pt file</li>
+</ul>
+<h3 id="data"><strong>Data</strong>:<a class="headerlink" href="#data" title="Permanent link">&para;</a></h3>
+<ul>
+<li>
+<p><strong>-data_type [text]</strong> 
+Type of the source input. Options: [text|img].</p>
+</li>
+<li>
+<p><strong>-src </strong> 
+Source sequence to decode (one line per sequence)</p>
+</li>
+<li>
+<p><strong>-src_dir </strong> 
+Source directory for image or audio files</p>
+</li>
+<li>
+<p><strong>-tgt </strong> 
+True target sequence (optional)</p>
+</li>
+<li>
+<p><strong>-output [pred.txt]</strong> 
+Path to output the predictions (each line will be the decoded sequence</p>
+</li>
+<li>
+<p><strong>-dynamic_dict </strong> 
+Create dynamic dictionaries</p>
+</li>
+<li>
+<p><strong>-share_vocab </strong> 
+Share source and target vocabulary</p>
+</li>
+</ul>
+<h3 id="beam"><strong>Beam</strong>:<a class="headerlink" href="#beam" title="Permanent link">&para;</a></h3>
+<ul>
+<li>
+<p><strong>-beam_size [5]</strong> 
+Beam size</p>
+</li>
+<li>
+<p><strong>-alpha </strong> 
+Google NMT length penalty parameter (higher = longer generation)</p>
+</li>
+<li>
+<p><strong>-beta </strong> 
+Coverage penalty parameter</p>
+</li>
+<li>
+<p><strong>-max_sent_length [100]</strong> 
+Maximum sentence length.</p>
+</li>
+<li>
+<p><strong>-replace_unk </strong> 
+Replace the generated UNK tokens with the source token that had highest
 attention weight. If phrase_table is provided, it will lookup the identified
-source token and give the corresponding target token. If it is not provided (or
+source token and give the corresponding target token. If it is not provided(or
 the identified source token does not exist in the table) then it will copy the
-source token
-</pre></div>
-
-
-<h3 id="-verbose"><strong>-verbose</strong><a class="headerlink" href="#-verbose" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>Print scores and predictions for each sentence
-</pre></div>
-
-
-<h3 id="-n_best-n_best"><strong>-n_best N_BEST</strong><a class="headerlink" href="#-n_best-n_best" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>If verbose is set, will output the n_best decoded sentences
-</pre></div>
-
-
-<h3 id="-gpu-gpu"><strong>-gpu GPU</strong><a class="headerlink" href="#-gpu-gpu" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>Device to run on
-</pre></div>
+source token</p>
+</li>
+</ul>
+<h3 id="logging"><strong>Logging</strong>:<a class="headerlink" href="#logging" title="Permanent link">&para;</a></h3>
+<ul>
+<li>
+<p><strong>-verbose </strong> 
+Print scores and predictions for each sentence</p>
+</li>
+<li>
+<p><strong>-attn_debug </strong> 
+Print best attn for each word</p>
+</li>
+<li>
+<p><strong>-dump_beam </strong> 
+File to dump beam information to.</p>
+</li>
+<li>
+<p><strong>-n_best [1]</strong> 
+If verbose is set, will output the n_best decoded sentences</p>
+</li>
+</ul>
+<h3 id="efficiency"><strong>Efficiency</strong>:<a class="headerlink" href="#efficiency" title="Permanent link">&para;</a></h3>
+<ul>
+<li>
+<p><strong>-batch_size [30]</strong> 
+Batch size</p>
+</li>
+<li>
+<p><strong>-gpu [-1]</strong> 
+Device to run on</p>
+</li>
+</ul>
+<h3 id="speech"><strong>Speech</strong>:<a class="headerlink" href="#speech" title="Permanent link">&para;</a></h3>
+<ul>
+<li>
+<p><strong>-sample_rate [16000]</strong> 
+Sample rate.</p>
+</li>
+<li>
+<p><strong>-window_size [0.02]</strong> 
+Window size for spectrogram in seconds</p>
+</li>
+<li>
+<p><strong>-window_stride [0.01]</strong> 
+Window stride for spectrogram in seconds</p>
+</li>
+<li>
+<p><strong>-window [hamming]</strong> 
+Window type for spectrogram generation</p>
+</li>
+</ul>
                 
                   
                 
@@ -693,13 +662,13 @@ source token
           </a>
         
         
-          <a href="../../references/" title="References" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../../CONTRIBUTORS/" title="Contributing" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                References
+                Contributing
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">
@@ -739,7 +708,7 @@ source token
       
     </div>
     
-      <script src="../../assets/javascripts/application-ad1183cb07.js"></script>
+      <script src="../../assets/javascripts/application-06a3e72efd.js"></script>
       <script>app.initialize({url:{base:"../.."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_HTMLorMML"></script>

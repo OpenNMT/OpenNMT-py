@@ -1,6 +1,6 @@
 
 <!DOCTYPE html>
-<html class="no-js">
+<html lang="en" class="no-js">
   <head>
     
       <meta charset="utf-8">
@@ -11,18 +11,18 @@
       
         <link rel="shortcut icon" href="../assets/images/favicon.png">
       
-      <meta name="generator" content="mkdocs-0.16.3, mkdocs-material-1.5.5">
+      <meta name="generator" content="mkdocs-0.16.3, mkdocs-material-1.6.4">
     
     
       
-        <title>Installation - OpenNMT-py</title>
+        <title>Image-to-Text - OpenNMT-py</title>
       
     
     
-      <script src="../assets/javascripts/modernizr-56ade86843.js"></script>
+      <script src="../assets/javascripts/modernizr-1df76c4e58.js"></script>
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/application-b1a1975878.css">
+      <link rel="stylesheet" href="../assets/stylesheets/application-e2807e330f.css">
       
     
     
@@ -76,8 +76,12 @@
           
             
               
+                <span class="md-header-nav__parent">
+                  Examples
+                </span>
+              
             
-            Installation
+            Image-to-Text
           
         </span>
       </div>
@@ -86,7 +90,7 @@
           <label class="md-icon md-icon--search md-header-nav__button" for="search"></label>
           
 <div class="md-search" data-md-component="search">
-  <div class="md-search__overlay"></div>
+  <label class="md-search__overlay" for="search"></label>
   <div class="md-search__inner">
     <form class="md-search__form" name="search">
       <input type="text" class="md-search__input" name="query" required placeholder="Search" accesskey="s" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query">
@@ -199,30 +203,105 @@
   
 
 
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2" checked>
+    
+    <label class="md-nav__link" for="nav-2">
+      Examples
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-2">
+        Examples
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../quickstart/" title="Quickstart" class="md-nav__link">
+      Quickstart
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../extended/" title="Translation" class="md-nav__link">
+      Translation
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../Summarization/" title="Summarization" class="md-nav__link">
+      Summarization
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
   <li class="md-nav__item md-nav__item--active">
     
     <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="toc">
     
+      
+    
     
       <label class="md-nav__link md-nav__link--active" for="toc">
-        Installation
+        Image-to-Text
       </label>
     
-    <a href="./" title="Installation" class="md-nav__link md-nav__link--active">
-      Installation
+    <a href="./" title="Image-to-Text" class="md-nav__link md-nav__link--active">
+      Image-to-Text
     </a>
     
       
 <nav class="md-nav md-nav--secondary">
   
   
+    
+  
   
     <label class="md-nav__title" for="toc">Table of contents</label>
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#standard" title="Standard" class="md-nav__link">
-    Standard
+  <a href="#dependencies" title="Dependencies" class="md-nav__link">
+    Dependencies
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quick-start" title="Quick Start" class="md-nav__link">
+    Quick Start
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#options" title="Options" class="md-nav__link">
+    Options
   </a>
   
 </li>
@@ -235,16 +314,21 @@
     
   </li>
 
-    
-      
-      
-      
+        
+          
+          
+          
 
 
   <li class="md-nav__item">
-    <a href="../quickstart/" title="Quickstart" class="md-nav__link">
-      Quickstart
+    <a href="../speech2text/" title="Speech-to-Text" class="md-nav__link">
+      Speech-to-Text
     </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
     
@@ -254,8 +338,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../extended/" title="Extended Example" class="md-nav__link">
-      Extended Example
+    <a href="../FAQ/" title="FAQ" class="md-nav__link">
+      FAQ
     </a>
   </li>
 
@@ -267,13 +351,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5" type="checkbox" id="nav-5">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4">
     
-    <label class="md-nav__link" for="nav-5">
+    <label class="md-nav__link" for="nav-4">
       Reference: Options
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
-      <label class="md-nav__title" for="nav-5">
+      <label class="md-nav__title" for="nav-4">
         Reference: Options
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -326,8 +410,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../references/" title="References" class="md-nav__link">
-      References
+    <a href="../CONTRIBUTORS/" title="Contributing" class="md-nav__link">
+      Contributing
     </a>
   </li>
 
@@ -346,13 +430,29 @@
 <nav class="md-nav md-nav--secondary">
   
   
+    
+  
   
     <label class="md-nav__title" for="toc">Table of contents</label>
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#standard" title="Standard" class="md-nav__link">
-    Standard
+  <a href="#dependencies" title="Dependencies" class="md-nav__link">
+    Dependencies
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quick-start" title="Quick Start" class="md-nav__link">
+    Quick Start
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#options" title="Options" class="md-nav__link">
+    Options
   </a>
   
 </li>
@@ -371,20 +471,73 @@
             <article class="md-content__inner md-typeset">
               
                 
-                  <a href="https://github.com/OpenNMT/OpenNMT-py/edit/master/docs/installation.md" title="Edit this page" class="md-icon md-content__icon">edit</a>
+                  <a href="https://github.com/OpenNMT/OpenNMT-py/edit/master/docs/im2text.md" title="Edit this page" class="md-icon md-content__icon">edit</a>
                 
                 
-                  <h1>Installation</h1>
-                
-                <h2 id="standard">Standard<a class="headerlink" href="#standard" title="Permanent link">&para;</a></h2>
-<p>1. <a href="http://pytorch.org/">Install PyTorch</a></p>
-<p>2. Clone the OpenNMT-py repository:</p>
-<div class="codehilite"><pre><span></span>git clone https://github.com/OpenNMT/OpenNMT-py
-<span class="nb">cd</span> OpenNMT-py
+                <h1 id="image-to-text">Image to Text<a class="headerlink" href="#image-to-text" title="Permanent link">&para;</a></h1>
+<p>A deep learning-based approach to learning the image-to-text conversion, built on top of the <a href="http://opennmt.net/">OpenNMT</a> system. It is completely data-driven, hence can be used for a variety of image-to-text problems, such as image captioning, optical character recognition and LaTeX decompilation. </p>
+<p>Take LaTeX decompilation as an example, given a formula image:</p>
+<p align="center"><img src="http://lstm.seas.harvard.edu/latex/results/website/images/119b93a445-orig.png"></p>
+
+<p>The goal is to infer the LaTeX source that can be compiled to such an image:</p>
+<div class="codehilite"><pre><span></span> d s _ { 1 1 } ^ { 2 } = d x ^ { + } d x ^ { - } + l _ { p } ^ { 9 } \frac { p _ { - } } { r ^ { 7 } } \delta ( x ^ { - } ) d x ^ { - } d x ^ { - } + d x _ { 1 } ^ { 2 } + \; \cdots \; + d x _ { 9 } ^ { 2 } 
 </pre></div>
 
 
-<p>And you are ready to go! Take a look at the <a href="../quickstart/">quickstart</a> to familiarize yourself with the main training workflow.</p>
+<p>The paper <a href="https://arxiv.org/pdf/1609.04938.pdf">[What You Get Is What You See: A Visual Markup Decompiler]</a> provides more technical details of this model.</p>
+<h2 id="dependencies">Dependencies<a class="headerlink" href="#dependencies" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>torchvision</code>: <code>conda install torchvision</code></li>
+<li><code>Pillow</code>: <code>pip install Pillow</code></li>
+</ul>
+<h2 id="quick-start">Quick Start<a class="headerlink" href="#quick-start" title="Permanent link">&para;</a></h2>
+<p>To get started, we provide a toy Math-to-LaTex example. We assume that the working directory is <code>OpenNMT-py</code> throughout this document.</p>
+<p>Im2Text consists of four commands:</p>
+<p>0) Download the data.</p>
+<div class="codehilite"><pre><span></span>wget -O data/im2text.tgz http://lstm.seas.harvard.edu/latex/im2text_small.tgz; tar zxf data/im2text.tgz -C data/
+</pre></div>
+
+
+<p>1) Preprocess the data.</p>
+<div class="codehilite"><pre><span></span>python preprocess.py -data_type img -src_dir data/im2text/images/ -train_src data/im2text/src-train.txt -train_tgt data/im2text/tgt-train.txt -valid_src data/im2text/src-val.txt -valid_tgt data/im2text/tgt-val.txt -save_data data/im2text/demo
+</pre></div>
+
+
+<p>2) Train the model.</p>
+<div class="codehilite"><pre><span></span>python train.py -model_type img -data data/im2text/demo -save_model demo-model -gpuid 0 -batch_size 20 -max_grad_norm 20 -learning_rate 0.1
+</pre></div>
+
+
+<p>3) Translate the images.</p>
+<div class="codehilite"><pre><span></span>python translate.py -data_type img -model demo-model_acc_x_ppl_x_e13.pt -src_dir data/im2text/images -src data/im2text/src-test.txt -output pred.txt -gpu 0 -verbose
+</pre></div>
+
+
+<p>The above dataset is sampled from the <a href="http://lstm.seas.harvard.edu/latex/im2text.tgz">im2latex-100k-dataset</a>. We provide a trained model <a href="http://lstm.seas.harvard.edu/latex/py-model.pt">[link]</a> on this dataset.</p>
+<h2 id="options">Options<a class="headerlink" href="#options" title="Permanent link">&para;</a></h2>
+<ul>
+<li>
+<p><code>-src_dir</code>: The directory containing the images.</p>
+</li>
+<li>
+<p><code>-train_tgt</code>: The file storing the tokenized labels, one label per line. It shall look like:</p>
+</li>
+</ul>
+<div class="codehilite"><pre><span></span>&lt;label0_token0&gt; &lt;label0_token1&gt; ... &lt;label0_tokenN0&gt;
+&lt;label1_token0&gt; &lt;label1_token1&gt; ... &lt;label1_tokenN1&gt;
+&lt;label2_token0&gt; &lt;label2_token1&gt; ... &lt;label2_tokenN2&gt;
+...
+</pre></div>
+
+
+<ul>
+<li><code>-train_src</code>: The file storing the paths of the images (relative to <code>src_dir</code>).</li>
+</ul>
+<div class="codehilite"><pre><span></span>&lt;image0_path&gt;
+&lt;image1_path&gt;
+&lt;image2_path&gt;
+...
+</pre></div>
                 
                   
                 
@@ -403,7 +556,7 @@
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href=".." title="Overview" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../Summarization/" title="Summarization" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -412,19 +565,19 @@
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Overview
+                Summarization
               </span>
             </div>
           </a>
         
         
-          <a href="../quickstart/" title="Quickstart" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../speech2text/" title="Speech-to-Text" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                Quickstart
+                Speech-to-Text
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">
@@ -464,7 +617,7 @@
       
     </div>
     
-      <script src="../assets/javascripts/application-ad1183cb07.js"></script>
+      <script src="../assets/javascripts/application-06a3e72efd.js"></script>
       <script>app.initialize({url:{base:".."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_HTMLorMML"></script>

@@ -1,6 +1,6 @@
 
 <!DOCTYPE html>
-<html class="no-js">
+<html lang="en" class="no-js">
   <head>
     
       <meta charset="utf-8">
@@ -11,7 +11,7 @@
       
         <link rel="shortcut icon" href="../../assets/images/favicon.png">
       
-      <meta name="generator" content="mkdocs-0.16.3, mkdocs-material-1.5.5">
+      <meta name="generator" content="mkdocs-0.16.3, mkdocs-material-1.6.4">
     
     
       
@@ -19,10 +19,10 @@
       
     
     
-      <script src="../../assets/javascripts/modernizr-56ade86843.js"></script>
+      <script src="../../assets/javascripts/modernizr-1df76c4e58.js"></script>
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/application-b1a1975878.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/application-e2807e330f.css">
       
     
     
@@ -90,7 +90,7 @@
           <label class="md-icon md-icon--search md-header-nav__button" for="search"></label>
           
 <div class="md-search" data-md-component="search">
-  <div class="md-search__overlay"></div>
+  <label class="md-search__overlay" for="search"></label>
   <div class="md-search__inner">
     <form class="md-search__form" name="search">
       <input type="text" class="md-search__input" name="query" required placeholder="Search" accesskey="s" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query">
@@ -201,16 +201,23 @@
       
 
 
-  <li class="md-nav__item">
-    <a href="../../installation/" title="Installation" class="md-nav__link">
-      Installation
-    </a>
-  </li>
-
+  <li class="md-nav__item md-nav__item--nested">
     
-      
-      
-      
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2">
+    
+    <label class="md-nav__link" for="nav-2">
+      Examples
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-2">
+        Examples
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
 
 
   <li class="md-nav__item">
@@ -219,6 +226,59 @@
     </a>
   </li>
 
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../extended/" title="Translation" class="md-nav__link">
+      Translation
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Summarization/" title="Summarization" class="md-nav__link">
+      Summarization
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../im2text/" title="Image-to-Text" class="md-nav__link">
+      Image-to-Text
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../speech2text/" title="Speech-to-Text" class="md-nav__link">
+      Speech-to-Text
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
     
       
       
@@ -226,8 +286,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../extended/" title="Extended Example" class="md-nav__link">
-      Extended Example
+    <a href="../../FAQ/" title="FAQ" class="md-nav__link">
+      FAQ
     </a>
   </li>
 
@@ -241,13 +301,13 @@
 
   <li class="md-nav__item md-nav__item--active md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5" type="checkbox" id="nav-5" checked>
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4" checked>
     
-    <label class="md-nav__link" for="nav-5">
+    <label class="md-nav__link" for="nav-4">
       Reference: Options
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
-      <label class="md-nav__title" for="nav-5">
+      <label class="md-nav__title" for="nav-4">
         Reference: Options
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -264,8 +324,6 @@
     
     <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="toc">
     
-      
-    
     
       <label class="md-nav__link md-nav__link--active" for="toc">
         preprocess.py
@@ -279,141 +337,49 @@
 <nav class="md-nav md-nav--secondary">
   
   
-    
-  
   
     <label class="md-nav__title" for="toc">Table of contents</label>
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#optional-arguments" title="optional arguments:" class="md-nav__link">
-    optional arguments:
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#-h-help" title="-h, --help" class="md-nav__link">
-    -h, --help
+  <a href="#data" title="Data:" class="md-nav__link">
+    Data:
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#-md" title="-md" class="md-nav__link">
-    -md
+      
+        <li class="md-nav__item">
+  <a href="#vocab" title="Vocab:" class="md-nav__link">
+    Vocab:
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#-config-config" title="-config CONFIG" class="md-nav__link">
-    -config CONFIG
+      
+        <li class="md-nav__item">
+  <a href="#pruning" title="Pruning:" class="md-nav__link">
+    Pruning:
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#-train_src-train_src" title="-train_src TRAIN_SRC" class="md-nav__link">
-    -train_src TRAIN_SRC
+      
+        <li class="md-nav__item">
+  <a href="#random" title="Random:" class="md-nav__link">
+    Random:
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#-train_tgt-train_tgt" title="-train_tgt TRAIN_TGT" class="md-nav__link">
-    -train_tgt TRAIN_TGT
+      
+        <li class="md-nav__item">
+  <a href="#logging" title="Logging:" class="md-nav__link">
+    Logging:
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#-valid_src-valid_src" title="-valid_src VALID_SRC" class="md-nav__link">
-    -valid_src VALID_SRC
+      
+        <li class="md-nav__item">
+  <a href="#speech" title="Speech:" class="md-nav__link">
+    Speech:
   </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-valid_tgt-valid_tgt" title="-valid_tgt VALID_TGT" class="md-nav__link">
-    -valid_tgt VALID_TGT
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-save_data-save_data" title="-save_data SAVE_DATA" class="md-nav__link">
-    -save_data SAVE_DATA
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-src_vocab_size-src_vocab_size" title="-src_vocab_size SRC_VOCAB_SIZE" class="md-nav__link">
-    -src_vocab_size SRC_VOCAB_SIZE
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-tgt_vocab_size-tgt_vocab_size" title="-tgt_vocab_size TGT_VOCAB_SIZE" class="md-nav__link">
-    -tgt_vocab_size TGT_VOCAB_SIZE
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-src_vocab-src_vocab" title="-src_vocab SRC_VOCAB" class="md-nav__link">
-    -src_vocab SRC_VOCAB
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-tgt_vocab-tgt_vocab" title="-tgt_vocab TGT_VOCAB" class="md-nav__link">
-    -tgt_vocab TGT_VOCAB
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-seq_length-seq_length" title="-seq_length SEQ_LENGTH" class="md-nav__link">
-    -seq_length SEQ_LENGTH
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-shuffle-shuffle" title="-shuffle SHUFFLE" class="md-nav__link">
-    -shuffle SHUFFLE
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-seed-seed" title="-seed SEED" class="md-nav__link">
-    -seed SEED
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-lower" title="-lower" class="md-nav__link">
-    -lower
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-report_every-report_every" title="-report_every REPORT_EVERY" class="md-nav__link">
-    -report_every REPORT_EVERY
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -461,8 +427,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../references/" title="References" class="md-nav__link">
-      References
+    <a href="../../CONTRIBUTORS/" title="Contributing" class="md-nav__link">
+      Contributing
     </a>
   </li>
 
@@ -481,141 +447,49 @@
 <nav class="md-nav md-nav--secondary">
   
   
-    
-  
   
     <label class="md-nav__title" for="toc">Table of contents</label>
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#optional-arguments" title="optional arguments:" class="md-nav__link">
-    optional arguments:
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#-h-help" title="-h, --help" class="md-nav__link">
-    -h, --help
+  <a href="#data" title="Data:" class="md-nav__link">
+    Data:
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#-md" title="-md" class="md-nav__link">
-    -md
+      
+        <li class="md-nav__item">
+  <a href="#vocab" title="Vocab:" class="md-nav__link">
+    Vocab:
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#-config-config" title="-config CONFIG" class="md-nav__link">
-    -config CONFIG
+      
+        <li class="md-nav__item">
+  <a href="#pruning" title="Pruning:" class="md-nav__link">
+    Pruning:
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#-train_src-train_src" title="-train_src TRAIN_SRC" class="md-nav__link">
-    -train_src TRAIN_SRC
+      
+        <li class="md-nav__item">
+  <a href="#random" title="Random:" class="md-nav__link">
+    Random:
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#-train_tgt-train_tgt" title="-train_tgt TRAIN_TGT" class="md-nav__link">
-    -train_tgt TRAIN_TGT
+      
+        <li class="md-nav__item">
+  <a href="#logging" title="Logging:" class="md-nav__link">
+    Logging:
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#-valid_src-valid_src" title="-valid_src VALID_SRC" class="md-nav__link">
-    -valid_src VALID_SRC
+      
+        <li class="md-nav__item">
+  <a href="#speech" title="Speech:" class="md-nav__link">
+    Speech:
   </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-valid_tgt-valid_tgt" title="-valid_tgt VALID_TGT" class="md-nav__link">
-    -valid_tgt VALID_TGT
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-save_data-save_data" title="-save_data SAVE_DATA" class="md-nav__link">
-    -save_data SAVE_DATA
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-src_vocab_size-src_vocab_size" title="-src_vocab_size SRC_VOCAB_SIZE" class="md-nav__link">
-    -src_vocab_size SRC_VOCAB_SIZE
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-tgt_vocab_size-tgt_vocab_size" title="-tgt_vocab_size TGT_VOCAB_SIZE" class="md-nav__link">
-    -tgt_vocab_size TGT_VOCAB_SIZE
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-src_vocab-src_vocab" title="-src_vocab SRC_VOCAB" class="md-nav__link">
-    -src_vocab SRC_VOCAB
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-tgt_vocab-tgt_vocab" title="-tgt_vocab TGT_VOCAB" class="md-nav__link">
-    -tgt_vocab TGT_VOCAB
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-seq_length-seq_length" title="-seq_length SEQ_LENGTH" class="md-nav__link">
-    -seq_length SEQ_LENGTH
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-shuffle-shuffle" title="-shuffle SHUFFLE" class="md-nav__link">
-    -shuffle SHUFFLE
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-seed-seed" title="-seed SEED" class="md-nav__link">
-    -seed SEED
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-lower" title="-lower" class="md-nav__link">
-    -lower
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-report_every-report_every" title="-report_every REPORT_EVERY" class="md-nav__link">
-    -report_every REPORT_EVERY
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -636,105 +510,139 @@
                   <a href="https://github.com/OpenNMT/OpenNMT-py/edit/master/docs/options/preprocess.md" title="Edit this page" class="md-icon md-content__icon">edit</a>
                 
                 
+                  <h1>preprocess.py</h1>
+                
                 <!--- This file was automatically generated. Do not modify it manually but use the docs/options/generate.sh script instead. -->
 
-<h1 id="preprocesspy">preprocess.py:<a class="headerlink" href="#preprocesspy" title="Permanent link">&para;</a></h1>
-<div class="codehilite"><pre><span></span>usage: preprocess.py [-h] [-md] [-config CONFIG] -train_src TRAIN_SRC
-                     -train_tgt TRAIN_TGT -valid_src VALID_SRC -valid_tgt
-                     VALID_TGT -save_data SAVE_DATA
-                     [-src_vocab_size SRC_VOCAB_SIZE]
-                     [-tgt_vocab_size TGT_VOCAB_SIZE] [-src_vocab SRC_VOCAB]
-                     [-tgt_vocab TGT_VOCAB] [-seq_length SEQ_LENGTH]
-                     [-shuffle SHUFFLE] [-seed SEED] [-lower]
-                     [-report_every REPORT_EVERY]
-</pre></div>
-
-
-<p>preprocess.py</p>
-<h2 id="optional-arguments"><strong>optional arguments</strong>:<a class="headerlink" href="#optional-arguments" title="Permanent link">&para;</a></h2>
-<h3 id="-h-help"><strong>-h, --help</strong><a class="headerlink" href="#-h-help" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>show this help message and exit
-</pre></div>
-
-
-<h3 id="-md"><strong>-md</strong><a class="headerlink" href="#-md" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>print Markdown-formatted help text and exit.
-</pre></div>
-
-
-<h3 id="-config-config"><strong>-config CONFIG</strong><a class="headerlink" href="#-config-config" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>Read options from this file
-</pre></div>
-
-
-<h3 id="-train_src-train_src"><strong>-train_src TRAIN_SRC</strong><a class="headerlink" href="#-train_src-train_src" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>Path to the training source data
-</pre></div>
-
-
-<h3 id="-train_tgt-train_tgt"><strong>-train_tgt TRAIN_TGT</strong><a class="headerlink" href="#-train_tgt-train_tgt" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>Path to the training target data
-</pre></div>
-
-
-<h3 id="-valid_src-valid_src"><strong>-valid_src VALID_SRC</strong><a class="headerlink" href="#-valid_src-valid_src" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>Path to the validation source data
-</pre></div>
-
-
-<h3 id="-valid_tgt-valid_tgt"><strong>-valid_tgt VALID_TGT</strong><a class="headerlink" href="#-valid_tgt-valid_tgt" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>Path to the validation target data
-</pre></div>
-
-
-<h3 id="-save_data-save_data"><strong>-save_data SAVE_DATA</strong><a class="headerlink" href="#-save_data-save_data" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>Output file for the prepared data
-</pre></div>
-
-
-<h3 id="-src_vocab_size-src_vocab_size"><strong>-src_vocab_size SRC_VOCAB_SIZE</strong><a class="headerlink" href="#-src_vocab_size-src_vocab_size" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>Size of the source vocabulary
-</pre></div>
-
-
-<h3 id="-tgt_vocab_size-tgt_vocab_size"><strong>-tgt_vocab_size TGT_VOCAB_SIZE</strong><a class="headerlink" href="#-tgt_vocab_size-tgt_vocab_size" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>Size of the target vocabulary
-</pre></div>
-
-
-<h3 id="-src_vocab-src_vocab"><strong>-src_vocab SRC_VOCAB</strong><a class="headerlink" href="#-src_vocab-src_vocab" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>Path to an existing source vocabulary
-</pre></div>
-
-
-<h3 id="-tgt_vocab-tgt_vocab"><strong>-tgt_vocab TGT_VOCAB</strong><a class="headerlink" href="#-tgt_vocab-tgt_vocab" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>Path to an existing target vocabulary
-</pre></div>
-
-
-<h3 id="-seq_length-seq_length"><strong>-seq_length SEQ_LENGTH</strong><a class="headerlink" href="#-seq_length-seq_length" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>Maximum sequence length
-</pre></div>
-
-
-<h3 id="-shuffle-shuffle"><strong>-shuffle SHUFFLE</strong><a class="headerlink" href="#-shuffle-shuffle" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>Shuffle data
-</pre></div>
-
-
-<h3 id="-seed-seed"><strong>-seed SEED</strong><a class="headerlink" href="#-seed-seed" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>Random seed
-</pre></div>
-
-
-<h3 id="-lower"><strong>-lower</strong><a class="headerlink" href="#-lower" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>lowercase data
-</pre></div>
-
-
-<h3 id="-report_every-report_every"><strong>-report_every REPORT_EVERY</strong><a class="headerlink" href="#-report_every-report_every" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>Report status every this many sentences
-</pre></div>
+<p>preprocess.py
+:
+preprocess.py</p>
+<h3 id="data"><strong>Data</strong>:<a class="headerlink" href="#data" title="Permanent link">&para;</a></h3>
+<ul>
+<li>
+<p><strong>-data_type [text]</strong> 
+Type of the source input. Options are [text|img].</p>
+</li>
+<li>
+<p><strong>-train_src </strong> 
+Path to the training source data</p>
+</li>
+<li>
+<p><strong>-train_tgt </strong> 
+Path to the training target data</p>
+</li>
+<li>
+<p><strong>-valid_src </strong> 
+Path to the validation source data</p>
+</li>
+<li>
+<p><strong>-valid_tgt </strong> 
+Path to the validation target data</p>
+</li>
+<li>
+<p><strong>-src_dir </strong> 
+Source directory for image or audio files.</p>
+</li>
+<li>
+<p><strong>-save_data </strong> 
+Output file for the prepared data</p>
+</li>
+</ul>
+<h3 id="vocab"><strong>Vocab</strong>:<a class="headerlink" href="#vocab" title="Permanent link">&para;</a></h3>
+<ul>
+<li>
+<p><strong>-src_vocab </strong> 
+Path to an existing source vocabulary</p>
+</li>
+<li>
+<p><strong>-tgt_vocab </strong> 
+Path to an existing target vocabulary</p>
+</li>
+<li>
+<p><strong>-features_vocabs_prefix </strong> 
+Path prefix to existing features vocabularies</p>
+</li>
+<li>
+<p><strong>-src_vocab_size [50000]</strong> 
+Size of the source vocabulary</p>
+</li>
+<li>
+<p><strong>-tgt_vocab_size [50000]</strong> 
+Size of the target vocabulary</p>
+</li>
+<li>
+<p><strong>-src_words_min_frequency </strong> </p>
+</li>
+<li>
+<p><strong>-tgt_words_min_frequency </strong> </p>
+</li>
+<li>
+<p><strong>-dynamic_dict </strong> 
+Create dynamic dictionaries</p>
+</li>
+<li>
+<p><strong>-share_vocab </strong> 
+Share source and target vocabulary</p>
+</li>
+</ul>
+<h3 id="pruning"><strong>Pruning</strong>:<a class="headerlink" href="#pruning" title="Permanent link">&para;</a></h3>
+<ul>
+<li>
+<p><strong>-src_seq_length [50]</strong> 
+Maximum source sequence length</p>
+</li>
+<li>
+<p><strong>-src_seq_length_trunc </strong> 
+Truncate source sequence length.</p>
+</li>
+<li>
+<p><strong>-tgt_seq_length [50]</strong> 
+Maximum target sequence length to keep.</p>
+</li>
+<li>
+<p><strong>-tgt_seq_length_trunc </strong> 
+Truncate target sequence length.</p>
+</li>
+<li>
+<p><strong>-lower </strong> 
+lowercase data</p>
+</li>
+</ul>
+<h3 id="random"><strong>Random</strong>:<a class="headerlink" href="#random" title="Permanent link">&para;</a></h3>
+<ul>
+<li>
+<p><strong>-shuffle [1]</strong> 
+Shuffle data</p>
+</li>
+<li>
+<p><strong>-seed [3435]</strong> 
+Random seed</p>
+</li>
+</ul>
+<h3 id="logging"><strong>Logging</strong>:<a class="headerlink" href="#logging" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>-report_every [100000]</strong> 
+Report status every this many sentences</li>
+</ul>
+<h3 id="speech"><strong>Speech</strong>:<a class="headerlink" href="#speech" title="Permanent link">&para;</a></h3>
+<ul>
+<li>
+<p><strong>-sample_rate [16000]</strong> 
+Sample rate.</p>
+</li>
+<li>
+<p><strong>-window_size [0.02]</strong> 
+Window size for spectrogram in seconds.</p>
+</li>
+<li>
+<p><strong>-window_stride [0.01]</strong> 
+Window stride for spectrogram in seconds.</p>
+</li>
+<li>
+<p><strong>-window [hamming]</strong> 
+Window type for spectrogram generation.</p>
+</li>
+</ul>
                 
                   
                 
@@ -753,7 +661,7 @@
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../../extended/" title="Extended Example" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../../FAQ/" title="FAQ" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -762,7 +670,7 @@
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Extended Example
+                FAQ
               </span>
             </div>
           </a>
@@ -814,7 +722,7 @@
       
     </div>
     
-      <script src="../../assets/javascripts/application-ad1183cb07.js"></script>
+      <script src="../../assets/javascripts/application-06a3e72efd.js"></script>
       <script>app.initialize({url:{base:"../.."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_HTMLorMML"></script>

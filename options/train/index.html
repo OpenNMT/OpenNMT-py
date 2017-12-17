@@ -1,6 +1,6 @@
 
 <!DOCTYPE html>
-<html class="no-js">
+<html lang="en" class="no-js">
   <head>
     
       <meta charset="utf-8">
@@ -11,7 +11,7 @@
       
         <link rel="shortcut icon" href="../../assets/images/favicon.png">
       
-      <meta name="generator" content="mkdocs-0.16.3, mkdocs-material-1.5.5">
+      <meta name="generator" content="mkdocs-0.16.3, mkdocs-material-1.6.4">
     
     
       
@@ -19,10 +19,10 @@
       
     
     
-      <script src="../../assets/javascripts/modernizr-56ade86843.js"></script>
+      <script src="../../assets/javascripts/modernizr-1df76c4e58.js"></script>
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/application-b1a1975878.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/application-e2807e330f.css">
       
     
     
@@ -90,7 +90,7 @@
           <label class="md-icon md-icon--search md-header-nav__button" for="search"></label>
           
 <div class="md-search" data-md-component="search">
-  <div class="md-search__overlay"></div>
+  <label class="md-search__overlay" for="search"></label>
   <div class="md-search__inner">
     <form class="md-search__form" name="search">
       <input type="text" class="md-search__input" name="query" required placeholder="Search" accesskey="s" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query">
@@ -201,16 +201,23 @@
       
 
 
-  <li class="md-nav__item">
-    <a href="../../installation/" title="Installation" class="md-nav__link">
-      Installation
-    </a>
-  </li>
-
+  <li class="md-nav__item md-nav__item--nested">
     
-      
-      
-      
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2">
+    
+    <label class="md-nav__link" for="nav-2">
+      Examples
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-2">
+        Examples
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
 
 
   <li class="md-nav__item">
@@ -219,6 +226,59 @@
     </a>
   </li>
 
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../extended/" title="Translation" class="md-nav__link">
+      Translation
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Summarization/" title="Summarization" class="md-nav__link">
+      Summarization
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../im2text/" title="Image-to-Text" class="md-nav__link">
+      Image-to-Text
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../speech2text/" title="Speech-to-Text" class="md-nav__link">
+      Speech-to-Text
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
     
       
       
@@ -226,8 +286,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../extended/" title="Extended Example" class="md-nav__link">
-      Extended Example
+    <a href="../../FAQ/" title="FAQ" class="md-nav__link">
+      FAQ
     </a>
   </li>
 
@@ -241,13 +301,13 @@
 
   <li class="md-nav__item md-nav__item--active md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5" type="checkbox" id="nav-5" checked>
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4" checked>
     
-    <label class="md-nav__link" for="nav-5">
+    <label class="md-nav__link" for="nav-4">
       Reference: Options
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
-      <label class="md-nav__title" for="nav-5">
+      <label class="md-nav__title" for="nav-4">
         Reference: Options
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -276,8 +336,6 @@
     
     <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="toc">
     
-      
-    
     
       <label class="md-nav__link md-nav__link--active" for="toc">
         train.py
@@ -291,225 +349,70 @@
 <nav class="md-nav md-nav--secondary">
   
   
-    
-  
   
     <label class="md-nav__title" for="toc">Table of contents</label>
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#optional-arguments" title="optional arguments:" class="md-nav__link">
-    optional arguments:
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#-h-help" title="-h, --help" class="md-nav__link">
-    -h, --help
+  <a href="#model-embeddings" title="Model-Embeddings:" class="md-nav__link">
+    Model-Embeddings:
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#-md" title="-md" class="md-nav__link">
-    -md
+      
+        <li class="md-nav__item">
+  <a href="#model-encoder-decoder" title="Model- Encoder-Decoder:" class="md-nav__link">
+    Model- Encoder-Decoder:
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#-data-data" title="-data DATA" class="md-nav__link">
-    -data DATA
+      
+        <li class="md-nav__item">
+  <a href="#model-attention" title="Model- Attention:" class="md-nav__link">
+    Model- Attention:
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#-save_model-save_model" title="-save_model SAVE_MODEL" class="md-nav__link">
-    -save_model SAVE_MODEL
+      
+        <li class="md-nav__item">
+  <a href="#general" title="General:" class="md-nav__link">
+    General:
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#-train_from_state_dict-train_from_state_dict" title="-train_from_state_dict TRAIN_FROM_STATE_DICT" class="md-nav__link">
-    -train_from_state_dict TRAIN_FROM_STATE_DICT
+      
+        <li class="md-nav__item">
+  <a href="#initialization" title="Initialization:" class="md-nav__link">
+    Initialization:
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#-train_from-train_from" title="-train_from TRAIN_FROM" class="md-nav__link">
-    -train_from TRAIN_FROM
+      
+        <li class="md-nav__item">
+  <a href="#optimization-type" title="Optimization- Type:" class="md-nav__link">
+    Optimization- Type:
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#-layers-layers" title="-layers LAYERS" class="md-nav__link">
-    -layers LAYERS
+      
+        <li class="md-nav__item">
+  <a href="#optimization-rate" title="Optimization- Rate:" class="md-nav__link">
+    Optimization- Rate:
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#-rnn_size-rnn_size" title="-rnn_size RNN_SIZE" class="md-nav__link">
-    -rnn_size RNN_SIZE
+      
+        <li class="md-nav__item">
+  <a href="#logging" title="Logging:" class="md-nav__link">
+    Logging:
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#-word_vec_size-word_vec_size" title="-word_vec_size WORD_VEC_SIZE" class="md-nav__link">
-    -word_vec_size WORD_VEC_SIZE
+      
+        <li class="md-nav__item">
+  <a href="#speech" title="Speech:" class="md-nav__link">
+    Speech:
   </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-input_feed-input_feed" title="-input_feed INPUT_FEED" class="md-nav__link">
-    -input_feed INPUT_FEED
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-brnn" title="-brnn" class="md-nav__link">
-    -brnn
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-brnn_merge-brnn_merge" title="-brnn_merge BRNN_MERGE" class="md-nav__link">
-    -brnn_merge BRNN_MERGE
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-batch_size-batch_size" title="-batch_size BATCH_SIZE" class="md-nav__link">
-    -batch_size BATCH_SIZE
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-max_generator_batches-max_generator_batches" title="-max_generator_batches MAX_GENERATOR_BATCHES" class="md-nav__link">
-    -max_generator_batches MAX_GENERATOR_BATCHES
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-epochs-epochs" title="-epochs EPOCHS" class="md-nav__link">
-    -epochs EPOCHS
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-start_epoch-start_epoch" title="-start_epoch START_EPOCH" class="md-nav__link">
-    -start_epoch START_EPOCH
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-param_init-param_init" title="-param_init PARAM_INIT" class="md-nav__link">
-    -param_init PARAM_INIT
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-optim-optim" title="-optim OPTIM" class="md-nav__link">
-    -optim OPTIM
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-max_grad_norm-max_grad_norm" title="-max_grad_norm MAX_GRAD_NORM" class="md-nav__link">
-    -max_grad_norm MAX_GRAD_NORM
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-dropout-dropout" title="-dropout DROPOUT" class="md-nav__link">
-    -dropout DROPOUT
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-curriculum" title="-curriculum" class="md-nav__link">
-    -curriculum
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-extra_shuffle" title="-extra_shuffle" class="md-nav__link">
-    -extra_shuffle
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-learning_rate-learning_rate" title="-learning_rate LEARNING_RATE" class="md-nav__link">
-    -learning_rate LEARNING_RATE
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-learning_rate_decay-learning_rate_decay" title="-learning_rate_decay LEARNING_RATE_DECAY" class="md-nav__link">
-    -learning_rate_decay LEARNING_RATE_DECAY
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-start_decay_at-start_decay_at" title="-start_decay_at START_DECAY_AT" class="md-nav__link">
-    -start_decay_at START_DECAY_AT
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-pre_word_vecs_enc-pre_word_vecs_enc" title="-pre_word_vecs_enc PRE_WORD_VECS_ENC" class="md-nav__link">
-    -pre_word_vecs_enc PRE_WORD_VECS_ENC
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-pre_word_vecs_dec-pre_word_vecs_dec" title="-pre_word_vecs_dec PRE_WORD_VECS_DEC" class="md-nav__link">
-    -pre_word_vecs_dec PRE_WORD_VECS_DEC
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-gpus-gpus-gpus" title="-gpus GPUS [GPUS ...]" class="md-nav__link">
-    -gpus GPUS [GPUS ...]
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-log_interval-log_interval" title="-log_interval LOG_INTERVAL" class="md-nav__link">
-    -log_interval LOG_INTERVAL
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -545,8 +448,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../references/" title="References" class="md-nav__link">
-      References
+    <a href="../../CONTRIBUTORS/" title="Contributing" class="md-nav__link">
+      Contributing
     </a>
   </li>
 
@@ -565,225 +468,70 @@
 <nav class="md-nav md-nav--secondary">
   
   
-    
-  
   
     <label class="md-nav__title" for="toc">Table of contents</label>
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#optional-arguments" title="optional arguments:" class="md-nav__link">
-    optional arguments:
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#-h-help" title="-h, --help" class="md-nav__link">
-    -h, --help
+  <a href="#model-embeddings" title="Model-Embeddings:" class="md-nav__link">
+    Model-Embeddings:
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#-md" title="-md" class="md-nav__link">
-    -md
+      
+        <li class="md-nav__item">
+  <a href="#model-encoder-decoder" title="Model- Encoder-Decoder:" class="md-nav__link">
+    Model- Encoder-Decoder:
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#-data-data" title="-data DATA" class="md-nav__link">
-    -data DATA
+      
+        <li class="md-nav__item">
+  <a href="#model-attention" title="Model- Attention:" class="md-nav__link">
+    Model- Attention:
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#-save_model-save_model" title="-save_model SAVE_MODEL" class="md-nav__link">
-    -save_model SAVE_MODEL
+      
+        <li class="md-nav__item">
+  <a href="#general" title="General:" class="md-nav__link">
+    General:
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#-train_from_state_dict-train_from_state_dict" title="-train_from_state_dict TRAIN_FROM_STATE_DICT" class="md-nav__link">
-    -train_from_state_dict TRAIN_FROM_STATE_DICT
+      
+        <li class="md-nav__item">
+  <a href="#initialization" title="Initialization:" class="md-nav__link">
+    Initialization:
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#-train_from-train_from" title="-train_from TRAIN_FROM" class="md-nav__link">
-    -train_from TRAIN_FROM
+      
+        <li class="md-nav__item">
+  <a href="#optimization-type" title="Optimization- Type:" class="md-nav__link">
+    Optimization- Type:
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#-layers-layers" title="-layers LAYERS" class="md-nav__link">
-    -layers LAYERS
+      
+        <li class="md-nav__item">
+  <a href="#optimization-rate" title="Optimization- Rate:" class="md-nav__link">
+    Optimization- Rate:
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#-rnn_size-rnn_size" title="-rnn_size RNN_SIZE" class="md-nav__link">
-    -rnn_size RNN_SIZE
+      
+        <li class="md-nav__item">
+  <a href="#logging" title="Logging:" class="md-nav__link">
+    Logging:
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#-word_vec_size-word_vec_size" title="-word_vec_size WORD_VEC_SIZE" class="md-nav__link">
-    -word_vec_size WORD_VEC_SIZE
+      
+        <li class="md-nav__item">
+  <a href="#speech" title="Speech:" class="md-nav__link">
+    Speech:
   </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-input_feed-input_feed" title="-input_feed INPUT_FEED" class="md-nav__link">
-    -input_feed INPUT_FEED
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-brnn" title="-brnn" class="md-nav__link">
-    -brnn
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-brnn_merge-brnn_merge" title="-brnn_merge BRNN_MERGE" class="md-nav__link">
-    -brnn_merge BRNN_MERGE
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-batch_size-batch_size" title="-batch_size BATCH_SIZE" class="md-nav__link">
-    -batch_size BATCH_SIZE
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-max_generator_batches-max_generator_batches" title="-max_generator_batches MAX_GENERATOR_BATCHES" class="md-nav__link">
-    -max_generator_batches MAX_GENERATOR_BATCHES
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-epochs-epochs" title="-epochs EPOCHS" class="md-nav__link">
-    -epochs EPOCHS
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-start_epoch-start_epoch" title="-start_epoch START_EPOCH" class="md-nav__link">
-    -start_epoch START_EPOCH
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-param_init-param_init" title="-param_init PARAM_INIT" class="md-nav__link">
-    -param_init PARAM_INIT
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-optim-optim" title="-optim OPTIM" class="md-nav__link">
-    -optim OPTIM
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-max_grad_norm-max_grad_norm" title="-max_grad_norm MAX_GRAD_NORM" class="md-nav__link">
-    -max_grad_norm MAX_GRAD_NORM
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-dropout-dropout" title="-dropout DROPOUT" class="md-nav__link">
-    -dropout DROPOUT
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-curriculum" title="-curriculum" class="md-nav__link">
-    -curriculum
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-extra_shuffle" title="-extra_shuffle" class="md-nav__link">
-    -extra_shuffle
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-learning_rate-learning_rate" title="-learning_rate LEARNING_RATE" class="md-nav__link">
-    -learning_rate LEARNING_RATE
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-learning_rate_decay-learning_rate_decay" title="-learning_rate_decay LEARNING_RATE_DECAY" class="md-nav__link">
-    -learning_rate_decay LEARNING_RATE_DECAY
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-start_decay_at-start_decay_at" title="-start_decay_at START_DECAY_AT" class="md-nav__link">
-    -start_decay_at START_DECAY_AT
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-pre_word_vecs_enc-pre_word_vecs_enc" title="-pre_word_vecs_enc PRE_WORD_VECS_ENC" class="md-nav__link">
-    -pre_word_vecs_enc PRE_WORD_VECS_ENC
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-pre_word_vecs_dec-pre_word_vecs_dec" title="-pre_word_vecs_dec PRE_WORD_VECS_DEC" class="md-nav__link">
-    -pre_word_vecs_dec PRE_WORD_VECS_DEC
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-gpus-gpus-gpus" title="-gpus GPUS [GPUS ...]" class="md-nav__link">
-    -gpus GPUS [GPUS ...]
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-log_interval-log_interval" title="-log_interval LOG_INTERVAL" class="md-nav__link">
-    -log_interval LOG_INTERVAL
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -804,185 +552,299 @@
                   <a href="https://github.com/OpenNMT/OpenNMT-py/edit/master/docs/options/train.md" title="Edit this page" class="md-icon md-content__icon">edit</a>
                 
                 
+                  <h1>train.py</h1>
+                
                 <!--- This file was automatically generated. Do not modify it manually but use the docs/options/generate.sh script instead. -->
 
-<h1 id="trainpy">train.py:<a class="headerlink" href="#trainpy" title="Permanent link">&para;</a></h1>
-<div class="codehilite"><pre><span></span>usage: train.py [-h] [-md] -data DATA [-save_model SAVE_MODEL]
-                [-train_from_state_dict TRAIN_FROM_STATE_DICT]
-                [-train_from TRAIN_FROM] [-layers LAYERS] [-rnn_size RNN_SIZE]
-                [-word_vec_size WORD_VEC_SIZE] [-input_feed INPUT_FEED]
-                [-brnn] [-brnn_merge BRNN_MERGE] [-batch_size BATCH_SIZE]
-                [-max_generator_batches MAX_GENERATOR_BATCHES]
-                [-epochs EPOCHS] [-start_epoch START_EPOCH]
-                [-param_init PARAM_INIT] [-optim OPTIM]
-                [-max_grad_norm MAX_GRAD_NORM] [-dropout DROPOUT]
-                [-curriculum] [-extra_shuffle] [-learning_rate LEARNING_RATE]
-                [-learning_rate_decay LEARNING_RATE_DECAY]
-                [-start_decay_at START_DECAY_AT]
-                [-pre_word_vecs_enc PRE_WORD_VECS_ENC]
-                [-pre_word_vecs_dec PRE_WORD_VECS_DEC] [-gpus GPUS [GPUS ...]]
-                [-log_interval LOG_INTERVAL]
-</pre></div>
-
-
-<p>train.py</p>
-<h2 id="optional-arguments"><strong>optional arguments</strong>:<a class="headerlink" href="#optional-arguments" title="Permanent link">&para;</a></h2>
-<h3 id="-h-help"><strong>-h, --help</strong><a class="headerlink" href="#-h-help" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>show this help message and exit
-</pre></div>
-
-
-<h3 id="-md"><strong>-md</strong><a class="headerlink" href="#-md" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>print Markdown-formatted help text and exit.
-</pre></div>
-
-
-<h3 id="-data-data"><strong>-data DATA</strong><a class="headerlink" href="#-data-data" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>Path to the *-train.pt file from preprocess.py
-</pre></div>
-
-
-<h3 id="-save_model-save_model"><strong>-save_model SAVE_MODEL</strong><a class="headerlink" href="#-save_model-save_model" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>Model filename (the model will be saved as &lt;save_model&gt;_epochN_PPL.pt where PPL
-is the validation perplexity
-</pre></div>
-
-
-<h3 id="-train_from_state_dict-train_from_state_dict"><strong>-train_from_state_dict TRAIN_FROM_STATE_DICT</strong><a class="headerlink" href="#-train_from_state_dict-train_from_state_dict" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>If training from a checkpoint then this is the path to the pretrained model&#39;s
-state_dict.
-</pre></div>
-
-
-<h3 id="-train_from-train_from"><strong>-train_from TRAIN_FROM</strong><a class="headerlink" href="#-train_from-train_from" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>If training from a checkpoint then this is the path to the pretrained model.
-</pre></div>
-
-
-<h3 id="-layers-layers"><strong>-layers LAYERS</strong><a class="headerlink" href="#-layers-layers" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>Number of layers in the LSTM encoder/decoder
-</pre></div>
-
-
-<h3 id="-rnn_size-rnn_size"><strong>-rnn_size RNN_SIZE</strong><a class="headerlink" href="#-rnn_size-rnn_size" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>Size of LSTM hidden states
-</pre></div>
-
-
-<h3 id="-word_vec_size-word_vec_size"><strong>-word_vec_size WORD_VEC_SIZE</strong><a class="headerlink" href="#-word_vec_size-word_vec_size" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>Word embedding sizes
-</pre></div>
-
-
-<h3 id="-input_feed-input_feed"><strong>-input_feed INPUT_FEED</strong><a class="headerlink" href="#-input_feed-input_feed" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>Feed the context vector at each time step as additional input (via concatenation
-with the word embeddings) to the decoder.
-</pre></div>
-
-
-<h3 id="-brnn"><strong>-brnn</strong><a class="headerlink" href="#-brnn" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>Use a bidirectional encoder
-</pre></div>
-
-
-<h3 id="-brnn_merge-brnn_merge"><strong>-brnn_merge BRNN_MERGE</strong><a class="headerlink" href="#-brnn_merge-brnn_merge" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>Merge action for the bidirectional hidden states: [concat|sum]
-</pre></div>
-
-
-<h3 id="-batch_size-batch_size"><strong>-batch_size BATCH_SIZE</strong><a class="headerlink" href="#-batch_size-batch_size" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>Maximum batch size
-</pre></div>
-
-
-<h3 id="-max_generator_batches-max_generator_batches"><strong>-max_generator_batches MAX_GENERATOR_BATCHES</strong><a class="headerlink" href="#-max_generator_batches-max_generator_batches" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>Maximum batches of words in a sequence to run the generator on in parallel.
-Higher is faster, but uses more memory.
-</pre></div>
-
-
-<h3 id="-epochs-epochs"><strong>-epochs EPOCHS</strong><a class="headerlink" href="#-epochs-epochs" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>Number of training epochs
-</pre></div>
-
-
-<h3 id="-start_epoch-start_epoch"><strong>-start_epoch START_EPOCH</strong><a class="headerlink" href="#-start_epoch-start_epoch" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>The epoch from which to start
-</pre></div>
-
-
-<h3 id="-param_init-param_init"><strong>-param_init PARAM_INIT</strong><a class="headerlink" href="#-param_init-param_init" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>Parameters are initialized over uniform distribution with support (-param_init,
-param_init)
-</pre></div>
-
-
-<h3 id="-optim-optim"><strong>-optim OPTIM</strong><a class="headerlink" href="#-optim-optim" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>Optimization method. [sgd|adagrad|adadelta|adam]
-</pre></div>
-
-
-<h3 id="-max_grad_norm-max_grad_norm"><strong>-max_grad_norm MAX_GRAD_NORM</strong><a class="headerlink" href="#-max_grad_norm-max_grad_norm" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>If the norm of the gradient vector exceeds this, renormalize it to have the norm
-equal to max_grad_norm
-</pre></div>
-
-
-<h3 id="-dropout-dropout"><strong>-dropout DROPOUT</strong><a class="headerlink" href="#-dropout-dropout" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>Dropout probability; applied between LSTM stacks.
-</pre></div>
-
-
-<h3 id="-curriculum"><strong>-curriculum</strong><a class="headerlink" href="#-curriculum" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>For this many epochs, order the minibatches based on source sequence length.
-Sometimes setting this to 1 will increase convergence speed.
-</pre></div>
-
-
-<h3 id="-extra_shuffle"><strong>-extra_shuffle</strong><a class="headerlink" href="#-extra_shuffle" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>By default only shuffle mini-batch order; when true, shuffle and re-assign mini-
-batches
-</pre></div>
-
-
-<h3 id="-learning_rate-learning_rate"><strong>-learning_rate LEARNING_RATE</strong><a class="headerlink" href="#-learning_rate-learning_rate" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>Starting learning rate. If adagrad/adadelta/adam is used, then this is the
-global learning rate. Recommended settings: sgd = 1, adagrad = 0.1, adadelta =
-1, adam = 0.001
-</pre></div>
-
-
-<h3 id="-learning_rate_decay-learning_rate_decay"><strong>-learning_rate_decay LEARNING_RATE_DECAY</strong><a class="headerlink" href="#-learning_rate_decay-learning_rate_decay" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>If update_learning_rate, decay learning rate by this much if (i) perplexity does
-not decrease on the validation set or (ii) epoch has gone past start_decay_at
-</pre></div>
-
-
-<h3 id="-start_decay_at-start_decay_at"><strong>-start_decay_at START_DECAY_AT</strong><a class="headerlink" href="#-start_decay_at-start_decay_at" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>Start decaying every epoch after and including this epoch
-</pre></div>
-
-
-<h3 id="-pre_word_vecs_enc-pre_word_vecs_enc"><strong>-pre_word_vecs_enc PRE_WORD_VECS_ENC</strong><a class="headerlink" href="#-pre_word_vecs_enc-pre_word_vecs_enc" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>If a valid path is specified, then this will load pretrained word embeddings on
-the encoder side. See README for specific formatting instructions.
-</pre></div>
-
-
-<h3 id="-pre_word_vecs_dec-pre_word_vecs_dec"><strong>-pre_word_vecs_dec PRE_WORD_VECS_DEC</strong><a class="headerlink" href="#-pre_word_vecs_dec-pre_word_vecs_dec" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>If a valid path is specified, then this will load pretrained word embeddings on
-the decoder side. See README for specific formatting instructions.
-</pre></div>
-
-
-<h3 id="-gpus-gpus-gpus"><strong>-gpus GPUS [GPUS ...]</strong><a class="headerlink" href="#-gpus-gpus-gpus" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>Use CUDA on the listed devices.
-</pre></div>
-
-
-<h3 id="-log_interval-log_interval"><strong>-log_interval LOG_INTERVAL</strong><a class="headerlink" href="#-log_interval-log_interval" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>Print stats at this interval.
-</pre></div>
+<p>train.py
+:
+train.py</p>
+<h3 id="model-embeddings"><strong>Model-Embeddings</strong>:<a class="headerlink" href="#model-embeddings" title="Permanent link">&para;</a></h3>
+<ul>
+<li>
+<p><strong>-word_vec_size [-1]</strong> 
+Word embedding for both.</p>
+</li>
+<li>
+<p><strong>-src_word_vec_size [500]</strong> 
+Src word embedding sizes</p>
+</li>
+<li>
+<p><strong>-tgt_word_vec_size [500]</strong> 
+Tgt word embedding sizes</p>
+</li>
+<li>
+<p><strong>-feat_merge [concat]</strong> 
+Merge action for the features embeddings</p>
+</li>
+<li>
+<p><strong>-feat_vec_size [-1]</strong> 
+If specified, feature embedding sizes will be set to this. Otherwise,
+feat_vec_exponent will be used.</p>
+</li>
+<li>
+<p><strong>-feat_vec_exponent [0.7]</strong> 
+If -feat_merge_size is not set, feature embedding sizes will be set to
+N^feat_vec_exponent where N is the number of values the feature takes.</p>
+</li>
+<li>
+<p><strong>-position_encoding </strong> 
+Use a sin to mark relative words positions.</p>
+</li>
+<li>
+<p><strong>-share_decoder_embeddings </strong> 
+Share the word and out embeddings for decoder.</p>
+</li>
+<li>
+<p><strong>-share_embeddings </strong> 
+Share the word embeddings between encoder and decoder.</p>
+</li>
+</ul>
+<h3 id="model-encoder-decoder"><strong>Model- Encoder-Decoder</strong>:<a class="headerlink" href="#model-encoder-decoder" title="Permanent link">&para;</a></h3>
+<ul>
+<li>
+<p><strong>-model_type [text]</strong> 
+Type of encoder to use. Options are [text|img|audio].</p>
+</li>
+<li>
+<p><strong>-encoder_type [rnn]</strong> 
+Type of encoder layer to use.</p>
+</li>
+<li>
+<p><strong>-decoder_type [rnn]</strong> 
+Type of decoder layer to use.</p>
+</li>
+<li>
+<p><strong>-layers [-1]</strong> 
+Number of layers in enc/dec.</p>
+</li>
+<li>
+<p><strong>-enc_layers [2]</strong> 
+Number of layers in the encoder</p>
+</li>
+<li>
+<p><strong>-dec_layers [2]</strong> 
+Number of layers in the decoder</p>
+</li>
+<li>
+<p><strong>-cnn_kernel_width [3]</strong> 
+Size of windows in the cnn, the kernel_size is (cnn_kernel_width, 1) in conv
+layer</p>
+</li>
+<li>
+<p><strong>-rnn_size [500]</strong> 
+Size of LSTM hidden states</p>
+</li>
+<li>
+<p><strong>-input_feed [1]</strong> 
+Feed the context vector at each time step as additional input (via concatenation
+with the word embeddings) to the decoder.</p>
+</li>
+<li>
+<p><strong>-rnn_type [LSTM]</strong> 
+The gate type to use in the RNNs</p>
+</li>
+<li>
+<p><strong>-brnn </strong> 
+Deprecated, use <code>encoder_type</code>.</p>
+</li>
+<li>
+<p><strong>-brnn_merge [concat]</strong> 
+Merge action for the bidir hidden states</p>
+</li>
+<li>
+<p><strong>-context_gate </strong> 
+Type of context gate to use. Do not select for no context gate.</p>
+</li>
+</ul>
+<h3 id="model-attention"><strong>Model- Attention</strong>:<a class="headerlink" href="#model-attention" title="Permanent link">&para;</a></h3>
+<ul>
+<li>
+<p><strong>-global_attention [general]</strong> 
+The attention type to use: dotprod or general (Luong) or MLP (Bahdanau)</p>
+</li>
+<li>
+<p><strong>-copy_attn </strong> 
+Train copy attention layer.</p>
+</li>
+<li>
+<p><strong>-copy_attn_force </strong> 
+When available, train to copy.</p>
+</li>
+<li>
+<p><strong>-coverage_attn </strong> 
+Train a coverage attention layer.</p>
+</li>
+<li>
+<p><strong>-lambda_coverage [1]</strong> 
+Lambda value for coverage.</p>
+</li>
+</ul>
+<h3 id="general"><strong>General</strong>:<a class="headerlink" href="#general" title="Permanent link">&para;</a></h3>
+<ul>
+<li>
+<p><strong>-data </strong> 
+Path prefix to the ".train.pt" and ".valid.pt" file path from preprocess.py</p>
+</li>
+<li>
+<p><strong>-save_model [model]</strong> 
+Model filename (the model will be saved as <save_model>_epochN_PPL.pt where PPL
+is the validation perplexity</p>
+</li>
+<li>
+<p><strong>-gpuid </strong> 
+Use CUDA on the listed devices.</p>
+</li>
+<li>
+<p><strong>-seed [-1]</strong> 
+Random seed used for the experiments reproducibility.</p>
+</li>
+</ul>
+<h3 id="initialization"><strong>Initialization</strong>:<a class="headerlink" href="#initialization" title="Permanent link">&para;</a></h3>
+<ul>
+<li>
+<p><strong>-start_epoch [1]</strong> 
+The epoch from which to start</p>
+</li>
+<li>
+<p><strong>-param_init [0.1]</strong> 
+Parameters are initialized over uniform distribution with support (-param_init,
+param_init). Use 0 to not use initialization</p>
+</li>
+<li>
+<p><strong>-train_from </strong> 
+If training from a checkpoint then this is the path to the pretrained model's
+state_dict.</p>
+</li>
+<li>
+<p><strong>-pre_word_vecs_enc </strong> 
+If a valid path is specified, then this will load pretrained word embeddings on
+the encoder side. See README for specific formatting instructions.</p>
+</li>
+<li>
+<p><strong>-pre_word_vecs_dec </strong> 
+If a valid path is specified, then this will load pretrained word embeddings on
+the decoder side. See README for specific formatting instructions.</p>
+</li>
+<li>
+<p><strong>-fix_word_vecs_enc </strong> 
+Fix word embeddings on the encoder side.</p>
+</li>
+<li>
+<p><strong>-fix_word_vecs_dec </strong> 
+Fix word embeddings on the encoder side.</p>
+</li>
+</ul>
+<h3 id="optimization-type"><strong>Optimization- Type</strong>:<a class="headerlink" href="#optimization-type" title="Permanent link">&para;</a></h3>
+<ul>
+<li>
+<p><strong>-batch_size [64]</strong> 
+Maximum batch size</p>
+</li>
+<li>
+<p><strong>-max_generator_batches [32]</strong> 
+Maximum batches of words in a sequence to run the generator on in parallel.
+Higher is faster, but uses more memory.</p>
+</li>
+<li>
+<p><strong>-epochs [13]</strong> 
+Number of training epochs</p>
+</li>
+<li>
+<p><strong>-optim [sgd]</strong> 
+Optimization method.</p>
+</li>
+<li>
+<p><strong>-adagrad_accumulator_init </strong> 
+Initializes the accumulator values in adagrad. Mirrors the
+initial_accumulator_value option in the tensorflow adagrad (use 0.1 for their
+default).</p>
+</li>
+<li>
+<p><strong>-max_grad_norm [5]</strong> 
+If the norm of the gradient vector exceeds this, renormalize it to have the norm
+equal to max_grad_norm</p>
+</li>
+<li>
+<p><strong>-dropout [0.3]</strong> 
+Dropout probability; applied in LSTM stacks.</p>
+</li>
+<li>
+<p><strong>-truncated_decoder </strong> 
+Truncated bptt.</p>
+</li>
+<li>
+<p><strong>-adam_beta1 [0.9]</strong> 
+The beta1 parameter used by Adam. Almost without exception a value of 0.9 is
+used in the literature, seemingly giving good results, so we would discourage
+changing this value from the default without due consideration.</p>
+</li>
+<li>
+<p><strong>-adam_beta2 [0.999]</strong> 
+The beta2 parameter used by Adam. Typically a value of 0.999 is recommended, as
+this is the value suggested by the original paper describing Adam, and is also
+the value adopted in other frameworks such as Tensorflow and Kerras, i.e. see:
+https://www.tensorflow.org/api_docs/python/tf/train/AdamOptimizer
+https://keras.io/optimizers/ . Whereas recently the paper "Attention is All You
+Need" suggested a value of 0.98 for beta2, this parameter may not work well for
+normal models / default baselines.</p>
+</li>
+</ul>
+<h3 id="optimization-rate"><strong>Optimization- Rate</strong>:<a class="headerlink" href="#optimization-rate" title="Permanent link">&para;</a></h3>
+<ul>
+<li>
+<p><strong>-learning_rate [1.0]</strong> 
+Starting learning rate. Recommended settings: sgd = 1, adagrad = 0.1, adadelta =
+1, adam = 0.001</p>
+</li>
+<li>
+<p><strong>-learning_rate_decay [0.5]</strong> 
+If update_learning_rate, decay learning rate by this much if (i) perplexity does
+not decrease on the validation set or (ii) epoch has gone past start_decay_at</p>
+</li>
+<li>
+<p><strong>-start_decay_at [8]</strong> 
+Start decaying every epoch after and including this epoch</p>
+</li>
+<li>
+<p><strong>-start_checkpoint_at </strong> 
+Start checkpointing every epoch after and including this epoch</p>
+</li>
+<li>
+<p><strong>-decay_method </strong> 
+Use a custom decay rate.</p>
+</li>
+<li>
+<p><strong>-warmup_steps [4000]</strong> 
+Number of warmup steps for custom decay.</p>
+</li>
+</ul>
+<h3 id="logging"><strong>Logging</strong>:<a class="headerlink" href="#logging" title="Permanent link">&para;</a></h3>
+<ul>
+<li>
+<p><strong>-report_every [50]</strong> 
+Print stats at this interval.</p>
+</li>
+<li>
+<p><strong>-exp_host </strong> 
+Send logs to this crayon server.</p>
+</li>
+<li>
+<p><strong>-exp </strong> 
+Name of the experiment for logging.</p>
+</li>
+</ul>
+<h3 id="speech"><strong>Speech</strong>:<a class="headerlink" href="#speech" title="Permanent link">&para;</a></h3>
+<ul>
+<li>
+<p><strong>-sample_rate [16000]</strong> 
+Sample rate.</p>
+</li>
+<li>
+<p><strong>-window_size [0.02]</strong> 
+Window size for spectrogram in seconds.</p>
+</li>
+</ul>
                 
                   
                 
@@ -1062,7 +924,7 @@ the decoder side. See README for specific formatting instructions.
       
     </div>
     
-      <script src="../../assets/javascripts/application-ad1183cb07.js"></script>
+      <script src="../../assets/javascripts/application-06a3e72efd.js"></script>
       <script>app.initialize({url:{base:"../.."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_HTMLorMML"></script>

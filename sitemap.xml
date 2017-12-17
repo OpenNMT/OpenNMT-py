@@ -4,31 +4,49 @@
     
     <url>
      <loc>/</loc>
-     <lastmod>2017-05-31</lastmod>
+     <lastmod>2017-12-17</lastmod>
      <changefreq>daily</changefreq>
     </url>
     
 
     
-    <url>
-     <loc>/installation/</loc>
-     <lastmod>2017-05-31</lastmod>
-     <changefreq>daily</changefreq>
-    </url>
-    
-
-    
+        
     <url>
      <loc>/quickstart/</loc>
-     <lastmod>2017-05-31</lastmod>
+     <lastmod>2017-12-17</lastmod>
      <changefreq>daily</changefreq>
     </url>
+        
+    <url>
+     <loc>/extended/</loc>
+     <lastmod>2017-12-17</lastmod>
+     <changefreq>daily</changefreq>
+    </url>
+        
+    <url>
+     <loc>/Summarization/</loc>
+     <lastmod>2017-12-17</lastmod>
+     <changefreq>daily</changefreq>
+    </url>
+        
+    <url>
+     <loc>/im2text/</loc>
+     <lastmod>2017-12-17</lastmod>
+     <changefreq>daily</changefreq>
+    </url>
+        
+    <url>
+     <loc>/speech2text/</loc>
+     <lastmod>2017-12-17</lastmod>
+     <changefreq>daily</changefreq>
+    </url>
+        
     
 
     
     <url>
-     <loc>/extended/</loc>
-     <lastmod>2017-05-31</lastmod>
+     <loc>/FAQ/</loc>
+     <lastmod>2017-12-17</lastmod>
      <changefreq>daily</changefreq>
     </url>
     
@@ -37,19 +55,19 @@
         
     <url>
      <loc>/options/preprocess/</loc>
-     <lastmod>2017-05-31</lastmod>
+     <lastmod>2017-12-17</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
      <loc>/options/train/</loc>
-     <lastmod>2017-05-31</lastmod>
+     <lastmod>2017-12-17</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
      <loc>/options/translate/</loc>
-     <lastmod>2017-05-31</lastmod>
+     <lastmod>2017-12-17</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
@@ -57,8 +75,8 @@
 
     
     <url>
-     <loc>/references/</loc>
-     <lastmod>2017-05-31</lastmod>
+     <loc>/CONTRIBUTORS/</loc>
+     <lastmod>2017-12-17</lastmod>
      <changefreq>daily</changefreq>
     </url>
     

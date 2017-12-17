@@ -1,6 +1,6 @@
 
 <!DOCTYPE html>
-<html class="no-js">
+<html lang="en" class="no-js">
   <head>
     
       <meta charset="utf-8">
@@ -11,18 +11,18 @@
       
         <link rel="shortcut icon" href="../assets/images/favicon.png">
       
-      <meta name="generator" content="mkdocs-0.16.3, mkdocs-material-1.5.5">
+      <meta name="generator" content="mkdocs-0.16.3, mkdocs-material-1.6.4">
     
     
       
-        <title>References - OpenNMT-py</title>
+        <title>Speech-to-Text - OpenNMT-py</title>
       
     
     
-      <script src="../assets/javascripts/modernizr-56ade86843.js"></script>
+      <script src="../assets/javascripts/modernizr-1df76c4e58.js"></script>
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/application-b1a1975878.css">
+      <link rel="stylesheet" href="../assets/stylesheets/application-e2807e330f.css">
       
     
     
@@ -76,8 +76,12 @@
           
             
               
+                <span class="md-header-nav__parent">
+                  Examples
+                </span>
+              
             
-            References
+            Speech-to-Text
           
         </span>
       </div>
@@ -86,7 +90,7 @@
           <label class="md-icon md-icon--search md-header-nav__button" for="search"></label>
           
 <div class="md-search" data-md-component="search">
-  <div class="md-search__overlay"></div>
+  <label class="md-search__overlay" for="search"></label>
   <div class="md-search__inner">
     <form class="md-search__form" name="search">
       <input type="text" class="md-search__input" name="query" required placeholder="Search" accesskey="s" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query">
@@ -196,17 +200,26 @@
       
       
 
+  
 
-  <li class="md-nav__item">
-    <a href="../installation/" title="Installation" class="md-nav__link">
-      Installation
-    </a>
-  </li>
 
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
     
-      
-      
-      
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2" checked>
+    
+    <label class="md-nav__link" for="nav-2">
+      Examples
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-2">
+        Examples
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
 
 
   <li class="md-nav__item">
@@ -215,6 +228,116 @@
     </a>
   </li>
 
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../extended/" title="Translation" class="md-nav__link">
+      Translation
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../Summarization/" title="Summarization" class="md-nav__link">
+      Summarization
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../im2text/" title="Image-to-Text" class="md-nav__link">
+      Image-to-Text
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="toc">
+        Speech-to-Text
+      </label>
+    
+    <a href="./" title="Speech-to-Text" class="md-nav__link md-nav__link--active">
+      Speech-to-Text
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#dependencies" title="Dependencies" class="md-nav__link">
+    Dependencies
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quick-start" title="Quick Start" class="md-nav__link">
+    Quick Start
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#options" title="Options" class="md-nav__link">
+    Options
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#acknowledgement" title="Acknowledgement" class="md-nav__link">
+    Acknowledgement
+  </a>
+  
+</li>
+      
+      
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
     
       
       
@@ -222,8 +345,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../extended/" title="Extended Example" class="md-nav__link">
-      Extended Example
+    <a href="../FAQ/" title="FAQ" class="md-nav__link">
+      FAQ
     </a>
   </li>
 
@@ -235,13 +358,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5" type="checkbox" id="nav-5">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4">
     
-    <label class="md-nav__link" for="nav-5">
+    <label class="md-nav__link" for="nav-4">
       Reference: Options
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
-      <label class="md-nav__title" for="nav-5">
+      <label class="md-nav__title" for="nav-4">
         Reference: Options
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -292,18 +415,11 @@
       
       
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active">
-    
-    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="toc">
-    
-    
-    <a href="./" title="References" class="md-nav__link md-nav__link--active">
-      References
+  <li class="md-nav__item">
+    <a href="../CONTRIBUTORS/" title="Contributing" class="md-nav__link">
+      Contributing
     </a>
-    
   </li>
 
     
@@ -321,6 +437,43 @@
 <nav class="md-nav md-nav--secondary">
   
   
+    
+  
+  
+    <label class="md-nav__title" for="toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#dependencies" title="Dependencies" class="md-nav__link">
+    Dependencies
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quick-start" title="Quick Start" class="md-nav__link">
+    Quick Start
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#options" title="Options" class="md-nav__link">
+    Options
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#acknowledgement" title="Acknowledgement" class="md-nav__link">
+    Acknowledgement
+  </a>
+  
+</li>
+      
+      
+      
+    </ul>
   
 </nav>
                   </div>
@@ -332,19 +485,73 @@
             <article class="md-content__inner md-typeset">
               
                 
-                  <a href="https://github.com/OpenNMT/OpenNMT-py/edit/master/docs/references.md" title="Edit this page" class="md-icon md-content__icon">edit</a>
+                  <a href="https://github.com/OpenNMT/OpenNMT-py/edit/master/docs/speech2text.md" title="Edit this page" class="md-icon md-content__icon">edit</a>
                 
                 
-                  <h1>References</h1>
-                
-                <p>This is the list of papers, OpenNMT has been inspired on:</p>
+                <h1 id="speech-to-text">Speech to Text<a class="headerlink" href="#speech-to-text" title="Permanent link">&para;</a></h1>
+<p>A deep learning-based approach to learning the speech-to-text conversion, built on top of the <a href="http://opennmt.net/">OpenNMT</a> system.</p>
+<p>Given raw audio, we first apply short-time Fourier transform (STFT), then apply Convolutional Neural Networks to get the source features. Based on this source representation, we use an LSTM decoder with attention to produce the text character by character.</p>
+<h2 id="dependencies">Dependencies<a class="headerlink" href="#dependencies" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a name="Luong2015"></a>Luong, M. T., Pham, H., &amp; Manning, C. D. (2015). <a href="https://arxiv.org/abs/1508.04025">Effective approaches to attention-based neural machine translation</a>. arXiv preprint arXiv:1508.04025.</li>
-<li><a name="Senrich2016-1"></a>Sennrich, R., &amp; Haddow, B. (2016). <a href="https://arxiv.org/abs/1606.02892">Linguistic input features improve neural machine translation</a>. arXiv preprint arXiv:1606.02892.</li>
-<li><a name="Senrich2016-2"></a>Sennrich, R., Haddow, B., &amp; Birch, A. (2015). <a href="https://arxiv.org/abs/1508.07909">Neural machine translation of rare words with subword units</a>. arXiv preprint arXiv:1508.07909.</li>
-<li><a name="GNMT"></a>Wu, Y., Schuster, M., Chen, Z., Le, Q. V., Norouzi, M., Macherey, W., ... &amp; Klingner, J. (2016). <a href="https://arxiv.org/abs/1609.08144">Google's Neural Machine Translation System: Bridging the Gap between Human and Machine Translation</a>. arXiv preprint arXiv:1609.08144.</li>
-<li><a name="Jean2015"></a>Jean, S., Cho, K., Memisevic, R., Bengio, Y. (2015). <a href="http://www.aclweb.org/anthology/P15-1001">On Using Very Large Target Vocabulary for Neural Machine Translation</a>. ACL 2015</li>
+<li><code>torchaudio</code>: <code>sudo apt-get install -y sox libsox-dev libsox-fmt-all; pip install git+https://github.com/pytorch/audio</code></li>
+<li><code>librosa</code>: <code>pip install librosa</code></li>
 </ul>
+<h2 id="quick-start">Quick Start<a class="headerlink" href="#quick-start" title="Permanent link">&para;</a></h2>
+<p>To get started, we provide a toy speech-to-text example. We assume that the working directory is <code>OpenNMT-py</code> throughout this document.</p>
+<p>0) Download the data.</p>
+<div class="codehilite"><pre><span></span>wget -O data/speech.tgz http://lstm.seas.harvard.edu/latex/speech.tgz; tar zxf data/speech.tgz -C data/
+</pre></div>
+
+
+<p>1) Preprocess the data.</p>
+<div class="codehilite"><pre><span></span>python preprocess.py -data_type audio -src_dir data/speech/an4_dataset -train_src data/speech/src-train.txt -train_tgt data/speech/tgt-train.txt -valid_src data/speech/src-val.txt -valid_tgt data/speech/tgt-val.txt -save_data data/speech/demo
+</pre></div>
+
+
+<p>2) Train the model.</p>
+<div class="codehilite"><pre><span></span>python train.py -model_type audio -data data/speech/demo -save_model demo-model -gpuid 0 -batch_size 16 -max_grad_norm 20 -learning_rate 0.1 -learning_rate_decay 0.98 -epochs 60
+</pre></div>
+
+
+<p>3) Translate the speechs.</p>
+<div class="codehilite"><pre><span></span>python translate.py -data_type audio -model demo-model_acc_x_ppl_x_e13.pt -src_dir data/speech/an4_dataset -src data/speech/src-val.txt -output pred.txt -gpu 0 -verbose
+</pre></div>
+
+
+<h2 id="options">Options<a class="headerlink" href="#options" title="Permanent link">&para;</a></h2>
+<ul>
+<li>
+<p><code>-src_dir</code>: The directory containing the audio files.</p>
+</li>
+<li>
+<p><code>-train_tgt</code>: The file storing the tokenized labels, one label per line. It shall look like:</p>
+</li>
+</ul>
+<div class="codehilite"><pre><span></span>&lt;label0_token0&gt; &lt;label0_token1&gt; ... &lt;label0_tokenN0&gt;
+&lt;label1_token0&gt; &lt;label1_token1&gt; ... &lt;label1_tokenN1&gt;
+&lt;label2_token0&gt; &lt;label2_token1&gt; ... &lt;label2_tokenN2&gt;
+...
+</pre></div>
+
+
+<ul>
+<li><code>-train_src</code>: The file storing the paths of the audio files (relative to <code>src_dir</code>).</li>
+</ul>
+<div class="codehilite"><pre><span></span>&lt;speech0_path&gt;
+&lt;speech1_path&gt;
+&lt;speech2_path&gt;
+...
+</pre></div>
+
+
+<ul>
+<li><code>sample_rate</code>: Sample rate. Default: 16000.</li>
+<li><code>window_size</code>: Window size for spectrogram in seconds. Default: 0.02.</li>
+<li><code>window_stride</code>: Window stride for spectrogram in seconds. Default: 0.01.</li>
+<li><code>window</code>: Window type for spectrogram generation. Default: hamming.</li>
+</ul>
+<h2 id="acknowledgement">Acknowledgement<a class="headerlink" href="#acknowledgement" title="Permanent link">&para;</a></h2>
+<p>Our preprocessing and CNN encoder is adapted from <a href="https://github.com/SeanNaren/deepspeech.pytorch">deepspeech.pytorch</a>.</p>
                 
                   
                 
@@ -363,7 +570,7 @@
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../options/translate/" title="translate.py" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../im2text/" title="Image-to-Text" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -372,11 +579,25 @@
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                translate.py
+                Image-to-Text
               </span>
             </div>
           </a>
         
+        
+          <a href="../FAQ/" title="FAQ" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                FAQ
+              </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
+          </a>
         
       </nav>
     </div>
@@ -410,7 +631,7 @@
       
     </div>
     
-      <script src="../assets/javascripts/application-ad1183cb07.js"></script>
+      <script src="../assets/javascripts/application-06a3e72efd.js"></script>
       <script>app.initialize({url:{base:".."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_HTMLorMML"></script>
