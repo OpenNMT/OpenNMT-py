@@ -1,11 +1,12 @@
 import argparse
 import copy
 import unittest
-import onmt
-import opts
+from collections import Counter
+
 import torchtext
 
-from collections import Counter
+import onmt
+import opts
 
 
 parser = argparse.ArgumentParser(description='preprocess.py')
@@ -32,15 +33,18 @@ class TestData(unittest.TestCase):
     def dataset_build(self, opt):
         fields = onmt.IO.get_fields("text", 0, 0)
 
-        train = onmt.IO.ONMTDataset(
-            opt.data_type, opt.train_src, opt.train_tgt, fields,
-            opt.src_seq_length, opt.tgt_seq_length,
-            src_seq_length_trunc=opt.src_seq_length_trunc,
-            tgt_seq_length_trunc=opt.tgt_seq_length_trunc,
-            dynamic_dict=opt.dynamic_dict,
-            src_dir=opt.src_dir, sample_rate=opt.sample_rate,
-            window_size=opt.window_size, window_stride=opt.window_stride,
-            window=opt.window)
+        train = onmt.IO.build_dataset(
+                    fields, opt.data_type, opt.train_src, opt.train_tgt,
+                    src_dir=opt.src_dir,
+                    src_seq_length=opt.src_seq_length,
+                    tgt_seq_length=opt.tgt_seq_length,
+                    src_seq_length_trunc=opt.src_seq_length_trunc,
+                    tgt_seq_length_trunc=opt.tgt_seq_length_trunc,
+                    dynamic_dict=opt.dynamic_dict,
+                    sample_rate=opt.sample_rate,
+                    window_size=opt.window_size,
+                    window_stride=opt.window_stride,
+                    window=opt.window)
 
         onmt.IO.build_vocab(train, opt.data_type, opt.share_vocab,
                             opt.src_vocab_size,
@@ -48,14 +52,17 @@ class TestData(unittest.TestCase):
                             opt.tgt_vocab_size,
                             opt.tgt_words_min_frequency)
 
-        onmt.IO.ONMTDataset(
-            opt.data_type, opt.valid_src, opt.valid_tgt, fields,
-            opt.src_seq_length, opt.tgt_seq_length,
+        onmt.IO.build_dataset(
+            fields, opt.data_type, opt.valid_src, opt.valid_tgt,
+            src_dir=opt.src_dir,
+            src_seq_length=opt.src_seq_length,
+            tgt_seq_length=opt.tgt_seq_length,
             src_seq_length_trunc=opt.src_seq_length_trunc,
             tgt_seq_length_trunc=opt.tgt_seq_length_trunc,
             dynamic_dict=opt.dynamic_dict,
-            src_dir=opt.src_dir, sample_rate=opt.sample_rate,
-            window_size=opt.window_size, window_stride=opt.window_stride,
+            sample_rate=opt.sample_rate,
+            window_size=opt.window_size,
+            window_stride=opt.window_stride,
             window=opt.window)
 
     def test_merge_vocab(self):

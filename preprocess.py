@@ -56,17 +56,18 @@ def main():
     fields = onmt.IO.get_fields(opt.data_type, n_src_features, n_tgt_features)
 
     print("Building training data...")
-    train = onmt.IO.ONMTDataset(opt.data_type,
-                                opt.train_src, opt.train_tgt, fields,
-                                opt.src_seq_length, opt.tgt_seq_length,
-                                src_seq_length_trunc=opt.src_seq_length_trunc,
-                                tgt_seq_length_trunc=opt.tgt_seq_length_trunc,
-                                dynamic_dict=opt.dynamic_dict,
-                                src_dir=opt.src_dir,
-                                sample_rate=opt.sample_rate,
-                                window_size=opt.window_size,
-                                window_stride=opt.window_stride,
-                                window=opt.window, normalize_audio=True)
+    train = onmt.IO.build_dataset(
+                fields, opt.data_type, opt.train_src, opt.train_tgt,
+                src_dir=opt.src_dir,
+                src_seq_length=opt.src_seq_length,
+                tgt_seq_length=opt.tgt_seq_length,
+                src_seq_length_trunc=opt.src_seq_length_trunc,
+                tgt_seq_length_trunc=opt.tgt_seq_length_trunc,
+                dynamic_dict=opt.dynamic_dict,
+                sample_rate=opt.sample_rate,
+                window_size=opt.window_size,
+                window_stride=opt.window_stride,
+                window=opt.window)
 
     print("Building vocabulary...")
     onmt.IO.build_vocab(train, opt.data_type, opt.share_vocab,
@@ -76,17 +77,18 @@ def main():
                         opt.tgt_words_min_frequency)
 
     print("Building validation data...")
-    valid = onmt.IO.ONMTDataset(opt.data_type,
-                                opt.valid_src, opt.valid_tgt, fields,
-                                opt.src_seq_length, opt.tgt_seq_length,
-                                src_seq_length_trunc=opt.src_seq_length_trunc,
-                                tgt_seq_length_trunc=opt.tgt_seq_length_trunc,
-                                dynamic_dict=opt.dynamic_dict,
-                                src_dir=opt.src_dir,
-                                sample_rate=opt.sample_rate,
-                                window_size=opt.window_size,
-                                window_stride=opt.window_stride,
-                                window=opt.window, normalize_audio=True)
+    valid = onmt.IO.build_dataset(
+                fields, opt.data_type, opt.valid_src, opt.valid_tgt,
+                src_dir=opt.src_dir,
+                src_seq_length=opt.src_seq_length,
+                tgt_seq_length=opt.tgt_seq_length,
+                src_seq_length_trunc=opt.src_seq_length_trunc,
+                tgt_seq_length_trunc=opt.tgt_seq_length_trunc,
+                dynamic_dict=opt.dynamic_dict,
+                sample_rate=opt.sample_rate,
+                window_size=opt.window_size,
+                window_stride=opt.window_stride,
+                window=opt.window)
 
     print("Saving train/valid/vocab...")
     # Can't save fields, so remove/reconstruct at training time.
