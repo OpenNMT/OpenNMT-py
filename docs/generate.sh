@@ -10,4 +10,3 @@ gen_script_options ()
 gen_script_options preprocess.py docs/source/options/preprocess.md
 gen_script_options train.py docs/source/options/train.md
 gen_script_options translate.py docs/source/options/translate.md
-sphinx-apidoc -f -o docs/source/ onmt/
