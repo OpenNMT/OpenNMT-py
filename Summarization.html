@@ -1,0 +1,327 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Example: Summarization &mdash; OpenNMT-py  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="OpenNMT-py  documentation" href="index.html"/>
+        <link rel="next" title="Example: Image to Text" href="im2text.html"/>
+        <link rel="prev" title="Example: Translation" href="extended.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> OpenNMT-py
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="main.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extended.html">Example: Translation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Example: Summarization</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#preprocessing-the-data">Preprocessing the data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#training">Training</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#inference">Inference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#evaluation">Evaluation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#cnndm">CNNDM</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gigaword">Gigaword</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#references">References</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="im2text.html">Example: Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="speech2text.html">Example: Speech to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="options/preprocess.html">Options: preprocess.py:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="options/train.html">Options: train.py:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="options/translate.html">Options: translate.py:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.html">onmt package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.modules.html">onmt.modules package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CONTRIBUTORS.html">Contributors</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">OpenNMT-py</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Example: Summarization</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/Summarization.md.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="example-summarization">
+<span id="example-summarization"></span><h1>Example: Summarization<a class="headerlink" href="#example-summarization" title="Permalink to this headline">¶</a></h1>
+<p>This document describes how to replicate summarization experiments on the CNNDM and gigaword datasets using OpenNMT-py.
+In the following, we assume access to a tokenized form of the corpus split into train/valid/test set.</p>
+<p>An example article-title pair from Gigaword should look like this:</p>
+<p><strong>Input</strong>
+<em>australia 's current account deficit shrunk by a record #.## billion dollars -lrb- #.## billion us -rrb- in the june quarter due to soaring commodity prices , figures released monday showed .</em></p>
+<p><strong>Output</strong>
+<em>australian current account deficit narrows sharply</em></p>
+<div class="section" id="preprocessing-the-data">
+<span id="preprocessing-the-data"></span><h2>Preprocessing the data<a class="headerlink" href="#preprocessing-the-data" title="Permalink to this headline">¶</a></h2>
+<p>Since we are using copy-attention [1] in the model, we need to preprocess the dataset such that source and target are aligned and use the same dictionary. This is achieved by using the options <code class="docutils literal"><span class="pre">dynamic_dict</span></code> and <code class="docutils literal"><span class="pre">share_vocab</span></code>.
+We additionally turn off truncation of the source to ensure that inputs longer than 50 words are not truncated.
+For CNNDM we follow See et al. [2] and additionally truncate the source length at 400 tokens and the target at 100.</p>
+<p><strong>command used</strong>:</p>
+<p>(1) CNNDM</p>
+<p><code class="docutils literal"><span class="pre">python</span> <span class="pre">preprocess.py</span> <span class="pre">-train_src</span> <span class="pre">data/cnndm/train.txt.src</span> <span class="pre">-train_tgt</span> <span class="pre">data/cnn-no-sent-tag/train.txt.tgt</span> <span class="pre">-valid_src</span> <span class="pre">data/cnndm/val.txt.src</span> <span class="pre">-valid_tgt</span> <span class="pre">data/cnn-no-sent-tag/val.txt.tgt</span> <span class="pre">-save_data</span> <span class="pre">data/cnn-no-sent-tag/cnndm</span> <span class="pre">-src_seq_length</span> <span class="pre">10000</span> <span class="pre">-tgt_seq_length</span> <span class="pre">10000</span> <span class="pre">-src_seq_length_trunc</span> <span class="pre">400</span> <span class="pre">-tgt_seq_length_trunc</span> <span class="pre">100</span> <span class="pre">-dynamic_dict</span> <span class="pre">-share_vocab</span></code></p>
+<p>(2) Gigaword</p>
+<p><code class="docutils literal"><span class="pre">python</span> <span class="pre">preprocess.py</span> <span class="pre">-train_src</span> <span class="pre">data/giga/train.article.txt</span> <span class="pre">-train_tgt</span> <span class="pre">data/giga/train.title.txt</span> <span class="pre">-valid_src</span> <span class="pre">data/giga/valid.article.txt</span> <span class="pre">-valid_tgt</span> <span class="pre">data/giga/valid.title.txt</span> <span class="pre">-save_data</span> <span class="pre">data/giga/giga</span> <span class="pre">-src_seq_length</span> <span class="pre">10000</span> <span class="pre">-dynamic_dict</span> <span class="pre">-share_vocab</span></code></p>
+</div>
+<div class="section" id="training">
+<span id="training"></span><h2>Training<a class="headerlink" href="#training" title="Permalink to this headline">¶</a></h2>
+<p>The training procedure described in this section for the most part follows parameter choices and implementation similar to that of See et al. [2].  As mentioned above, we use copy attention as a mechanism for the model to decide whether to either generate a new word or to copy from the source (<code class="docutils literal"><span class="pre">copy_attn</span></code>).
+A notable difference to See's model is that we are using the attention mechanism introduced by Bahdanau et al. [3] (<code class="docutils literal"><span class="pre">global_attention</span> <span class="pre">mlp</span></code>) instead of that by Luong et al. [4] (<code class="docutils literal"><span class="pre">global_attention</span> <span class="pre">dot</span></code>). Both options typically perform very similar to each other with Luong attention often having a slight advantage.
+We are using using a 128-dimensional word-embedding, and 512-dimensional 1 layer LSTM. On the encoder side, we use a bidirectional LSTM (<code class="docutils literal"><span class="pre">brnn</span></code>), which means that the 512 dimensions are split into 256 dimensions per direction.
+We also share the word embeddings between encoder and decoder (<code class="docutils literal"><span class="pre">share_embeddings</span></code>). This option drastically reduces the number of parameters the model has to learn. However, we found only minimal impact on performance of a model without this option.</p>
+<p>For the training procedure, we are using SGD with an initial learning rate of 1 for a total of 16 epochs. In most cases, the lowest validation perplexity is achieved around epoch 10-12. We also use OpenNMT's default learning rate decay, which halves the learning rate after every epoch once the validation perplexity increased after an epoch (or after epoch 8).
+Alternative training procedures such as adam with initial learning rate 0.001 converge faster than sgd, but achieve slightly worse. We additionally set the maximum norm of the gradient to 2, and renormalize if the gradient norm exceeds this value.</p>
+<p><strong>commands used</strong>:</p>
+<p>(1) CNNDM</p>
+<p><code class="docutils literal"><span class="pre">python</span> <span class="pre">train.py</span> <span class="pre">-save_model</span> <span class="pre">logs/notag_sgd3</span> <span class="pre">-data</span> <span class="pre">data/cnn-no-sent-tag/CNNDM</span> <span class="pre">-copy_attn</span> <span class="pre">-global_attention</span> <span class="pre">mlp</span> <span class="pre">-word_vec_size</span> <span class="pre">128</span> <span class="pre">-rnn_size</span> <span class="pre">256</span> <span class="pre">-layers</span> <span class="pre">1</span> <span class="pre">-brnn</span> <span class="pre">-epochs</span> <span class="pre">16</span> <span class="pre">-seed</span> <span class="pre">777</span> <span class="pre">-batch_size</span> <span class="pre">32</span> <span class="pre">-max_grad_norm</span> <span class="pre">2</span> <span class="pre">-share_embeddings</span> <span class="pre">-gpuid</span> <span class="pre">0</span> <span class="pre">-start_checkpoint_at</span> <span class="pre">9</span></code></p>
+<p>(2) Gigaword</p>
+<p><code class="docutils literal"><span class="pre">python</span> <span class="pre">train.py</span> <span class="pre">-save_model</span> <span class="pre">logs/giga_sgd3_512</span> <span class="pre">-data</span> <span class="pre">data/giga/giga</span> <span class="pre">-copy_attn</span> <span class="pre">-global_attention</span> <span class="pre">mlp</span> <span class="pre">-word_vec_size</span> <span class="pre">128</span> <span class="pre">-rnn_size</span> <span class="pre">512</span> <span class="pre">-layers</span> <span class="pre">1</span> <span class="pre">-brnn</span> <span class="pre">-epochs</span> <span class="pre">16</span> <span class="pre">-seed</span> <span class="pre">777</span> <span class="pre">-batch_size</span> <span class="pre">32</span> <span class="pre">-max_grad_norm</span> <span class="pre">2</span> <span class="pre">-share_embeddings</span> <span class="pre">-gpuid</span> <span class="pre">0</span> <span class="pre">-start_checkpoint_at</span> <span class="pre">9</span></code></p>
+</div>
+<div class="section" id="inference">
+<span id="inference"></span><h2>Inference<a class="headerlink" href="#inference" title="Permalink to this headline">¶</a></h2>
+<p>During inference, we use beam-search with a beam-size of 10.
+We additionally use the <code class="docutils literal"><span class="pre">replace_unk</span></code> option which replaces generated <code class="docutils literal"><span class="pre">&lt;UNK&gt;</span></code> tokens with the source token of highest attention. This acts as safety-net should the copy attention fail which should learn to copy such words.</p>
+<p><strong>commands used</strong>:</p>
+<p>(1) CNNDM</p>
+<p><code class="docutils literal"><span class="pre">python</span> <span class="pre">translate.py</span> <span class="pre">-gpu</span> <span class="pre">2</span> <span class="pre">-batch_size</span> <span class="pre">1</span> <span class="pre">-model</span> <span class="pre">logs/notag_try3_acc_49.29_ppl_14.62_e16.pt</span> <span class="pre">-src</span> <span class="pre">data/cnndm/test.txt.src</span> <span class="pre">-output</span> <span class="pre">sgd3_out.txt</span> <span class="pre">-beam_size</span> <span class="pre">10</span> <span class="pre">-replace_unk</span></code></p>
+<p>(2) Gigaword</p>
+<p><code class="docutils literal"><span class="pre">python</span> <span class="pre">translate.py</span> <span class="pre">-gpu</span> <span class="pre">2</span> <span class="pre">-batch_size</span> <span class="pre">1</span> <span class="pre">-model</span> <span class="pre">logs/giga_sgd3_512_acc_51.10_ppl_12.04_e16.pt</span> <span class="pre">-src</span> <span class="pre">data/giga/test.article.txt</span> <span class="pre">-output</span> <span class="pre">giga_sgd3.out.txt</span> <span class="pre">-beam_size</span> <span class="pre">10</span> <span class="pre">-replace_unk</span></code></p>
+</div>
+<div class="section" id="evaluation">
+<span id="evaluation"></span><h2>Evaluation<a class="headerlink" href="#evaluation" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="cnndm">
+<span id="cnndm"></span><h3>CNNDM<a class="headerlink" href="#cnndm" title="Permalink to this headline">¶</a></h3>
+<p>To evaluate the ROUGE scores on CNNDM, we extended the pyrouge wrapper with additional evaluations such as the amount of repeated n-grams (typically found in models with copy attention), found <a class="reference external" href="https://github.com/falcondai/pyrouge/">here</a>.</p>
+<p>It can be run with the following command:</p>
+<p><code class="docutils literal"><span class="pre">python</span> <span class="pre">baseline.py</span> <span class="pre">-s</span> <span class="pre">sgd3_out.txt</span> <span class="pre">-t</span> <span class="pre">~/datasets/cnn-dailymail/sent-tagged/test.txt.tgt</span> <span class="pre">-m</span> <span class="pre">no_sent_tag</span> <span class="pre">-r</span></code></p>
+<p>Note that the <code class="docutils literal"><span class="pre">no_sent_tag</span></code> option strips tags around sentences - when a sentence previously was <code class="docutils literal"><span class="pre">&lt;s&gt;</span> <span class="pre">w</span> <span class="pre">w</span> <span class="pre">w</span> <span class="pre">w</span> <span class="pre">.</span> <span class="pre">&lt;/s&gt;</span></code>, it becomes <code class="docutils literal"><span class="pre">w</span> <span class="pre">w</span> <span class="pre">w</span> <span class="pre">w</span> <span class="pre">.</span></code>.</p>
+</div>
+<div class="section" id="gigaword">
+<span id="gigaword"></span><h3>Gigaword<a class="headerlink" href="#gigaword" title="Permalink to this headline">¶</a></h3>
+<p>For evaluation of large test sets such as Gigaword, we use the a parallel python wrapper around ROUGE, found <a class="reference external" href="https://github.com/pltrdy/files2rouge">here</a>.</p>
+<p><strong>command used</strong>:
+<code class="docutils literal"><span class="pre">files2rouge</span> <span class="pre">giga_sgd3.out.txt</span> <span class="pre">test.title.txt</span> <span class="pre">--verbose</span></code></p>
+<p>Running the commands above should yield the following scores:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">ROUGE</span><span class="o">-</span><span class="mi">1</span> <span class="p">(</span><span class="n">F</span><span class="p">):</span> <span class="mf">0.352127</span>
+<span class="n">ROUGE</span><span class="o">-</span><span class="mi">2</span> <span class="p">(</span><span class="n">F</span><span class="p">):</span> <span class="mf">0.173109</span>
+<span class="n">ROUGE</span><span class="o">-</span><span class="mi">3</span> <span class="p">(</span><span class="n">F</span><span class="p">):</span> <span class="mf">0.098244</span>
+<span class="n">ROUGE</span><span class="o">-</span><span class="n">L</span> <span class="p">(</span><span class="n">F</span><span class="p">):</span> <span class="mf">0.327742</span>
+<span class="n">ROUGE</span><span class="o">-</span><span class="n">S4</span> <span class="p">(</span><span class="n">F</span><span class="p">):</span> <span class="mf">0.155524</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="references">
+<span id="references"></span><h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
+<p>[1] Vinyals, O., Fortunato, M. and Jaitly, N., 2015. Pointer Network. NIPS</p>
+<p>[2] See, A., Liu, P.J. and Manning, C.D., 2017. Get To The Point: Summarization with Pointer-Generator Networks. ACL</p>
+<p>[3] Bahdanau, D., Cho, K. and Bengio, Y., 2014. Neural machine translation by jointly learning to align and translate. ICLR</p>
+<p>[4] Luong, M.T., Pham, H. and Manning, C.D., 2015. Effective approaches to attention-based neural machine translation. EMNLP</p>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="im2text.html" class="btn btn-neutral float-right" title="Example: Image to Text" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="extended.html" class="btn btn-neutral" title="Example: Translation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, srush.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

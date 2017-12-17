@@ -1,0 +1,1007 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>onmt.IO &mdash; OpenNMT-py  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="OpenNMT-py  documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> OpenNMT-py
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../main.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../extended.html">Example: Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Summarization.html">Example: Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../im2text.html">Example: Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../speech2text.html">Example: Speech to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../options/preprocess.html">Options: preprocess.py:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../options/train.html">Options: train.py:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../options/translate.html">Options: translate.py:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../onmt.html">onmt package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../onmt.modules.html">onmt.modules package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../CONTRIBUTORS.html">Contributors</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">OpenNMT-py</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>onmt.IO</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for onmt.IO</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">codecs</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">Counter</span><span class="p">,</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="k">import</span> <span class="n">chain</span><span class="p">,</span> <span class="n">count</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torchtext.data</span>
+<span class="kn">import</span> <span class="nn">torchtext.vocab</span>
+
+<span class="n">PAD_WORD</span> <span class="o">=</span> <span class="s1">&#39;&lt;blank&gt;&#39;</span>
+<span class="n">UNK</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">BOS_WORD</span> <span class="o">=</span> <span class="s1">&#39;&lt;s&gt;&#39;</span>
+<span class="n">EOS_WORD</span> <span class="o">=</span> <span class="s1">&#39;&lt;/s&gt;&#39;</span>
+
+
+<span class="k">def</span> <span class="nf">__getstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">,</span> <span class="n">stoi</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stoi</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">__setstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">stoi</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stoi</span><span class="p">)</span>
+
+
+<span class="n">torchtext</span><span class="o">.</span><span class="n">vocab</span><span class="o">.</span><span class="n">Vocab</span><span class="o">.</span><span class="n">__getstate__</span> <span class="o">=</span> <span class="n">__getstate__</span>
+<span class="n">torchtext</span><span class="o">.</span><span class="n">vocab</span><span class="o">.</span><span class="n">Vocab</span><span class="o">.</span><span class="n">__setstate__</span> <span class="o">=</span> <span class="n">__setstate__</span>
+
+
+<div class="viewcode-block" id="load_fields"><a class="viewcode-back" href="../../onmt.html#onmt.IO.load_fields">[docs]</a><span class="k">def</span> <span class="nf">load_fields</span><span class="p">(</span><span class="n">vocab</span><span class="p">,</span> <span class="n">data_type</span><span class="o">=</span><span class="s2">&quot;text&quot;</span><span class="p">):</span>
+    <span class="n">vocab</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">vocab</span><span class="p">)</span>
+    <span class="n">n_src_features</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">collect_features</span><span class="p">(</span><span class="n">vocab</span><span class="p">,</span> <span class="s1">&#39;src&#39;</span><span class="p">))</span>
+    <span class="n">n_tgt_features</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">collect_features</span><span class="p">(</span><span class="n">vocab</span><span class="p">,</span> <span class="s1">&#39;tgt&#39;</span><span class="p">))</span>
+    <span class="n">fields</span> <span class="o">=</span> <span class="n">get_fields</span><span class="p">(</span><span class="n">data_type</span><span class="p">,</span> <span class="n">n_src_features</span><span class="p">,</span> <span class="n">n_tgt_features</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">vocab</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="c1"># Hack. Can&#39;t pickle defaultdict :(</span>
+        <span class="n">v</span><span class="o">.</span><span class="n">stoi</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="n">v</span><span class="o">.</span><span class="n">stoi</span><span class="p">)</span>
+        <span class="n">fields</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">vocab</span> <span class="o">=</span> <span class="n">v</span>
+    <span class="k">return</span> <span class="n">fields</span></div>
+
+
+<div class="viewcode-block" id="collect_features"><a class="viewcode-back" href="../../onmt.html#onmt.IO.collect_features">[docs]</a><span class="k">def</span> <span class="nf">collect_features</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s2">&quot;src&quot;</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="n">side</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">,</span> <span class="s2">&quot;tgt&quot;</span><span class="p">]</span>
+    <span class="n">feats</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">count</span><span class="p">():</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">side</span> <span class="o">+</span> <span class="s2">&quot;_feat_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">j</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="n">feats</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">feats</span></div>
+
+
+<div class="viewcode-block" id="extract_features"><a class="viewcode-back" href="../../onmt.html#onmt.IO.extract_features">[docs]</a><span class="k">def</span> <span class="nf">extract_features</span><span class="p">(</span><span class="n">tokens</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Args:</span>
+<span class="sd">        tokens: A list of tokens, where each token consists of a word,</span>
+<span class="sd">            optionally followed by u&quot;￨&quot;-delimited features.</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        A sequence of words, a sequence of features, and num of features.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">tokens</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[],</span> <span class="p">[],</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">split_tokens</span> <span class="o">=</span> <span class="p">[</span><span class="n">token</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">u</span><span class="s2">&quot;￨&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">]</span>
+    <span class="n">split_tokens</span> <span class="o">=</span> <span class="p">[</span><span class="n">token</span> <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">split_tokens</span> <span class="k">if</span> <span class="n">token</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+    <span class="n">token_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">split_tokens</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">token</span><span class="p">)</span> <span class="o">==</span> <span class="n">token_size</span> <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">split_tokens</span><span class="p">),</span> \
+        <span class="s2">&quot;all words must have the same number of features&quot;</span>
+    <span class="n">words_and_features</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">split_tokens</span><span class="p">))</span>
+    <span class="n">words</span> <span class="o">=</span> <span class="n">words_and_features</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">features</span> <span class="o">=</span> <span class="n">words_and_features</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+    <span class="k">return</span> <span class="n">words</span><span class="p">,</span> <span class="n">features</span><span class="p">,</span> <span class="n">token_size</span> <span class="o">-</span> <span class="mi">1</span></div>
+
+
+<div class="viewcode-block" id="merge_vocabs"><a class="viewcode-back" href="../../onmt.html#onmt.IO.merge_vocabs">[docs]</a><span class="k">def</span> <span class="nf">merge_vocabs</span><span class="p">(</span><span class="n">vocabs</span><span class="p">,</span> <span class="n">vocab_size</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Merge individual vocabularies (assumed to be generated from disjoint</span>
+<span class="sd">    documents) into a larger vocabulary.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        vocabs: `torchtext.vocab.Vocab` vocabularies to be merged</span>
+<span class="sd">        vocab_size: `int` the final vocabulary size. `None` for no limit.</span>
+<span class="sd">    Return:</span>
+<span class="sd">        `torchtext.vocab.Vocab`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">merged</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">vocab</span><span class="o">.</span><span class="n">freqs</span> <span class="k">for</span> <span class="n">vocab</span> <span class="ow">in</span> <span class="n">vocabs</span><span class="p">],</span> <span class="n">Counter</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">torchtext</span><span class="o">.</span><span class="n">vocab</span><span class="o">.</span><span class="n">Vocab</span><span class="p">(</span><span class="n">merged</span><span class="p">,</span>
+                                 <span class="n">specials</span><span class="o">=</span><span class="p">[</span><span class="n">PAD_WORD</span><span class="p">,</span> <span class="n">BOS_WORD</span><span class="p">,</span> <span class="n">EOS_WORD</span><span class="p">],</span>
+                                 <span class="n">max_size</span><span class="o">=</span><span class="n">vocab_size</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="make_features"><a class="viewcode-back" href="../../onmt.html#onmt.IO.make_features">[docs]</a><span class="k">def</span> <span class="nf">make_features</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">side</span><span class="p">,</span> <span class="n">data_type</span><span class="o">=</span><span class="s1">&#39;text&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Args:</span>
+<span class="sd">        batch (Variable): a batch of source or target data.</span>
+<span class="sd">        side (str): for source or for target.</span>
+<span class="sd">        data_type (str): type of the source input. Options are [text|img].</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        A sequence of src/tgt tensors with optional feature tensors</span>
+<span class="sd">        of size (len x batch).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">side</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">,</span> <span class="s1">&#39;tgt&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">side</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">side</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">side</span><span class="p">]</span>
+
+    <span class="n">feat_start</span> <span class="o">=</span> <span class="n">side</span> <span class="o">+</span> <span class="s2">&quot;_feat_&quot;</span>
+    <span class="n">keys</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">batch</span><span class="o">.</span><span class="vm">__dict__</span> <span class="k">if</span> <span class="n">feat_start</span> <span class="ow">in</span> <span class="n">k</span><span class="p">])</span>
+    <span class="n">features</span> <span class="o">=</span> <span class="p">[</span><span class="n">batch</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">]</span>
+    <span class="n">levels</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="p">]</span> <span class="o">+</span> <span class="n">features</span>
+
+    <span class="k">if</span> <span class="n">data_type</span> <span class="o">==</span> <span class="s1">&#39;text&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">level</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="k">for</span> <span class="n">level</span> <span class="ow">in</span> <span class="n">levels</span><span class="p">],</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">levels</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="save_vocab"><a class="viewcode-back" href="../../onmt.html#onmt.IO.save_vocab">[docs]</a><span class="k">def</span> <span class="nf">save_vocab</span><span class="p">(</span><span class="n">fields</span><span class="p">):</span>
+    <span class="n">vocab</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fields</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="s1">&#39;vocab&#39;</span> <span class="ow">in</span> <span class="n">f</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">vocab</span><span class="o">.</span><span class="n">stoi</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">)</span>
+            <span class="n">vocab</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">k</span><span class="p">,</span> <span class="n">f</span><span class="o">.</span><span class="n">vocab</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">vocab</span></div>
+
+
+<div class="viewcode-block" id="collect_feature_dicts"><a class="viewcode-back" href="../../onmt.html#onmt.IO.collect_feature_dicts">[docs]</a><span class="k">def</span> <span class="nf">collect_feature_dicts</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">side</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="n">side</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">,</span> <span class="s1">&#39;tgt&#39;</span><span class="p">]</span>
+    <span class="n">feature_dicts</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">count</span><span class="p">():</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">side</span> <span class="o">+</span> <span class="s2">&quot;_feat_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">j</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="n">feature_dicts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fields</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">vocab</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">feature_dicts</span></div>
+
+
+<div class="viewcode-block" id="get_fields"><a class="viewcode-back" href="../../onmt.html#onmt.IO.get_fields">[docs]</a><span class="k">def</span> <span class="nf">get_fields</span><span class="p">(</span><span class="n">data_type</span><span class="p">,</span> <span class="n">n_src_features</span><span class="p">,</span> <span class="n">n_tgt_features</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Args:</span>
+<span class="sd">        data_type: type of the source input. Options are [text|img|audio].</span>
+<span class="sd">        n_src_features: the number of source features to create Field for.</span>
+<span class="sd">        n_tgt_features: the number of target features to create Field for.</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        A dictionary whose keys are strings and whose values are the</span>
+<span class="sd">        corresponding Field objects.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">fields</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="n">data_type</span> <span class="o">==</span> <span class="s1">&#39;text&#39;</span><span class="p">:</span>
+        <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torchtext</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Field</span><span class="p">(</span>
+            <span class="n">pad_token</span><span class="o">=</span><span class="n">PAD_WORD</span><span class="p">,</span>
+            <span class="n">include_lengths</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">data_type</span> <span class="o">==</span> <span class="s1">&#39;img&#39;</span><span class="p">:</span>
+        <span class="k">def</span> <span class="nf">make_img</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">_</span><span class="p">):</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">h</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="n">t</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">data</span><span class="p">])</span>
+            <span class="n">w</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="n">t</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">data</span><span class="p">])</span>
+            <span class="n">imgs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">c</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">img</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+                <span class="n">imgs</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">:</span><span class="n">img</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="mi">0</span><span class="p">:</span><span class="n">img</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">2</span><span class="p">)]</span> <span class="o">=</span> <span class="n">img</span>
+            <span class="k">return</span> <span class="n">imgs</span>
+
+        <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torchtext</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Field</span><span class="p">(</span>
+            <span class="n">use_vocab</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">tensor_type</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span>
+            <span class="n">postprocessing</span><span class="o">=</span><span class="n">make_img</span><span class="p">,</span> <span class="n">sequential</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">data_type</span> <span class="o">==</span> <span class="s1">&#39;audio&#39;</span><span class="p">:</span>
+        <span class="k">def</span> <span class="nf">make_audio</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">_</span><span class="p">):</span>
+            <span class="n">nfft</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="n">t</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">data</span><span class="p">])</span>
+            <span class="n">sounds</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="n">nfft</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">spect</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+                <span class="n">sounds</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">:</span><span class="n">spect</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)]</span> <span class="o">=</span> <span class="n">spect</span>
+            <span class="k">return</span> <span class="n">sounds</span>
+
+        <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torchtext</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Field</span><span class="p">(</span>
+            <span class="n">use_vocab</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">tensor_type</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span>
+            <span class="n">postprocessing</span><span class="o">=</span><span class="n">make_audio</span><span class="p">,</span> <span class="n">sequential</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_src_features</span><span class="p">):</span>
+        <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;src_feat_&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">j</span><span class="p">)]</span> <span class="o">=</span> \
+            <span class="n">torchtext</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Field</span><span class="p">(</span><span class="n">pad_token</span><span class="o">=</span><span class="n">PAD_WORD</span><span class="p">)</span>
+
+    <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torchtext</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Field</span><span class="p">(</span>
+        <span class="n">init_token</span><span class="o">=</span><span class="n">BOS_WORD</span><span class="p">,</span> <span class="n">eos_token</span><span class="o">=</span><span class="n">EOS_WORD</span><span class="p">,</span>
+        <span class="n">pad_token</span><span class="o">=</span><span class="n">PAD_WORD</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_tgt_features</span><span class="p">):</span>
+        <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt_feat_&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">j</span><span class="p">)]</span> <span class="o">=</span> \
+            <span class="n">torchtext</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Field</span><span class="p">(</span><span class="n">init_token</span><span class="o">=</span><span class="n">BOS_WORD</span><span class="p">,</span> <span class="n">eos_token</span><span class="o">=</span><span class="n">EOS_WORD</span><span class="p">,</span>
+                                 <span class="n">pad_token</span><span class="o">=</span><span class="n">PAD_WORD</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">make_src</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">_</span><span class="p">):</span>
+        <span class="n">src_size</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="n">t</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">data</span><span class="p">])</span>
+        <span class="n">src_vocab_size</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="n">t</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">data</span><span class="p">])</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">alignment</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">src_size</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">src_vocab_size</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">sent</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sent</span><span class="p">):</span>
+                <span class="n">alignment</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">alignment</span>
+
+    <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;src_map&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torchtext</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Field</span><span class="p">(</span>
+        <span class="n">use_vocab</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">tensor_type</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span>
+        <span class="n">postprocessing</span><span class="o">=</span><span class="n">make_src</span><span class="p">,</span> <span class="n">sequential</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">make_tgt</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">_</span><span class="p">):</span>
+        <span class="n">tgt_size</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="n">t</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">data</span><span class="p">])</span>
+        <span class="n">alignment</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">tgt_size</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))</span><span class="o">.</span><span class="n">long</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">sent</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+            <span class="n">alignment</span><span class="p">[:</span><span class="n">sent</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">sent</span>
+        <span class="k">return</span> <span class="n">alignment</span>
+
+    <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;alignment&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torchtext</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Field</span><span class="p">(</span>
+        <span class="n">use_vocab</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">tensor_type</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span>
+        <span class="n">postprocessing</span><span class="o">=</span><span class="n">make_tgt</span><span class="p">,</span> <span class="n">sequential</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;indices&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torchtext</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Field</span><span class="p">(</span>
+        <span class="n">use_vocab</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">tensor_type</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span>
+        <span class="n">sequential</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">fields</span></div>
+
+
+<div class="viewcode-block" id="build_dataset"><a class="viewcode-back" href="../../onmt.html#onmt.IO.build_dataset">[docs]</a><span class="k">def</span> <span class="nf">build_dataset</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">data_type</span><span class="p">,</span> <span class="n">src_path</span><span class="p">,</span> <span class="n">tgt_path</span><span class="p">,</span> <span class="n">src_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">src_seq_length</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">tgt_seq_length</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                  <span class="n">src_seq_length_trunc</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">tgt_seq_length_trunc</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                  <span class="n">dynamic_dict</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sample_rate</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                  <span class="n">window_size</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">window_stride</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">window</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">normalize_audio</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">use_filter_pred</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+
+    <span class="k">if</span> <span class="n">data_type</span> <span class="o">==</span> <span class="s1">&#39;text&#39;</span><span class="p">:</span>
+        <span class="n">dataset</span> <span class="o">=</span> <span class="n">TextDataset</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">src_path</span><span class="p">,</span> <span class="n">tgt_path</span><span class="p">,</span>
+                              <span class="n">src_seq_length</span><span class="o">=</span><span class="n">src_seq_length</span><span class="p">,</span>
+                              <span class="n">tgt_seq_length</span><span class="o">=</span><span class="n">tgt_seq_length</span><span class="p">,</span>
+                              <span class="n">src_seq_length_trunc</span><span class="o">=</span><span class="n">src_seq_length_trunc</span><span class="p">,</span>
+                              <span class="n">tgt_seq_length_trunc</span><span class="o">=</span><span class="n">tgt_seq_length_trunc</span><span class="p">,</span>
+                              <span class="n">dynamic_dict</span><span class="o">=</span><span class="n">dynamic_dict</span><span class="p">,</span>
+                              <span class="n">use_filter_pred</span><span class="o">=</span><span class="n">use_filter_pred</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">data_type</span> <span class="o">==</span> <span class="s1">&#39;img&#39;</span><span class="p">:</span>
+        <span class="n">dataset</span> <span class="o">=</span> <span class="n">ImageDataset</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">src_path</span><span class="p">,</span> <span class="n">src_dir</span><span class="p">,</span> <span class="n">tgt_path</span><span class="p">,</span>
+                               <span class="n">tgt_seq_length</span><span class="o">=</span><span class="n">tgt_seq_length</span><span class="p">,</span>
+                               <span class="n">tgt_seq_length_trunc</span><span class="o">=</span><span class="n">tgt_seq_length_trunc</span><span class="p">,</span>
+                               <span class="n">use_filter_pred</span><span class="o">=</span><span class="n">use_filter_pred</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">data_type</span> <span class="o">==</span> <span class="s1">&#39;audio&#39;</span><span class="p">:</span>
+        <span class="n">dataset</span> <span class="o">=</span> <span class="n">AudioDataset</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">src_path</span><span class="p">,</span> <span class="n">src_dir</span><span class="p">,</span> <span class="n">tgt_path</span><span class="p">,</span>
+                               <span class="n">tgt_seq_length</span><span class="o">=</span><span class="n">tgt_seq_length</span><span class="p">,</span>
+                               <span class="n">tgt_seq_length_trunc</span><span class="o">=</span><span class="n">tgt_seq_length_trunc</span><span class="p">,</span>
+                               <span class="n">sample_rate</span><span class="o">=</span><span class="n">sample_rate</span><span class="p">,</span>
+                               <span class="n">window_size</span><span class="o">=</span><span class="n">window_size</span><span class="p">,</span>
+                               <span class="n">window_stride</span><span class="o">=</span><span class="n">window_stride</span><span class="p">,</span>
+                               <span class="n">window</span><span class="o">=</span><span class="n">window</span><span class="p">,</span>
+                               <span class="n">normalize_audio</span><span class="o">=</span><span class="n">normalize_audio</span><span class="p">,</span>
+                               <span class="n">use_filter_pred</span><span class="o">=</span><span class="n">use_filter_pred</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">dataset</span></div>
+
+
+<div class="viewcode-block" id="build_vocab"><a class="viewcode-back" href="../../onmt.html#onmt.IO.build_vocab">[docs]</a><span class="k">def</span> <span class="nf">build_vocab</span><span class="p">(</span><span class="n">train</span><span class="p">,</span> <span class="n">data_type</span><span class="p">,</span> <span class="n">share_vocab</span><span class="p">,</span>
+                <span class="n">src_vocab_size</span><span class="p">,</span> <span class="n">src_words_min_frequency</span><span class="p">,</span>
+                <span class="n">tgt_vocab_size</span><span class="p">,</span> <span class="n">tgt_words_min_frequency</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Args:</span>
+<span class="sd">        train: a train dataset.</span>
+<span class="sd">        data_type: &quot;text&quot;, &quot;img&quot; or &quot;audio&quot;?</span>
+<span class="sd">        share_vocab(bool): share source and target vocabulary?</span>
+<span class="sd">        src_vocab_size(int): size of the source vocabulary.</span>
+<span class="sd">        src_words_min_frequency(int): the minimum frequency needed to</span>
+<span class="sd">                include a source word in the vocabulary.</span>
+<span class="sd">        tgt_vocab_size(int): size of the target vocabulary.</span>
+<span class="sd">        tgt_words_min_frequency(int): the minimum frequency needed to</span>
+<span class="sd">                include a target word in the vocabulary.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">fields</span> <span class="o">=</span> <span class="n">train</span><span class="o">.</span><span class="n">fields</span>
+
+    <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">build_vocab</span><span class="p">(</span><span class="n">train</span><span class="p">,</span> <span class="n">max_size</span><span class="o">=</span><span class="n">tgt_vocab_size</span><span class="p">,</span>
+                              <span class="n">min_freq</span><span class="o">=</span><span class="n">tgt_words_min_frequency</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">train</span><span class="o">.</span><span class="n">n_tgt_feats</span><span class="p">):</span>
+        <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt_feat_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">j</span><span class="p">)]</span><span class="o">.</span><span class="n">build_vocab</span><span class="p">(</span><span class="n">train</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">data_type</span> <span class="o">==</span> <span class="s1">&#39;text&#39;</span><span class="p">:</span>
+        <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">build_vocab</span><span class="p">(</span><span class="n">train</span><span class="p">,</span> <span class="n">max_size</span><span class="o">=</span><span class="n">src_vocab_size</span><span class="p">,</span>
+                                  <span class="n">min_freq</span><span class="o">=</span><span class="n">src_words_min_frequency</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">train</span><span class="o">.</span><span class="n">n_src_feats</span><span class="p">):</span>
+            <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;src_feat_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">j</span><span class="p">)]</span><span class="o">.</span><span class="n">build_vocab</span><span class="p">(</span><span class="n">train</span><span class="p">)</span>
+
+        <span class="c1"># Merge the input and output vocabularies.</span>
+        <span class="k">if</span> <span class="n">share_vocab</span><span class="p">:</span>
+            <span class="c1"># `tgt_vocab_size` is ignored when sharing vocabularies</span>
+            <span class="n">merged_vocab</span> <span class="o">=</span> <span class="n">merge_vocabs</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">fields</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">vocab</span><span class="p">,</span> <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">vocab</span><span class="p">],</span>
+                <span class="n">vocab_size</span><span class="o">=</span><span class="n">src_vocab_size</span><span class="p">)</span>
+            <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">vocab</span> <span class="o">=</span> <span class="n">merged_vocab</span>
+            <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">vocab</span> <span class="o">=</span> <span class="n">merged_vocab</span></div>
+
+
+<span class="k">def</span> <span class="nf">_join_dicts</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Args:</span>
+<span class="sd">        dictionaries with disjoint keys.</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        a single dictionary that has the union of these keys.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">chain</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">args</span><span class="p">]))</span>
+
+
+<span class="k">def</span> <span class="nf">_peek</span><span class="p">(</span><span class="n">seq</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Args:</span>
+<span class="sd">        seq: an iterator.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        the first thing returned by calling next() on the iterator</span>
+<span class="sd">        and an iterator created by re-chaining that value to the beginning</span>
+<span class="sd">        of the iterator.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">first</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">first</span><span class="p">,</span> <span class="n">chain</span><span class="p">([</span><span class="n">first</span><span class="p">],</span> <span class="n">seq</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_construct_example_fromlist</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">fields</span><span class="p">):</span>
+    <span class="n">ex</span> <span class="o">=</span> <span class="n">torchtext</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Example</span><span class="p">()</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">field</span><span class="p">),</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">field</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="n">ex</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">field</span><span class="o">.</span><span class="n">preprocess</span><span class="p">(</span><span class="n">val</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="n">ex</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ex</span>
+
+
+<span class="k">def</span> <span class="nf">_read_text_file</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">truncate</span><span class="p">,</span> <span class="n">side</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Args:</span>
+<span class="sd">        path: location of a src or tgt file.</span>
+<span class="sd">        truncate: maximum sequence length (0 for unlimited).</span>
+
+<span class="sd">    Yields:</span>
+<span class="sd">        (word, features, nfeat) triples for each line.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="n">codecs</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">corpus_file</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">corpus_file</span><span class="p">):</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">truncate</span><span class="p">:</span>
+                <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="p">[:</span><span class="n">truncate</span><span class="p">]</span>
+            <span class="n">words</span><span class="p">,</span> <span class="n">feats</span><span class="p">,</span> <span class="n">n_feats</span> <span class="o">=</span> <span class="n">extract_features</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+            <span class="n">example_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">side</span><span class="p">:</span> <span class="n">words</span><span class="p">,</span> <span class="s2">&quot;indices&quot;</span><span class="p">:</span> <span class="n">i</span><span class="p">}</span>
+            <span class="k">if</span> <span class="n">feats</span><span class="p">:</span>
+                <span class="n">prefix</span> <span class="o">=</span> <span class="n">side</span> <span class="o">+</span> <span class="s2">&quot;_feat_&quot;</span>
+                <span class="n">example_dict</span><span class="o">.</span><span class="n">update</span><span class="p">((</span><span class="n">prefix</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">j</span><span class="p">),</span> <span class="n">f</span><span class="p">)</span>
+                                    <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">feats</span><span class="p">))</span>
+            <span class="k">yield</span> <span class="n">example_dict</span><span class="p">,</span> <span class="n">n_feats</span>
+
+
+<span class="k">def</span> <span class="nf">_make_example</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">truncate</span><span class="p">,</span> <span class="n">side</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Process the text corpus into (examples, num_feats) tuple.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">side</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">,</span> <span class="s1">&#39;tgt&#39;</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">examples</span> <span class="o">=</span> <span class="n">_read_text_file</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">truncate</span><span class="p">,</span> <span class="n">side</span><span class="p">)</span>
+    <span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="n">num_feats</span><span class="p">),</span> <span class="n">examples</span> <span class="o">=</span> <span class="n">_peek</span><span class="p">(</span><span class="n">examples</span><span class="p">)</span>
+
+    <span class="n">out_examples</span> <span class="o">=</span> <span class="p">(</span><span class="n">ex</span> <span class="k">for</span> <span class="n">ex</span><span class="p">,</span> <span class="n">nfeats</span> <span class="ow">in</span> <span class="n">examples</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">out_examples</span><span class="p">,</span> <span class="n">num_feats</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_read_img_file</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">src_dir</span><span class="p">,</span> <span class="n">side</span><span class="p">,</span> <span class="n">truncate</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Args:</span>
+<span class="sd">        path: location of a src file containing image paths</span>
+<span class="sd">        src_dir: location of source images</span>
+<span class="sd">        side: &#39;src&#39; or &#39;tgt&#39;</span>
+<span class="sd">        truncate: maximum img size ((0,0) or None for unlimited)</span>
+
+<span class="sd">    Yields:</span>
+<span class="sd">        a dictionary containing image data, path and index for each line.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="n">codecs</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">corpus_file</span><span class="p">:</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">corpus_file</span><span class="p">:</span>
+            <span class="n">img_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">src_dir</span><span class="p">,</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">img_path</span><span class="p">):</span>
+                <span class="n">img_path</span> <span class="o">=</span> <span class="n">line</span>
+            <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">img_path</span><span class="p">),</span> \
+                <span class="s1">&#39;img path </span><span class="si">%s</span><span class="s1"> not found&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+            <span class="n">img</span> <span class="o">=</span> <span class="n">transforms</span><span class="o">.</span><span class="n">ToTensor</span><span class="p">()(</span><span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">img_path</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">truncate</span> <span class="ow">and</span> <span class="n">truncate</span> <span class="o">!=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">truncate</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                        <span class="ow">and</span> <span class="n">img</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">truncate</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                    <span class="k">continue</span>
+            <span class="n">example_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">side</span><span class="p">:</span> <span class="n">img</span><span class="p">,</span>
+                            <span class="n">side</span><span class="o">+</span><span class="s1">&#39;_path&#39;</span><span class="p">:</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span>
+                            <span class="s1">&#39;indices&#39;</span><span class="p">:</span> <span class="n">index</span><span class="p">}</span>
+            <span class="n">index</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">yield</span> <span class="n">example_dict</span>
+
+
+<span class="k">def</span> <span class="nf">_read_audio_file</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">src_dir</span><span class="p">,</span> <span class="n">side</span><span class="p">,</span> <span class="n">sample_rate</span><span class="p">,</span> <span class="n">window_size</span><span class="p">,</span>
+                     <span class="n">window_stride</span><span class="p">,</span> <span class="n">window</span><span class="p">,</span> <span class="n">normalize_audio</span><span class="p">,</span> <span class="n">truncate</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Args:</span>
+<span class="sd">        path: location of a src file containing audio paths.</span>
+<span class="sd">        src_dir: location of source audio files.</span>
+<span class="sd">        side: &#39;src&#39; or &#39;tgt&#39;.</span>
+<span class="sd">        sample_rate: sample_rate.</span>
+<span class="sd">        window_size: window size for spectrogram in seconds.</span>
+<span class="sd">        window_stride: window stride for spectrogram in seconds.</span>
+<span class="sd">        window: window type for spectrogram generation.</span>
+<span class="sd">        normalize_audio: subtract spectrogram by mean and divide by std or not</span>
+<span class="sd">        truncate: maximum audio length (0 or None for unlimited).</span>
+
+<span class="sd">    Yields:</span>
+<span class="sd">        image for each line.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="n">codecs</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">corpus_file</span><span class="p">:</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">corpus_file</span><span class="p">:</span>
+            <span class="n">audio_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">src_dir</span><span class="p">,</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">audio_path</span><span class="p">):</span>
+                <span class="n">audio_path</span> <span class="o">=</span> <span class="n">line</span>
+            <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">audio_path</span><span class="p">),</span> \
+                <span class="s1">&#39;audio path </span><span class="si">%s</span><span class="s1"> not found&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+            <span class="n">sound</span><span class="p">,</span> <span class="n">sample_rate</span> <span class="o">=</span> <span class="n">torchaudio</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">audio_path</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">truncate</span> <span class="ow">and</span> <span class="n">truncate</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">sound</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">truncate</span><span class="p">:</span>
+                    <span class="k">continue</span>
+            <span class="k">assert</span> <span class="n">sample_rate</span> <span class="o">==</span> <span class="n">sample_rate</span><span class="p">,</span> \
+                <span class="s1">&#39;Sample rate of </span><span class="si">%s</span><span class="s1"> != -sample_rate (</span><span class="si">%d</span><span class="s1"> vs </span><span class="si">%d</span><span class="s1">)&#39;</span> \
+                <span class="o">%</span> <span class="p">(</span><span class="n">audio_path</span><span class="p">,</span> <span class="n">sample_rate</span><span class="p">,</span> <span class="n">sample_rate</span><span class="p">)</span>
+            <span class="n">sound</span> <span class="o">=</span> <span class="n">sound</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sound</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">sound</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">sound</span> <span class="o">=</span> <span class="n">sound</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">sound</span> <span class="o">=</span> <span class="n">sound</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># average multiple channels</span>
+            <span class="n">n_fft</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">sample_rate</span> <span class="o">*</span> <span class="n">window_size</span><span class="p">)</span>
+            <span class="n">win_length</span> <span class="o">=</span> <span class="n">n_fft</span>
+            <span class="n">hop_length</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">sample_rate</span> <span class="o">*</span> <span class="n">window_stride</span><span class="p">)</span>
+            <span class="c1"># STFT</span>
+            <span class="n">D</span> <span class="o">=</span> <span class="n">librosa</span><span class="o">.</span><span class="n">stft</span><span class="p">(</span><span class="n">sound</span><span class="p">,</span> <span class="n">n_fft</span><span class="o">=</span><span class="n">n_fft</span><span class="p">,</span> <span class="n">hop_length</span><span class="o">=</span><span class="n">hop_length</span><span class="p">,</span>
+                             <span class="n">win_length</span><span class="o">=</span><span class="n">win_length</span><span class="p">,</span> <span class="n">window</span><span class="o">=</span><span class="n">window</span><span class="p">)</span>
+            <span class="n">spect</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">librosa</span><span class="o">.</span><span class="n">magphase</span><span class="p">(</span><span class="n">D</span><span class="p">)</span>
+            <span class="n">spect</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log1p</span><span class="p">(</span><span class="n">spect</span><span class="p">)</span>
+            <span class="n">spect</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">(</span><span class="n">spect</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">normalize_audio</span><span class="p">:</span>
+                <span class="n">mean</span> <span class="o">=</span> <span class="n">spect</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+                <span class="n">std</span> <span class="o">=</span> <span class="n">spect</span><span class="o">.</span><span class="n">std</span><span class="p">()</span>
+                <span class="n">spect</span><span class="o">.</span><span class="n">add_</span><span class="p">(</span><span class="o">-</span><span class="n">mean</span><span class="p">)</span>
+                <span class="n">spect</span><span class="o">.</span><span class="n">div_</span><span class="p">(</span><span class="n">std</span><span class="p">)</span>
+            <span class="n">example_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">side</span><span class="p">:</span> <span class="n">spect</span><span class="p">,</span>
+                            <span class="n">side</span> <span class="o">+</span> <span class="s1">&#39;_path&#39;</span><span class="p">:</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span>
+                            <span class="s1">&#39;indices&#39;</span><span class="p">:</span> <span class="n">index</span><span class="p">}</span>
+            <span class="n">index</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">yield</span> <span class="n">example_dict</span>
+
+
+<div class="viewcode-block" id="OrderedIterator"><a class="viewcode-back" href="../../onmt.html#onmt.IO.OrderedIterator">[docs]</a><span class="k">class</span> <span class="nc">OrderedIterator</span><span class="p">(</span><span class="n">torchtext</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Iterator</span><span class="p">):</span>
+<div class="viewcode-block" id="OrderedIterator.create_batches"><a class="viewcode-back" href="../../onmt.html#onmt.IO.OrderedIterator.create_batches">[docs]</a>    <span class="k">def</span> <span class="nf">create_batches</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">train</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">batches</span> <span class="o">=</span> <span class="n">torchtext</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">pool</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sort_key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size_fn</span><span class="p">,</span>
+                <span class="n">random_shuffler</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_shuffler</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">batches</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">torchtext</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">batch</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span>
+                                          <span class="bp">self</span><span class="o">.</span><span class="n">batch_size_fn</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">batches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sort_key</span><span class="p">))</span></div></div>
+
+
+<div class="viewcode-block" id="ONMTDatasetBase"><a class="viewcode-back" href="../../onmt.html#onmt.IO.ONMTDatasetBase">[docs]</a><span class="k">class</span> <span class="nc">ONMTDatasetBase</span><span class="p">(</span><span class="n">torchtext</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A dataset basically supports iteration over all the examples</span>
+<span class="sd">    it contains. We currently have 3 datasets inheriting this base</span>
+<span class="sd">    for 3 types of corpus respectively: &quot;text&quot;, &quot;img&quot;, &quot;audio&quot;.</span>
+
+<span class="sd">    Internally it initializes an `torchtext.data.Dataset` object with</span>
+<span class="sd">    the following attributes:</span>
+
+<span class="sd">     `examples`: a sequence of `torchtext.data.Example` objects.</span>
+<span class="sd">     `fields`: a dictionary associating str keys with Field objects. Does not</span>
+<span class="sd">            necessarily have the same keys as the input fields.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">examples</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">filter_pred</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_corpus</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ONMTDatasetBase</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">examples</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">filter_pred</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__getstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span>
+
+    <span class="k">def</span> <span class="nf">__setstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__reduce_ex__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">proto</span><span class="p">):</span>
+        <span class="s2">&quot;This is a hack. Something is broken with torch pickle.&quot;</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">ONMTDatasetBase</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__reduce_ex__</span><span class="p">()</span>
+
+<div class="viewcode-block" id="ONMTDatasetBase.collapse_copy_scores"><a class="viewcode-back" href="../../onmt.html#onmt.IO.ONMTDatasetBase.collapse_copy_scores">[docs]</a>    <span class="k">def</span> <span class="nf">collapse_copy_scores</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scores</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">tgt_vocab</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Given scores from an expanded dictionary</span>
+<span class="sd">        corresponeding to a batch, sums together copies,</span>
+<span class="sd">        with a dictionary word when it is ambigious.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">offset</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">tgt_vocab</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">batch_size</span><span class="p">):</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">indices</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">b</span><span class="p">]</span>
+            <span class="n">src_vocab</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">src_vocabs</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">src_vocab</span><span class="p">)):</span>
+                <span class="n">sw</span> <span class="o">=</span> <span class="n">src_vocab</span><span class="o">.</span><span class="n">itos</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="n">ti</span> <span class="o">=</span> <span class="n">tgt_vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">sw</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">ti</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">scores</span><span class="p">[:,</span> <span class="n">b</span><span class="p">,</span> <span class="n">ti</span><span class="p">]</span> <span class="o">+=</span> <span class="n">scores</span><span class="p">[:,</span> <span class="n">b</span><span class="p">,</span> <span class="n">offset</span> <span class="o">+</span> <span class="n">i</span><span class="p">]</span>
+                    <span class="n">scores</span><span class="p">[:,</span> <span class="n">b</span><span class="p">,</span> <span class="n">offset</span> <span class="o">+</span> <span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">fill_</span><span class="p">(</span><span class="mf">1e-20</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">scores</span></div></div>
+
+
+<div class="viewcode-block" id="TextDataset"><a class="viewcode-back" href="../../onmt.html#onmt.IO.TextDataset">[docs]</a><span class="k">class</span> <span class="nc">TextDataset</span><span class="p">(</span><span class="n">ONMTDatasetBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Dataset for data_type==&#39;text&#39; &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="TextDataset.sort_key"><a class="viewcode-back" href="../../onmt.html#onmt.IO.TextDataset.sort_key">[docs]</a>    <span class="k">def</span> <span class="nf">sort_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ex</span><span class="p">):</span>
+        <span class="s2">&quot;Sort using the size of source example.&quot;</span>
+        <span class="k">return</span> <span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">ex</span><span class="o">.</span><span class="n">src</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_process_corpus</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">src_path</span><span class="p">,</span> <span class="n">tgt_path</span><span class="p">,</span>
+                        <span class="n">src_seq_length</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">tgt_seq_length</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                        <span class="n">src_seq_length_trunc</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">tgt_seq_length_trunc</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                        <span class="n">dynamic_dict</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">use_filter_pred</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Build Example objects, Field objects, and filter_pred function</span>
+<span class="sd">        from text corpus.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            fields: a dictionary of Field objects. Keys are like &#39;src&#39;,</span>
+<span class="sd">                    &#39;tgt&#39;, &#39;src_map&#39;, and &#39;alignment&#39;.</span>
+<span class="sd">            src_path: location of source-side data.</span>
+<span class="sd">            tgt_path: location of target-side data or None. If should be the</span>
+<span class="sd">                      same length as the source-side data if it exists.</span>
+<span class="sd">            src_seq_length: maximum source sequence length.</span>
+<span class="sd">            tgt_seq_length: maximum target sequence length.</span>
+<span class="sd">            src_seq_length_trunc: truncated source sequence length.</span>
+<span class="sd">            tgt_seq_length_trunc: truncated target sequence length.</span>
+<span class="sd">            dynamic_dict: create dynamic dictionaries?</span>
+<span class="sd">            use_filter_pred: use a custom filter predicate to filter examples?</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            constructed tuple of Examples objects, Field objects, filter_pred.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span> <span class="o">=</span> <span class="s1">&#39;text&#39;</span>
+
+        <span class="c1"># self.src_vocabs: mutated in dynamic_dict, used in</span>
+        <span class="c1"># collapse_copy_scores and in Translator.py</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">src_vocabs</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Process the corpus into examples, and extract number of features,</span>
+        <span class="c1"># if any. Note tgt_path might be None.</span>
+        <span class="n">src_examples</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_src_feats</span> <span class="o">=</span> \
+            <span class="n">_make_example</span><span class="p">(</span><span class="n">src_path</span><span class="p">,</span> <span class="n">src_seq_length_trunc</span><span class="p">,</span> <span class="s2">&quot;src&quot;</span><span class="p">)</span>
+
+        <span class="n">tgt_examples</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_tgt_feats</span> <span class="o">=</span> \
+            <span class="n">_make_example</span><span class="p">(</span><span class="n">tgt_path</span><span class="p">,</span> <span class="n">tgt_seq_length_trunc</span><span class="p">,</span> <span class="s2">&quot;tgt&quot;</span><span class="p">)</span>
+
+        <span class="c1"># examples: one for each src line or (src, tgt) line pair.</span>
+        <span class="c1"># Each element is a dictionary whose keys represent at minimum</span>
+        <span class="c1"># the src tokens and their indices and potentially also the</span>
+        <span class="c1"># src and tgt features and alignment information.</span>
+        <span class="k">if</span> <span class="n">tgt_examples</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">examples</span> <span class="o">=</span> <span class="p">(</span><span class="n">_join_dicts</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span>
+                        <span class="k">for</span> <span class="n">src</span><span class="p">,</span> <span class="n">tgt</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">src_examples</span><span class="p">,</span> <span class="n">tgt_examples</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">examples</span> <span class="o">=</span> <span class="n">src_examples</span>
+
+        <span class="k">if</span> <span class="n">dynamic_dict</span><span class="p">:</span>
+            <span class="n">examples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dynamic_dict</span><span class="p">(</span><span class="n">examples</span><span class="p">)</span>
+
+        <span class="c1"># Peek at the first to see which fields are used.</span>
+        <span class="n">ex</span><span class="p">,</span> <span class="n">examples</span> <span class="o">=</span> <span class="n">_peek</span><span class="p">(</span><span class="n">examples</span><span class="p">)</span>
+        <span class="n">keys</span> <span class="o">=</span> <span class="n">ex</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+
+        <span class="n">out_fields</span> <span class="o">=</span> <span class="p">[(</span><span class="n">k</span><span class="p">,</span> <span class="n">fields</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">fields</span> <span class="k">else</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                      <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">]</span>
+        <span class="n">example_values</span> <span class="o">=</span> <span class="p">([</span><span class="n">ex</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">]</span> <span class="k">for</span> <span class="n">ex</span> <span class="ow">in</span> <span class="n">examples</span><span class="p">)</span>
+        <span class="n">out_examples</span> <span class="o">=</span> <span class="p">(</span><span class="n">_construct_example_fromlist</span><span class="p">(</span><span class="n">ex_values</span><span class="p">,</span> <span class="n">out_fields</span><span class="p">)</span>
+                        <span class="k">for</span> <span class="n">ex_values</span> <span class="ow">in</span> <span class="n">example_values</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">filter_pred</span><span class="p">(</span><span class="n">example</span><span class="p">):</span>
+            <span class="k">return</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">example</span><span class="o">.</span><span class="n">src</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">src_seq_length</span> \
+               <span class="ow">and</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">example</span><span class="o">.</span><span class="n">tgt</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">tgt_seq_length</span>
+
+        <span class="n">filter_pred</span> <span class="o">=</span> <span class="n">filter_pred</span> <span class="k">if</span> <span class="n">use_filter_pred</span> <span class="k">else</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="kc">True</span>
+
+        <span class="k">return</span> <span class="n">out_examples</span><span class="p">,</span> <span class="n">out_fields</span><span class="p">,</span> <span class="n">filter_pred</span>
+
+    <span class="k">def</span> <span class="nf">_dynamic_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">examples</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">example</span> <span class="ow">in</span> <span class="n">examples</span><span class="p">:</span>
+            <span class="n">src</span> <span class="o">=</span> <span class="n">example</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span>
+            <span class="n">src_vocab</span> <span class="o">=</span> <span class="n">torchtext</span><span class="o">.</span><span class="n">vocab</span><span class="o">.</span><span class="n">Vocab</span><span class="p">(</span><span class="n">Counter</span><span class="p">(</span><span class="n">src</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">src_vocabs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">src_vocab</span><span class="p">)</span>
+            <span class="c1"># Mapping source tokens to indices in the dynamic dict.</span>
+            <span class="n">src_map</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">([</span><span class="n">src_vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">w</span><span class="p">]</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">src</span><span class="p">])</span>
+            <span class="n">example</span><span class="p">[</span><span class="s2">&quot;src_map&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">src_map</span>
+
+            <span class="k">if</span> <span class="s2">&quot;tgt&quot;</span> <span class="ow">in</span> <span class="n">example</span><span class="p">:</span>
+                <span class="n">tgt</span> <span class="o">=</span> <span class="n">example</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span>
+                <span class="n">mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">(</span>
+                        <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">src_vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">w</span><span class="p">]</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">tgt</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">example</span><span class="p">[</span><span class="s2">&quot;alignment&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mask</span>
+            <span class="k">yield</span> <span class="n">example</span></div>
+
+
+<div class="viewcode-block" id="ImageDataset"><a class="viewcode-back" href="../../onmt.html#onmt.IO.ImageDataset">[docs]</a><span class="k">class</span> <span class="nc">ImageDataset</span><span class="p">(</span><span class="n">ONMTDatasetBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Dataset for data_type==&#39;img&#39; &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ImageDataset.sort_key"><a class="viewcode-back" href="../../onmt.html#onmt.IO.ImageDataset.sort_key">[docs]</a>    <span class="k">def</span> <span class="nf">sort_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ex</span><span class="p">):</span>
+        <span class="s2">&quot;Sort using the size of the image.&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="o">-</span><span class="n">ex</span><span class="o">.</span><span class="n">src</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="o">-</span><span class="n">ex</span><span class="o">.</span><span class="n">src</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span></div>
+
+    <span class="k">def</span> <span class="nf">_process_corpus</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">src_path</span><span class="p">,</span> <span class="n">src_dir</span><span class="p">,</span> <span class="n">tgt_path</span><span class="p">,</span>
+                        <span class="n">tgt_seq_length</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">tgt_seq_length_trunc</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                        <span class="n">use_filter_pred</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Build Example objects, Field objects, and filter_pred function</span>
+<span class="sd">        from image corpus.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            fields: a dictionary of Field objects. Keys are like &#39;src&#39;,</span>
+<span class="sd">                    &#39;tgt&#39;, &#39;src_map&#39;, and &#39;alignment&#39;.</span>
+<span class="sd">            src_path: location of a src file containing image paths</span>
+<span class="sd">            src_dir: location of source images</span>
+<span class="sd">            tgt_path: location of target-side data or None.</span>
+<span class="sd">            tgt_seq_length: maximum target sequence length.</span>
+<span class="sd">            tgt_seq_length_trunc: truncated target sequence length.</span>
+<span class="sd">            use_filter_pred: use a custom filter predicate to filter examples?</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            constructed tuple of Examples objects, Field objects, filter_pred.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="p">(</span><span class="n">src_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">src_dir</span><span class="p">),</span>\
+            <span class="s1">&#39;src_dir must be a valid directory if data_type is img&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span> <span class="o">=</span> <span class="s1">&#39;img&#39;</span>
+
+        <span class="k">global</span> <span class="n">Image</span><span class="p">,</span> <span class="n">transforms</span>
+        <span class="kn">from</span> <span class="nn">PIL</span> <span class="k">import</span> <span class="n">Image</span>
+        <span class="kn">from</span> <span class="nn">torchvision</span> <span class="k">import</span> <span class="n">transforms</span>
+
+        <span class="c1"># Process the source image corpus into examples, and process</span>
+        <span class="c1"># the target text corpus into examples, if tgt_path is not None.</span>
+        <span class="n">src_examples</span> <span class="o">=</span> <span class="n">_read_img_file</span><span class="p">(</span><span class="n">src_path</span><span class="p">,</span> <span class="n">src_dir</span><span class="p">,</span> <span class="s2">&quot;src&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_src_feats</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="n">tgt_examples</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_tgt_feats</span> <span class="o">=</span> \
+            <span class="n">_make_example</span><span class="p">(</span><span class="n">tgt_path</span><span class="p">,</span> <span class="n">tgt_seq_length_trunc</span><span class="p">,</span> <span class="s2">&quot;tgt&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">tgt_examples</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">examples</span> <span class="o">=</span> <span class="p">(</span><span class="n">_join_dicts</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span>
+                        <span class="k">for</span> <span class="n">src</span><span class="p">,</span> <span class="n">tgt</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">src_examples</span><span class="p">,</span> <span class="n">tgt_examples</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">examples</span> <span class="o">=</span> <span class="n">src_examples</span>
+
+        <span class="c1"># Peek at the first to see which fields are used.</span>
+        <span class="n">ex</span><span class="p">,</span> <span class="n">examples</span> <span class="o">=</span> <span class="n">_peek</span><span class="p">(</span><span class="n">examples</span><span class="p">)</span>
+        <span class="n">keys</span> <span class="o">=</span> <span class="n">ex</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+
+        <span class="n">out_fields</span> <span class="o">=</span> <span class="p">[(</span><span class="n">k</span><span class="p">,</span> <span class="n">fields</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">fields</span> <span class="k">else</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                      <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">]</span>
+        <span class="n">example_values</span> <span class="o">=</span> <span class="p">([</span><span class="n">ex</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">]</span> <span class="k">for</span> <span class="n">ex</span> <span class="ow">in</span> <span class="n">examples</span><span class="p">)</span>
+        <span class="n">out_examples</span> <span class="o">=</span> <span class="p">(</span><span class="n">_construct_example_fromlist</span><span class="p">(</span><span class="n">ex_values</span><span class="p">,</span> <span class="n">out_fields</span><span class="p">)</span>
+                        <span class="k">for</span> <span class="n">ex_values</span> <span class="ow">in</span> <span class="n">example_values</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">filter_pred</span><span class="p">(</span><span class="n">example</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">tgt_examples</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">example</span><span class="o">.</span><span class="n">tgt</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">tgt_seq_length</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="n">filter_pred</span> <span class="o">=</span> <span class="n">filter_pred</span> <span class="k">if</span> <span class="n">use_filter_pred</span> <span class="k">else</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="kc">True</span>
+
+        <span class="k">return</span> <span class="n">out_examples</span><span class="p">,</span> <span class="n">out_fields</span><span class="p">,</span> <span class="n">filter_pred</span></div>
+
+
+<div class="viewcode-block" id="AudioDataset"><a class="viewcode-back" href="../../onmt.html#onmt.IO.AudioDataset">[docs]</a><span class="k">class</span> <span class="nc">AudioDataset</span><span class="p">(</span><span class="n">ONMTDatasetBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Dataset for data_type==&#39;audio&#39; &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="AudioDataset.sort_key"><a class="viewcode-back" href="../../onmt.html#onmt.IO.AudioDataset.sort_key">[docs]</a>    <span class="k">def</span> <span class="nf">sort_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ex</span><span class="p">):</span>
+        <span class="s2">&quot;Sort using the size of the audio corpus.&quot;</span>
+        <span class="k">return</span> <span class="o">-</span><span class="n">ex</span><span class="o">.</span><span class="n">src</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_process_corpus</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">src_path</span><span class="p">,</span> <span class="n">src_dir</span><span class="p">,</span> <span class="n">tgt_path</span><span class="p">,</span>
+                        <span class="n">tgt_seq_length</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">tgt_seq_length_trunc</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                        <span class="n">sample_rate</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">window_size</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                        <span class="n">window_stride</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">window</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">normalize_audio</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="n">use_filter_pred</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Build Example objects, Field objects, and filter_pred function</span>
+<span class="sd">        from audio corpus.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            fields: a dictionary of Field objects. Keys are like &#39;src&#39;,</span>
+<span class="sd">                    &#39;tgt&#39;, &#39;src_map&#39;, and &#39;alignment&#39;.</span>
+<span class="sd">            src_path: location of a src file containing audio paths.</span>
+<span class="sd">            src_dir: location of source audio file.</span>
+<span class="sd">            tgt_path: location of target-side data or None.</span>
+<span class="sd">            tgt_seq_length: maximum target sequence length.</span>
+<span class="sd">            tgt_seq_length_trunc: truncated target sequence length.</span>
+<span class="sd">            sample_rate: sample rate.</span>
+<span class="sd">            window_size: window size for spectrogram in seconds.</span>
+<span class="sd">            window_stride: window stride for spectrogram in seconds.</span>
+<span class="sd">            window: indow type for spectrogram generation.</span>
+<span class="sd">            normalize_audio: subtract spectrogram by mean and divide</span>
+<span class="sd">                             by std or not.</span>
+<span class="sd">            use_filter_pred: use a custom filter predicate to filter</span>
+<span class="sd">                             examples?</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            constructed tuple of Examples objects, Field objects, filter_pred.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="p">(</span><span class="n">src_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">src_dir</span><span class="p">),</span>\
+            <span class="s2">&quot;src_dir must be a valid directory if data_type is audio&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span> <span class="o">=</span> <span class="s1">&#39;audio&#39;</span>
+
+        <span class="k">global</span> <span class="n">torchaudio</span><span class="p">,</span> <span class="n">librosa</span><span class="p">,</span> <span class="n">np</span>
+        <span class="kn">import</span> <span class="nn">torchaudio</span>
+        <span class="kn">import</span> <span class="nn">librosa</span>
+        <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span> <span class="o">=</span> <span class="n">sample_rate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">window_size</span> <span class="o">=</span> <span class="n">window_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">window_stride</span> <span class="o">=</span> <span class="n">window_stride</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">window</span> <span class="o">=</span> <span class="n">window</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">normalize_audio</span> <span class="o">=</span> <span class="n">normalize_audio</span>
+
+        <span class="c1"># Process the source audio corpus into examples, and process</span>
+        <span class="c1"># the target text corpus into examples, if tgt_path is not None.</span>
+        <span class="n">src_examples</span> <span class="o">=</span> <span class="n">_read_audio_file</span><span class="p">(</span><span class="n">src_path</span><span class="p">,</span> <span class="n">src_dir</span><span class="p">,</span> <span class="s2">&quot;src&quot;</span><span class="p">,</span>
+                                        <span class="n">sample_rate</span><span class="p">,</span> <span class="n">window_size</span><span class="p">,</span>
+                                        <span class="n">window_stride</span><span class="p">,</span> <span class="n">window</span><span class="p">,</span>
+                                        <span class="n">normalize_audio</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_src_feats</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="n">tgt_examples</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_tgt_feats</span> <span class="o">=</span> \
+            <span class="n">_make_example</span><span class="p">(</span><span class="n">tgt_path</span><span class="p">,</span> <span class="n">tgt_seq_length_trunc</span><span class="p">,</span> <span class="s2">&quot;tgt&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">tgt_examples</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">examples</span> <span class="o">=</span> <span class="p">(</span><span class="n">_join_dicts</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span>
+                        <span class="k">for</span> <span class="n">src</span><span class="p">,</span> <span class="n">tgt</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">src_examples</span><span class="p">,</span> <span class="n">tgt_examples</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">examples</span> <span class="o">=</span> <span class="n">src_examples</span>
+
+        <span class="c1"># Peek at the first to see which fields are used.</span>
+        <span class="n">ex</span><span class="p">,</span> <span class="n">examples</span> <span class="o">=</span> <span class="n">_peek</span><span class="p">(</span><span class="n">examples</span><span class="p">)</span>
+        <span class="n">keys</span> <span class="o">=</span> <span class="n">ex</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+
+        <span class="n">out_fields</span> <span class="o">=</span> <span class="p">[(</span><span class="n">k</span><span class="p">,</span> <span class="n">fields</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">fields</span> <span class="k">else</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                      <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">]</span>
+        <span class="n">example_values</span> <span class="o">=</span> <span class="p">([</span><span class="n">ex</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">]</span> <span class="k">for</span> <span class="n">ex</span> <span class="ow">in</span> <span class="n">examples</span><span class="p">)</span>
+        <span class="n">out_examples</span> <span class="o">=</span> <span class="p">(</span><span class="n">_construct_example_fromlist</span><span class="p">(</span><span class="n">ex_values</span><span class="p">,</span> <span class="n">out_fields</span><span class="p">)</span>
+                        <span class="k">for</span> <span class="n">ex_values</span> <span class="ow">in</span> <span class="n">example_values</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">filter_pred</span><span class="p">(</span><span class="n">example</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">tgt_examples</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">example</span><span class="o">.</span><span class="n">tgt</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">tgt_seq_length</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="n">filter_pred</span> <span class="o">=</span> <span class="n">filter_pred</span> <span class="k">if</span> <span class="n">use_filter_pred</span> <span class="k">else</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="kc">True</span>
+
+        <span class="k">return</span> <span class="n">out_examples</span><span class="p">,</span> <span class="n">out_fields</span><span class="p">,</span> <span class="n">filter_pred</span></div>
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, srush.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

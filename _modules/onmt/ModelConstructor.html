@@ -1,0 +1,430 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>onmt.ModelConstructor &mdash; OpenNMT-py  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="OpenNMT-py  documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> OpenNMT-py
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../main.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../extended.html">Example: Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Summarization.html">Example: Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../im2text.html">Example: Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../speech2text.html">Example: Speech to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../options/preprocess.html">Options: preprocess.py:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../options/train.html">Options: train.py:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../options/translate.html">Options: translate.py:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../onmt.html">onmt package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../onmt.modules.html">onmt.modules package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../CONTRIBUTORS.html">Contributors</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">OpenNMT-py</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>onmt.ModelConstructor</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for onmt.ModelConstructor</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This file is for models creation, which consults options</span>
+<span class="sd">and creates each encoder and decoder accordingly.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+
+<span class="kn">import</span> <span class="nn">onmt</span>
+<span class="kn">import</span> <span class="nn">onmt.Models</span>
+<span class="kn">import</span> <span class="nn">onmt.modules</span>
+<span class="kn">from</span> <span class="nn">onmt.Models</span> <span class="k">import</span> <span class="n">NMTModel</span><span class="p">,</span> <span class="n">MeanEncoder</span><span class="p">,</span> <span class="n">RNNEncoder</span><span class="p">,</span> \
+                        <span class="n">StdRNNDecoder</span><span class="p">,</span> <span class="n">InputFeedRNNDecoder</span>
+<span class="kn">from</span> <span class="nn">onmt.modules</span> <span class="k">import</span> <span class="n">Embeddings</span><span class="p">,</span> <span class="n">ImageEncoder</span><span class="p">,</span> <span class="n">CopyGenerator</span><span class="p">,</span> \
+                         <span class="n">TransformerEncoder</span><span class="p">,</span> <span class="n">TransformerDecoder</span><span class="p">,</span> \
+                         <span class="n">CNNEncoder</span><span class="p">,</span> <span class="n">CNNDecoder</span><span class="p">,</span> <span class="n">AudioEncoder</span>
+
+
+<div class="viewcode-block" id="make_embeddings"><a class="viewcode-back" href="../../onmt.html#onmt.ModelConstructor.make_embeddings">[docs]</a><span class="k">def</span> <span class="nf">make_embeddings</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">word_dict</span><span class="p">,</span> <span class="n">feature_dicts</span><span class="p">,</span> <span class="n">for_encoder</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Make an Embeddings instance.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        opt: the option in current environment.</span>
+<span class="sd">        word_dict(Vocab): words dictionary.</span>
+<span class="sd">        feature_dicts([Vocab], optional): a list of feature dictionary.</span>
+<span class="sd">        for_encoder(bool): make Embeddings for encoder or decoder?</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">for_encoder</span><span class="p">:</span>
+        <span class="n">embedding_dim</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">src_word_vec_size</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">embedding_dim</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">tgt_word_vec_size</span>
+
+    <span class="n">word_padding_idx</span> <span class="o">=</span> <span class="n">word_dict</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">onmt</span><span class="o">.</span><span class="n">IO</span><span class="o">.</span><span class="n">PAD_WORD</span><span class="p">]</span>
+    <span class="n">num_word_embeddings</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">word_dict</span><span class="p">)</span>
+
+    <span class="n">feats_padding_idx</span> <span class="o">=</span> <span class="p">[</span><span class="n">feat_dict</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">onmt</span><span class="o">.</span><span class="n">IO</span><span class="o">.</span><span class="n">PAD_WORD</span><span class="p">]</span>
+                         <span class="k">for</span> <span class="n">feat_dict</span> <span class="ow">in</span> <span class="n">feature_dicts</span><span class="p">]</span>
+    <span class="n">num_feat_embeddings</span> <span class="o">=</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">feat_dict</span><span class="p">)</span> <span class="k">for</span> <span class="n">feat_dict</span> <span class="ow">in</span>
+                           <span class="n">feature_dicts</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">Embeddings</span><span class="p">(</span><span class="n">embedding_dim</span><span class="p">,</span>
+                      <span class="n">opt</span><span class="o">.</span><span class="n">position_encoding</span><span class="p">,</span>
+                      <span class="n">opt</span><span class="o">.</span><span class="n">feat_merge</span><span class="p">,</span>
+                      <span class="n">opt</span><span class="o">.</span><span class="n">feat_vec_exponent</span><span class="p">,</span>
+                      <span class="n">opt</span><span class="o">.</span><span class="n">feat_vec_size</span><span class="p">,</span>
+                      <span class="n">opt</span><span class="o">.</span><span class="n">dropout</span><span class="p">,</span>
+                      <span class="n">word_padding_idx</span><span class="p">,</span>
+                      <span class="n">feats_padding_idx</span><span class="p">,</span>
+                      <span class="n">num_word_embeddings</span><span class="p">,</span>
+                      <span class="n">num_feat_embeddings</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="make_encoder"><a class="viewcode-back" href="../../onmt.html#onmt.ModelConstructor.make_encoder">[docs]</a><span class="k">def</span> <span class="nf">make_encoder</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Various encoder dispatcher function.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        opt: the option in current environment.</span>
+<span class="sd">        embeddings (Embeddings): vocab embeddings for this encoder.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">encoder_type</span> <span class="o">==</span> <span class="s2">&quot;transformer&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">TransformerEncoder</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">enc_layers</span><span class="p">,</span> <span class="n">opt</span><span class="o">.</span><span class="n">rnn_size</span><span class="p">,</span>
+                                  <span class="n">opt</span><span class="o">.</span><span class="n">dropout</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">encoder_type</span> <span class="o">==</span> <span class="s2">&quot;cnn&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">CNNEncoder</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">enc_layers</span><span class="p">,</span> <span class="n">opt</span><span class="o">.</span><span class="n">rnn_size</span><span class="p">,</span>
+                          <span class="n">opt</span><span class="o">.</span><span class="n">cnn_kernel_width</span><span class="p">,</span>
+                          <span class="n">opt</span><span class="o">.</span><span class="n">dropout</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">encoder_type</span> <span class="o">==</span> <span class="s2">&quot;mean&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">MeanEncoder</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">enc_layers</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># &quot;rnn&quot; or &quot;brnn&quot;</span>
+        <span class="k">return</span> <span class="n">RNNEncoder</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">rnn_type</span><span class="p">,</span> <span class="n">opt</span><span class="o">.</span><span class="n">brnn</span><span class="p">,</span> <span class="n">opt</span><span class="o">.</span><span class="n">enc_layers</span><span class="p">,</span>
+                          <span class="n">opt</span><span class="o">.</span><span class="n">rnn_size</span><span class="p">,</span> <span class="n">opt</span><span class="o">.</span><span class="n">dropout</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="make_decoder"><a class="viewcode-back" href="../../onmt.html#onmt.ModelConstructor.make_decoder">[docs]</a><span class="k">def</span> <span class="nf">make_decoder</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Various decoder dispatcher function.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        opt: the option in current environment.</span>
+<span class="sd">        embeddings (Embeddings): vocab embeddings for this decoder.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">decoder_type</span> <span class="o">==</span> <span class="s2">&quot;transformer&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">TransformerDecoder</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">dec_layers</span><span class="p">,</span> <span class="n">opt</span><span class="o">.</span><span class="n">rnn_size</span><span class="p">,</span>
+                                  <span class="n">opt</span><span class="o">.</span><span class="n">global_attention</span><span class="p">,</span> <span class="n">opt</span><span class="o">.</span><span class="n">copy_attn</span><span class="p">,</span>
+                                  <span class="n">opt</span><span class="o">.</span><span class="n">dropout</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">decoder_type</span> <span class="o">==</span> <span class="s2">&quot;cnn&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">CNNDecoder</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">dec_layers</span><span class="p">,</span> <span class="n">opt</span><span class="o">.</span><span class="n">rnn_size</span><span class="p">,</span>
+                          <span class="n">opt</span><span class="o">.</span><span class="n">global_attention</span><span class="p">,</span> <span class="n">opt</span><span class="o">.</span><span class="n">copy_attn</span><span class="p">,</span>
+                          <span class="n">opt</span><span class="o">.</span><span class="n">cnn_kernel_width</span><span class="p">,</span> <span class="n">opt</span><span class="o">.</span><span class="n">dropout</span><span class="p">,</span>
+                          <span class="n">embeddings</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">input_feed</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">InputFeedRNNDecoder</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">rnn_type</span><span class="p">,</span> <span class="n">opt</span><span class="o">.</span><span class="n">brnn</span><span class="p">,</span>
+                                   <span class="n">opt</span><span class="o">.</span><span class="n">dec_layers</span><span class="p">,</span> <span class="n">opt</span><span class="o">.</span><span class="n">rnn_size</span><span class="p">,</span>
+                                   <span class="n">opt</span><span class="o">.</span><span class="n">global_attention</span><span class="p">,</span>
+                                   <span class="n">opt</span><span class="o">.</span><span class="n">coverage_attn</span><span class="p">,</span>
+                                   <span class="n">opt</span><span class="o">.</span><span class="n">context_gate</span><span class="p">,</span>
+                                   <span class="n">opt</span><span class="o">.</span><span class="n">copy_attn</span><span class="p">,</span>
+                                   <span class="n">opt</span><span class="o">.</span><span class="n">dropout</span><span class="p">,</span>
+                                   <span class="n">embeddings</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">StdRNNDecoder</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">rnn_type</span><span class="p">,</span> <span class="n">opt</span><span class="o">.</span><span class="n">brnn</span><span class="p">,</span>
+                             <span class="n">opt</span><span class="o">.</span><span class="n">dec_layers</span><span class="p">,</span> <span class="n">opt</span><span class="o">.</span><span class="n">rnn_size</span><span class="p">,</span>
+                             <span class="n">opt</span><span class="o">.</span><span class="n">global_attention</span><span class="p">,</span>
+                             <span class="n">opt</span><span class="o">.</span><span class="n">coverage_attn</span><span class="p">,</span>
+                             <span class="n">opt</span><span class="o">.</span><span class="n">context_gate</span><span class="p">,</span>
+                             <span class="n">opt</span><span class="o">.</span><span class="n">copy_attn</span><span class="p">,</span>
+                             <span class="n">opt</span><span class="o">.</span><span class="n">dropout</span><span class="p">,</span>
+                             <span class="n">embeddings</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="make_base_model"><a class="viewcode-back" href="../../onmt.html#onmt.ModelConstructor.make_base_model">[docs]</a><span class="k">def</span> <span class="nf">make_base_model</span><span class="p">(</span><span class="n">model_opt</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">gpu</span><span class="p">,</span> <span class="n">checkpoint</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Args:</span>
+<span class="sd">        model_opt: the option loaded from checkpoint.</span>
+<span class="sd">        fields: `Field` objects for the model.</span>
+<span class="sd">        gpu(bool): whether to use gpu.</span>
+<span class="sd">        checkpoint: the model gnerated by train phase, or a resumed snapshot</span>
+<span class="sd">                    model from a stopped training.</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        the NMTModel.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">model_opt</span><span class="o">.</span><span class="n">model_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;img&quot;</span><span class="p">,</span> <span class="s2">&quot;audio&quot;</span><span class="p">],</span> \
+        <span class="p">(</span><span class="s2">&quot;Unsupported model type </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">model_opt</span><span class="o">.</span><span class="n">model_type</span><span class="p">))</span>
+
+    <span class="c1"># Make encoder.</span>
+    <span class="k">if</span> <span class="n">model_opt</span><span class="o">.</span><span class="n">model_type</span> <span class="o">==</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span>
+        <span class="n">src_dict</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">vocab</span>
+        <span class="n">feature_dicts</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">IO</span><span class="o">.</span><span class="n">collect_feature_dicts</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="s1">&#39;src&#39;</span><span class="p">)</span>
+        <span class="n">src_embeddings</span> <span class="o">=</span> <span class="n">make_embeddings</span><span class="p">(</span><span class="n">model_opt</span><span class="p">,</span> <span class="n">src_dict</span><span class="p">,</span>
+                                         <span class="n">feature_dicts</span><span class="p">)</span>
+        <span class="n">encoder</span> <span class="o">=</span> <span class="n">make_encoder</span><span class="p">(</span><span class="n">model_opt</span><span class="p">,</span> <span class="n">src_embeddings</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">model_opt</span><span class="o">.</span><span class="n">model_type</span> <span class="o">==</span> <span class="s2">&quot;img&quot;</span><span class="p">:</span>
+        <span class="n">encoder</span> <span class="o">=</span> <span class="n">ImageEncoder</span><span class="p">(</span><span class="n">model_opt</span><span class="o">.</span><span class="n">enc_layers</span><span class="p">,</span>
+                               <span class="n">model_opt</span><span class="o">.</span><span class="n">brnn</span><span class="p">,</span>
+                               <span class="n">model_opt</span><span class="o">.</span><span class="n">rnn_size</span><span class="p">,</span>
+                               <span class="n">model_opt</span><span class="o">.</span><span class="n">dropout</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">model_opt</span><span class="o">.</span><span class="n">model_type</span> <span class="o">==</span> <span class="s2">&quot;audio&quot;</span><span class="p">:</span>
+        <span class="n">encoder</span> <span class="o">=</span> <span class="n">AudioEncoder</span><span class="p">(</span><span class="n">model_opt</span><span class="o">.</span><span class="n">enc_layers</span><span class="p">,</span>
+                               <span class="n">model_opt</span><span class="o">.</span><span class="n">brnn</span><span class="p">,</span>
+                               <span class="n">model_opt</span><span class="o">.</span><span class="n">rnn_size</span><span class="p">,</span>
+                               <span class="n">model_opt</span><span class="o">.</span><span class="n">dropout</span><span class="p">,</span>
+                               <span class="n">model_opt</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">,</span>
+                               <span class="n">model_opt</span><span class="o">.</span><span class="n">window_size</span><span class="p">)</span>
+
+    <span class="c1"># Make decoder.</span>
+    <span class="n">tgt_dict</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">vocab</span>
+    <span class="c1"># TODO: prepare for a future where tgt features are possible.</span>
+    <span class="n">feature_dicts</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">IO</span><span class="o">.</span><span class="n">collect_feature_dicts</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="s1">&#39;tgt&#39;</span><span class="p">)</span>
+    <span class="n">tgt_embeddings</span> <span class="o">=</span> <span class="n">make_embeddings</span><span class="p">(</span><span class="n">model_opt</span><span class="p">,</span> <span class="n">tgt_dict</span><span class="p">,</span>
+                                     <span class="n">feature_dicts</span><span class="p">,</span> <span class="n">for_encoder</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="c1"># Share the embedding matrix - preprocess with share_vocab required</span>
+    <span class="k">if</span> <span class="n">model_opt</span><span class="o">.</span><span class="n">share_embeddings</span><span class="p">:</span>
+        <span class="n">tgt_embeddings</span><span class="o">.</span><span class="n">word_lut</span><span class="o">.</span><span class="n">weight</span> <span class="o">=</span> <span class="n">src_embeddings</span><span class="o">.</span><span class="n">word_lut</span><span class="o">.</span><span class="n">weight</span>
+
+    <span class="n">decoder</span> <span class="o">=</span> <span class="n">make_decoder</span><span class="p">(</span><span class="n">model_opt</span><span class="p">,</span> <span class="n">tgt_embeddings</span><span class="p">)</span>
+
+    <span class="c1"># Make NMTModel(= encoder + decoder).</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">NMTModel</span><span class="p">(</span><span class="n">encoder</span><span class="p">,</span> <span class="n">decoder</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">model_type</span> <span class="o">=</span> <span class="n">model_opt</span><span class="o">.</span><span class="n">model_type</span>
+
+    <span class="c1"># Make Generator.</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">model_opt</span><span class="o">.</span><span class="n">copy_attn</span><span class="p">:</span>
+        <span class="n">generator</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">model_opt</span><span class="o">.</span><span class="n">rnn_size</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">vocab</span><span class="p">)),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">LogSoftmax</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">model_opt</span><span class="o">.</span><span class="n">share_decoder_embeddings</span><span class="p">:</span>
+            <span class="n">generator</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span> <span class="o">=</span> <span class="n">decoder</span><span class="o">.</span><span class="n">embeddings</span><span class="o">.</span><span class="n">word_lut</span><span class="o">.</span><span class="n">weight</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">generator</span> <span class="o">=</span> <span class="n">CopyGenerator</span><span class="p">(</span><span class="n">model_opt</span><span class="p">,</span> <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">vocab</span><span class="p">,</span>
+                                  <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">vocab</span><span class="p">)</span>
+
+    <span class="c1"># Load the model states from checkpoint or initialize them.</span>
+    <span class="k">if</span> <span class="n">checkpoint</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Loading model parameters.&#39;</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">[</span><span class="s1">&#39;model&#39;</span><span class="p">])</span>
+        <span class="n">generator</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">[</span><span class="s1">&#39;generator&#39;</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">model_opt</span><span class="o">.</span><span class="n">param_init</span> <span class="o">!=</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Intializing model parameters.&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">():</span>
+                <span class="n">p</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">uniform_</span><span class="p">(</span><span class="o">-</span><span class="n">model_opt</span><span class="o">.</span><span class="n">param_init</span><span class="p">,</span> <span class="n">model_opt</span><span class="o">.</span><span class="n">param_init</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">generator</span><span class="o">.</span><span class="n">parameters</span><span class="p">():</span>
+                <span class="n">p</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">uniform_</span><span class="p">(</span><span class="o">-</span><span class="n">model_opt</span><span class="o">.</span><span class="n">param_init</span><span class="p">,</span> <span class="n">model_opt</span><span class="o">.</span><span class="n">param_init</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">encoder</span><span class="p">,</span> <span class="s1">&#39;embeddings&#39;</span><span class="p">):</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">encoder</span><span class="o">.</span><span class="n">embeddings</span><span class="o">.</span><span class="n">load_pretrained_vectors</span><span class="p">(</span>
+                    <span class="n">model_opt</span><span class="o">.</span><span class="n">pre_word_vecs_enc</span><span class="p">,</span> <span class="n">model_opt</span><span class="o">.</span><span class="n">fix_word_vecs_enc</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="p">,</span> <span class="s1">&#39;embeddings&#39;</span><span class="p">):</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">embeddings</span><span class="o">.</span><span class="n">load_pretrained_vectors</span><span class="p">(</span>
+                    <span class="n">model_opt</span><span class="o">.</span><span class="n">pre_word_vecs_dec</span><span class="p">,</span> <span class="n">model_opt</span><span class="o">.</span><span class="n">fix_word_vecs_dec</span><span class="p">)</span>
+
+    <span class="c1"># Add generator to model (this registers it as parameter of model).</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">generator</span> <span class="o">=</span> <span class="n">generator</span>
+
+    <span class="c1"># Make the whole model leverage GPU if indicated to do so.</span>
+    <span class="k">if</span> <span class="n">gpu</span><span class="p">:</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">cuda</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">model</span></div>
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, srush.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

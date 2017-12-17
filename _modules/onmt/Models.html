@@ -1,0 +1,731 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>onmt.Models &mdash; OpenNMT-py  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="OpenNMT-py  documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> OpenNMT-py
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../main.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../extended.html">Example: Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Summarization.html">Example: Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../im2text.html">Example: Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../speech2text.html">Example: Speech to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../options/preprocess.html">Options: preprocess.py:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../options/train.html">Options: train.py:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../options/translate.html">Options: translate.py:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../onmt.html">onmt package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../onmt.modules.html">onmt.modules package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../CONTRIBUTORS.html">Contributors</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">OpenNMT-py</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>onmt.Models</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for onmt.Models</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">division</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+<span class="kn">from</span> <span class="nn">torch.autograd</span> <span class="k">import</span> <span class="n">Variable</span>
+<span class="kn">from</span> <span class="nn">torch.nn.utils.rnn</span> <span class="k">import</span> <span class="n">pack_padded_sequence</span> <span class="k">as</span> <span class="n">pack</span>
+<span class="kn">from</span> <span class="nn">torch.nn.utils.rnn</span> <span class="k">import</span> <span class="n">pad_packed_sequence</span> <span class="k">as</span> <span class="n">unpack</span>
+
+<span class="kn">import</span> <span class="nn">onmt</span>
+<span class="kn">from</span> <span class="nn">onmt.Utils</span> <span class="k">import</span> <span class="n">aeq</span>
+
+
+<div class="viewcode-block" id="EncoderBase"><a class="viewcode-back" href="../../onmt.html#onmt.Models.EncoderBase">[docs]</a><span class="k">class</span> <span class="nc">EncoderBase</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    EncoderBase class for sharing code among various encoder.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">_check_args</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">,</span> <span class="n">lengths</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hidden</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">s_len</span><span class="p">,</span> <span class="n">n_batch</span><span class="p">,</span> <span class="n">n_feats</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">lengths</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">n_batch_</span><span class="p">,</span> <span class="o">=</span> <span class="n">lengths</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+            <span class="n">aeq</span><span class="p">(</span><span class="n">n_batch</span><span class="p">,</span> <span class="n">n_batch_</span><span class="p">)</span>
+
+<div class="viewcode-block" id="EncoderBase.forward"><a class="viewcode-back" href="../../onmt.html#onmt.Models.EncoderBase.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">,</span> <span class="n">lengths</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hidden</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            input (LongTensor): len x batch x nfeat.</span>
+<span class="sd">            lengths (LongTensor): batch</span>
+<span class="sd">            hidden: Initial hidden state.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            hidden_t (Variable): Pair of layers x batch x rnn_size - final</span>
+<span class="sd">                                    encoder state</span>
+<span class="sd">            outputs (FloatTensor):  len x batch x rnn_size -  Memory bank</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div></div>
+
+
+<div class="viewcode-block" id="MeanEncoder"><a class="viewcode-back" href="../../onmt.html#onmt.Models.MeanEncoder">[docs]</a><span class="k">class</span> <span class="nc">MeanEncoder</span><span class="p">(</span><span class="n">EncoderBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; A trivial encoder without RNN, just takes mean as final state. &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MeanEncoder</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_layers</span> <span class="o">=</span> <span class="n">num_layers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span> <span class="o">=</span> <span class="n">embeddings</span>
+
+<div class="viewcode-block" id="MeanEncoder.forward"><a class="viewcode-back" href="../../onmt.html#onmt.Models.MeanEncoder.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">,</span> <span class="n">lengths</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hidden</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; See EncoderBase.forward() for description of args and returns. &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_args</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">lengths</span><span class="p">,</span> <span class="n">hidden</span><span class="p">)</span>
+
+        <span class="n">emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+        <span class="n">s_len</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">emb_dim</span> <span class="o">=</span> <span class="n">emb</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+        <span class="n">mean</span> <span class="o">=</span> <span class="n">emb</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_layers</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">emb_dim</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">mean</span><span class="p">),</span> <span class="n">emb</span></div></div>
+
+
+<div class="viewcode-block" id="RNNEncoder"><a class="viewcode-back" href="../../onmt.html#onmt.Models.RNNEncoder">[docs]</a><span class="k">class</span> <span class="nc">RNNEncoder</span><span class="p">(</span><span class="n">EncoderBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; The standard RNN encoder. &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rnn_type</span><span class="p">,</span> <span class="n">bidirectional</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">,</span>
+                 <span class="n">hidden_size</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RNNEncoder</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="n">num_directions</span> <span class="o">=</span> <span class="mi">2</span> <span class="k">if</span> <span class="n">bidirectional</span> <span class="k">else</span> <span class="mi">1</span>
+        <span class="k">assert</span> <span class="n">hidden_size</span> <span class="o">%</span> <span class="n">num_directions</span> <span class="o">==</span> <span class="mi">0</span>
+        <span class="n">hidden_size</span> <span class="o">=</span> <span class="n">hidden_size</span> <span class="o">//</span> <span class="n">num_directions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span> <span class="o">=</span> <span class="n">embeddings</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">no_pack_padded_seq</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># Use pytorch version when available.</span>
+        <span class="k">if</span> <span class="n">rnn_type</span> <span class="o">==</span> <span class="s2">&quot;SRU&quot;</span><span class="p">:</span>
+            <span class="c1"># SRU doesn&#39;t support PackedSequence.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">no_pack_padded_seq</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rnn</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">SRU</span><span class="p">(</span>
+                    <span class="n">input_size</span><span class="o">=</span><span class="n">embeddings</span><span class="o">.</span><span class="n">embedding_size</span><span class="p">,</span>
+                    <span class="n">hidden_size</span><span class="o">=</span><span class="n">hidden_size</span><span class="p">,</span>
+                    <span class="n">num_layers</span><span class="o">=</span><span class="n">num_layers</span><span class="p">,</span>
+                    <span class="n">dropout</span><span class="o">=</span><span class="n">dropout</span><span class="p">,</span>
+                    <span class="n">bidirectional</span><span class="o">=</span><span class="n">bidirectional</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rnn</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">nn</span><span class="p">,</span> <span class="n">rnn_type</span><span class="p">)(</span>
+                    <span class="n">input_size</span><span class="o">=</span><span class="n">embeddings</span><span class="o">.</span><span class="n">embedding_size</span><span class="p">,</span>
+                    <span class="n">hidden_size</span><span class="o">=</span><span class="n">hidden_size</span><span class="p">,</span>
+                    <span class="n">num_layers</span><span class="o">=</span><span class="n">num_layers</span><span class="p">,</span>
+                    <span class="n">dropout</span><span class="o">=</span><span class="n">dropout</span><span class="p">,</span>
+                    <span class="n">bidirectional</span><span class="o">=</span><span class="n">bidirectional</span><span class="p">)</span>
+
+<div class="viewcode-block" id="RNNEncoder.forward"><a class="viewcode-back" href="../../onmt.html#onmt.Models.RNNEncoder.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">,</span> <span class="n">lengths</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hidden</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; See EncoderBase.forward() for description of args and returns.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_args</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">lengths</span><span class="p">,</span> <span class="n">hidden</span><span class="p">)</span>
+
+        <span class="n">emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+        <span class="n">s_len</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">emb_dim</span> <span class="o">=</span> <span class="n">emb</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+
+        <span class="n">packed_emb</span> <span class="o">=</span> <span class="n">emb</span>
+        <span class="k">if</span> <span class="n">lengths</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">no_pack_padded_seq</span><span class="p">:</span>
+            <span class="c1"># Lengths data is wrapped inside a Variable.</span>
+            <span class="n">lengths</span> <span class="o">=</span> <span class="n">lengths</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            <span class="n">packed_emb</span> <span class="o">=</span> <span class="n">pack</span><span class="p">(</span><span class="n">emb</span><span class="p">,</span> <span class="n">lengths</span><span class="p">)</span>
+
+        <span class="n">outputs</span><span class="p">,</span> <span class="n">hidden_t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rnn</span><span class="p">(</span><span class="n">packed_emb</span><span class="p">,</span> <span class="n">hidden</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">lengths</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">no_pack_padded_seq</span><span class="p">:</span>
+            <span class="n">outputs</span> <span class="o">=</span> <span class="n">unpack</span><span class="p">(</span><span class="n">outputs</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">hidden_t</span><span class="p">,</span> <span class="n">outputs</span></div></div>
+
+
+<div class="viewcode-block" id="RNNDecoderBase"><a class="viewcode-back" href="../../onmt.html#onmt.Models.RNNDecoderBase">[docs]</a><span class="k">class</span> <span class="nc">RNNDecoderBase</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    RNN decoder base class.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rnn_type</span><span class="p">,</span> <span class="n">bidirectional_encoder</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">,</span>
+                 <span class="n">hidden_size</span><span class="p">,</span> <span class="n">attn_type</span><span class="p">,</span> <span class="n">coverage_attn</span><span class="p">,</span> <span class="n">context_gate</span><span class="p">,</span>
+                 <span class="n">copy_attn</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RNNDecoderBase</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="c1"># Basic attributes.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">decoder_type</span> <span class="o">=</span> <span class="s1">&#39;rnn&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bidirectional_encoder</span> <span class="o">=</span> <span class="n">bidirectional_encoder</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_layers</span> <span class="o">=</span> <span class="n">num_layers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hidden_size</span> <span class="o">=</span> <span class="n">hidden_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span> <span class="o">=</span> <span class="n">embeddings</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span>
+
+        <span class="c1"># Build the RNN.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rnn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_rnn</span><span class="p">(</span><span class="n">rnn_type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_input_size</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span>
+                                   <span class="n">num_layers</span><span class="p">,</span> <span class="n">dropout</span><span class="p">)</span>
+
+        <span class="c1"># Set up the context gate.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">context_gate</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">context_gate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">context_gate</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">ContextGateFactory</span><span class="p">(</span>
+                <span class="n">context_gate</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_input_size</span><span class="p">,</span>
+                <span class="n">hidden_size</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span> <span class="n">hidden_size</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Set up the standard attention.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_coverage</span> <span class="o">=</span> <span class="n">coverage_attn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attn</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">GlobalAttention</span><span class="p">(</span>
+            <span class="n">hidden_size</span><span class="p">,</span> <span class="n">coverage</span><span class="o">=</span><span class="n">coverage_attn</span><span class="p">,</span>
+            <span class="n">attn_type</span><span class="o">=</span><span class="n">attn_type</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Set up a separated copy attention layer, if needed.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_copy</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">copy_attn</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">GlobalAttention</span><span class="p">(</span>
+                <span class="n">hidden_size</span><span class="p">,</span> <span class="n">attn_type</span><span class="o">=</span><span class="n">attn_type</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_copy</span> <span class="o">=</span> <span class="kc">True</span>
+
+<div class="viewcode-block" id="RNNDecoderBase.forward"><a class="viewcode-back" href="../../onmt.html#onmt.Models.RNNDecoderBase.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">context_lengths</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Forward through the decoder.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            input (LongTensor): a sequence of input tokens tensors</span>
+<span class="sd">                                of size (len x batch x nfeats).</span>
+<span class="sd">            context (FloatTensor): output(tensor sequence) from the encoder</span>
+<span class="sd">                        RNN of size (src_len x batch x hidden_size).</span>
+<span class="sd">            state (FloatTensor): hidden state from the encoder RNN for</span>
+<span class="sd">                                 initializing the decoder.</span>
+<span class="sd">            context_lengths (LongTensor): the source context lengths.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            outputs (FloatTensor): a Tensor sequence of output from the decoder</span>
+<span class="sd">                                   of shape (len x batch x hidden_size).</span>
+<span class="sd">            state (FloatTensor): final hidden state from the decoder.</span>
+<span class="sd">            attns (dict of (str, FloatTensor)): a dictionary of different</span>
+<span class="sd">                                type of attention Tensor from the decoder</span>
+<span class="sd">                                of shape (src_len x batch).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Args Check</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">RNNDecoderState</span><span class="p">)</span>
+        <span class="n">input_len</span><span class="p">,</span> <span class="n">input_batch</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+        <span class="n">contxt_len</span><span class="p">,</span> <span class="n">contxt_batch</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+        <span class="n">aeq</span><span class="p">(</span><span class="n">input_batch</span><span class="p">,</span> <span class="n">contxt_batch</span><span class="p">)</span>
+        <span class="c1"># END Args Check</span>
+
+        <span class="c1"># Run the forward pass of the RNN.</span>
+        <span class="n">hidden</span><span class="p">,</span> <span class="n">outputs</span><span class="p">,</span> <span class="n">attns</span><span class="p">,</span> <span class="n">coverage</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_forward_pass</span><span class="p">(</span>
+            <span class="nb">input</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">context_lengths</span><span class="o">=</span><span class="n">context_lengths</span><span class="p">)</span>
+
+        <span class="c1"># Update the state with the result.</span>
+        <span class="n">final_output</span> <span class="o">=</span> <span class="n">outputs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">state</span><span class="o">.</span><span class="n">update_state</span><span class="p">(</span><span class="n">hidden</span><span class="p">,</span> <span class="n">final_output</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
+                           <span class="n">coverage</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                           <span class="k">if</span> <span class="n">coverage</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="c1"># Concatenates sequence of tensors along a new dimension.</span>
+        <span class="n">outputs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">outputs</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">attns</span><span class="p">:</span>
+            <span class="n">attns</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">attns</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">outputs</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">attns</span></div>
+
+    <span class="k">def</span> <span class="nf">_fix_enc_hidden</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The encoder hidden is  (layers*directions) x batch x dim.</span>
+<span class="sd">        We need to convert it to layers x batch x (directions*dim).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bidirectional_encoder</span><span class="p">:</span>
+            <span class="n">h</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">h</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">h</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">):</span><span class="mi">2</span><span class="p">],</span> <span class="n">h</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="n">h</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">):</span><span class="mi">2</span><span class="p">]],</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">h</span>
+
+<div class="viewcode-block" id="RNNDecoderBase.init_decoder_state"><a class="viewcode-back" href="../../onmt.html#onmt.Models.RNNDecoderBase.init_decoder_state">[docs]</a>    <span class="k">def</span> <span class="nf">init_decoder_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">enc_hidden</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">enc_hidden</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>  <span class="c1"># LSTM</span>
+            <span class="k">return</span> <span class="n">RNNDecoderState</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_size</span><span class="p">,</span>
+                                   <span class="nb">tuple</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">_fix_enc_hidden</span><span class="p">(</span><span class="n">enc_hidden</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                                         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">enc_hidden</span><span class="p">))]))</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># GRU</span>
+            <span class="k">return</span> <span class="n">RNNDecoderState</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_size</span><span class="p">,</span>
+                                   <span class="bp">self</span><span class="o">.</span><span class="n">_fix_enc_hidden</span><span class="p">(</span><span class="n">enc_hidden</span><span class="p">))</span></div></div>
+
+
+<div class="viewcode-block" id="StdRNNDecoder"><a class="viewcode-back" href="../../onmt.html#onmt.Models.StdRNNDecoder">[docs]</a><span class="k">class</span> <span class="nc">StdRNNDecoder</span><span class="p">(</span><span class="n">RNNDecoderBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Stardard RNN decoder, with Attention.</span>
+<span class="sd">    Currently no &#39;coverage_attn&#39; and &#39;copy_attn&#39; support.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">_run_forward_pass</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">context_lengths</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Private helper for running the specific RNN forward pass.</span>
+<span class="sd">        Must be overriden by all subclasses.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            input (LongTensor): a sequence of input tokens tensors</span>
+<span class="sd">                                of size (len x batch x nfeats).</span>
+<span class="sd">            context (FloatTensor): output(tensor sequence) from the encoder</span>
+<span class="sd">                        RNN of size (src_len x batch x hidden_size).</span>
+<span class="sd">            state (FloatTensor): hidden state from the encoder RNN for</span>
+<span class="sd">                                 initializing the decoder.</span>
+<span class="sd">            context_lengths (LongTensor): the source context lengths.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            hidden (Variable): final hidden state from the decoder.</span>
+<span class="sd">            outputs ([FloatTensor]): an array of output of every time</span>
+<span class="sd">                                     step from the decoder.</span>
+<span class="sd">            attns (dict of (str, [FloatTensor]): a dictionary of different</span>
+<span class="sd">                            type of attention Tensor array of every time</span>
+<span class="sd">                            step from the decoder.</span>
+<span class="sd">            coverage (FloatTensor, optional): coverage from the decoder.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_copy</span>  <span class="c1"># TODO, no support yet.</span>
+        <span class="k">assert</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coverage</span>  <span class="c1"># TODO, no support yet.</span>
+
+        <span class="c1"># Initialize local and return variables.</span>
+        <span class="n">outputs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">attns</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;std&quot;</span><span class="p">:</span> <span class="p">[]}</span>
+        <span class="n">coverage</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="n">emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+
+        <span class="c1"># Run the forward pass of the RNN.</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rnn</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">GRU</span><span class="p">):</span>
+            <span class="n">rnn_output</span><span class="p">,</span> <span class="n">hidden</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rnn</span><span class="p">(</span><span class="n">emb</span><span class="p">,</span> <span class="n">state</span><span class="o">.</span><span class="n">hidden</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">rnn_output</span><span class="p">,</span> <span class="n">hidden</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rnn</span><span class="p">(</span><span class="n">emb</span><span class="p">,</span> <span class="n">state</span><span class="o">.</span><span class="n">hidden</span><span class="p">)</span>
+        <span class="c1"># Result Check</span>
+        <span class="n">input_len</span><span class="p">,</span> <span class="n">input_batch</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+        <span class="n">output_len</span><span class="p">,</span> <span class="n">output_batch</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">rnn_output</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+        <span class="n">aeq</span><span class="p">(</span><span class="n">input_len</span><span class="p">,</span> <span class="n">output_len</span><span class="p">)</span>
+        <span class="n">aeq</span><span class="p">(</span><span class="n">input_batch</span><span class="p">,</span> <span class="n">output_batch</span><span class="p">)</span>
+        <span class="c1"># END Result Check</span>
+
+        <span class="c1"># Calculate the attention.</span>
+        <span class="n">attn_outputs</span><span class="p">,</span> <span class="n">attn_scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">attn</span><span class="p">(</span>
+            <span class="n">rnn_output</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">(),</span>  <span class="c1"># (output_len, batch, d)</span>
+            <span class="n">context</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>                  <span class="c1"># (contxt_len, batch, d)</span>
+            <span class="n">context_lengths</span><span class="o">=</span><span class="n">context_lengths</span>
+        <span class="p">)</span>
+        <span class="n">attns</span><span class="p">[</span><span class="s2">&quot;std&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">attn_scores</span>
+
+        <span class="c1"># Calculate the context gate.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">context_gate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context_gate</span><span class="p">(</span>
+                <span class="n">emb</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">emb</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">2</span><span class="p">)),</span>
+                <span class="n">rnn_output</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">rnn_output</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">2</span><span class="p">)),</span>
+                <span class="n">attn_outputs</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">attn_outputs</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+            <span class="p">)</span>
+            <span class="n">outputs</span> <span class="o">=</span> <span class="n">outputs</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">input_len</span><span class="p">,</span> <span class="n">input_batch</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_size</span><span class="p">)</span>
+            <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">(</span><span class="n">outputs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">(</span><span class="n">attn_outputs</span><span class="p">)</span>    <span class="c1"># (input_len, batch, d)</span>
+
+        <span class="c1"># Return result.</span>
+        <span class="k">return</span> <span class="n">hidden</span><span class="p">,</span> <span class="n">outputs</span><span class="p">,</span> <span class="n">attns</span><span class="p">,</span> <span class="n">coverage</span>
+
+    <span class="k">def</span> <span class="nf">_build_rnn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rnn_type</span><span class="p">,</span> <span class="n">input_size</span><span class="p">,</span>
+                   <span class="n">hidden_size</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">,</span> <span class="n">dropout</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Private helper for building standard decoder RNN.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Use pytorch version when available.</span>
+        <span class="k">if</span> <span class="n">rnn_type</span> <span class="o">==</span> <span class="s2">&quot;SRU&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">onmt</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">SRU</span><span class="p">(</span>
+                    <span class="n">input_size</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span>
+                    <span class="n">num_layers</span><span class="o">=</span><span class="n">num_layers</span><span class="p">,</span>
+                    <span class="n">dropout</span><span class="o">=</span><span class="n">dropout</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">nn</span><span class="p">,</span> <span class="n">rnn_type</span><span class="p">)(</span>
+            <span class="n">input_size</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span>
+            <span class="n">num_layers</span><span class="o">=</span><span class="n">num_layers</span><span class="p">,</span>
+            <span class="n">dropout</span><span class="o">=</span><span class="n">dropout</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_input_size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Private helper returning the number of expected features.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span><span class="o">.</span><span class="n">embedding_size</span></div>
+
+
+<div class="viewcode-block" id="InputFeedRNNDecoder"><a class="viewcode-back" href="../../onmt.html#onmt.Models.InputFeedRNNDecoder">[docs]</a><span class="k">class</span> <span class="nc">InputFeedRNNDecoder</span><span class="p">(</span><span class="n">RNNDecoderBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Stardard RNN decoder, with Input Feed and Attention.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">_run_forward_pass</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">context_lengths</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        See StdRNNDecoder._run_forward_pass() for description</span>
+<span class="sd">        of arguments and return values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Additional args check.</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">input_feed</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">output_batch</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+        <span class="n">input_len</span><span class="p">,</span> <span class="n">input_batch</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+        <span class="n">aeq</span><span class="p">(</span><span class="n">input_batch</span><span class="p">,</span> <span class="n">output_batch</span><span class="p">)</span>
+        <span class="c1"># END Additional args check.</span>
+
+        <span class="c1"># Initialize local and return variables.</span>
+        <span class="n">outputs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">attns</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;std&quot;</span><span class="p">:</span> <span class="p">[]}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_copy</span><span class="p">:</span>
+            <span class="n">attns</span><span class="p">[</span><span class="s2">&quot;copy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coverage</span><span class="p">:</span>
+            <span class="n">attns</span><span class="p">[</span><span class="s2">&quot;coverage&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">emb</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">==</span> <span class="mi">3</span>  <span class="c1"># len x batch x embedding_dim</span>
+
+        <span class="n">hidden</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">hidden</span>
+        <span class="n">coverage</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">coverage</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> \
+            <span class="k">if</span> <span class="n">state</span><span class="o">.</span><span class="n">coverage</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+
+        <span class="c1"># Input feed concatenates hidden state with</span>
+        <span class="c1"># input at every time step.</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">emb_t</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">emb</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="mi">1</span><span class="p">)):</span>
+            <span class="n">emb_t</span> <span class="o">=</span> <span class="n">emb_t</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">emb_t</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">emb_t</span><span class="p">,</span> <span class="n">output</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+
+            <span class="n">rnn_output</span><span class="p">,</span> <span class="n">hidden</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rnn</span><span class="p">(</span><span class="n">emb_t</span><span class="p">,</span> <span class="n">hidden</span><span class="p">)</span>
+            <span class="n">attn_output</span><span class="p">,</span> <span class="n">attn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">attn</span><span class="p">(</span>
+                <span class="n">rnn_output</span><span class="p">,</span>
+                <span class="n">context</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                <span class="n">context_lengths</span><span class="o">=</span><span class="n">context_lengths</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">context_gate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context_gate</span><span class="p">(</span>
+                    <span class="n">emb_t</span><span class="p">,</span> <span class="n">rnn_output</span><span class="p">,</span> <span class="n">attn_output</span>
+                <span class="p">)</span>
+                <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">(</span><span class="n">attn_output</span><span class="p">)</span>
+            <span class="n">outputs</span> <span class="o">+=</span> <span class="p">[</span><span class="n">output</span><span class="p">]</span>
+            <span class="n">attns</span><span class="p">[</span><span class="s2">&quot;std&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="p">[</span><span class="n">attn</span><span class="p">]</span>
+
+            <span class="c1"># Update the coverage attention.</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coverage</span><span class="p">:</span>
+                <span class="n">coverage</span> <span class="o">=</span> <span class="n">coverage</span> <span class="o">+</span> <span class="n">attn</span> \
+                    <span class="k">if</span> <span class="n">coverage</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">attn</span>
+                <span class="n">attns</span><span class="p">[</span><span class="s2">&quot;coverage&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="p">[</span><span class="n">coverage</span><span class="p">]</span>
+
+            <span class="c1"># Run the forward pass of the copy attention layer.</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_copy</span><span class="p">:</span>
+                <span class="n">_</span><span class="p">,</span> <span class="n">copy_attn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span><span class="p">(</span><span class="n">output</span><span class="p">,</span>
+                                              <span class="n">context</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+                <span class="n">attns</span><span class="p">[</span><span class="s2">&quot;copy&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="p">[</span><span class="n">copy_attn</span><span class="p">]</span>
+
+        <span class="c1"># Return result.</span>
+        <span class="k">return</span> <span class="n">hidden</span><span class="p">,</span> <span class="n">outputs</span><span class="p">,</span> <span class="n">attns</span><span class="p">,</span> <span class="n">coverage</span>
+
+    <span class="k">def</span> <span class="nf">_build_rnn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rnn_type</span><span class="p">,</span> <span class="n">input_size</span><span class="p">,</span>
+                   <span class="n">hidden_size</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">,</span> <span class="n">dropout</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="ow">not</span> <span class="n">rnn_type</span> <span class="o">==</span> <span class="s2">&quot;SRU&quot;</span><span class="p">,</span> <span class="s2">&quot;SRU doesn&#39;t support input feed! &quot;</span> \
+                <span class="s2">&quot;Please set -input_feed 0!&quot;</span>
+        <span class="k">if</span> <span class="n">rnn_type</span> <span class="o">==</span> <span class="s2">&quot;LSTM&quot;</span><span class="p">:</span>
+            <span class="n">stacked_cell</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">StackedLSTM</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">stacked_cell</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">StackedGRU</span>
+        <span class="k">return</span> <span class="n">stacked_cell</span><span class="p">(</span><span class="n">num_layers</span><span class="p">,</span> <span class="n">input_size</span><span class="p">,</span>
+                            <span class="n">hidden_size</span><span class="p">,</span> <span class="n">dropout</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_input_size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Using input feed by concatenating input with attention vectors.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span><span class="o">.</span><span class="n">embedding_size</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_size</span></div>
+
+
+<div class="viewcode-block" id="NMTModel"><a class="viewcode-back" href="../../onmt.html#onmt.Models.NMTModel">[docs]</a><span class="k">class</span> <span class="nc">NMTModel</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The encoder + decoder Neural Machine Translation Model.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">encoder</span><span class="p">,</span> <span class="n">decoder</span><span class="p">,</span> <span class="n">multigpu</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            encoder(*Encoder): the various encoder.</span>
+<span class="sd">            decoder(*Decoder): the various decoder.</span>
+<span class="sd">            multigpu(bool): run parellel on multi-GPU?</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">multigpu</span> <span class="o">=</span> <span class="n">multigpu</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">NMTModel</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span> <span class="o">=</span> <span class="n">encoder</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span> <span class="o">=</span> <span class="n">decoder</span>
+
+<div class="viewcode-block" id="NMTModel.forward"><a class="viewcode-back" href="../../onmt.html#onmt.Models.NMTModel.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">lengths</span><span class="p">,</span> <span class="n">dec_state</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            src(FloatTensor): a sequence of source tensors with</span>
+<span class="sd">                    optional feature tensors of size (len x batch).</span>
+<span class="sd">            tgt(FloatTensor): a sequence of target tensors with</span>
+<span class="sd">                    optional feature tensors of size (len x batch).</span>
+<span class="sd">            lengths([int]): an array of the src length.</span>
+<span class="sd">            dec_state: A decoder state object</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            outputs (FloatTensor): (len x batch x hidden_size): decoder outputs</span>
+<span class="sd">            attns (FloatTensor): Dictionary of (src_len x batch)</span>
+<span class="sd">            dec_hidden (FloatTensor): tuple (1 x batch x hidden_size)</span>
+<span class="sd">                                      Init hidden state</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tgt</span> <span class="o">=</span> <span class="n">tgt</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># exclude last target from inputs</span>
+        <span class="n">enc_hidden</span><span class="p">,</span> <span class="n">context</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">lengths</span><span class="p">)</span>
+        <span class="n">enc_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">init_decoder_state</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">enc_hidden</span><span class="p">)</span>
+        <span class="n">out</span><span class="p">,</span> <span class="n">dec_state</span><span class="p">,</span> <span class="n">attns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="p">(</span><span class="n">tgt</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span>
+                                             <span class="n">enc_state</span> <span class="k">if</span> <span class="n">dec_state</span> <span class="ow">is</span> <span class="kc">None</span>
+                                             <span class="k">else</span> <span class="n">dec_state</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">multigpu</span><span class="p">:</span>
+            <span class="c1"># Not yet supported on multi-gpu</span>
+            <span class="n">dec_state</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">attns</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">out</span><span class="p">,</span> <span class="n">attns</span><span class="p">,</span> <span class="n">dec_state</span></div></div>
+
+
+<div class="viewcode-block" id="DecoderState"><a class="viewcode-back" href="../../onmt.html#onmt.Models.DecoderState">[docs]</a><span class="k">class</span> <span class="nc">DecoderState</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    DecoderState is a base class for models, used during translation</span>
+<span class="sd">    for storing translation states.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="DecoderState.detach"><a class="viewcode-back" href="../../onmt.html#onmt.Models.DecoderState.detach">[docs]</a>    <span class="k">def</span> <span class="nf">detach</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Detaches all Variables from the graph</span>
+<span class="sd">        that created it, making it a leaf.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_all</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">h</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">h</span><span class="o">.</span><span class="n">detach_</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="DecoderState.beam_update"><a class="viewcode-back" href="../../onmt.html#onmt.Models.DecoderState.beam_update">[docs]</a>    <span class="k">def</span> <span class="nf">beam_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">positions</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Update when beam advances. &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_all</span><span class="p">:</span>
+            <span class="n">a</span><span class="p">,</span> <span class="n">br</span><span class="p">,</span> <span class="n">d</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+            <span class="n">sentStates</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">,</span> <span class="n">br</span> <span class="o">//</span> <span class="n">beam_size</span><span class="p">,</span> <span class="n">d</span><span class="p">)[:,</span> <span class="p">:,</span> <span class="n">idx</span><span class="p">]</span>
+            <span class="n">sentStates</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">copy_</span><span class="p">(</span>
+                <span class="n">sentStates</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">positions</span><span class="p">))</span></div></div>
+
+
+<div class="viewcode-block" id="RNNDecoderState"><a class="viewcode-back" href="../../onmt.html#onmt.Models.RNNDecoderState">[docs]</a><span class="k">class</span> <span class="nc">RNNDecoderState</span><span class="p">(</span><span class="n">DecoderState</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span> <span class="n">rnnstate</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            context (FloatTensor): output from the encoder of size</span>
+<span class="sd">                                   len x batch x rnn_size.</span>
+<span class="sd">            hidden_size (int): the size of hidden layer of the decoder.</span>
+<span class="sd">            rnnstate (Variable): final hidden state from the encoder.</span>
+<span class="sd">                transformed to shape: layers x batch x (directions*dim).</span>
+<span class="sd">            input_feed (FloatTensor): output from last layer of the decoder.</span>
+<span class="sd">            coverage (FloatTensor): coverage output from the decoder.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rnnstate</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hidden</span> <span class="o">=</span> <span class="p">(</span><span class="n">rnnstate</span><span class="p">,)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hidden</span> <span class="o">=</span> <span class="n">rnnstate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coverage</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Init the input feed.</span>
+        <span class="n">batch_size</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">h_size</span> <span class="o">=</span> <span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_feed</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">context</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="o">*</span><span class="n">h_size</span><span class="p">)</span><span class="o">.</span><span class="n">zero_</span><span class="p">(),</span>
+                                   <span class="n">requires_grad</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_all</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_feed</span><span class="p">,)</span>
+
+<div class="viewcode-block" id="RNNDecoderState.update_state"><a class="viewcode-back" href="../../onmt.html#onmt.Models.RNNDecoderState.update_state">[docs]</a>    <span class="k">def</span> <span class="nf">update_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rnnstate</span><span class="p">,</span> <span class="n">input_feed</span><span class="p">,</span> <span class="n">coverage</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rnnstate</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hidden</span> <span class="o">=</span> <span class="p">(</span><span class="n">rnnstate</span><span class="p">,)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hidden</span> <span class="o">=</span> <span class="n">rnnstate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_feed</span> <span class="o">=</span> <span class="n">input_feed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coverage</span> <span class="o">=</span> <span class="n">coverage</span></div>
+
+<div class="viewcode-block" id="RNNDecoderState.repeat_beam_size_times"><a class="viewcode-back" href="../../onmt.html#onmt.Models.RNNDecoderState.repeat_beam_size_times">[docs]</a>    <span class="k">def</span> <span class="nf">repeat_beam_size_times</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Repeat beam_size times along batch dimension. &quot;&quot;&quot;</span>
+        <span class="nb">vars</span> <span class="o">=</span> <span class="p">[</span><span class="n">Variable</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">volatile</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_all</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hidden</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">vars</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_feed</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div></div>
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, srush.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

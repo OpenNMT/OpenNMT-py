@@ -1,0 +1,438 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>onmt.Trainer &mdash; OpenNMT-py  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="OpenNMT-py  documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> OpenNMT-py
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../main.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../extended.html">Example: Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Summarization.html">Example: Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../im2text.html">Example: Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../speech2text.html">Example: Speech to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../options/preprocess.html">Options: preprocess.py:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../options/train.html">Options: train.py:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../options/translate.html">Options: translate.py:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../onmt.html">onmt package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../onmt.modules.html">onmt.modules package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../CONTRIBUTORS.html">Contributors</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">OpenNMT-py</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>onmt.Trainer</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for onmt.Trainer</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">division</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This is the loadable seq2seq trainer library that is</span>
+<span class="sd">in charge of training details, loss compute, and statistics.</span>
+<span class="sd">See train.py for a use case of this library.</span>
+
+<span class="sd">Note!!! To make this a general library, we implement *only*</span>
+<span class="sd">mechanism things here(i.e. what to do), and leave the strategy</span>
+<span class="sd">things to users(i.e. how to do it). Also see train.py(one of the</span>
+<span class="sd">users of this library) for the strategy things we do.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+
+<span class="kn">import</span> <span class="nn">onmt</span>
+<span class="kn">import</span> <span class="nn">onmt.modules</span>
+
+
+<div class="viewcode-block" id="Statistics"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.Statistics">[docs]</a><span class="k">class</span> <span class="nc">Statistics</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Train/validate loss statistics.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_words</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_correct</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loss</span> <span class="o">=</span> <span class="n">loss</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_words</span> <span class="o">=</span> <span class="n">n_words</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_correct</span> <span class="o">=</span> <span class="n">n_correct</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_src_words</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Statistics.update"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.Statistics.update">[docs]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stat</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loss</span> <span class="o">+=</span> <span class="n">stat</span><span class="o">.</span><span class="n">loss</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_words</span> <span class="o">+=</span> <span class="n">stat</span><span class="o">.</span><span class="n">n_words</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_correct</span> <span class="o">+=</span> <span class="n">stat</span><span class="o">.</span><span class="n">n_correct</span></div>
+
+<div class="viewcode-block" id="Statistics.accuracy"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.Statistics.accuracy">[docs]</a>    <span class="k">def</span> <span class="nf">accuracy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="mi">100</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_correct</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_words</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Statistics.ppl"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.Statistics.ppl">[docs]</a>    <span class="k">def</span> <span class="nf">ppl</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loss</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_words</span><span class="p">,</span> <span class="mi">100</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Statistics.elapsed_time"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.Statistics.elapsed_time">[docs]</a>    <span class="k">def</span> <span class="nf">elapsed_time</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span></div>
+
+<div class="viewcode-block" id="Statistics.output"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.Statistics.output">[docs]</a>    <span class="k">def</span> <span class="nf">output</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">epoch</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">n_batches</span><span class="p">,</span> <span class="n">start</span><span class="p">):</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">elapsed_time</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">((</span><span class="s2">&quot;Epoch </span><span class="si">%2d</span><span class="s2">, </span><span class="si">%5d</span><span class="s2">/</span><span class="si">%5d</span><span class="s2">; acc: </span><span class="si">%6.2f</span><span class="s2">; ppl: </span><span class="si">%6.2f</span><span class="s2">; &quot;</span> <span class="o">+</span>
+               <span class="s2">&quot;</span><span class="si">%3.0f</span><span class="s2"> src tok/s; </span><span class="si">%3.0f</span><span class="s2"> tgt tok/s; </span><span class="si">%6.0f</span><span class="s2"> s elapsed&quot;</span><span class="p">)</span> <span class="o">%</span>
+              <span class="p">(</span><span class="n">epoch</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span>  <span class="n">n_batches</span><span class="p">,</span>
+               <span class="bp">self</span><span class="o">.</span><span class="n">accuracy</span><span class="p">(),</span>
+               <span class="bp">self</span><span class="o">.</span><span class="n">ppl</span><span class="p">(),</span>
+               <span class="bp">self</span><span class="o">.</span><span class="n">n_src_words</span> <span class="o">/</span> <span class="p">(</span><span class="n">t</span> <span class="o">+</span> <span class="mf">1e-5</span><span class="p">),</span>
+               <span class="bp">self</span><span class="o">.</span><span class="n">n_words</span> <span class="o">/</span> <span class="p">(</span><span class="n">t</span> <span class="o">+</span> <span class="mf">1e-5</span><span class="p">),</span>
+               <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span><span class="p">))</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Statistics.log"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.Statistics.log">[docs]</a>    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">experiment</span><span class="p">,</span> <span class="n">lr</span><span class="p">):</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">elapsed_time</span><span class="p">()</span>
+        <span class="n">experiment</span><span class="o">.</span><span class="n">add_scalar_value</span><span class="p">(</span><span class="n">prefix</span> <span class="o">+</span> <span class="s2">&quot;_ppl&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ppl</span><span class="p">())</span>
+        <span class="n">experiment</span><span class="o">.</span><span class="n">add_scalar_value</span><span class="p">(</span><span class="n">prefix</span> <span class="o">+</span> <span class="s2">&quot;_accuracy&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">accuracy</span><span class="p">())</span>
+        <span class="n">experiment</span><span class="o">.</span><span class="n">add_scalar_value</span><span class="p">(</span><span class="n">prefix</span> <span class="o">+</span> <span class="s2">&quot;_tgtper&quot;</span><span class="p">,</span>  <span class="bp">self</span><span class="o">.</span><span class="n">n_words</span> <span class="o">/</span> <span class="n">t</span><span class="p">)</span>
+        <span class="n">experiment</span><span class="o">.</span><span class="n">add_scalar_value</span><span class="p">(</span><span class="n">prefix</span> <span class="o">+</span> <span class="s2">&quot;_lr&quot;</span><span class="p">,</span> <span class="n">lr</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="Trainer"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.Trainer">[docs]</a><span class="k">class</span> <span class="nc">Trainer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">train_iter</span><span class="p">,</span> <span class="n">valid_iter</span><span class="p">,</span>
+                 <span class="n">train_loss</span><span class="p">,</span> <span class="n">valid_loss</span><span class="p">,</span> <span class="n">optim</span><span class="p">,</span>
+                 <span class="n">trunc_size</span><span class="p">,</span> <span class="n">shard_size</span><span class="p">,</span> <span class="n">data_type</span><span class="o">=</span><span class="s1">&#39;text&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            model: the seq2seq model.</span>
+<span class="sd">            train_iter: the train data iterator.</span>
+<span class="sd">            valid_iter: the validate data iterator.</span>
+<span class="sd">            train_loss: the train side LossCompute object for computing loss.</span>
+<span class="sd">            valid_loss: the valid side LossCompute object for computing loss.</span>
+<span class="sd">            optim: the optimizer responsible for lr update.</span>
+<span class="sd">            trunc_size: a batch is divided by several truncs of this size.</span>
+<span class="sd">            shard_size: compute loss in shards of this size for efficiency.</span>
+<span class="sd">            data_type: type of the source input. Options are [text|img].</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Basic attributes.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">train_iter</span> <span class="o">=</span> <span class="n">train_iter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_iter</span> <span class="o">=</span> <span class="n">valid_iter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">train_loss</span> <span class="o">=</span> <span class="n">train_loss</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_loss</span> <span class="o">=</span> <span class="n">valid_loss</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optim</span> <span class="o">=</span> <span class="n">optim</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trunc_size</span> <span class="o">=</span> <span class="n">trunc_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shard_size</span> <span class="o">=</span> <span class="n">shard_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">model_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span> <span class="o">=</span> <span class="n">data_type</span>
+
+        <span class="c1"># Set model in training mode.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Trainer.train"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.Trainer.train">[docs]</a>    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">epoch</span><span class="p">,</span> <span class="n">report_func</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Called for each epoch to train. &quot;&quot;&quot;</span>
+        <span class="n">total_stats</span> <span class="o">=</span> <span class="n">Statistics</span><span class="p">()</span>
+        <span class="n">report_stats</span> <span class="o">=</span> <span class="n">Statistics</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">batch</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_iter</span><span class="p">):</span>
+            <span class="n">target_size</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">tgt</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="c1"># Truncated BPTT</span>
+            <span class="n">trunc_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trunc_size</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">trunc_size</span> <span class="k">else</span> <span class="n">target_size</span>
+
+            <span class="n">dec_state</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">src</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">IO</span><span class="o">.</span><span class="n">make_features</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="s1">&#39;src&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span> <span class="o">==</span> <span class="s1">&#39;text&#39;</span><span class="p">:</span>
+                <span class="n">_</span><span class="p">,</span> <span class="n">src_lengths</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">src</span>
+                <span class="n">report_stats</span><span class="o">.</span><span class="n">n_src_words</span> <span class="o">+=</span> <span class="n">src_lengths</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">src_lengths</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="n">tgt_outer</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">IO</span><span class="o">.</span><span class="n">make_features</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="s1">&#39;tgt&#39;</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">target_size</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">trunc_size</span><span class="p">):</span>
+                <span class="c1"># 1. Create truncated target.</span>
+                <span class="n">tgt</span> <span class="o">=</span> <span class="n">tgt_outer</span><span class="p">[</span><span class="n">j</span><span class="p">:</span> <span class="n">j</span> <span class="o">+</span> <span class="n">trunc_size</span><span class="p">]</span>
+
+                <span class="c1"># 2. F-prop all but generator.</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+                <span class="n">outputs</span><span class="p">,</span> <span class="n">attns</span><span class="p">,</span> <span class="n">dec_state</span> <span class="o">=</span> \
+                    <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">,</span> <span class="n">dec_state</span><span class="p">)</span>
+
+                <span class="c1"># 3. Compute loss in shards for memory efficiency.</span>
+                <span class="n">batch_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_loss</span><span class="o">.</span><span class="n">sharded_compute_loss</span><span class="p">(</span>
+                        <span class="n">batch</span><span class="p">,</span> <span class="n">outputs</span><span class="p">,</span> <span class="n">attns</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span>
+                        <span class="n">trunc_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shard_size</span><span class="p">)</span>
+
+                <span class="c1"># 4. Update the parameters and statistics.</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+                <span class="n">total_stats</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">batch_stats</span><span class="p">)</span>
+                <span class="n">report_stats</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">batch_stats</span><span class="p">)</span>
+
+                <span class="c1"># If truncated, don&#39;t backprop fully.</span>
+                <span class="k">if</span> <span class="n">dec_state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">dec_state</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="n">report_func</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">report_stats</span> <span class="o">=</span> <span class="n">report_func</span><span class="p">(</span>
+                        <span class="n">epoch</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_iter</span><span class="p">),</span>
+                        <span class="n">total_stats</span><span class="o">.</span><span class="n">start_time</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">lr</span><span class="p">,</span> <span class="n">report_stats</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">total_stats</span></div>
+
+<div class="viewcode-block" id="Trainer.validate"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.Trainer.validate">[docs]</a>    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Called for each epoch to validate. &quot;&quot;&quot;</span>
+        <span class="c1"># Set model in validating mode.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+
+        <span class="n">stats</span> <span class="o">=</span> <span class="n">Statistics</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_iter</span><span class="p">:</span>
+            <span class="n">src</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">IO</span><span class="o">.</span><span class="n">make_features</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="s1">&#39;src&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span> <span class="o">==</span> <span class="s1">&#39;text&#39;</span><span class="p">:</span>
+                <span class="n">_</span><span class="p">,</span> <span class="n">src_lengths</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">src</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">src_lengths</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="n">tgt</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">IO</span><span class="o">.</span><span class="n">make_features</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="s1">&#39;tgt&#39;</span><span class="p">)</span>
+
+            <span class="c1"># F-prop through the model.</span>
+            <span class="n">outputs</span><span class="p">,</span> <span class="n">attns</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">)</span>
+
+            <span class="c1"># Compute loss.</span>
+            <span class="n">batch_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_loss</span><span class="o">.</span><span class="n">monolithic_compute_loss</span><span class="p">(</span>
+                    <span class="n">batch</span><span class="p">,</span> <span class="n">outputs</span><span class="p">,</span> <span class="n">attns</span><span class="p">)</span>
+
+            <span class="c1"># Update statistics.</span>
+            <span class="n">stats</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">batch_stats</span><span class="p">)</span>
+
+        <span class="c1"># Set model back to training mode.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">stats</span></div>
+
+<div class="viewcode-block" id="Trainer.epoch_step"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.Trainer.epoch_step">[docs]</a>    <span class="k">def</span> <span class="nf">epoch_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ppl</span><span class="p">,</span> <span class="n">epoch</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Called for each epoch to update learning rate. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">updateLearningRate</span><span class="p">(</span><span class="n">ppl</span><span class="p">,</span> <span class="n">epoch</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Trainer.drop_checkpoint"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.Trainer.drop_checkpoint">[docs]</a>    <span class="k">def</span> <span class="nf">drop_checkpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">epoch</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">valid_stats</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Called conditionally each epoch to save a snapshot. &quot;&quot;&quot;</span>
+        <span class="n">real_model</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">module</span>
+                      <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">DataParallel</span><span class="p">)</span>
+                      <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+        <span class="n">real_generator</span> <span class="o">=</span> <span class="p">(</span><span class="n">real_model</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">module</span>
+                          <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">real_model</span><span class="o">.</span><span class="n">generator</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">DataParallel</span><span class="p">)</span>
+                          <span class="k">else</span> <span class="n">real_model</span><span class="o">.</span><span class="n">generator</span><span class="p">)</span>
+
+        <span class="n">model_state_dict</span> <span class="o">=</span> <span class="n">real_model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">()</span>
+        <span class="n">model_state_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">model_state_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                            <span class="k">if</span> <span class="s1">&#39;generator&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">k</span><span class="p">}</span>
+        <span class="n">generator_state_dict</span> <span class="o">=</span> <span class="n">real_generator</span><span class="o">.</span><span class="n">state_dict</span><span class="p">()</span>
+        <span class="n">checkpoint</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;model&#39;</span><span class="p">:</span> <span class="n">model_state_dict</span><span class="p">,</span>
+            <span class="s1">&#39;generator&#39;</span><span class="p">:</span> <span class="n">generator_state_dict</span><span class="p">,</span>
+            <span class="s1">&#39;vocab&#39;</span><span class="p">:</span> <span class="n">onmt</span><span class="o">.</span><span class="n">IO</span><span class="o">.</span><span class="n">save_vocab</span><span class="p">(</span><span class="n">fields</span><span class="p">),</span>
+            <span class="s1">&#39;opt&#39;</span><span class="p">:</span> <span class="n">opt</span><span class="p">,</span>
+            <span class="s1">&#39;epoch&#39;</span><span class="p">:</span> <span class="n">epoch</span><span class="p">,</span>
+            <span class="s1">&#39;optim&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">,</span>
+                   <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">_acc_</span><span class="si">%.2f</span><span class="s1">_ppl_</span><span class="si">%.2f</span><span class="s1">_e</span><span class="si">%d</span><span class="s1">.pt&#39;</span>
+                   <span class="o">%</span> <span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">save_model</span><span class="p">,</span> <span class="n">valid_stats</span><span class="o">.</span><span class="n">accuracy</span><span class="p">(),</span>
+                      <span class="n">valid_stats</span><span class="o">.</span><span class="n">ppl</span><span class="p">(),</span> <span class="n">epoch</span><span class="p">))</span></div></div>
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, srush.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

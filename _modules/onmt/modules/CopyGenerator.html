@@ -1,0 +1,373 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>onmt.modules.CopyGenerator &mdash; OpenNMT-py  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../../genindex.html"/>
+        <link rel="search" title="Search" href="../../../search.html"/>
+    <link rel="top" title="OpenNMT-py  documentation" href="../../../index.html"/>
+        <link rel="up" title="Module code" href="../../index.html"/> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> OpenNMT-py
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../main.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../extended.html">Example: Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../Summarization.html">Example: Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../im2text.html">Example: Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../speech2text.html">Example: Speech to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/preprocess.html">Options: preprocess.py:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/train.html">Options: train.py:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/translate.html">Options: translate.py:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.html">onmt package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.modules.html">onmt.modules package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../CONTRIBUTORS.html">Contributors</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">OpenNMT-py</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>onmt.modules.CopyGenerator</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for onmt.modules.CopyGenerator</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+<span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.cuda</span>
+
+<span class="kn">import</span> <span class="nn">onmt</span>
+<span class="kn">from</span> <span class="nn">onmt.Utils</span> <span class="k">import</span> <span class="n">aeq</span>
+
+
+<div class="viewcode-block" id="CopyGenerator"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.CopyGenerator.CopyGenerator">[docs]</a><span class="k">class</span> <span class="nc">CopyGenerator</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generator module that additionally considers copying</span>
+<span class="sd">    words directly from the source.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">src_dict</span><span class="p">,</span> <span class="n">tgt_dict</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">CopyGenerator</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">linear</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">rnn_size</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">tgt_dict</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">linear_copy</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">rnn_size</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">src_dict</span> <span class="o">=</span> <span class="n">src_dict</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tgt_dict</span> <span class="o">=</span> <span class="n">tgt_dict</span>
+
+<div class="viewcode-block" id="CopyGenerator.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.CopyGenerator.CopyGenerator.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hidden</span><span class="p">,</span> <span class="n">attn</span><span class="p">,</span> <span class="n">src_map</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes p(w) = p(z=1) p_{copy}(w|z=0)  +  p(z=0) * p_{softmax}(w|z=0)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># CHECKS</span>
+        <span class="n">batch_by_tlen</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">hidden</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+        <span class="n">batch_by_tlen_</span><span class="p">,</span> <span class="n">slen</span> <span class="o">=</span> <span class="n">attn</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+        <span class="n">slen_</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">cvocab</span> <span class="o">=</span> <span class="n">src_map</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+        <span class="n">aeq</span><span class="p">(</span><span class="n">batch_by_tlen</span><span class="p">,</span> <span class="n">batch_by_tlen_</span><span class="p">)</span>
+        <span class="n">aeq</span><span class="p">(</span><span class="n">slen</span><span class="p">,</span> <span class="n">slen_</span><span class="p">)</span>
+
+        <span class="c1"># Original probabilities.</span>
+        <span class="n">logits</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear</span><span class="p">(</span><span class="n">hidden</span><span class="p">)</span>
+        <span class="n">logits</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tgt_dict</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">onmt</span><span class="o">.</span><span class="n">IO</span><span class="o">.</span><span class="n">PAD_WORD</span><span class="p">]]</span> <span class="o">=</span> <span class="o">-</span><span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">)</span>
+        <span class="n">prob</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">logits</span><span class="p">)</span>
+
+        <span class="c1"># Probability of copying p(z=1) batch.</span>
+        <span class="n">copy</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">linear_copy</span><span class="p">(</span><span class="n">hidden</span><span class="p">))</span>
+
+        <span class="c1"># Probibility of not copying: p_{word}(w) * (1 - p(z))</span>
+        <span class="n">out_prob</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">prob</span><span class="p">,</span>  <span class="mi">1</span> <span class="o">-</span> <span class="n">copy</span><span class="o">.</span><span class="n">expand_as</span><span class="p">(</span><span class="n">prob</span><span class="p">))</span>
+        <span class="n">mul_attn</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">attn</span><span class="p">,</span> <span class="n">copy</span><span class="o">.</span><span class="n">expand_as</span><span class="p">(</span><span class="n">attn</span><span class="p">))</span>
+        <span class="n">copy_prob</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">bmm</span><span class="p">(</span><span class="n">mul_attn</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">slen</span><span class="p">)</span>
+                              <span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                              <span class="n">src_map</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">copy_prob</span> <span class="o">=</span> <span class="n">copy_prob</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">cvocab</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">out_prob</span><span class="p">,</span> <span class="n">copy_prob</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="CopyGeneratorCriterion"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.CopyGenerator.CopyGeneratorCriterion">[docs]</a><span class="k">class</span> <span class="nc">CopyGeneratorCriterion</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vocab_size</span><span class="p">,</span> <span class="n">force_copy</span><span class="p">,</span> <span class="n">pad</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-20</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">force_copy</span> <span class="o">=</span> <span class="n">force_copy</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eps</span> <span class="o">=</span> <span class="n">eps</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span> <span class="n">vocab_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pad</span> <span class="o">=</span> <span class="n">pad</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scores</span><span class="p">,</span> <span class="n">align</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="n">align</span> <span class="o">=</span> <span class="n">align</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Copy prob.</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">scores</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">align</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="p">)</span> \
+                    <span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">align</span><span class="o">.</span><span class="n">ne</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">())</span>
+        <span class="n">tmp</span> <span class="o">=</span> <span class="n">scores</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">target</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Regular prob (no unks and unks that can&#39;t be copied)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">force_copy</span><span class="p">:</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="n">out</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">eps</span> <span class="o">+</span> <span class="n">tmp</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">ne</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">())</span> <span class="o">+</span> \
+                  <span class="n">tmp</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">align</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">())</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Forced copy.</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="n">out</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">eps</span> <span class="o">+</span> <span class="n">tmp</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">align</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">())</span>
+
+        <span class="c1"># Drop padding.</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="o">-</span><span class="n">out</span><span class="o">.</span><span class="n">log</span><span class="p">()</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">ne</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pad</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">())</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">loss</span></div>
+
+
+<div class="viewcode-block" id="CopyGeneratorLossCompute"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.CopyGenerator.CopyGeneratorLossCompute">[docs]</a><span class="k">class</span> <span class="nc">CopyGeneratorLossCompute</span><span class="p">(</span><span class="n">onmt</span><span class="o">.</span><span class="n">Loss</span><span class="o">.</span><span class="n">LossComputeBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Copy Generator Loss Computation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">generator</span><span class="p">,</span> <span class="n">tgt_vocab</span><span class="p">,</span> <span class="n">dataset</span><span class="p">,</span>
+                 <span class="n">force_copy</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-20</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">CopyGeneratorLossCompute</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">generator</span><span class="p">,</span> <span class="n">tgt_vocab</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span> <span class="o">=</span> <span class="n">dataset</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">force_copy</span> <span class="o">=</span> <span class="n">force_copy</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">criterion</span> <span class="o">=</span> <span class="n">CopyGeneratorCriterion</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tgt_vocab</span><span class="p">),</span> <span class="n">force_copy</span><span class="p">,</span>
+                                                <span class="bp">self</span><span class="o">.</span><span class="n">padding_idx</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CopyGeneratorLossCompute.make_shard_state"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.CopyGenerator.CopyGeneratorLossCompute.make_shard_state">[docs]</a>    <span class="k">def</span> <span class="nf">make_shard_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">range_</span><span class="p">,</span> <span class="n">attns</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; See base class for args description. &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="s2">&quot;alignment&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="s2">&quot;using -copy_attn you need to pass in &quot;</span>
+                                 <span class="s2">&quot;-dynamic_dict during preprocess stage.&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;output&quot;</span><span class="p">:</span> <span class="n">output</span><span class="p">,</span>
+            <span class="s2">&quot;target&quot;</span><span class="p">:</span> <span class="n">batch</span><span class="o">.</span><span class="n">tgt</span><span class="p">[</span><span class="n">range_</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span> <span class="n">range_</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span>
+            <span class="s2">&quot;copy_attn&quot;</span><span class="p">:</span> <span class="n">attns</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;copy&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;align&quot;</span><span class="p">:</span> <span class="n">batch</span><span class="o">.</span><span class="n">alignment</span><span class="p">[</span><span class="n">range_</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span> <span class="n">range_</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+        <span class="p">}</span></div>
+
+<div class="viewcode-block" id="CopyGeneratorLossCompute.compute_loss"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.CopyGenerator.CopyGeneratorLossCompute.compute_loss">[docs]</a>    <span class="k">def</span> <span class="nf">compute_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">copy_attn</span><span class="p">,</span> <span class="n">align</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the loss. The args must match self.make_shard_state().</span>
+<span class="sd">        Args:</span>
+<span class="sd">            batch: the current batch.</span>
+<span class="sd">            output: the predict output from the model.</span>
+<span class="sd">            target: the validate target to compare output with.</span>
+<span class="sd">            copy_attn: the copy attention value.</span>
+<span class="sd">            align: the align info.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">align</span> <span class="o">=</span> <span class="n">align</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bottle</span><span class="p">(</span><span class="n">output</span><span class="p">),</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">bottle</span><span class="p">(</span><span class="n">copy_attn</span><span class="p">),</span>
+                                <span class="n">batch</span><span class="o">.</span><span class="n">src_map</span><span class="p">)</span>
+
+        <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">criterion</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">align</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+
+        <span class="n">scores_data</span> <span class="o">=</span> <span class="n">scores</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+        <span class="n">scores_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">collapse_copy_scores</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">unbottle</span><span class="p">(</span><span class="n">scores_data</span><span class="p">,</span> <span class="n">batch</span><span class="o">.</span><span class="n">batch_size</span><span class="p">),</span>
+                <span class="n">batch</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tgt_vocab</span><span class="p">)</span>
+        <span class="n">scores_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bottle</span><span class="p">(</span><span class="n">scores_data</span><span class="p">)</span>
+
+        <span class="c1"># Correct target copy token instead of &lt;unk&gt;</span>
+        <span class="c1"># tgt[i] = align[i] + len(tgt_vocab)</span>
+        <span class="c1"># for i such that tgt[i] == 0 and align[i] != 0</span>
+        <span class="n">target_data</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+        <span class="n">correct_mask</span> <span class="o">=</span> <span class="n">target_data</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="n">align</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">ne</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">correct_copy</span> <span class="o">=</span> <span class="p">(</span><span class="n">align</span><span class="o">.</span><span class="n">data</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tgt_vocab</span><span class="p">))</span> <span class="o">*</span> <span class="n">correct_mask</span><span class="o">.</span><span class="n">long</span><span class="p">()</span>
+        <span class="n">target_data</span> <span class="o">=</span> <span class="n">target_data</span> <span class="o">+</span> <span class="n">correct_copy</span>
+
+        <span class="c1"># Coverage loss term.</span>
+        <span class="n">loss_data</span> <span class="o">=</span> <span class="n">loss</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+
+        <span class="n">stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stats</span><span class="p">(</span><span class="n">loss_data</span><span class="p">,</span> <span class="n">scores_data</span><span class="p">,</span> <span class="n">target_data</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">loss</span><span class="p">,</span> <span class="n">stats</span></div></div>
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, srush.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

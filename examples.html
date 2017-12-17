@@ -1,0 +1,294 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>&lt;no title&gt; &mdash; OpenNMT-py  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="OpenNMT-py  documentation" href="index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> OpenNMT-py
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="main.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extended.html">Example: Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Summarization.html">Example: Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="im2text.html">Example: Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="speech2text.html">Example: Speech to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="options/preprocess.html">Options: preprocess.py:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="options/train.html">Options: train.py:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="options/translate.html">Options: translate.py:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.html">onmt package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.modules.html">onmt.modules package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CONTRIBUTORS.html">Contributors</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">OpenNMT-py</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>&lt;no title&gt;</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/examples.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <p>== Examples ==</p>
+<p># Quickstart</p>
+<p>### Step 1: Preprocess the data</p>
+<p><code class="docutils literal"><span class="pre">`bash</span>
+<span class="pre">python</span> <span class="pre">preprocess.py</span> <span class="pre">-train_src</span> <span class="pre">data/src-train.txt</span> <span class="pre">-train_tgt</span> <span class="pre">data/tgt-train.txt</span> <span class="pre">-valid_src</span> <span class="pre">data/src-val.txt</span> <span class="pre">-valid_tgt</span> <span class="pre">data/tgt-val.txt</span> <span class="pre">-save_data</span> <span class="pre">data/demo</span>
+<span class="pre">`</span></code></p>
+<p>We will be working with some example data in <cite>data/</cite> folder.</p>
+<p>The data consists of parallel source (<cite>src</cite>) and target (<cite>tgt</cite>) data containing one sentence per line with tokens separated by a space:</p>
+<ul class="simple">
+<li><cite>src-train.txt</cite></li>
+<li><cite>tgt-train.txt</cite></li>
+<li><cite>src-val.txt</cite></li>
+<li><cite>tgt-val.txt</cite></li>
+</ul>
+<p>Validation files are required and used to evaluate the convergence of the training. It usually contains no more than 5000 sentences.</p>
+<p><code class="docutils literal"><span class="pre">`text</span>
+<span class="pre">$</span> <span class="pre">head</span> <span class="pre">-n</span> <span class="pre">3</span> <span class="pre">data/src-train.txt</span>
+<span class="pre">It</span> <span class="pre">is</span> <span class="pre">not</span> <span class="pre">acceptable</span> <span class="pre">that</span> <span class="pre">,</span> <span class="pre">with</span> <span class="pre">the</span> <span class="pre">help</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">national</span> <span class="pre">bureaucracies</span> <span class="pre">,</span> <span class="pre">Parliament</span> <span class="pre">&amp;apos;s</span> <span class="pre">legislative</span> <span class="pre">prerogative</span> <span class="pre">should</span> <span class="pre">be</span> <span class="pre">made</span> <span class="pre">null</span> <span class="pre">and</span> <span class="pre">void</span> <span class="pre">by</span> <span class="pre">means</span> <span class="pre">of</span> <span class="pre">implementing</span> <span class="pre">provisions</span> <span class="pre">whose</span> <span class="pre">content</span> <span class="pre">,</span> <span class="pre">purpose</span> <span class="pre">and</span> <span class="pre">extent</span> <span class="pre">are</span> <span class="pre">not</span> <span class="pre">laid</span> <span class="pre">down</span> <span class="pre">in</span> <span class="pre">advance</span> <span class="pre">.</span>
+<span class="pre">Federal</span> <span class="pre">Master</span> <span class="pre">Trainer</span> <span class="pre">and</span> <span class="pre">Senior</span> <span class="pre">Instructor</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">Italian</span> <span class="pre">Federation</span> <span class="pre">of</span> <span class="pre">Aerobic</span> <span class="pre">Fitness</span> <span class="pre">,</span> <span class="pre">Group</span> <span class="pre">Fitness</span> <span class="pre">,</span> <span class="pre">Postural</span> <span class="pre">Gym</span> <span class="pre">,</span> <span class="pre">Stretching</span> <span class="pre">and</span> <span class="pre">Pilates;</span> <span class="pre">from</span> <span class="pre">2004</span> <span class="pre">,</span> <span class="pre">he</span> <span class="pre">has</span> <span class="pre">been</span> <span class="pre">collaborating</span> <span class="pre">with</span> <span class="pre">Antiche</span> <span class="pre">Terme</span> <span class="pre">as</span> <span class="pre">personal</span> <span class="pre">Trainer</span> <span class="pre">and</span> <span class="pre">Instructor</span> <span class="pre">of</span> <span class="pre">Stretching</span> <span class="pre">,</span> <span class="pre">Pilates</span> <span class="pre">and</span> <span class="pre">Postural</span> <span class="pre">Gym</span> <span class="pre">.</span>
+<span class="pre">&amp;quot;</span> <span class="pre">Two</span> <span class="pre">soldiers</span> <span class="pre">came</span> <span class="pre">up</span> <span class="pre">to</span> <span class="pre">me</span> <span class="pre">and</span> <span class="pre">told</span> <span class="pre">me</span> <span class="pre">that</span> <span class="pre">if</span> <span class="pre">I</span> <span class="pre">refuse</span> <span class="pre">to</span> <span class="pre">sleep</span> <span class="pre">with</span> <span class="pre">them</span> <span class="pre">,</span> <span class="pre">they</span> <span class="pre">will</span> <span class="pre">kill</span> <span class="pre">me</span> <span class="pre">.</span> <span class="pre">They</span> <span class="pre">beat</span> <span class="pre">me</span> <span class="pre">and</span> <span class="pre">ripped</span> <span class="pre">my</span> <span class="pre">clothes</span> <span class="pre">.</span>
+<span class="pre">`</span></code></p>
+<p>### Step 2: Train the model</p>
+<p><code class="docutils literal"><span class="pre">`bash</span>
+<span class="pre">python</span> <span class="pre">train.py</span> <span class="pre">-data</span> <span class="pre">data/demo.train.pt</span> <span class="pre">-save_model</span> <span class="pre">demo-model</span>
+<span class="pre">`</span></code></p>
+<p>The main train command is quite simple. Minimally it takes a data file
+and a save file.  This will run the default model, which consists of a
+2-layer LSTM with 500 hidden units on both the encoder/decoder. You
+can also add <cite>-gpuid 1</cite> to use (say) GPU 1.</p>
+<p>### Step 3: Translate</p>
+<p><code class="docutils literal"><span class="pre">`bash</span>
+<span class="pre">python</span> <span class="pre">translate.py</span> <span class="pre">-model</span> <span class="pre">demo-model_epochX_PPL.pt</span> <span class="pre">-src</span> <span class="pre">data/src-test.txt</span> <span class="pre">-output</span> <span class="pre">pred.txt</span> <span class="pre">-replace_unk</span> <span class="pre">-verbose</span>
+<span class="pre">`</span></code></p>
+<p>Now you have a model which you can use to predict on new data. We do this by running beam search. This will output predictions into <cite>pred.txt</cite>.</p>
+<dl class="docutils">
+<dt>!!! note “Note”</dt>
+<dd>The predictions are going to be quite terrible, as the demo dataset is small. Try running on some larger datasets! For example you can download millions of parallel sentences for [translation](<a class="reference external" href="http://www.statmt.org/wmt16/translation-task.html">http://www.statmt.org/wmt16/translation-task.html</a>) or [summarization](<a class="reference external" href="https://github.com/harvardnlp/sent-summary">https://github.com/harvardnlp/sent-summary</a>).</dd>
+</dl>
+<p># Example: Translation</p>
+<p>The example below uses the Moses tokenizer (<a class="reference external" href="http://www.statmt.org/moses/">http://www.statmt.org/moses/</a>) to prepare the data and the moses BLEU script for evaluation. This example if for training for the WMT‘16 Multimodal Translation task (<a class="reference external" href="http://www.statmt.org/wmt16/multimodal-task.html">http://www.statmt.org/wmt16/multimodal-task.html</a>).</p>
+<p>### 0) Download the data.</p>
+<p><code class="docutils literal"><span class="pre">`bash</span>
+<span class="pre">mkdir</span> <span class="pre">-p</span> <span class="pre">data/multi30k</span>
+<span class="pre">wget</span> <span class="pre">http://www.quest.dcs.shef.ac.uk/wmt16_files_mmt/training.tar.gz</span> <span class="pre">&amp;&amp;</span>&#160; <span class="pre">tar</span> <span class="pre">-xf</span> <span class="pre">training.tar.gz</span> <span class="pre">-C</span> <span class="pre">data/multi30k</span> <span class="pre">&amp;&amp;</span> <span class="pre">rm</span> <span class="pre">training.tar.gz</span>
+<span class="pre">wget</span> <span class="pre">http://www.quest.dcs.shef.ac.uk/wmt16_files_mmt/validation.tar.gz</span> <span class="pre">&amp;&amp;</span> <span class="pre">tar</span> <span class="pre">-xf</span> <span class="pre">validation.tar.gz</span> <span class="pre">-C</span> <span class="pre">data/multi30k</span> <span class="pre">&amp;&amp;</span> <span class="pre">rm</span> <span class="pre">validation.tar.gz</span>
+<span class="pre">wget</span> <span class="pre">http://www.quest.dcs.shef.ac.uk/wmt17_files_mmt/mmt_task1_test2016.tar.gz</span> <span class="pre">&amp;&amp;</span> <span class="pre">tar</span> <span class="pre">-xf</span> <span class="pre">mmt_task1_test2016.tar.gz</span> <span class="pre">-C</span> <span class="pre">data/multi30k</span> <span class="pre">&amp;&amp;</span> <span class="pre">rm</span> <span class="pre">mmt_task1_test2016.tar.gz</span>
+<span class="pre">`</span></code></p>
+<p>### 1) Preprocess the data.</p>
+<p><code class="docutils literal"><span class="pre">`bash</span>
+<span class="pre">for</span> <span class="pre">l</span> <span class="pre">in</span> <span class="pre">en</span> <span class="pre">de;</span> <span class="pre">do</span> <span class="pre">for</span> <span class="pre">f</span> <span class="pre">in</span> <span class="pre">data/multi30k/*.$l;</span> <span class="pre">do</span> <span class="pre">if</span> <span class="pre">[[</span> <span class="pre">&quot;$f&quot;</span> <span class="pre">!=</span> <span class="pre">*&quot;test&quot;*</span> <span class="pre">]];</span> <span class="pre">then</span> <span class="pre">sed</span> <span class="pre">-i</span> <span class="pre">&quot;$</span> <span class="pre">d&quot;</span> <span class="pre">$f;</span> <span class="pre">fi;</span>&#160; <span class="pre">done;</span> <span class="pre">done</span>
+<span class="pre">for</span> <span class="pre">l</span> <span class="pre">in</span> <span class="pre">en</span> <span class="pre">de;</span> <span class="pre">do</span> <span class="pre">for</span> <span class="pre">f</span> <span class="pre">in</span> <span class="pre">data/multi30k/*.$l;</span> <span class="pre">do</span> <span class="pre">perl</span> <span class="pre">tools/tokenizer.perl</span> <span class="pre">-a</span> <span class="pre">-no-escape</span> <span class="pre">-l</span> <span class="pre">$l</span> <span class="pre">-q</span>&#160; <span class="pre">&lt;</span> <span class="pre">$f</span> <span class="pre">&gt;</span> <span class="pre">$f.atok;</span> <span class="pre">done;</span> <span class="pre">done</span>
+<span class="pre">python</span> <span class="pre">preprocess.py</span> <span class="pre">-train_src</span> <span class="pre">data/multi30k/train.en.atok</span> <span class="pre">-train_tgt</span> <span class="pre">data/multi30k/train.de.atok</span> <span class="pre">-valid_src</span> <span class="pre">data/multi30k/val.en.atok</span> <span class="pre">-valid_tgt</span> <span class="pre">data/multi30k/val.de.atok</span> <span class="pre">-save_data</span> <span class="pre">data/multi30k.atok.low</span> <span class="pre">-lower</span>
+<span class="pre">`</span></code></p>
+<p>### 2) Train the model.</p>
+<p><code class="docutils literal"><span class="pre">`bash</span>
+<span class="pre">python</span> <span class="pre">train.py</span> <span class="pre">-data</span> <span class="pre">data/multi30k.atok.low</span> <span class="pre">-save_model</span> <span class="pre">multi30k_model</span> <span class="pre">-gpuid</span> <span class="pre">0</span>
+<span class="pre">`</span></code></p>
+<p>### 3) Translate sentences.</p>
+<p><code class="docutils literal"><span class="pre">`bash</span>
+<span class="pre">python</span> <span class="pre">translate.py</span> <span class="pre">-gpu</span> <span class="pre">0</span> <span class="pre">-model</span> <span class="pre">multi30k_model_*_e13.pt</span> <span class="pre">-src</span> <span class="pre">data/multi30k/test.en.atok</span> <span class="pre">-tgt</span> <span class="pre">data/multi30k/test.de.atok</span> <span class="pre">-replace_unk</span> <span class="pre">-verbose</span> <span class="pre">-output</span> <span class="pre">multi30k.test.pred.atok</span>
+<span class="pre">`</span></code></p>
+<p>### 4) Evaluate.</p>
+<p><code class="docutils literal"><span class="pre">`bash</span>
+<span class="pre">perl</span> <span class="pre">tools/multi-bleu.perl</span> <span class="pre">data/multi30k/test.de.atok</span> <span class="pre">&lt;</span> <span class="pre">multi30k.test.pred.atok</span>
+<span class="pre">`</span></code></p>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, srush.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
