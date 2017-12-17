@@ -10,16 +10,30 @@ def model_opts(parser):
 
     # Embedding Options
     group = parser.add_argument_group('Model-Embeddings')
-    group.add_argument('-word_vec_size', type=int, default=-1,
-                       help='Word embedding for both.')
     group.add_argument('-src_word_vec_size', type=int, default=500,
-                       help='Src word embedding sizes')
+                       help='Word embedding size for src.')
     group.add_argument('-tgt_word_vec_size', type=int, default=500,
-                       help='Tgt word embedding sizes')
+                       help='Word embedding size for tgt.')
+    group.add_argument('-word_vec_size', type=int, default=-1,
+                       help='Word embedding size for src and tgt.')
 
+    group.add_argument('-share_decoder_embeddings', action='store_true',
+                       help="""Use a shared weight matrix for the input and
+                       output word  embeddings in the decoder.""")
+    group.add_argument('-share_embeddings', action='store_true',
+                       help="""Share the word embeddings between encoder
+                       and decoder. Need to use shared dictionary for this
+                       option.""")
+    group.add_argument('-position_encoding', action='store_true',
+                       help="""Use a sin to mark relative words positions.
+                       Necessary for non-RNN style models.
+                       """)
+
+    group = parser.add_argument_group('Model-Embedding Features')
     group.add_argument('-feat_merge', type=str, default='concat',
                        choices=['concat', 'sum', 'mlp'],
-                       help='Merge action for the features embeddings')
+                       help="""Merge action for incorporating features embeddings.
+                       Options [concat|sum|mlp].""")
     group.add_argument('-feat_vec_size', type=int, default=-1,
                        help="""If specified, feature embedding sizes
                        will be set to this. Otherwise, feat_vec_exponent
@@ -28,26 +42,24 @@ def model_opts(parser):
                        help="""If -feat_merge_size is not set, feature
                        embedding sizes will be set to N^feat_vec_exponent
                        where N is the number of values the feature takes.""")
-    group.add_argument('-position_encoding', action='store_true',
-                       help='Use a sin to mark relative words positions.')
-    group.add_argument('-share_decoder_embeddings', action='store_true',
-                       help='Share the word and out embeddings for decoder.')
-    group.add_argument('-share_embeddings', action='store_true',
-                       help="""Share the word embeddings between encoder
-                       and decoder.""")
 
-    # RNN Options
+    # Encoder-Deocder Options
     group = parser.add_argument_group('Model- Encoder-Decoder')
     group.add_argument('-model_type', default='text',
-                       help="""Type of encoder to use. Options are
-                       [text|img|audio].""")
+                       help="""Type of source model to use. Allows
+                       the system to incorporate non-text inputs.
+                       Options are [text|img|audio].""")
 
     group.add_argument('-encoder_type', type=str, default='rnn',
                        choices=['rnn', 'brnn', 'mean', 'transformer', 'cnn'],
-                       help="""Type of encoder layer to use.""")
+                       help="""Type of encoder layer to use. Non-RNN layers
+                       are experimental. Options are
+                       [rnn|brnn|mean|transformer|cnn].""")
     group.add_argument('-decoder_type', type=str, default='rnn',
                        choices=['rnn', 'transformer', 'cnn'],
-                       help='Type of decoder layer to use.')
+                       help="""Type of decoder layer to use. Non-RNN layers
+                       are experimental. Options are
+                       [rnn|transformer|cnn].""")
 
     group.add_argument('-layers', type=int, default=-1,
                        help='Number of layers in enc/dec.')
@@ -55,13 +67,12 @@ def model_opts(parser):
                        help='Number of layers in the encoder')
     group.add_argument('-dec_layers', type=int, default=2,
                        help='Number of layers in the decoder')
-
+    group.add_argument('-rnn_size', type=int, default=500,
+                       help='Size of rnn hidden states')
     group.add_argument('-cnn_kernel_width', type=int, default=3,
                        help="""Size of windows in the cnn, the kernel_size is
                        (cnn_kernel_width, 1) in conv layer""")
 
-    group.add_argument('-rnn_size', type=int, default=500,
-                       help='Size of LSTM hidden states')
     group.add_argument('-input_feed', type=int, default=1,
                        help="""Feed the context vector at each time step as
                        additional input (via concatenation with the word
@@ -109,7 +120,7 @@ def preprocess_opts(parser):
     group.add_argument('-data_type', default="text",
                        help="""Type of the source input.
                        Options are [text|img].""")
-    
+
     group.add_argument('-train_src', required=True,
                        help="Path to the training source data")
     group.add_argument('-train_tgt', required=True,
@@ -141,7 +152,7 @@ def preprocess_opts(parser):
 
     group.add_argument('-src_words_min_frequency', type=int, default=0)
     group.add_argument('-tgt_words_min_frequency', type=int, default=0)
-    
+
     group.add_argument('-dynamic_dict', action='store_true',
                        help="Create dynamic dictionaries")
     group.add_argument('-share_vocab', action='store_true',
@@ -157,7 +168,7 @@ def preprocess_opts(parser):
                        help="Maximum target sequence length to keep.")
     group.add_argument('-tgt_seq_length_trunc', type=int, default=0,
                        help="Truncate target sequence length.")
-    group.add_argument('-lower', action='store_true', help='lowercase data')    
+    group.add_argument('-lower', action='store_true', help='lowercase data')
 
     # Data processing options
     group = parser.add_argument_group('Random')
@@ -169,7 +180,7 @@ def preprocess_opts(parser):
     group = parser.add_argument_group('Logging')
     group.add_argument('-report_every', type=int, default=100000,
                        help="Report status every this many sentences")
-    
+
     # Options most relevant to speech
     group = parser.add_argument_group('Speech')
     group.add_argument('-sample_rate', type=int, default=16000,
@@ -201,7 +212,7 @@ def train_opts(parser):
     group.add_argument('-seed', type=int, default=-1,
                        help="""Random seed used for the experiments
                        reproducibility.""")
-    
+
     # Init options
     group = parser.add_argument_group('Initialization')
     group.add_argument('-start_epoch', type=int, default=1,
@@ -317,7 +328,7 @@ def translate_opts(parser):
     group = parser.add_argument_group('Model')
     group.add_argument('-model', required=True,
                        help='Path to model .pt file')
-    
+
     group = parser.add_argument_group('Data')
     group.add_argument('-data_type', default="text",
                        help="Type of the source input. Options: [text|img].")
@@ -376,7 +387,7 @@ def translate_opts(parser):
                        help='Batch size')
     group.add_argument('-gpu', type=int, default=-1,
                        help="Device to run on")
-    
+
     # Options most relevant to speech.
     group = parser.add_argument_group('Speech')
     group.add_argument('-sample_rate', type=int, default=16000,
