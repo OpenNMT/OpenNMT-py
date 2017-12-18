@@ -246,11 +246,16 @@ def build_dataset(fields, data_type, src_path, tgt_path, src_dir=None,
     from onmt.io import TextDataset, ImageDataset, AudioDataset
 
     if data_type == 'text':
-        dataset = TextDataset(fields, src_path, tgt_path,
+        src_examples_iter, num_src_feats = \
+            _make_examples_numfeats_tpl(src_path, src_seq_length_trunc, "src")
+
+        tgt_examples_iter, num_tgt_feats = \
+            _make_examples_numfeats_tpl(tgt_path, tgt_seq_length_trunc, "tgt")
+
+        dataset = TextDataset(fields, src_examples_iter, tgt_examples_iter,
+                              num_src_feats, num_tgt_feats,
                               src_seq_length=src_seq_length,
                               tgt_seq_length=tgt_seq_length,
-                              src_seq_length_trunc=src_seq_length_trunc,
-                              tgt_seq_length_trunc=tgt_seq_length_trunc,
                               dynamic_dict=dynamic_dict,
                               use_filter_pred=use_filter_pred)
     elif data_type == 'img':

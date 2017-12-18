@@ -4,8 +4,8 @@ from collections import Counter
 import torch
 import torchtext
 
-from onmt.io.IO import ONMTDatasetBase, _make_examples_numfeats_tpl, \
-                    _join_dicts, _peek, _construct_example_fromlist
+from onmt.io.IO import ONMTDatasetBase, _join_dicts, _peek,\
+                       _construct_example_fromlist
 
 
 class TextDataset(ONMTDatasetBase):
@@ -15,9 +15,9 @@ class TextDataset(ONMTDatasetBase):
         "Sort using the size of source example."
         return -len(ex.src)
 
-    def _process_corpus(self, fields, src_path, tgt_path,
+    def _process_corpus(self, fields, src_examples_iter, tgt_examples_iter,
+                        num_src_feats=0, num_tgt_feats=0,
                         src_seq_length=0, tgt_seq_length=0,
-                        src_seq_length_trunc=0, tgt_seq_length_trunc=0,
                         dynamic_dict=True, use_filter_pred=True):
         """
         Build Example objects, Field objects, and filter_pred function
@@ -26,13 +26,12 @@ class TextDataset(ONMTDatasetBase):
         Args:
             fields: a dictionary of Field objects. Keys are like 'src',
                     'tgt', 'src_map', and 'alignment'.
-            src_path: location of source-side data.
-            tgt_path: location of target-side data or None. If should be the
-                      same length as the source-side data if it exists.
+            src_examples_iter: preprocessed source example_dict iterator.
+            tgt_examples_iter: preprocessed target example_dict iterator.
+            num_src_feats: number of source side features.
+            num_tgt_feats: number of target side features.
             src_seq_length: maximum source sequence length.
             tgt_seq_length: maximum target sequence length.
-            src_seq_length_trunc: truncated source sequence length.
-            tgt_seq_length_trunc: truncated target sequence length.
             dynamic_dict: create dynamic dictionaries?
             use_filter_pred: use a custom filter predicate to filter examples?
 
@@ -45,34 +44,28 @@ class TextDataset(ONMTDatasetBase):
         # collapse_copy_scores and in Translator.py
         self.src_vocabs = []
 
-        # Process the corpus into examples, and extract number of features,
-        # if any. Note tgt_path might be None.
-        src_examples, self.n_src_feats = \
-            _make_examples_numfeats_tpl(src_path, src_seq_length_trunc, "src")
+        self.n_src_feats = num_src_feats
+        self.n_tgt_feats = num_tgt_feats
 
-        tgt_examples, self.n_tgt_feats = \
-            _make_examples_numfeats_tpl(tgt_path, tgt_seq_length_trunc, "tgt")
-
-        # examples: one for each src line or (src, tgt) line pair.
-        # Each element is a dictionary whose keys represent at minimum
-        # the src tokens and their indices and potentially also the
-        # src and tgt features and alignment information.
-        if tgt_examples is not None:
-            examples = (_join_dicts(src, tgt)
-                        for src, tgt in zip(src_examples, tgt_examples))
+        # Each element of an example is a dictionary whose keys represents
+        # at minimum the src tokens and their indices and potentially also
+        # the src and tgt features and alignment information.
+        if tgt_examples_iter is not None:
+            examples_iter = (_join_dicts(src, tgt) for src, tgt in
+                             zip(src_examples_iter, tgt_examples_iter))
         else:
-            examples = src_examples
+            examples_iter = src_examples_iter
 
         if dynamic_dict:
-            examples = self._dynamic_dict(examples)
+            examples_iter = self._dynamic_dict(examples_iter)
 
         # Peek at the first to see which fields are used.
-        ex, examples = _peek(examples)
+        ex, examples_iter = _peek(examples_iter)
         keys = ex.keys()
 
         out_fields = [(k, fields[k]) if k in fields else (k, None)
                       for k in keys]
-        example_values = ([ex[k] for k in keys] for ex in examples)
+        example_values = ([ex[k] for k in keys] for ex in examples_iter)
         out_examples = (_construct_example_fromlist(ex_values, out_fields)
                         for ex_values in example_values)
 
@@ -84,8 +77,8 @@ class TextDataset(ONMTDatasetBase):
 
         return out_examples, out_fields, filter_pred
 
-    def _dynamic_dict(self, examples):
-        for example in examples:
+    def _dynamic_dict(self, examples_iter):
+        for example in examples_iter:
             src = example["src"]
             src_vocab = torchtext.vocab.Vocab(Counter(src))
             self.src_vocabs.append(src_vocab)
