@@ -259,6 +259,7 @@ def build_dataset(fields, data_type, src_path, tgt_path, src_dir=None,
                               tgt_seq_length=tgt_seq_length,
                               dynamic_dict=dynamic_dict,
                               use_filter_pred=use_filter_pred)
+
     elif data_type == 'img':
         src_examples_iter = _read_img_file(src_path, src_dir, "src")
         num_src_feats = 0  # Source side(image) has no features.
@@ -272,9 +273,18 @@ def build_dataset(fields, data_type, src_path, tgt_path, src_dir=None,
                                use_filter_pred=use_filter_pred)
 
     elif data_type == 'audio':
-        dataset = AudioDataset(fields, src_path, src_dir, tgt_path,
+        src_examples_iter = _read_audio_file(src_path, src_dir, "src",
+                                             sample_rate, window_size,
+                                             window_stride, window,
+                                             normalize_audio)
+        num_src_feats = 0  # Source side(audio) has no features.
+
+        tgt_examples_iter, num_tgt_feats = \
+            _make_examples_numfeats_tpl(tgt_path, tgt_seq_length_trunc, "tgt")
+
+        dataset = AudioDataset(fields, src_examples_iter, tgt_examples_iter,
+                               num_src_feats, num_tgt_feats,
                                tgt_seq_length=tgt_seq_length,
-                               tgt_seq_length_trunc=tgt_seq_length_trunc,
                                sample_rate=sample_rate,
                                window_size=window_size,
                                window_stride=window_stride,
@@ -413,6 +423,73 @@ def _read_img_file(path, src_dir, side, truncate=None):
                     continue
             example_dict = {side: img,
                             side+'_path': line.strip(),
+                            'indices': index}
+            index += 1
+            yield example_dict
+
+
+def _read_audio_file(path, src_dir, side, sample_rate, window_size,
+                     window_stride, window, normalize_audio, truncate=None):
+    """
+    Args:
+        path: location of a src file containing audio paths.
+        src_dir: location of source audio files.
+        side: 'src' or 'tgt'.
+        sample_rate: sample_rate.
+        window_size: window size for spectrogram in seconds.
+        window_stride: window stride for spectrogram in seconds.
+        window: window type for spectrogram generation.
+        normalize_audio: subtract spectrogram by mean and divide by std or not
+        truncate: maximum audio length (0 or None for unlimited).
+
+    Yields:
+        a dictionary containing audio data for each line.
+    """
+    assert (src_dir is not None) and os.path.exists(src_dir),\
+        "src_dir must be a valid directory if data_type is audio"
+
+    global torchaudio, librosa, np
+    import torchaudio
+    import librosa
+    import numpy as np
+
+    with codecs.open(path, "r", "utf-8") as corpus_file:
+        index = 0
+        for line in corpus_file:
+            audio_path = os.path.join(src_dir, line.strip())
+            if not os.path.exists(audio_path):
+                audio_path = line
+            assert os.path.exists(audio_path), \
+                'audio path %s not found' % (line.strip())
+            sound, sample_rate = torchaudio.load(audio_path)
+            if truncate and truncate > 0:
+                if sound.size(0) > truncate:
+                    continue
+            assert sample_rate == sample_rate, \
+                'Sample rate of %s != -sample_rate (%d vs %d)' \
+                % (audio_path, sample_rate, sample_rate)
+            sound = sound.numpy()
+            if len(sound.shape) > 1:
+                if sound.shape[1] == 1:
+                    sound = sound.squeeze()
+                else:
+                    sound = sound.mean(axis=1)  # average multiple channels
+            n_fft = int(sample_rate * window_size)
+            win_length = n_fft
+            hop_length = int(sample_rate * window_stride)
+            # STFT
+            D = librosa.stft(sound, n_fft=n_fft, hop_length=hop_length,
+                             win_length=win_length, window=window)
+            spect, _ = librosa.magphase(D)
+            spect = np.log1p(spect)
+            spect = torch.FloatTensor(spect)
+            if normalize_audio:
+                mean = spect.mean()
+                std = spect.std()
+                spect.add_(-mean)
+                spect.div_(std)
+            example_dict = {side: spect,
+                            side + '_path': line.strip(),
                             'indices': index}
             index += 1
             yield example_dict
