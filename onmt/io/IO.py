@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import os
 import codecs
 from collections import Counter, defaultdict
 from itertools import chain, count
@@ -259,9 +260,15 @@ def build_dataset(fields, data_type, src_path, tgt_path, src_dir=None,
                               dynamic_dict=dynamic_dict,
                               use_filter_pred=use_filter_pred)
     elif data_type == 'img':
-        dataset = ImageDataset(fields, src_path, src_dir, tgt_path,
+        src_examples_iter = _read_img_file(src_path, src_dir, "src")
+        num_src_feats = 0  # Source side(image) has no features.
+
+        tgt_examples_iter, num_tgt_feats = \
+            _make_examples_numfeats_tpl(tgt_path, tgt_seq_length_trunc, "tgt")
+
+        dataset = ImageDataset(fields, src_examples_iter, tgt_examples_iter,
+                               num_src_feats, num_tgt_feats,
                                tgt_seq_length=tgt_seq_length,
-                               tgt_seq_length_trunc=tgt_seq_length_trunc,
                                use_filter_pred=use_filter_pred)
 
     elif data_type == 'audio':
@@ -371,6 +378,44 @@ def _read_text_file(path, truncate, side):
                 example_dict.update((prefix + str(j), f)
                                     for j, f in enumerate(feats))
             yield example_dict, n_feats
+
+
+def _read_img_file(path, src_dir, side, truncate=None):
+    """
+    Args:
+        path: location of a src file containing image paths
+        src_dir: location of source images
+        side: 'src' or 'tgt'
+        truncate: maximum img size ((0,0) or None for unlimited)
+
+    Yields:
+        a dictionary containing image data, path and index for each line.
+    """
+    assert (src_dir is not None) and os.path.exists(src_dir),\
+        'src_dir must be a valid directory if data_type is img'
+
+    global Image, transforms
+    from PIL import Image
+    from torchvision import transforms
+
+    with codecs.open(path, "r", "utf-8") as corpus_file:
+        index = 0
+        for line in corpus_file:
+            img_path = os.path.join(src_dir, line.strip())
+            if not os.path.exists(img_path):
+                img_path = line
+            assert os.path.exists(img_path), \
+                'img path %s not found' % (line.strip())
+            img = transforms.ToTensor()(Image.open(img_path))
+            if truncate and truncate != (0, 0):
+                if not (img.size(1) <= truncate[0]
+                        and img.size(2) <= truncate[1]):
+                    continue
+            example_dict = {side: img,
+                            side+'_path': line.strip(),
+                            'indices': index}
+            index += 1
+            yield example_dict
 
 
 def _make_examples_numfeats_tpl(path, truncate, side):
