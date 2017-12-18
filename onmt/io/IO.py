@@ -368,21 +368,21 @@ def _read_text_file(path, truncate, side):
             yield example_dict, n_feats
 
 
-def _make_example(path, truncate, side):
+def _make_examples_numfeats_tpl(path, truncate, side):
     """
-    Process the text corpus into (examples, num_feats) tuple.
+    Process the text corpus into (examples iterator, num_feats) tuple.
     """
     assert side in ['src', 'tgt']
 
     if path is None:
         return (None, 0)
 
-    examples = _read_text_file(path, truncate, side)
-    (_, num_feats), examples = _peek(examples)
+    examples_tpl = _read_text_file(path, truncate, side)
+    (_, num_feats), examples_tpl = _peek(examples_tpl)
 
-    out_examples = (ex for ex, nfeats in examples)
+    examples_iter = (ex for ex, nfeats in examples_tpl)
 
-    return (out_examples, num_feats)
+    return (examples_iter, num_feats)
 
 
 class OrderedIterator(torchtext.data.Iterator):

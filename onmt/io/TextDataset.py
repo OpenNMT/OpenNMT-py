@@ -4,7 +4,7 @@ from collections import Counter
 import torch
 import torchtext
 
-from onmt.io.IO import ONMTDatasetBase, _make_example, \
+from onmt.io.IO import ONMTDatasetBase, _make_examples_numfeats_tpl, \
                     _join_dicts, _peek, _construct_example_fromlist
 
 
@@ -48,10 +48,10 @@ class TextDataset(ONMTDatasetBase):
         # Process the corpus into examples, and extract number of features,
         # if any. Note tgt_path might be None.
         src_examples, self.n_src_feats = \
-            _make_example(src_path, src_seq_length_trunc, "src")
+            _make_examples_numfeats_tpl(src_path, src_seq_length_trunc, "src")
 
         tgt_examples, self.n_tgt_feats = \
-            _make_example(tgt_path, tgt_seq_length_trunc, "tgt")
+            _make_examples_numfeats_tpl(tgt_path, tgt_seq_length_trunc, "tgt")
 
         # examples: one for each src line or (src, tgt) line pair.
         # Each element is a dictionary whose keys represent at minimum

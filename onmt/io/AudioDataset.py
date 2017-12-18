@@ -4,7 +4,7 @@ import os
 import codecs
 import torch
 
-from onmt.io.IO import ONMTDatasetBase, _make_example, \
+from onmt.io.IO import ONMTDatasetBase, _make_examples_numfeats_tpl, \
                     _join_dicts, _peek, _construct_example_fromlist
 
 
@@ -69,7 +69,7 @@ class AudioDataset(ONMTDatasetBase):
         self.n_src_feats = 0
 
         tgt_examples, self.n_tgt_feats = \
-            _make_example(tgt_path, tgt_seq_length_trunc, "tgt")
+            _make_examples_numfeats_tpl(tgt_path, tgt_seq_length_trunc, "tgt")
 
         if tgt_examples is not None:
             examples = (_join_dicts(src, tgt)
