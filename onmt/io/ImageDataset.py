@@ -3,7 +3,7 @@
 import os
 import codecs
 
-from onmt.io import ONMTDatasetBase, _make_example, \
+from onmt.io.IO import ONMTDatasetBase, _make_example, \
                     _join_dicts, _peek, _construct_example_fromlist
 
 
