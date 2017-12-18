@@ -28,114 +28,6 @@ torchtext.vocab.Vocab.__getstate__ = __getstate__
 torchtext.vocab.Vocab.__setstate__ = __setstate__
 
 
-def load_fields(vocab, data_type="text"):
-    vocab = dict(vocab)
-    n_src_features = len(collect_features(vocab, 'src'))
-    n_tgt_features = len(collect_features(vocab, 'tgt'))
-    fields = get_fields(data_type, n_src_features, n_tgt_features)
-    for k, v in vocab.items():
-        # Hack. Can't pickle defaultdict :(
-        v.stoi = defaultdict(lambda: 0, v.stoi)
-        fields[k].vocab = v
-    return fields
-
-
-def extract_features(tokens):
-    """
-    Args:
-        tokens: A list of tokens, where each token consists of a word,
-            optionally followed by u"￨"-delimited features.
-    Returns:
-        A sequence of words, a sequence of features, and num of features.
-    """
-    if not tokens:
-        return [], [], -1
-    split_tokens = [token.split(u"￨") for token in tokens]
-    split_tokens = [token for token in split_tokens if token[0]]
-    token_size = len(split_tokens[0])
-    assert all(len(token) == token_size for token in split_tokens), \
-        "all words must have the same number of features"
-    words_and_features = list(zip(*split_tokens))
-    words = words_and_features[0]
-    features = words_and_features[1:]
-    return words, features, token_size - 1
-
-
-def merge_vocabs(vocabs, vocab_size=None):
-    """
-    Merge individual vocabularies (assumed to be generated from disjoint
-    documents) into a larger vocabulary.
-
-    Args:
-        vocabs: `torchtext.vocab.Vocab` vocabularies to be merged
-        vocab_size: `int` the final vocabulary size. `None` for no limit.
-    Return:
-        `torchtext.vocab.Vocab`
-    """
-    merged = sum([vocab.freqs for vocab in vocabs], Counter())
-    return torchtext.vocab.Vocab(merged,
-                                 specials=[PAD_WORD, BOS_WORD, EOS_WORD],
-                                 max_size=vocab_size)
-
-
-def make_features(batch, side, data_type='text'):
-    """
-    Args:
-        batch (Variable): a batch of source or target data.
-        side (str): for source or for target.
-        data_type (str): type of the source input. Options are [text|img].
-    Returns:
-        A sequence of src/tgt tensors with optional feature tensors
-        of size (len x batch).
-    """
-    assert side in ['src', 'tgt']
-    if isinstance(batch.__dict__[side], tuple):
-        data = batch.__dict__[side][0]
-    else:
-        data = batch.__dict__[side]
-
-    feat_start = side + "_feat_"
-    keys = sorted([k for k in batch.__dict__ if feat_start in k])
-    features = [batch.__dict__[k] for k in keys]
-    levels = [data] + features
-
-    if data_type == 'text':
-        return torch.cat([level.unsqueeze(2) for level in levels], 2)
-    else:
-        return levels[0]
-
-
-def save_vocab(fields):
-    vocab = []
-    for k, f in fields.items():
-        if 'vocab' in f.__dict__:
-            f.vocab.stoi = dict(f.vocab.stoi)
-            vocab.append((k, f.vocab))
-    return vocab
-
-
-def collect_features(fields, side="src"):
-    assert side in ["src", "tgt"]
-    feats = []
-    for j in count():
-        key = side + "_feat_" + str(j)
-        if key not in fields:
-            break
-        feats.append(key)
-    return feats
-
-
-def collect_feature_vocabs(fields, side):
-    assert side in ['src', 'tgt']
-    feature_vocabs = []
-    for j in count():
-        key = side + "_feat_" + str(j)
-        if key not in fields:
-            break
-        feature_vocabs.append(fields[key].vocab)
-    return feature_vocabs
-
-
 def get_fields(data_type, n_src_features, n_tgt_features):
     """
     Args:
@@ -221,6 +113,126 @@ def get_fields(data_type, n_src_features, n_tgt_features):
         sequential=False)
 
     return fields
+
+
+def load_fields_from_vocab(vocab, data_type="text"):
+    """
+    Load Field objects from `vocab.pt` file.
+    """
+    vocab = dict(vocab)
+    n_src_features = len(collect_features(vocab, 'src'))
+    n_tgt_features = len(collect_features(vocab, 'tgt'))
+    fields = get_fields(data_type, n_src_features, n_tgt_features)
+    for k, v in vocab.items():
+        # Hack. Can't pickle defaultdict :(
+        v.stoi = defaultdict(lambda: 0, v.stoi)
+        fields[k].vocab = v
+    return fields
+
+
+def save_fields_to_vocab(fields):
+    """
+    Save Vocab objects in Field objects to `vocab.pt` file.
+    """
+    vocab = []
+    for k, f in fields.items():
+        if 'vocab' in f.__dict__:
+            f.vocab.stoi = dict(f.vocab.stoi)
+            vocab.append((k, f.vocab))
+    return vocab
+
+
+def merge_vocabs(vocabs, vocab_size=None):
+    """
+    Merge individual vocabularies (assumed to be generated from disjoint
+    documents) into a larger vocabulary.
+
+    Args:
+        vocabs: `torchtext.vocab.Vocab` vocabularies to be merged
+        vocab_size: `int` the final vocabulary size. `None` for no limit.
+    Return:
+        `torchtext.vocab.Vocab`
+    """
+    merged = sum([vocab.freqs for vocab in vocabs], Counter())
+    return torchtext.vocab.Vocab(merged,
+                                 specials=[PAD_WORD, BOS_WORD, EOS_WORD],
+                                 max_size=vocab_size)
+
+
+def make_features(batch, side, data_type='text'):
+    """
+    Args:
+        batch (Variable): a batch of source or target data.
+        side (str): for source or for target.
+        data_type (str): type of the source input. Options are [text|img].
+    Returns:
+        A sequence of src/tgt tensors with optional feature tensors
+        of size (len x batch).
+    """
+    assert side in ['src', 'tgt']
+    if isinstance(batch.__dict__[side], tuple):
+        data = batch.__dict__[side][0]
+    else:
+        data = batch.__dict__[side]
+
+    feat_start = side + "_feat_"
+    keys = sorted([k for k in batch.__dict__ if feat_start in k])
+    features = [batch.__dict__[k] for k in keys]
+    levels = [data] + features
+
+    if data_type == 'text':
+        return torch.cat([level.unsqueeze(2) for level in levels], 2)
+    else:
+        return levels[0]
+
+
+def extract_features(tokens):
+    """
+    Args:
+        tokens: A list of tokens, where each token consists of a word,
+            optionally followed by u"￨"-delimited features.
+    Returns:
+        A sequence of words, a sequence of features, and num of features.
+    """
+    if not tokens:
+        return [], [], -1
+    split_tokens = [token.split(u"￨") for token in tokens]
+    split_tokens = [token for token in split_tokens if token[0]]
+    token_size = len(split_tokens[0])
+    assert all(len(token) == token_size for token in split_tokens), \
+        "all words must have the same number of features"
+    words_and_features = list(zip(*split_tokens))
+    words = words_and_features[0]
+    features = words_and_features[1:]
+    return words, features, token_size - 1
+
+
+def collect_features(fields, side="src"):
+    """
+    Collect features from Field object.
+    """
+    assert side in ["src", "tgt"]
+    feats = []
+    for j in count():
+        key = side + "_feat_" + str(j)
+        if key not in fields:
+            break
+        feats.append(key)
+    return feats
+
+
+def collect_feature_vocabs(fields, side):
+    """
+    Collect feature Vocab objects from Field object.
+    """
+    assert side in ['src', 'tgt']
+    feature_vocabs = []
+    for j in count():
+        key = side + "_feat_" + str(j)
+        if key not in fields:
+            break
+        feature_vocabs.append(fields[key].vocab)
+    return feature_vocabs
 
 
 def build_dataset(fields, data_type, src_path, tgt_path, src_dir=None,

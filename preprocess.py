@@ -96,7 +96,7 @@ def main():
 
     print("Saving train/valid/vocab...")
     # Can't save fields, so remove/reconstruct at training time.
-    torch.save(onmt.io.save_vocab(fields),
+    torch.save(onmt.io.save_fields_to_vocab(fields),
                open(opt.save_data + '.vocab.pt', 'wb'))
     train.fields = []
     valid.fields = []

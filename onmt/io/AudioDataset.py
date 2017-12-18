@@ -113,7 +113,7 @@ def _read_audio_file(path, src_dir, side, sample_rate, window_size,
         truncate: maximum audio length (0 or None for unlimited).
 
     Yields:
-        image for each line.
+        a dictionary containing audio data for each line.
     """
     with codecs.open(path, "r", "utf-8") as corpus_file:
         index = 0

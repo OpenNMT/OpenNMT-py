@@ -206,7 +206,7 @@ def tally_parameters(model):
 
 def load_fields(train, valid, checkpoint):
     data_type = train.data_type
-    fields = onmt.io.load_fields(
+    fields = onmt.io.load_fields_from_vocab(
                 torch.load(opt.data + '.vocab.pt'), data_type)
     fields = dict([(k, f) for (k, f) in fields.items()
                   if k in train.examples[0].__dict__])
@@ -215,7 +215,8 @@ def load_fields(train, valid, checkpoint):
 
     if opt.train_from:
         print('Loading vocab from checkpoint at %s.' % opt.train_from)
-        fields = onmt.io.load_fields(checkpoint['vocab'], data_type)
+        fields = onmt.io.load_fields_from_vocab(
+                    checkpoint['vocab'], data_type)
 
     if data_type == 'text':
         print(' * vocabulary size. source = %d; target = %d' %
