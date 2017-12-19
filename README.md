@@ -32,19 +32,19 @@ pip install -r requirements.txt
 
 The following OpenNMT features are implemented:
 
-- [data preprocessing](http://opennmt.net/OpenNMT-py/options/preprocess/)
-- [Inference (translation) with batching and beam search](http://opennmt.net/OpenNMT-py/options/translate/)
-- [Multiple source and target RNN (lstm/gru) types and attention (dotprod/mlp) types](http://opennmt.net/OpenNMT-py/options/train/#model-encoder-decoder)
-- [TensorBoard/Crayon logging](http://opennmt.net/OpenNMT-py/options/train/#logging)
-- [Source word features](http://opennmt.net/OpenNMT-py/options/train/#model-embeddings)
-- [Pretrained Embeddings](http://opennmt.net/OpenNMT-py/FAQ/#how-do-i-use-pretrained-embeddings-eg-glove)
-- [Copy and Coverage Attention](http://opennmt.net/OpenNMT-py/options/train/#model-attention)
-- [Image-to-text processing](http://opennmt.net/OpenNMT-py/im2text/)
-- [Speech-to-text processing](http://opennmt.net/OpenNMT-py/speech2text/)
+- [data preprocessing](http://opennmt.net/OpenNMT-py/options/preprocess.html)
+- [Inference (translation) with batching and beam search](http://opennmt.net/OpenNMT-py/options/translate.html)
+- [Multiple source and target RNN (lstm/gru) types and attention (dotprod/mlp) types](http://opennmt.net/OpenNMT-py/options/train.html#model-encoder-decoder)
+- [TensorBoard/Crayon logging](http://opennmt.net/OpenNMT-py/options/train.html#logging)
+- [Source word features](http://opennmt.net/OpenNMT-py/options/train.html#model-embeddings)
+- [Pretrained Embeddings](http://opennmt.net/OpenNMT-py/FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove)
+- [Copy and Coverage Attention](http://opennmt.net/OpenNMT-py/options/train.html#model-attention)
+- [Image-to-text processing](http://opennmt.net/OpenNMT-py/im2text.html)
+- [Speech-to-text processing](http://opennmt.net/OpenNMT-py/speech2text.html)
 
 Beta Features (committed):
 - multi-GPU
-- ["Attention is all you need"](http://opennmt.net/OpenNMT-py/FAQ/#how-do-i-use-the-transformer-model)
+- ["Attention is all you need"](http://opennmt.net/OpenNMT-py/FAQ.html#how-do-i-use-the-transformer-model)
 - Structured attention
 - [Conv2Conv convolution model]
 - SRU "RNNs faster than CNN" paper
