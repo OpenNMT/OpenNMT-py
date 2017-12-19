@@ -35,11 +35,12 @@ class TestData(unittest.TestCase):
     def dataset_build(self, opt):
         fields = onmt.io.get_fields("text", 0, 0)
 
-        train = preprocess.build_dataset('train', fields, opt)
+        train = preprocess.build_save_dataset('train', fields,
+                                              opt, save=False)
 
         preprocess.build_save_vocab([train], fields, opt, save=False)
 
-        preprocess.build_dataset('valid', fields, opt)
+        preprocess.build_save_dataset('valid', fields, opt, save=False)
 
     def test_merge_vocab(self):
         va = torchtext.vocab.Vocab(Counter('abbccc'))

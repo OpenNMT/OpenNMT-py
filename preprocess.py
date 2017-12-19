@@ -46,7 +46,7 @@ def get_num_features(side, opt):
     return n_features
 
 
-def build_dataset(corpus_type, fields, opt):
+def build_save_dataset(corpus_type, fields, opt, save=True):
     assert corpus_type in ['train', 'valid']
 
     if corpus_type == 'train':
@@ -68,6 +68,12 @@ def build_dataset(corpus_type, fields, opt):
                 window_size=opt.window_size,
                 window_stride=opt.window_stride,
                 window=opt.window)
+
+    if save:
+        # We save fields in vocab.pt seperately, so make it empty.
+        dataset.fields = []
+        pt_file = "{:s}.{:s}.pt".format(opt.save_data, corpus_type)
+        torch.save(dataset, open(pt_file, 'wb'))
 
     return dataset
 
@@ -98,20 +104,14 @@ def main():
     n_tgt_features = get_num_features('tgt', opt)
     fields = onmt.io.get_fields(opt.data_type, n_src_features, n_tgt_features)
 
-    print("Building training data...")
-    train = build_dataset('train', fields, opt)
+    print("Building & saving training data...")
+    train = build_save_dataset('train', fields, opt)
 
     print("Building & saving vocabulary...")
     build_save_vocab([train], fields, opt)
 
-    print("Building validation data...")
-    valid = build_dataset('valid', fields, opt)
-
-    print("Saving train/valid...")
-    train.fields = []
-    valid.fields = []
-    torch.save(train, open(opt.save_data + '.train.pt', 'wb'))
-    torch.save(valid, open(opt.save_data + '.valid.pt', 'wb'))
+    print("Building & saving validation data...")
+    build_save_dataset('valid', fields, opt)
 
 
 if __name__ == "__main__":
