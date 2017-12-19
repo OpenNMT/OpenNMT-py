@@ -5,6 +5,7 @@ and creates each encoder and decoder accordingly.
 import torch.nn as nn
 
 import onmt
+import onmt.io
 import onmt.Models
 import onmt.modules
 from onmt.Models import NMTModel, MeanEncoder, RNNEncoder, \
@@ -28,10 +29,10 @@ def make_embeddings(opt, word_dict, feature_dicts, for_encoder=True):
     else:
         embedding_dim = opt.tgt_word_vec_size
 
-    word_padding_idx = word_dict.stoi[onmt.IO.PAD_WORD]
+    word_padding_idx = word_dict.stoi[onmt.io.PAD_WORD]
     num_word_embeddings = len(word_dict)
 
-    feats_padding_idx = [feat_dict.stoi[onmt.IO.PAD_WORD]
+    feats_padding_idx = [feat_dict.stoi[onmt.io.PAD_WORD]
                          for feat_dict in feature_dicts]
     num_feat_embeddings = [len(feat_dict) for feat_dict in
                            feature_dicts]
@@ -123,7 +124,7 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
     # Make encoder.
     if model_opt.model_type == "text":
         src_dict = fields["src"].vocab
-        feature_dicts = onmt.IO.collect_feature_dicts(fields, 'src')
+        feature_dicts = onmt.io.collect_feature_vocabs(fields, 'src')
         src_embeddings = make_embeddings(model_opt, src_dict,
                                          feature_dicts)
         encoder = make_encoder(model_opt, src_embeddings)
@@ -143,7 +144,7 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
     # Make decoder.
     tgt_dict = fields["tgt"].vocab
     # TODO: prepare for a future where tgt features are possible.
-    feature_dicts = onmt.IO.collect_feature_dicts(fields, 'tgt')
+    feature_dicts = onmt.io.collect_feature_vocabs(fields, 'tgt')
     tgt_embeddings = make_embeddings(model_opt, tgt_dict,
                                      feature_dicts, for_encoder=False)
 

@@ -7,6 +7,7 @@ import torch
 from torch.autograd import Variable
 
 import onmt
+import onmt.io
 import opts
 from onmt.ModelConstructor import make_embeddings, \
                             make_encoder, make_decoder
@@ -29,7 +30,7 @@ class TestModel(unittest.TestCase):
     # Helper to generate a vocabulary
 
     def get_vocab(self):
-        src = onmt.IO.get_fields("text", 0, 0)["src"]
+        src = onmt.io.get_fields("text", 0, 0)["src"]
         src.build_vocab([])
         return src.vocab
 

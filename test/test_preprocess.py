@@ -6,6 +6,7 @@ from collections import Counter
 import torchtext
 
 import onmt
+import onmt.io
 import opts
 import preprocess
 
@@ -32,11 +33,11 @@ class TestData(unittest.TestCase):
         self.opt = opt
 
     def dataset_build(self, opt):
-        fields = onmt.IO.get_fields("text", 0, 0)
+        fields = onmt.io.get_fields("text", 0, 0)
 
         train = preprocess.build_dataset('train', fields, opt)
 
-        onmt.IO.build_vocab(train, opt.data_type, opt.share_vocab,
+        onmt.io.build_vocab(train, opt.data_type, opt.share_vocab,
                             opt.src_vocab_size,
                             opt.src_words_min_frequency,
                             opt.tgt_vocab_size,
@@ -48,7 +49,7 @@ class TestData(unittest.TestCase):
         va = torchtext.vocab.Vocab(Counter('abbccc'))
         vb = torchtext.vocab.Vocab(Counter('eeabbcccf'))
 
-        merged = onmt.IO.merge_vocabs([va, vb], 2)
+        merged = onmt.io.merge_vocabs([va, vb], 2)
 
         self.assertEqual(Counter({'c': 6, 'b': 4, 'a': 2, 'e': 2, 'f': 1}),
                          merged.freqs)

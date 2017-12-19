@@ -16,6 +16,7 @@ import torch
 import torch.nn as nn
 
 import onmt
+import onmt.io
 import onmt.modules
 
 
@@ -106,14 +107,14 @@ class Trainer(object):
             trunc_size = self.trunc_size if self.trunc_size else target_size
 
             dec_state = None
-            src = onmt.IO.make_features(batch, 'src', self.data_type)
+            src = onmt.io.make_features(batch, 'src', self.data_type)
             if self.data_type == 'text':
                 _, src_lengths = batch.src
                 report_stats.n_src_words += src_lengths.sum()
             else:
                 src_lengths = None
 
-            tgt_outer = onmt.IO.make_features(batch, 'tgt')
+            tgt_outer = onmt.io.make_features(batch, 'tgt')
 
             for j in range(0, target_size-1, trunc_size):
                 # 1. Create truncated target.
@@ -153,13 +154,13 @@ class Trainer(object):
         stats = Statistics()
 
         for batch in self.valid_iter:
-            src = onmt.IO.make_features(batch, 'src', self.data_type)
+            src = onmt.io.make_features(batch, 'src', self.data_type)
             if self.data_type == 'text':
                 _, src_lengths = batch.src
             else:
                 src_lengths = None
 
-            tgt = onmt.IO.make_features(batch, 'tgt')
+            tgt = onmt.io.make_features(batch, 'tgt')
 
             # F-prop through the model.
             outputs, attns, _ = self.model(src, tgt, src_lengths)
@@ -196,7 +197,7 @@ class Trainer(object):
         checkpoint = {
             'model': model_state_dict,
             'generator': generator_state_dict,
-            'vocab': onmt.IO.save_vocab(fields),
+            'vocab': onmt.io.save_fields_to_vocab(fields),
             'opt': opt,
             'epoch': epoch,
             'optim': self.optim,
