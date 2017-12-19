@@ -295,12 +295,12 @@ def build_dataset(fields, data_type, src_path, tgt_path, src_dir=None,
     return dataset
 
 
-def build_vocab(train, data_type, share_vocab,
+def build_vocab(train_datasets, data_type, share_vocab,
                 src_vocab_size, src_words_min_frequency,
                 tgt_vocab_size, tgt_words_min_frequency):
     """
     Args:
-        train: a train dataset.
+        train_datasets: a list of train dataset.
         data_type: "text", "img" or "audio"?
         share_vocab(bool): share source and target vocabulary?
         src_vocab_size(int): size of the source vocabulary.
@@ -310,18 +310,19 @@ def build_vocab(train, data_type, share_vocab,
         tgt_words_min_frequency(int): the minimum frequency needed to
                 include a target word in the vocabulary.
     """
-    fields = train.fields
+    # All datasets have same fields, get the first one is OK.
+    fields = train_datasets[0].fields
 
-    fields["tgt"].build_vocab(train, max_size=tgt_vocab_size,
+    fields["tgt"].build_vocab(*train_datasets, max_size=tgt_vocab_size,
                               min_freq=tgt_words_min_frequency)
-    for j in range(train.n_tgt_feats):
-        fields["tgt_feat_" + str(j)].build_vocab(train)
+    for j in range(train_datasets[0].n_tgt_feats):
+        fields["tgt_feat_" + str(j)].build_vocab(*train_datasets)
 
     if data_type == 'text':
-        fields["src"].build_vocab(train, max_size=src_vocab_size,
+        fields["src"].build_vocab(*train_datasets, max_size=src_vocab_size,
                                   min_freq=src_words_min_frequency)
-        for j in range(train.n_src_feats):
-            fields["src_feat_" + str(j)].build_vocab(train)
+        for j in range(train_datasets[0].n_src_feats):
+            fields["src_feat_" + str(j)].build_vocab(*train_datasets)
 
         # Merge the input and output vocabularies.
         if share_vocab:

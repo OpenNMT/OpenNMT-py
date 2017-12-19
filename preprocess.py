@@ -84,7 +84,7 @@ def main():
     train = build_dataset('train', fields, opt)
 
     print("Building vocabulary...")
-    onmt.io.build_vocab(train, opt.data_type, opt.share_vocab,
+    onmt.io.build_vocab([train], opt.data_type, opt.share_vocab,
                         opt.src_vocab_size,
                         opt.src_words_min_frequency,
                         opt.tgt_vocab_size,
