@@ -104,6 +104,10 @@ def build_save_text_dataset_in_shards(src_corpus, tgt_corpus, fields,
                     opt.save_data, corpus_type, index)
             torch.save(dataset, open(pt_file, 'wb'))
 
+    if index == 1:
+        # Only one shard, strip the index in the filename.
+        os.rename(pt_file, opt.save_data + '.' + corpus_type + '.pt')
+
     return ret_list
 
 
