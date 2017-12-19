@@ -3,6 +3,8 @@
 
 import argparse
 import codecs
+import os
+
 import torch
 
 import onmt.io
@@ -46,6 +48,63 @@ def get_num_features(side, opt):
     return n_features
 
 
+def build_save_text_dataset_in_shards(src_corpus, tgt_corpus,
+                                      fields, corpus_type, opt):
+    '''
+    Divide the big text corpus into shards, and build dataset seperately.
+    '''
+    # The reason we do this is to avoid taking up too much memory due
+    # to sucking in a huge corpus file.
+    #
+    # To tackle this, we only read in part of the corpus file of
+    # size `max_shard_size`, and process it into dataset, then write
+    # it to disk along the way. By doing this, we only focus on part
+    # of the corpus at any moment, thus effectively reducing memory use.
+    # According to test, this method can reduce memory footprint by ~40%.
+    #
+    # Note! As we process along the shards, previous shards might still
+    # stay in memory, but since we are done with them, and no more
+    # reference to them, if there is memory tight situation, the OS could
+    # easily reclaim these memory.
+    #
+    # If `max_shard_size` is 0 or is larger than the corpus size, it is
+    # effectively preprocessed into one dataset, i.e. no sharding.
+
+    corpus_size = os.path.getsize(src_corpus)
+    if corpus_size > 10 * (1024**2) and opt.max_shard_size == 0:
+        print("Warning! The corpus %s is larger than 10M bytes, you can "
+              "set '-max_shard_size' to process it by small shards "
+              "to avoid memory hogging problem !!!" % src_corpus)
+
+    ret_list = []
+    src_iter = onmt.io.ShardedTextCorpusIterator(
+                src_corpus, opt.src_seq_length_trunc,
+                "src", opt.max_shard_size)
+    tgt_iter = onmt.io.ShardedTextCorpusIterator(
+                tgt_corpus, opt.tgt_seq_length_trunc,
+                "tgt", opt.max_shard_size,
+                assoc_iter=src_iter)
+
+    index = 0
+    while not src_iter.hit_end():
+        index += 1
+        dataset = onmt.io.TextDataset(
+                fields, src_iter, tgt_iter,
+                src_iter.n_feats, tgt_iter.n_feats,
+                src_seq_length=opt.src_seq_length,
+                tgt_seq_length=opt.tgt_seq_length,
+                dynamic_dict=opt.dynamic_dict)
+        ret_list.append(dataset)
+
+        # We save fields in vocab.pt seperately, so make it empty.
+        dataset.fields = []
+        part_name = "{:s}.{:s}.{:d}.pt".format(
+                    opt.save_data, corpus_type, index)
+        torch.save(dataset, open(part_name, 'wb'))
+
+    return ret_list
+
+
 def build_save_dataset(corpus_type, fields, opt, save=True):
     assert corpus_type in ['train', 'valid']
 
@@ -56,6 +115,15 @@ def build_save_dataset(corpus_type, fields, opt, save=True):
         src_corpus = opt.valid_src
         tgt_corpus = opt.valid_tgt
 
+    if opt.data_type == 'text':
+        # Currently we only do sharding for text corpus.
+        return build_save_text_dataset_in_shards(
+                src_corpus, tgt_corpus, fields, corpus_type, opt)
+
+    # For data_type == 'img' or 'audio', currently we don't do
+    # preprocess sharding. We only build a monolithic dataset.
+    # But since the interfaces are uniform, it would be not hard
+    # to do this should users need this feature.
     dataset = onmt.io.build_dataset(
                 fields, opt.data_type, src_corpus, tgt_corpus,
                 src_dir=opt.src_dir,
@@ -75,7 +143,7 @@ def build_save_dataset(corpus_type, fields, opt, save=True):
         pt_file = "{:s}.{:s}.pt".format(opt.save_data, corpus_type)
         torch.save(dataset, open(pt_file, 'wb'))
 
-    return dataset
+    return [dataset]
 
 
 def build_save_vocab(train_dataset, fields, opt, save=True):
@@ -105,10 +173,10 @@ def main():
     fields = onmt.io.get_fields(opt.data_type, n_src_features, n_tgt_features)
 
     print("Building & saving training data...")
-    train = build_save_dataset('train', fields, opt)
+    train_datasets = build_save_dataset('train', fields, opt)
 
     print("Building & saving vocabulary...")
-    build_save_vocab([train], fields, opt)
+    build_save_vocab(train_datasets, fields, opt)
 
     print("Building & saving validation data...")
     build_save_dataset('valid', fields, opt)

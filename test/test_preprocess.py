@@ -35,10 +35,10 @@ class TestData(unittest.TestCase):
     def dataset_build(self, opt):
         fields = onmt.io.get_fields("text", 0, 0)
 
-        train = preprocess.build_save_dataset('train', fields,
-                                              opt, save=False)
+        trains = preprocess.build_save_dataset('train', fields,
+                                               opt, save=False)
 
-        preprocess.build_save_vocab([train], fields, opt, save=False)
+        preprocess.build_save_vocab(trains, fields, opt, save=False)
 
         preprocess.build_save_dataset('valid', fields, opt, save=False)
 
