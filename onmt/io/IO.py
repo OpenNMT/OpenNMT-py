@@ -498,17 +498,19 @@ def _read_audio_file(path, src_dir, side, sample_rate, window_size,
 
 def _make_examples_numfeats_tpl(path, truncate, side):
     """
-    Process the text corpus into (examples iterator, num_feats) tuple.
+    Process the text corpus into (example_dict iterator, num_feats) tuple.
     """
     assert side in ['src', 'tgt']
 
     if path is None:
         return (None, 0)
 
-    examples_tpl = _read_text_file(path, truncate, side)
-    (_, num_feats), examples_tpl = _peek(examples_tpl)
+    # All examples have same number of features, so we peek first one
+    # to get the num_feats.
+    examples_nfeats_iter = _read_text_file(path, truncate, side)
+    (_, num_feats), examples_nfeats_iter = _peek(examples_nfeats_iter)
 
-    examples_iter = (ex for ex, nfeats in examples_tpl)
+    examples_iter = (ex for ex, nfeats in examples_nfeats_iter)
 
     return (examples_iter, num_feats)
 

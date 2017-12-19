@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
 
 from collections import Counter
+import io
+import sys
+
 import torch
 import torchtext
 
+from onmt.Utils import aeq
 from onmt.io.IO import ONMTDatasetBase, _join_dicts, _peek,\
-                       _construct_example_fromlist
+                       _construct_example_fromlist, extract_features
 
 
 class TextDataset(ONMTDatasetBase):
@@ -92,3 +96,114 @@ class TextDataset(ONMTDatasetBase):
                         [0] + [src_vocab.stoi[w] for w in tgt] + [0])
                 example["alignment"] = mask
             yield example
+
+
+class ShardedTextCorpusIterator(object):
+    """
+    This is the iterator for text corpus, used for sharding large text
+    corpus into small shards, to avoid hogging memory.
+
+    Inside this iterator, it automatically divides the corpus file into
+    shards of size `shard_size`. Then, for each shard, it processes
+    into (example_dict, n_features) tuples when iterates.
+    """
+    def __init__(self, corpus_path, line_truncate, side, shard_size,
+                 assoc_iter=None):
+        """
+        Args:
+            corpus_path: the corpus file path.
+            line_truncate: the maximum length of a line to read.
+                            0 for unlimited.
+            side: "src" or "tgt".
+            shard_size: the shard size, 0 means not sharding the file.
+            assoc_iter: if not None, it is the associate iterator that
+                        this iterator should align its step with.
+        """
+        try:
+            # The codecs module seems to have bugs with seek()/tell(),
+            # so we use io.open().
+            self.corpus = io.open(corpus_path, "r", encoding="utf-8")
+        except IOError:
+            sys.stderr.write("Failed to open corpus file: %s" % corpus_path)
+            sys.exit(1)
+
+        self.line_truncate = line_truncate
+        self.side = side
+        self.shard_size = shard_size
+        self.assoc_iter = assoc_iter
+        self.last_pos = 0
+        self.line_index = -1
+        self.eof = False
+
+    def __iter__(self):
+        """
+        Iterator of (example_dict, nfeats).
+        On each call, it iterates over as many (example_dict, nfeats) tuples
+        until this shard's size equals to or approximates `self.shard_size`.
+        """
+        if self.assoc_iter is not None:
+            # We have associate iterator, just yields tuples
+            # util we run parallel with it.
+            while self.line_index < self.assoc_iter.line_index:
+                line = self.corpus.readline()
+                if line == '':
+                    raise AssertionError(
+                        "Two corpuses must have same number of lines!")
+
+                self.line_index += 1
+                yield self._example_dict_iter(line)
+
+            if self.assoc_iter.eof:
+                self.eof = True
+                self.corpus.close()
+        else:
+            # Yield tuples util this shard's size reaches the threshold.
+            self.corpus.seek(self.last_pos)
+            while True:
+                if self.shard_size != 0 and \
+                   self.corpus.tell() >= self.last_pos + self.shard_size:
+                    self.last_pos = self.corpus.tell()
+                    raise StopIteration
+
+                line = self.corpus.readline()
+                if line == '':
+                    self.eof = True
+                    self.corpus.close()
+                    raise StopIteration
+
+                self.line_index += 1
+                yield self._example_dict_iter(line)
+
+    def hit_end(self):
+        return self.eof
+
+    @property
+    def num_feats(self):
+        # We peek the first line and seek back to
+        # the beginning of the file.
+        saved_pos = self.corpus.tell()
+
+        line = self.corpus.readline().split()
+        if self.line_truncate:
+            line = line[:self.line_truncate]
+        _, _, self.n_feats = extract_features(line)
+
+        self.corpus.seek(saved_pos)
+
+        return self.n_feats
+
+    def _example_dict_iter(self, line):
+        line = line.split()
+        if self.line_truncate:
+            line = line[:self.line_truncate]
+        words, feats, n_feats = extract_features(line)
+        example_dict = {self.side: words, "indices": self.line_index}
+        if feats:
+            # All examples must have same number of features.
+            aeq(self.n_feats, n_feats)
+
+            prefix = self.side + "_feat_"
+            example_dict.update((prefix + str(j), f)
+                                for j, f in enumerate(feats))
+
+        return example_dict
