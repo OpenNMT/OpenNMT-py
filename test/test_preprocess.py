@@ -37,11 +37,7 @@ class TestData(unittest.TestCase):
 
         train = preprocess.build_dataset('train', fields, opt)
 
-        onmt.io.build_vocab([train], opt.data_type, opt.share_vocab,
-                            opt.src_vocab_size,
-                            opt.src_words_min_frequency,
-                            opt.tgt_vocab_size,
-                            opt.tgt_words_min_frequency)
+        preprocess.build_save_vocab([train], fields, opt, save=False)
 
         preprocess.build_dataset('valid', fields, opt)
 

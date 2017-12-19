@@ -72,6 +72,24 @@ def build_dataset(corpus_type, fields, opt):
     return dataset
 
 
+def build_save_vocab(train_dataset, fields, opt, save=True):
+    # We've empty'ed each dataset's `fields` attribute
+    # when saving datasets, so restore them.
+    for train in train_dataset:
+        train.fields = fields
+
+    onmt.io.build_vocab(train_dataset, opt.data_type, opt.share_vocab,
+                        opt.src_vocab_size,
+                        opt.src_words_min_frequency,
+                        opt.tgt_vocab_size,
+                        opt.tgt_words_min_frequency)
+
+    if save:
+        # Can't save fields, so remove/reconstruct at training time.
+        torch.save(onmt.io.save_fields_to_vocab(fields),
+                   open(opt.save_data + '.vocab.pt', 'wb'))
+
+
 def main():
     opt = parse_args()
 
@@ -83,20 +101,13 @@ def main():
     print("Building training data...")
     train = build_dataset('train', fields, opt)
 
-    print("Building vocabulary...")
-    onmt.io.build_vocab([train], opt.data_type, opt.share_vocab,
-                        opt.src_vocab_size,
-                        opt.src_words_min_frequency,
-                        opt.tgt_vocab_size,
-                        opt.tgt_words_min_frequency)
+    print("Building & saving vocabulary...")
+    build_save_vocab([train], fields, opt)
 
     print("Building validation data...")
     valid = build_dataset('valid', fields, opt)
 
-    print("Saving train/valid/vocab...")
-    # Can't save fields, so remove/reconstruct at training time.
-    torch.save(onmt.io.save_fields_to_vocab(fields),
-               open(opt.save_data + '.vocab.pt', 'wb'))
+    print("Saving train/valid...")
     train.fields = []
     valid.fields = []
     torch.save(train, open(opt.save_data + '.train.pt', 'wb'))
