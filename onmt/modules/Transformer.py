@@ -12,7 +12,6 @@ from onmt.Models import EncoderBase
 from onmt.Models import DecoderState
 from onmt.Utils import aeq
 
-
 MAX_SIZE = 5000
 
 
@@ -30,13 +29,14 @@ class PositionwiseFeedForward(nn.Module):
         self.w_1 = onmt.modules.BottleLinear(size, hidden_size)
         self.w_2 = onmt.modules.BottleLinear(hidden_size, size)
         self.layer_norm = onmt.modules.BottleLayerNorm(size)
-        self.dropout = nn.Dropout(dropout)
+        self.dropout_1 = nn.Dropout(dropout)
+        self.dropout_2 = nn.Dropout(dropout)
         self.relu = nn.ReLU()
 
     def forward(self, x):
-        residual = x
-        output = self.dropout(self.w_2(self.relu(self.w_1(x))))
-        return self.layer_norm(output + residual)
+        inter = self.dropout_1(self.relu(self.w_1(self.layer_norm(x))))
+        output = self.dropout_2(self.w_2(inter))
+        return output + x
 
 
 class TransformerEncoderLayer(nn.Module):
@@ -58,10 +58,12 @@ class TransformerEncoderLayer(nn.Module):
         self.feed_forward = PositionwiseFeedForward(size,
                                                     hidden_size,
                                                     dropout)
+        self.layer_norm = onmt.modules.BottleLayerNorm(size)
 
     def forward(self, input, mask):
-        mid, _ = self.self_attn(input, input, input, mask=mask)
-        out = self.feed_forward(mid)
+        input_norm = self.layer_norm(input)
+        mid, _ = self.self_attn(input_norm, input_norm, input_norm, mask=mask)
+        out = self.feed_forward(mid + input)
         return out
 
 
@@ -78,6 +80,7 @@ class TransformerEncoder(EncoderBase):
         self.transformer = nn.ModuleList(
             [TransformerEncoderLayer(hidden_size, dropout)
              for i in range(num_layers)])
+        self.layer_norm = onmt.modules.BottleLayerNorm(hidden_size)
 
     def forward(self, input, lengths=None, hidden=None):
         """ See EncoderBase.forward() for description of args and returns."""
@@ -103,6 +106,8 @@ class TransformerEncoder(EncoderBase):
         # Run the forward pass of every layer of the tranformer.
         for i in range(self.num_layers):
             out = self.transformer[i](out, mask)
+        
+        out = self.layer_norm(out)
 
         return Variable(emb.data), out.transpose(0, 1).contiguous()
 
@@ -127,6 +132,8 @@ class TransformerDecoderLayer(nn.Module):
         self.feed_forward = PositionwiseFeedForward(size,
                                                     hidden_size,
                                                     dropout)
+        self.layer_norm_1 = onmt.modules.BottleLayerNorm(size)
+        self.layer_norm_2 = onmt.modules.BottleLayerNorm(size)
         self.dropout = dropout
         mask = self._get_attn_subsequent_mask(MAX_SIZE)
         # Register self.mask as a buffer in TransformerDecoderLayer, so
@@ -149,10 +156,12 @@ class TransformerDecoderLayer(nn.Module):
         dec_mask = torch.gt(tgt_pad_mask + self.mask[:, :tgt_pad_mask.size(1),
                             :tgt_pad_mask.size(1)]
                             .expand_as(tgt_pad_mask), 0)
-        query, attn = self.self_attn(input, input, input, mask=dec_mask)
-        mid, attn = self.context_attn(context, context, query,
+        input_norm = self.layer_norm_1(input)
+        query, attn = self.self_attn(input_norm, input_norm, input_norm, mask=dec_mask)
+        query_norm = self.layer_norm_2(query+input)
+        mid, attn = self.context_attn(context, context, query_norm,
                                       mask=src_pad_mask)
-        output = self.feed_forward(mid)
+        output = self.feed_forward(mid+query+input)
 
         # CHECKS
         output_batch, output_len, _ = output.size()
@@ -200,6 +209,7 @@ class TransformerDecoder(nn.Module):
             self.copy_attn = onmt.modules.GlobalAttention(
                 hidden_size, attn_type=attn_type)
             self._copy = True
+        self.layer_norm = onmt.modules.BottleLayerNorm(hidden_size)
 
     def forward(self, input, context, state, context_lengths=None):
         """
@@ -265,6 +275,7 @@ class TransformerDecoder(nn.Module):
                 = self.transformer_layers[i](output, src_context,
                                              src_pad_mask, tgt_pad_mask)
 
+        output = self.layer_norm(output)
         # Process the result and update the attentions.
         outputs = output.transpose(0, 1).contiguous()
         if state.previous_input is not None:

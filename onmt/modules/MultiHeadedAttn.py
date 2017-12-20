@@ -37,7 +37,7 @@ class MultiHeadedAttention(nn.Module):
                                          bias=False)
         self.sm = BottleSoftmax()
         self.activation = nn.ReLU()
-        self.layer_norm = BottleLayerNorm(model_dim)
+        #self.layer_norm = BottleLayerNorm(model_dim)
         self.dropout = nn.Dropout(p)
         self.res_dropout = nn.Dropout(p)
 
@@ -98,8 +98,9 @@ class MultiHeadedAttention(nn.Module):
         out = unshape_projection(torch.bmm(drop_attn, value_up), residual)
 
         # Residual and layer norm
-        res = self.res_dropout(out) + residual
-        ret = self.layer_norm(res)
+        ret = self.res_dropout(out)
+        #res = self.res_dropout(out) + residual
+        #ret = self.layer_norm(res)
 
         # CHECK
         batch_, q_len_, d_ = ret.size()
