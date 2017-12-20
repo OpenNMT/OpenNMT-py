@@ -8,6 +8,9 @@ class MatrixTree(nn.Module):
     """Implementation of the matrix-tree theorem for computing marginals
     of non-projective dependency parsing. This attention layer is used
     in the paper "Learning Structured Text Representations."
+
+
+    :cite:`DBLP:journals/corr/LiuL17d`
     """
     def __init__(self, eps=1e-5):
         self.eps = eps

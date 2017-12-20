@@ -34,6 +34,7 @@
 
 from recommonmark.parser import CommonMarkParser
 import sphinx_rtd_theme
+from recommonmark.transform import AutoStructify
 
 source_parsers = {
         '.md': CommonMarkParser,
@@ -45,7 +46,8 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.viewcode',
               'sphinx.ext.githubpages',
               'sphinx.ext.napoleon',
-              'sphinxcontrib.mermaid']
+              'sphinxcontrib.mermaid',
+              'sphinxcontrib.bibtex']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['.templates']
@@ -184,3 +186,11 @@ texinfo_documents = [
      author, 'OpenNMT-py', 'One line description of project.',
      'Miscellaneous'),
 ]
+
+github_doc_root = 'https://github.com/opennmt/opennmt-py/tree/master/doc/'
+def setup(app):
+    print("hello")
+    app.add_config_value('recommonmark_config', {
+        'enable_eval_rst': True
+    }, True)
+    app.add_transform(AutoStructify)
