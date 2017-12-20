@@ -248,13 +248,19 @@ def build_dataset(fields, data_type, src_path, tgt_path, src_dir=None,
     # Hide this import inside to avoid circular dependency problem.
     from onmt.io import TextDataset, ImageDataset, AudioDataset
 
+    # Build src/tgt examples iterator from corpus files, also extract
+    # number of features. For all data types, the tgt side corpus is
+    # in form of text.
+    src_examples_iter, num_src_feats = \
+        _make_examples_nfeats_tpl(data_type, src_path, src_dir,
+                                  src_seq_length_trunc, sample_rate,
+                                  window_size, window_stride,
+                                  window, normalize_audio)
+
+    tgt_examples_iter, num_tgt_feats = \
+        _make_text_examples_nfeats_tpl(tgt_path, tgt_seq_length_trunc, "tgt")
+
     if data_type == 'text':
-        src_examples_iter, num_src_feats = \
-            _make_examples_numfeats_tpl(src_path, src_seq_length_trunc, "src")
-
-        tgt_examples_iter, num_tgt_feats = \
-            _make_examples_numfeats_tpl(tgt_path, tgt_seq_length_trunc, "tgt")
-
         dataset = TextDataset(fields, src_examples_iter, tgt_examples_iter,
                               num_src_feats, num_tgt_feats,
                               src_seq_length=src_seq_length,
@@ -263,27 +269,12 @@ def build_dataset(fields, data_type, src_path, tgt_path, src_dir=None,
                               use_filter_pred=use_filter_pred)
 
     elif data_type == 'img':
-        src_examples_iter = _read_img_file(src_path, src_dir, "src")
-        num_src_feats = 0  # Source side(image) has no features.
-
-        tgt_examples_iter, num_tgt_feats = \
-            _make_examples_numfeats_tpl(tgt_path, tgt_seq_length_trunc, "tgt")
-
         dataset = ImageDataset(fields, src_examples_iter, tgt_examples_iter,
                                num_src_feats, num_tgt_feats,
                                tgt_seq_length=tgt_seq_length,
                                use_filter_pred=use_filter_pred)
 
     elif data_type == 'audio':
-        src_examples_iter = _read_audio_file(src_path, src_dir, "src",
-                                             sample_rate, window_size,
-                                             window_stride, window,
-                                             normalize_audio)
-        num_src_feats = 0  # Source side(audio) has no features.
-
-        tgt_examples_iter, num_tgt_feats = \
-            _make_examples_numfeats_tpl(tgt_path, tgt_seq_length_trunc, "tgt")
-
         dataset = AudioDataset(fields, src_examples_iter, tgt_examples_iter,
                                num_src_feats, num_tgt_feats,
                                tgt_seq_length=tgt_seq_length,
@@ -498,7 +489,7 @@ def _read_audio_file(path, src_dir, side, sample_rate, window_size,
             yield example_dict
 
 
-def _make_examples_numfeats_tpl(path, truncate, side):
+def _make_text_examples_nfeats_tpl(path, truncate, side):
     """
     Process the text corpus into (example_dict iterator, num_feats) tuple.
     """
@@ -515,6 +506,33 @@ def _make_examples_numfeats_tpl(path, truncate, side):
     examples_iter = (ex for ex, nfeats in examples_nfeats_iter)
 
     return (examples_iter, num_feats)
+
+
+def _make_examples_nfeats_tpl(data_type, src_path, src_dir,
+                              src_seq_length_trunc, sample_rate,
+                              window_size, window_stride,
+                              window, normalize_audio):
+    """
+    Process the corpus into (example_dict iterator, num_feats) tuple
+    on source side for different 'data_type'.
+    """
+
+    if data_type == 'text':
+        src_examples_iter, num_src_feats = _make_text_examples_nfeats_tpl(
+                            src_path, src_seq_length_trunc, "src")
+
+    elif data_type == 'img':
+        src_examples_iter = _read_img_file(src_path, src_dir, "src")
+        num_src_feats = 0  # Source side(img) has no features.
+
+    elif data_type == 'audio':
+        src_examples_iter = _read_audio_file(src_path, src_dir, "src",
+                                             sample_rate, window_size,
+                                             window_stride, window,
+                                             normalize_audio)
+        num_src_feats = 0  # Source side(audio) has no features.
+
+    return src_examples_iter, num_src_feats
 
 
 class OrderedIterator(torchtext.data.Iterator):
