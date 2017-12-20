@@ -53,23 +53,24 @@ def build_save_text_dataset_in_shards(src_corpus, tgt_corpus, fields,
     '''
     Divide the big corpus into shards, and build dataset seperately.
     This is currently only for data_type=='text'.
+
+    The reason we do this is to avoid taking up too much memory due
+    to sucking in a huge corpus file.
+
+    To tackle this, we only read in part of the corpus file of
+    size `max_shard_size`, and process it into dataset, then write
+    it to disk along the way. By doing this, we only focus on part
+    of the corpus at any moment, thus effectively reducing memory use.
+    According to test, this method can reduce memory footprint by ~50%.
+
+    Note! As we process along the shards, previous shards might still
+    stay in memory, but since we are done with them, and no more
+    reference to them, if there is memory tight situation, the OS could
+    easily reclaim these memory.
+
+    If `max_shard_size` is 0 or is larger than the corpus size, it is
+    effectively preprocessed into one dataset, i.e. no sharding.
     '''
-    # The reason we do this is to avoid taking up too much memory due
-    # to sucking in a huge corpus file.
-    #
-    # To tackle this, we only read in part of the corpus file of
-    # size `max_shard_size`, and process it into dataset, then write
-    # it to disk along the way. By doing this, we only focus on part
-    # of the corpus at any moment, thus effectively reducing memory use.
-    # According to test, this method can reduce memory footprint by ~40%.
-    #
-    # Note! As we process along the shards, previous shards might still
-    # stay in memory, but since we are done with them, and no more
-    # reference to them, if there is memory tight situation, the OS could
-    # easily reclaim these memory.
-    #
-    # If `max_shard_size` is 0 or is larger than the corpus size, it is
-    # effectively preprocessed into one dataset, i.e. no sharding.
 
     corpus_size = os.path.getsize(src_corpus)
     if corpus_size > 10 * (1024**2) and opt.max_shard_size == 0:
