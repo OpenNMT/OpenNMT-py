@@ -156,7 +156,7 @@ class TransformerDecoderLayer(nn.Module):
                             :tgt_pad_mask.size(1)]
                             .expand_as(tgt_pad_mask), 0)
         input_norm = self.layer_norm_1(input)
-        query, attn = self.self_attn(input_norm, input_norm, input_norm, 
+        query, attn = self.self_attn(input_norm, input_norm, input_norm,
                                      mask=dec_mask)
         query_norm = self.layer_norm_2(query+input)
         mid, attn = self.context_attn(context, context, query_norm,

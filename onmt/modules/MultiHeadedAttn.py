@@ -7,7 +7,6 @@ from onmt.Utils import aeq
 from onmt.modules.UtilClass import BottleLinear, BottleSoftmax
 
 
-
 class MultiHeadedAttention(nn.Module):
     ''' Multi-Head Attention module from
         "Attention is All You Need".
