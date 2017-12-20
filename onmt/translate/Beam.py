@@ -1,6 +1,6 @@
 from __future__ import division
 import torch
-import onmt
+
 import onmt.io
 
 """

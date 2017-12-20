@@ -2,6 +2,7 @@ import torch
 from torch.autograd import Variable
 
 import onmt
+import onmt.translate.Beam
 import onmt.Models
 import onmt.ModelConstructor
 import onmt.modules

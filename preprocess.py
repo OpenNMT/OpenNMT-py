@@ -5,7 +5,6 @@ import argparse
 import codecs
 import torch
 
-import onmt
 import onmt.io
 import opts
 
