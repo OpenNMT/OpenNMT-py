@@ -140,8 +140,7 @@ def make_loss_compute(model, tgt_vocab, dataset, opt):
     return compute
 
 
-def train_model(model, train, valid, fields, optim):
-
+def train_model(model, train, valid, fields, optim, model_opt):
     train_iter = make_train_data_iter(train, opt)
     valid_iter = make_valid_data_iter(valid, opt)
 
@@ -180,7 +179,7 @@ def train_model(model, train, valid, fields, optim):
 
         # 5. Drop a checkpoint if needed.
         if epoch >= opt.start_checkpoint_at:
-            trainer.drop_checkpoint(opt, epoch, fields, valid_stats)
+            trainer.drop_checkpoint(model_opt, epoch, fields, valid_stats)
 
 
 def check_save_model_path():
@@ -310,7 +309,7 @@ def main():
     optim = build_optim(model, checkpoint)
 
     # Do training.
-    train_model(model, train, valid, fields, optim)
+    train_model(model, train, valid, fields, optim, model_opt)
 
 
 if __name__ == "__main__":
