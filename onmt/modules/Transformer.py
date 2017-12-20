@@ -106,7 +106,6 @@ class TransformerEncoder(EncoderBase):
         # Run the forward pass of every layer of the tranformer.
         for i in range(self.num_layers):
             out = self.transformer[i](out, mask)
-        
         out = self.layer_norm(out)
 
         return Variable(emb.data), out.transpose(0, 1).contiguous()
@@ -157,7 +156,8 @@ class TransformerDecoderLayer(nn.Module):
                             :tgt_pad_mask.size(1)]
                             .expand_as(tgt_pad_mask), 0)
         input_norm = self.layer_norm_1(input)
-        query, attn = self.self_attn(input_norm, input_norm, input_norm, mask=dec_mask)
+        query, attn = self.self_attn(input_norm, input_norm, input_norm, 
+                                     mask=dec_mask)
         query_norm = self.layer_norm_2(query+input)
         mid, attn = self.context_attn(context, context, query_norm,
                                       mask=src_pad_mask)
