@@ -15,3 +15,4 @@
       onmt.rst
       onmt.modules.rst
       CONTRIBUTORS.md
+      ref.rst
