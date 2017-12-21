@@ -46,25 +46,6 @@ class Translator(object):
             "scores": [],
             "log_probs": []}
 
-    def buildTargetTokens(self, pred, src, attn, copy_vocab, src_raw):
-        vocab = self.fields["tgt"].vocab
-        tokens = []
-        for tok in pred:
-            if tok < len(vocab):
-                tokens.append(vocab.itos[tok])
-            else:
-                tokens.append(copy_vocab.itos[tok - len(vocab)])
-            if tokens[-1] == onmt.io.EOS_WORD:
-                tokens = tokens[:-1]
-                break
-
-        if self.opt.replace_unk and (attn is not None) and (src is not None):
-            for i in range(len(tokens)):
-                if tokens[i] == vocab.itos[onmt.io.UNK]:
-                    _, maxIndex = attn[i].max(0)
-                    tokens[i] = src_raw[maxIndex[0]]
-        return tokens
-
     def _runTarget(self, batch, data):
         data_type = data.data_type
         if data_type == 'text':
@@ -133,7 +114,10 @@ class Translator(object):
         beam = [onmt.translate.Beam(beam_size, n_best=self.opt.n_best,
                                     cuda=self.opt.cuda,
                                     vocab=self.fields["tgt"].vocab,
-                                    global_scorer=scorer)
+                                    global_scorer=scorer,
+                                    pad=vocab.stoi[onmt.io.PAD_WORD],
+                                    eos=self.vocab.stoi[onmt.io.EOS_WORD],
+                                    bos=self.vocab.stoi[onmt.io.BOS_WORD])
                 for __ in range(batch_size)]
 
         # (2) run the decoder to generate sentences, using beam search.
@@ -215,42 +199,6 @@ class Translator(object):
         return allHyps, allScores, allAttn, allGold
 
     def translate(self, batch, data):
-        #  (1) convert words to indexes
-        batch_size = batch.batch_size
-
-        #  (2) translate
-        pred, predScore, attn, goldScore = self.translateBatch(batch, data)
-        assert(len(goldScore) == len(pred))
-        pred, predScore, attn, goldScore, indices = list(zip(
-            *sorted(zip(pred, predScore, attn, goldScore,
-                        batch.indices.data),
-                    key=lambda x: x[-1])))
-        inds, perm = torch.sort(batch.indices.data)
-
-        #  (3) convert indexes to words
-        predBatch, goldBatch = [], []
-        data_type = data.data_type
-        if data_type == 'text':
-            src = batch.src[0].data.index_select(1, perm)
-        else:
-            src = None
-        if self.opt.tgt:
-            tgt = batch.tgt.data.index_select(1, perm)
-        for b in range(batch_size):
-            if data_type == 'text':
-                src_vocab = data.src_vocabs[inds[b]]
-                example = data.examples[inds[b]].src
-            else:
-                src_vocab = None
-                example = None
-            predBatch.append(
-                [self.buildTargetTokens(pred[b][n], src[:, b]
-                                        if src is not None else None,
-                                        attn[b][n], src_vocab, example)
-                 for n in range(self.opt.n_best)])
-            if self.opt.tgt:
-                goldBatch.append(
-                    self.buildTargetTokens(tgt[1:, b], src[:, b]
-                                           if src is not None else None,
-                                           None, None, None))
-        return predBatch, goldBatch, predScore, goldScore, attn, src, indices
+        allHyps, allScores, allAttn, allGold = self.translateBatch(batch, data)
+        return onmt.translate.Translation.fromBatch(
+            self.opt.nbest, self.opt.tgt, batch, data, allHyps, allScores, allAttn, allGold)        

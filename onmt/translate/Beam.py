@@ -1,8 +1,6 @@
 from __future__ import division
 import torch
 
-import onmt.io
-
 """
  Class for managing the internals of the beam search process.
 
@@ -12,7 +10,7 @@ import onmt.io
 
 class Beam(object):
     def __init__(self, size, n_best=1, cuda=False, vocab=None,
-                 global_scorer=None):
+                 global_scorer=None, pad, bos, eos):
 
         self.size = size
         self.tt = torch.cuda if cuda else torch
@@ -26,12 +24,12 @@ class Beam(object):
 
         # The outputs at each time-step.
         self.nextYs = [self.tt.LongTensor(size)
-                       .fill_(vocab.stoi[onmt.io.PAD_WORD])]
-        self.nextYs[0][0] = vocab.stoi[onmt.io.BOS_WORD]
+                       .fill_(pad)]
+        self.nextYs[0][0] = bos
         self.vocab = vocab
 
         # Has EOS topped the beam yet.
-        self._eos = self.vocab.stoi[onmt.io.EOS_WORD]
+        self._eos = eos
         self.eosTop = False
 
         # The attentions (matrix) for each time.
@@ -102,7 +100,7 @@ class Beam(object):
                 self.finished.append((s, len(self.nextYs) - 1, i))
 
         # End condition is when top-of-beam is EOS and no global score.
-        if self.nextYs[-1][0] == self.vocab.stoi[onmt.io.EOS_WORD]:
+        if self.nextYs[-1][0] == self._eos:
             # self.allScores.append(self.scores)
             self.eosTop = True
 
