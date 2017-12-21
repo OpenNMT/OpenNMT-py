@@ -145,9 +145,9 @@ def preprocess_opts(parser):
                        help="Path to an existing target vocabulary")
     group.add_argument('-features_vocabs_prefix', type=str, default='',
                        help="Path prefix to existing features vocabularies")
-    group.add_argument('-src_vocab_size', type=int, default=30000,
+    group.add_argument('-src_vocab_size', type=int, default=50000,
                        help="Size of the source vocabulary")
-    group.add_argument('-tgt_vocab_size', type=int, default=30000,
+    group.add_argument('-tgt_vocab_size', type=int, default=50000,
                        help="Size of the target vocabulary")
 
     group.add_argument('-src_words_min_frequency', type=int, default=0)
@@ -315,7 +315,7 @@ def train_opts(parser):
                        help="""Number of warmup steps for custom decay.""")
 
     group = parser.add_argument_group('Logging')
-    group.add_argument('-report_every', type=int, default=100,
+    group.add_argument('-report_every', type=int, default=50,
                        help="Print stats at this interval.")
     group.add_argument('-exp_host', type=str, default="",
                        help="Send logs to this crayon server.")
