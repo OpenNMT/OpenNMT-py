@@ -145,9 +145,9 @@ def preprocess_opts(parser):
                        help="Path to an existing target vocabulary")
     group.add_argument('-features_vocabs_prefix', type=str, default='',
                        help="Path prefix to existing features vocabularies")
-    group.add_argument('-src_vocab_size', type=int, default=50000,
+    group.add_argument('-src_vocab_size', type=int, default=30000,
                        help="Size of the source vocabulary")
-    group.add_argument('-tgt_vocab_size', type=int, default=50000,
+    group.add_argument('-tgt_vocab_size', type=int, default=30000,
                        help="Size of the target vocabulary")
 
     group.add_argument('-src_words_min_frequency', type=int, default=0)
@@ -286,6 +286,12 @@ def train_opts(parser):
                        suggested a value of 0.98 for beta2, this parameter may
                        not work well for normal models / default
                        baselines.""")
+    group.add_argument('-label_smoothing', type=float, default=0.0,
+                       help="""Label smoothing value epsilon.
+                       Probabilities of all non-true labels will be set to epsilon.
+                       Set to zero to turn off label smoothing.
+                       For more detailed information, see:
+                       https://arxiv.org/abs/1512.00567""")
     # learning rate
     group = parser.add_argument_group('Optimization- Rate')
     group.add_argument('-learning_rate', type=float, default=1.0,
@@ -309,7 +315,7 @@ def train_opts(parser):
                        help="""Number of warmup steps for custom decay.""")
 
     group = parser.add_argument_group('Logging')
-    group.add_argument('-report_every', type=int, default=50,
+    group.add_argument('-report_every', type=int, default=100,
                        help="Print stats at this interval.")
     group.add_argument('-exp_host', type=str, default="",
                        help="Send logs to this crayon server.")
