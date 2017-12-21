@@ -5,6 +5,7 @@ import onmt
 import onmt.Models
 import onmt.ModelConstructor
 import onmt.modules
+import onmt.translate.Beam
 import onmt.io
 from onmt.Utils import use_gpu
 
@@ -45,7 +46,7 @@ class Translator(object):
             "scores": [],
             "log_probs": []}
 
-    def buildTargetTokens(self, pred, src, attn, copy_vocab):
+    def buildTargetTokens(self, pred, src, attn, copy_vocab, src_raw):
         vocab = self.fields["tgt"].vocab
         tokens = []
         for tok in pred:
@@ -61,7 +62,7 @@ class Translator(object):
             for i in range(len(tokens)):
                 if tokens[i] == vocab.itos[onmt.io.UNK]:
                     _, maxIndex = attn[i].max(0)
-                    tokens[i] = self.fields["src"].vocab.itos[src[maxIndex[0]]]
+                    tokens[i] = src_raw[maxIndex[0]]
         return tokens
 
     def _runTarget(self, batch, data):
@@ -128,11 +129,11 @@ class Translator(object):
         else:
             srcMap = None
         decStates.repeat_beam_size_times(beam_size)
-        scorer = onmt.GNMTGlobalScorer(self.alpha, self.beta)
-        beam = [onmt.Beam(beam_size, n_best=self.opt.n_best,
-                          cuda=self.opt.cuda,
-                          vocab=self.fields["tgt"].vocab,
-                          global_scorer=scorer)
+        scorer = onmt.translate.GNMTGlobalScorer(self.alpha, self.beta)
+        beam = [onmt.translate.Beam(beam_size, n_best=self.opt.n_best,
+                                    cuda=self.opt.cuda,
+                                    vocab=self.fields["tgt"].vocab,
+                                    global_scorer=scorer)
                 for __ in range(batch_size)]
 
         # (2) run the decoder to generate sentences, using beam search.
@@ -238,16 +239,18 @@ class Translator(object):
         for b in range(batch_size):
             if data_type == 'text':
                 src_vocab = data.src_vocabs[inds[b]]
+                example = data.examples[inds[b]].src
             else:
                 src_vocab = None
+                example = None
             predBatch.append(
                 [self.buildTargetTokens(pred[b][n], src[:, b]
                                         if src is not None else None,
-                                        attn[b][n], src_vocab)
+                                        attn[b][n], src_vocab, example)
                  for n in range(self.opt.n_best)])
             if self.opt.tgt:
                 goldBatch.append(
                     self.buildTargetTokens(tgt[1:, b], src[:, b]
                                            if src is not None else None,
-                                           None, None))
+                                           None, None, None))
         return predBatch, goldBatch, predScore, goldScore, attn, src, indices

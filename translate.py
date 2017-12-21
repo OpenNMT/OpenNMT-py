@@ -9,6 +9,7 @@ import torch
 
 import onmt
 import onmt.io
+import onmt.translate
 import opts
 from itertools import takewhile, count
 
@@ -45,7 +46,7 @@ def main():
     opt.cuda = opt.gpu > -1
     if opt.cuda:
         torch.cuda.set_device(opt.gpu)
-    translator = onmt.Translator(opt, dummy_opt.__dict__)
+    translator = onmt.translate.Translator(opt, dummy_opt.__dict__)
     out_file = codecs.open(opt.output, 'w', 'utf-8')
     pred_score_total, pred_words_total = 0, 0
     gold_score_total, gold_words_total = 0, 0
