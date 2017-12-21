@@ -9,6 +9,8 @@ import torch
 import torchtext.data
 import torchtext.vocab
 
+from onmt.Utils import aeq
+
 
 PAD_WORD = '<blank>'
 UNK = 0
@@ -575,3 +577,25 @@ class ONMTDatasetBase(torchtext.data.Dataset):
                     scores[:, b, ti] += scores[:, b, offset + i]
                     scores[:, b, offset + i].fill_(1e-20)
         return scores
+
+    @staticmethod
+    def coalesce_datasets(datasets):
+        """Coalesce all dataset instances. """
+        final = datasets[0]
+        for d in datasets[1:]:
+            # `src_vocabs` is a list of `torchtext.vocab.Vocab`.
+            # Each sentence transforms into on Vocab.
+            # Coalesce them into one big list.
+            final.src_vocabs += d.src_vocabs
+
+            # All datasets have same number of features.
+            aeq(final.n_src_feats, d.n_src_feats)
+            aeq(final.n_tgt_feats, d.n_tgt_feats)
+
+            # `examples` is a list of `torchtext.data.Example`.
+            # Coalesce them into one big list.
+            final.examples += d.examples
+
+            # All datasets have same fields, no need to update.
+
+        return final

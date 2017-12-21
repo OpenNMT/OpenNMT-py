@@ -1,4 +1,4 @@
-from onmt.io.IO import PAD_WORD, BOS_WORD, EOS_WORD, UNK, \
+from onmt.io.IO import PAD_WORD, BOS_WORD, EOS_WORD, UNK, ONMTDatasetBase, \
                        collect_feature_vocabs, make_features, \
                        collect_features, extract_features, \
                        load_fields_from_vocab, get_fields, \
@@ -9,7 +9,7 @@ from onmt.io.ImageDataset import ImageDataset
 from onmt.io.AudioDataset import AudioDataset
 
 
-__all__ = [PAD_WORD, BOS_WORD, EOS_WORD, UNK,
+__all__ = [PAD_WORD, BOS_WORD, EOS_WORD, UNK, ONMTDatasetBase,
            collect_feature_vocabs, make_features,
            collect_features, extract_features,
            load_fields_from_vocab, get_fields,

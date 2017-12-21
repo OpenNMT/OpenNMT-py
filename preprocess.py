@@ -48,10 +48,11 @@ def get_num_features(side, opt):
     return n_features
 
 
-def build_save_text_dataset_in_shards(src_corpus, tgt_corpus,
-                                      fields, corpus_type, opt):
+def build_save_text_dataset_in_shards(src_corpus, tgt_corpus, fields,
+                                      corpus_type, opt, save=True):
     '''
-    Divide the big text corpus into shards, and build dataset seperately.
+    Divide the big corpus into shards, and build dataset seperately.
+    This is currently only for data_type=='text'.
     '''
     # The reason we do this is to avoid taking up too much memory due
     # to sucking in a huge corpus file.
@@ -90,17 +91,18 @@ def build_save_text_dataset_in_shards(src_corpus, tgt_corpus,
         index += 1
         dataset = onmt.io.TextDataset(
                 fields, src_iter, tgt_iter,
-                src_iter.n_feats, tgt_iter.n_feats,
+                src_iter.num_feats, tgt_iter.num_feats,
                 src_seq_length=opt.src_seq_length,
                 tgt_seq_length=opt.tgt_seq_length,
                 dynamic_dict=opt.dynamic_dict)
         ret_list.append(dataset)
 
-        # We save fields in vocab.pt seperately, so make it empty.
-        dataset.fields = []
-        part_name = "{:s}.{:s}.{:d}.pt".format(
+        if save:
+            # We save fields in vocab.pt seperately, so make it empty.
+            dataset.fields = []
+            pt_file = "{:s}.{:s}.{:d}.pt".format(
                     opt.save_data, corpus_type, index)
-        torch.save(dataset, open(part_name, 'wb'))
+            torch.save(dataset, open(pt_file, 'wb'))
 
     return ret_list
 
@@ -115,10 +117,11 @@ def build_save_dataset(corpus_type, fields, opt, save=True):
         src_corpus = opt.valid_src
         tgt_corpus = opt.valid_tgt
 
+    # Currently we only do preprocess sharding for corpus: data_type=='text'.
     if opt.data_type == 'text':
-        # Currently we only do sharding for text corpus.
         return build_save_text_dataset_in_shards(
-                src_corpus, tgt_corpus, fields, corpus_type, opt)
+                src_corpus, tgt_corpus, fields,
+                corpus_type, opt, save)
 
     # For data_type == 'img' or 'audio', currently we don't do
     # preprocess sharding. We only build a monolithic dataset.
