@@ -133,7 +133,8 @@ class NMTLossCompute(LossComputeBase):
             self.register_buffer('one_hot', one_hot)
             self.normalizing = \
                 - (1 - label_smoothing) * np.log(1 - label_smoothing) \
-                - (len(tgt_vocab) - 1) * low_confidence * np.log(low_confidence)
+                - (len(tgt_vocab) - 1) * low_confidence * \
+                  np.log(low_confidence)
         else:
             self.criterion = nn.NLLLoss(weight, size_average=False)
         self.label_smoothing = label_smoothing
@@ -156,7 +157,8 @@ class NMTLossCompute(LossComputeBase):
                               .repeat(1, scores.size(1))
             target_ = Variable(self.one_hot.repeat(target_feed.size(0), 1),
                                requires_grad=False)
-            target_.scatter_(1, target_feed.unsqueeze(1), 1 - self.label_smoothing)
+            target_.scatter_(1, target_feed.unsqueeze(1), 
+                             1 - self.label_smoothing)
             target_.masked_fill_(mask, 0)
             target_feed = target_
             norm_ = self.normalizing * target.data.ne(self.padding_idx).sum()
