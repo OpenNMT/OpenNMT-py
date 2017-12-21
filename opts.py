@@ -289,7 +289,7 @@ def train_opts(parser):
     group.add_argument('-label_smoothing', type=float, default=0.0,
                        help="""Label smoothing value epsilon.
                        Probabilities of all non-true labels
-                       will be set to epsilon.
+                       will be smoothed by epsilon / (vocab_size - 1).
                        Set to zero to turn off label smoothing.
                        For more detailed information, see:
                        https://arxiv.org/abs/1512.00567""")
