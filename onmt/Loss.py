@@ -5,6 +5,7 @@ This includes: LossComputeBase and the standard NMTLossCompute, and
                sharded loss compute stuff.
 """
 from __future__ import division
+import numpy as np
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
@@ -103,12 +104,41 @@ class NMTLossCompute(LossComputeBase):
     """
     Standard NMT Loss Computation.
     """
-    def __init__(self, generator, tgt_vocab):
+    def __init__(self, generator, tgt_vocab, label_smoothing=0.0):
         super(NMTLossCompute, self).__init__(generator, tgt_vocab)
 
-        weight = torch.ones(len(tgt_vocab))
-        weight[self.padding_idx] = 0
-        self.criterion = nn.NLLLoss(weight, size_average=False)
+        # CHECK
+        assert (label_smoothing >= 0.0 and label_smoothing <= 1.0)
+        # END CHECK
+
+        if label_smoothing > 0:
+            # When label smoothing is turned on,
+            # KL-divergence between q_{smoothed ground truth prob.}(w)
+            # and p_{prob. computed by model}(w) is minimized.
+            # If label smoothing value is set to zero, the loss
+            # is equivalent to NLLLoss or CrossEntropyLoss.
+            # All non-true labels are uniformly set to low-confidence.
+            # Normalizing term is the entropy of q_(w),
+            # a constant that has no effect to gradient update.
+            # It was added to recover cross-entropy term
+            # from KL-divergence, for better readability.
+            # H(q_(w), p_(w)) = D_{KL}(q_(w)||p_(w)) + H(q_(w))
+            # H(q_(w)) = - sum_{all labels}(p(label) * log p(label))
+            self.criterion = nn.KLDivLoss(size_average=False)
+            low_confidence = label_smoothing / (len(tgt_vocab) - 2)
+            one_hot = torch.randn(1, len(tgt_vocab))
+            one_hot.fill_(low_confidence)
+            one_hot[0][self.padding_idx] = 0
+            self.register_buffer('one_hot', one_hot)
+            self.normalizing = \
+                - (1 - label_smoothing) * np.log(1 - label_smoothing) \
+                - (len(tgt_vocab) - 2) * low_confidence * \
+                np.log(low_confidence)
+        else:
+            weight = torch.ones(len(tgt_vocab))
+            weight[self.padding_idx] = 0
+            self.criterion = nn.NLLLoss(weight, size_average=False)
+        self.label_smoothing = label_smoothing
 
     def make_shard_state(self, batch, output, range_, attns=None):
         """ See base class for args description. """
@@ -121,12 +151,23 @@ class NMTLossCompute(LossComputeBase):
         """ See base class for args description. """
         scores = self.generator(self.bottle(output))
 
-        target = target.view(-1)
+        target_feed = target.view(-1)
+        norm_ = 0
+        if self.label_smoothing > 0:
+            mask = target_feed.unsqueeze(1).eq(self.padding_idx) \
+                              .repeat(1, scores.size(1))
+            target_ = Variable(self.one_hot.repeat(target_feed.size(0), 1),
+                               requires_grad=False)
+            target_.scatter_(1, target_feed.unsqueeze(1),
+                             1 - self.label_smoothing)
+            target_.masked_fill_(mask, 0)
+            target_feed = target_
+            norm_ = self.normalizing * target.data.ne(self.padding_idx).sum()
 
-        loss = self.criterion(scores, target)
-        loss_data = loss.data.clone()
+        loss = self.criterion(scores, target_feed)
+        loss_data = loss.data.clone() + norm_
 
-        stats = self.stats(loss_data, scores.data, target.data)
+        stats = self.stats(loss_data, scores.data, target.view(-1).data)
 
         return loss, stats
 

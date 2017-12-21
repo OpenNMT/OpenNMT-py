@@ -286,6 +286,13 @@ def train_opts(parser):
                        suggested a value of 0.98 for beta2, this parameter may
                        not work well for normal models / default
                        baselines.""")
+    group.add_argument('-label_smoothing', type=float, default=0.0,
+                       help="""Label smoothing value epsilon.
+                       Probabilities of all non-true labels
+                       will be smoothed by epsilon / (vocab_size - 1).
+                       Set to zero to turn off label smoothing.
+                       For more detailed information, see:
+                       https://arxiv.org/abs/1512.00567""")
     # learning rate
     group = parser.add_argument_group('Optimization- Rate')
     group.add_argument('-learning_rate', type=float, default=1.0,
