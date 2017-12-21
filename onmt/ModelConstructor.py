@@ -143,13 +143,17 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
 
     # Make decoder.
     tgt_dict = fields["tgt"].vocab
-    # TODO: prepare for a future where tgt features are possible.
     feature_dicts = onmt.io.collect_feature_vocabs(fields, 'tgt')
     tgt_embeddings = make_embeddings(model_opt, tgt_dict,
                                      feature_dicts, for_encoder=False)
 
-    # Share the embedding matrix - preprocess with share_vocab required
+    # Share the embedding matrix - preprocess with share_vocab required.
     if model_opt.share_embeddings:
+        # src/tgt vocab should be the same if `-share_vocab` is specified.
+        if src_dict != tgt_dict:
+            raise AssertionError('The `-share_vocab` should be set during '
+                                 'preprocess if you use share_embeddings!')
+
         tgt_embeddings.word_lut.weight = src_embeddings.word_lut.weight
 
     decoder = make_decoder(model_opt, tgt_embeddings)
