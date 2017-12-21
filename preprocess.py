@@ -57,10 +57,11 @@ def build_save_text_dataset_in_shards(src_corpus, tgt_corpus, fields,
     The reason we do this is to avoid taking up too much memory due
     to sucking in a huge corpus file.
 
-    To tackle this, we only read in part of the corpus file of
-    size `max_shard_size`, and process it into dataset, then write
-    it to disk along the way. By doing this, we only focus on part
-    of the corpus at any moment, thus effectively reducing memory use.
+    To tackle this, we only read in part of the corpus file of size
+    `max_shard_size`(actually it is multiples of 64 bytes that equals
+    or is slightly larger than this size), and process it into dataset,
+    then write it to disk along the way. By doing this, we only focus on
+    part of the corpus at any moment, thus effectively reducing memory use.
     According to test, this method can reduce memory footprint by ~50%.
 
     Note! As we process along the shards, previous shards might still

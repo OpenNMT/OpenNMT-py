@@ -160,10 +160,16 @@ class ShardedTextCorpusIterator(object):
             # Yield tuples util this shard's size reaches the threshold.
             self.corpus.seek(self.last_pos)
             while True:
-                if self.shard_size != 0 and \
-                   self.corpus.tell() >= self.last_pos + self.shard_size:
-                    self.last_pos = self.corpus.tell()
-                    raise StopIteration
+                if self.shard_size != 0 and self.line_index % 64 == 0:
+                    # This part of check is time consuming on Py2 (but
+                    # it is quite fast on Py3, weird!). So we don't bother
+                    # to check for very line. Instead we chekc every 64
+                    # lines. Thus we are not dividing exactly per
+                    # `shard_size`, but it is not too much difference.
+                    cur_pos = self.corpus.tell()
+                    if cur_pos >= self.last_pos + self.shard_size:
+                        self.last_pos = cur_pos
+                        raise StopIteration
 
                 line = self.corpus.readline()
                 if line == '':

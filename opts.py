@@ -139,8 +139,9 @@ def preprocess_opts(parser):
     group.add_argument('-max_shard_size', type=int, default=0,
                        help="""For text corpus of large volume, it will
                        be divided into shards of this size to preprocess.
-                       If 0, the data will be handled as a whole.
-                       The unit is in bytes.""")
+                       If 0, the data will be handled as a whole. The unit
+                       is in bytes. Optimal value should be multiples of
+                       64 bytes.""")
 
     # Dictionary options, for text corpus
 
