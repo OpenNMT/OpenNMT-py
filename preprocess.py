@@ -103,7 +103,7 @@ def build_save_text_dataset_in_shards(src_corpus, tgt_corpus, fields,
             dataset.fields = []
             pt_file = "{:s}.{:s}.{:d}.pt".format(
                     opt.save_data, corpus_type, index)
-            torch.save(dataset, open(pt_file, 'wb'))
+            torch.save(dataset, pt_file)
 
     if index == 1:
         # Only one shard, strip the index in the filename.
@@ -149,7 +149,7 @@ def build_save_dataset(corpus_type, fields, opt, save=True):
         # We save fields in vocab.pt seperately, so make it empty.
         dataset.fields = []
         pt_file = "{:s}.{:s}.pt".format(opt.save_data, corpus_type)
-        torch.save(dataset, open(pt_file, 'wb'))
+        torch.save(dataset, pt_file)
 
     return [dataset]
 
@@ -168,8 +168,8 @@ def build_save_vocab(train_dataset, fields, opt, save=True):
 
     if save:
         # Can't save fields, so remove/reconstruct at training time.
-        torch.save(onmt.io.save_fields_to_vocab(fields),
-                   open(opt.save_data + '.vocab.pt', 'wb'))
+        vocab_file = opt.save_data + '.vocab.pt'
+        torch.save(onmt.io.save_fields_to_vocab(fields), vocab_file)
 
 
 def main():
