@@ -111,8 +111,6 @@ class NMTLossCompute(LossComputeBase):
         assert (label_smoothing >= 0.0 and label_smoothing <= 1.0)
         # END CHECK
 
-        weight = torch.ones(len(tgt_vocab))
-        weight[self.padding_idx] = 0
         if label_smoothing > 0:
             # When label smoothing is turned on,
             # KL-divergence between q_{smoothed ground truth prob.}(w)
@@ -127,15 +125,18 @@ class NMTLossCompute(LossComputeBase):
             # H(q_(w), p_(w)) = D_{KL}(q_(w)||p_(w)) + H(q_(w))
             # H(q_(w)) = - sum_{all labels}(p(label) * log p(label))
             self.criterion = nn.KLDivLoss(size_average=False)
-            low_confidence = label_smoothing / (len(tgt_vocab) - 1)
+            low_confidence = label_smoothing / (len(tgt_vocab) - 2)
             one_hot = torch.randn(1, len(tgt_vocab))
             one_hot.fill_(low_confidence)
+            one_hot[0][self.padding_idx] = 0
             self.register_buffer('one_hot', one_hot)
             self.normalizing = \
                 - (1 - label_smoothing) * np.log(1 - label_smoothing) \
-                - (len(tgt_vocab) - 1) * low_confidence * \
+                - (len(tgt_vocab) - 2) * low_confidence * \
                 np.log(low_confidence)
         else:
+            weight = torch.ones(len(tgt_vocab))
+            weight[self.padding_idx] = 0
             self.criterion = nn.NLLLoss(weight, size_average=False)
         self.label_smoothing = label_smoothing
 
