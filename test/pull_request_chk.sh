@@ -11,6 +11,7 @@ TEST_DIR="$PROJECT_ROOT/test"
 clean_up()
 {
     rm ${LOG_FILE}
+    rm -rf /tmp/*pt
     rm -rf /tmp/im2text
     rm -rf /tm/speech
 }
@@ -73,6 +74,7 @@ echo "Succeeded" | tee -a ${LOG_FILE}
 echo "[+] Doing preprocess test..."
 
 echo -n "  [+] Testing NMT preprocessing..."
+rm -rf /tmp/data*pt
 python preprocess.py -train_src ${DATA_DIR}/src-train.txt \
 		     -train_tgt ${DATA_DIR}/tgt-train.txt \
 		     -valid_src ${DATA_DIR}/src-val.txt \
@@ -84,6 +86,7 @@ python preprocess.py -train_src ${DATA_DIR}/src-train.txt \
 echo "Succeeded" | tee -a ${LOG_FILE}
 
 echo -n "  [+] Testing img2text preprocessing..."
+rm -rf /tmp/im2text/data*pt
 python preprocess.py -data_type img \
 		     -src_dir /tmp/im2text/images \
 		     -train_src /tmp/im2text/src-train.txt \
@@ -95,6 +98,7 @@ python preprocess.py -data_type img \
 echo "Succeeded" | tee -a ${LOG_FILE}
 
 echo -n "  [+] Testing speech2text preprocessing..."
+rm -rf /tmp/speech/data*pt
 python preprocess.py -data_type audio \
 		     -src_dir /tmp/speech/an4_dataset \
 		     -train_src /tmp/speech/src-train.txt \
@@ -147,6 +151,7 @@ echo "Succeeded" | tee -a ${LOG_FILE}
 echo -n "[+] Doing NMT {preprocess + train + translation} test..."
 head ${DATA_DIR}/src-val.txt > /tmp/src-val.txt
 head ${DATA_DIR}/tgt-val.txt > /tmp/tgt-val.txt
+rm -rf /tmp/q*pt
 python preprocess.py -train_src /tmp/src-val.txt \
 		     -train_tgt /tmp/tgt-val.txt \
 		     -valid_src /tmp/src-val.txt \
@@ -171,6 +176,7 @@ echo "Succeeded" | tee -a ${LOG_FILE}
 echo -n "[+] Doing im2text {preprocess + train} test..."
 head /tmp/im2text/src-val.txt > /tmp/im2text/src-val-head.txt
 head /tmp/im2text/tgt-val.txt > /tmp/im2text/tgt-val-head.txt
+rm -rf /tmp/im2text/q*pt
 python preprocess.py -data_type img \
 	             -src_dir /tmp/im2text/images \
 		     -train_src /tmp/im2text/src-val-head.txt \
@@ -188,6 +194,7 @@ echo "Succeeded" | tee -a ${LOG_FILE}
 echo -n "[+] Doing speech2text {preprocess + train} test..."
 head /tmp/speech/src-val.txt > /tmp/speech/src-val-head.txt
 head /tmp/speech/tgt-val.txt > /tmp/speech/tgt-val-head.txt
+rm -rf /tmp/speech/q*pt
 python preprocess.py -data_type audio \
 	             -src_dir /tmp/speech/an4_dataset \
 		     -train_src /tmp/speech/src-val-head.txt \

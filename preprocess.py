@@ -4,11 +4,25 @@
 import argparse
 import codecs
 import os
+import glob
+import sys
 
 import torch
 
 import onmt.io
 import opts
+
+
+def check_existing_pt_files(opt):
+    # We will use glob.glob() to find sharded {train|valid}.[0-9]*.pt
+    # when training, so check to avoid tampering with existing pt files
+    # or mixing them up.
+    for t in ['train', 'valid', 'vocab']:
+        pattern = opt.save_data + '.' + t + '*.pt'
+        if glob.glob(pattern):
+            sys.stderr.write("Please backup exisiting pt file: %s, "
+                             "to avoid tampering!\n" % pattern)
+            sys.exit(1)
 
 
 def parse_args():
@@ -21,6 +35,8 @@ def parse_args():
 
     opt = parser.parse_args()
     torch.manual_seed(opt.seed)
+
+    check_existing_pt_files(opt)
 
     return opt
 
