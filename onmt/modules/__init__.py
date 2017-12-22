@@ -14,6 +14,8 @@ from onmt.modules.StackedRNN import StackedLSTM, StackedGRU
 from onmt.modules.Embeddings import Embeddings
 from onmt.modules.WeightNorm import WeightNormConv2d
 
+from onmt.Models import EncoderBase, RNNDecoderBase
+
 from onmt.modules.SRU import check_sru_requirement
 can_use_sru = check_sru_requirement()
 if can_use_sru:
@@ -21,7 +23,8 @@ if can_use_sru:
 
 
 # For flake8 compatibility.
-__all__ = [GlobalAttention, ImageEncoder, CopyGenerator, MultiHeadedAttention,
+__all__ = [EncoderBase, RNNDecoderBase,
+           GlobalAttention, ImageEncoder, CopyGenerator, MultiHeadedAttention,
            LayerNorm, Bottle, BottleLinear, BottleLayerNorm, BottleSoftmax,
            TransformerEncoder, TransformerDecoder, Embeddings, Elementwise,
            MatrixTree, WeightNormConv2d, ConvMultiStepAttention,

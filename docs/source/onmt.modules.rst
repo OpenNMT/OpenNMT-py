@@ -11,16 +11,30 @@ Core Modules
     :undoc-members:
 
 
-.. autoclass:: onmt.modules.StackedGRU
-    :members:
-    :undoc-members:
-
-.. autoclass:: onmt.modules.StackedLSTM
-    :members:
-    :undoc-members:
-
-
 .. autoclass:: onmt.modules.GlobalAttention
+    :members:
+    :undoc-members:
+
+
+Encoders
+---------
+
+.. autoclass:: onmt.modules.EncoderBase
+    :members:
+
+
+.. autoclass:: onmt.modules.MeanEncoder
+    :members:
+
+.. autoclass:: onmt.modules.RNNEncoder
+    :members:
+
+
+Decoders
+---------
+
+
+.. autoclass:: onmt.modules.RNNDecoderBase
     :members:
     :undoc-members:
 

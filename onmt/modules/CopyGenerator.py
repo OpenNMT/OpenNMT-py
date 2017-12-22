@@ -90,7 +90,7 @@ class CopyGeneratorLossCompute(onmt.Loss.LossComputeBase):
         self.criterion = CopyGeneratorCriterion(len(tgt_vocab), force_copy,
                                                 self.padding_idx)
 
-    def make_shard_state(self, batch, output, range_, attns):
+    def _make_shard_state(self, batch, output, range_, attns):
         """ See base class for args description. """
         if getattr(batch, "alignment", None) is None:
             raise AssertionError("using -copy_attn you need to pass in "
@@ -103,9 +103,9 @@ class CopyGeneratorLossCompute(onmt.Loss.LossComputeBase):
             "align": batch.alignment[range_[0] + 1: range_[1]]
         }
 
-    def compute_loss(self, batch, output, target, copy_attn, align):
+    def _compute_loss(self, batch, output, target, copy_attn, align):
         """
-        Compute the loss. The args must match self.make_shard_state().
+        Compute the loss. The args must match self._make_shard_state().
         Args:
             batch: the current batch.
             output: the predict output from the model.
@@ -115,17 +115,17 @@ class CopyGeneratorLossCompute(onmt.Loss.LossComputeBase):
         """
         target = target.view(-1)
         align = align.view(-1)
-        scores = self.generator(self.bottle(output),
-                                self.bottle(copy_attn),
+        scores = self.generator(self._bottle(output),
+                                self._bottle(copy_attn),
                                 batch.src_map)
 
         loss = self.criterion(scores, align, target)
 
         scores_data = scores.data.clone()
         scores_data = self.dataset.collapse_copy_scores(
-                self.unbottle(scores_data, batch.batch_size),
+                self._unbottle(scores_data, batch.batch_size),
                 batch, self.tgt_vocab)
-        scores_data = self.bottle(scores_data)
+        scores_data = self._bottle(scores_data)
 
         # Correct target copy token instead of <unk>
         # tgt[i] = align[i] + len(tgt_vocab)
@@ -138,6 +138,6 @@ class CopyGeneratorLossCompute(onmt.Loss.LossComputeBase):
         # Coverage loss term.
         loss_data = loss.data.clone()
 
-        stats = self.stats(loss_data, scores_data, target_data)
+        stats = self._stats(loss_data, scores_data, target_data)
 
         return loss, stats

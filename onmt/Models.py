@@ -22,13 +22,13 @@ class EncoderBase(nn.Module):
     def forward(self, input, lengths=None, hidden=None):
         """
         Args:
-            input (LongTensor): len x batch x nfeat.
-            lengths (LongTensor): batch
-            hidden: Initial hidden state.
+            input (:obj:`LongTensor`): len x batch x nfeat.
+            lengths (:obj:`LongTensor`): batch
+            hidden (class specific): Initial hidden state.
         Returns:
-            hidden_t (Variable): Pair of layers x batch x rnn_size - final
+            :obj:`Variable`: Pair of layers x batch x rnn_size - final
                                     encoder state
-            outputs (FloatTensor):  len x batch x rnn_size -  Memory bank
+            :obj:`FloatTensor`: outputs  len x batch x rnn_size -  Memory bank
         """
         raise NotImplementedError
 
@@ -391,34 +391,40 @@ class InputFeedRNNDecoder(RNNDecoderBase):
 
 class NMTModel(nn.Module):
     """
-    The encoder + decoder Neural Machine Translation Model.
+    Core trainable object in OpenNMT. Implements a trainable interface
+    for a simple, generic encoder + decoder model.
+
+    Args:
+      encoder (:obj:`EncoderBase`): an encoder object
+      decoder (:obj:`RNNDecoderBase`): a decoder object
+      multigpu (bool): setup for multigpu support
     """
     def __init__(self, encoder, decoder, multigpu=False):
-        """
-        Args:
-            encoder(*Encoder): the various encoder.
-            decoder(*Decoder): the various decoder.
-            multigpu(bool): run parellel on multi-GPU?
-        """
         self.multigpu = multigpu
         super(NMTModel, self).__init__()
         self.encoder = encoder
         self.decoder = decoder
 
     def forward(self, src, tgt, lengths, dec_state=None):
-        """
+        """Forward propagate a `src` and `tgt` pair for training.
+        Possible initialized with a beginning decoder state.
+
         Args:
-            src(FloatTensor): a sequence of source tensors with
-                    optional feature tensors of size (len x batch).
-            tgt(FloatTensor): a sequence of target tensors with
-                    optional feature tensors of size (len x batch).
-            lengths([int]): an array of the src length.
-            dec_state: A decoder state object
+            src (:obj:`Tensor`):
+                a source sequence passed to encoder.
+                typically for inputs this will be a padded :obj:`LongTensor`
+                of size `[len x batch x features]`. however, may be an
+                image or other generic input depending on encoder.
+            tgt (:obj:`LongTensor`):
+                 a target sequence of size `[tgt_len x batch]`.
+            lengths(:obj:`LongTensor`): the src lengths, pre-padding `[batch]`.
+            dec_state (:obj:`DecoderState`, optional): the initial decoder state
         Returns:
-            outputs (FloatTensor): (len x batch x hidden_size): decoder outputs
-            attns (FloatTensor): Dictionary of (src_len x batch)
-            dec_hidden (FloatTensor): tuple (1 x batch x hidden_size)
-                                      Init hidden state
+            (:obj:`FloatTensor`, `dict` of :obj:`FloatTensor`, :obj:`DecoderState`) :
+
+                 * decoder output `[tgt_len x batch x hidden]`
+                 * dictionary attention dists of `[tgt_len x batch x src_len]`
+                 * final decoder state
         """
         tgt = tgt[:-1]  # exclude last target from inputs
         enc_hidden, context = self.encoder(src, lengths)
@@ -434,21 +440,19 @@ class NMTModel(nn.Module):
 
 
 class DecoderState(object):
-    """
-    DecoderState is a base class for models, used during translation
-    for storing translation states.
+    """Interface for grouping together the current state of a recurrent
+    decoder. In the simplest case just represents the hidden state of
+    the model.  But can also be used for implementing various forms of
+    input_feeding and non-recurrent models.
+
+    Modules need to implement this to utilize beam search decoding.
     """
     def detach(self):
-        """
-        Detaches all Variables from the graph
-        that created it, making it a leaf.
-        """
         for h in self._all:
             if h is not None:
                 h.detach_()
 
     def beam_update(self, idx, positions, beam_size):
-        """ Update when beam advances. """
         for e in self._all:
             a, br, d = e.size()
             sent_states = e.view(a, beam_size, br // beam_size, d)[:, :, idx]
