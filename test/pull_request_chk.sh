@@ -7,6 +7,7 @@ echo > ${LOG_FILE} # Empty the log file.
 PROJECT_ROOT=`dirname "$0"`"/.."
 DATA_DIR="$PROJECT_ROOT/data"
 TEST_DIR="$PROJECT_ROOT/test"
+PYTHON="python"
 
 clean_up()
 {
@@ -49,7 +50,7 @@ environment_prepare()
 
 # flake8 check
 echo -n "[+] Doing flake8 check..."
-python -m flake8  >> ${LOG_FILE} 2>&1
+${PYTHON} -m flake8  >> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 
@@ -63,7 +64,7 @@ echo "Succeeded" | tee -a ${LOG_FILE}
 
 # unittest
 echo -n "[+] Doing unittest test..."
-python -m unittest discover >> ${LOG_FILE} 2>&1
+${PYTHON} -m unittest discover >> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 
@@ -75,7 +76,7 @@ echo "[+] Doing preprocess test..."
 
 echo -n "  [+] Testing NMT preprocessing..."
 rm -rf /tmp/data*pt
-python preprocess.py -train_src ${DATA_DIR}/src-train.txt \
+${PYTHON} preprocess.py -train_src ${DATA_DIR}/src-train.txt \
 		     -train_tgt ${DATA_DIR}/tgt-train.txt \
 		     -valid_src ${DATA_DIR}/src-val.txt \
 		     -valid_tgt ${DATA_DIR}/tgt-val.txt \
@@ -87,7 +88,7 @@ echo "Succeeded" | tee -a ${LOG_FILE}
 
 echo -n "  [+] Testing img2text preprocessing..."
 rm -rf /tmp/im2text/data*pt
-python preprocess.py -data_type img \
+${PYTHON} preprocess.py -data_type img \
 		     -src_dir /tmp/im2text/images \
 		     -train_src /tmp/im2text/src-train.txt \
 		     -train_tgt /tmp/im2text/tgt-train.txt \
@@ -99,7 +100,7 @@ echo "Succeeded" | tee -a ${LOG_FILE}
 
 echo -n "  [+] Testing speech2text preprocessing..."
 rm -rf /tmp/speech/data*pt
-python preprocess.py -data_type audio \
+${PYTHON} preprocess.py -data_type audio \
 		     -src_dir /tmp/speech/an4_dataset \
 		     -train_src /tmp/speech/src-train.txt \
 		     -train_tgt /tmp/speech/tgt-train.txt \
@@ -117,14 +118,14 @@ echo "[+] Doing translation test..."
 
 echo -n "  [+] Testing NMT translation..."
 head ${DATA_DIR}/src-test.txt > /tmp/src-test.txt
-python translate.py -model ${TEST_DIR}/test_model.pt -src /tmp/src-test.txt -verbose >> ${LOG_FILE} 2>&1
+${PYTHON} translate.py -model ${TEST_DIR}/test_model.pt -src /tmp/src-test.txt -verbose >> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 
 echo -n "  [+] Testing img2text translation..."
 head /tmp/im2text/src-val.txt > /tmp/im2text/src-val-head.txt
 head /tmp/im2text/tgt-val.txt > /tmp/im2text/tgt-val-head.txt
-python translate.py -data_type img \
+${PYTHON} translate.py -data_type img \
 	            -src_dir /tmp/im2text/images \
 		    -model /tmp/test_model_im2text.pt \
 		    -src /tmp/im2text/src-val-head.txt \
@@ -136,7 +137,7 @@ echo "Succeeded" | tee -a ${LOG_FILE}
 echo -n "  [+] Testing speech2text translation..."
 head /tmp/speech/src-val.txt > /tmp/speech/src-val-head.txt
 head /tmp/speech/tgt-val.txt > /tmp/speech/tgt-val-head.txt
-python translate.py -data_type audio \
+${PYTHON} translate.py -data_type audio \
 	            -src_dir /tmp/speech/an4_dataset \
 		    -model /tmp/test_model_speech.pt \
 		    -src /tmp/speech/src-val-head.txt \
@@ -152,17 +153,17 @@ echo -n "[+] Doing NMT {preprocess + train + translation} test..."
 head ${DATA_DIR}/src-val.txt > /tmp/src-val.txt
 head ${DATA_DIR}/tgt-val.txt > /tmp/tgt-val.txt
 rm -rf /tmp/q*pt
-python preprocess.py -train_src /tmp/src-val.txt \
+${PYTHON} preprocess.py -train_src /tmp/src-val.txt \
 		     -train_tgt /tmp/tgt-val.txt \
 		     -valid_src /tmp/src-val.txt \
 		     -valid_tgt /tmp/tgt-val.txt \
 		     -save_data /tmp/q           \
 		     -src_vocab_size 1000        \
 		     -tgt_vocab_size 1000        >> ${LOG_FILE} 2>&1
-python train.py -data /tmp/q -rnn_size 2 -batch_size 10 \
+${PYTHON} train.py -data /tmp/q -rnn_size 2 -batch_size 10 \
 		-word_vec_size 5 -report_every 5        \
 		-rnn_size 10 -epochs 1                 >> ${LOG_FILE} 2>&1
-python translate.py -model ${TEST_DIR}/test_model2.pt  \
+${PYTHON} translate.py -model ${TEST_DIR}/test_model2.pt  \
 		    -src ${DATA_DIR}/morph/src.valid   \
 		    -verbose -batch_size 10     \
 		    -beam_size 10               \
@@ -177,14 +178,14 @@ echo -n "[+] Doing im2text {preprocess + train} test..."
 head /tmp/im2text/src-val.txt > /tmp/im2text/src-val-head.txt
 head /tmp/im2text/tgt-val.txt > /tmp/im2text/tgt-val-head.txt
 rm -rf /tmp/im2text/q*pt
-python preprocess.py -data_type img \
+${PYTHON} preprocess.py -data_type img \
 	             -src_dir /tmp/im2text/images \
 		     -train_src /tmp/im2text/src-val-head.txt \
 		     -train_tgt /tmp/im2text/tgt-val-head.txt \
 		     -valid_src /tmp/im2text/src-val-head.txt \
 		     -valid_tgt /tmp/im2text/tgt-val-head.txt \
 		     -save_data /tmp/im2text/q  >> ${LOG_FILE} 2>&1
-python train.py -model_type img \
+${PYTHON} train.py -model_type img \
 	        -data /tmp/im2text/q -rnn_size 2 -batch_size 10 \
 		-word_vec_size 5 -report_every 5 -rnn_size 10 -epochs 1  >> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
@@ -195,14 +196,14 @@ echo -n "[+] Doing speech2text {preprocess + train} test..."
 head /tmp/speech/src-val.txt > /tmp/speech/src-val-head.txt
 head /tmp/speech/tgt-val.txt > /tmp/speech/tgt-val-head.txt
 rm -rf /tmp/speech/q*pt
-python preprocess.py -data_type audio \
+${PYTHON} preprocess.py -data_type audio \
 	             -src_dir /tmp/speech/an4_dataset \
 		     -train_src /tmp/speech/src-val-head.txt \
 		     -train_tgt /tmp/speech/tgt-val-head.txt \
 		     -valid_src /tmp/speech/src-val-head.txt \
 		     -valid_tgt /tmp/speech/tgt-val-head.txt \
 		     -save_data /tmp/speech/q  >> ${LOG_FILE} 2>&1
-python train.py -model_type audio \
+${PYTHON} train.py -model_type audio \
 	        -data /tmp/speech/q -rnn_size 2 -batch_size 10 \
 		-word_vec_size 5 -report_every 5 -rnn_size 10 -epochs 1  >> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit

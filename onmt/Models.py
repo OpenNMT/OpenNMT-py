@@ -125,7 +125,7 @@ class RNNDecoderBase(nn.Module):
         # Set up the context gate.
         self.context_gate = None
         if context_gate is not None:
-            self.context_gate = onmt.modules.ContextGateFactory(
+            self.context_gate = onmt.modules.context_gate_factory(
                 context_gate, self._input_size,
                 hidden_size, hidden_size, hidden_size
             )
@@ -451,9 +451,9 @@ class DecoderState(object):
         """ Update when beam advances. """
         for e in self._all:
             a, br, d = e.size()
-            sentStates = e.view(a, beam_size, br // beam_size, d)[:, :, idx]
-            sentStates.data.copy_(
-                sentStates.data.index_select(1, positions))
+            sent_states = e.view(a, beam_size, br // beam_size, d)[:, :, idx]
+            sent_states.data.copy_(
+                sent_states.data.index_select(1, positions))
 
 
 class RNNDecoderState(DecoderState):

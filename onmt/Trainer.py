@@ -179,7 +179,7 @@ class Trainer(object):
 
     def epoch_step(self, ppl, epoch):
         """ Called for each epoch to update learning rate. """
-        return self.optim.updateLearningRate(ppl, epoch)
+        return self.optim.update_learning_rate(ppl, epoch)
 
     def drop_checkpoint(self, opt, epoch, fields, valid_stats):
         """ Called conditionally each epoch to save a snapshot. """

@@ -18,17 +18,17 @@ BOS_WORD = '<s>'
 EOS_WORD = '</s>'
 
 
-def __getstate__(self):
+def _getstate(self):
     return dict(self.__dict__, stoi=dict(self.stoi))
 
 
-def __setstate__(self, state):
+def _setstate(self, state):
     self.__dict__.update(state)
     self.stoi = defaultdict(lambda: 0, self.stoi)
 
 
-torchtext.vocab.Vocab.__getstate__ = __getstate__
-torchtext.vocab.Vocab.__setstate__ = __setstate__
+torchtext.vocab.Vocab.__getstate__ = _getstate
+torchtext.vocab.Vocab.__setstate__ = _setstate
 
 
 def get_fields(data_type, n_src_features, n_tgt_features):
@@ -472,9 +472,9 @@ def _read_audio_file(path, src_dir, side, sample_rate, window_size,
             win_length = n_fft
             hop_length = int(sample_rate * window_stride)
             # STFT
-            D = librosa.stft(sound, n_fft=n_fft, hop_length=hop_length,
+            d = librosa.stft(sound, n_fft=n_fft, hop_length=hop_length,
                              win_length=win_length, window=window)
-            spect, _ = librosa.magphase(D)
+            spect, _ = librosa.magphase(d)
             spect = np.log1p(spect)
             spect = torch.FloatTensor(spect)
             if normalize_audio:

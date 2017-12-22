@@ -49,7 +49,7 @@ class Optim(object):
         self.adagrad_accum = adagrad_accum
         self.opt = opt
 
-    def _setRate(self, lr):
+    def _set_rate(self, lr):
         self.lr = lr
         self.optimizer.param_groups[0]['lr'] = self.lr
 
@@ -69,7 +69,7 @@ class Optim(object):
             clip_grad_norm(self.params, self.max_grad_norm)
         self.optimizer.step()
 
-    def updateLearningRate(self, ppl, epoch):
+    def update_learning_rate(self, ppl, epoch):
         """
         Decay learning rate if val perf does not improve
         or we hit the start_decay_at limit.

@@ -21,7 +21,7 @@ class ConvMultiStepAttention(nn.Module):
         self.linear_in = nn.Linear(input_size, input_size)
         self.mask = None
 
-    def applyMask(self, mask):
+    def apply_mask(self, mask):
         self.mask = mask
 
     def forward(self, base_target_emb, input, encoder_out_top,
