@@ -9,6 +9,8 @@ import torch
 import torchtext.data
 import torchtext.vocab
 
+from onmt.Utils import aeq
+
 
 PAD_WORD = '<blank>'
 UNK = 0
@@ -246,13 +248,19 @@ def build_dataset(fields, data_type, src_path, tgt_path, src_dir=None,
     # Hide this import inside to avoid circular dependency problem.
     from onmt.io import TextDataset, ImageDataset, AudioDataset
 
+    # Build src/tgt examples iterator from corpus files, also extract
+    # number of features. For all data types, the tgt side corpus is
+    # in form of text.
+    src_examples_iter, num_src_feats = \
+        _make_examples_nfeats_tpl(data_type, src_path, src_dir,
+                                  src_seq_length_trunc, sample_rate,
+                                  window_size, window_stride,
+                                  window, normalize_audio)
+
+    tgt_examples_iter, num_tgt_feats = \
+        _make_text_examples_nfeats_tpl(tgt_path, tgt_seq_length_trunc, "tgt")
+
     if data_type == 'text':
-        src_examples_iter, num_src_feats = \
-            _make_examples_numfeats_tpl(src_path, src_seq_length_trunc, "src")
-
-        tgt_examples_iter, num_tgt_feats = \
-            _make_examples_numfeats_tpl(tgt_path, tgt_seq_length_trunc, "tgt")
-
         dataset = TextDataset(fields, src_examples_iter, tgt_examples_iter,
                               num_src_feats, num_tgt_feats,
                               src_seq_length=src_seq_length,
@@ -261,27 +269,12 @@ def build_dataset(fields, data_type, src_path, tgt_path, src_dir=None,
                               use_filter_pred=use_filter_pred)
 
     elif data_type == 'img':
-        src_examples_iter = _read_img_file(src_path, src_dir, "src")
-        num_src_feats = 0  # Source side(image) has no features.
-
-        tgt_examples_iter, num_tgt_feats = \
-            _make_examples_numfeats_tpl(tgt_path, tgt_seq_length_trunc, "tgt")
-
         dataset = ImageDataset(fields, src_examples_iter, tgt_examples_iter,
                                num_src_feats, num_tgt_feats,
                                tgt_seq_length=tgt_seq_length,
                                use_filter_pred=use_filter_pred)
 
     elif data_type == 'audio':
-        src_examples_iter = _read_audio_file(src_path, src_dir, "src",
-                                             sample_rate, window_size,
-                                             window_stride, window,
-                                             normalize_audio)
-        num_src_feats = 0  # Source side(audio) has no features.
-
-        tgt_examples_iter, num_tgt_feats = \
-            _make_examples_numfeats_tpl(tgt_path, tgt_seq_length_trunc, "tgt")
-
         dataset = AudioDataset(fields, src_examples_iter, tgt_examples_iter,
                                num_src_feats, num_tgt_feats,
                                tgt_seq_length=tgt_seq_length,
@@ -295,12 +288,12 @@ def build_dataset(fields, data_type, src_path, tgt_path, src_dir=None,
     return dataset
 
 
-def build_vocab(train, data_type, share_vocab,
+def build_vocab(train_datasets, data_type, share_vocab,
                 src_vocab_size, src_words_min_frequency,
                 tgt_vocab_size, tgt_words_min_frequency):
     """
     Args:
-        train: a train dataset.
+        train_datasets: a list of train dataset.
         data_type: "text", "img" or "audio"?
         share_vocab(bool): share source and target vocabulary?
         src_vocab_size(int): size of the source vocabulary.
@@ -310,18 +303,19 @@ def build_vocab(train, data_type, share_vocab,
         tgt_words_min_frequency(int): the minimum frequency needed to
                 include a target word in the vocabulary.
     """
-    fields = train.fields
+    # All datasets have same fields, get the first one is OK.
+    fields = train_datasets[0].fields
 
-    fields["tgt"].build_vocab(train, max_size=tgt_vocab_size,
+    fields["tgt"].build_vocab(*train_datasets, max_size=tgt_vocab_size,
                               min_freq=tgt_words_min_frequency)
-    for j in range(train.n_tgt_feats):
-        fields["tgt_feat_" + str(j)].build_vocab(train)
+    for j in range(train_datasets[0].n_tgt_feats):
+        fields["tgt_feat_" + str(j)].build_vocab(*train_datasets)
 
     if data_type == 'text':
-        fields["src"].build_vocab(train, max_size=src_vocab_size,
+        fields["src"].build_vocab(*train_datasets, max_size=src_vocab_size,
                                   min_freq=src_words_min_frequency)
-        for j in range(train.n_src_feats):
-            fields["src_feat_" + str(j)].build_vocab(train)
+        for j in range(train_datasets[0].n_src_feats):
+            fields["src_feat_" + str(j)].build_vocab(*train_datasets)
 
         # Merge the input and output vocabularies.
         if share_vocab:
@@ -495,21 +489,50 @@ def _read_audio_file(path, src_dir, side, sample_rate, window_size,
             yield example_dict
 
 
-def _make_examples_numfeats_tpl(path, truncate, side):
+def _make_text_examples_nfeats_tpl(path, truncate, side):
     """
-    Process the text corpus into (examples iterator, num_feats) tuple.
+    Process the text corpus into (example_dict iterator, num_feats) tuple.
     """
     assert side in ['src', 'tgt']
 
     if path is None:
         return (None, 0)
 
-    examples_tpl = _read_text_file(path, truncate, side)
-    (_, num_feats), examples_tpl = _peek(examples_tpl)
+    # All examples have same number of features, so we peek first one
+    # to get the num_feats.
+    examples_nfeats_iter = _read_text_file(path, truncate, side)
+    (_, num_feats), examples_nfeats_iter = _peek(examples_nfeats_iter)
 
-    examples_iter = (ex for ex, nfeats in examples_tpl)
+    examples_iter = (ex for ex, nfeats in examples_nfeats_iter)
 
     return (examples_iter, num_feats)
+
+
+def _make_examples_nfeats_tpl(data_type, src_path, src_dir,
+                              src_seq_length_trunc, sample_rate,
+                              window_size, window_stride,
+                              window, normalize_audio):
+    """
+    Process the corpus into (example_dict iterator, num_feats) tuple
+    on source side for different 'data_type'.
+    """
+
+    if data_type == 'text':
+        src_examples_iter, num_src_feats = _make_text_examples_nfeats_tpl(
+                            src_path, src_seq_length_trunc, "src")
+
+    elif data_type == 'img':
+        src_examples_iter = _read_img_file(src_path, src_dir, "src")
+        num_src_feats = 0  # Source side(img) has no features.
+
+    elif data_type == 'audio':
+        src_examples_iter = _read_audio_file(src_path, src_dir, "src",
+                                             sample_rate, window_size,
+                                             window_stride, window,
+                                             normalize_audio)
+        num_src_feats = 0  # Source side(audio) has no features.
+
+    return src_examples_iter, num_src_feats
 
 
 class OrderedIterator(torchtext.data.Iterator):
@@ -572,3 +595,25 @@ class ONMTDatasetBase(torchtext.data.Dataset):
                     scores[:, b, ti] += scores[:, b, offset + i]
                     scores[:, b, offset + i].fill_(1e-20)
         return scores
+
+    @staticmethod
+    def coalesce_datasets(datasets):
+        """Coalesce all dataset instances. """
+        final = datasets[0]
+        for d in datasets[1:]:
+            # `src_vocabs` is a list of `torchtext.vocab.Vocab`.
+            # Each sentence transforms into on Vocab.
+            # Coalesce them into one big list.
+            final.src_vocabs += d.src_vocabs
+
+            # All datasets have same number of features.
+            aeq(final.n_src_feats, d.n_src_feats)
+            aeq(final.n_tgt_feats, d.n_tgt_feats)
+
+            # `examples` is a list of `torchtext.data.Example`.
+            # Coalesce them into one big list.
+            final.examples += d.examples
+
+            # All datasets have same fields, no need to update.
+
+        return final

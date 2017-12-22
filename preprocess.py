@@ -3,10 +3,26 @@
 
 import argparse
 import codecs
+import os
+import glob
+import sys
+
 import torch
 
 import onmt.io
 import opts
+
+
+def check_existing_pt_files(opt):
+    # We will use glob.glob() to find sharded {train|valid}.[0-9]*.pt
+    # when training, so check to avoid tampering with existing pt files
+    # or mixing them up.
+    for t in ['train', 'valid', 'vocab']:
+        pattern = opt.save_data + '.' + t + '*.pt'
+        if glob.glob(pattern):
+            sys.stderr.write("Please backup exisiting pt file: %s, "
+                             "to avoid tampering!\n" % pattern)
+            sys.exit(1)
 
 
 def parse_args():
@@ -19,6 +35,8 @@ def parse_args():
 
     opt = parser.parse_args()
     torch.manual_seed(opt.seed)
+
+    check_existing_pt_files(opt)
 
     return opt
 
@@ -46,7 +64,72 @@ def get_num_features(side, opt):
     return n_features
 
 
-def build_dataset(corpus_type, fields, opt):
+def build_save_text_dataset_in_shards(src_corpus, tgt_corpus, fields,
+                                      corpus_type, opt, save=True):
+    '''
+    Divide the big corpus into shards, and build dataset seperately.
+    This is currently only for data_type=='text'.
+
+    The reason we do this is to avoid taking up too much memory due
+    to sucking in a huge corpus file.
+
+    To tackle this, we only read in part of the corpus file of size
+    `max_shard_size`(actually it is multiples of 64 bytes that equals
+    or is slightly larger than this size), and process it into dataset,
+    then write it to disk along the way. By doing this, we only focus on
+    part of the corpus at any moment, thus effectively reducing memory use.
+    According to test, this method can reduce memory footprint by ~50%.
+
+    Note! As we process along the shards, previous shards might still
+    stay in memory, but since we are done with them, and no more
+    reference to them, if there is memory tight situation, the OS could
+    easily reclaim these memory.
+
+    If `max_shard_size` is 0 or is larger than the corpus size, it is
+    effectively preprocessed into one dataset, i.e. no sharding.
+    '''
+
+    corpus_size = os.path.getsize(src_corpus)
+    if corpus_size > 10 * (1024**2) and opt.max_shard_size == 0:
+        print("Warning! The corpus %s is larger than 10M bytes, you can "
+              "set '-max_shard_size' to process it by small shards "
+              "to avoid memory hogging problem !!!" % src_corpus)
+
+    ret_list = []
+    src_iter = onmt.io.ShardedTextCorpusIterator(
+                src_corpus, opt.src_seq_length_trunc,
+                "src", opt.max_shard_size)
+    tgt_iter = onmt.io.ShardedTextCorpusIterator(
+                tgt_corpus, opt.tgt_seq_length_trunc,
+                "tgt", opt.max_shard_size,
+                assoc_iter=src_iter)
+
+    index = 0
+    while not src_iter.hit_end():
+        index += 1
+        dataset = onmt.io.TextDataset(
+                fields, src_iter, tgt_iter,
+                src_iter.num_feats, tgt_iter.num_feats,
+                src_seq_length=opt.src_seq_length,
+                tgt_seq_length=opt.tgt_seq_length,
+                dynamic_dict=opt.dynamic_dict)
+        ret_list.append(dataset)
+
+        if save:
+            # We save fields in vocab.pt seperately, so make it empty.
+            dataset.fields = []
+            pt_file = "{:s}.{:s}.{:d}.pt".format(
+                    opt.save_data, corpus_type, index)
+            torch.save(dataset, pt_file)
+
+    if index == 1:
+        # Only one shard, strip the index in the filename.
+        os.rename(pt_file, opt.save_data + '.' + corpus_type + '.pt')
+
+    return ret_list
+
+
+def build_save_dataset(corpus_type, fields, opt, save=True):
     assert corpus_type in ['train', 'valid']
 
     if corpus_type == 'train':
@@ -56,6 +139,16 @@ def build_dataset(corpus_type, fields, opt):
         src_corpus = opt.valid_src
         tgt_corpus = opt.valid_tgt
 
+    # Currently we only do preprocess sharding for corpus: data_type=='text'.
+    if opt.data_type == 'text':
+        return build_save_text_dataset_in_shards(
+                src_corpus, tgt_corpus, fields,
+                corpus_type, opt, save)
+
+    # For data_type == 'img' or 'audio', currently we don't do
+    # preprocess sharding. We only build a monolithic dataset.
+    # But since the interfaces are uniform, it would be not hard
+    # to do this should users need this feature.
     dataset = onmt.io.build_dataset(
                 fields, opt.data_type, src_corpus, tgt_corpus,
                 src_dir=opt.src_dir,
@@ -69,7 +162,31 @@ def build_dataset(corpus_type, fields, opt):
                 window_stride=opt.window_stride,
                 window=opt.window)
 
-    return dataset
+    if save:
+        # We save fields in vocab.pt seperately, so make it empty.
+        dataset.fields = []
+        pt_file = "{:s}.{:s}.pt".format(opt.save_data, corpus_type)
+        torch.save(dataset, pt_file)
+
+    return [dataset]
+
+
+def build_save_vocab(train_dataset, fields, opt, save=True):
+    # We've empty'ed each dataset's `fields` attribute
+    # when saving datasets, so restore them.
+    for train in train_dataset:
+        train.fields = fields
+
+    onmt.io.build_vocab(train_dataset, opt.data_type, opt.share_vocab,
+                        opt.src_vocab_size,
+                        opt.src_words_min_frequency,
+                        opt.tgt_vocab_size,
+                        opt.tgt_words_min_frequency)
+
+    if save:
+        # Can't save fields, so remove/reconstruct at training time.
+        vocab_file = opt.save_data + '.vocab.pt'
+        torch.save(onmt.io.save_fields_to_vocab(fields), vocab_file)
 
 
 def main():
@@ -80,27 +197,14 @@ def main():
     n_tgt_features = get_num_features('tgt', opt)
     fields = onmt.io.get_fields(opt.data_type, n_src_features, n_tgt_features)
 
-    print("Building training data...")
-    train = build_dataset('train', fields, opt)
+    print("Building & saving training data...")
+    train_datasets = build_save_dataset('train', fields, opt)
 
-    print("Building vocabulary...")
-    onmt.io.build_vocab(train, opt.data_type, opt.share_vocab,
-                        opt.src_vocab_size,
-                        opt.src_words_min_frequency,
-                        opt.tgt_vocab_size,
-                        opt.tgt_words_min_frequency)
+    print("Building & saving vocabulary...")
+    build_save_vocab(train_datasets, fields, opt)
 
-    print("Building validation data...")
-    valid = build_dataset('valid', fields, opt)
-
-    print("Saving train/valid/vocab...")
-    # Can't save fields, so remove/reconstruct at training time.
-    torch.save(onmt.io.save_fields_to_vocab(fields),
-               open(opt.save_data + '.vocab.pt', 'wb'))
-    train.fields = []
-    valid.fields = []
-    torch.save(train, open(opt.save_data + '.train.pt', 'wb'))
-    torch.save(valid, open(opt.save_data + '.valid.pt', 'wb'))
+    print("Building & saving validation data...")
+    build_save_dataset('valid', fields, opt)
 
 
 if __name__ == "__main__":

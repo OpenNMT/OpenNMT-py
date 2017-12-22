@@ -2,9 +2,10 @@
 
 from __future__ import division
 
+import argparse
+import glob
 import os
 import sys
-import argparse
 import random
 
 import torch
@@ -16,7 +17,7 @@ import onmt.io
 import onmt.Models
 import onmt.ModelConstructor
 import onmt.modules
-from onmt.Utils import aeq, use_gpu
+from onmt.Utils import use_gpu
 import opts
 
 
@@ -96,7 +97,7 @@ def report_func(epoch, batch, num_batches,
     return report_stats
 
 
-def make_train_data_iter(train_data, opt):
+def make_train_data_iter(train_dataset, opt):
     """
     This returns user-defined train data iterator for the trainer
     to iterate over during each train epoch. We implement simple
@@ -104,12 +105,12 @@ def make_train_data_iter(train_data, opt):
     like curriculum learning is ok too.
     """
     return onmt.io.OrderedIterator(
-                dataset=train_data, batch_size=opt.batch_size,
+                dataset=train_dataset, batch_size=opt.batch_size,
                 device=opt.gpuid[0] if opt.gpuid else -1,
                 repeat=False)
 
 
-def make_valid_data_iter(valid_data, opt):
+def make_valid_data_iter(valid_dataset, opt):
     """
     This returns user-defined validate data iterator for the trainer
     to iterate over during each validate epoch. We implement simple
@@ -117,7 +118,7 @@ def make_valid_data_iter(valid_data, opt):
     is ok too.
     """
     return onmt.io.OrderedIterator(
-                dataset=valid_data, batch_size=opt.batch_size,
+                dataset=valid_dataset, batch_size=opt.batch_size,
                 device=opt.gpuid[0] if opt.gpuid else -1,
                 train=False, sort=True)
 
@@ -141,21 +142,24 @@ def make_loss_compute(model, tgt_vocab, dataset, opt):
     return compute
 
 
-def train_model(model, train, valid, fields, optim, model_opt):
-    train_iter = make_train_data_iter(train, opt)
-    valid_iter = make_valid_data_iter(valid, opt)
+def train_model(model, train_dataset, valid_dataset,
+                fields, optim, model_opt):
+
+    train_iter = make_train_data_iter(train_dataset, opt)
+    valid_iter = make_valid_data_iter(valid_dataset, opt)
 
     train_loss = make_loss_compute(model, fields["tgt"].vocab,
-                                   train, opt)
+                                   train_dataset, opt)
     valid_loss = make_loss_compute(model, fields["tgt"].vocab,
-                                   valid, opt)
+                                   valid_dataset, opt)
 
     trunc_size = opt.truncated_decoder  # Badly named...
     shard_size = opt.max_generator_batches
+    data_type = train_dataset.data_type
 
     trainer = onmt.Trainer(model, train_iter, valid_iter,
                            train_loss, valid_loss, optim,
-                           trunc_size, shard_size, train.data_type)
+                           trunc_size, shard_size, data_type)
 
     for epoch in range(opt.start_epoch, opt.epochs + 1):
         print('')
@@ -204,14 +208,43 @@ def tally_parameters(model):
     print('decoder: ', dec)
 
 
-def load_fields(train, valid, checkpoint):
-    data_type = train.data_type
+def load_dataset(data_type):
+    assert data_type in ["train", "valid"]
+
+    print("Loading %s data from '%s'" % (data_type, opt.data))
+
+    pts = glob.glob(opt.data + '.' + data_type + '.[0-9]*.pt')
+    if pts:
+        # Multiple onmt.io.*Dataset's, coalesce all.
+        # torch.load loads them imemediately, which might eat up
+        # too much memory. A lazy load would be better, but later
+        # when we create data iterator, it still requires these
+        # data to be loaded. So it seams we don't have a good way
+        # to avoid this now.
+        datasets = []
+        for pt in pts:
+            datasets.append(torch.load(pt))
+        dataset = onmt.io.ONMTDatasetBase.coalesce_datasets(datasets)
+    else:
+        # Only one onmt.io.*Dataset, simple!
+        dataset = torch.load(opt.data + '.' + data_type + '.pt')
+
+    print(' * number of %s sentences: %d' % (data_type, len(dataset)))
+
+    return dataset
+
+
+def load_fields(train_dataset, valid_dataset, checkpoint):
+    data_type = train_dataset.data_type
+
     fields = onmt.io.load_fields_from_vocab(
                 torch.load(opt.data + '.vocab.pt'), data_type)
     fields = dict([(k, f) for (k, f) in fields.items()
-                  if k in train.examples[0].__dict__])
-    train.fields = fields
-    valid.fields = fields
+                  if k in train_dataset.examples[0].__dict__])
+
+    # We save fields in vocab.pt, so assign them back to dataset here.
+    train_dataset.fields = fields
+    valid_dataset.fields = fields
 
     if opt.train_from:
         print('Loading vocab from checkpoint at %s.' % opt.train_from)
@@ -228,13 +261,14 @@ def load_fields(train, valid, checkpoint):
     return fields
 
 
-def collect_features(train, fields):
-    # TODO: account for target features.
-    # Also, why does fields need to have the structure it does?
-    src_features = onmt.io.collect_features(fields)
-    aeq(len(src_features), train.n_src_feats)
+def collect_report_features(fields):
+    src_features = onmt.io.collect_features(fields, side='src')
+    tgt_features = onmt.io.collect_features(fields, side='tgt')
 
-    return src_features
+    for j, feat in enumerate(src_features):
+        print(' * src feature %d size = %d' % (j, len(fields[feat].vocab)))
+    for j, feat in enumerate(tgt_features):
+        print(' * tgt feature %d size = %d' % (j, len(fields[feat].vocab)))
 
 
 def build_model(model_opt, opt, fields, checkpoint):
@@ -275,10 +309,8 @@ def build_optim(model, checkpoint):
 def main():
 
     # Load train and validate data.
-    print("Loading train and validate data from '%s'" % opt.data)
-    train = torch.load(opt.data + '.train.pt')
-    valid = torch.load(opt.data + '.valid.pt')
-    print(' * number of training sentences: %d' % len(train))
+    train_dataset = load_dataset("train")
+    valid_dataset = load_dataset("valid")
     print(' * maximum batch size: %d' % opt.batch_size)
 
     # Load checkpoint if we resume from a previous training.
@@ -287,19 +319,17 @@ def main():
         checkpoint = torch.load(opt.train_from,
                                 map_location=lambda storage, loc: storage)
         model_opt = checkpoint['opt']
-        # I don't like reassigning attributes of opt: it's not clear
+        # I don't like reassigning attributes of opt: it's not clear.
         opt.start_epoch = checkpoint['epoch'] + 1
     else:
         checkpoint = None
         model_opt = opt
 
     # Load fields generated from preprocess phase.
-    fields = load_fields(train, valid, checkpoint)
+    fields = load_fields(train_dataset, valid_dataset, checkpoint)
 
-    # Collect features.
-    src_features = collect_features(train, fields)
-    for j, feat in enumerate(src_features):
-        print(' * src feature %d size = %d' % (j, len(fields[feat].vocab)))
+    # Report src/tgt features.
+    collect_report_features(fields)
 
     # Build model.
     model = build_model(model_opt, opt, fields, checkpoint)
@@ -310,7 +340,7 @@ def main():
     optim = build_optim(model, checkpoint)
 
     # Do training.
-    train_model(model, train, valid, fields, optim, model_opt)
+    train_model(model, train_dataset, valid_dataset, fields, optim, model_opt)
 
 
 if __name__ == "__main__":
