@@ -1,6 +1,5 @@
 # GEC branch
-*.sh
-outputs/
+gec-experiment/*
 
 # repo-specific stuff
 pred.txt
