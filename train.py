@@ -261,10 +261,14 @@ def load_fields(train_dataset, valid_dataset, checkpoint):
     return fields
 
 
-def collect_features(fields):
-    # TODO: account for target features.
-    src_features = onmt.io.collect_features(fields)
-    return src_features
+def collect_report_features(fields):
+    src_features = onmt.io.collect_features(fields, side='src')
+    tgt_features = onmt.io.collect_features(fields, side='tgt')
+
+    for j, feat in enumerate(src_features):
+        print(' * src feature %d size = %d' % (j, len(fields[feat].vocab)))
+    for j, feat in enumerate(tgt_features):
+        print(' * tgt feature %d size = %d' % (j, len(fields[feat].vocab)))
 
 
 def build_model(model_opt, opt, fields, checkpoint):
@@ -324,10 +328,8 @@ def main():
     # Load fields generated from preprocess phase.
     fields = load_fields(train_dataset, valid_dataset, checkpoint)
 
-    # Collect features.
-    src_features = collect_features(fields)
-    for j, feat in enumerate(src_features):
-        print(' * src feature %d size = %d' % (j, len(fields[feat].vocab)))
+    # Report src/tgt features.
+    collect_report_features(fields)
 
     # Build model.
     model = build_model(model_opt, opt, fields, checkpoint)
