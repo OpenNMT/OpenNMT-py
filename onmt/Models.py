@@ -50,7 +50,8 @@ class EncoderBase(nn.Module):
 
         Returns:k
             (tuple of :obj:`FloatTensor`, :obj:`FloatTensor`):
-                * final encoder state, used to initialize decoder `[layers x batch x hidden]`
+                * final encoder state, used to initialize decoder
+                   `[layers x batch x hidden]`
                 * contexts for attention, `[src_len x batch x hidden]`
         """
         raise NotImplementedError
@@ -237,10 +238,13 @@ class RNNDecoderBase(nn.Module):
             context_lengths (`LongTensor`): the padded source lengths
                 `[batch]`.
         Returns:
-            (:obj:`FloatTensor`, :obj:`onmt.Models.DecoderState`, dict of :obj:`FloatTensor`)
-                * outputs: output from the decoder  `[tgt_len x batch x hidden]`.
+            (:obj:`FloatTensor`, :obj:`onmt.Models.DecoderState`,
+             dict of :obj:`FloatTensor`):
+                * outputs: output from the decoder
+                         `[tgt_len x batch x hidden]`.
                 * state: final hidden state from the decoder
-                * attns: distribution over src at each tgt `[tgt_len x batch x src_len]`.
+                * attns: distribution over src at each tgt
+                        `[tgt_len x batch x src_len]`.
         """
         # Args Check
         assert isinstance(state, RNNDecoderState)
@@ -293,7 +297,8 @@ class StdRNNDecoder(RNNDecoderBase):
 
 
     Based around the approach from
-    "Neural Machine Translation By Jointly Learning To Align and Translate" :cite:`Bahdanau2015`
+    "Neural Machine Translation By Jointly Learning To Align and Translate"
+    :cite:`Bahdanau2015`
 
 
     Implemented without input_feeding and currently with no `coverage_attn`
@@ -395,7 +400,8 @@ class InputFeedRNNDecoder(RNNDecoderBase):
     Input feeding based decoder. See :obj:`RNNDecoderBase` for options.
 
     Based around the input feeding approach from
-    "Effective Approaches to Attention-based Neural Machine Translation" :cite:`Luong2015`
+    "Effective Approaches to Attention-based Neural Machine Translation"
+    :cite:`Luong2015`
 
 
     .. mermaid::
@@ -527,9 +533,10 @@ class NMTModel(nn.Module):
             tgt (:obj:`LongTensor`):
                  a target sequence of size `[tgt_len x batch]`.
             lengths(:obj:`LongTensor`): the src lengths, pre-padding `[batch]`.
-            dec_state (:obj:`DecoderState`, optional): the initial decoder state
+            dec_state (:obj:`DecoderState`, optional): initial decoder state
         Returns:
-            (:obj:`FloatTensor`, `dict` of :obj:`FloatTensor`, :obj:`DecoderState`) :
+            (:obj:`FloatTensor`, `dict` of :obj:`FloatTensor`,
+              :obj:`DecoderState`) :
 
                  * decoder output `[tgt_len x batch x hidden]`
                  * dictionary attention dists of `[tgt_len x batch x src_len]`
