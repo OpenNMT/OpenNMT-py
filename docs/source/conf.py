@@ -189,6 +189,8 @@ texinfo_documents = [
 ]
 
 github_doc_root = 'https://github.com/opennmt/opennmt-py/tree/master/doc/'
+
+
 def setup(app):
     print("hello")
     app.add_config_value('recommonmark_config', {
