@@ -58,7 +58,7 @@ script:
   - python translate.py -model test/test_model2.pt  -src  data/morph/src.valid  -verbose -batch_size 10 -beam_size 10 -tgt data/morph/tgt.valid -out /tmp/trans; diff  data/morph/tgt.valid /tmp/trans
   # test tool
   - PYTHONPATH=$PYTHONPATH:. python tools/extract_embeddings.py -model test/test_model.pt
-  - cd docs/; make html
+  - cd docs/; make html; cd ..
   - set -e
   - # Command to build your docs
   - pip install doctr
