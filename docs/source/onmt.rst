@@ -1,46 +1,42 @@
-onmt package
-============
+OpenNMT Framework
+=================
 
-onmt\.Beam 
------------------
+Model
+------
 
-.. automodule:: onmt.Beam
+.. autoclass:: onmt.NMTModel
     :members:
     :undoc-members:
-    :show-inheritance:
 
-
-onmt\.Loss 
------------------
-
-.. automodule:: onmt.Loss
+.. autoclass:: onmt.EncoderBase
     :members:
     :undoc-members:
-    :show-inheritance:
 
-
-onmt\.Models
--------------------
-
-.. automodule:: onmt.Models
+.. autoclass:: onmt.DecoderBase
     :members:
     :undoc-members:
-    :show-inheritance:
 
-onmt\.Optim 
-------------------
 
-.. automodule:: onmt.Optim
+Trainer
+-------
+
+.. autoclass:: onmt.Trainer
     :members:
-    :undoc-members:
-    :show-inheritance:
 
-onmt\.Trainer
---------------------
 
-.. automodule:: onmt.Trainer
+.. autoclass:: onmt.Statistics
     :members:
-    :undoc-members:
-    :show-inheritance:
+
+Loss
+----
 
 
+.. autoclass:: onmt.Loss.LossComputeBase
+    :members:
+
+
+Optim
+-----
+
+.. autoclass:: onmt.Optim.Optim
+    :members:

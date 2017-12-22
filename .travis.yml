@@ -2,7 +2,7 @@ language: python
 python:
   - "2.7"
   - "3.5"
-
+cache: pip
 before_install:
   - sudo apt-get update
   - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
@@ -24,6 +24,7 @@ before_install:
   # dependencies for speech2text
   - sudo apt-get install -y sox libsox-dev libsox-fmt-all
   - pip install librosa git+https://github.com/pytorch/audio
+
 
 install:
   - python setup.py install
@@ -56,9 +57,23 @@ script:
   - python translate.py -model test/test_model2.pt  -src  data/morph/src.valid  -verbose -batch_size 10 -beam_size 10 -tgt data/morph/tgt.valid -out /tmp/trans; diff  data/morph/tgt.valid /tmp/trans
   # test tool
   - PYTHONPATH=$PYTHONPATH:. python tools/extract_embeddings.py -model test/test_model.pt
+
+env:
+  global:
+    # Doctr deploy key for OpenNMT/OpenNMT-py
+    - secure: "gL0Soefo1cQgAqwiHUrlNyZd/+SI1eJAAjLD3BEDQWXW160eXyjQAAujGgJoCirjOM7cPHVwLzwmK3S7Y3PVM3JOZguOX5Yl4uxMh/mhiEM+RG77SZyv4OGoLFsEQ8RTvIdYdtP6AwyjlkRDXvZql88TqFNYjpXDu8NG+JwEfiIoGIDYxxZ5SlbrZN0IqmQSZ4/CsV6VQiuq99Jn5kqi4MnUZBTcmhqjaztCP1omvsMRdbrG2IVhDKQOCDIO0kaPJrMy2SGzP4GV7ar52bdBtpeP3Xbm6ZOuhDNfds7M/OMHp1wGdl7XwKtolw9MeXhnGBC4gcrqhhMfcQ6XtfVLMLnsB09Ezl3FXX5zWgTB5Pm0X6TgnGrMA25MAdVqKGJpfqZxOKTh4EMb04b6OXrVbxZ88mp+V0NopuxwlTPD8PMfYLWlTe9chh1BnT0iQlLqeA4Hv3+NdpiFb4aq3V3cWTTgMqOoWSGq4t318pqIZ3qbBXBq12DLFgO5n6+M6ZrdxbDUGQvgh8nAiZcIEdodKJ4ABHi1SNCeWOzCoedUdegcbjShHfkMVmNKrncB18aRWwQ3GQJ5qdkjgJmC++uZmkS6+GPM8UmmAy1ZIkRW0aWiitjG6teqtvUHOofNd/TCxX4bhnxAj+mtVIrARCE/ci8topJ6uG4wVJ1TrIkUlAY="
+
 matrix:
   include:
     - env: LINT_CHECK
       python: "2.7"
       install: pip install flake8 pep8-naming
       script: flake8
+    - python: "3.5"
+      install:
+        - pip install doctr
+      script:
+        - pip install -r docs/requirements.txt
+        - cd docs/; make html; cd ..
+        - set -e
+        - doctr deploy --built-docs docs/build/html/ .

@@ -80,4 +80,6 @@ python train.py -data mydata/data -save_model mydata/model -gpuid 0 -epochs 50
 
 ## Do you support multi-gpu?
 
-Currently our system does not support multi-gpu. We do intend to do so in the future. 
+Currently our system does not support
+
+
