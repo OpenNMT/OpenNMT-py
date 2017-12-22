@@ -19,7 +19,7 @@ class Translator(object):
         self.copy_attn = copy_attn
         self.beam_size = beam_size
         self.cuda = cuda
-        
+
         # for debugging
         self.beam_accum = None
         if beam_trace:
@@ -28,7 +28,7 @@ class Translator(object):
                 "beam_parent_ids": [],
                 "scores": [],
                 "log_probs": []}
-        
+
     def translateBatch(self, batch, data):
         # (0) Prep each of the components of the search.
         # And helper method for reducing verbosity.
@@ -46,7 +46,7 @@ class Translator(object):
 
         # Help functions for working with beams and batches
         def var(a): return Variable(a, volatile=True)
-        
+
         def rvar(a): return var(a.repeat(1, beam_size, 1))
 
         def bottle(m):
@@ -149,8 +149,7 @@ class Translator(object):
             ret["scores"].append(scores)
             ret["attention"].append(attn)
         return ret
-        
-    
+
     def _runTarget(self, batch, data):
         data_type = data.data_type
         if data_type == 'text':

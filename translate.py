@@ -12,11 +12,9 @@ from itertools import count
 import onmt.io
 import onmt.translate
 import onmt
-import onmt.Models
 import onmt.ModelConstructor
 import onmt.modules
 import opts
-from onmt.Utils import use_gpu
 
 parser = argparse.ArgumentParser(
     description='translate.py',
@@ -35,7 +33,6 @@ def main():
     opt.cuda = opt.gpu > -1
     if opt.cuda:
         torch.cuda.set_device(opt.gpu)
-
 
     # Load the model.
     fields, model, model_opt = \
@@ -59,7 +56,6 @@ def main():
         batch_size=opt.batch_size, train=False, sort=False,
         shuffle=False)
 
-
     # Translator
     scorer = onmt.translate.GNMTGlobalScorer(opt.alpha, opt.beta)
     translator = onmt.translate.Translator(model, fields,
@@ -74,7 +70,6 @@ def main():
         data, translator.fields,
         opt.n_best, opt.replace_unk, opt.tgt)
 
-    
     # Statistics
     counter = count(1)
     pred_score_total, pred_words_total = 0, 0
@@ -83,7 +78,7 @@ def main():
     for batch in test_data:
         batch_data = translator.translateBatch(batch, data)
         translations = builder.fromBatch(batch_data)
-        
+
         for trans in translations:
             pred_score_total += trans.pred_scores[0]
             pred_words_total += len(trans.pred_sents[0])
@@ -106,7 +101,7 @@ def main():
         print("%s AVG SCORE: %.4f, %s PPL: %.4f" % (
             name, score_total / words_total,
             name, math.exp(-score_total/words_total)))
-                
+
     report_score('PRED', pred_score_total, pred_words_total)
     if opt.tgt:
         report_score('GOLD', gold_score_total, gold_words_total)

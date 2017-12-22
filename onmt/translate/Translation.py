@@ -1,5 +1,3 @@
-from itertools import takewhile, count
-
 import torch
 import onmt.io
 
@@ -35,7 +33,7 @@ class TranslationBuilder(object):
         assert(len(translation_batch["gold_score"]) ==
                len(translation_batch["predictions"]))
         batch_size = batch.batch_size
-        
+
         preds, predScore, attn, goldScore, indices = list(zip(
             *sorted(zip(translation_batch["predictions"],
                         translation_batch["scores"],
@@ -56,7 +54,7 @@ class TranslationBuilder(object):
             tgt = batch.tgt.data.index_select(1, perm)
         else:
             tgt = None
-            
+
         translations = []
         for b in range(batch_size):
             if data_type == 'text':
@@ -75,13 +73,13 @@ class TranslationBuilder(object):
                     src[:, b], src_vocab, src_raw,
                     tgt[1:, b] if tgt else None, None)
 
-            translation = Translation(src[:, b], src_raw, pred_sents, 
+            translation = Translation(src[:, b], src_raw, pred_sents,
                                       attn[b], predScore[b], gold_sent,
                                       goldScore[b])
             translations.append(translation)
-            
+
         return translations
-    
+
 
 class Translation(object):
     def __init__(self, src, src_raw, pred_sents,
@@ -93,7 +91,7 @@ class Translation(object):
         self.pred_scores = pred_scores
         self.tgt_sent = tgt_sent
         self.gold_score = gold_score
-        
+
     def log(self, sent_number):
         output = '\nSENT {}: {}\n'.format(sent_number, ' '.join(self.src_raw))
 

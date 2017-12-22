@@ -114,7 +114,7 @@ def load_test_model(opt, dummy_opt):
                             map_location=lambda storage, loc: storage)
     fields = onmt.io.load_fields_from_vocab(
         checkpoint['vocab'], data_type=opt.data_type)
-    
+
     model_opt = checkpoint['opt']
     for arg in dummy_opt:
         if arg not in model_opt:
