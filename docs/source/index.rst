@@ -13,6 +13,7 @@
       options/train.md
       options/translate.md
       onmt.rst
+      onmt.io.rst
       onmt.modules.rst
       CONTRIBUTORS.md
       ref.rst

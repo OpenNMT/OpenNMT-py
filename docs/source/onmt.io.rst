@@ -1,8 +1,8 @@
 OpenNMT Data
-============
+=============
 
-
-
+Datasets
+---------
 
 .. autoclass:: onmt.io.TextDataset
     :members:

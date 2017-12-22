@@ -22,24 +22,20 @@ Trainer
 
 .. autoclass:: onmt.Trainer
     :members:
-    :undoc-members:
 
 .. autoclass:: onmt.Statistics
     :members:
-    :undoc-members:
 
 
 Loss
 ----
 
-.. automodule:: onmt.LossComputeBase
+.. autoclass:: onmt.Loss.LossComputeBase
     :members:
-    :undoc-members:
 
 
 Optim
 -----
 
-.. automodule:: onmt.Optim
+.. autoclass:: onmt.Optim.Optim
     :members:
-    :undoc-members:
