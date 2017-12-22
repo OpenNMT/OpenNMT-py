@@ -5,13 +5,14 @@ and creates each encoder and decoder accordingly.
 import torch.nn as nn
 
 import onmt
+import onmt.io
 import onmt.Models
 import onmt.modules
 from onmt.Models import NMTModel, MeanEncoder, RNNEncoder, \
                         StdRNNDecoder, InputFeedRNNDecoder
 from onmt.modules import Embeddings, ImageEncoder, CopyGenerator, \
                          TransformerEncoder, TransformerDecoder, \
-                         CNNEncoder, CNNDecoder
+                         CNNEncoder, CNNDecoder, AudioEncoder
 
 
 def make_embeddings(opt, word_dict, feature_dicts, for_encoder=True):
@@ -28,10 +29,10 @@ def make_embeddings(opt, word_dict, feature_dicts, for_encoder=True):
     else:
         embedding_dim = opt.tgt_word_vec_size
 
-    word_padding_idx = word_dict.stoi[onmt.IO.PAD_WORD]
+    word_padding_idx = word_dict.stoi[onmt.io.PAD_WORD]
     num_word_embeddings = len(word_dict)
 
-    feats_padding_idx = [feat_dict.stoi[onmt.IO.PAD_WORD]
+    feats_padding_idx = [feat_dict.stoi[onmt.io.PAD_WORD]
                          for feat_dict in feature_dicts]
     num_feat_embeddings = [len(feat_dict) for feat_dict in
                            feature_dicts]
@@ -117,37 +118,49 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
     Returns:
         the NMTModel.
     """
-    assert model_opt.model_type in ["text", "img"], \
+    assert model_opt.model_type in ["text", "img", "audio"], \
         ("Unsupported model type %s" % (model_opt.model_type))
 
     # Make encoder.
     if model_opt.model_type == "text":
         src_dict = fields["src"].vocab
-        feature_dicts = onmt.IO.collect_feature_dicts(fields, 'src')
+        feature_dicts = onmt.io.collect_feature_vocabs(fields, 'src')
         src_embeddings = make_embeddings(model_opt, src_dict,
                                          feature_dicts)
         encoder = make_encoder(model_opt, src_embeddings)
-    else:
-        encoder = ImageEncoder(model_opt.layers,
+    elif model_opt.model_type == "img":
+        encoder = ImageEncoder(model_opt.enc_layers,
                                model_opt.brnn,
                                model_opt.rnn_size,
                                model_opt.dropout)
+    elif model_opt.model_type == "audio":
+        encoder = AudioEncoder(model_opt.enc_layers,
+                               model_opt.brnn,
+                               model_opt.rnn_size,
+                               model_opt.dropout,
+                               model_opt.sample_rate,
+                               model_opt.window_size)
 
     # Make decoder.
     tgt_dict = fields["tgt"].vocab
-    # TODO: prepare for a future where tgt features are possible.
-    feature_dicts = onmt.IO.collect_feature_dicts(fields, 'tgt')
+    feature_dicts = onmt.io.collect_feature_vocabs(fields, 'tgt')
     tgt_embeddings = make_embeddings(model_opt, tgt_dict,
                                      feature_dicts, for_encoder=False)
 
-    # Share the embedding matrix - preprocess with share_vocab required
+    # Share the embedding matrix - preprocess with share_vocab required.
     if model_opt.share_embeddings:
+        # src/tgt vocab should be the same if `-share_vocab` is specified.
+        if src_dict != tgt_dict:
+            raise AssertionError('The `-share_vocab` should be set during '
+                                 'preprocess if you use share_embeddings!')
+
         tgt_embeddings.word_lut.weight = src_embeddings.word_lut.weight
 
     decoder = make_decoder(model_opt, tgt_embeddings)
 
     # Make NMTModel(= encoder + decoder).
     model = NMTModel(encoder, decoder)
+    model.model_type = model_opt.model_type
 
     # Make Generator.
     if not model_opt.copy_attn:
@@ -172,10 +185,12 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
                 p.data.uniform_(-model_opt.param_init, model_opt.param_init)
             for p in generator.parameters():
                 p.data.uniform_(-model_opt.param_init, model_opt.param_init)
-        model.encoder.embeddings.load_pretrained_vectors(
-                model_opt.pre_word_vecs_enc, model_opt.fix_word_vecs_enc)
-        model.decoder.embeddings.load_pretrained_vectors(
-                model_opt.pre_word_vecs_dec, model_opt.fix_word_vecs_dec)
+        if hasattr(model.encoder, 'embeddings'):
+            model.encoder.embeddings.load_pretrained_vectors(
+                    model_opt.pre_word_vecs_enc, model_opt.fix_word_vecs_enc)
+        if hasattr(model.decoder, 'embeddings'):
+            model.decoder.embeddings.load_pretrained_vectors(
+                    model_opt.pre_word_vecs_dec, model_opt.fix_word_vecs_dec)
 
     # Add generator to model (this registers it as parameter of model).
     model.generator = generator

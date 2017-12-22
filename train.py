@@ -5,16 +5,20 @@ from __future__ import division
 import os
 import sys
 import argparse
+import random
+
 import torch
 import torch.nn as nn
 from torch import cuda
 
 import onmt
+import onmt.io
 import onmt.Models
 import onmt.ModelConstructor
 import onmt.modules
 from onmt.Utils import aeq, use_gpu
 import opts
+
 
 parser = argparse.ArgumentParser(
     description='train.py',
@@ -36,6 +40,7 @@ if opt.layers != -1:
 
 opt.brnn = (opt.encoder_type == "brnn")
 if opt.seed > 0:
+    random.seed(opt.seed)
     torch.manual_seed(opt.seed)
 
 if opt.rnn_type == "SRU" and not opt.gpuid:
@@ -98,7 +103,7 @@ def make_train_data_iter(train_data, opt):
     ordered iterator strategy here, but more sophisticated strategy
     like curriculum learning is ok too.
     """
-    return onmt.IO.OrderedIterator(
+    return onmt.io.OrderedIterator(
                 dataset=train_data, batch_size=opt.batch_size,
                 device=opt.gpuid[0] if opt.gpuid else -1,
                 repeat=False)
@@ -111,7 +116,7 @@ def make_valid_data_iter(valid_data, opt):
     ordered iterator strategy here, but more sophisticated strategy
     is ok too.
     """
-    return onmt.IO.OrderedIterator(
+    return onmt.io.OrderedIterator(
                 dataset=valid_data, batch_size=opt.batch_size,
                 device=opt.gpuid[0] if opt.gpuid else -1,
                 train=False, sort=True)
@@ -127,7 +132,8 @@ def make_loss_compute(model, tgt_vocab, dataset, opt):
         compute = onmt.modules.CopyGeneratorLossCompute(
             model.generator, tgt_vocab, dataset, opt.copy_attn_force)
     else:
-        compute = onmt.Loss.NMTLossCompute(model.generator, tgt_vocab)
+        compute = onmt.Loss.NMTLossCompute(model.generator, tgt_vocab,
+                                           opt.label_smoothing)
 
     if use_gpu(opt):
         compute.cuda()
@@ -135,22 +141,21 @@ def make_loss_compute(model, tgt_vocab, dataset, opt):
     return compute
 
 
-def train_model(model, train_data, valid_data, fields, optim):
-
-    train_iter = make_train_data_iter(train_data, opt)
-    valid_iter = make_valid_data_iter(valid_data, opt)
+def train_model(model, train, valid, fields, optim, model_opt):
+    train_iter = make_train_data_iter(train, opt)
+    valid_iter = make_valid_data_iter(valid, opt)
 
     train_loss = make_loss_compute(model, fields["tgt"].vocab,
-                                   train_data, opt)
+                                   train, opt)
     valid_loss = make_loss_compute(model, fields["tgt"].vocab,
-                                   valid_data, opt)
+                                   valid, opt)
 
     trunc_size = opt.truncated_decoder  # Badly named...
     shard_size = opt.max_generator_batches
 
     trainer = onmt.Trainer(model, train_iter, valid_iter,
                            train_loss, valid_loss, optim,
-                           trunc_size, shard_size)
+                           trunc_size, shard_size, train.data_type)
 
     for epoch in range(opt.start_epoch, opt.epochs + 1):
         print('')
@@ -175,7 +180,7 @@ def train_model(model, train_data, valid_data, fields, optim):
 
         # 5. Drop a checkpoint if needed.
         if epoch >= opt.start_checkpoint_at:
-            trainer.drop_checkpoint(opt, epoch, fields, valid_stats)
+            trainer.drop_checkpoint(model_opt, epoch, fields, valid_stats)
 
 
 def check_save_model_path():
@@ -200,8 +205,9 @@ def tally_parameters(model):
 
 
 def load_fields(train, valid, checkpoint):
-    fields = onmt.IO.load_fields(
-                torch.load(opt.data + '.vocab.pt'))
+    data_type = train.data_type
+    fields = onmt.io.load_fields_from_vocab(
+                torch.load(opt.data + '.vocab.pt'), data_type)
     fields = dict([(k, f) for (k, f) in fields.items()
                   if k in train.examples[0].__dict__])
     train.fields = fields
@@ -209,10 +215,15 @@ def load_fields(train, valid, checkpoint):
 
     if opt.train_from:
         print('Loading vocab from checkpoint at %s.' % opt.train_from)
-        fields = onmt.IO.load_fields(checkpoint['vocab'])
+        fields = onmt.io.load_fields_from_vocab(
+                    checkpoint['vocab'], data_type)
 
-    print(' * vocabulary size. source = %d; target = %d' %
-          (len(fields['src'].vocab), len(fields['tgt'].vocab)))
+    if data_type == 'text':
+        print(' * vocabulary size. source = %d; target = %d' %
+              (len(fields['src'].vocab), len(fields['tgt'].vocab)))
+    else:
+        print(' * vocabulary size. target = %d' %
+              (len(fields['tgt'].vocab)))
 
     return fields
 
@@ -220,7 +231,7 @@ def load_fields(train, valid, checkpoint):
 def collect_features(train, fields):
     # TODO: account for target features.
     # Also, why does fields need to have the structure it does?
-    src_features = onmt.IO.collect_features(fields)
+    src_features = onmt.io.collect_features(fields)
     aeq(len(src_features), train.n_src_feats)
 
     return src_features
@@ -299,7 +310,7 @@ def main():
     optim = build_optim(model, checkpoint)
 
     # Do training.
-    train_model(model, train, valid, fields, optim)
+    train_model(model, train, valid, fields, optim, model_opt)
 
 
 if __name__ == "__main__":
