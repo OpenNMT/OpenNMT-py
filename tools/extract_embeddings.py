@@ -3,6 +3,7 @@ import torch
 import argparse
 import opts
 import onmt
+import onmt.ModelConstructor
 import onmt.io
 from onmt.Utils import use_gpu
 

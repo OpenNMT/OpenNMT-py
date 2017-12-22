@@ -1,3 +1,5 @@
+from __future__ import division, unicode_literals
+
 import torch
 import onmt.io
 
@@ -64,13 +66,15 @@ class TranslationBuilder(object):
                 src_vocab = None
                 src_raw = None
             pred_sents = [self._build_target_tokens(
-                src[:, b], src_vocab, src_raw,
+                src[:, b] if src is not None else None,
+                src_vocab, src_raw,
                 preds[b][n], attn[b][n])
                           for n in range(self.n_best)]
             gold_sent = None
             if tgt is not None:
                 gold_sent = self._build_target_tokens(
-                    src[:, b], src_vocab, src_raw,
+                    src[:, b] if src is not None else None,
+                    src_vocab, src_raw,
                     tgt[1:, b] if tgt is not None else None, None)
 
             translation = Translation(src[:, b], src_raw, pred_sents,
