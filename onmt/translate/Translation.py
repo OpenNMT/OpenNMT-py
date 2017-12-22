@@ -77,7 +77,8 @@ class TranslationBuilder(object):
                     src_vocab, src_raw,
                     tgt[1:, b] if tgt is not None else None, None)
 
-            translation = Translation(src[:, b], src_raw, pred_sents,
+            translation = Translation(src[:, b] if src is not None else None,
+                                      src_raw, pred_sents,
                                       attn[b], predScore[b], gold_sent,
                                       gold_score[b])
             translations.append(translation)
@@ -97,7 +98,7 @@ class Translation(object):
         self.gold_score = gold_score
 
     def log(self, sent_number):
-        output = '\nSENT {}: {}\n'.format(sent_number, ' '.join(self.src_raw))
+        output = '\nSENT {}: {}\n'.format(sent_number, self.src_raw)
 
         best_pred = self.pred_sents[0]
         best_score = self.pred_scores[0]
