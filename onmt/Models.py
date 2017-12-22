@@ -125,7 +125,7 @@ class RNNDecoderBase(nn.Module):
         # Set up the context gate.
         self.context_gate = None
         if context_gate is not None:
-            self.context_gate = onmt.modules.ContextGateFactory(
+            self.context_gate = onmt.modules.context_gate_factory(
                 context_gate, self._input_size,
                 hidden_size, hidden_size, hidden_size
             )
