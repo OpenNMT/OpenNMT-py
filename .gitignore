@@ -1,5 +1,7 @@
 # GEC branch
-gec-experiment/*
+gec-experiment/outputs/*
+gec-experiment/checkpoints/*
+gec-experiment/data/
 
 # repo-specific stuff
 pred.txt
