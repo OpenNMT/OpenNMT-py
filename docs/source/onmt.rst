@@ -23,12 +23,13 @@ Trainer
 .. autoclass:: onmt.Trainer
     :members:
 
+
 .. autoclass:: onmt.Statistics
     :members:
 
-
 Loss
 ----
+
 
 .. autoclass:: onmt.Loss.LossComputeBase
     :members:
