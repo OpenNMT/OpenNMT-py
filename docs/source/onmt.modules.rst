@@ -4,16 +4,9 @@ OpenNMT Modules
 Core Modules
 ------------
 
-
-
 .. autoclass:: onmt.modules.Embeddings
     :members:
-    :undoc-members:
 
-
-.. autoclass:: onmt.modules.GlobalAttention
-    :members:
-    :undoc-members:
 
 
 Encoders
@@ -36,7 +29,20 @@ Decoders
 
 .. autoclass:: onmt.modules.RNNDecoderBase
     :members:
-    :undoc-members:
+
+
+.. autoclass:: onmt.modules.StdRNNDecoder
+    :members:
+
+
+.. autoclass:: onmt.modules.InputFeedRNNDecoder
+    :members:
+
+Attention
+----------
+
+.. autoclass:: onmt.modules.GlobalAttention
+    :members:
 
 
 
@@ -89,7 +95,7 @@ onmt\.modules\.ImageEncoder
 
 
 
-ExtensionsK
+Extensions
 ----------
 
 .. autoclass:: onmt.modules.CopyGenerator
