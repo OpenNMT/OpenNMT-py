@@ -103,12 +103,30 @@ class NMTLossCompute(LossComputeBase):
     """
     Standard NMT Loss Computation.
     """
-    def __init__(self, generator, tgt_vocab):
+    def __init__(self, generator, tgt_vocab, label_smoothing=0.0):
         super(NMTLossCompute, self).__init__(generator, tgt_vocab)
 
-        weight = torch.ones(len(tgt_vocab))
-        weight[self.padding_idx] = 0
-        self.criterion = nn.NLLLoss(weight, size_average=False)
+        # CHECK
+        assert (label_smoothing >= 0.0 and label_smoothing <= 1.0)
+        # END CHECK
+
+        if label_smoothing > 0:
+            # When label smoothing is turned on,
+            # KL-divergence between q_{smoothed ground truth prob.}(w)
+            # and p_{prob. computed by model}(w) is minimized.
+            # If label smoothing value is set to zero, the loss
+            # is equivalent to NLLLoss or CrossEntropyLoss.
+            # All non-true labels are uniformly set to low-confidence.
+            self.criterion = nn.KLDivLoss(size_average=False)
+            one_hot = torch.randn(1, len(tgt_vocab))
+            one_hot.fill_(label_smoothing / (len(tgt_vocab) - 2))
+            one_hot[0][self.padding_idx] = 0
+            self.register_buffer('one_hot', one_hot)
+        else:
+            weight = torch.ones(len(tgt_vocab))
+            weight[self.padding_idx] = 0
+            self.criterion = nn.NLLLoss(weight, size_average=False)
+        self.confidence = 1.0 - label_smoothing
 
     def make_shard_state(self, batch, output, range_, attns=None):
         """ See base class for args description. """
@@ -121,12 +139,25 @@ class NMTLossCompute(LossComputeBase):
         """ See base class for args description. """
         scores = self.generator(self.bottle(output))
 
-        target = target.view(-1)
+        gtruth = target.view(-1)
+        if self.confidence < 1:
+            tdata = gtruth.data
+            mask = torch.nonzero(tdata.eq(self.padding_idx)).squeeze()
+            likelihood = torch.gather(scores.data, 1, tdata.unsqueeze(1))
+            tmp_ = self.one_hot.repeat(gtruth.size(0), 1)
+            tmp_.scatter_(1, tdata.unsqueeze(1), self.confidence)
+            if mask.dim() > 0:
+                likelihood.index_fill_(0, mask, 0)
+                tmp_.index_fill_(0, mask, 0)
+            gtruth = Variable(tmp_, requires_grad=False)
 
-        loss = self.criterion(scores, target)
-        loss_data = loss.data.clone()
+        loss = self.criterion(scores, gtruth)
+        if self.confidence < 1:
+            loss_data = - likelihood.sum(0)
+        else:
+            loss_data = loss.data.clone()
 
-        stats = self.stats(loss_data, scores.data, target.data)
+        stats = self.stats(loss_data, scores.data, target.view(-1).data)
 
         return loss, stats
 

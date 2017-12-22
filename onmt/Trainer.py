@@ -79,7 +79,7 @@ class Trainer(object):
             optim: the optimizer responsible for lr update.
             trunc_size: a batch is divided by several truncs of this size.
             shard_size: compute loss in shards of this size for efficiency.
-            data_type: type of the source input. Options are [text|img].
+            data_type: type of the source input: [text|img|audio].
         """
         # Basic attributes.
         self.model = model
