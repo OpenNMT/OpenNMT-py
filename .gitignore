@@ -1,3 +1,7 @@
+# GEC branch
+*.sh
+outputs/
+
 # repo-specific stuff
 pred.txt
 multi-bleu.perl
