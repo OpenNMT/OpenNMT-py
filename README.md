@@ -20,7 +20,6 @@ Table of Contents
   * [Requirements](#requirements)
   * [Features](#features)
   * [Quickstart](#quickstart)
-  * [Advanced](#advanced)
   * [Citation](#citation)
  
 ## Requirements
