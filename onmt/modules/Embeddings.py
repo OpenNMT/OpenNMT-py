@@ -33,6 +33,10 @@ class Embeddings(nn.Module):
     """
     Words embeddings for encoder/decoder.
 
+    Additionally includes ability to add sparse input features
+    based on "Linguistic Input Features Improve Neural Machine Translation"
+    :cite:`sennrich2016linguistic`.
+
 
     .. mermaid::
 

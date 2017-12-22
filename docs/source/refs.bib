@@ -12,7 +12,29 @@
                                    biburl    = {http://dblp.org/rec/bib/journals/corr/LiuL17d},
                                      bibsource = {dblp computer science bibliography, http://dblp.org}
                                      }
+@article{sennrich2016linguistic,
+  title={Linguistic Input Features Improve Neural Machine Translation},
+    author={Sennrich, Rico and Haddow, Barry},
+      journal={arXiv preprint arXiv:1606.02892},
+        year={2016}
+        }
 
+@inproceedings{Bahdanau2015,
+archivePrefix = {arXiv},
+arxivId = {1409.0473},
+author = {Bahdanau, Dzmitry and Cho, Kyunghyun and Bengio, Yoshua},
+booktitle = {ICLR},
+doi = {10.1146/annurev.neuro.26.041002.131047},
+eprint = {1409.0473},
+isbn = {0147-006X (Print)},
+issn = {0147-006X},
+keywords = {Neural machine translation is a recently proposed,Unlike the traditional statistical machine transla,a source sentence into a fixed-length vector from,and propose to extend this by allowing a model to,bottleneck in improving the performance of this ba,for parts of a source sentence that are relevant t,having to form these parts as a hard segment expli,machine translation often belong to a family of en,maximize the translation performance. The models p,phrase-based system on the task of English-to-Fren,qualitative analysis reveals that the (soft-)align,the neural machine,translation aims at building a single neural netwo,translation. In this paper,we achieve a translation performance comparable to,we conjecture that the use of a fixed-length vecto,well with our intuition,without},
+pages = {1--15},
+pmid = {14527267},
+title = {{Neural Machine Translation By Jointly Learning To Align and Translate}},
+url = {http://arxiv.org/abs/1409.0473 http://arxiv.org/abs/1409.0473v3},
+year = {2014}
+}
 
 @inproceedings{sutskever14sequence,
 abstract = {Deep Neural Networks (DNNs) are powerful models that have achieved excellent performance on difficult learning tasks. Although DNNs work well whenever large labeled training sets are available, they cannot be used to map sequences to sequences. In this paper, we present a general end-to-end approach to sequence learning that makes minimal assumptions on the sequence structure. Our method uses a multilayered Long Short-Term Memory (LSTM) to map the input sequence to a vector of a fixed dimensionality, and then another deep LSTM to decode the target sequence from the vector. Our main result is that on an English to French translation task from the WMT'14 dataset, the translations produced by the LSTM achieve a BLEU score of 34.8 on the entire test set, where the LSTM's BLEU score was penalized on out-of-vocabulary words. Additionally, the LSTM did not have difficulty on long sentences. For comparison, a phrase-based SMT system achieves a BLEU score of 33.3 on the same dataset. When we used the LSTM to rerank the 1000 hypotheses produced by the aforementioned SMT system, its BLEU score increases to 36.5, which is close to the previous best result on this task. The LSTM also learned sensible phrase and sentence representations that are sensitive to word order and are relatively invariant to the active and the passive voice. Finally, we found that reversing the order of the words in all source sentences (but not target sentences) improved the LSTM's performance markedly, because doing so introduced many short term dependencies between the source and the target sentence which made the optimization problem easier.},
@@ -29,23 +51,6 @@ url = {http://arxiv.org/abs/1409.3215},
 year = {2014}
 }
 
-@inproceedings{Bahdanau2015,
-abstract = {Neural machine translation is a recently proposed approach to machine transla-tion. Unlike the traditional statistical machine translation, the neural machine translation aims at building a single neural network that can be jointly tuned to maximize the translation performance. The models proposed recently for neu-ral machine translation often belong to a family of encoder窶電ecoders and encode a source sentence into a fixed-length vector from which a decoder generates a translation. In this paper, we conjecture that the use of a fixed-length vector is a bottleneck in improving the performance of this basic encoder窶電ecoder architec-ture, and propose to extend this by allowing a model to automatically (soft-)search for parts of a source sentence that are relevant to predicting a target word, without having to form these parts as a hard segment explicitly. With this new approach, we achieve a translation performance comparable to the existing state-of-the-art phrase-based system on the task of English-to-French translation. Furthermore, qualitative analysis reveals that the (soft-)alignments found by the model agree well with our intuition.},
-archivePrefix = {arXiv},
-arxivId = {1409.0473},
-author = {Bahdanau, Dzmitry and Cho, Kyunghyun and Bengio, Yoshua},
-booktitle = {ICLR},
-doi = {10.1146/annurev.neuro.26.041002.131047},
-eprint = {1409.0473},
-isbn = {0147-006X (Print)},
-issn = {0147-006X},
-keywords = {Neural machine translation is a recently proposed,Unlike the traditional statistical machine transla,a source sentence into a fixed-length vector from,and propose to extend this by allowing a model to,bottleneck in improving the performance of this ba,for parts of a source sentence that are relevant t,having to form these parts as a hard segment expli,machine translation often belong to a family of en,maximize the translation performance. The models p,phrase-based system on the task of English-to-Fren,qualitative analysis reveals that the (soft-)align,the neural machine,translation aims at building a single neural netwo,translation. In this paper,we achieve a translation performance comparable to,we conjecture that the use of a fixed-length vecto,well with our intuition,without},
-pages = {1--15},
-pmid = {14527267},
-title = {{Neural Machine Translation By Jointly Learning To Align and Translate}},
-url = {http://arxiv.org/abs/1409.0473 http://arxiv.org/abs/1409.0473v3},
-year = {2014}
-}
 @article{Xu2015,
 abstract = {Inspired by recent work in machine translation and object detection, we introduce an attention based model that automatically learns to describe the content of images. We describe how we can train this model in a deterministic manner using standard backpropagation techniques and stochastically by maximizing a variational lower bound. We also show through visualization how the model is able to automatically learn to fix its gaze on salient objects while generating the corresponding words in the output sequence. We validate the use of attention with state-of-the-art performance on three benchmark datasets: Flickr8k, Flickr30k and MS COCO.},
 archivePrefix = {arXiv},
@@ -138,12 +143,6 @@ year = {2015}
         year={2014}
         }
 
-@article{sennrich2016linguistic,
-  title={Linguistic Input Features Improve Neural Machine Translation},
-    author={Sennrich, Rico and Haddow, Barry},
-      journal={arXiv preprint arXiv:1606.02892},
-        year={2016}
-        }
 
 @inproceedings{yang2016hierarchical,
   title={Hierarchical attention networks for document classification},

@@ -52,26 +52,25 @@ Architecture: Transfomer
 
 .. autoclass:: onmt.modules.TransformerEncoder
     :members:
-    :show-inheritance:
 
 .. autoclass:: onmt.modules.TransformerDecoder
     :members:
-    :show-inheritance:
 
 
-Architecture: Transfomer
+Architecture: Conv2Conv
 ----------------------------
 
-.. automodule:: onmt.modules.Conv2Conv
+.. autoclass:: onmt.modules.CNNEncoder
     :members:
-    :undoc-members:
+
+.. autoclass:: onmt.modules.CNNDecoder
+    :members:
 
 Architecture: SRU
 ----------------------------
 
-.. automodule:: onmt.modules.SRU
+.. autoclass:: onmt.modules.SRU
     :members:
-    :undoc-members:
 
 
 Alternative Encoders
@@ -82,8 +81,6 @@ onmt\.modules\.AudioEncoder
 
 .. autoclass:: onmt.modules.AudioEncoder
     :members:
-    :undoc-members:
-
 
 
 onmt\.modules\.ImageEncoder
@@ -91,8 +88,6 @@ onmt\.modules\.ImageEncoder
 
 .. autoclass:: onmt.modules.ImageEncoder
     :members:
-    :undoc-members:
-
 
 
 Extensions
