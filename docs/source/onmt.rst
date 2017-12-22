@@ -1,4 +1,4 @@
-OpenNMT Framework
+Doc: Framework
 =================
 
 Model

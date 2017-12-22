@@ -1,5 +1,5 @@
-OpenNMT Data
-=============
+Doc: Data Loaders
+=================
 
 Datasets
 ---------

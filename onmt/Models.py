@@ -88,7 +88,7 @@ class RNNEncoder(EncoderBase):
        bidirectional (bool) : use a bidirectional RNN
        num_layers (int) : number of stacked layers
        hidden_size (int) : hidden size of each layer
-       dropout (float) : dropout value for :opt:`nn.Dropout`
+       dropout (float) : dropout value for :obj:`nn.Dropout`
        embeddings (:obj:`onmt.modules.Embeddings`): embedding module to use
     """
     def __init__(self, rnn_type, bidirectional, num_layers,
@@ -183,7 +183,7 @@ class RNNDecoderBase(nn.Module):
        coverage_attn (str): see :obj:`onmt.modules.GlobalAttention`
        context_gate (str): see :obj:`onmt.modules.ContextGate`
        copy_attn (bool): setup a separate copy attention mechanism
-       dropout (float) : dropout value for :opt:`nn.Dropout`
+       dropout (float) : dropout value for :obj:`nn.Dropout`
        embeddings (:obj:`onmt.modules.Embeddings`): embedding module to use
     """
     def __init__(self, rnn_type, bidirectional_encoder, num_layers,
@@ -238,8 +238,7 @@ class RNNDecoderBase(nn.Module):
             context_lengths (`LongTensor`): the padded source lengths
                 `[batch]`.
         Returns:
-            (:obj:`FloatTensor`, :obj:`onmt.Models.DecoderState`,
-             dict of :obj:`FloatTensor`):
+            (`FloatTensor`,:obj:`onmt.Models.DecoderState`,`FloatTensor`):
                 * outputs: output from the decoder
                          `[tgt_len x batch x hidden]`.
                 * state: final hidden state from the decoder
@@ -535,8 +534,7 @@ class NMTModel(nn.Module):
             lengths(:obj:`LongTensor`): the src lengths, pre-padding `[batch]`.
             dec_state (:obj:`DecoderState`, optional): initial decoder state
         Returns:
-            (:obj:`FloatTensor`, `dict` of :obj:`FloatTensor`,
-              :obj:`DecoderState`) :
+            (:obj:`FloatTensor`, `dict`, :obj:`onmt.Models.DecoderState`):
 
                  * decoder output `[tgt_len x batch x hidden]`
                  * dictionary attention dists of `[tgt_len x batch x src_len]`

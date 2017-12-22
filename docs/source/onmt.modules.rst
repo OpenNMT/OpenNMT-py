@@ -1,5 +1,5 @@
-OpenNMT Modules
-=====================
+Doc: Modules
+=============
 
 Core Modules
 ------------
