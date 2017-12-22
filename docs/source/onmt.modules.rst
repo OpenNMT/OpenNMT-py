@@ -1,110 +1,116 @@
-onmt\.modules
+OpenNMT Modules
 =====================
 
-onmt\.modules\.AudioEncoder
-----------------------------------
+Core Modules
+------------
 
-.. automodule:: onmt.modules.AudioEncoder
+
+
+.. autoclass:: onmt.modules.Embeddings
     :members:
     :undoc-members:
+
+
+.. autoclass:: onmt.modules.StackedGRU
+    :members:
+    :undoc-members:
+
+.. autoclass:: onmt.modules.StackedLSTM
+    :members:
+    :undoc-members:
+
+
+.. autoclass:: onmt.modules.GlobalAttention
+    :members:
+    :undoc-members:
+
+
+
+Architecture: Transfomer
+----------------------------
+
+
+.. autoclass:: onmt.modules.TransformerEncoder
+    :members:
     :show-inheritance:
 
-onmt\.modules\.Conv2Conv 
--------------------------------
+.. autoclass:: onmt.modules.TransformerDecoder
+    :members:
+    :show-inheritance:
+
+
+Architecture: Transfomer
+----------------------------
 
 .. automodule:: onmt.modules.Conv2Conv
     :members:
     :undoc-members:
-    :show-inheritance:
 
-
-onmt\.modules\.CopyGenerator
------------------------------------
-
-.. automodule:: onmt.modules.CopyGenerator
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-onmt\.modules\.Embeddings 
---------------------------------
-
-.. automodule:: onmt.modules.Embeddings
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-onmt\.modules\.Gate 
---------------------------
-
-.. automodule:: onmt.modules.Gate
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-onmt\.modules\.GlobalAttention 
--------------------------------------
-
-.. automodule:: onmt.modules.GlobalAttention
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-onmt\.modules\.ImageEncoder 
-----------------------------------
-
-.. automodule:: onmt.modules.ImageEncoder
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-onmt\.modules\.MultiHeadedAttn
--------------------------------------
-
-.. automodule:: onmt.modules.MultiHeadedAttn
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-onmt\.modules\.SRU 
--------------------------
+Architecture: SRU
+----------------------------
 
 .. automodule:: onmt.modules.SRU
     :members:
     :undoc-members:
-    :show-inheritance:
 
-onmt\.modules\.StackedRNN 
---------------------------------
 
-.. automodule:: onmt.modules.StackedRNN
+Alternative Encoders
+--------------------
+
+onmt\.modules\.AudioEncoder
+
+
+.. autoclass:: onmt.modules.AudioEncoder
     :members:
     :undoc-members:
-    :show-inheritance:
 
-onmt\.modules\.StructuredAttention 
------------------------------------------
 
-.. automodule:: onmt.modules.StructuredAttention
+
+onmt\.modules\.ImageEncoder
+
+
+.. autoclass:: onmt.modules.ImageEncoder
     :members:
     :undoc-members:
-    :show-inheritance:
 
-onmt\.modules\.Transformer 
----------------------------------
 
-.. automodule:: onmt.modules.Transformer
+
+ExtensionsK
+----------
+
+.. autoclass:: onmt.modules.CopyGenerator
     :members:
     :undoc-members:
-    :show-inheritance:
+
+.. autoclass:: onmt.modules.CopyGeneratorLossCompute
+    :members:
+    :undoc-members:
 
 
-onmt\.modules\.WeightNorm 
---------------------------------
+.. autoclass:: onmt.modules.ContextGate
+    :members:
+    :undoc-members:
+
+
+Alternative Attention: Multi Headed
+-----------------------------------
+
+.. autoclass:: onmt.modules.MultiHeadedAttention
+    :members:
+    :undoc-members:
+
+
+Alternative Attention: Structured Attention
+-------------------------------------------
+
+.. autoclass:: onmt.modules.MatrixTree
+    :members:
+    :undoc-members:
+
+
+
 
 .. automodule:: onmt.modules.WeightNorm
     :members:
     :undoc-members:
     :show-inheritance:
-
-
