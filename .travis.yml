@@ -71,6 +71,7 @@ matrix:
       script: flake8
     - python: "3.5"
       install:
+        - python setup.py install
         - pip install doctr
       script:
         - pip install -r docs/requirements.txt
