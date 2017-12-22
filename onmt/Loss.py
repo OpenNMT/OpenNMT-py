@@ -118,27 +118,16 @@ class NMTLossCompute(LossComputeBase):
             # If label smoothing value is set to zero, the loss
             # is equivalent to NLLLoss or CrossEntropyLoss.
             # All non-true labels are uniformly set to low-confidence.
-            # Normalizing term is the entropy of q_(w),
-            # a constant that has no effect to gradient update.
-            # It was added to recover cross-entropy term
-            # from KL-divergence, for better readability.
-            # H(q_(w), p_(w)) = D_{KL}(q_(w)||p_(w)) + H(q_(w))
-            # H(q_(w)) = - sum_{all labels}(p(label) * log p(label))
             self.criterion = nn.KLDivLoss(size_average=False)
-            low_confidence = label_smoothing / (len(tgt_vocab) - 2)
             one_hot = torch.randn(1, len(tgt_vocab))
-            one_hot.fill_(low_confidence)
+            one_hot.fill_(label_smoothing / (len(tgt_vocab) - 2))
             one_hot[0][self.padding_idx] = 0
             self.register_buffer('one_hot', one_hot)
-            self.normalizing = \
-                - (1 - label_smoothing) * np.log(1 - label_smoothing) \
-                - (len(tgt_vocab) - 2) * low_confidence * \
-                np.log(low_confidence)
         else:
             weight = torch.ones(len(tgt_vocab))
             weight[self.padding_idx] = 0
             self.criterion = nn.NLLLoss(weight, size_average=False)
-        self.label_smoothing = label_smoothing
+        self.confidence = 1.0 - label_smoothing
 
     def make_shard_state(self, batch, output, range_, attns=None):
         """ See base class for args description. """
@@ -151,21 +140,23 @@ class NMTLossCompute(LossComputeBase):
         """ See base class for args description. """
         scores = self.generator(self.bottle(output))
 
-        target_feed = target.view(-1)
-        norm_ = 0
-        if self.label_smoothing > 0:
-            mask = target_feed.unsqueeze(1).eq(self.padding_idx) \
-                              .repeat(1, scores.size(1))
-            target_ = Variable(self.one_hot.repeat(target_feed.size(0), 1),
-                               requires_grad=False)
-            target_.scatter_(1, target_feed.unsqueeze(1),
-                             1 - self.label_smoothing)
-            target_.masked_fill_(mask, 0)
-            target_feed = target_
-            norm_ = self.normalizing * target.data.ne(self.padding_idx).sum()
+        gtruth = target.view(-1)
+        if self.confidence < 1:
+            tdata = gtruth.data
+            mask = torch.nonzero(tdata.eq(self.padding_idx)).squeeze()
+            likelihood = torch.gather(scores.data, 1, tdata.unsqueeze(1))
+            tmp_ = self.one_hot.repeat(gtruth.size(0), 1)
+            tmp_.scatter_(1, tdata.unsqueeze(1), self.confidence)
+            if mask.dim() > 0:
+                likelihood.index_fill_(0, mask, 0)
+                tmp_.index_fill_(0, mask, 0)
+            gtruth = Variable(tmp_, requires_grad=False)
 
-        loss = self.criterion(scores, target_feed)
-        loss_data = loss.data.clone() + norm_
+        loss = self.criterion(scores, gtruth)
+        if self.confidence < 1:
+            loss_data = - likelihood.sum(0)
+        else:
+            loss_data = loss.data.clone()
 
         stats = self.stats(loss_data, scores.data, target.view(-1).data)
 
