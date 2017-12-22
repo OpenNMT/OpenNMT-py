@@ -1,0 +1,164 @@
+
+<title></title>
+<!-- Bootstrap v3.0.3 -->
+<link href="https://s3.amazonaws.com/mturk-public/bs30/css/bootstrap.min.css" rel="stylesheet" /><!-- colors -->
+<link href="https://s3-us-west-2.amazonaws.com/colors-css/2.2.0/colors.min.css" rel="stylesheet" />
+<section class="container" id="Other" style="font-size:1.2em;"><!-- other css -->
+<style type="text/css">.expl {
+color: #0000FF;
+}
+</style>
+<!-- javascript --><script type="text/javascript">
+function toggle() {
+
+    var ele = document.getElementById("examples");
+    var text = document.getElementById("displaytext");
+
+    if (ele.style.display != "none") {
+        ele.style.display = "none";
+        text.innerHTML = "(show)";
+    } else {
+        ele.style.display = "block";
+        text.innerHTML = "(hide)";
+    }
+}
+</script>
+<div class="container">
+<h1>Grammatical Error Correction</h1>
+
+<p class="lead">This HIT requires additional qualification. If you don&#39;t have a qualification, please try <a href="https://goo.gl/Lt1rXj" target="_blank"><u>our qualification test</u></a>. <!-- <br />(We are planning to publish 1500+ HITs in total after the pilot period.) --></p>
+
+<h3>Instructions</h3>
+
+<p>Please correct the following sentence to make it <span class="blue">sound natural and fluent</span> to a native speaker of (American) English. The sentence is written by a second language learner of English. You should <span class="blue">fix grammatical mistakes, awkward phrases, spelling errors</span>, etc. following standard written usage conventions, but your edits <span class="blue"> must be conservative</span>. Please keep the original sentence (words, phrases, and structure) as much as possible. The ultimate goal of this task is to make the given sentence sound natural to native speakers of English without making unnecessary changes. <span class="blue">Please do not split the original sentence into two or more.</span> <span class="blue">Edits are not required when the sentence is already grammatical and sounds natural.</span> <!-- When the sentence is too erroneous to correct (e.g. "The memory is very.", "For example, in children."), please check the box below the sentence. --></p>
+
+<p>If you have any questions or comments, please send an e-mail to <span class="blue">ADDRESS</span></p>
+
+<h3>Examples <a href="javascript:toggle();" id="displaytext" style="font-size: 80%;">(hide)</a></h3>
+
+<div class="container" id="examples">
+<table class="table table-condensed">
+	<thead>
+		<tr>
+			<td>Example #1</td>
+			<td>&nbsp;</td>
+			<td>Notes</td>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td style="width: 100px;"><span class="navy">[original]</span></td>
+			<td>John is fund for cats.</td>
+			<td>&nbsp;</td>
+		</tr>
+		<tr>
+			<td><span class="blue">[good edits]</span></td>
+			<td>John is <span class="blue">fond of </span>cats.</td>
+			<td>Fixed spelling and preposition errors.</td>
+		</tr>
+		<tr>
+			<td><span class="red">[bad edits]</span></td>
+			<td>John is <span class="red">crazy about </span>cats.</td>
+			<td>Addes emphasis and changes the meaning for no reason.</td>
+		</tr>
+	</tbody>
+</table>
+
+<table class="table table-condensed">
+	<thead>
+		<tr>
+			<td>Example #2</td>
+			<td>&nbsp;</td>
+			<td>Notes</td>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td style="width: 100px;"><span class="navy">[original]</span></td>
+			<td>From this scope, social media has shorten our distance.</td>
+			<td>&nbsp;</td>
+		</tr>
+		<tr>
+			<td><span class="blue">[good edits]</span></td>
+			<td>From this <span class="blue">perspective</span>, social media has <span class="blue">shortened the </span> distance <span class="blue">between us</span>.</td>
+			<td>The edits are grammatical and fluent. Also, the original words and phrases are kept as much as possible.</td>
+		</tr>
+		<tr>
+			<td><pan class="red">[bad edits]</pan></td>
+			<td>From this scope, social media has <span class="red">shortened</span> our distance.</td>
+			<td>The edits are grammatical but the sentence does&#39;t sound natural to a native speaker.</td>
+		</tr>
+	</tbody>
+</table>
+
+<table class="table table-condensed">
+	<thead>
+		<tr>
+			<td>Example #3</td>
+			<td>&nbsp;</td>
+			<td>Notes</td>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td style="width: 100px;"><span class="navy">[original]</span></td>
+			<td>It is obvious to see that internet saves people&#39;s time and also connect people globally.</td>
+			<td>&nbsp;</td>
+		</tr>
+		<tr>
+			<td><span class="blue">[good edits]</span></td>
+			<td>It is obvious to see that <span class="blue">the</span> internet saves people&#39;s time and also <span class="blue">connects</span> people globally.</td>
+			<td>Missing article (&quot;the&quot;) and subject-verb agreement (&quot;verb+s&quot;) are corrected.</td>
+		</tr>
+		<tr>
+			<td><pan class="red">[bad edits]</pan></td>
+			<td><span class="red">It&#39;s clear the Internet&#39;s greatest appeal lies partially in its time-saving ability but is mostly attributable to the ease with which it brings users closer together.</span></td>
+			<td>The edits are grammatical and fluent but the original words and phrases are not preserved at all.</td>
+		</tr>
+	</tbody>
+</table>
+</div>
+
+<hr />
+<section>
+<fieldset>
+<h3>Question</h3>
+
+<h5>Please keep in mind the instructions.</h5>
+
+<ul style="font-size: 80%;">
+	<li>Correct the following sentence to make it sound natural and fluent to a native speaker of (American) English.</li>
+	<li>Your edits must be conservative. Please keep the original sentence (words, phrases, and structure) as much as possible.</li>
+	<li>Please do not split the sentence into two or more.</li>
+	<li>Edits are not required when the sentence is already grammatical and sounds natural.</li>
+	<li><span class="blue">If the sentence is too difficult to correct, please leave the sentence, choose &quot;1. very difficult&quot;, and leave a comment in the comment box below. (We never reject the HITs.)</span></li>
+</ul>
+
+<div class="panel-body" style="font-size:1em;">
+<p>${Sentence}</p>
+<!-- <textarea style="font-size:1em;" class="form-control" cols="80" name="MultiLineTextInput" rows="2">${Sentence}</textarea> --><textarea class="form-control" name="MultiLineTextInput" rows="2" style="font-size:1em;">${Sentence}</textarea>
+
+<h5><span class="red">The quality of your submissions will be checked by a professional editor. Please double check if your edits are GRAMMATICAL, SOUND NATURAL, and SPELLING is all correct before submission.&nbsp;</span></h5>
+<!-- <div class="checkbox"><label><input name="impossible" type="checkbox" value="1"/>Impossible to correct due to the errors <input type="hidden" name="impossible", value=" "> -->
+
+<p>How difficult is this sentence for you to correct?</p>
+
+<div class="radio"><label><input name="Difficulty" type="radio" value="1" />1. Very difficult</label></div>
+
+<div class="radio"><label><input name="Difficulty" type="radio" value="2" />2. Somewhat difficult</label></div>
+
+<div class="radio"><label><input checked="checked" name="Difficulty" type="radio" value="3" />3. Neither difficult nor easy</label></div>
+
+<div class="radio"><label><input name="Difficulty" type="radio" value="4" />4. Somewhat easy</label></div>
+
+<div class="radio"><label><input name="Difficulty" type="radio" value="5" />5. Very easy</label></div>
+</div>
+</fieldset>
+</section>
+</div>
+
+<h5>If you have any questions or comments, please send an e-mail to amazon_mturk@yahoo.com or use the comment box below.</h5>
+<textarea class="form-control" name="Feedback" rows="2" style="font-size:1em;">Comments</textarea></section>
+<!-- meta info (if necessary) -->
+
+<p><span style="font-size: 1px; color: #FFFFFF;">${Id}</span></p>
