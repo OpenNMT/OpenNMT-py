@@ -9,8 +9,8 @@ import torch
 import torch.nn as nn
 
 
-def ContextGateFactory(type, embeddings_size, decoder_size,
-                       attention_size, output_size):
+def context_gate_factory(type, embeddings_size, decoder_size,
+                         attention_size, output_size):
     """Returns the correct ContextGate class"""
 
     gate_types = {'source': SourceContextGate,

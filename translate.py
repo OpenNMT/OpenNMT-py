@@ -76,8 +76,8 @@ def main():
     gold_score_total, gold_words_total = 0, 0
 
     for batch in test_data:
-        batch_data = translator.translateBatch(batch, data)
-        translations = builder.fromBatch(batch_data)
+        batch_data = translator.translate_batch(batch, data)
+        translations = builder.from_batch(batch_data)
 
         for trans in translations:
             pred_score_total += trans.pred_scores[0]

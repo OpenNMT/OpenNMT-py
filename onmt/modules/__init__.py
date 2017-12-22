@@ -1,6 +1,6 @@
 from onmt.modules.UtilClass import LayerNorm, Bottle, BottleLinear, \
     BottleLayerNorm, BottleSoftmax, Elementwise
-from onmt.modules.Gate import ContextGateFactory
+from onmt.modules.Gate import context_gate_factory
 from onmt.modules.GlobalAttention import GlobalAttention
 from onmt.modules.ConvMultiStepAttention import ConvMultiStepAttention
 from onmt.modules.ImageEncoder import ImageEncoder
@@ -25,8 +25,8 @@ __all__ = [GlobalAttention, ImageEncoder, CopyGenerator, MultiHeadedAttention,
            LayerNorm, Bottle, BottleLinear, BottleLayerNorm, BottleSoftmax,
            TransformerEncoder, TransformerDecoder, Embeddings, Elementwise,
            MatrixTree, WeightNormConv2d, ConvMultiStepAttention,
-           CNNEncoder, CNNDecoder, StackedLSTM, StackedGRU, ContextGateFactory,
-           CopyGeneratorLossCompute, AudioEncoder]
+           CNNEncoder, CNNDecoder, StackedLSTM, StackedGRU,
+           context_gate_factory, CopyGeneratorLossCompute, AudioEncoder]
 
 if can_use_sru:
     __all__.extend([SRU, check_sru_requirement])

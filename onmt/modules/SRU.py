@@ -5,6 +5,8 @@ TODO: turn to pytorch's implementation when it is available.
 This implementation is adpoted from the author of the paper:
 https://github.com/taolei87/sru/blob/master/cuda_functional.py.
 """
+# flake8: noqa
+
 import subprocess
 import platform
 import os

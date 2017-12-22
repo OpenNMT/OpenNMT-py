@@ -57,25 +57,26 @@ class TestData(unittest.TestCase):
         self.assertTrue('b' in merged.itos)
 
 
-def _add_test(paramSetting, methodname):
+def _add_test(param_setting, methodname):
     """
     Adds a Test to TestData according to settings
 
     Args:
-        paramSetting: list of tuples of (param, setting)
+        param_setting: list of tuples of (param, setting)
         methodname: name of the method that gets called
     """
 
     def test_method(self):
-        if paramSetting:
+        if param_setting:
             opt = copy.deepcopy(self.opt)
-            for param, setting in paramSetting:
+            for param, setting in param_setting:
                 setattr(opt, param, setting)
         else:
             opt = self.opt
         getattr(self, methodname)(opt)
-    if paramSetting:
-        name = 'test_' + methodname + "_" + "_".join(str(paramSetting).split())
+    if param_setting:
+        name = 'test_' + methodname + "_" + "_".join(
+            str(param_setting).split())
     else:
         name = 'test_' + methodname + '_standard'
     setattr(TestData, name, test_method)
