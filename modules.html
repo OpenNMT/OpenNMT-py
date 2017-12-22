@@ -95,9 +95,11 @@
 <li class="toctree-l1"><a class="reference internal" href="options/preprocess.html">Options: preprocess.py:</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/train.html">Options: train.py:</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/translate.html">Options: translate.py:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="onmt.html">onmt package</a></li>
-<li class="toctree-l1"><a class="reference internal" href="onmt.modules.html">onmt.modules package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.html">OpenNMT Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.io.html">OpenNMT Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.modules.html">OpenNMT Modules</a></li>
 <li class="toctree-l1"><a class="reference internal" href="CONTRIBUTORS.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ref.html">References</a></li>
 </ul>
 
             
@@ -165,41 +167,11 @@
 <h1>onmt<a class="headerlink" href="#onmt" title="Permalink to this headline">¶</a></h1>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="onmt.html">onmt package</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="onmt.html#subpackages">Subpackages</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="onmt.modules.html">onmt.modules package</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="onmt.modules.html#submodules">Submodules</a></li>
-<li class="toctree-l4"><a class="reference internal" href="onmt.modules.html#module-onmt.modules.AudioEncoder">onmt.modules.AudioEncoder module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="onmt.modules.html#module-onmt.modules.Conv2Conv">onmt.modules.Conv2Conv module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="onmt.modules.html#module-onmt.modules.ConvMultiStepAttention">onmt.modules.ConvMultiStepAttention module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="onmt.modules.html#module-onmt.modules.CopyGenerator">onmt.modules.CopyGenerator module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="onmt.modules.html#module-onmt.modules.Embeddings">onmt.modules.Embeddings module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="onmt.modules.html#module-onmt.modules.Gate">onmt.modules.Gate module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="onmt.modules.html#module-onmt.modules.GlobalAttention">onmt.modules.GlobalAttention module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="onmt.modules.html#module-onmt.modules.ImageEncoder">onmt.modules.ImageEncoder module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="onmt.modules.html#module-onmt.modules.MultiHeadedAttn">onmt.modules.MultiHeadedAttn module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="onmt.modules.html#module-onmt.modules.SRU">onmt.modules.SRU module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="onmt.modules.html#module-onmt.modules.StackedRNN">onmt.modules.StackedRNN module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="onmt.modules.html#module-onmt.modules.StructuredAttention">onmt.modules.StructuredAttention module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="onmt.modules.html#module-onmt.modules.Transformer">onmt.modules.Transformer module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="onmt.modules.html#module-onmt.modules.UtilClass">onmt.modules.UtilClass module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="onmt.modules.html#module-onmt.modules.WeightNorm">onmt.modules.WeightNorm module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="onmt.modules.html#module-contents">Module contents</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="onmt.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="onmt.html#module-onmt.Beam">onmt.Beam module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="onmt.html#module-onmt.IO">onmt.IO module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="onmt.html#module-onmt.Loss">onmt.Loss module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="onmt.html#module-onmt.ModelConstructor">onmt.ModelConstructor module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="onmt.html#module-onmt.Models">onmt.Models module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="onmt.html#module-onmt.Optim">onmt.Optim module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="onmt.html#module-onmt.Trainer">onmt.Trainer module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="onmt.html#module-onmt.Translator">onmt.Translator module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="onmt.html#module-onmt.Utils">onmt.Utils module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="onmt.html#module-contents">Module contents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.html">OpenNMT Framework</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="onmt.html#model">Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="onmt.html#trainer">Trainer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="onmt.html#loss">Loss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="onmt.html#optim">Optim</a></li>
 </ul>
 </li>
 </ul>

@@ -95,9 +95,11 @@
 <li class="toctree-l1"><a class="reference internal" href="options/preprocess.html">Options: preprocess.py:</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/train.html">Options: train.py:</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/translate.html">Options: translate.py:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="onmt.html">onmt package</a></li>
-<li class="toctree-l1"><a class="reference internal" href="onmt.modules.html">onmt.modules package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.html">OpenNMT Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.io.html">OpenNMT Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.modules.html">OpenNMT Modules</a></li>
 <li class="toctree-l1"><a class="reference internal" href="CONTRIBUTORS.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ref.html">References</a></li>
 </ul>
 
             
@@ -201,28 +203,28 @@ can also add <cite>-gpuid 1</cite> to use (say) GPU 1.</p>
 </dl>
 <p># Example: Translation</p>
 <p>The example below uses the Moses tokenizer (<a class="reference external" href="http://www.statmt.org/moses/">http://www.statmt.org/moses/</a>) to prepare the data and the moses BLEU script for evaluation. This example if for training for the WMT‘16 Multimodal Translation task (<a class="reference external" href="http://www.statmt.org/wmt16/multimodal-task.html">http://www.statmt.org/wmt16/multimodal-task.html</a>).</p>
-<p>### 0) Download the data.</p>
+<p>Step 0. Download the data.</p>
 <p><code class="docutils literal"><span class="pre">`bash</span>
 <span class="pre">mkdir</span> <span class="pre">-p</span> <span class="pre">data/multi30k</span>
 <span class="pre">wget</span> <span class="pre">http://www.quest.dcs.shef.ac.uk/wmt16_files_mmt/training.tar.gz</span> <span class="pre">&amp;&amp;</span>&#160; <span class="pre">tar</span> <span class="pre">-xf</span> <span class="pre">training.tar.gz</span> <span class="pre">-C</span> <span class="pre">data/multi30k</span> <span class="pre">&amp;&amp;</span> <span class="pre">rm</span> <span class="pre">training.tar.gz</span>
 <span class="pre">wget</span> <span class="pre">http://www.quest.dcs.shef.ac.uk/wmt16_files_mmt/validation.tar.gz</span> <span class="pre">&amp;&amp;</span> <span class="pre">tar</span> <span class="pre">-xf</span> <span class="pre">validation.tar.gz</span> <span class="pre">-C</span> <span class="pre">data/multi30k</span> <span class="pre">&amp;&amp;</span> <span class="pre">rm</span> <span class="pre">validation.tar.gz</span>
 <span class="pre">wget</span> <span class="pre">http://www.quest.dcs.shef.ac.uk/wmt17_files_mmt/mmt_task1_test2016.tar.gz</span> <span class="pre">&amp;&amp;</span> <span class="pre">tar</span> <span class="pre">-xf</span> <span class="pre">mmt_task1_test2016.tar.gz</span> <span class="pre">-C</span> <span class="pre">data/multi30k</span> <span class="pre">&amp;&amp;</span> <span class="pre">rm</span> <span class="pre">mmt_task1_test2016.tar.gz</span>
 <span class="pre">`</span></code></p>
-<p>### 1) Preprocess the data.</p>
+<p>Step 1. Preprocess the data.</p>
 <p><code class="docutils literal"><span class="pre">`bash</span>
 <span class="pre">for</span> <span class="pre">l</span> <span class="pre">in</span> <span class="pre">en</span> <span class="pre">de;</span> <span class="pre">do</span> <span class="pre">for</span> <span class="pre">f</span> <span class="pre">in</span> <span class="pre">data/multi30k/*.$l;</span> <span class="pre">do</span> <span class="pre">if</span> <span class="pre">[[</span> <span class="pre">&quot;$f&quot;</span> <span class="pre">!=</span> <span class="pre">*&quot;test&quot;*</span> <span class="pre">]];</span> <span class="pre">then</span> <span class="pre">sed</span> <span class="pre">-i</span> <span class="pre">&quot;$</span> <span class="pre">d&quot;</span> <span class="pre">$f;</span> <span class="pre">fi;</span>&#160; <span class="pre">done;</span> <span class="pre">done</span>
 <span class="pre">for</span> <span class="pre">l</span> <span class="pre">in</span> <span class="pre">en</span> <span class="pre">de;</span> <span class="pre">do</span> <span class="pre">for</span> <span class="pre">f</span> <span class="pre">in</span> <span class="pre">data/multi30k/*.$l;</span> <span class="pre">do</span> <span class="pre">perl</span> <span class="pre">tools/tokenizer.perl</span> <span class="pre">-a</span> <span class="pre">-no-escape</span> <span class="pre">-l</span> <span class="pre">$l</span> <span class="pre">-q</span>&#160; <span class="pre">&lt;</span> <span class="pre">$f</span> <span class="pre">&gt;</span> <span class="pre">$f.atok;</span> <span class="pre">done;</span> <span class="pre">done</span>
 <span class="pre">python</span> <span class="pre">preprocess.py</span> <span class="pre">-train_src</span> <span class="pre">data/multi30k/train.en.atok</span> <span class="pre">-train_tgt</span> <span class="pre">data/multi30k/train.de.atok</span> <span class="pre">-valid_src</span> <span class="pre">data/multi30k/val.en.atok</span> <span class="pre">-valid_tgt</span> <span class="pre">data/multi30k/val.de.atok</span> <span class="pre">-save_data</span> <span class="pre">data/multi30k.atok.low</span> <span class="pre">-lower</span>
 <span class="pre">`</span></code></p>
-<p>### 2) Train the model.</p>
+<p>Step 2. Train the model.</p>
 <p><code class="docutils literal"><span class="pre">`bash</span>
 <span class="pre">python</span> <span class="pre">train.py</span> <span class="pre">-data</span> <span class="pre">data/multi30k.atok.low</span> <span class="pre">-save_model</span> <span class="pre">multi30k_model</span> <span class="pre">-gpuid</span> <span class="pre">0</span>
 <span class="pre">`</span></code></p>
-<p>### 3) Translate sentences.</p>
+<p>Step 3. Translate sentences.</p>
 <p><code class="docutils literal"><span class="pre">`bash</span>
 <span class="pre">python</span> <span class="pre">translate.py</span> <span class="pre">-gpu</span> <span class="pre">0</span> <span class="pre">-model</span> <span class="pre">multi30k_model_*_e13.pt</span> <span class="pre">-src</span> <span class="pre">data/multi30k/test.en.atok</span> <span class="pre">-tgt</span> <span class="pre">data/multi30k/test.de.atok</span> <span class="pre">-replace_unk</span> <span class="pre">-verbose</span> <span class="pre">-output</span> <span class="pre">multi30k.test.pred.atok</span>
 <span class="pre">`</span></code></p>
-<p>### 4) Evaluate.</p>
+<p>And evaluate</p>
 <p><code class="docutils literal"><span class="pre">`bash</span>
 <span class="pre">perl</span> <span class="pre">tools/multi-bleu.perl</span> <span class="pre">data/multi30k/test.de.atok</span> <span class="pre">&lt;</span> <span class="pre">multi30k.test.pred.atok</span>
 <span class="pre">`</span></code></p>

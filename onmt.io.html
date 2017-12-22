@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Quickstart &mdash; OpenNMT-py  documentation</title>
+  <title>OpenNMT Data &mdash; OpenNMT-py  documentation</title>
   
 
   
@@ -36,8 +36,8 @@
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
     <link rel="top" title="OpenNMT-py  documentation" href="index.html"/>
-        <link rel="next" title="Example: Translation" href="extended.html"/>
-        <link rel="prev" title="Overview" href="main.html"/> 
+        <link rel="next" title="OpenNMT Modules" href="onmt.modules.html"/>
+        <link rel="prev" title="OpenNMT Framework" href="onmt.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -88,12 +88,7 @@
             
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="main.html">Overview</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Quickstart</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#step-1-preprocess-the-data">Step 1: Preprocess the data</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#step-2-train-the-model">Step 2: Train the model</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#step-3-translate">Step 3: Translate</a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
 <li class="toctree-l1"><a class="reference internal" href="extended.html">Example: Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Summarization.html">Example: Summarization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="im2text.html">Example: Image to Text</a></li>
@@ -103,7 +98,10 @@
 <li class="toctree-l1"><a class="reference internal" href="options/train.html">Options: train.py:</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/translate.html">Options: translate.py:</a></li>
 <li class="toctree-l1"><a class="reference internal" href="onmt.html">OpenNMT Framework</a></li>
-<li class="toctree-l1"><a class="reference internal" href="onmt.io.html">OpenNMT Data</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">OpenNMT Data</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#datasets">Datasets</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="onmt.modules.html">OpenNMT Modules</a></li>
 <li class="toctree-l1"><a class="reference internal" href="CONTRIBUTORS.html">Contributors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ref.html">References</a></li>
@@ -151,13 +149,13 @@
     
       <li><a href="index.html">Docs</a> &raquo;</li>
         
-      <li>Quickstart</li>
+      <li>OpenNMT Data</li>
     
     
       <li class="wy-breadcrumbs-aside">
         
             
-            <a href="_sources/quickstart.md.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/onmt.io.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -170,47 +168,10 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="quickstart">
-<span id="quickstart"></span><h1>Quickstart<a class="headerlink" href="#quickstart" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="step-1-preprocess-the-data">
-<span id="step-1-preprocess-the-data"></span><h2>Step 1: Preprocess the data<a class="headerlink" href="#step-1-preprocess-the-data" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-bash"><div class="highlight"><pre><span></span>python preprocess.py -train_src data/src-train.txt -train_tgt data/tgt-train.txt -valid_src data/src-val.txt -valid_tgt data/tgt-val.txt -save_data data/demo
-</pre></div>
-</div>
-<p>We will be working with some example data in <code class="docutils literal"><span class="pre">data/</span></code> folder.</p>
-<p>The data consists of parallel source (<code class="docutils literal"><span class="pre">src</span></code>) and target (<code class="docutils literal"><span class="pre">tgt</span></code>) data containing one sentence per line with tokens separated by a space:</p>
-<ul class="simple">
-<li><code class="docutils literal"><span class="pre">src-train.txt</span></code></li>
-<li><code class="docutils literal"><span class="pre">tgt-train.txt</span></code></li>
-<li><code class="docutils literal"><span class="pre">src-val.txt</span></code></li>
-<li><code class="docutils literal"><span class="pre">tgt-val.txt</span></code></li>
-</ul>
-<p>Validation files are required and used to evaluate the convergence of the training. It usually contains no more than 5000 sentences.</p>
-<div class="highlight-text"><div class="highlight"><pre><span></span>$ head -n 3 data/src-train.txt
-It is not acceptable that , with the help of the national bureaucracies , Parliament &amp;apos;s legislative prerogative should be made null and void by means of implementing provisions whose content , purpose and extent are not laid down in advance .
-Federal Master Trainer and Senior Instructor of the Italian Federation of Aerobic Fitness , Group Fitness , Postural Gym , Stretching and Pilates; from 2004 , he has been collaborating with Antiche Terme as personal Trainer and Instructor of Stretching , Pilates and Postural Gym .
-&amp;quot; Two soldiers came up to me and told me that if I refuse to sleep with them , they will kill me . They beat me and ripped my clothes .
-</pre></div>
-</div>
-</div>
-<div class="section" id="step-2-train-the-model">
-<span id="step-2-train-the-model"></span><h2>Step 2: Train the model<a class="headerlink" href="#step-2-train-the-model" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-bash"><div class="highlight"><pre><span></span>python train.py -data data/demo.train.pt -save_model demo-model 
-</pre></div>
-</div>
-<p>The main train command is quite simple. Minimally it takes a data file
-and a save file.  This will run the default model, which consists of a
-2-layer LSTM with 500 hidden units on both the encoder/decoder. You
-can also add <code class="docutils literal"><span class="pre">-gpuid</span> <span class="pre">1</span></code> to use (say) GPU 1.</p>
-</div>
-<div class="section" id="step-3-translate">
-<span id="step-3-translate"></span><h2>Step 3: Translate<a class="headerlink" href="#step-3-translate" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-bash"><div class="highlight"><pre><span></span>python translate.py -model demo-model_epochX_PPL.pt -src data/src-test.txt -output pred.txt -replace_unk -verbose
-</pre></div>
-</div>
-<p>Now you have a model which you can use to predict on new data. We do this by running beam search. This will output predictions into <code class="docutils literal"><span class="pre">pred.txt</span></code>.</p>
-<p>!!! note &quot;Note&quot;
-The predictions are going to be quite terrible, as the demo dataset is small. Try running on some larger datasets! For example you can download millions of parallel sentences for <a class="reference external" href="http://www.statmt.org/wmt16/translation-task.html">translation</a> or <a class="reference external" href="https://github.com/harvardnlp/sent-summary">summarization</a>.</p>
+  <div class="section" id="opennmt-data">
+<h1>OpenNMT Data<a class="headerlink" href="#opennmt-data" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="datasets">
+<h2>Datasets<a class="headerlink" href="#datasets" title="Permalink to this headline">¶</a></h2>
 </div>
 </div>
 
@@ -224,10 +185,10 @@ The predictions are going to be quite terrible, as the demo dataset is small. Tr
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="extended.html" class="btn btn-neutral float-right" title="Example: Translation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="onmt.modules.html" class="btn btn-neutral float-right" title="OpenNMT Modules" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="main.html" class="btn btn-neutral" title="Overview" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="onmt.html" class="btn btn-neutral" title="OpenNMT Framework" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

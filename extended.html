@@ -89,14 +89,7 @@
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="main.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Example: Translation</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#download-the-data">0) Download the data.</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#preprocess-the-data">1) Preprocess the data.</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#train-the-model">2) Train the model.</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#translate-sentences">3) Translate sentences.</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#evaluate">4) Evaluate.</a></li>
-</ul>
-</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Example: Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Summarization.html">Example: Summarization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="im2text.html">Example: Image to Text</a></li>
 <li class="toctree-l1"><a class="reference internal" href="speech2text.html">Example: Speech to Text</a></li>
@@ -104,9 +97,11 @@
 <li class="toctree-l1"><a class="reference internal" href="options/preprocess.html">Options: preprocess.py:</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/train.html">Options: train.py:</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/translate.html">Options: translate.py:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="onmt.html">onmt package</a></li>
-<li class="toctree-l1"><a class="reference internal" href="onmt.modules.html">onmt.modules package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.html">OpenNMT Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.io.html">OpenNMT Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.modules.html">OpenNMT Modules</a></li>
 <li class="toctree-l1"><a class="reference internal" href="CONTRIBUTORS.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ref.html">References</a></li>
 </ul>
 
             
@@ -173,40 +168,30 @@
   <div class="section" id="example-translation">
 <span id="example-translation"></span><h1>Example: Translation<a class="headerlink" href="#example-translation" title="Permalink to this headline">¶</a></h1>
 <p>The example below uses the Moses tokenizer (http://www.statmt.org/moses/) to prepare the data and the moses BLEU script for evaluation. This example if for training for the WMT'16 Multimodal Translation task (http://www.statmt.org/wmt16/multimodal-task.html).</p>
-<div class="section" id="download-the-data">
-<span id="download-the-data"></span><h2>0) Download the data.<a class="headerlink" href="#download-the-data" title="Permalink to this headline">¶</a></h2>
+<p>Step 0. Download the data.</p>
 <div class="highlight-bash"><div class="highlight"><pre><span></span>mkdir -p data/multi30k
 wget http://www.quest.dcs.shef.ac.uk/wmt16_files_mmt/training.tar.gz <span class="o">&amp;&amp;</span>  tar -xf training.tar.gz -C data/multi30k <span class="o">&amp;&amp;</span> rm training.tar.gz
 wget http://www.quest.dcs.shef.ac.uk/wmt16_files_mmt/validation.tar.gz <span class="o">&amp;&amp;</span> tar -xf validation.tar.gz -C data/multi30k <span class="o">&amp;&amp;</span> rm validation.tar.gz
 wget http://www.quest.dcs.shef.ac.uk/wmt17_files_mmt/mmt_task1_test2016.tar.gz <span class="o">&amp;&amp;</span> tar -xf mmt_task1_test2016.tar.gz -C data/multi30k <span class="o">&amp;&amp;</span> rm mmt_task1_test2016.tar.gz
 </pre></div>
 </div>
-</div>
-<div class="section" id="preprocess-the-data">
-<span id="preprocess-the-data"></span><h2>1) Preprocess the data.<a class="headerlink" href="#preprocess-the-data" title="Permalink to this headline">¶</a></h2>
+<p>Step 1. Preprocess the data.</p>
 <div class="highlight-bash"><div class="highlight"><pre><span></span><span class="k">for</span> l in en de<span class="p">;</span> <span class="k">do</span> <span class="k">for</span> f in data/multi30k/*.<span class="nv">$l</span><span class="p">;</span> <span class="k">do</span> <span class="k">if</span> <span class="o">[[</span> <span class="s2">&quot;</span><span class="nv">$f</span><span class="s2">&quot;</span> !<span class="o">=</span> *<span class="s2">&quot;test&quot;</span>* <span class="o">]]</span><span class="p">;</span> <span class="k">then</span> sed -i <span class="s2">&quot;</span>$<span class="s2"> d&quot;</span> <span class="nv">$f</span><span class="p">;</span> <span class="k">fi</span><span class="p">;</span>  <span class="k">done</span><span class="p">;</span> <span class="k">done</span>
 <span class="k">for</span> l in en de<span class="p">;</span> <span class="k">do</span> <span class="k">for</span> f in data/multi30k/*.<span class="nv">$l</span><span class="p">;</span> <span class="k">do</span> perl tools/tokenizer.perl -a -no-escape -l <span class="nv">$l</span> -q  &lt; <span class="nv">$f</span> &gt; <span class="nv">$f</span>.atok<span class="p">;</span> <span class="k">done</span><span class="p">;</span> <span class="k">done</span>
 python preprocess.py -train_src data/multi30k/train.en.atok -train_tgt data/multi30k/train.de.atok -valid_src data/multi30k/val.en.atok -valid_tgt data/multi30k/val.de.atok -save_data data/multi30k.atok.low -lower
 </pre></div>
 </div>
-</div>
-<div class="section" id="train-the-model">
-<span id="train-the-model"></span><h2>2) Train the model.<a class="headerlink" href="#train-the-model" title="Permalink to this headline">¶</a></h2>
+<p>Step 2. Train the model.</p>
 <div class="highlight-bash"><div class="highlight"><pre><span></span>python train.py -data data/multi30k.atok.low -save_model multi30k_model -gpuid <span class="m">0</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="translate-sentences">
-<span id="translate-sentences"></span><h2>3) Translate sentences.<a class="headerlink" href="#translate-sentences" title="Permalink to this headline">¶</a></h2>
+<p>Step 3. Translate sentences.</p>
 <div class="highlight-bash"><div class="highlight"><pre><span></span>python translate.py -gpu <span class="m">0</span> -model multi30k_model_*_e13.pt -src data/multi30k/test.en.atok -tgt data/multi30k/test.de.atok -replace_unk -verbose -output multi30k.test.pred.atok
 </pre></div>
 </div>
-</div>
-<div class="section" id="evaluate">
-<span id="evaluate"></span><h2>4) Evaluate.<a class="headerlink" href="#evaluate" title="Permalink to this headline">¶</a></h2>
+<p>And evaluate</p>
 <div class="highlight-bash"><div class="highlight"><pre><span></span>perl tools/multi-bleu.perl data/multi30k/test.de.atok &lt; multi30k.test.pred.atok
 </pre></div>
-</div>
 </div>
 </div>
 
