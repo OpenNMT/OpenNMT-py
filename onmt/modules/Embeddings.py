@@ -31,21 +31,39 @@ class PositionalEncoding(nn.Module):
 
 class Embeddings(nn.Module):
     """
-    Words embeddings dictionary for encoder/decoder.
+    Words embeddings for encoder/decoder.
+
+    Additionally includes ability to add sparse input features
+    based on "Linguistic Input Features Improve Neural Machine Translation"
+    :cite:`sennrich2016linguistic`.
+
+
+    .. mermaid::
+
+       graph LR
+          A[Input]
+          C[Feature 1 Lookup]
+          A-->B[Word Lookup]
+          A-->C
+          A-->D[Feature N Lookup]
+          B-->E[MLP/Concat]
+          C-->E
+          D-->E
+          E-->F[Output]
 
     Args:
         word_vec_size (int): size of the dictionary of embeddings.
         position_encoding (bool): use a sin to mark relative words positions.
         feat_merge (string): merge action for the features embeddings:
                     concat, sum or mlp.
-        feat_vec_exponent (float): when using '-feat_merge concat', feature
+        feat_vec_exponent (float): when using `-feat_merge concat`, feature
                     embedding size is N^feat_dim_exponent, where N is the
                     number of values of feature takes.
         feat_vec_size (int): embedding dimension for features when using
-                    '-feat_merge mlp'
+                    `-feat_merge mlp`
         dropout (float): dropout probability.
         word_padding_idx (int): padding index for words in the embeddings.
-        feats_padding_idx ([int]): padding index for a list of features
+        feats_padding_idx (list of int): padding index for a list of features
                                    in the embeddings.
         word_vocab_size (int): size of dictionary of embeddings for words.
         feat_vocab_sizes ([int], optional): list of size of dictionary
@@ -118,6 +136,12 @@ class Embeddings(nn.Module):
         return self.make_embedding[0]
 
     def load_pretrained_vectors(self, emb_file, fixed):
+        """Load in pretrained embeddings.
+
+        Args:
+          emb_file (str) : path to torch serialized embeddings
+          fixed (bool) : if true, embeddings are not updated
+        """
         if emb_file:
             pretrained = torch.load(emb_file)
             self.word_lut.weight.data.copy_(pretrained)
@@ -126,11 +150,12 @@ class Embeddings(nn.Module):
 
     def forward(self, input):
         """
-        Return the embeddings for words, and features if there are any.
+        Computes the embeddings for words and features.
+
         Args:
-            input (LongTensor): len x batch x nfeat
+            input (`LongTensor`): index tensor `[len x batch x nfeat]`
         Return:
-            emb (FloatTensor): len x batch x self.embedding_size
+            `FloatTensor`: word embeddings `[len x batch x embedding_size]`
         """
         in_length, in_batch, nfeat = input.size()
         aeq(nfeat, len(self.emb_luts))

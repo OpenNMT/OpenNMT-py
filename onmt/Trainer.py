@@ -23,6 +23,11 @@ import onmt.modules
 class Statistics(object):
     """
     Accumulator for loss statistics.
+    Currently calculates:
+
+    * accuracy
+    * perplexity
+    * elapsed time
     """
     def __init__(self, loss=0, n_words=0, n_correct=0):
         self.loss = loss
@@ -37,15 +42,12 @@ class Statistics(object):
         self.n_correct += stat.n_correct
 
     def accuracy(self):
-        """Resturns percentage of correct next-step predictions."""
         return 100 * (self.n_correct / self.n_words)
 
     def ppl(self):
-        """Returns perplexity"""
         return math.exp(min(self.loss / self.n_words, 100))
 
     def elapsed_time(self):
-        """Elapsed time since creation of object."""
         return time.time() - self.start_time
 
     def output(self, epoch, batch, n_batches, start):
@@ -57,7 +59,6 @@ class Statistics(object):
            n_batch (int): total batches
            start (int): start time of epoch.
         """
-
         t = self.elapsed_time()
         print(("Epoch %2d, %5d/%5d; acc: %6.2f; ppl: %6.2f; " +
                "%3.0f src tok/s; %3.0f tgt tok/s; %6.0f s elapsed") %
@@ -79,8 +80,10 @@ class Statistics(object):
 
 class Trainer(object):
     """
+    Class that controls the training process.
+
     Args:
-            model(:py:class:`onmt.Model.NMTModel`): the model.
+            model(:py:class:`onmt.Model.NMTModel`): translation model to train
             train_iter: training data iterator
             valid_iter: validate data iterator
             train_loss(:obj:`onmt.Loss.LossComputeBase`):
@@ -119,7 +122,7 @@ class Trainer(object):
             report_func(fn): function for logging
 
         Returns:
-            stats(:class:`onmt.Statistics`): epoch loss statistics
+            stats (:obj:`onmt.Statistics`): epoch loss statistics
         """
         total_stats = Statistics()
         report_stats = Statistics()
@@ -173,7 +176,7 @@ class Trainer(object):
         """ Validate model.
 
         Returns:
-            stats(:class:`onmt.Statistics`): validation loss statistics
+            :obj:`onmt.Statistics`: validation loss statistics
         """
         # Set model in validating mode.
         self.model.eval()

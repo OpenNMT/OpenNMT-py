@@ -3,25 +3,21 @@ from torch.nn.utils import clip_grad_norm
 
 
 class Optim(object):
+    """
+    Controller class for optimization. Mostly a thin
+    wrapper for `optim`, but also useful for implementing
+    rate scheduling beyond what is currently available.
+    Also implements necessary methods for training RNNs such
+    as grad manipulations.
 
-    def set_parameters(self, params):
-        self.params = [p for p in params if p.requires_grad]
-        if self.method == 'sgd':
-            self.optimizer = optim.SGD(self.params, lr=self.lr)
-        elif self.method == 'adagrad':
-            self.optimizer = optim.Adagrad(self.params, lr=self.lr)
-            for group in self.optimizer.param_groups:
-                for p in group['params']:
-                    self.optimizer.state[p]['sum'] = self.optimizer\
-                        .state[p]['sum'].fill_(self.adagrad_accum)
-        elif self.method == 'adadelta':
-            self.optimizer = optim.Adadelta(self.params, lr=self.lr)
-        elif self.method == 'adam':
-            self.optimizer = optim.Adam(self.params, lr=self.lr,
-                                        betas=self.betas, eps=1e-9)
-        else:
-            raise RuntimeError("Invalid optim method: " + self.method)
-
+    Args:
+      method (:obj:`str`): one of [sgd, adagrad, adadelta, adam]
+      lr (float): learning rate
+      lr_decay (float, optional): learning rate decay multiplier
+      start_decay_at (int, optional): epoch to start learning rate decay
+      beta1, beta2 (float, optional): parameters for adam
+      adagrad_accum (float, optional): initialization parameter for adagrad
+    """
     # We use the default parameters for Adam that are suggested by
     # the original paper https://arxiv.org/pdf/1412.6980.pdf
     # These values are also used by other established implementations,
@@ -49,12 +45,34 @@ class Optim(object):
         self.adagrad_accum = adagrad_accum
         self.opt = opt
 
+    def set_parameters(self, params):
+        self.params = [p for p in params if p.requires_grad]
+        if self.method == 'sgd':
+            self.optimizer = optim.SGD(self.params, lr=self.lr)
+        elif self.method == 'adagrad':
+            self.optimizer = optim.Adagrad(self.params, lr=self.lr)
+            for group in self.optimizer.param_groups:
+                for p in group['params']:
+                    self.optimizer.state[p]['sum'] = self.optimizer\
+                        .state[p]['sum'].fill_(self.adagrad_accum)
+        elif self.method == 'adadelta':
+            self.optimizer = optim.Adadelta(self.params, lr=self.lr)
+        elif self.method == 'adam':
+            self.optimizer = optim.Adam(self.params, lr=self.lr,
+                                        betas=self.betas, eps=1e-9)
+        else:
+            raise RuntimeError("Invalid optim method: " + self.method)
+
     def _set_rate(self, lr):
         self.lr = lr
         self.optimizer.param_groups[0]['lr'] = self.lr
 
     def step(self):
-        "Compute gradients norm."
+        """Update the model parameters based on current gradients.
+
+        Optionally, will employ gradient modification or update learning
+        rate.
+        """
         self._step += 1
 
         # Decay method used in tensor2tensor.

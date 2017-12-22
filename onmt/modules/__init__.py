@@ -1,6 +1,6 @@
 from onmt.modules.UtilClass import LayerNorm, Bottle, BottleLinear, \
     BottleLayerNorm, BottleSoftmax, Elementwise
-from onmt.modules.Gate import context_gate_factory
+from onmt.modules.Gate import context_gate_factory, ContextGate
 from onmt.modules.GlobalAttention import GlobalAttention
 from onmt.modules.ConvMultiStepAttention import ConvMultiStepAttention
 from onmt.modules.ImageEncoder import ImageEncoder
@@ -14,6 +14,9 @@ from onmt.modules.StackedRNN import StackedLSTM, StackedGRU
 from onmt.modules.Embeddings import Embeddings
 from onmt.modules.WeightNorm import WeightNormConv2d
 
+from onmt.Models import EncoderBase, MeanEncoder, StdRNNDecoder, \
+    RNNDecoderBase, InputFeedRNNDecoder
+
 from onmt.modules.SRU import check_sru_requirement
 can_use_sru = check_sru_requirement()
 if can_use_sru:
@@ -21,7 +24,9 @@ if can_use_sru:
 
 
 # For flake8 compatibility.
-__all__ = [GlobalAttention, ImageEncoder, CopyGenerator, MultiHeadedAttention,
+__all__ = [EncoderBase, MeanEncoder, RNNDecoderBase, InputFeedRNNDecoder,
+           StdRNNDecoder, ContextGate, GlobalAttention, ImageEncoder,
+           CopyGenerator, MultiHeadedAttention,
            LayerNorm, Bottle, BottleLinear, BottleLayerNorm, BottleSoftmax,
            TransformerEncoder, TransformerDecoder, Embeddings, Elementwise,
            MatrixTree, WeightNormConv2d, ConvMultiStepAttention,
