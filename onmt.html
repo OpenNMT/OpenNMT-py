@@ -178,12 +178,225 @@
 </div>
 <div class="section" id="trainer">
 <h2>Trainer<a class="headerlink" href="#trainer" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="onmt.Trainer">
+<em class="property">class </em><code class="descclassname">onmt.</code><code class="descname">Trainer</code><span class="sig-paren">(</span><em>model</em>, <em>train_iter</em>, <em>valid_iter</em>, <em>train_loss</em>, <em>valid_loss</em>, <em>optim</em>, <em>trunc_size</em>, <em>shard_size</em>, <em>data_type='text'</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Trainer" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>model</strong> (<code class="xref py py-class docutils literal"><span class="pre">onmt.Model.NMTModel</span></code>) – the model.</li>
+<li><strong>train_iter</strong> – training data iterator</li>
+<li><strong>valid_iter</strong> – validate data iterator</li>
+<li><strong>train_loss</strong> (<a class="reference internal" href="#onmt.Loss.LossComputeBase" title="onmt.Loss.LossComputeBase"><code class="xref py py-obj docutils literal"><span class="pre">onmt.Loss.LossComputeBase</span></code></a>) – training loss computation</li>
+<li><strong>valid_loss</strong> (<a class="reference internal" href="#onmt.Loss.LossComputeBase" title="onmt.Loss.LossComputeBase"><code class="xref py py-obj docutils literal"><span class="pre">onmt.Loss.LossComputeBase</span></code></a>) – training loss computation</li>
+<li><strong>optim</strong> (<a class="reference internal" href="#onmt.Optim.Optim" title="onmt.Optim.Optim"><code class="xref py py-obj docutils literal"><span class="pre">onmt.Optim.Optim</span></code></a>) – the optimizer responsible for update</li>
+<li><strong>trunc_size</strong> (<em>int</em>) – length of truncated back propagation through time</li>
+<li><strong>shard_size</strong> (<em>int</em>) – compute loss in shards of this size for efficiency</li>
+<li><strong>data_type</strong> (<em>string</em>) – type of the source input: [text|img|audio]</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="onmt.Trainer.drop_checkpoint">
+<code class="descname">drop_checkpoint</code><span class="sig-paren">(</span><em>opt</em>, <em>epoch</em>, <em>fields</em>, <em>valid_stats</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Trainer.drop_checkpoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save a resumable checkpoint.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>opt</strong> (<em>dict</em>) – option object</li>
+<li><strong>epoch</strong> (<em>int</em>) – epoch number</li>
+<li><strong>fields</strong> (<em>dict</em>) – fields and vocabulary</li>
+<li><strong>valid_stats</strong> – statistics of last validation run</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.Trainer.train">
+<code class="descname">train</code><span class="sig-paren">(</span><em>epoch</em>, <em>report_func=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Trainer.train" title="Permalink to this definition">¶</a></dt>
+<dd><p>Train next epoch.
+:param epoch: the epoch number
+:type epoch: int
+:param report_func: function for logging
+:type report_func: fn</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">epoch loss statistics</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">stats(<a class="reference internal" href="#onmt.Statistics" title="onmt.Statistics"><code class="xref py py-class docutils literal"><span class="pre">onmt.Statistics</span></code></a>)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.Trainer.validate">
+<code class="descname">validate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Trainer.validate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Validate model.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">validation loss statistics</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">stats(<a class="reference internal" href="#onmt.Statistics" title="onmt.Statistics"><code class="xref py py-class docutils literal"><span class="pre">onmt.Statistics</span></code></a>)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="onmt.Statistics">
+<em class="property">class </em><code class="descclassname">onmt.</code><code class="descname">Statistics</code><span class="sig-paren">(</span><em>loss=0</em>, <em>n_words=0</em>, <em>n_correct=0</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Statistics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Accumulator for loss statistics.</p>
+<dl class="method">
+<dt id="onmt.Statistics.accuracy">
+<code class="descname">accuracy</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Statistics.accuracy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Resturns percentage of correct next-step predictions.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.Statistics.elapsed_time">
+<code class="descname">elapsed_time</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Statistics.elapsed_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Elapsed time since creation of object.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.Statistics.output">
+<code class="descname">output</code><span class="sig-paren">(</span><em>epoch</em>, <em>batch</em>, <em>n_batches</em>, <em>start</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Statistics.output" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write out statistics to stdout.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>epoch</strong> (<em>int</em>) – current epoch</li>
+<li><strong>batch</strong> (<em>int</em>) – current batch</li>
+<li><strong>n_batch</strong> (<em>int</em>) – total batches</li>
+<li><strong>start</strong> (<em>int</em>) – start time of epoch.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.Statistics.ppl">
+<code class="descname">ppl</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Statistics.ppl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns perplexity</p>
+</dd></dl>
+
+</dd></dl>
+
 </div>
 <div class="section" id="loss">
 <h2>Loss<a class="headerlink" href="#loss" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="onmt.Loss.LossComputeBase">
+<em class="property">class </em><code class="descclassname">onmt.Loss.</code><code class="descname">LossComputeBase</code><span class="sig-paren">(</span><em>generator</em>, <em>tgt_vocab</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Loss.LossComputeBase" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is the loss criterion base class. Users can implement their own
+loss computation strategy by making subclass of this one.
+Users need to implement the compute_loss() and make_shard_state() methods.
+We inherits from nn.Module to leverage the cuda behavior.</p>
+<dl class="method">
+<dt id="onmt.Loss.LossComputeBase.compute_loss">
+<code class="descname">compute_loss</code><span class="sig-paren">(</span><em>batch</em>, <em>output</em>, <em>target</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Loss.LossComputeBase.compute_loss" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the loss. Subclass must define this method.
+:param batch: the current batch.
+:param output: the predict output from the model.
+:param target: the validate target to compare output with.
+:param **kwargs: additional info for computing loss.
+:type **kwargs: optional</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.Loss.LossComputeBase.make_shard_state">
+<code class="descname">make_shard_state</code><span class="sig-paren">(</span><em>batch</em>, <em>output</em>, <em>range_</em>, <em>attns=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Loss.LossComputeBase.make_shard_state" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make shard state dictionary for shards() to return iterable
+shards for efficient loss computation. Subclass must define
+this method to match its own compute_loss() interface.
+:param batch: the current batch.
+:param output: the predict output from the model.
+:param <a href="#id1"><span class="problematic" id="id2">range_</span></a>: the range of examples for computing, the whole</p>
+<blockquote>
+<div>batch or a trunc of it?</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>attns</strong> – the attns dictionary returned from the model.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.Loss.LossComputeBase.monolithic_compute_loss">
+<code class="descname">monolithic_compute_loss</code><span class="sig-paren">(</span><em>batch</em>, <em>output</em>, <em>attns</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Loss.LossComputeBase.monolithic_compute_loss" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the loss monolithically, not dividing into shards.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.Loss.LossComputeBase.sharded_compute_loss">
+<code class="descname">sharded_compute_loss</code><span class="sig-paren">(</span><em>batch</em>, <em>output</em>, <em>attns</em>, <em>cur_trunc</em>, <em>trunc_size</em>, <em>shard_size</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Loss.LossComputeBase.sharded_compute_loss" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the loss in shards for efficiency.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.Loss.LossComputeBase.stats">
+<code class="descname">stats</code><span class="sig-paren">(</span><em>loss</em>, <em>scores</em>, <em>target</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Loss.LossComputeBase.stats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute and return a Statistics object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>loss</strong> (<em>Tensor</em>) – the loss computed by the loss criterion.</li>
+<li><strong>scores</strong> (<em>Tensor</em>) – a sequence of predict output with scores.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
 </div>
 <div class="section" id="optim">
 <h2>Optim<a class="headerlink" href="#optim" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="onmt.Optim.Optim">
+<em class="property">class </em><code class="descclassname">onmt.Optim.</code><code class="descname">Optim</code><span class="sig-paren">(</span><em>method</em>, <em>lr</em>, <em>max_grad_norm</em>, <em>lr_decay=1</em>, <em>start_decay_at=None</em>, <em>beta1=0.9</em>, <em>beta2=0.999</em>, <em>adagrad_accum=0.0</em>, <em>opt=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Optim.Optim" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="onmt.Optim.Optim.step">
+<code class="descname">step</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Optim.Optim.step" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute gradients norm.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.Optim.Optim.update_learning_rate">
+<code class="descname">update_learning_rate</code><span class="sig-paren">(</span><em>ppl</em>, <em>epoch</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Optim.Optim.update_learning_rate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decay learning rate if val perf does not improve
+or we hit the start_decay_at limit.</p>
+</dd></dl>
+
+</dd></dl>
+
 </div>
 </div>
 

@@ -1,6 +1,7 @@
 ./CONTRIBUTORS.html
 ./FAQ.html
 ./Summarization.html
+./_modules/index.html
 ./_sources/CONTRIBUTORS.md.txt
 ./_sources/FAQ.md.txt
 ./_sources/Summarization.md.txt
@@ -68,6 +69,7 @@
 ./options/preprocess.html
 ./options/train.html
 ./options/translate.html
+./py-modindex.html
 ./quickstart.html
 ./ref.html
 ./references.html

@@ -172,6 +172,42 @@
 <h1>OpenNMT Data<a class="headerlink" href="#opennmt-data" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="datasets">
 <h2>Datasets<a class="headerlink" href="#datasets" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="onmt.io.TextDataset">
+<em class="property">class </em><code class="descclassname">onmt.io.</code><code class="descname">TextDataset</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.TextDataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dataset for data_type==’text’</p>
+<dl class="method">
+<dt id="onmt.io.TextDataset.sort_key">
+<code class="descname">sort_key</code><span class="sig-paren">(</span><em>ex</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.TextDataset.sort_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sort using the size of source example.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="onmt.io.ImageDataset">
+<em class="property">class </em><code class="descclassname">onmt.io.</code><code class="descname">ImageDataset</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.ImageDataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dataset for data_type==’img’</p>
+<dl class="method">
+<dt id="onmt.io.ImageDataset.sort_key">
+<code class="descname">sort_key</code><span class="sig-paren">(</span><em>ex</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.ImageDataset.sort_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sort using the size of the image.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="onmt.io.AudioDataset">
+<em class="property">class </em><code class="descclassname">onmt.io.</code><code class="descname">AudioDataset</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.AudioDataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dataset for data_type==’audio’</p>
+<dl class="method">
+<dt id="onmt.io.AudioDataset.sort_key">
+<code class="descname">sort_key</code><span class="sig-paren">(</span><em>ex</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.AudioDataset.sort_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sort using the size of the audio corpus.</p>
+</dd></dl>
+
+</dd></dl>
+
 </div>
 </div>
 
