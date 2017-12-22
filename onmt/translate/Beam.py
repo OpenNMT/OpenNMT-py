@@ -9,8 +9,9 @@ import torch
 
 
 class Beam(object):
-    def __init__(self, size, n_best=1, cuda=False, vocab=None,
-                 global_scorer=None, pad, bos, eos):
+    def __init__(self, size, pad, bos, eos,
+                 n_best=1, cuda=False,
+                 global_scorer=None):
 
         self.size = size
         self.tt = torch.cuda if cuda else torch
@@ -26,7 +27,6 @@ class Beam(object):
         self.nextYs = [self.tt.LongTensor(size)
                        .fill_(pad)]
         self.nextYs[0][0] = bos
-        self.vocab = vocab
 
         # Has EOS topped the beam yet.
         self._eos = eos

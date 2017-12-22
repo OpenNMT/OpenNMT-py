@@ -7,9 +7,16 @@ import math
 import codecs
 import torch
 
+from itertools import count
+
 import onmt.io
 import onmt.translate
+import onmt
+import onmt.Models
+import onmt.ModelConstructor
+import onmt.modules
 import opts
+from onmt.Utils import use_gpu
 
 parser = argparse.ArgumentParser(
     description='translate.py',
@@ -28,15 +35,17 @@ def main():
     opt.cuda = opt.gpu > -1
     if opt.cuda:
         torch.cuda.set_device(opt.gpu)
-    translator = onmt.translate.Translator(opt, dummy_opt.__dict__)
-    out_file = codecs.open(opt.output, 'w', 'utf-8')
-    pred_score_total, pred_words_total = 0, 0
-    gold_score_total, gold_words_total = 0, 0
-    if opt.dump_beam != "":
-        import json
-        translator.initBeamAccum()
 
-    data = onmt.io.build_dataset(translator.fields, opt.data_type,
+
+    # Load the model.
+    fields, model, model_opt = \
+        onmt.ModelConstructor.load_test_model(opt, dummy_opt.__dict__)
+
+    # File to write sentences to.
+    out_file = codecs.open(opt.output, 'w', 'utf-8')
+
+    # Test data
+    data = onmt.io.build_dataset(fields, opt.data_type,
                                  opt.src, opt.tgt,
                                  src_dir=opt.src_dir,
                                  sample_rate=opt.sample_rate,
@@ -44,17 +53,37 @@ def main():
                                  window_stride=opt.window_stride,
                                  window=opt.window,
                                  use_filter_pred=False)
-    data_type = data.data_type
 
     test_data = onmt.io.OrderedIterator(
         dataset=data, device=opt.gpu,
         batch_size=opt.batch_size, train=False, sort=False,
         shuffle=False)
 
-    counter = count(1)
-    for batch in test_data:
 
-        translations = translator.translate(batch, data)
+    # Translator
+    scorer = onmt.translate.GNMTGlobalScorer(opt.alpha, opt.beta)
+    translator = onmt.translate.Translator(model, fields,
+                                           beam_size=opt.beam_size,
+                                           n_best=opt.n_best,
+                                           global_scorer=scorer,
+                                           max_length=opt.max_sent_length,
+                                           copy_attn=model_opt.copy_attn,
+                                           cuda=opt.cuda,
+                                           beam_trace=opt.dump_beam != "")
+    builder = onmt.translate.TranslationBuilder(
+        data, translator.fields,
+        opt.n_best, opt.replace_unk, opt.tgt)
+
+    
+    # Statistics
+    counter = count(1)
+    pred_score_total, pred_words_total = 0, 0
+    gold_score_total, gold_words_total = 0, 0
+
+    for batch in test_data:
+        batch_data = translator.translateBatch(batch, data)
+        translations = builder.fromBatch(batch_data)
+        
         for trans in translations:
             pred_score_total += trans.pred_scores[0]
             pred_words_total += len(trans.pred_sents[0])
@@ -63,16 +92,15 @@ def main():
                 gold_words_total += len(trans.gold_sent)
 
             n_best_preds = [" ".join(pred)
-                            for pred in translation.pred_sents[:opt.n_best]]
+                            for pred in trans.pred_sents[:opt.n_best]]
             out_file.write('\n'.join(n_best_preds))
             out_file.write('\n')
             out_file.flush()
 
             if opt.verbose:
                 sent_number = next(counter)
-                output = translation.log()
+                output = trans.log(sent_number)
                 os.write(1, output.encode('utf-8'))
-
 
     def report_score(name, score_total, words_total):
         print("%s AVG SCORE: %.4f, %s PPL: %.4f" % (
@@ -84,6 +112,7 @@ def main():
         report_score('GOLD', gold_score_total, gold_words_total)
 
     if opt.dump_beam:
+        import json
         json.dump(translator.beam_accum,
                   codecs.open(opt.dump_beam, 'w', 'utf-8'))
 
