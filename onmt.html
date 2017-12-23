@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>OpenNMT Framework &mdash; OpenNMT-py  documentation</title>
+  <title>Doc: Framework &mdash; OpenNMT-py  documentation</title>
   
 
   
@@ -36,8 +36,8 @@
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
     <link rel="top" title="OpenNMT-py  documentation" href="index.html"/>
-        <link rel="next" title="OpenNMT Data" href="onmt.io.html"/>
-        <link rel="prev" title="Options: translate.py:" href="options/translate.html"/> 
+        <link rel="next" title="Doc: Modules" href="onmt.modules.html"/>
+        <link rel="prev" title="Quickstart" href="quickstart.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -89,23 +89,23 @@
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="main.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="extended.html">Example: Translation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Summarization.html">Example: Summarization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="im2text.html">Example: Image to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="speech2text.html">Example: Speech to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="FAQ.html">FAQ</a></li>
-<li class="toctree-l1"><a class="reference internal" href="options/preprocess.html">Options: preprocess.py:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="options/train.html">Options: train.py:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="options/translate.html">Options: translate.py:</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">OpenNMT Framework</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Doc: Framework</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#model">Model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#trainer">Trainer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#loss">Loss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#optim">Optim</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="onmt.io.html">OpenNMT Data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="onmt.modules.html">OpenNMT Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.modules.html">Doc: Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.io.html">Doc: Data Loaders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="options/preprocess.html">Options: preprocess.py:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="options/train.html">Options: train.py:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="options/translate.html">Options: translate.py:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extended.html">Example: Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Summarization.html">Example: Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="im2text.html">Example: Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="speech2text.html">Example: Speech to Text</a></li>
 <li class="toctree-l1"><a class="reference internal" href="CONTRIBUTORS.html">Contributors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ref.html">References</a></li>
 </ul>
@@ -152,7 +152,7 @@
     
       <li><a href="index.html">Docs</a> &raquo;</li>
         
-      <li>OpenNMT Framework</li>
+      <li>Doc: Framework</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -171,22 +171,88 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="opennmt-framework">
-<h1>OpenNMT Framework<a class="headerlink" href="#opennmt-framework" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="doc-framework">
+<h1>Doc: Framework<a class="headerlink" href="#doc-framework" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="model">
 <h2>Model<a class="headerlink" href="#model" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="onmt.Models.NMTModel">
+<em class="property">class </em><code class="descclassname">onmt.Models.</code><code class="descname">NMTModel</code><span class="sig-paren">(</span><em>encoder</em>, <em>decoder</em>, <em>multigpu=False</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Models.NMTModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Core trainable object in OpenNMT. Implements a trainable interface
+for a simple, generic encoder + decoder model.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>encoder</strong> (<code class="xref py py-obj docutils literal"><span class="pre">EncoderBase</span></code>) – an encoder object</li>
+<li><strong>decoder</strong> (<code class="xref py py-obj docutils literal"><span class="pre">RNNDecoderBase</span></code>) – a decoder object</li>
+<li><strong>multigpu</strong> (<em>bool</em>) – setup for multigpu support</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="onmt.Models.NMTModel.forward">
+<code class="descname">forward</code><span class="sig-paren">(</span><em>src</em>, <em>tgt</em>, <em>lengths</em>, <em>dec_state=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Models.NMTModel.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Forward propagate a <cite>src</cite> and <cite>tgt</cite> pair for training.
+Possible initialized with a beginning decoder state.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>src</strong> (<code class="xref py py-obj docutils literal"><span class="pre">Tensor</span></code>) – a source sequence passed to encoder.
+typically for inputs this will be a padded <code class="xref py py-obj docutils literal"><span class="pre">LongTensor</span></code>
+of size <cite>[len x batch x features]</cite>. however, may be an
+image or other generic input depending on encoder.</li>
+<li><strong>tgt</strong> (<code class="xref py py-obj docutils literal"><span class="pre">LongTensor</span></code>) – a target sequence of size <cite>[tgt_len x batch]</cite>.</li>
+<li><strong>lengths</strong> (<code class="xref py py-obj docutils literal"><span class="pre">LongTensor</span></code>) – the src lengths, pre-padding <cite>[batch]</cite>.</li>
+<li><strong>dec_state</strong> (<a class="reference internal" href="#onmt.Models.DecoderState" title="onmt.Models.DecoderState"><code class="xref py py-obj docutils literal"><span class="pre">DecoderState</span></code></a>, optional) – initial decoder state</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><ul class="simple">
+<li>decoder output <cite>[tgt_len x batch x hidden]</cite></li>
+<li>dictionary attention dists of <cite>[tgt_len x batch x src_len]</cite></li>
+<li>final decoder state</li>
+</ul>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">(<code class="xref py py-obj docutils literal"><span class="pre">FloatTensor</span></code>, <cite>dict</cite>, <a class="reference internal" href="#onmt.Models.DecoderState" title="onmt.Models.DecoderState"><code class="xref py py-obj docutils literal"><span class="pre">onmt.Models.DecoderState</span></code></a>)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="onmt.Models.DecoderState">
+<em class="property">class </em><code class="descclassname">onmt.Models.</code><code class="descname">DecoderState</code><a class="headerlink" href="#onmt.Models.DecoderState" title="Permalink to this definition">¶</a></dt>
+<dd><p>Interface for grouping together the current state of a recurrent
+decoder. In the simplest case just represents the hidden state of
+the model.  But can also be used for implementing various forms of
+input_feeding and non-recurrent models.</p>
+<p>Modules need to implement this to utilize beam search decoding.</p>
+</dd></dl>
+
 </div>
 <div class="section" id="trainer">
 <h2>Trainer<a class="headerlink" href="#trainer" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.Trainer">
 <em class="property">class </em><code class="descclassname">onmt.</code><code class="descname">Trainer</code><span class="sig-paren">(</span><em>model</em>, <em>train_iter</em>, <em>valid_iter</em>, <em>train_loss</em>, <em>valid_loss</em>, <em>optim</em>, <em>trunc_size</em>, <em>shard_size</em>, <em>data_type='text'</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Trainer" title="Permalink to this definition">¶</a></dt>
-<dd><table class="docutils field-list" frame="void" rules="none">
+<dd><p>Class that controls the training process.</p>
+<table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>model</strong> (<code class="xref py py-class docutils literal"><span class="pre">onmt.Model.NMTModel</span></code>) – the model.</li>
+<li><strong>model</strong> (<code class="xref py py-class docutils literal"><span class="pre">onmt.Model.NMTModel</span></code>) – translation model to train</li>
 <li><strong>train_iter</strong> – training data iterator</li>
 <li><strong>valid_iter</strong> – validate data iterator</li>
 <li><strong>train_loss</strong> (<a class="reference internal" href="#onmt.Loss.LossComputeBase" title="onmt.Loss.LossComputeBase"><code class="xref py py-obj docutils literal"><span class="pre">onmt.Loss.LossComputeBase</span></code></a>) – training loss computation</li>
@@ -234,7 +300,7 @@
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">epoch loss statistics</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">stats(<a class="reference internal" href="#onmt.Statistics" title="onmt.Statistics"><code class="xref py py-class docutils literal"><span class="pre">onmt.Statistics</span></code></a>)</td>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">stats (<a class="reference internal" href="#onmt.Statistics" title="onmt.Statistics"><code class="xref py py-obj docutils literal"><span class="pre">onmt.Statistics</span></code></a>)</td>
 </tr>
 </tbody>
 </table>
@@ -250,7 +316,7 @@
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">validation loss statistics</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">stats(<a class="reference internal" href="#onmt.Statistics" title="onmt.Statistics"><code class="xref py py-class docutils literal"><span class="pre">onmt.Statistics</span></code></a>)</td>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#onmt.Statistics" title="onmt.Statistics"><code class="xref py py-obj docutils literal"><span class="pre">onmt.Statistics</span></code></a></td>
 </tr>
 </tbody>
 </table>
@@ -261,19 +327,13 @@
 <dl class="class">
 <dt id="onmt.Statistics">
 <em class="property">class </em><code class="descclassname">onmt.</code><code class="descname">Statistics</code><span class="sig-paren">(</span><em>loss=0</em>, <em>n_words=0</em>, <em>n_correct=0</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Statistics" title="Permalink to this definition">¶</a></dt>
-<dd><p>Accumulator for loss statistics.</p>
-<dl class="method">
-<dt id="onmt.Statistics.accuracy">
-<code class="descname">accuracy</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Statistics.accuracy" title="Permalink to this definition">¶</a></dt>
-<dd><p>Resturns percentage of correct next-step predictions.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="onmt.Statistics.elapsed_time">
-<code class="descname">elapsed_time</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Statistics.elapsed_time" title="Permalink to this definition">¶</a></dt>
-<dd><p>Elapsed time since creation of object.</p>
-</dd></dl>
-
+<dd><p>Accumulator for loss statistics.
+Currently calculates:</p>
+<ul class="simple">
+<li>accuracy</li>
+<li>perplexity</li>
+<li>elapsed time</li>
+</ul>
 <dl class="method">
 <dt id="onmt.Statistics.output">
 <code class="descname">output</code><span class="sig-paren">(</span><em>epoch</em>, <em>batch</em>, <em>n_batches</em>, <em>start</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Statistics.output" title="Permalink to this definition">¶</a></dt>
@@ -294,12 +354,6 @@
 </table>
 </dd></dl>
 
-<dl class="method">
-<dt id="onmt.Statistics.ppl">
-<code class="descname">ppl</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Statistics.ppl" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns perplexity</p>
-</dd></dl>
-
 </dd></dl>
 
 </div>
@@ -308,66 +362,82 @@
 <dl class="class">
 <dt id="onmt.Loss.LossComputeBase">
 <em class="property">class </em><code class="descclassname">onmt.Loss.</code><code class="descname">LossComputeBase</code><span class="sig-paren">(</span><em>generator</em>, <em>tgt_vocab</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Loss.LossComputeBase" title="Permalink to this definition">¶</a></dt>
-<dd><p>This is the loss criterion base class. Users can implement their own
-loss computation strategy by making subclass of this one.
-Users need to implement the compute_loss() and make_shard_state() methods.
-We inherits from nn.Module to leverage the cuda behavior.</p>
-<dl class="method">
-<dt id="onmt.Loss.LossComputeBase.compute_loss">
-<code class="descname">compute_loss</code><span class="sig-paren">(</span><em>batch</em>, <em>output</em>, <em>target</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Loss.LossComputeBase.compute_loss" title="Permalink to this definition">¶</a></dt>
-<dd><p>Compute the loss. Subclass must define this method.
-:param batch: the current batch.
-:param output: the predict output from the model.
-:param target: the validate target to compare output with.
-:param **kwargs: additional info for computing loss.
-:type **kwargs: optional</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="onmt.Loss.LossComputeBase.make_shard_state">
-<code class="descname">make_shard_state</code><span class="sig-paren">(</span><em>batch</em>, <em>output</em>, <em>range_</em>, <em>attns=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Loss.LossComputeBase.make_shard_state" title="Permalink to this definition">¶</a></dt>
-<dd><p>Make shard state dictionary for shards() to return iterable
-shards for efficient loss computation. Subclass must define
-this method to match its own compute_loss() interface.
-:param batch: the current batch.
-:param output: the predict output from the model.
-:param <a href="#id1"><span class="problematic" id="id2">range_</span></a>: the range of examples for computing, the whole</p>
-<blockquote>
-<div>batch or a trunc of it?</div></blockquote>
+<dd><p>Class for managing efficient loss computation. Handles
+sharding next step predictions and accumulating mutiple
+loss computations</p>
+<p>Users can implement their own loss computation strategy by making
+subclass of this one.  Users need to implement the _compute_loss()
+and make_shard_state() methods.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>attns</strong> – the attns dictionary returned from the model.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>generator</strong> (<code class="xref py py-obj docutils literal"><span class="pre">nn.Module</span></code>) – module that maps the output of the decoder to a
+distribution over the target vocabulary.</li>
+<li><strong>tgt_vocab</strong> (<code class="xref py py-obj docutils literal"><span class="pre">Vocab</span></code>) – torchtext vocab object representing the target output</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="onmt.Loss.LossComputeBase.monolithic_compute_loss">
+<code class="descname">monolithic_compute_loss</code><span class="sig-paren">(</span><em>batch</em>, <em>output</em>, <em>attns</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Loss.LossComputeBase.monolithic_compute_loss" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the forward loss for the batch.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>batch</strong> (<em>batch</em>) – batch of labeled examples</li>
+<li><strong>output</strong> (<code class="xref py py-obj docutils literal"><span class="pre">FloatTensor</span></code>) – output of decoder model <cite>[tgt_len x batch x hidden]</cite></li>
+<li><strong>attns</strong> (dict of <code class="xref py py-obj docutils literal"><span class="pre">FloatTensor</span></code>) – dictionary of attention distributions
+<cite>[tgt_len x batch x src_len]</cite></li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">loss statistics</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#onmt.Statistics" title="onmt.Statistics"><code class="xref py py-obj docutils literal"><span class="pre">onmt.Statistics</span></code></a></p>
+</td>
 </tr>
 </tbody>
 </table>
 </dd></dl>
 
 <dl class="method">
-<dt id="onmt.Loss.LossComputeBase.monolithic_compute_loss">
-<code class="descname">monolithic_compute_loss</code><span class="sig-paren">(</span><em>batch</em>, <em>output</em>, <em>attns</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Loss.LossComputeBase.monolithic_compute_loss" title="Permalink to this definition">¶</a></dt>
-<dd><p>Compute the loss monolithically, not dividing into shards.</p>
-</dd></dl>
-
-<dl class="method">
 <dt id="onmt.Loss.LossComputeBase.sharded_compute_loss">
 <code class="descname">sharded_compute_loss</code><span class="sig-paren">(</span><em>batch</em>, <em>output</em>, <em>attns</em>, <em>cur_trunc</em>, <em>trunc_size</em>, <em>shard_size</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Loss.LossComputeBase.sharded_compute_loss" title="Permalink to this definition">¶</a></dt>
-<dd><p>Compute the loss in shards for efficiency.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="onmt.Loss.LossComputeBase.stats">
-<code class="descname">stats</code><span class="sig-paren">(</span><em>loss</em>, <em>scores</em>, <em>target</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Loss.LossComputeBase.stats" title="Permalink to this definition">¶</a></dt>
-<dd><p>Compute and return a Statistics object.</p>
+<dd><p>Compute the forward loss and backpropagate.  Computation is done
+with shards and optionally truncation for memory efficiency.</p>
+<p>Also supports truncated BPTT for long sequences by taking a
+range in the decoder output sequence to back propagate in.
+Range is from <cite>(cur_trunc, cur_trunc + trunc_size)</cite>.</p>
+<p>Note harding is an exact efficiency trick to relieve memory
+required for the generation buffers. Truncation is an
+approximate efficiency trick to relieve the memory required
+in the RNN buffers.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>loss</strong> (<em>Tensor</em>) – the loss computed by the loss criterion.</li>
-<li><strong>scores</strong> (<em>Tensor</em>) – a sequence of predict output with scores.</li>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>batch</strong> (<em>batch</em>) – batch of labeled examples</li>
+<li><strong>output</strong> (<code class="xref py py-obj docutils literal"><span class="pre">FloatTensor</span></code>) – output of decoder model <cite>[tgt_len x batch x hidden]</cite></li>
+<li><strong>attns</strong> (<em>dict</em>) – dictionary of attention distributions
+<cite>[tgt_len x batch x src_len]</cite></li>
+<li><strong>cur_trunc</strong> (<em>int</em>) – starting position of truncation window</li>
+<li><strong>trunc_size</strong> (<em>int</em>) – length of truncation window</li>
+<li><strong>shard_size</strong> (<em>int</em>) – maximum number of examples in a shard</li>
 </ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">validation loss statistics</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#onmt.Statistics" title="onmt.Statistics"><code class="xref py py-obj docutils literal"><span class="pre">onmt.Statistics</span></code></a></p>
 </td>
 </tr>
 </tbody>
@@ -382,10 +452,33 @@ this method to match its own compute_loss() interface.
 <dl class="class">
 <dt id="onmt.Optim.Optim">
 <em class="property">class </em><code class="descclassname">onmt.Optim.</code><code class="descname">Optim</code><span class="sig-paren">(</span><em>method</em>, <em>lr</em>, <em>max_grad_norm</em>, <em>lr_decay=1</em>, <em>start_decay_at=None</em>, <em>beta1=0.9</em>, <em>beta2=0.999</em>, <em>adagrad_accum=0.0</em>, <em>opt=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Optim.Optim" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
+<dd><p>Controller class for optimization. Mostly a thin
+wrapper for <cite>optim</cite>, but also useful for implementing
+rate scheduling beyond what is currently available.
+Also implements necessary methods for training RNNs such
+as grad manipulations.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>method</strong> (<code class="xref py py-obj docutils literal"><span class="pre">str</span></code>) – one of [sgd, adagrad, adadelta, adam]</li>
+<li><strong>lr</strong> (<em>float</em>) – learning rate</li>
+<li><strong>lr_decay</strong> (<em>float</em><em>, </em><em>optional</em>) – learning rate decay multiplier</li>
+<li><strong>start_decay_at</strong> (<em>int</em><em>, </em><em>optional</em>) – epoch to start learning rate decay</li>
+<li><strong>beta2</strong> (<em>beta1</em><em>,</em>) – parameters for adam</li>
+<li><strong>adagrad_accum</strong> (<em>float</em><em>, </em><em>optional</em>) – initialization parameter for adagrad</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
 <dt id="onmt.Optim.Optim.step">
 <code class="descname">step</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Optim.Optim.step" title="Permalink to this definition">¶</a></dt>
-<dd><p>Compute gradients norm.</p>
+<dd><p>Update the model parameters based on current gradients.</p>
+<p>Optionally, will employ gradient modification or update learning
+rate.</p>
 </dd></dl>
 
 <dl class="method">
@@ -410,10 +503,10 @@ or we hit the start_decay_at limit.</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="onmt.io.html" class="btn btn-neutral float-right" title="OpenNMT Data" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="onmt.modules.html" class="btn btn-neutral float-right" title="Doc: Modules" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="options/translate.html" class="btn btn-neutral" title="Options: translate.py:" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="quickstart.html" class="btn btn-neutral" title="Quickstart" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

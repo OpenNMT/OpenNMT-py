@@ -1,21 +1,14 @@
-OpenNMT Framework
+Doc: Framework
 =================
 
 Model
-------
+-----
 
-.. autoclass:: onmt.NMTModel
+.. autoclass:: onmt.Models.NMTModel
     :members:
-    :undoc-members:
 
-.. autoclass:: onmt.EncoderBase
+.. autoclass:: onmt.Models.DecoderState
     :members:
-    :undoc-members:
-
-.. autoclass:: onmt.DecoderBase
-    :members:
-    :undoc-members:
-
 
 Trainer
 -------

@@ -87,17 +87,17 @@
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../main.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../extended.html">Example: Translation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../Summarization.html">Example: Summarization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../im2text.html">Example: Image to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../speech2text.html">Example: Speech to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../onmt.html">Doc: Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../onmt.modules.html">Doc: Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../onmt.io.html">Doc: Data Loaders</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html">FAQ</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../options/preprocess.html">Options: preprocess.py:</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../options/train.html">Options: train.py:</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../options/translate.html">Options: translate.py:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../onmt.html">OpenNMT Framework</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../onmt.io.html">OpenNMT Data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../onmt.modules.html">OpenNMT Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../extended.html">Example: Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Summarization.html">Example: Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../im2text.html">Example: Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../speech2text.html">Example: Speech to Text</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../CONTRIBUTORS.html">Contributors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ref.html">References</a></li>
 </ul>
@@ -163,6 +163,7 @@
             
   <h1>All modules for which code is available</h1>
 <ul><li><a href="onmt/Loss.html">onmt.Loss</a></li>
+<li><a href="onmt/Models.html">onmt.Models</a></li>
 <li><a href="onmt/Optim.html">onmt.Optim</a></li>
 <li><a href="onmt/Trainer.html">onmt.Trainer</a></li>
 <li><a href="onmt/io/AudioDataset.html">onmt.io.AudioDataset</a></li>
@@ -172,11 +173,10 @@
 <li><a href="onmt/modules/Conv2Conv.html">onmt.modules.Conv2Conv</a></li>
 <li><a href="onmt/modules/CopyGenerator.html">onmt.modules.CopyGenerator</a></li>
 <li><a href="onmt/modules/Embeddings.html">onmt.modules.Embeddings</a></li>
+<li><a href="onmt/modules/Gate.html">onmt.modules.Gate</a></li>
 <li><a href="onmt/modules/GlobalAttention.html">onmt.modules.GlobalAttention</a></li>
 <li><a href="onmt/modules/ImageEncoder.html">onmt.modules.ImageEncoder</a></li>
 <li><a href="onmt/modules/MultiHeadedAttn.html">onmt.modules.MultiHeadedAttn</a></li>
-<li><a href="onmt/modules/SRU.html">onmt.modules.SRU</a></li>
-<li><a href="onmt/modules/StackedRNN.html">onmt.modules.StackedRNN</a></li>
 <li><a href="onmt/modules/StructuredAttention.html">onmt.modules.StructuredAttention</a></li>
 <li><a href="onmt/modules/Transformer.html">onmt.modules.Transformer</a></li>
 <li><a href="onmt/modules/WeightNorm.html">onmt.modules.WeightNorm</a></li>
@@ -227,6 +227,7 @@
       <script type="text/javascript" src="../_static/underscore.js"></script>
       <script type="text/javascript" src="../_static/doctools.js"></script>
       <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script>
 
   
 

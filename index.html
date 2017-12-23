@@ -88,17 +88,17 @@
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="main.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="extended.html">Example: Translation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Summarization.html">Example: Summarization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="im2text.html">Example: Image to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="speech2text.html">Example: Speech to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.html">Doc: Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.modules.html">Doc: Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.io.html">Doc: Data Loaders</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html">FAQ</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/preprocess.html">Options: preprocess.py:</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/train.html">Options: train.py:</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/translate.html">Options: translate.py:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="onmt.html">OpenNMT Framework</a></li>
-<li class="toctree-l1"><a class="reference internal" href="onmt.io.html">OpenNMT Data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="onmt.modules.html">OpenNMT Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extended.html">Example: Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Summarization.html">Example: Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="im2text.html">Example: Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="speech2text.html">Example: Speech to Text</a></li>
 <li class="toctree-l1"><a class="reference internal" href="CONTRIBUTORS.html">Contributors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ref.html">References</a></li>
 </ul>
@@ -178,26 +178,29 @@
 <li class="toctree-l2"><a class="reference internal" href="quickstart.html#step-3-translate">Step 3: Translate</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="extended.html">Example: Translation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Summarization.html">Example: Summarization</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="Summarization.html#preprocessing-the-data">Preprocessing the data</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Summarization.html#training">Training</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Summarization.html#inference">Inference</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Summarization.html#evaluation">Evaluation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Summarization.html#references">References</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.html">Doc: Framework</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="onmt.html#model">Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="onmt.html#trainer">Trainer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="onmt.html#loss">Loss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="onmt.html#optim">Optim</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="im2text.html">Example: Image to Text</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="im2text.html#dependencies">Dependencies</a></li>
-<li class="toctree-l2"><a class="reference internal" href="im2text.html#quick-start">Quick Start</a></li>
-<li class="toctree-l2"><a class="reference internal" href="im2text.html#options">Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.modules.html">Doc: Modules</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="onmt.modules.html#core-modules">Core Modules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="onmt.modules.html#encoders">Encoders</a></li>
+<li class="toctree-l2"><a class="reference internal" href="onmt.modules.html#decoders">Decoders</a></li>
+<li class="toctree-l2"><a class="reference internal" href="onmt.modules.html#attention">Attention</a></li>
+<li class="toctree-l2"><a class="reference internal" href="onmt.modules.html#architecture-transfomer">Architecture: Transfomer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="onmt.modules.html#architecture-conv2conv">Architecture: Conv2Conv</a></li>
+<li class="toctree-l2"><a class="reference internal" href="onmt.modules.html#architecture-sru">Architecture: SRU</a></li>
+<li class="toctree-l2"><a class="reference internal" href="onmt.modules.html#alternative-encoders">Alternative Encoders</a></li>
+<li class="toctree-l2"><a class="reference internal" href="onmt.modules.html#extensions">Extensions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="onmt.modules.html#alternative-attention-multi-headed">Alternative Attention: Multi Headed</a></li>
+<li class="toctree-l2"><a class="reference internal" href="onmt.modules.html#alternative-attention-structured-attention">Alternative Attention: Structured Attention</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="speech2text.html">Example: Speech to Text</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="speech2text.html#dependencies">Dependencies</a></li>
-<li class="toctree-l2"><a class="reference internal" href="speech2text.html#quick-start">Quick Start</a></li>
-<li class="toctree-l2"><a class="reference internal" href="speech2text.html#options">Options</a></li>
-<li class="toctree-l2"><a class="reference internal" href="speech2text.html#acknowledgement">Acknowledgement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.io.html">Doc: Data Loaders</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="onmt.io.html#datasets">Datasets</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html">FAQ</a><ul>
@@ -237,26 +240,26 @@
 <li class="toctree-l2"><a class="reference internal" href="options/translate.html#speech"><strong>Speech</strong>:</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="onmt.html">OpenNMT Framework</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="onmt.html#model">Model</a></li>
-<li class="toctree-l2"><a class="reference internal" href="onmt.html#trainer">Trainer</a></li>
-<li class="toctree-l2"><a class="reference internal" href="onmt.html#loss">Loss</a></li>
-<li class="toctree-l2"><a class="reference internal" href="onmt.html#optim">Optim</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extended.html">Example: Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Summarization.html">Example: Summarization</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="Summarization.html#preprocessing-the-data">Preprocessing the data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Summarization.html#training">Training</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Summarization.html#inference">Inference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Summarization.html#evaluation">Evaluation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Summarization.html#references">References</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="onmt.io.html">OpenNMT Data</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="onmt.io.html#datasets">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="im2text.html">Example: Image to Text</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="im2text.html#dependencies">Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="im2text.html#quick-start">Quick Start</a></li>
+<li class="toctree-l2"><a class="reference internal" href="im2text.html#options">Options</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="onmt.modules.html">OpenNMT Modules</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="onmt.modules.html#core-modules">Core Modules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="onmt.modules.html#architecture-transfomer">Architecture: Transfomer</a></li>
-<li class="toctree-l2"><a class="reference internal" href="onmt.modules.html#id1">Architecture: Transfomer</a></li>
-<li class="toctree-l2"><a class="reference internal" href="onmt.modules.html#module-onmt.modules.SRU">Architecture: SRU</a></li>
-<li class="toctree-l2"><a class="reference internal" href="onmt.modules.html#alternative-encoders">Alternative Encoders</a></li>
-<li class="toctree-l2"><a class="reference internal" href="onmt.modules.html#extensionsk">ExtensionsK</a></li>
-<li class="toctree-l2"><a class="reference internal" href="onmt.modules.html#alternative-attention-multi-headed">Alternative Attention: Multi Headed</a></li>
-<li class="toctree-l2"><a class="reference internal" href="onmt.modules.html#alternative-attention-structured-attention">Alternative Attention: Structured Attention</a></li>
+<li class="toctree-l1"><a class="reference internal" href="speech2text.html">Example: Speech to Text</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="speech2text.html#dependencies">Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="speech2text.html#quick-start">Quick Start</a></li>
+<li class="toctree-l2"><a class="reference internal" href="speech2text.html#options">Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="speech2text.html#acknowledgement">Acknowledgement</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="CONTRIBUTORS.html">Contributors</a></li>

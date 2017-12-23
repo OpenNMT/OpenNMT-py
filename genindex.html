@@ -88,17 +88,17 @@
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="main.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="extended.html">Example: Translation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Summarization.html">Example: Summarization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="im2text.html">Example: Image to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="speech2text.html">Example: Speech to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.html">Doc: Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.modules.html">Doc: Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.io.html">Doc: Data Loaders</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html">FAQ</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/preprocess.html">Options: preprocess.py:</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/train.html">Options: train.py:</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/translate.html">Options: translate.py:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="onmt.html">OpenNMT Framework</a></li>
-<li class="toctree-l1"><a class="reference internal" href="onmt.io.html">OpenNMT Data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="onmt.modules.html">OpenNMT Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extended.html">Example: Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Summarization.html">Example: Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="im2text.html">Example: Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="speech2text.html">Example: Speech to Text</a></li>
 <li class="toctree-l1"><a class="reference internal" href="CONTRIBUTORS.html">Contributors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ref.html">References</a></li>
 </ul>
@@ -167,7 +167,6 @@
 
 <div class="genindex-jumpbox">
  <a href="#A"><strong>A</strong></a>
- | <a href="#B"><strong>B</strong></a>
  | <a href="#C"><strong>C</strong></a>
  | <a href="#D"><strong>D</strong></a>
  | <a href="#E"><strong>E</strong></a>
@@ -176,8 +175,8 @@
  | <a href="#I"><strong>I</strong></a>
  | <a href="#L"><strong>L</strong></a>
  | <a href="#M"><strong>M</strong></a>
+ | <a href="#N"><strong>N</strong></a>
  | <a href="#O"><strong>O</strong></a>
- | <a href="#P"><strong>P</strong></a>
  | <a href="#R"><strong>R</strong></a>
  | <a href="#S"><strong>S</strong></a>
  | <a href="#T"><strong>T</strong></a>
@@ -189,21 +188,11 @@
 <h2 id="A">A</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="onmt.html#onmt.Statistics.accuracy">accuracy() (onmt.Statistics method)</a>
-</li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="onmt.io.html#onmt.io.AudioDataset">AudioDataset (class in onmt.io)</a>
 </li>
-      <li><a href="onmt.modules.html#onmt.modules.AudioEncoder">AudioEncoder (class in onmt.modules)</a>
-</li>
   </ul></td>
-</tr></table>
-
-<h2 id="B">B</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="onmt.modules.html#onmt.modules.SRU.SRU_Compute.backward">backward() (onmt.modules.SRU.SRU_Compute method)</a>
+      <li><a href="onmt.modules.html#onmt.modules.AudioEncoder">AudioEncoder (class in onmt.modules)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -211,24 +200,14 @@
 <h2 id="C">C</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="onmt.modules.html#onmt.modules.SRU.check_sru_requirement">check_sru_requirement() (in module onmt.modules.SRU)</a>
+      <li><a href="onmt.modules.html#onmt.modules.CNNDecoder">CNNDecoder (class in onmt.modules)</a>
 </li>
-      <li><a href="onmt.modules.html#onmt.modules.SRU.CheckSRU">CheckSRU (class in onmt.modules.SRU)</a>
-</li>
-      <li><a href="onmt.modules.html#onmt.modules.Conv2Conv.CNNDecoder">CNNDecoder (class in onmt.modules.Conv2Conv)</a>
-</li>
-      <li><a href="onmt.modules.html#onmt.modules.Conv2Conv.CNNDecoderState">CNNDecoderState (class in onmt.modules.Conv2Conv)</a>
+      <li><a href="onmt.modules.html#onmt.modules.CNNEncoder">CNNEncoder (class in onmt.modules)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="onmt.modules.html#onmt.modules.Conv2Conv.CNNEncoder">CNNEncoder (class in onmt.modules.Conv2Conv)</a>
+      <li><a href="onmt.modules.html#onmt.modules.ContextGate">ContextGate (class in onmt.modules)</a>
 </li>
-      <li><a href="onmt.html#onmt.Loss.LossComputeBase.compute_loss">compute_loss() (onmt.Loss.LossComputeBase method)</a>
-
-      <ul>
-        <li><a href="onmt.modules.html#onmt.modules.CopyGeneratorLossCompute.compute_loss">(onmt.modules.CopyGeneratorLossCompute method)</a>
-</li>
-      </ul></li>
       <li><a href="onmt.modules.html#onmt.modules.CopyGenerator">CopyGenerator (class in onmt.modules)</a>
 </li>
       <li><a href="onmt.modules.html#onmt.modules.CopyGeneratorLossCompute">CopyGeneratorLossCompute (class in onmt.modules)</a>
@@ -239,6 +218,10 @@
 <h2 id="D">D</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="onmt.html#onmt.Models.DecoderState">DecoderState (class in onmt.Models)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="onmt.html#onmt.Trainer.drop_checkpoint">drop_checkpoint() (onmt.Trainer method)</a>
 </li>
   </ul></td>
@@ -247,13 +230,11 @@
 <h2 id="E">E</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="onmt.html#onmt.Statistics.elapsed_time">elapsed_time() (onmt.Statistics method)</a>
+      <li><a href="onmt.modules.html#onmt.modules.Embeddings">Embeddings (class in onmt.modules)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="onmt.modules.html#onmt.modules.Embeddings.emb_luts">emb_luts (onmt.modules.Embeddings attribute)</a>
-</li>
-      <li><a href="onmt.modules.html#onmt.modules.Embeddings">Embeddings (class in onmt.modules)</a>
+      <li><a href="onmt.modules.html#onmt.modules.EncoderBase">EncoderBase (class in onmt.modules)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -261,38 +242,30 @@
 <h2 id="F">F</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="onmt.modules.html#onmt.modules.AudioEncoder.forward">forward() (onmt.modules.AudioEncoder method)</a>
+      <li><a href="onmt.html#onmt.Models.NMTModel.forward">forward() (onmt.Models.NMTModel method)</a>
 
       <ul>
-        <li><a href="onmt.modules.html#onmt.modules.Conv2Conv.CNNDecoder.forward">(onmt.modules.Conv2Conv.CNNDecoder method)</a>
+        <li><a href="onmt.modules.html#onmt.modules.CNNDecoder.forward">(onmt.modules.CNNDecoder method)</a>
 </li>
-        <li><a href="onmt.modules.html#onmt.modules.Conv2Conv.CNNEncoder.forward">(onmt.modules.Conv2Conv.CNNEncoder method)</a>
+        <li><a href="onmt.modules.html#onmt.modules.CNNEncoder.forward">(onmt.modules.CNNEncoder method)</a>
 </li>
-        <li><a href="onmt.modules.html#onmt.modules.Conv2Conv.GatedConv.forward">(onmt.modules.Conv2Conv.GatedConv method)</a>
-</li>
-        <li><a href="onmt.modules.html#onmt.modules.Conv2Conv.StackedCNN.forward">(onmt.modules.Conv2Conv.StackedCNN method)</a>
+        <li><a href="onmt.modules.html#onmt.modules.ContextGate.forward">(onmt.modules.ContextGate method)</a>
 </li>
         <li><a href="onmt.modules.html#onmt.modules.CopyGenerator.forward">(onmt.modules.CopyGenerator method)</a>
 </li>
         <li><a href="onmt.modules.html#onmt.modules.Embeddings.forward">(onmt.modules.Embeddings method)</a>
 </li>
-        <li><a href="onmt.modules.html#onmt.modules.GlobalAttention.forward">(onmt.modules.GlobalAttention method)</a>
+        <li><a href="onmt.modules.html#onmt.modules.EncoderBase.forward">(onmt.modules.EncoderBase method)</a>
 </li>
-        <li><a href="onmt.modules.html#onmt.modules.ImageEncoder.forward">(onmt.modules.ImageEncoder method)</a>
+        <li><a href="onmt.modules.html#onmt.modules.GlobalAttention.forward">(onmt.modules.GlobalAttention method)</a>
 </li>
         <li><a href="onmt.modules.html#onmt.modules.MatrixTree.forward">(onmt.modules.MatrixTree method)</a>
 </li>
+        <li><a href="onmt.modules.html#onmt.modules.MeanEncoder.forward">(onmt.modules.MeanEncoder method)</a>
+</li>
         <li><a href="onmt.modules.html#onmt.modules.MultiHeadedAttention.forward">(onmt.modules.MultiHeadedAttention method)</a>
 </li>
-        <li><a href="onmt.modules.html#onmt.modules.SRU.SRU.forward">(onmt.modules.SRU.SRU method)</a>
-</li>
-        <li><a href="onmt.modules.html#onmt.modules.SRU.SRUCell.forward">(onmt.modules.SRU.SRUCell method)</a>
-</li>
-        <li><a href="onmt.modules.html#onmt.modules.SRU.SRU_Compute.forward">(onmt.modules.SRU.SRU_Compute method)</a>
-</li>
-        <li><a href="onmt.modules.html#onmt.modules.StackedGRU.forward">(onmt.modules.StackedGRU method)</a>
-</li>
-        <li><a href="onmt.modules.html#onmt.modules.StackedLSTM.forward">(onmt.modules.StackedLSTM method)</a>
+        <li><a href="onmt.modules.html#onmt.modules.RNNDecoderBase.forward">(onmt.modules.RNNDecoderBase method)</a>
 </li>
         <li><a href="onmt.modules.html#onmt.modules.TransformerDecoder.forward">(onmt.modules.TransformerDecoder method)</a>
 </li>
@@ -311,14 +284,10 @@
 <h2 id="G">G</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="onmt.modules.html#onmt.modules.Conv2Conv.GatedConv">GatedConv (class in onmt.modules.Conv2Conv)</a>
-</li>
-      <li><a href="onmt.modules.html#onmt.modules.SRU.SRUCell.get_dropout_mask_">get_dropout_mask_() (onmt.modules.SRU.SRUCell method)</a>
+      <li><a href="onmt.modules.html#onmt.modules.WeightNorm.get_var_maybe_avg">get_var_maybe_avg() (in module onmt.modules.WeightNorm)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="onmt.modules.html#onmt.modules.WeightNorm.get_var_maybe_avg">get_var_maybe_avg() (in module onmt.modules.WeightNorm)</a>
-</li>
       <li><a href="onmt.modules.html#onmt.modules.WeightNorm.get_vars_maybe_avg">get_vars_maybe_avg() (in module onmt.modules.WeightNorm)</a>
 </li>
       <li><a href="onmt.modules.html#onmt.modules.GlobalAttention">GlobalAttention (class in onmt.modules)</a>
@@ -331,13 +300,11 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="onmt.io.html#onmt.io.ImageDataset">ImageDataset (class in onmt.io)</a>
 </li>
-      <li><a href="onmt.modules.html#onmt.modules.ImageEncoder">ImageEncoder (class in onmt.modules)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="onmt.modules.html#onmt.modules.Conv2Conv.CNNDecoder.init_decoder_state">init_decoder_state() (onmt.modules.Conv2Conv.CNNDecoder method)</a>
+      <li><a href="onmt.modules.html#onmt.modules.ImageEncoder">ImageEncoder (class in onmt.modules)</a>
 </li>
-      <li><a href="onmt.modules.html#onmt.modules.SRU.SRUCell.init_weight">init_weight() (onmt.modules.SRU.SRUCell method)</a>
+      <li><a href="onmt.modules.html#onmt.modules.InputFeedRNNDecoder">InputFeedRNNDecoder (class in onmt.modules)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -345,14 +312,8 @@
 <h2 id="L">L</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="onmt.modules.html#onmt.modules.AudioEncoder.load_pretrained_vectors">load_pretrained_vectors() (onmt.modules.AudioEncoder method)</a>
-
-      <ul>
-        <li><a href="onmt.modules.html#onmt.modules.Embeddings.load_pretrained_vectors">(onmt.modules.Embeddings method)</a>
+      <li><a href="onmt.modules.html#onmt.modules.Embeddings.load_pretrained_vectors">load_pretrained_vectors() (onmt.modules.Embeddings method)</a>
 </li>
-        <li><a href="onmt.modules.html#onmt.modules.ImageEncoder.load_pretrained_vectors">(onmt.modules.ImageEncoder method)</a>
-</li>
-      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="onmt.html#onmt.Loss.LossComputeBase">LossComputeBase (class in onmt.Loss)</a>
@@ -363,16 +324,12 @@
 <h2 id="M">M</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="onmt.html#onmt.Loss.LossComputeBase.make_shard_state">make_shard_state() (onmt.Loss.LossComputeBase method)</a>
-
-      <ul>
-        <li><a href="onmt.modules.html#onmt.modules.CopyGeneratorLossCompute.make_shard_state">(onmt.modules.CopyGeneratorLossCompute method)</a>
-</li>
-      </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="onmt.modules.html#onmt.modules.MatrixTree">MatrixTree (class in onmt.modules)</a>
 </li>
+      <li><a href="onmt.modules.html#onmt.modules.MeanEncoder">MeanEncoder (class in onmt.modules)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="onmt.html#onmt.Loss.LossComputeBase.monolithic_compute_loss">monolithic_compute_loss() (onmt.Loss.LossComputeBase method)</a>
 </li>
       <li><a href="onmt.modules.html#onmt.modules.MultiHeadedAttention">MultiHeadedAttention (class in onmt.modules)</a>
@@ -380,17 +337,21 @@
   </ul></td>
 </tr></table>
 
+<h2 id="N">N</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="onmt.html#onmt.Models.NMTModel">NMTModel (class in onmt.Models)</a>
+</li>
+  </ul></td>
+</tr></table>
+
 <h2 id="O">O</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="onmt.modules.html#module-onmt.modules.Conv2Conv">onmt.modules.Conv2Conv (module)</a>
-</li>
-      <li><a href="onmt.modules.html#module-onmt.modules.SRU">onmt.modules.SRU (module)</a>
+      <li><a href="onmt.modules.html#module-onmt.modules.WeightNorm">onmt.modules.WeightNorm (module)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="onmt.modules.html#module-onmt.modules.WeightNorm">onmt.modules.WeightNorm (module)</a>
-</li>
       <li><a href="onmt.html#onmt.Optim.Optim">Optim (class in onmt.Optim)</a>
 </li>
       <li><a href="onmt.html#onmt.Statistics.output">output() (onmt.Statistics method)</a>
@@ -398,19 +359,9 @@
   </ul></td>
 </tr></table>
 
-<h2 id="P">P</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="onmt.html#onmt.Statistics.ppl">ppl() (onmt.Statistics method)</a>
-</li>
-  </ul></td>
-</tr></table>
-
 <h2 id="R">R</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="onmt.modules.html#onmt.modules.Conv2Conv.CNNDecoderState.repeat_beam_size_times">repeat_beam_size_times() (onmt.modules.Conv2Conv.CNNDecoderState method)</a>
-</li>
       <li><a href="onmt.modules.html#onmt.modules.WeightNorm.WeightNormConv2d.reset_parameters">reset_parameters() (onmt.modules.WeightNorm.WeightNormConv2d method)</a>
 
       <ul>
@@ -420,20 +371,16 @@
 </li>
       </ul></li>
   </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="onmt.modules.html#onmt.modules.RNNDecoderBase">RNNDecoderBase (class in onmt.modules)</a>
+</li>
+  </ul></td>
 </tr></table>
 
 <h2 id="S">S</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="onmt.modules.html#onmt.modules.GlobalAttention.score">score() (onmt.modules.GlobalAttention method)</a>
-</li>
-      <li><a href="onmt.modules.html#onmt.modules.SRU.SRU.set_bias">set_bias() (onmt.modules.SRU.SRU method)</a>
-
-      <ul>
-        <li><a href="onmt.modules.html#onmt.modules.SRU.SRUCell.set_bias">(onmt.modules.SRU.SRUCell method)</a>
-</li>
-      </ul></li>
-      <li><a href="onmt.modules.html#onmt.modules.Conv2Conv.shape_transform">shape_transform() (in module onmt.modules.Conv2Conv)</a>
 </li>
       <li><a href="onmt.html#onmt.Loss.LossComputeBase.sharded_compute_loss">sharded_compute_loss() (onmt.Loss.LossComputeBase method)</a>
 </li>
@@ -447,21 +394,11 @@
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="onmt.modules.html#onmt.modules.SRU.SRU">SRU (class in onmt.modules.SRU)</a>
-</li>
-      <li><a href="onmt.modules.html#onmt.modules.SRU.SRU_Compute">SRU_Compute (class in onmt.modules.SRU)</a>
-</li>
-      <li><a href="onmt.modules.html#onmt.modules.SRU.SRUCell">SRUCell (class in onmt.modules.SRU)</a>
-</li>
-      <li><a href="onmt.modules.html#onmt.modules.Conv2Conv.StackedCNN">StackedCNN (class in onmt.modules.Conv2Conv)</a>
-</li>
-      <li><a href="onmt.modules.html#onmt.modules.StackedGRU">StackedGRU (class in onmt.modules)</a>
-</li>
-      <li><a href="onmt.modules.html#onmt.modules.StackedLSTM">StackedLSTM (class in onmt.modules)</a>
+      <li><a href="onmt.modules.html#onmt.modules.SRU">SRU (in module onmt.modules)</a>
 </li>
       <li><a href="onmt.html#onmt.Statistics">Statistics (class in onmt)</a>
 </li>
-      <li><a href="onmt.html#onmt.Loss.LossComputeBase.stats">stats() (onmt.Loss.LossComputeBase method)</a>
+      <li><a href="onmt.modules.html#onmt.modules.StdRNNDecoder">StdRNNDecoder (class in onmt.modules)</a>
 </li>
       <li><a href="onmt.html#onmt.Optim.Optim.step">step() (onmt.Optim.Optim method)</a>
 </li>
@@ -492,10 +429,6 @@
       <li><a href="onmt.html#onmt.Optim.Optim.update_learning_rate">update_learning_rate() (onmt.Optim.Optim method)</a>
 </li>
   </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="onmt.modules.html#onmt.modules.Conv2Conv.CNNDecoderState.update_state">update_state() (onmt.modules.Conv2Conv.CNNDecoderState method)</a>
-</li>
-  </ul></td>
 </tr></table>
 
 <h2 id="V">V</h2>
@@ -511,13 +444,11 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="onmt.modules.html#onmt.modules.WeightNorm.WeightNormConv2d">WeightNormConv2d (class in onmt.modules.WeightNorm)</a>
 </li>
-      <li><a href="onmt.modules.html#onmt.modules.WeightNorm.WeightNormConvTranspose2d">WeightNormConvTranspose2d (class in onmt.modules.WeightNorm)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="onmt.modules.html#onmt.modules.WeightNorm.WeightNormLinear">WeightNormLinear (class in onmt.modules.WeightNorm)</a>
+      <li><a href="onmt.modules.html#onmt.modules.WeightNorm.WeightNormConvTranspose2d">WeightNormConvTranspose2d (class in onmt.modules.WeightNorm)</a>
 </li>
-      <li><a href="onmt.modules.html#onmt.modules.Embeddings.word_lut">word_lut (onmt.modules.Embeddings attribute)</a>
+      <li><a href="onmt.modules.html#onmt.modules.WeightNorm.WeightNormLinear">WeightNormLinear (class in onmt.modules.WeightNorm)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -569,6 +500,7 @@
       <script type="text/javascript" src="_static/underscore.js"></script>
       <script type="text/javascript" src="_static/doctools.js"></script>
       <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script>
 
   
 

@@ -1,28 +1,48 @@
-OpenNMT Modules
-=====================
+Doc: Modules
+=============
 
 Core Modules
 ------------
 
-
-
 .. autoclass:: onmt.modules.Embeddings
     :members:
-    :undoc-members:
 
 
-.. autoclass:: onmt.modules.StackedGRU
+
+Encoders
+---------
+
+.. autoclass:: onmt.modules.EncoderBase
     :members:
-    :undoc-members:
 
-.. autoclass:: onmt.modules.StackedLSTM
+
+.. autoclass:: onmt.modules.MeanEncoder
     :members:
-    :undoc-members:
 
+.. autoclass:: onmt.modules.RNNEncoder
+    :members:
+
+
+Decoders
+---------
+
+
+.. autoclass:: onmt.modules.RNNDecoderBase
+    :members:
+
+
+.. autoclass:: onmt.modules.StdRNNDecoder
+    :members:
+
+
+.. autoclass:: onmt.modules.InputFeedRNNDecoder
+    :members:
+
+Attention
+----------
 
 .. autoclass:: onmt.modules.GlobalAttention
     :members:
-    :undoc-members:
 
 
 
@@ -32,26 +52,25 @@ Architecture: Transfomer
 
 .. autoclass:: onmt.modules.TransformerEncoder
     :members:
-    :show-inheritance:
 
 .. autoclass:: onmt.modules.TransformerDecoder
     :members:
-    :show-inheritance:
 
 
-Architecture: Transfomer
+Architecture: Conv2Conv
 ----------------------------
 
-.. automodule:: onmt.modules.Conv2Conv
+.. autoclass:: onmt.modules.CNNEncoder
     :members:
-    :undoc-members:
+
+.. autoclass:: onmt.modules.CNNDecoder
+    :members:
 
 Architecture: SRU
 ----------------------------
 
-.. automodule:: onmt.modules.SRU
+.. autoclass:: onmt.modules.SRU
     :members:
-    :undoc-members:
 
 
 Alternative Encoders
@@ -62,8 +81,6 @@ onmt\.modules\.AudioEncoder
 
 .. autoclass:: onmt.modules.AudioEncoder
     :members:
-    :undoc-members:
-
 
 
 onmt\.modules\.ImageEncoder
@@ -71,11 +88,9 @@ onmt\.modules\.ImageEncoder
 
 .. autoclass:: onmt.modules.ImageEncoder
     :members:
-    :undoc-members:
 
 
-
-ExtensionsK
+Extensions
 ----------
 
 .. autoclass:: onmt.modules.CopyGenerator
