@@ -1,4 +1,4 @@
-OPENNMT_HOME=/home/howard/gec/OpenNMT-py
+OPENNMT_HOME=/home/howard/gec/nmt.gec
 TRAIN_DATA_HOME=/home/howard/gec/dataset/efcamdat
 VALID_DATA_HOME=/home/howard/gec/dataset/jfleg
 
