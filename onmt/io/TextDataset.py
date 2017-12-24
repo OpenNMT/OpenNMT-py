@@ -13,17 +13,8 @@ from onmt.io.IO import ONMTDatasetBase, _join_dicts, _peek,\
 
 
 class TextDataset(ONMTDatasetBase):
-    """ Dataset for data_type=='text' """
+    """ Dataset for data_type=='text'
 
-    def sort_key(self, ex):
-        "Sort using the size of source example."
-        return -len(ex.src)
-
-    def _process_corpus(self, fields, src_examples_iter, tgt_examples_iter,
-                        num_src_feats=0, num_tgt_feats=0,
-                        src_seq_length=0, tgt_seq_length=0,
-                        dynamic_dict=True, use_filter_pred=True):
-        """
         Build Example objects, Field objects, and filter_pred function
         from text corpus.
 
@@ -38,10 +29,15 @@ class TextDataset(ONMTDatasetBase):
             tgt_seq_length: maximum target sequence length.
             dynamic_dict: create dynamic dictionaries?
             use_filter_pred: use a custom filter predicate to filter examples?
+    """
 
-        Returns:
-            constructed tuple of Examples objects, Field objects, filter_pred.
-        """
+    def sort_key(self, ex):
+        return -len(ex.src)
+
+    def _process_corpus(self, fields, src_examples_iter, tgt_examples_iter,
+                        num_src_feats=0, num_tgt_feats=0,
+                        src_seq_length=0, tgt_seq_length=0,
+                        dynamic_dict=True, use_filter_pred=True):
         self.data_type = 'text'
 
         # self.src_vocabs: mutated in dynamic_dict, used in

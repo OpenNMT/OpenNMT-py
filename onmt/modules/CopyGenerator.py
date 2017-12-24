@@ -9,20 +9,74 @@ from onmt.Utils import aeq
 
 
 class CopyGenerator(nn.Module):
-    """
-    Generator module that additionally considers copying
+    """Generator module that additionally considers copying
     words directly from the source.
+
+    The main idea is that we have an extended "dynamic dictionary".
+    It contains `|tgt_dict|` words plus an arbitrary number of
+    additional words introduced by the source sentence.
+    For each source sentence we have a `src_map` that maps
+    each source word to an index in `tgt_dict` if it known, or
+    else to an extra word.
+
+    The copy generator is an extended version of the standard
+    generator that computse three values.
+
+    * :math:`p_{softmax}` the standard softmax over `tgt_dict`
+    * :math:`p(z)` the probability of instead copying a
+      word from the source, computed using a bernoulli
+    * :math:`p_{copy}` the probility of copying a word instead.
+      taken from the attention distribution directly.
+
+    The model returns a distribution over the extend dictionary,
+    computed as
+
+    :math:`p(w) = p(z=1)  p_{copy}(w)  +  p(z=0)  p_{softmax}(w)`
+
+
+    .. mermaid::
+
+       graph BT
+          A[input]
+          S[src_map]
+          B[softmax]
+          BB[switch]
+          C[attn]
+          D[copy]
+          O[output]
+          A --> B
+          A --> BB
+          S --> D
+          C --> D
+          D --> O
+          B --> O
+          BB --> O
+
+
+    Args:
+       input_size (int): size of input representation
+       tgt_dict (Vocab): output target dictionary
+
     """
-    def __init__(self, opt, src_dict, tgt_dict):
+    def __init__(self, input_size, tgt_dict):
         super(CopyGenerator, self).__init__()
-        self.linear = nn.Linear(opt.rnn_size, len(tgt_dict))
-        self.linear_copy = nn.Linear(opt.rnn_size, 1)
-        self.src_dict = src_dict
+        self.linear = nn.Linear(input_size, len(tgt_dict))
+        self.linear_copy = nn.Linear(input_size, 1)
         self.tgt_dict = tgt_dict
 
     def forward(self, hidden, attn, src_map):
         """
-        Computes p(w) = p(z=1) p_{copy}(w|z=0)  +  p(z=0) * p_{softmax}(w|z=0)
+        Compute a distribution over the target dictionary
+        extended by the dynamic dictionary implied by compying
+        source words.
+
+        Args:
+           hidden (`FloatTensor`): hidden outputs `[batch*tlen, input_size]`
+           attn (`FloatTensor`): attn for each `[batch*tlen, input_size]`
+           src_map (`FloatTensor`):
+             A sparse indicator matrix mapping each source word to
+             its index in the "extended" vocab containing.
+             `[src_len, batch, extra_words]`
         """
         # CHECKS
         batch_by_tlen, _ = hidden.size()

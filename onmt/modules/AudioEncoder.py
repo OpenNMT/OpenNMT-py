@@ -5,17 +5,20 @@ import torch.nn.functional as F
 
 class AudioEncoder(nn.Module):
     """
-    Encoder recurrent neural network for Images.
+    A simple encoder convolutional -> recurrent neural network for
+    audio input.
+
+    Args:
+        num_layers (int): number of encoder layers.
+        bidirectional (bool): bidirectional encoder.
+        rnn_size (int): size of hidden states of the rnn.
+        dropout (float): dropout probablity.
+        sample_rate (float): input spec
+        window_size (int): input spec
+
     """
     def __init__(self, num_layers, bidirectional, rnn_size, dropout,
                  sample_rate, window_size):
-        """
-        Args:
-            num_layers (int): number of encoder layers.
-            bidirectional (bool): bidirectional encoder.
-            rnn_size (int): size of hidden states of the rnn.
-            dropout (float): dropout probablity.
-        """
         super(AudioEncoder, self).__init__()
         self.num_layers = num_layers
         self.num_directions = 2 if bidirectional else 1
@@ -42,6 +45,7 @@ class AudioEncoder(nn.Module):
         pass
 
     def forward(self, input, lengths=None):
+        "See :obj:`onmt.modules.EncoderBase.forward()`"
         # (batch_size, 1, nfft, t)
         # layer 1
         input = self.batch_norm1(self.layer1(input[:, :, :, :]))

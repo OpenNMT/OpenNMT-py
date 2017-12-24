@@ -460,6 +460,8 @@ class InputFeedRNNDecoder(RNNDecoderBase):
                 context.transpose(0, 1),
                 context_lengths=context_lengths)
             if self.context_gate is not None:
+                # TODO: context gate should be employed
+                # instead of second RNN transform.
                 output = self.context_gate(
                     emb_t, rnn_output, attn_output
                 )
@@ -511,7 +513,7 @@ class NMTModel(nn.Module):
     Args:
       encoder (:obj:`EncoderBase`): an encoder object
       decoder (:obj:`RNNDecoderBase`): a decoder object
-      multigpu (bool): setup for multigpu support
+      multi<gpu (bool): setup for multigpu support
     """
     def __init__(self, encoder, decoder, multigpu=False):
         self.multigpu = multigpu

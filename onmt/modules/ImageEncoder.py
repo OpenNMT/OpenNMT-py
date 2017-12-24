@@ -6,16 +6,16 @@ from torch.autograd import Variable
 
 class ImageEncoder(nn.Module):
     """
-    Encoder recurrent neural network for Images.
+    A simple encoder convolutional -> recurrent neural network for
+    image input.
+
+    Args:
+        num_layers (int): number of encoder layers.
+        bidirectional (bool): bidirectional encoder.
+        rnn_size (int): size of hidden states of the rnn.
+        dropout (float): dropout probablity.
     """
     def __init__(self, num_layers, bidirectional, rnn_size, dropout):
-        """
-        Args:
-            num_layers (int): number of encoder layers.
-            bidirectional (bool): bidirectional encoder.
-            rnn_size (int): size of hidden states of the rnn.
-            dropout (float): dropout probablity.
-        """
         super(ImageEncoder, self).__init__()
         self.num_layers = num_layers
         self.num_directions = 2 if bidirectional else 1
@@ -50,6 +50,8 @@ class ImageEncoder(nn.Module):
         pass
 
     def forward(self, input, lengths=None):
+        "See :obj:`onmt.modules.EncoderBase.forward()`"
+
         batch_size = input.size(0)
         # (batch_size, 64, imgH, imgW)
         # layer 1

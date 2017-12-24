@@ -5,16 +5,8 @@ from onmt.io.IO import ONMTDatasetBase, _join_dicts, _peek, \
 
 
 class ImageDataset(ONMTDatasetBase):
-    """ Dataset for data_type=='img' """
+    """ Dataset for data_type=='img'
 
-    def sort_key(self, ex):
-        "Sort using the size of the image."
-        return (-ex.src.size(2), -ex.src.size(1))
-
-    def _process_corpus(self, fields, src_examples_iter, tgt_examples_iter,
-                        num_src_feats=0, num_tgt_feats=0,
-                        tgt_seq_length=0, use_filter_pred=True):
-        """
         Build Example objects, Field objects, and filter_pred function
         from image corpus.
 
@@ -26,10 +18,15 @@ class ImageDataset(ONMTDatasetBase):
             num_tgt_feats: number of target side features.
             tgt_seq_length: maximum target sequence length.
             use_filter_pred: use a custom filter predicate to filter examples?
+    """
 
-        Returns:
-            constructed tuple of Examples objects, Field objects, filter_pred.
-        """
+    def sort_key(self, ex):
+        "Sort using the size of the image."
+        return (-ex.src.size(2), -ex.src.size(1))
+
+    def _process_corpus(self, fields, src_examples_iter, tgt_examples_iter,
+                        num_src_feats=0, num_tgt_feats=0,
+                        tgt_seq_length=0, use_filter_pred=True):
         self.data_type = 'img'
 
         self.n_src_feats = num_src_feats

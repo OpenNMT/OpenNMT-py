@@ -6,6 +6,7 @@
       quickstart.md
       onmt.rst
       onmt.modules.rst
+      onmt.translation.rst
       onmt.io.rst
       FAQ.md
       options/preprocess.md

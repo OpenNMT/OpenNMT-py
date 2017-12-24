@@ -5,6 +5,20 @@ import onmt.io
 
 
 class TranslationBuilder(object):
+    """
+    Build a word-based translation from the batch output
+    of translator and the underlying dictionaries.
+
+    Replacement based on "Addressing the Rare Word
+    Problem in Neural Machine Translation" :cite:`Luong2015b`
+
+    Args:
+       data (DataSet):
+       fields (dict of Fields): data fields
+       n_best (int): number of translations produced
+       replace_unk (bool): replace unknown words using attention
+       has_tgt (bool): will the batch have gold targets
+    """
     def __init__(self, data, fields, n_best, replace_unk, has_tgt):
         self.data = data
         self.fields = fields
@@ -87,6 +101,20 @@ class TranslationBuilder(object):
 
 
 class Translation(object):
+    """
+    Container for a translated sentence.
+
+    Attributes:
+        src (`LongTensor`): src word ids
+        src_raw ([str]): raw src words
+
+        pred_sents ([[str]]): words from the n-best translations
+        pred_scores ([[float]]): log-probs of n-best translations
+        attns ([`FloatTensor`]) : attention dist for each translation
+        gold_sent ([str]): words from gold translation
+        gold_score ([float]): log-prob of gold translation
+
+    """
     def __init__(self, src, src_raw, pred_sents,
                  attn, pred_scores, tgt_sent, gold_score):
         self.src = src
@@ -98,6 +126,9 @@ class Translation(object):
         self.gold_score = gold_score
 
     def log(self, sent_number):
+        """
+        Log translation to stdout.
+        """
         output = '\nSENT {}: {}\n'.format(sent_number, self.src_raw)
 
         best_pred = self.pred_sents[0]
