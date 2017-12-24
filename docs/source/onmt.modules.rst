@@ -1,110 +1,120 @@
-onmt\.modules
-=====================
+Doc: Modules
+=============
+
+Core Modules
+------------
+
+.. autoclass:: onmt.modules.Embeddings
+    :members:
+
+
+Encoders
+---------
+
+.. autoclass:: onmt.modules.EncoderBase
+    :members:
+
+.. autoclass:: onmt.modules.MeanEncoder
+    :members:
+
+.. autoclass:: onmt.modules.RNNEncoder
+    :members:
+
+
+Decoders
+---------
+
+
+.. autoclass:: onmt.modules.RNNDecoderBase
+    :members:
+
+
+.. autoclass:: onmt.modules.StdRNNDecoder
+    :members:
+
+
+.. autoclass:: onmt.modules.InputFeedRNNDecoder
+    :members:
+
+Attention
+----------
+
+.. autoclass:: onmt.modules.GlobalAttention
+    :members:
+
+
+
+Architecture: Transfomer
+----------------------------
+
+.. autoclass:: onmt.modules.PositionalEncoding
+    :members:
+
+.. autoclass:: onmt.modules.PositionwiseFeedForward
+    :members:
+
+.. autoclass:: onmt.modules.TransformerEncoder
+    :members:
+
+.. autoclass:: onmt.modules.TransformerDecoder
+    :members:
+
+.. autoclass:: onmt.modules.MultiHeadedAttention
+    :members:
+    :undoc-members:
+
+
+Architecture: Conv2Conv
+----------------------------
+
+(These methods are from a user contribution
+and have not been thoroughly tested.)
+
+
+.. autoclass:: onmt.modules.CNNEncoder
+    :members:
+
+
+.. autoclass:: onmt.modules.CNNDecoder
+    :members:
+
+.. autoclass:: onmt.modules.ConvMultiStepAttention
+    :members:
+
+.. autoclass:: onmt.modules.WeightNorm
+    :members:
+
+Architecture: SRU
+----------------------------
+
+.. autoclass:: onmt.modules.SRU
+    :members:
+
+
+Alternative Encoders
+--------------------
 
 onmt\.modules\.AudioEncoder
-----------------------------------
 
-.. automodule:: onmt.modules.AudioEncoder
+.. autoclass:: onmt.modules.AudioEncoder
     :members:
-    :undoc-members:
-    :show-inheritance:
 
-onmt\.modules\.Conv2Conv 
--------------------------------
 
-.. automodule:: onmt.modules.Conv2Conv
+onmt\.modules\.ImageEncoder
+
+.. autoclass:: onmt.modules.ImageEncoder
     :members:
-    :undoc-members:
-    :show-inheritance:
 
 
-onmt\.modules\.CopyGenerator
------------------------------------
+Copy Attention
+--------------
 
-.. automodule:: onmt.modules.CopyGenerator
+.. autoclass:: onmt.modules.CopyGenerator
     :members:
-    :undoc-members:
-    :show-inheritance:
 
-onmt\.modules\.Embeddings 
---------------------------------
 
-.. automodule:: onmt.modules.Embeddings
+Structured Attention
+-------------------------------------------
+
+.. autoclass:: onmt.modules.MatrixTree
     :members:
-    :undoc-members:
-    :show-inheritance:
-
-onmt\.modules\.Gate 
---------------------------
-
-.. automodule:: onmt.modules.Gate
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-onmt\.modules\.GlobalAttention 
--------------------------------------
-
-.. automodule:: onmt.modules.GlobalAttention
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-onmt\.modules\.ImageEncoder 
-----------------------------------
-
-.. automodule:: onmt.modules.ImageEncoder
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-onmt\.modules\.MultiHeadedAttn
--------------------------------------
-
-.. automodule:: onmt.modules.MultiHeadedAttn
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-onmt\.modules\.SRU 
--------------------------
-
-.. automodule:: onmt.modules.SRU
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-onmt\.modules\.StackedRNN 
---------------------------------
-
-.. automodule:: onmt.modules.StackedRNN
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-onmt\.modules\.StructuredAttention 
------------------------------------------
-
-.. automodule:: onmt.modules.StructuredAttention
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-onmt\.modules\.Transformer 
----------------------------------
-
-.. automodule:: onmt.modules.Transformer
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
-onmt\.modules\.WeightNorm 
---------------------------------
-
-.. automodule:: onmt.modules.WeightNorm
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-

@@ -59,7 +59,8 @@ class StackedCNN(nn.Module):
 
 class CNNEncoder(EncoderBase):
     """
-    Encoder built on CNN.
+    Encoder built on CNN based on
+    :cite:`DBLP:journals/corr/GehringAGYD17`.
     """
     def __init__(self, num_layers, hidden_size,
                  cnn_kernel_width, dropout, embeddings):
@@ -72,7 +73,7 @@ class CNNEncoder(EncoderBase):
                               cnn_kernel_width, dropout)
 
     def forward(self, input, lengths=None, hidden=None):
-        """ See EncoderBase.forward() for description of args and returns."""
+        """ See :obj:`onmt.modules.EncoderBase.forward()`"""
         self._check_args(input, lengths, hidden)
 
         emb = self.embeddings(input)
@@ -91,8 +92,10 @@ class CNNEncoder(EncoderBase):
 
 class CNNDecoder(nn.Module):
     """
-    Decoder built on CNN, which consists of resduial convolutional layers,
-    with ConvMultiStepAttention.
+    Decoder built on CNN, based on :cite:`DBLP:journals/corr/GehringAGYD17`.
+
+
+    Consists of residual convolutional layers, with ConvMultiStepAttention.
     """
     def __init__(self, num_layers, hidden_size, attn_type,
                  copy_attn, cnn_kernel_width, dropout, embeddings):
@@ -129,25 +132,7 @@ class CNNDecoder(nn.Module):
             self._copy = True
 
     def forward(self, input, context, state, context_lengths=None):
-        """
-        Forward through the CNNDecoder.
-        Args:
-            input (LongTensor): a sequence of input tokens tensors
-                                of size (len x batch x nfeats).
-            context (FloatTensor): output(tensor sequence) from the encoder
-                        CNN of size (src_len x batch x hidden_size).
-            state (FloatTensor): hidden state from the encoder CNN for
-                                 initializing the decoder.
-            context_lengths (LongTensor): the source context lengths, this is
-                    not used for CNNDecoder, but for interface compatibility.
-        Returns:
-            outputs (FloatTensor): a Tensor sequence of output from the decoder
-                                   of shape (len x batch x hidden_size).
-            state (FloatTensor): final hidden state from the decoder.
-            attns (dict of (str, FloatTensor)): a dictionary of different
-                                type of attention Tensor from the decoder
-                                of shape (src_len x batch).
-        """
+        """ See :obj:`onmt.modules.RNNDecoderBase.forward()`"""
         # CHECKS
         assert isinstance(state, CNNDecoderState)
         input_len, input_batch, _ = input.size()

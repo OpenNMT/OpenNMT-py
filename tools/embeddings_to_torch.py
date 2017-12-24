@@ -21,7 +21,7 @@ opt = parser.parse_args()
 
 def get_vocabs(dict_file):
     vocabs = torch.load(dict_file)
-    enc_vocab, dec_vocab = [vocab[1] for vocab in vocabs]
+    enc_vocab, dec_vocab = vocabs[0][1], vocabs[-1][1]
 
     print("From: %s" % dict_file)
     print("\t* source vocab: %d words" % len(enc_vocab))

@@ -136,6 +136,13 @@ def preprocess_opts(parser):
     group.add_argument('-save_data', required=True,
                        help="Output file for the prepared data")
 
+    group.add_argument('-max_shard_size', type=int, default=0,
+                       help="""For text corpus of large volume, it will
+                       be divided into shards of this size to preprocess.
+                       If 0, the data will be handled as a whole. The unit
+                       is in bytes. Optimal value should be multiples of
+                       64 bytes.""")
+
     # Dictionary options, for text corpus
 
     group = parser.add_argument_group('Vocab')
@@ -350,6 +357,7 @@ def translate_opts(parser):
     group.add_argument('-output', default='pred.txt',
                        help="""Path to output the predictions (each line will
                        be the decoded sequence""")
+
     # Options most relevant to summarization.
     group.add_argument('-dynamic_dict', action='store_true',
                        help="Create dynamic dictionaries")

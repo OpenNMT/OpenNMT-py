@@ -2,6 +2,7 @@
 This file is for models creation, which consults options
 and creates each encoder and decoder accordingly.
 """
+import torch
 import torch.nn as nn
 
 import onmt
@@ -13,6 +14,7 @@ from onmt.Models import NMTModel, MeanEncoder, RNNEncoder, \
 from onmt.modules import Embeddings, ImageEncoder, CopyGenerator, \
                          TransformerEncoder, TransformerDecoder, \
                          CNNEncoder, CNNDecoder, AudioEncoder
+from onmt.Utils import use_gpu
 
 
 def make_embeddings(opt, word_dict, feature_dicts, for_encoder=True):
@@ -107,6 +109,24 @@ def make_decoder(opt, embeddings):
                              embeddings)
 
 
+def load_test_model(opt, dummy_opt):
+    checkpoint = torch.load(opt.model,
+                            map_location=lambda storage, loc: storage)
+    fields = onmt.io.load_fields_from_vocab(
+        checkpoint['vocab'], data_type=opt.data_type)
+
+    model_opt = checkpoint['opt']
+    for arg in dummy_opt:
+        if arg not in model_opt:
+            model_opt.__dict__[arg] = dummy_opt[arg]
+
+    model = make_base_model(model_opt, fields,
+                            use_gpu(opt), checkpoint)
+    model.eval()
+    model.generator.eval()
+    return fields, model, model_opt
+
+
 def make_base_model(model_opt, fields, gpu, checkpoint=None):
     """
     Args:
@@ -170,7 +190,7 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
         if model_opt.share_decoder_embeddings:
             generator[0].weight = decoder.embeddings.word_lut.weight
     else:
-        generator = CopyGenerator(model_opt, fields["src"].vocab,
+        generator = CopyGenerator(model_opt.rnn_size,
                                   fields["tgt"].vocab)
 
     # Load the model states from checkpoint or initialize them.
