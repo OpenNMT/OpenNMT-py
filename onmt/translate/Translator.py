@@ -102,7 +102,8 @@ class Translator(object):
                                                   .fill_(context.size(0))
 
         # (2) Repeat src objects `beam_size` times.
-        src_map = rvar(batch.src_map.data) if data_type == 'text' and self.copy_attn else None
+        src_map = rvar(batch.src_map.data) \
+            if data_type == 'text' and self.copy_attn else None
         context = rvar(context.data)
         context_lengths = src_lengths.repeat(beam_size)
         dec_states.repeat_beam_size_times(beam_size)
