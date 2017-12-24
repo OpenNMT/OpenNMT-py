@@ -1,14 +1,20 @@
 from __future__ import division
 import torch
 
-"""
- Class for managing the internals of the beam search process.
-
- Takes care of beams, back pointers, and scores.
-"""
-
 
 class Beam(object):
+    """
+    Class for managing the internals of the beam search process.
+
+    Takes care of beams, back pointers, and scores.
+
+    Args:
+       size (int): beam size
+       pad, bos, eos (int): indices of padding, beginning, and ending.
+       n_best (int): nbest size to use
+       cuda (bool): use gpu
+       global_scorer (:obj:`GlobalScorer`)
+    """
     def __init__(self, size, pad, bos, eos,
                  n_best=1, cuda=False,
                  global_scorer=None):
@@ -139,7 +145,12 @@ class Beam(object):
 
 class GNMTGlobalScorer(object):
     """
-    Google NMT ranking score from Wu et al.
+    NMT re-ranking score from
+    "Google's Neural Machine Translation System" :cite:`wu2016google`
+
+    Args:
+       alpha (float): length parameter
+       beta (float):  coverage parameter
     """
     def __init__(self, alpha, beta):
         self.alpha = alpha

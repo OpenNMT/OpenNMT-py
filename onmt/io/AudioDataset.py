@@ -5,18 +5,8 @@ from onmt.io.IO import ONMTDatasetBase, _join_dicts, _peek, \
 
 
 class AudioDataset(ONMTDatasetBase):
-    """ Dataset for data_type=='audio' """
+    """ Dataset for data_type=='audio'
 
-    def sort_key(self, ex):
-        "Sort using the size of the audio corpus."
-        return -ex.src.size(1)
-
-    def _process_corpus(self, fields, src_examples_iter, tgt_examples_iter,
-                        num_src_feats=0, num_tgt_feats=0,
-                        tgt_seq_length=0, sample_rate=0,
-                        window_size=0, window_stride=0, window=None,
-                        normalize_audio=True, use_filter_pred=True):
-        """
         Build Example objects, Field objects, and filter_pred function
         from audio corpus.
 
@@ -36,9 +26,15 @@ class AudioDataset(ONMTDatasetBase):
             use_filter_pred: use a custom filter predicate to filter
                              examples?
 
-        Returns:
-            constructed tuple of Examples objects, Field objects, filter_pred.
-        """
+    """
+    def sort_key(self, ex):
+        return -ex.src.size(1)
+
+    def _process_corpus(self, fields, src_examples_iter, tgt_examples_iter,
+                        num_src_feats=0, num_tgt_feats=0,
+                        tgt_seq_length=0, sample_rate=0,
+                        window_size=0, window_stride=0, window=None,
+                        normalize_audio=True, use_filter_pred=True):
         self.data_type = 'audio'
 
         self.sample_rate = sample_rate

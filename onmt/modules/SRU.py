@@ -1,10 +1,3 @@
-"""
-Implementation of "Training RNNs as Fast as CNNs".
-TODO: turn to pytorch's implementation when it is available.
-
-This implementation is adpoted from the author of the paper:
-https://github.com/taolei87/sru/blob/master/cuda_functional.py.
-"""
 # flake8: noqa
 
 import subprocess
@@ -554,6 +547,26 @@ class SRUCell(nn.Module):
 
 
 class SRU(nn.Module):
+    """
+    Implementation of "Training RNNs as Fast as CNNs"
+    :cite:`DBLP:journals/corr/abs-1709-02755`
+
+    TODO: turn to pytorch's implementation when it is available.
+
+    This implementation is adpoted from the author of the paper:
+    https://github.com/taolei87/sru/blob/master/cuda_functional.py.
+
+    Args:
+      input_size (int): input to model
+      hidden_size (int): hidden dimension
+      num_layers (int): number of layers
+      dropout (float): dropout to use (stacked)
+      rnn_dropout (float): dropout to use (recurrent)
+      bidirectional (bool): bidirectional
+      use_tanh (bool): activation
+      use_relu (bool): activation
+
+    """
     def __init__(self, input_size, hidden_size,
                  num_layers=2, dropout=0, rnn_dropout=0,
                  bidirectional=False, use_tanh=1, use_relu=0):

@@ -6,6 +6,23 @@ import onmt.io
 
 
 class Translator(object):
+    """
+    Uses a model to translate a batch of sentences.
+
+
+    Args:
+       model (:obj:`onmt.modules.NMTModel`):
+          NMT model to use for translation
+       fields (dict of Fields): data fields
+       beam_size (int): size of beam to use
+       n_best (int): number of translations produced
+       max_length (int): maximum length output to produce
+       global_scores (:obj:`GlobalScorer`):
+         object to rescore final translations
+       copy_attn (bool): use copy attention during translation
+       cuda (bool): use cuda
+       beam_trace (bool): trace beam search for debugging
+    """
     def __init__(self, model, fields,
                  beam_size, n_best,
                  max_length,
@@ -30,6 +47,20 @@ class Translator(object):
                 "log_probs": []}
 
     def translate_batch(self, batch, data):
+        """
+        Translate a batch of sentences.
+
+        Mostly a wrapper around :obj:`Beam`.
+
+        Args:
+           batch (:obj:`Batch`): a batch from a dataset object
+           data (:obj:`Dataset`): the dataset object
+
+
+        Todo:
+           Shouldn't need the original dataset.
+        """
+
         # (0) Prep each of the components of the search.
         # And helper method for reducing verbosity.
         beam_size = self.beam_size

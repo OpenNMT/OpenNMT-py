@@ -1,9 +1,3 @@
-"""
-Implementation of "Weight Normalization: A Simple Reparameterization
-to Accelerate Training of Deep Neural Networks"
-As a reparameterization method, weight normalization is same
-as BatchNormalization, but it doesn't depend on minibatch.
-"""
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -34,6 +28,14 @@ def get_vars_maybe_avg(namespace, var_names, training, polyak_decay):
 
 
 class WeightNormLinear(nn.Linear):
+    """
+    Implementation of "Weight Normalization: A Simple Reparameterization
+    to Accelerate Training of Deep Neural Networks"
+    :cite:`DBLP:journals/corr/SalimansK16`
+
+    As a reparameterization method, weight normalization is same
+    as BatchNormalization, but it doesn't depend on minibatch.
+    """
     def __init__(self, in_features, out_features,
                  init_scale=1., polyak_decay=0.9995):
         super(WeightNormLinear, self).__init__(

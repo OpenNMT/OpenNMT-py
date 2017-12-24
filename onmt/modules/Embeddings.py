@@ -7,6 +7,17 @@ from onmt.Utils import aeq
 
 
 class PositionalEncoding(nn.Module):
+    """
+    Implements the sinusoidal positional encoding for
+    non-recurrent neural networks.
+
+    Implementation based on "Attention Is All You Need"
+    :cite:`DBLP:journals/corr/VaswaniSPUJGKP17`
+
+    Args:
+       dropout (float): dropout parameter
+       dim (int): embedding size
+    """
 
     def __init__(self, dropout, dim, max_len=5000):
         pe = torch.arange(0, max_len).unsqueeze(1).expand(max_len, dim)
@@ -53,7 +64,15 @@ class Embeddings(nn.Module):
 
     Args:
         word_vec_size (int): size of the dictionary of embeddings.
-        position_encoding (bool): use a sin to mark relative words positions.
+        word_padding_idx (int): padding index for words in the embeddings.
+        feats_padding_idx (list of int): padding index for a list of features
+                                   in the embeddings.
+        word_vocab_size (int): size of dictionary of embeddings for words.
+        feat_vocab_sizes ([int], optional): list of size of dictionary
+                                    of embeddings for each feature.
+
+        position_encoding (bool): see :obj:`onmt.modules.PositionalEncoding`
+
         feat_merge (string): merge action for the features embeddings:
                     concat, sum or mlp.
         feat_vec_exponent (float): when using `-feat_merge concat`, feature
@@ -62,12 +81,6 @@ class Embeddings(nn.Module):
         feat_vec_size (int): embedding dimension for features when using
                     `-feat_merge mlp`
         dropout (float): dropout probability.
-        word_padding_idx (int): padding index for words in the embeddings.
-        feats_padding_idx (list of int): padding index for a list of features
-                                   in the embeddings.
-        word_vocab_size (int): size of dictionary of embeddings for words.
-        feat_vocab_sizes ([int], optional): list of size of dictionary
-                                    of embeddings for each feature.
     """
     def __init__(self, word_vec_size, position_encoding, feat_merge,
                  feat_vec_exponent, feat_vec_size, dropout,

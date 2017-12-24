@@ -16,15 +16,15 @@ MAX_SIZE = 5000
 
 
 class PositionwiseFeedForward(nn.Module):
-    """ A two-layer Feed-Forward-Network."""
-    def __init__(self, size, hidden_size, dropout=0.1):
-        """
+    """ A two-layer Feed-Forward-Network with residual layer norm.
+
         Args:
-            size(int): the size of input for the first-layer of the FFN.
-            hidden_size(int): the hidden layer size of the second-layer
+            size (int): the size of input for the first-layer of the FFN.
+            hidden_size (int): the hidden layer size of the second-layer
                               of the FNN.
-            droput(float): dropout probability(0-1.0).
-        """
+            dropout (float): dropout probability(0-1.0).
+    """
+    def __init__(self, size, hidden_size, dropout=0.1):
         super(PositionwiseFeedForward, self).__init__()
         self.w_1 = onmt.modules.BottleLinear(size, hidden_size)
         self.w_2 = onmt.modules.BottleLinear(hidden_size, size)
@@ -40,21 +40,24 @@ class PositionwiseFeedForward(nn.Module):
 
 
 class TransformerEncoderLayer(nn.Module):
-    def __init__(self, size, dropout,
-                 head_count=8, hidden_size=2048):
-        """
-        Args:
+    """
+    A single layer of the transformer encoder.
+
+    Args:
             size(int): the dimension of keys/values/queries in
                        MultiHeadedAttention, also the input size of
                        the first-layer of the PositionwiseFeedForward.
             droput(float): dropout probability(0-1.0).
             head_count(int): the number of head for MultiHeadedAttention.
             hidden_size(int): the second-layer of the PositionwiseFeedForward.
-        """
+    """
+
+    def __init__(self, size, dropout,
+                 head_count=8, hidden_size=2048):
         super(TransformerEncoderLayer, self).__init__()
 
         self.self_attn = onmt.modules.MultiHeadedAttention(
-            head_count, size, p=dropout)
+            head_count, size, dropout=dropout)
         self.feed_forward = PositionwiseFeedForward(size,
                                                     hidden_size,
                                                     dropout)
@@ -70,6 +73,27 @@ class TransformerEncoderLayer(nn.Module):
 class TransformerEncoder(EncoderBase):
     """
     The Transformer encoder from "Attention is All You Need".
+
+
+    .. mermaid::
+
+       graph BT
+          A[input]
+          B[multi-head self-attn]
+          C[feed forward]
+          O[output]
+          A --> B
+          B --> C
+          C --> O
+
+
+
+    Args:
+       num_layers (int): number of encoder layers
+       hidden_size (int): number of hidden units
+       dropout (float): dropout parameters
+       embeddings (:obj:`onmt.modules.Embeddings`):
+          embeddings to use, should have positional encodings
     """
     def __init__(self, num_layers, hidden_size,
                  dropout, embeddings):
@@ -83,7 +107,7 @@ class TransformerEncoder(EncoderBase):
         self.layer_norm = onmt.modules.BottleLayerNorm(hidden_size)
 
     def forward(self, input, lengths=None, hidden=None):
-        """ See EncoderBase.forward() for description of args and returns."""
+        """ See :obj:`EncoderBase.forward()`"""
         self._check_args(input, lengths, hidden)
 
         emb = self.embeddings(input)
@@ -112,22 +136,22 @@ class TransformerEncoder(EncoderBase):
 
 
 class TransformerDecoderLayer(nn.Module):
-    def __init__(self, size, dropout,
-                 head_count=8, hidden_size=2048):
-        """
-        Args:
-            size(int): the dimension of keys/values/queries in
+    """
+    Args:
+      size(int): the dimension of keys/values/queries in
                        MultiHeadedAttention, also the input size of
                        the first-layer of the PositionwiseFeedForward.
-            droput(float): dropout probability(0-1.0).
-            head_count(int): the number of head for MultiHeadedAttention.
-            hidden_size(int): the second-layer of the PositionwiseFeedForward.
-        """
+      droput(float): dropout probability(0-1.0).
+      head_count(int): the number of heads for MultiHeadedAttention.
+      hidden_size(int): the second-layer of the PositionwiseFeedForward.
+    """
+    def __init__(self, size, dropout,
+                 head_count=8, hidden_size=2048):
         super(TransformerDecoderLayer, self).__init__()
         self.self_attn = onmt.modules.MultiHeadedAttention(
-                head_count, size, p=dropout)
+                head_count, size, dropout=dropout)
         self.context_attn = onmt.modules.MultiHeadedAttention(
-                head_count, size, p=dropout)
+                head_count, size, dropout=dropout)
         self.feed_forward = PositionwiseFeedForward(size,
                                                     hidden_size,
                                                     dropout)
@@ -187,6 +211,30 @@ class TransformerDecoderLayer(nn.Module):
 class TransformerDecoder(nn.Module):
     """
     The Transformer decoder from "Attention is All You Need".
+
+
+    .. mermaid::
+
+       graph BT
+          A[input]
+          B[multi-head self-attn]
+          BB[multi-head src-attn]
+          C[feed forward]
+          O[output]
+          A --> B
+          B --> BB
+          BB --> C
+          C --> O
+
+
+    Args:
+       num_layers (int): number of encoder layers.
+       hidden_size (int): number of hidden units
+       dropout (float): dropout parameters
+       embeddings (:obj:`onmt.modules.Embeddings`):
+          embeddings to use, should have positional encodings
+
+       attn_type (str): if using a seperate copy attention
     """
     def __init__(self, num_layers, hidden_size, attn_type,
                  copy_attn, dropout, embeddings):
@@ -213,24 +261,7 @@ class TransformerDecoder(nn.Module):
 
     def forward(self, input, context, state, context_lengths=None):
         """
-        Forward through the TransformerDecoder.
-        Args:
-            input (LongTensor): a sequence of input tokens tensors
-                                of size (len x batch x nfeats).
-            context (FloatTensor): output(tensor sequence) from the encoder
-                                of size (src_len x batch x hidden_size).
-            state (FloatTensor): hidden state from the encoder RNN for
-                                 initializing the decoder.
-            context_lengths (LongTensor): the source context lengths, this is
-                                          not used for TransformerDecoder, but
-                                          for interface compatibility.
-        Returns:
-            outputs (FloatTensor): a Tensor sequence of output from the decoder
-                                   of shape (len x batch x hidden_size).
-            state (FloatTensor): final hidden state from the decoder.
-            attns (dict of (str, FloatTensor)): a dictionary of different
-                                type of attention Tensor from the decoder
-                                of shape (src_len x batch).
+        See :obj:`onmt.modules.RNNDecoderBase.forward()`
         """
         # CHECKS
         assert isinstance(state, TransformerDecoderState)
