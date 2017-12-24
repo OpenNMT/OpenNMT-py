@@ -176,18 +176,53 @@
 <dt id="onmt.io.TextDataset">
 <em class="property">class </em><code class="descclassname">onmt.io.</code><code class="descname">TextDataset</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.TextDataset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Dataset for data_type==’text’</p>
-<dl class="method">
-<dt id="onmt.io.TextDataset.sort_key">
-<code class="descname">sort_key</code><span class="sig-paren">(</span><em>ex</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.TextDataset.sort_key" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sort using the size of source example.</p>
-</dd></dl>
-
+<p>Build Example objects, Field objects, and filter_pred function
+from text corpus.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>fields</strong> – a dictionary of Field objects. Keys are like ‘src’,
+‘tgt’, ‘src_map’, and ‘alignment’.</li>
+<li><strong>src_examples_iter</strong> – preprocessed source example_dict iterator.</li>
+<li><strong>tgt_examples_iter</strong> – preprocessed target example_dict iterator.</li>
+<li><strong>num_src_feats</strong> – number of source side features.</li>
+<li><strong>num_tgt_feats</strong> – number of target side features.</li>
+<li><strong>src_seq_length</strong> – maximum source sequence length.</li>
+<li><strong>tgt_seq_length</strong> – maximum target sequence length.</li>
+<li><strong>dynamic_dict</strong> – create dynamic dictionaries?</li>
+<li><strong>use_filter_pred</strong> – use a custom filter predicate to filter examples?</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="class">
 <dt id="onmt.io.ImageDataset">
 <em class="property">class </em><code class="descclassname">onmt.io.</code><code class="descname">ImageDataset</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.ImageDataset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Dataset for data_type==’img’</p>
+<p>Build Example objects, Field objects, and filter_pred function
+from image corpus.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>fields</strong> – a dictionary of Field objects.</li>
+<li><strong>src_examples_iter</strong> – preprocessed source example_dict iterator.</li>
+<li><strong>tgt_examples_iter</strong> – preprocessed target example_dict iterator.</li>
+<li><strong>num_src_feats</strong> – number of source side features.</li>
+<li><strong>num_tgt_feats</strong> – number of target side features.</li>
+<li><strong>tgt_seq_length</strong> – maximum target sequence length.</li>
+<li><strong>use_filter_pred</strong> – use a custom filter predicate to filter examples?</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 <dl class="method">
 <dt id="onmt.io.ImageDataset.sort_key">
 <code class="descname">sort_key</code><span class="sig-paren">(</span><em>ex</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.ImageDataset.sort_key" title="Permalink to this definition">¶</a></dt>
@@ -200,12 +235,32 @@
 <dt id="onmt.io.AudioDataset">
 <em class="property">class </em><code class="descclassname">onmt.io.</code><code class="descname">AudioDataset</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.AudioDataset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Dataset for data_type==’audio’</p>
-<dl class="method">
-<dt id="onmt.io.AudioDataset.sort_key">
-<code class="descname">sort_key</code><span class="sig-paren">(</span><em>ex</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.AudioDataset.sort_key" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sort using the size of the audio corpus.</p>
-</dd></dl>
-
+<p>Build Example objects, Field objects, and filter_pred function
+from audio corpus.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>fields</strong> – a dictionary of Field objects.</li>
+<li><strong>src_examples_iter</strong> – preprocessed source example_dict iterator.</li>
+<li><strong>tgt_examples_iter</strong> – preprocessed target example_dict iterator.</li>
+<li><strong>num_src_feats</strong> – number of source side features.</li>
+<li><strong>num_tgt_feats</strong> – number of target side features.</li>
+<li><strong>tgt_seq_length</strong> – maximum target sequence length.</li>
+<li><strong>sample_rate</strong> – sample rate.</li>
+<li><strong>window_size</strong> – window size for spectrogram in seconds.</li>
+<li><strong>window_stride</strong> – window stride for spectrogram in seconds.</li>
+<li><strong>window</strong> – indow type for spectrogram generation.</li>
+<li><strong>normalize_audio</strong> – subtract spectrogram by mean and divide
+by std or not.</li>
+<li><strong>use_filter_pred</strong> – use a custom filter predicate to filter
+examples?</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </div>

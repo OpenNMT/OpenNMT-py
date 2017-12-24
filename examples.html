@@ -197,10 +197,8 @@ can also add <cite>-gpuid 1</cite> to use (say) GPU 1.</p>
 <span class="pre">python</span> <span class="pre">translate.py</span> <span class="pre">-model</span> <span class="pre">demo-model_epochX_PPL.pt</span> <span class="pre">-src</span> <span class="pre">data/src-test.txt</span> <span class="pre">-output</span> <span class="pre">pred.txt</span> <span class="pre">-replace_unk</span> <span class="pre">-verbose</span>
 <span class="pre">`</span></code></p>
 <p>Now you have a model which you can use to predict on new data. We do this by running beam search. This will output predictions into <cite>pred.txt</cite>.</p>
-<dl class="docutils">
-<dt>!!! note “Note”</dt>
-<dd>The predictions are going to be quite terrible, as the demo dataset is small. Try running on some larger datasets! For example you can download millions of parallel sentences for [translation](<a class="reference external" href="http://www.statmt.org/wmt16/translation-task.html">http://www.statmt.org/wmt16/translation-task.html</a>) or [summarization](<a class="reference external" href="https://github.com/harvardnlp/sent-summary">https://github.com/harvardnlp/sent-summary</a>).</dd>
-</dl>
+<p>Note:</p>
+<p>The predictions are going to be quite terrible, as the demo dataset is small. Try running on some larger datasets! For example you can download millions of parallel sentences for [translation](<a class="reference external" href="http://www.statmt.org/wmt16/translation-task.html">http://www.statmt.org/wmt16/translation-task.html</a>) or [summarization](<a class="reference external" href="https://github.com/harvardnlp/sent-summary">https://github.com/harvardnlp/sent-summary</a>).</p>
 <p># Example: Translation</p>
 <p>The example below uses the Moses tokenizer (<a class="reference external" href="http://www.statmt.org/moses/">http://www.statmt.org/moses/</a>) to prepare the data and the moses BLEU script for evaluation. This example if for training for the WMT‘16 Multimodal Translation task (<a class="reference external" href="http://www.statmt.org/wmt16/multimodal-task.html">http://www.statmt.org/wmt16/multimodal-task.html</a>).</p>
 <p>Step 0. Download the data.</p>

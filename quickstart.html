@@ -195,7 +195,7 @@ Federal Master Trainer and Senior Instructor of the Italian Federation of Aerobi
 </div>
 <div class="section" id="step-2-train-the-model">
 <span id="step-2-train-the-model"></span><h2>Step 2: Train the model<a class="headerlink" href="#step-2-train-the-model" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-bash"><div class="highlight"><pre><span></span>python train.py -data data/demo.train.pt -save_model demo-model 
+<div class="highlight-bash"><div class="highlight"><pre><span></span>python train.py -data data/demo.train.pt -save_model demo-model
 </pre></div>
 </div>
 <p>The main train command is quite simple. Minimally it takes a data file
@@ -209,8 +209,8 @@ can also add <code class="docutils literal"><span class="pre">-gpuid</span> <spa
 </pre></div>
 </div>
 <p>Now you have a model which you can use to predict on new data. We do this by running beam search. This will output predictions into <code class="docutils literal"><span class="pre">pred.txt</span></code>.</p>
-<p>!!! note &quot;Note&quot;
-The predictions are going to be quite terrible, as the demo dataset is small. Try running on some larger datasets! For example you can download millions of parallel sentences for <a class="reference external" href="http://www.statmt.org/wmt16/translation-task.html">translation</a> or <a class="reference external" href="https://github.com/harvardnlp/sent-summary">summarization</a>.</p>
+<p>Note:</p>
+<p>The predictions are going to be quite terrible, as the demo dataset is small. Try running on some larger datasets! For example you can download millions of parallel sentences for <a class="reference external" href="http://www.statmt.org/wmt16/translation-task.html">translation</a> or <a class="reference external" href="https://github.com/harvardnlp/sent-summary">summarization</a>.</p>
 </div>
 </div>
 
