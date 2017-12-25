@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 
+import codecs
+import os
+
 from onmt.io.IO import ONMTDatasetBase
 
 
@@ -61,3 +64,45 @@ class ImageDataset(ONMTDatasetBase):
     def sort_key(self, ex):
         "Sort using the size of the image."
         return (-ex.src.size(2), -ex.src.size(1))
+
+    @staticmethod
+    def read_img_file(path, src_dir, side, truncate=None):
+        """
+        Args:
+            path: location of a src file containing image paths
+            src_dir: location of source images
+            side: 'src' or 'tgt'
+            truncate: maximum img size ((0,0) or None for unlimited)
+
+        Yields:
+            a dictionary containing image data, path and index for each line.
+        """
+        assert (src_dir is not None) and os.path.exists(src_dir),\
+            'src_dir must be a valid directory if data_type is img'
+
+        global Image, transforms
+        from PIL import Image
+        from torchvision import transforms
+
+        with codecs.open(path, "r", "utf-8") as corpus_file:
+            index = 0
+            for line in corpus_file:
+                img_path = os.path.join(src_dir, line.strip())
+                if not os.path.exists(img_path):
+                    img_path = line
+
+                assert os.path.exists(img_path), \
+                    'img path %s not found' % (line.strip())
+
+                img = transforms.ToTensor()(Image.open(img_path))
+                if truncate and truncate != (0, 0):
+                    if not (img.size(1) <= truncate[0]
+                            and img.size(2) <= truncate[1]):
+                        continue
+
+                example_dict = {side: img,
+                                side+'_path': line.strip(),
+                                'indices': index}
+                index += 1
+
+                yield example_dict

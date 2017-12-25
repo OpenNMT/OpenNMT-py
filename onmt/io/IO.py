@@ -328,44 +328,6 @@ def build_vocab(train_datasets, data_type, share_vocab,
             fields["tgt"].vocab = merged_vocab
 
 
-def _read_img_file(path, src_dir, side, truncate=None):
-    """
-    Args:
-        path: location of a src file containing image paths
-        src_dir: location of source images
-        side: 'src' or 'tgt'
-        truncate: maximum img size ((0,0) or None for unlimited)
-
-    Yields:
-        a dictionary containing image data, path and index for each line.
-    """
-    assert (src_dir is not None) and os.path.exists(src_dir),\
-        'src_dir must be a valid directory if data_type is img'
-
-    global Image, transforms
-    from PIL import Image
-    from torchvision import transforms
-
-    with codecs.open(path, "r", "utf-8") as corpus_file:
-        index = 0
-        for line in corpus_file:
-            img_path = os.path.join(src_dir, line.strip())
-            if not os.path.exists(img_path):
-                img_path = line
-            assert os.path.exists(img_path), \
-                'img path %s not found' % (line.strip())
-            img = transforms.ToTensor()(Image.open(img_path))
-            if truncate and truncate != (0, 0):
-                if not (img.size(1) <= truncate[0]
-                        and img.size(2) <= truncate[1]):
-                    continue
-            example_dict = {side: img,
-                            side+'_path': line.strip(),
-                            'indices': index}
-            index += 1
-            yield example_dict
-
-
 def _read_audio_file(path, src_dir, side, sample_rate, window_size,
                      window_stride, window, normalize_audio, truncate=None):
     """
@@ -443,7 +405,7 @@ def _make_examples_nfeats_tpl(data_type, src_path, src_dir,
     """
 
     # Hide this import inside to avoid circular dependency problem.
-    from onmt.io import TextDataset
+    from onmt.io import TextDataset, ImageDataset
 
     if data_type == 'text':
         src_examples_iter, num_src_feats = \
@@ -451,7 +413,8 @@ def _make_examples_nfeats_tpl(data_type, src_path, src_dir,
                 src_path, src_seq_length_trunc, "src")
 
     elif data_type == 'img':
-        src_examples_iter = _read_img_file(src_path, src_dir, "src")
+        src_examples_iter = \
+            ImageDataset.read_img_file(src_path, src_dir, "src")
         num_src_feats = 0  # Source side(img) has no features.
 
     elif data_type == 'audio':
