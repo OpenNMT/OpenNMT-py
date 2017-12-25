@@ -180,3 +180,26 @@ class ImageDataset(ONMTDatasetBase):
             sequential=False)
 
         return fields
+
+    @staticmethod
+    def get_num_features(corpus_file, side):
+        """
+        For image corpus, source side is in form of image, thus
+        no feature; while target side is in form of text, thus
+        we can extract its text features.
+
+        Args:
+            corpus_file (str): file path to get the features.
+            side (str): 'src' or 'tgt'.
+
+        Returns:
+            number of features on `side`.
+        """
+        if side == 'src':
+            num_feats = 0
+        else:
+            with codecs.open(corpus_file, "r", "utf-8") as cf:
+                f_line = cf.readline().strip().split()
+                _, _, num_feats = ImageDataset.extract_text_features(f_line)
+
+        return num_feats

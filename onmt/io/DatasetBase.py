@@ -74,6 +74,30 @@ class ONMTDatasetBase(torchtext.data.Dataset):
 
         return final
 
+    @staticmethod
+    def extract_text_features(tokens):
+        """
+        Args:
+            tokens: A list of tokens, where each token consists of a word,
+                optionally followed by u"￨"-delimited features.
+        Returns:
+            A sequence of words, a sequence of features, and num of features.
+        """
+        if not tokens:
+            return [], [], -1
+
+        split_tokens = [token.split(u"￨") for token in tokens]
+        split_tokens = [token for token in split_tokens if token[0]]
+        token_size = len(split_tokens[0])
+
+        assert all(len(token) == token_size for token in split_tokens), \
+            "all words must have the same number of features"
+        words_and_features = list(zip(*split_tokens))
+        words = words_and_features[0]
+        features = words_and_features[1:]
+
+        return words, features, token_size - 1
+
     # Below are helper functions for intra-class use only.
 
     def _join_dicts(self, *args):

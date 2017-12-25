@@ -197,31 +197,7 @@ class TextDataset(ONMTDatasetBase):
         return fields
 
     @staticmethod
-    def extract_text_features(tokens):
-        """
-        Args:
-            tokens: A list of tokens, where each token consists of a word,
-                optionally followed by u"￨"-delimited features.
-        Returns:
-            A sequence of words, a sequence of features, and num of features.
-        """
-        if not tokens:
-            return [], [], -1
-
-        split_tokens = [token.split(u"￨") for token in tokens]
-        split_tokens = [token for token in split_tokens if token[0]]
-        token_size = len(split_tokens[0])
-
-        assert all(len(token) == token_size for token in split_tokens), \
-            "all words must have the same number of features"
-        words_and_features = list(zip(*split_tokens))
-        words = words_and_features[0]
-        features = words_and_features[1:]
-
-        return words, features, token_size - 1
-
-    @staticmethod
-    def get_num_features(corpus_file):
+    def get_num_features(corpus_file, side):
         """
         Peek one line and get number of features of it.
         (All lines must have same number of features).
@@ -230,6 +206,7 @@ class TextDataset(ONMTDatasetBase):
 
         Args:
             corpus_file (str): file path to get the features.
+            side (str): 'src' or 'tgt'.
 
         Returns:
             number of features on `side`.

@@ -104,15 +104,12 @@ def get_num_features(data_type, corpus_file, side):
     """
     assert side in ["src", "tgt"]
 
-    # For target side, all 'data_type' are in form of text.
-    if side == 'tgt':
-        return TextDataset.get_num_features(corpus_file)
-
-    # For source side, 'img' and 'audio' don't have features.
-    if data_type == 'img' or data_type == 'audio':
-        return 0
-    elif data_type == 'text':
-        return TextDataset.get_num_features(corpus_file)
+    if data_type == 'text':
+        return TextDataset.get_num_features(corpus_file, side)
+    elif data_type == 'img':
+        return ImageDataset.get_num_features(corpus_file, side)
+    elif data_type == 'audio':
+        return AudioDataset.get_num_features(corpus_file, side)
 
 
 def make_features(batch, side, data_type='text'):
