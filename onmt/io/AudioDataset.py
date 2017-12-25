@@ -6,8 +6,7 @@ import os
 import torch
 import torchtext
 
-from onmt.io.IO import ONMTDatasetBase, \
-                        PAD_WORD, BOS_WORD, EOS_WORD
+from onmt.io.DatasetBase import ONMTDatasetBase, PAD_WORD, BOS_WORD, EOS_WORD
 
 
 class AudioDataset(ONMTDatasetBase):
