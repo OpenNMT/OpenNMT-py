@@ -15,29 +15,28 @@ from onmt.io.IO import ONMTDatasetBase, _join_dicts, _peek,\
 class TextDataset(ONMTDatasetBase):
     """ Dataset for data_type=='text'
 
-        Build Example objects, Field objects, and filter_pred function
+        Build `Example` objects, `Field` objects, and filter_pred function
         from text corpus.
 
         Args:
-            fields: a dictionary of Field objects. Keys are like 'src',
-                    'tgt', 'src_map', and 'alignment'.
-            src_examples_iter: preprocessed source example_dict iterator.
-            tgt_examples_iter: preprocessed target example_dict iterator.
-            num_src_feats: number of source side features.
-            num_tgt_feats: number of target side features.
-            src_seq_length: maximum source sequence length.
-            tgt_seq_length: maximum target sequence length.
-            dynamic_dict: create dynamic dictionaries?
-            use_filter_pred: use a custom filter predicate to filter examples?
+            fields (dict): a dictionary of `torchtext.data.Field`.
+                Keys are like 'src', 'tgt', 'src_map', and 'alignment'.
+            src_examples_iter (dict iter): preprocessed source example
+                dictionary iterator.
+            tgt_examples_iter (dict iter): preprocessed target example
+                dictionary iterator.
+            num_src_feats (int): number of source side features.
+            num_tgt_feats (int): number of target side features.
+            src_seq_length (int): maximum source sequence length.
+            tgt_seq_length (int): maximum target sequence length.
+            dynamic_dict (bool): create dynamic dictionaries?
+            use_filter_pred (bool): use a custom filter predicate to filter
+                out examples?
     """
-
-    def sort_key(self, ex):
-        return -len(ex.src)
-
-    def _process_corpus(self, fields, src_examples_iter, tgt_examples_iter,
-                        num_src_feats=0, num_tgt_feats=0,
-                        src_seq_length=0, tgt_seq_length=0,
-                        dynamic_dict=True, use_filter_pred=True):
+    def __init__(self, fields, src_examples_iter, tgt_examples_iter,
+                 num_src_feats=0, num_tgt_feats=0,
+                 src_seq_length=0, tgt_seq_length=0,
+                 dynamic_dict=True, use_filter_pred=True):
         self.data_type = 'text'
 
         # self.src_vocabs: mutated in dynamic_dict, used in
@@ -75,7 +74,12 @@ class TextDataset(ONMTDatasetBase):
 
         filter_pred = filter_pred if use_filter_pred else lambda x: True
 
-        return out_examples, out_fields, filter_pred
+        super(TextDataset, self).__init__(
+            out_examples, out_fields, filter_pred
+        )
+
+    def sort_key(self, ex):
+        return -len(ex.src)
 
     def _dynamic_dict(self, examples_iter):
         for example in examples_iter:

@@ -559,15 +559,9 @@ class ONMTDatasetBase(torchtext.data.Dataset):
     the following attributes:
 
      `examples`: a sequence of `torchtext.data.Example` objects.
-     `fields`: a dictionary associating str keys with Field objects. Does not
-            necessarily have the same keys as the input fields.
+     `fields`: a dictionary associating str keys with `torchtext.data.Field`
+        objects, and not necessarily having the same keys as the input fields.
     """
-    def __init__(self, *args, **kwargs):
-        examples, fields, filter_pred = self._process_corpus(*args, **kwargs)
-        super(ONMTDatasetBase, self).__init__(
-            examples, fields, filter_pred
-        )
-
     def __getstate__(self):
         return self.__dict__
 
