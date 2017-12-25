@@ -60,14 +60,15 @@ class Statistics(object):
            start (int): start time of epoch.
         """
         t = self.elapsed_time()
-        print(("Epoch %2d, %5d/%5d; acc: %6.2f; ppl: %6.2f; " +
+        print(("Epoch %2d, %5d/%5d; loss: %6.2f; acc: %6.2f; ppl: %6.2f; " +
                "%3.0f src tok/s; %3.0f tgt tok/s; %6.0f s elapsed") %
-              (epoch, batch,  n_batches,
+              (epoch, batch, n_batches,
+               self.loss,
                self.accuracy(),
                self.ppl(),
                self.n_src_words / (t + 1e-5),
                self.n_words / (t + 1e-5),
-               time.time() - start))
+               time.time() - start), end='\r')
         sys.stdout.flush()
 
     def log(self, prefix, experiment, lr):
@@ -210,7 +211,7 @@ class Trainer(object):
     def epoch_step(self, ppl, epoch):
         return self.optim.update_learning_rate(ppl, epoch)
 
-    def drop_checkpoint(self, opt, epoch, fields, valid_stats):
+    def drop_checkpoint(self, opt, epoch, fields, valid_stats, val_gleu_avg_score=None):
         """ Save a resumable checkpoint.
 
         Args:
@@ -238,7 +239,14 @@ class Trainer(object):
             'epoch': epoch,
             'optim': self.optim,
         }
-        torch.save(checkpoint,
-                   '%s_acc_%.2f_ppl_%.2f_e%d.pt'
-                   % (opt.save_model, valid_stats.accuracy(),
-                      valid_stats.ppl(), epoch))
+        
+        if opt.eval_metric == 'gleu':
+            torch.save(checkpoint,
+                    '%s_acc_%.2f_ppl_%.2f_gleu_%.2f_e%d.pt'
+                    % (opt.save_model, valid_stats.accuracy(),
+                        valid_stats.ppl(), val_gleu_avg_score, epoch))
+        else:
+            torch.save(checkpoint,
+                    '%s_acc_%.2f_ppl_%.2f_e%d.pt'
+                    % (opt.save_model, valid_stats.accuracy(),
+                        valid_stats.ppl(), epoch))

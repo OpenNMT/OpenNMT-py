@@ -330,12 +330,52 @@ def train_opts(parser):
     group.add_argument('-exp', type=str, default="",
                        help="Name of the experiment for logging.")
 
-    group = parser.add_argument_group('Speech')
     # Options most relevant to speech
+    group = parser.add_argument_group('Speech')
     group.add_argument('-sample_rate', type=int, default=16000,
                        help="Sample rate.")
     group.add_argument('-window_size', type=float, default=.02,
                        help="Window size for spectrogram in seconds.")
+    group.add_argument('-window_stride', type=float, default=.01,
+                        help='Window stride for spectrogram in seconds')
+    group.add_argument('-window', default='hamming',
+                        help='Window type for spectrogram generation')
+
+    # Validation settings and parameters
+    group = parser.add_argument_group('Validation')
+    group.add_argument('-eval_metric', type=str, default='gleu',
+                        help="Select which evaluation metric to use. Options: [gleu|simple]")
+    group.add_argument('-gleu_src_path', type=str,
+                        help="Specify which source file will be used while evaluation")
+    group.add_argument('-gleu_tgt_path', type=str,
+                        help="Specify which target file will be used while evaluation")
+    # TODO: Not implemented yet, need to confirm what token will be used to seperate words.
+    # group.add_argument('-char_level', action="store_true",
+    #                     help="Whether tokens are character level.")
+    group.add_argument('-beam_size',  type=int, default=5,
+                        help='Beam size')
+    group.add_argument('-n_best', type=int, default=1,
+                        help="""If verbose is set, will output the n_best
+                        decoded sentences""")
+    group.add_argument('-max_sent_length', type=int, default=100,
+                        help='Maximum sentence length.')
+    group.add_argument('-replace_unk', action="store_true",
+                        help="""Replace the generated UNK tokens with the
+                        source token that had highest attention weight. If
+                        phrase_table is provided, it will lookup the
+                        identified source token and give the corresponding
+                        target token. If it is not provided(or the identified
+                        source token does not exist in the table) then it
+                        will copy the source token""")
+    group.add_argument('-dump_beam', type=str, default="",
+                       help='File to dump beam information to.')
+    # Alpha and Beta values for Google Length + Coverage penalty
+    # Described here: https://arxiv.org/pdf/1609.08144.pdf, Section 7
+    group.add_argument('-alpha', type=float, default=0.,
+                        help="""Google NMT length penalty parameter
+                        (higher = longer generation)""")
+    group.add_argument('-beta', type=float, default=-0.,
+                        help="""Coverage penalty parameter""")
 
 
 def translate_opts(parser):
