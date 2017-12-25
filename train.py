@@ -20,6 +20,10 @@ import onmt.modules
 from onmt.Utils import use_gpu
 import opts
 
+import numpy as np
+from tqdm import tqdm
+from gleu import GLEU
+
 
 parser = argparse.ArgumentParser(
     description='train.py',
@@ -142,6 +146,89 @@ def make_loss_compute(model, tgt_vocab, dataset, opt):
     return compute
 
 
+def compute_gleu_score(src, n_ref, pred):
+
+    def avg_gleu_score(scores):
+        scores = [float(l[0]) for l in scores if l!='nan']
+        return np.average(scores)
+
+    gleu_calculator = GLEU(len(n_ref))
+    gleu_calculator.load_sources(src)
+    gleu_calculator.load_references(n_ref)
+    scores = [g for g in gleu_calculator.run_iterations(n=len(n_ref),
+                                                        hypothesis=pred, 
+                                                        per_sent=False)]
+    return avg_gleu_score(scores)
+
+
+def validate_gleu_score(model, translator, translation_builder, val_dataset, val_dataset_iter, epoch, validation_dump_dir):
+
+    assert opt.n_best==1, "Current GLEU calculation only support single hypothesis, got {}".format(opt.n_best)
+
+    all_translations = []
+
+    # Do Translation
+    #
+    # Note: 
+    #       For simplicity, we currently do translation for each reference, in other word, we do extra 3 redundant translations.
+    #       Will comeback to fix this if necessary
+    model.eval()
+    model.generator.eval()
+
+    for batch in tqdm(val_dataset_iter):
+        batch_data = translator.translate_batch(batch, val_dataset)
+        translations = translation_builder.from_batch(batch_data)
+        all_translations += translations
+
+    model.train()
+    model.generator.train()
+    assert len(all_translations)%4==0, "Expected source should be 4's multiplier, got {}".format(len(all_translations)) 
+
+    # Transform list to dict, using src as dict key
+
+    all_translations_dict = {}
+    for translation in all_translations:
+        src = translation.src_raw
+        key = tuple(src)
+        if key in all_translations_dict:
+            ref = translation.gold_sent
+            all_translations_dict[key]['refs'].append(ref)
+        else:
+            obj = {}
+            all_translations_dict[key] = obj
+            pred = translation.pred_sents[0]
+            ref = translation.gold_sent
+            obj['src'] = src
+            obj['pred'] = pred
+            obj['refs'] = [ref]
+        
+    # Collapse dict back to list
+
+    all_src = []
+    all_pred = []
+    all_refs = [[] for i in range(4)]
+    for k in all_translations_dict:
+        all_src.append(all_translations_dict[k]['src'])
+        all_pred.append(all_translations_dict[k]['pred'])
+        for n in range(4):
+            all_refs[n].append(all_translations_dict[k]['refs'][n])
+
+    avg_gleu_score = compute_gleu_score(all_src, all_refs, all_pred)
+
+    # Save validation output for each epoch. This can help analysis and debugging.
+    
+    with open(validation_dump_dir + 'Epoch_{}.txt'.format(epoch), 'w') as f:
+        for i in range(len(all_src)):
+            f.write(str(i)+'\n')
+            f.write(' '.join(all_src[i])+'\n')
+            f.write(' '.join(all_pred[i])+'\n')
+            for n in range(4):
+                f.write(' '.join(all_refs[n][i])+'\n')
+
+
+    return avg_gleu_score
+
+
 def train_model(model, train_dataset, valid_dataset,
                 fields, optim, model_opt):
 
@@ -156,6 +243,45 @@ def train_model(model, train_dataset, valid_dataset,
     trunc_size = opt.truncated_decoder  # Badly named...
     shard_size = opt.max_generator_batches
     data_type = train_dataset.data_type
+
+    # Setup translator for GLEU score 
+    # Since OpenNMT model has copy mechenism, 
+    #   we should fully reconstruct output instead of using model output to get GLEU score directly
+    if opt.eval_metric == 'gleu':
+
+        # Translator
+        val_dataset = onmt.io.build_dataset(fields, "text",
+                                            opt.gleu_src_path, opt.gleu_tgt_path,
+                                            src_dir=os.path.dirname(opt.gleu_src_path),
+                                            sample_rate=opt.sample_rate,
+                                            window_size=opt.window_size,
+                                            window_stride=opt.window_stride,
+                                            window=opt.window,
+                                            use_filter_pred=False)
+
+        val_dataset_iter = onmt.io.OrderedIterator(dataset=val_dataset, device=opt.gpuid[0],
+                                                batch_size=opt.batch_size, train=False, sort=False,
+                                                shuffle=False)
+
+        scorer = onmt.translate.GNMTGlobalScorer(opt.alpha, opt.beta)
+
+        translator = onmt.translate.Translator(model, fields,
+                                               beam_size=opt.beam_size,
+                                               n_best=opt.n_best,
+                                               global_scorer=scorer,
+                                               max_length=opt.max_sent_length,
+                                               copy_attn=model_opt.copy_attn,
+                                               cuda=True,
+                                               beam_trace=opt.dump_beam != "")
+
+        translation_builder = onmt.translate.TranslationBuilder(val_dataset, translator.fields,
+                                                                opt.n_best, opt.replace_unk, opt.gleu_tgt_path)
+
+        import time
+
+        localtime   = time.localtime()
+        validation_dump_dir = './validation_dump/val_{}/'.format(time.strftime("%Y:%m:%d_%H:%M:%S", time.localtime()))
+        os.mkdir(validation_dump_dir)
 
     trainer = onmt.Trainer(model, train_iter, valid_iter,
                            train_loss, valid_loss, optim,
@@ -174,6 +300,19 @@ def train_model(model, train_dataset, valid_dataset,
         print('Validation perplexity: %g' % valid_stats.ppl())
         print('Validation accuracy: %g' % valid_stats.accuracy())
 
+        # 2-1. Validate GLEU score
+        if opt.eval_metric == 'gleu':
+
+            model.eval()
+            model.generator.eval()
+            
+            val_gleu_avg_score = validate_gleu_score(model, translator, translation_builder, val_dataset, val_dataset_iter, epoch, validation_dump_dir)
+            
+            model.train()
+            model.generator.train()
+
+            print('Validation GLEU avg score: %g' % val_gleu_avg_score)
+
         # 3. Log to remote server.
         if opt.exp_host:
             train_stats.log("train", experiment, optim.lr)
@@ -184,7 +323,10 @@ def train_model(model, train_dataset, valid_dataset,
 
         # 5. Drop a checkpoint if needed.
         if epoch >= opt.start_checkpoint_at:
-            trainer.drop_checkpoint(model_opt, epoch, fields, valid_stats)
+            if opt.eval_metric == 'gleu':
+                trainer.drop_checkpoint(model_opt, epoch, fields, valid_stats, val_gleu_avg_score=val_gleu_avg_score)
+            else:
+                trainer.drop_checkpoint(model_opt, epoch, fields, valid_stats, val_gleu_avg_score=None)
 
 
 def check_save_model_path():
