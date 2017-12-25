@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import argparse
-import codecs
 import os
 import glob
 import sys
@@ -42,26 +41,8 @@ def parse_args():
 
 
 def get_num_features(side, opt):
-    """ Peek one line and get number of features of it.
-        (All lines must have same number of features).
-    """
-    assert side in ["src", "tgt"]
-
-    # Only "text" corpus has srouce-side features.
-    if side == "src":
-        data_file = opt.train_src if opt.data_type == "text" else None
-    else:
-        # side == "tgt"
-        data_file = opt.train_tgt
-
-    if data_file is not None:
-        with codecs.open(data_file, "r", "utf-8") as df:
-            f_line = df.readline().strip().split()
-            _, _, n_features = onmt.io.extract_features(f_line)
-    else:
-        n_features = 0
-
-    return n_features
+    corpus_file = opt.train_src if side == "src" else opt.train_tgt
+    return onmt.io.get_num_features(opt.data_type, corpus_file, side)
 
 
 def build_save_text_dataset_in_shards(src_corpus, tgt_corpus, fields,

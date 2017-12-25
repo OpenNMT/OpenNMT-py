@@ -97,12 +97,40 @@ def merge_vocabs(vocabs, vocab_size=None):
                                  max_size=vocab_size)
 
 
+def get_num_features(data_type, corpus_file, side):
+    """
+    Args:
+        data_type (str): type of the source input.
+            Options are [text|img|audio].
+        corpus_file (str): file path to get the features.
+        side (str): for source or for target.
+
+    Returns:
+        number of features on `side`.
+    """
+    assert side in ["src", "tgt"]
+
+    # Hide this import inside to avoid circular dependency problem.
+    from onmt.io import TextDataset
+
+    # For target side, all 'data_type' are in form of text.
+    if side == 'tgt':
+        return TextDataset.get_num_features(corpus_file)
+
+    # For source side, 'img' and 'audio' don't have features.
+    if data_type == 'img' or data_type == 'audio':
+        return 0
+    elif data_type == 'text':
+        return TextDataset.get_num_features(corpus_file)
+
+
 def make_features(batch, side, data_type='text'):
     """
     Args:
         batch (Variable): a batch of source or target data.
         side (str): for source or for target.
-        data_type (str): type of the source input. Options are [text|img].
+        data_type (str): type of the source input.
+            Options are [text|img|audio].
     Returns:
         A sequence of src/tgt tensors with optional feature tensors
         of size (len x batch).
@@ -122,27 +150,6 @@ def make_features(batch, side, data_type='text'):
         return torch.cat([level.unsqueeze(2) for level in levels], 2)
     else:
         return levels[0]
-
-
-def extract_features(tokens):
-    """
-    Args:
-        tokens: A list of tokens, where each token consists of a word,
-            optionally followed by u"￨"-delimited features.
-    Returns:
-        A sequence of words, a sequence of features, and num of features.
-    """
-    if not tokens:
-        return [], [], -1
-    split_tokens = [token.split(u"￨") for token in tokens]
-    split_tokens = [token for token in split_tokens if token[0]]
-    token_size = len(split_tokens[0])
-    assert all(len(token) == token_size for token in split_tokens), \
-        "all words must have the same number of features"
-    words_and_features = list(zip(*split_tokens))
-    words = words_and_features[0]
-    features = words_and_features[1:]
-    return words, features, token_size - 1
 
 
 def collect_features(fields, side="src"):

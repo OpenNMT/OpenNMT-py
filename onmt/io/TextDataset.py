@@ -10,7 +10,7 @@ import torch
 import torchtext
 
 from onmt.Utils import aeq
-from onmt.io.IO import ONMTDatasetBase, extract_features, \
+from onmt.io.IO import ONMTDatasetBase, \
                         PAD_WORD, BOS_WORD, EOS_WORD
 
 
@@ -124,7 +124,10 @@ class TextDataset(ONMTDatasetBase):
                 line = line.strip().split()
                 if truncate:
                     line = line[:truncate]
-                words, feats, n_feats = extract_features(line)
+
+                words, feats, n_feats = \
+                    TextDataset.extract_text_features(line)
+
                 example_dict = {side: words, "indices": i}
                 if feats:
                     prefix = side + "_feat_"
@@ -193,6 +196,50 @@ class TextDataset(ONMTDatasetBase):
             sequential=False)
 
         return fields
+
+    @staticmethod
+    def extract_text_features(tokens):
+        """
+        Args:
+            tokens: A list of tokens, where each token consists of a word,
+                optionally followed by u"￨"-delimited features.
+        Returns:
+            A sequence of words, a sequence of features, and num of features.
+        """
+        if not tokens:
+            return [], [], -1
+
+        split_tokens = [token.split(u"￨") for token in tokens]
+        split_tokens = [token for token in split_tokens if token[0]]
+        token_size = len(split_tokens[0])
+
+        assert all(len(token) == token_size for token in split_tokens), \
+            "all words must have the same number of features"
+        words_and_features = list(zip(*split_tokens))
+        words = words_and_features[0]
+        features = words_and_features[1:]
+
+        return words, features, token_size - 1
+
+    @staticmethod
+    def get_num_features(corpus_file):
+        """
+        Peek one line and get number of features of it.
+        (All lines must have same number of features).
+        For text corpus, both sides are in text form, thus
+        it works the same.
+
+        Args:
+            corpus_file (str): file path to get the features.
+
+        Returns:
+            number of features on `side`.
+        """
+        with codecs.open(corpus_file, "r", "utf-8") as cf:
+            f_line = cf.readline().strip().split()
+            _, _, num_feats = TextDataset.extract_text_features(f_line)
+
+        return num_feats
 
     # Below are helper functions for intra-class use only.self.
     def _dynamic_dict(self, examples_iter):
@@ -306,7 +353,7 @@ class ShardedTextCorpusIterator(object):
         line = self.corpus.readline().split()
         if self.line_truncate:
             line = line[:self.line_truncate]
-        _, _, self.n_feats = extract_features(line)
+        _, _, self.n_feats = TextDataset.extract_text_features(line)
 
         self.corpus.seek(saved_pos)
 
@@ -316,7 +363,7 @@ class ShardedTextCorpusIterator(object):
         line = line.split()
         if self.line_truncate:
             line = line[:self.line_truncate]
-        words, feats, n_feats = extract_features(line)
+        words, feats, n_feats = TextDataset.extract_text_features(line)
         example_dict = {self.side: words, "indices": self.line_index}
         if feats:
             # All examples must have same number of features.
