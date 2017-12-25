@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
 
 from collections import Counter
+from itertools import chain
 import io
+import codecs
 import sys
 
 import torch
 import torchtext
 
 from onmt.Utils import aeq
-from onmt.io.IO import ONMTDatasetBase, _join_dicts, _peek,\
-                       _construct_example_fromlist, extract_features
+from onmt.io.IO import ONMTDatasetBase, extract_features
 
 
 class TextDataset(ONMTDatasetBase):
@@ -50,7 +51,7 @@ class TextDataset(ONMTDatasetBase):
         # at minimum the src tokens and their indices and potentially also
         # the src and tgt features and alignment information.
         if tgt_examples_iter is not None:
-            examples_iter = (_join_dicts(src, tgt) for src, tgt in
+            examples_iter = (self._join_dicts(src, tgt) for src, tgt in
                              zip(src_examples_iter, tgt_examples_iter))
         else:
             examples_iter = src_examples_iter
@@ -59,13 +60,14 @@ class TextDataset(ONMTDatasetBase):
             examples_iter = self._dynamic_dict(examples_iter)
 
         # Peek at the first to see which fields are used.
-        ex, examples_iter = _peek(examples_iter)
+        ex, examples_iter = self._peek(examples_iter)
         keys = ex.keys()
 
         out_fields = [(k, fields[k]) if k in fields else (k, None)
                       for k in keys]
         example_values = ([ex[k] for k in keys] for ex in examples_iter)
-        out_examples = (_construct_example_fromlist(ex_values, out_fields)
+        out_examples = (self._construct_example_fromlist(
+                            ex_values, out_fields)
                         for ex_values in example_values)
 
         def filter_pred(example):
@@ -81,6 +83,55 @@ class TextDataset(ONMTDatasetBase):
     def sort_key(self, ex):
         return -len(ex.src)
 
+    @staticmethod
+    def make_text_examples_nfeats_tpl(path, truncate, side):
+        """
+        Process the text corpus into (example_dict iterator, num_feats) tuple.
+        """
+        assert side in ['src', 'tgt']
+
+        if path is None:
+            return (None, 0)
+
+        # All examples have same number of features, so we peek first one
+        # to get the num_feats.
+        examples_nfeats_iter = \
+            TextDataset.read_text_file(path, truncate, side)
+
+        first_ex = next(examples_nfeats_iter)
+        num_feats = first_ex[1]
+
+        # Chain back the first element - we only want to peek it.
+        examples_nfeats_iter = chain([first_ex], examples_nfeats_iter)
+        examples_iter = (ex for ex, nfeats in examples_nfeats_iter)
+
+        return (examples_iter, num_feats)
+
+    @staticmethod
+    def read_text_file(path, truncate, side):
+        """
+        Args:
+            path: location of a src or tgt file.
+            truncate: maximum sequence length (0 for unlimited).
+            side: "src" or "tgt".
+
+        Yields:
+            (word, features, nfeat) triples for each line.
+        """
+        with codecs.open(path, "r", "utf-8") as corpus_file:
+            for i, line in enumerate(corpus_file):
+                line = line.strip().split()
+                if truncate:
+                    line = line[:truncate]
+                words, feats, n_feats = extract_features(line)
+                example_dict = {side: words, "indices": i}
+                if feats:
+                    prefix = side + "_feat_"
+                    example_dict.update((prefix + str(j), f)
+                                        for j, f in enumerate(feats))
+                yield example_dict, n_feats
+
+    # Below are helper functions for intra-class use only.self.
     def _dynamic_dict(self, examples_iter):
         for example in examples_iter:
             src = example["src"]

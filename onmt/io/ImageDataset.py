@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from onmt.io.IO import ONMTDatasetBase, _join_dicts, _peek, \
-                       _construct_example_fromlist
+from onmt.io.IO import ONMTDatasetBase
 
 
 class ImageDataset(ONMTDatasetBase):
@@ -31,19 +30,20 @@ class ImageDataset(ONMTDatasetBase):
         self.n_tgt_feats = num_tgt_feats
 
         if tgt_examples_iter is not None:
-            examples_iter = (_join_dicts(src, tgt) for src, tgt in
+            examples_iter = (self._join_dicts(src, tgt) for src, tgt in
                              zip(src_examples_iter, tgt_examples_iter))
         else:
             examples_iter = src_examples_iter
 
         # Peek at the first to see which fields are used.
-        ex, examples_iter = _peek(examples_iter)
+        ex, examples_iter = self._peek(examples_iter)
         keys = ex.keys()
 
         out_fields = [(k, fields[k]) if k in fields else (k, None)
                       for k in keys]
         example_values = ([ex[k] for k in keys] for ex in examples_iter)
-        out_examples = (_construct_example_fromlist(ex_values, out_fields)
+        out_examples = (self._construct_example_fromlist(
+                            ex_values, out_fields)
                         for ex_values in example_values)
 
         def filter_pred(example):

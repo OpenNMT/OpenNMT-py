@@ -258,7 +258,8 @@ def build_dataset(fields, data_type, src_path, tgt_path, src_dir=None,
                                   window, normalize_audio)
 
     tgt_examples_iter, num_tgt_feats = \
-        _make_text_examples_nfeats_tpl(tgt_path, tgt_seq_length_trunc, "tgt")
+        TextDataset.make_text_examples_nfeats_tpl(
+            tgt_path, tgt_seq_length_trunc, "tgt")
 
     if data_type == 'text':
         dataset = TextDataset(fields, src_examples_iter, tgt_examples_iter,
@@ -325,63 +326,6 @@ def build_vocab(train_datasets, data_type, share_vocab,
                 vocab_size=src_vocab_size)
             fields["src"].vocab = merged_vocab
             fields["tgt"].vocab = merged_vocab
-
-
-def _join_dicts(*args):
-    """
-    Args:
-        dictionaries with disjoint keys.
-    Returns:
-        a single dictionary that has the union of these keys.
-    """
-    return dict(chain(*[d.items() for d in args]))
-
-
-def _peek(seq):
-    """
-    Args:
-        seq: an iterator.
-
-    Returns:
-        the first thing returned by calling next() on the iterator
-        and an iterator created by re-chaining that value to the beginning
-        of the iterator.
-    """
-    first = next(seq)
-    return first, chain([first], seq)
-
-
-def _construct_example_fromlist(data, fields):
-    ex = torchtext.data.Example()
-    for (name, field), val in zip(fields, data):
-        if field is not None:
-            setattr(ex, name, field.preprocess(val))
-        else:
-            setattr(ex, name, val)
-    return ex
-
-
-def _read_text_file(path, truncate, side):
-    """
-    Args:
-        path: location of a src or tgt file.
-        truncate: maximum sequence length (0 for unlimited).
-
-    Yields:
-        (word, features, nfeat) triples for each line.
-    """
-    with codecs.open(path, "r", "utf-8") as corpus_file:
-        for i, line in enumerate(corpus_file):
-            line = line.strip().split()
-            if truncate:
-                line = line[:truncate]
-            words, feats, n_feats = extract_features(line)
-            example_dict = {side: words, "indices": i}
-            if feats:
-                prefix = side + "_feat_"
-                example_dict.update((prefix + str(j), f)
-                                    for j, f in enumerate(feats))
-            yield example_dict, n_feats
 
 
 def _read_img_file(path, src_dir, side, truncate=None):
@@ -489,25 +433,6 @@ def _read_audio_file(path, src_dir, side, sample_rate, window_size,
             yield example_dict
 
 
-def _make_text_examples_nfeats_tpl(path, truncate, side):
-    """
-    Process the text corpus into (example_dict iterator, num_feats) tuple.
-    """
-    assert side in ['src', 'tgt']
-
-    if path is None:
-        return (None, 0)
-
-    # All examples have same number of features, so we peek first one
-    # to get the num_feats.
-    examples_nfeats_iter = _read_text_file(path, truncate, side)
-    (_, num_feats), examples_nfeats_iter = _peek(examples_nfeats_iter)
-
-    examples_iter = (ex for ex, nfeats in examples_nfeats_iter)
-
-    return (examples_iter, num_feats)
-
-
 def _make_examples_nfeats_tpl(data_type, src_path, src_dir,
                               src_seq_length_trunc, sample_rate,
                               window_size, window_stride,
@@ -517,9 +442,13 @@ def _make_examples_nfeats_tpl(data_type, src_path, src_dir,
     on source side for different 'data_type'.
     """
 
+    # Hide this import inside to avoid circular dependency problem.
+    from onmt.io import TextDataset
+
     if data_type == 'text':
-        src_examples_iter, num_src_feats = _make_text_examples_nfeats_tpl(
-                            src_path, src_seq_length_trunc, "src")
+        src_examples_iter, num_src_feats = \
+            TextDataset.make_text_examples_nfeats_tpl(
+                src_path, src_seq_length_trunc, "src")
 
     elif data_type == 'img':
         src_examples_iter = _read_img_file(src_path, src_dir, "src")
@@ -611,3 +540,48 @@ class ONMTDatasetBase(torchtext.data.Dataset):
             # All datasets have same fields, no need to update.
 
         return final
+
+    # Below are helper functions for intra-class use only.
+
+    def _join_dicts(self, *args):
+        """
+        Args:
+            dictionaries with disjoint keys.
+
+        Returns:
+            a single dictionary that has the union of these keys.
+        """
+        return dict(chain(*[d.items() for d in args]))
+
+    def _peek(self, seq):
+        """
+        Args:
+            seq: an iterator.
+
+        Returns:
+            the first thing returned by calling next() on the iterator
+            and an iterator created by re-chaining that value to the beginning
+            of the iterator.
+        """
+        first = next(seq)
+        return first, chain([first], seq)
+
+    def _construct_example_fromlist(self, data, fields):
+        """
+        Args:
+            data: the data to be set as the value of the attributes of
+                the to-be-created `Example`, associating with respective
+                `Field` objects with same key.
+            fields: a dict of `torchtext.data.Field` objects. The keys
+                are attributes of the to-be-created `Example`.
+
+        Returns:
+            the created `Example` object.
+        """
+        ex = torchtext.data.Example()
+        for (name, field), val in zip(fields, data):
+            if field is not None:
+                setattr(ex, name, field.preprocess(val))
+            else:
+                setattr(ex, name, val)
+        return ex
