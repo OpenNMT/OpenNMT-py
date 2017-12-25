@@ -2,9 +2,12 @@
 
 import codecs
 import os
-import torch
 
-from onmt.io.IO import ONMTDatasetBase
+import torch
+import torchtext
+
+from onmt.io.IO import ONMTDatasetBase, \
+                        PAD_WORD, BOS_WORD, EOS_WORD
 
 
 class AudioDataset(ONMTDatasetBase):
@@ -154,3 +157,73 @@ class AudioDataset(ONMTDatasetBase):
                 index += 1
 
                 yield example_dict
+
+    @staticmethod
+    def get_fields(n_src_features, n_tgt_features):
+        """
+        Args:
+            n_src_features: the number of source features to
+                create `torchtext.data.Field` for.
+            n_tgt_features: the number of target features to
+                create `torchtext.data.Field` for.
+
+        Returns:
+            A dictionary whose keys are strings and whose values
+            are the corresponding Field objects.
+        """
+        fields = {}
+
+        def make_audio(data, _):
+            nfft = data[0].size(0)
+            t = max([t.size(1) for t in data])
+            sounds = torch.zeros(len(data), 1, nfft, t)
+            for i, spect in enumerate(data):
+                sounds[i, :, :, 0:spect.size(1)] = spect
+            return sounds
+
+        fields["src"] = torchtext.data.Field(
+            use_vocab=False, tensor_type=torch.FloatTensor,
+            postprocessing=make_audio, sequential=False)
+
+        for j in range(n_src_features):
+            fields["src_feat_"+str(j)] = \
+                torchtext.data.Field(pad_token=PAD_WORD)
+
+        fields["tgt"] = torchtext.data.Field(
+            init_token=BOS_WORD, eos_token=EOS_WORD,
+            pad_token=PAD_WORD)
+
+        for j in range(n_tgt_features):
+            fields["tgt_feat_"+str(j)] = \
+                torchtext.data.Field(init_token=BOS_WORD, eos_token=EOS_WORD,
+                                     pad_token=PAD_WORD)
+
+        def make_src(data, _):
+            src_size = max([t.size(0) for t in data])
+            src_vocab_size = max([t.max() for t in data]) + 1
+            alignment = torch.zeros(src_size, len(data), src_vocab_size)
+            for i, sent in enumerate(data):
+                for j, t in enumerate(sent):
+                    alignment[j, i, t] = 1
+            return alignment
+
+        fields["src_map"] = torchtext.data.Field(
+            use_vocab=False, tensor_type=torch.FloatTensor,
+            postprocessing=make_src, sequential=False)
+
+        def make_tgt(data, _):
+            tgt_size = max([t.size(0) for t in data])
+            alignment = torch.zeros(tgt_size, len(data)).long()
+            for i, sent in enumerate(data):
+                alignment[:sent.size(0), i] = sent
+            return alignment
+
+        fields["alignment"] = torchtext.data.Field(
+            use_vocab=False, tensor_type=torch.LongTensor,
+            postprocessing=make_tgt, sequential=False)
+
+        fields["indices"] = torchtext.data.Field(
+            use_vocab=False, tensor_type=torch.LongTensor,
+            sequential=False)
+
+        return fields

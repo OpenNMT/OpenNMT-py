@@ -33,87 +33,24 @@ def get_fields(data_type, n_src_features, n_tgt_features):
     """
     Args:
         data_type: type of the source input. Options are [text|img|audio].
-        n_src_features: the number of source features to create Field for.
-        n_tgt_features: the number of target features to create Field for.
+        n_src_features: the number of source features to
+            create `torchtext.data.Field` for.
+        n_tgt_features: the number of target features to
+            create `torchtext.data.Field` for.
+
     Returns:
         A dictionary whose keys are strings and whose values are the
         corresponding Field objects.
     """
-    fields = {}
+    # Hide this import inside to avoid circular dependency problem.
+    from onmt.io import TextDataset, ImageDataset, AudioDataset
+
     if data_type == 'text':
-        fields["src"] = torchtext.data.Field(
-            pad_token=PAD_WORD,
-            include_lengths=True)
-
+        return TextDataset.get_fields(n_src_features, n_tgt_features)
     elif data_type == 'img':
-        def make_img(data, _):
-            c = data[0].size(0)
-            h = max([t.size(1) for t in data])
-            w = max([t.size(2) for t in data])
-            imgs = torch.zeros(len(data), c, h, w)
-            for i, img in enumerate(data):
-                imgs[i, :, 0:img.size(1), 0:img.size(2)] = img
-            return imgs
-
-        fields["src"] = torchtext.data.Field(
-            use_vocab=False, tensor_type=torch.FloatTensor,
-            postprocessing=make_img, sequential=False)
-
+        return ImageDataset.get_fields(n_src_features, n_tgt_features)
     elif data_type == 'audio':
-        def make_audio(data, _):
-            nfft = data[0].size(0)
-            t = max([t.size(1) for t in data])
-            sounds = torch.zeros(len(data), 1, nfft, t)
-            for i, spect in enumerate(data):
-                sounds[i, :, :, 0:spect.size(1)] = spect
-            return sounds
-
-        fields["src"] = torchtext.data.Field(
-            use_vocab=False, tensor_type=torch.FloatTensor,
-            postprocessing=make_audio, sequential=False)
-
-    for j in range(n_src_features):
-        fields["src_feat_"+str(j)] = \
-            torchtext.data.Field(pad_token=PAD_WORD)
-
-    fields["tgt"] = torchtext.data.Field(
-        init_token=BOS_WORD, eos_token=EOS_WORD,
-        pad_token=PAD_WORD)
-
-    for j in range(n_tgt_features):
-        fields["tgt_feat_"+str(j)] = \
-            torchtext.data.Field(init_token=BOS_WORD, eos_token=EOS_WORD,
-                                 pad_token=PAD_WORD)
-
-    def make_src(data, _):
-        src_size = max([t.size(0) for t in data])
-        src_vocab_size = max([t.max() for t in data]) + 1
-        alignment = torch.zeros(src_size, len(data), src_vocab_size)
-        for i, sent in enumerate(data):
-            for j, t in enumerate(sent):
-                alignment[j, i, t] = 1
-        return alignment
-
-    fields["src_map"] = torchtext.data.Field(
-        use_vocab=False, tensor_type=torch.FloatTensor,
-        postprocessing=make_src, sequential=False)
-
-    def make_tgt(data, _):
-        tgt_size = max([t.size(0) for t in data])
-        alignment = torch.zeros(tgt_size, len(data)).long()
-        for i, sent in enumerate(data):
-            alignment[:sent.size(0), i] = sent
-        return alignment
-
-    fields["alignment"] = torchtext.data.Field(
-        use_vocab=False, tensor_type=torch.LongTensor,
-        postprocessing=make_tgt, sequential=False)
-
-    fields["indices"] = torchtext.data.Field(
-        use_vocab=False, tensor_type=torch.LongTensor,
-        sequential=False)
-
-    return fields
+        return AudioDataset.get_fields(n_src_features, n_tgt_features)
 
 
 def load_fields_from_vocab(vocab, data_type="text"):
@@ -247,14 +184,14 @@ def build_dataset(fields, data_type, src_path, tgt_path, src_dir=None,
     from onmt.io import TextDataset, ImageDataset, AudioDataset
 
     # Build src/tgt examples iterator from corpus files, also extract
-    # number of features. For all data types, the tgt side corpus is
-    # in form of text.
+    # number of features.
     src_examples_iter, num_src_feats = \
         _make_examples_nfeats_tpl(data_type, src_path, src_dir,
                                   src_seq_length_trunc, sample_rate,
                                   window_size, window_stride,
                                   window, normalize_audio)
 
+    # For all data types, the tgt side corpus is in form of text.
     tgt_examples_iter, num_tgt_feats = \
         TextDataset.make_text_examples_nfeats_tpl(
             tgt_path, tgt_seq_length_trunc, "tgt")
