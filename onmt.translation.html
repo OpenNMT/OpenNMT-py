@@ -1,0 +1,468 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Doc: Translation &mdash; OpenNMT-py  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="OpenNMT-py  documentation" href="index.html"/>
+        <link rel="next" title="Doc: Data Loaders" href="onmt.io.html"/>
+        <link rel="prev" title="Doc: Modules" href="onmt.modules.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> OpenNMT-py
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="main.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.html">Doc: Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.modules.html">Doc: Modules</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Doc: Translation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#translations">Translations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#translator-class">Translator Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#beam-search">Beam Search</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.io.html">Doc: Data Loaders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Library.html">Library: Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="options/preprocess.html">Options: preprocess.py:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="options/train.html">Options: train.py:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="options/translate.html">Options: translate.py:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extended.html">Example: Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Summarization.html">Example: Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="im2text.html">Example: Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="speech2text.html">Example: Speech to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CONTRIBUTORS.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ref.html">References</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">OpenNMT-py</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Doc: Translation</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/onmt.translation.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="doc-translation">
+<h1>Doc: Translation<a class="headerlink" href="#doc-translation" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="translations">
+<h2>Translations<a class="headerlink" href="#translations" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="onmt.translate.Translation">
+<em class="property">class </em><code class="descclassname">onmt.translate.</code><code class="descname">Translation</code><span class="sig-paren">(</span><em>src</em>, <em>src_raw</em>, <em>pred_sents</em>, <em>attn</em>, <em>pred_scores</em>, <em>tgt_sent</em>, <em>gold_score</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.translate.Translation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Container for a translated sentence.</p>
+<dl class="attribute">
+<dt id="onmt.translate.Translation.src">
+<code class="descname">src</code><a class="headerlink" href="#onmt.translate.Translation.src" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>LongTensor</cite> – src word ids</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="onmt.translate.Translation.src_raw">
+<code class="descname">src_raw</code><a class="headerlink" href="#onmt.translate.Translation.src_raw" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>[str]</em> – raw src words</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="onmt.translate.Translation.pred_sents">
+<code class="descname">pred_sents</code><a class="headerlink" href="#onmt.translate.Translation.pred_sents" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>[[str]]</em> – words from the n-best translations</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="onmt.translate.Translation.pred_scores">
+<code class="descname">pred_scores</code><a class="headerlink" href="#onmt.translate.Translation.pred_scores" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>[[float]]</em> – log-probs of n-best translations</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="onmt.translate.Translation.attns">
+<code class="descname">attns</code><a class="headerlink" href="#onmt.translate.Translation.attns" title="Permalink to this definition">¶</a></dt>
+<dd><p>[<cite>FloatTensor</cite>] – attention dist for each translation</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="onmt.translate.Translation.gold_sent">
+<code class="descname">gold_sent</code><a class="headerlink" href="#onmt.translate.Translation.gold_sent" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>[str]</em> – words from gold translation</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="onmt.translate.Translation.gold_score">
+<code class="descname">gold_score</code><a class="headerlink" href="#onmt.translate.Translation.gold_score" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>[float]</em> – log-prob of gold translation</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.translate.Translation.log">
+<code class="descname">log</code><span class="sig-paren">(</span><em>sent_number</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.translate.Translation.log" title="Permalink to this definition">¶</a></dt>
+<dd><p>Log translation to stdout.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="translator-class">
+<h2>Translator Class<a class="headerlink" href="#translator-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="onmt.translate.Translator">
+<em class="property">class </em><code class="descclassname">onmt.translate.</code><code class="descname">Translator</code><span class="sig-paren">(</span><em>model</em>, <em>fields</em>, <em>beam_size</em>, <em>n_best=1</em>, <em>max_length=100</em>, <em>global_scorer=None</em>, <em>copy_attn=False</em>, <em>cuda=False</em>, <em>beam_trace=False</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.translate.Translator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Uses a model to translate a batch of sentences.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>model</strong> (<code class="xref py py-obj docutils literal"><span class="pre">onmt.modules.NMTModel</span></code>) – NMT model to use for translation</li>
+<li><strong>fields</strong> (<em>dict of Fields</em>) – data fields</li>
+<li><strong>beam_size</strong> (<em>int</em>) – size of beam to use</li>
+<li><strong>n_best</strong> (<em>int</em>) – number of translations produced</li>
+<li><strong>max_length</strong> (<em>int</em>) – maximum length output to produce</li>
+<li><strong>global_scores</strong> (<code class="xref py py-obj docutils literal"><span class="pre">GlobalScorer</span></code>) – object to rescore final translations</li>
+<li><strong>copy_attn</strong> (<em>bool</em>) – use copy attention during translation</li>
+<li><strong>cuda</strong> (<em>bool</em>) – use cuda</li>
+<li><strong>beam_trace</strong> (<em>bool</em>) – trace beam search for debugging</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="onmt.translate.Translator.translate_batch">
+<code class="descname">translate_batch</code><span class="sig-paren">(</span><em>batch</em>, <em>data</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.translate.Translator.translate_batch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Translate a batch of sentences.</p>
+<p>Mostly a wrapper around <a class="reference internal" href="#onmt.translate.Beam" title="onmt.translate.Beam"><code class="xref py py-obj docutils literal"><span class="pre">Beam</span></code></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>batch</strong> (<code class="xref py py-obj docutils literal"><span class="pre">Batch</span></code>) – a batch from a dataset object</li>
+<li><strong>data</strong> (<code class="xref py py-obj docutils literal"><span class="pre">Dataset</span></code>) – the dataset object</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="onmt.translate.TranslationBuilder">
+<em class="property">class </em><code class="descclassname">onmt.translate.</code><code class="descname">TranslationBuilder</code><span class="sig-paren">(</span><em>data</em>, <em>fields</em>, <em>n_best=1</em>, <em>replace_unk=False</em>, <em>has_tgt=False</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.translate.TranslationBuilder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build a word-based translation from the batch output
+of translator and the underlying dictionaries.</p>
+<p>Replacement based on “Addressing the Rare Word
+Problem in Neural Machine Translation” <a class="reference internal" href="ref.html#luong2015b" id="id1">[LSL+15]</a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>data</strong> (<em>DataSet</em>) – </li>
+<li><strong>fields</strong> (<em>dict of Fields</em>) – data fields</li>
+<li><strong>n_best</strong> (<em>int</em>) – number of translations produced</li>
+<li><strong>replace_unk</strong> (<em>bool</em>) – replace unknown words using attention</li>
+<li><strong>has_tgt</strong> (<em>bool</em>) – will the batch have gold targets</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="beam-search">
+<h2>Beam Search<a class="headerlink" href="#beam-search" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="onmt.translate.Beam">
+<em class="property">class </em><code class="descclassname">onmt.translate.</code><code class="descname">Beam</code><span class="sig-paren">(</span><em>size</em>, <em>pad</em>, <em>bos</em>, <em>eos</em>, <em>n_best=1</em>, <em>cuda=False</em>, <em>global_scorer=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.translate.Beam" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class for managing the internals of the beam search process.</p>
+<p>Takes care of beams, back pointers, and scores.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>size</strong> (<em>int</em>) – beam size</li>
+<li><strong>bos</strong><strong>, </strong><strong>eos</strong> (<em>pad</em><em>,</em>) – indices of padding, beginning, and ending.</li>
+<li><strong>n_best</strong> (<em>int</em>) – nbest size to use</li>
+<li><strong>cuda</strong> (<em>bool</em>) – use gpu</li>
+<li><strong>global_scorer</strong> (<code class="xref py py-obj docutils literal"><span class="pre">GlobalScorer</span></code>) – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="onmt.translate.Beam.advance">
+<code class="descname">advance</code><span class="sig-paren">(</span><em>word_probs</em>, <em>attn_out</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.translate.Beam.advance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given prob over words for every last beam <cite>wordLk</cite> and attention
+<cite>attn_out</cite>: Compute and update the beam search.</p>
+<p>Parameters:</p>
+<ul class="simple">
+<li><cite>word_probs</cite>- probs of advancing from the last step (K x words)</li>
+<li><cite>attn_out</cite>- attention at the last step</li>
+</ul>
+<p>Returns: True if beam search is complete.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.translate.Beam.get_current_origin">
+<code class="descname">get_current_origin</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#onmt.translate.Beam.get_current_origin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the backpointers for the current timestep.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.translate.Beam.get_current_state">
+<code class="descname">get_current_state</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#onmt.translate.Beam.get_current_state" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the outputs for the current timestep.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.translate.Beam.get_hyp">
+<code class="descname">get_hyp</code><span class="sig-paren">(</span><em>timestep</em>, <em>k</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.translate.Beam.get_hyp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Walk back to construct the full hypothesis.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="onmt.translate.GNMTGlobalScorer">
+<em class="property">class </em><code class="descclassname">onmt.translate.</code><code class="descname">GNMTGlobalScorer</code><span class="sig-paren">(</span><em>alpha</em>, <em>beta</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.translate.GNMTGlobalScorer" title="Permalink to this definition">¶</a></dt>
+<dd><p>NMT re-ranking score from
+“Google’s Neural Machine Translation System” <a class="reference internal" href="ref.html#wu2016google" id="id2">[WSC+16]</a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>alpha</strong> (<em>float</em>) – length parameter</li>
+<li><strong>beta</strong> (<em>float</em>) – coverage parameter</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="onmt.translate.GNMTGlobalScorer.score">
+<code class="descname">score</code><span class="sig-paren">(</span><em>beam</em>, <em>logprobs</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.translate.GNMTGlobalScorer.score" title="Permalink to this definition">¶</a></dt>
+<dd><p>Additional term add to log probability</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.translate.GNMTGlobalScorer.update_global_state">
+<code class="descname">update_global_state</code><span class="sig-paren">(</span><em>beam</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.translate.GNMTGlobalScorer.update_global_state" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keeps the coverage vector as sum of attens</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="onmt.io.html" class="btn btn-neutral float-right" title="Doc: Data Loaders" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="onmt.modules.html" class="btn btn-neutral" title="Doc: Modules" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, srush.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

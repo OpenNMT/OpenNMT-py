@@ -36,7 +36,7 @@
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
     <link rel="top" title="OpenNMT-py  documentation" href="index.html"/>
-        <link rel="next" title="Doc: Data Loaders" href="onmt.io.html"/>
+        <link rel="next" title="Doc: Translation" href="onmt.translation.html"/>
         <link rel="prev" title="Doc: Framework" href="onmt.html"/> 
 
   
@@ -103,8 +103,9 @@
 <li class="toctree-l2"><a class="reference internal" href="#structured-attention">Structured Attention</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.translation.html">Doc: Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="onmt.io.html">Doc: Data Loaders</a></li>
-<li class="toctree-l1"><a class="reference internal" href="FAQ.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Library.html">Library: Example</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/preprocess.html">Options: preprocess.py:</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/train.html">Options: train.py:</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/translate.html">Options: translate.py:</a></li>
@@ -112,6 +113,7 @@
 <li class="toctree-l1"><a class="reference internal" href="Summarization.html">Example: Summarization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="im2text.html">Example: Image to Text</a></li>
 <li class="toctree-l1"><a class="reference internal" href="speech2text.html">Example: Speech to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html">FAQ</a></li>
 <li class="toctree-l1"><a class="reference internal" href="CONTRIBUTORS.html">Contributors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ref.html">References</a></li>
 </ul>
@@ -183,7 +185,7 @@
 <h2>Core Modules<a class="headerlink" href="#core-modules" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.modules.Embeddings">
-<em class="property">class </em><code class="descclassname">onmt.modules.</code><code class="descname">Embeddings</code><span class="sig-paren">(</span><em>word_vec_size</em>, <em>position_encoding</em>, <em>feat_merge</em>, <em>feat_vec_exponent</em>, <em>feat_vec_size</em>, <em>dropout</em>, <em>word_padding_idx</em>, <em>feat_padding_idx</em>, <em>word_vocab_size</em>, <em>feat_vocab_sizes=[]</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.modules.Embeddings" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.modules.</code><code class="descname">Embeddings</code><span class="sig-paren">(</span><em>word_vec_size</em>, <em>word_vocab_size</em>, <em>word_padding_idx</em>, <em>position_encoding=False</em>, <em>feat_merge='concat'</em>, <em>feat_vec_exponent=0.7</em>, <em>feat_vec_size=-1</em>, <em>feat_padding_idx=[]</em>, <em>feat_vocab_sizes=[]</em>, <em>dropout=0</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.modules.Embeddings" title="Permalink to this definition">¶</a></dt>
 <dd><p>Words embeddings for encoder/decoder.</p>
 <p>Additionally includes ability to add sparse input features
 based on “Linguistic Input Features Improve Neural Machine Translation”
@@ -362,12 +364,40 @@ and required by <a class="reference internal" href="onmt.html#onmt.Models.NMTMod
 
 </dd></dl>
 
+<dl class="class">
+<dt id="onmt.modules.RNNEncoder">
+<em class="property">class </em><code class="descclassname">onmt.modules.</code><code class="descname">RNNEncoder</code><span class="sig-paren">(</span><em>rnn_type</em>, <em>bidirectional</em>, <em>num_layers</em>, <em>hidden_size</em>, <em>dropout=0.0</em>, <em>embeddings=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.modules.RNNEncoder" title="Permalink to this definition">¶</a></dt>
+<dd><p>A generic recurrent neural network encoder.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>rnn_type</strong> (<code class="xref py py-obj docutils literal"><span class="pre">str</span></code>) – style of recurrent unit to use, one of [RNN, LSTM, GRU, SRU]</li>
+<li><strong>bidirectional</strong> (<em>bool</em>) – use a bidirectional RNN</li>
+<li><strong>num_layers</strong> (<em>int</em>) – number of stacked layers</li>
+<li><strong>hidden_size</strong> (<em>int</em>) – hidden size of each layer</li>
+<li><strong>dropout</strong> (<em>float</em>) – dropout value for <code class="xref py py-obj docutils literal"><span class="pre">nn.Dropout</span></code></li>
+<li><strong>embeddings</strong> (<a class="reference internal" href="#onmt.modules.Embeddings" title="onmt.modules.Embeddings"><code class="xref py py-obj docutils literal"><span class="pre">onmt.modules.Embeddings</span></code></a>) – embedding module to use</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="onmt.modules.RNNEncoder.forward">
+<code class="descname">forward</code><span class="sig-paren">(</span><em>input</em>, <em>lengths=None</em>, <em>hidden=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.modules.RNNEncoder.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference internal" href="#onmt.modules.EncoderBase.forward" title="onmt.modules.EncoderBase.forward"><code class="xref py py-obj docutils literal"><span class="pre">EncoderBase.forward()</span></code></a></p>
+</dd></dl>
+
+</dd></dl>
+
 </div>
 <div class="section" id="decoders">
 <h2>Decoders<a class="headerlink" href="#decoders" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.modules.RNNDecoderBase">
-<em class="property">class </em><code class="descclassname">onmt.modules.</code><code class="descname">RNNDecoderBase</code><span class="sig-paren">(</span><em>rnn_type</em>, <em>bidirectional_encoder</em>, <em>num_layers</em>, <em>hidden_size</em>, <em>attn_type</em>, <em>coverage_attn</em>, <em>context_gate</em>, <em>copy_attn</em>, <em>dropout</em>, <em>embeddings</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.modules.RNNDecoderBase" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.modules.</code><code class="descname">RNNDecoderBase</code><span class="sig-paren">(</span><em>rnn_type</em>, <em>bidirectional_encoder</em>, <em>num_layers</em>, <em>hidden_size</em>, <em>attn_type='general'</em>, <em>coverage_attn=False</em>, <em>context_gate=None</em>, <em>copy_attn=False</em>, <em>dropout=0.0</em>, <em>embeddings=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.modules.RNNDecoderBase" title="Permalink to this definition">¶</a></dt>
 <dd><p>Base recurrent attention-based decoder class.
 Specifies the interface used by different decoder types
 and required by <a class="reference internal" href="onmt.html#onmt.Models.NMTModel" title="onmt.Models.NMTModel"><code class="xref py py-obj docutils literal"><span class="pre">onmt.Models.NMTModel</span></code></a>.</p>
@@ -467,7 +497,7 @@ and required by <a class="reference internal" href="onmt.html#onmt.Models.NMTMod
 
 <dl class="class">
 <dt id="onmt.modules.StdRNNDecoder">
-<em class="property">class </em><code class="descclassname">onmt.modules.</code><code class="descname">StdRNNDecoder</code><span class="sig-paren">(</span><em>rnn_type</em>, <em>bidirectional_encoder</em>, <em>num_layers</em>, <em>hidden_size</em>, <em>attn_type</em>, <em>coverage_attn</em>, <em>context_gate</em>, <em>copy_attn</em>, <em>dropout</em>, <em>embeddings</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.modules.StdRNNDecoder" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.modules.</code><code class="descname">StdRNNDecoder</code><span class="sig-paren">(</span><em>rnn_type</em>, <em>bidirectional_encoder</em>, <em>num_layers</em>, <em>hidden_size</em>, <em>attn_type='general'</em>, <em>coverage_attn=False</em>, <em>context_gate=None</em>, <em>copy_attn=False</em>, <em>dropout=0.0</em>, <em>embeddings=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.modules.StdRNNDecoder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Standard fully batched RNN decoder with attention.
 Faster implementation, uses CuDNN for implementation.
 See <a class="reference internal" href="#onmt.modules.RNNDecoderBase" title="onmt.modules.RNNDecoderBase"><code class="xref py py-obj docutils literal"><span class="pre">RNNDecoderBase</span></code></a> for options.</p>
@@ -480,7 +510,7 @@ or <cite>copy_attn</cite> support.</p>
 
 <dl class="class">
 <dt id="onmt.modules.InputFeedRNNDecoder">
-<em class="property">class </em><code class="descclassname">onmt.modules.</code><code class="descname">InputFeedRNNDecoder</code><span class="sig-paren">(</span><em>rnn_type</em>, <em>bidirectional_encoder</em>, <em>num_layers</em>, <em>hidden_size</em>, <em>attn_type</em>, <em>coverage_attn</em>, <em>context_gate</em>, <em>copy_attn</em>, <em>dropout</em>, <em>embeddings</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.modules.InputFeedRNNDecoder" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.modules.</code><code class="descname">InputFeedRNNDecoder</code><span class="sig-paren">(</span><em>rnn_type</em>, <em>bidirectional_encoder</em>, <em>num_layers</em>, <em>hidden_size</em>, <em>attn_type='general'</em>, <em>coverage_attn=False</em>, <em>context_gate=None</em>, <em>copy_attn=False</em>, <em>dropout=0.0</em>, <em>embeddings=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.modules.InputFeedRNNDecoder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Input feeding based decoder. See <a class="reference internal" href="#onmt.modules.RNNDecoderBase" title="onmt.modules.RNNDecoderBase"><code class="xref py py-obj docutils literal"><span class="pre">RNNDecoderBase</span></code></a> for options.</p>
 <p>Based around the input feeding approach from
 “Effective Approaches to Attention-based Neural Machine Translation”
@@ -1110,7 +1140,7 @@ in the paper “Learning Structured Text Representations.”</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="onmt.io.html" class="btn btn-neutral float-right" title="Doc: Data Loaders" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="onmt.translation.html" class="btn btn-neutral float-right" title="Doc: Translation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="onmt.html" class="btn btn-neutral" title="Doc: Framework" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>

@@ -97,8 +97,9 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="onmt.modules.html">Doc: Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.translation.html">Doc: Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="onmt.io.html">Doc: Data Loaders</a></li>
-<li class="toctree-l1"><a class="reference internal" href="FAQ.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Library.html">Library: Example</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/preprocess.html">Options: preprocess.py:</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/train.html">Options: train.py:</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/translate.html">Options: translate.py:</a></li>
@@ -106,6 +107,7 @@
 <li class="toctree-l1"><a class="reference internal" href="Summarization.html">Example: Summarization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="im2text.html">Example: Image to Text</a></li>
 <li class="toctree-l1"><a class="reference internal" href="speech2text.html">Example: Speech to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html">FAQ</a></li>
 <li class="toctree-l1"><a class="reference internal" href="CONTRIBUTORS.html">Contributors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ref.html">References</a></li>
 </ul>
@@ -245,7 +247,7 @@ input_feeding and non-recurrent models.</p>
 <h2>Trainer<a class="headerlink" href="#trainer" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.Trainer">
-<em class="property">class </em><code class="descclassname">onmt.</code><code class="descname">Trainer</code><span class="sig-paren">(</span><em>model</em>, <em>train_iter</em>, <em>valid_iter</em>, <em>train_loss</em>, <em>valid_loss</em>, <em>optim</em>, <em>trunc_size</em>, <em>shard_size</em>, <em>data_type='text'</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Trainer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.</code><code class="descname">Trainer</code><span class="sig-paren">(</span><em>model</em>, <em>train_iter</em>, <em>valid_iter</em>, <em>train_loss</em>, <em>valid_loss</em>, <em>optim</em>, <em>trunc_size=0</em>, <em>shard_size=32</em>, <em>data_type='text'</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Trainer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class that controls the training process.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -451,7 +453,7 @@ in the RNN buffers.</p>
 <h2>Optim<a class="headerlink" href="#optim" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.Optim.Optim">
-<em class="property">class </em><code class="descclassname">onmt.Optim.</code><code class="descname">Optim</code><span class="sig-paren">(</span><em>method</em>, <em>lr</em>, <em>max_grad_norm</em>, <em>lr_decay=1</em>, <em>start_decay_at=None</em>, <em>beta1=0.9</em>, <em>beta2=0.999</em>, <em>adagrad_accum=0.0</em>, <em>opt=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Optim.Optim" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.Optim.</code><code class="descname">Optim</code><span class="sig-paren">(</span><em>method</em>, <em>lr</em>, <em>max_grad_norm</em>, <em>lr_decay=1</em>, <em>start_decay_at=None</em>, <em>beta1=0.9</em>, <em>beta2=0.999</em>, <em>adagrad_accum=0.0</em>, <em>decay_method=None</em>, <em>warmup_steps=4000</em>, <em>model_size=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Optim.Optim" title="Permalink to this definition">¶</a></dt>
 <dd><p>Controller class for optimization. Mostly a thin
 wrapper for <cite>optim</cite>, but also useful for implementing
 rate scheduling beyond what is currently available.
@@ -468,6 +470,9 @@ as grad manipulations.</p>
 <li><strong>start_decay_at</strong> (<em>int</em><em>, </em><em>optional</em>) – epoch to start learning rate decay</li>
 <li><strong>beta2</strong> (<em>beta1</em><em>,</em>) – parameters for adam</li>
 <li><strong>adagrad_accum</strong> (<em>float</em><em>, </em><em>optional</em>) – initialization parameter for adagrad</li>
+<li><strong>decay_method</strong> (<em>str</em><em>, </em><em>option</em>) – custom decay options</li>
+<li><strong>warmup_steps</strong> (<em>int</em><em>, </em><em>option</em>) – parameter for <cite>noam</cite> decay</li>
+<li><strong>model_size</strong> (<em>int</em><em>, </em><em>option</em>) – parameter for <cite>noam</cite> decay</li>
 </ul>
 </td>
 </tr>

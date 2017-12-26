@@ -1,9 +1,11 @@
 ./CONTRIBUTORS.html
 ./FAQ.html
+./Library.html
 ./Summarization.html
 ./_modules/index.html
 ./_sources/CONTRIBUTORS.md.txt
 ./_sources/FAQ.md.txt
+./_sources/Library.md.txt
 ./_sources/Summarization.md.txt
 ./_sources/examples.rst.txt
 ./_sources/extended.md.txt
@@ -14,6 +16,7 @@
 ./_sources/onmt.io.rst.txt
 ./_sources/onmt.modules.rst.txt
 ./_sources/onmt.rst.txt
+./_sources/onmt.translation.rst.txt
 ./_sources/options/preprocess.md.txt
 ./_sources/options/train.md.txt
 ./_sources/options/translate.md.txt
@@ -66,6 +69,7 @@
 ./onmt.html
 ./onmt.io.html
 ./onmt.modules.html
+./onmt.translation.html
 ./options/preprocess.html
 ./options/train.html
 ./options/translate.html
