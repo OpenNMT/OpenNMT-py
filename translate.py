@@ -1,72 +1,31 @@
-from __future__ import division
-from builtins import bytes
+#!/usr/bin/env python
 
-import onmt
-import onmt.IO
-import torch
+from __future__ import division, unicode_literals
+import os
 import argparse
 import math
 import codecs
-import os
+import torch
+
+from itertools import count
+
+import onmt.io
+import onmt.translate
+import onmt
+import onmt.ModelConstructor
+import onmt.modules
 import opts
 
-parser = argparse.ArgumentParser(description='translate.py')
+parser = argparse.ArgumentParser(
+    description='translate.py',
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 opts.add_md_help_argument(parser)
+opts.translate_opts(parser)
 
-parser.add_argument('-model', required=True,
-                    help='Path to model .pt file')
-parser.add_argument('-src',   required=True,
-                    help='Source sequence to decode (one line per sequence)')
-parser.add_argument('-src_img_dir',   default="",
-                    help='Source image directory')
-parser.add_argument('-tgt',
-                    help='True target sequence (optional)')
-parser.add_argument('-output', default='pred.txt',
-                    help="""Path to output the predictions (each line will
-                    be the decoded sequence""")
-parser.add_argument('-beam_size',  type=int, default=5,
-                    help='Beam size')
-parser.add_argument('-batch_size', type=int, default=30,
-                    help='Batch size')
-parser.add_argument('-max_sent_length', type=int, default=100,
-                    help='Maximum sentence length.')
-parser.add_argument('-replace_unk', action="store_true",
-                    help="""Replace the generated UNK tokens with the source
-                    token that had highest attention weight. If phrase_table
-                    is provided, it will lookup the identified source token and
-                    give the corresponding target token. If it is not provided
-                    (or the identified source token does not exist in the
-                    table) then it will copy the source token""")
-parser.add_argument('-verbose', action="store_true",
-                    help='Print scores and predictions for each sentence')
-parser.add_argument('-attn_debug', action="store_true",
-                    help='Print best attn for each word')
-
-parser.add_argument('-dump_beam', type=str, default="",
-                    help='File to dump beam information to.')
-
-parser.add_argument('-n_best', type=int, default=1,
-                    help="""If verbose is set, will output the n_best
-                    decoded sentences""")
-
-parser.add_argument('-gpu', type=int, default=-1,
-                    help="Device to run on")
-# options most relevant to summarization
-parser.add_argument('-dynamic_dict', action='store_true',
-                    help="Create dynamic dictionaries")
-parser.add_argument('-share_vocab', action='store_true',
-                    help="Share source and target vocabulary")
-
-
-def reportScore(name, scoreTotal, wordsTotal):
-    print("%s AVG SCORE: %.4f, %s PPL: %.4f" % (
-        name, scoreTotal / wordsTotal,
-        name, math.exp(-scoreTotal/wordsTotal)))
+opt = parser.parse_args()
 
 
 def main():
-    opt = parser.parse_args()
-
     dummy_parser = argparse.ArgumentParser(description='train.py')
     opts.model_opts(dummy_parser)
     dummy_opt = dummy_parser.parse_known_args([])[0]
@@ -74,77 +33,81 @@ def main():
     opt.cuda = opt.gpu > -1
     if opt.cuda:
         torch.cuda.set_device(opt.gpu)
-    translator = onmt.Translator(opt, dummy_opt.__dict__)
-    outF = codecs.open(opt.output, 'w', 'utf-8')
-    predScoreTotal, predWordsTotal, goldScoreTotal, goldWordsTotal = 0, 0, 0, 0
-    count = 0
-    if opt.dump_beam != "":
-        import json
-        translator.initBeamAccum()
-    data = onmt.IO.ONMTDataset(opt.src, opt.tgt, translator.fields, None)
 
-    testData = onmt.IO.OrderedIterator(
+    # Load the model.
+    fields, model, model_opt = \
+        onmt.ModelConstructor.load_test_model(opt, dummy_opt.__dict__)
+
+    # File to write sentences to.
+    out_file = codecs.open(opt.output, 'w', 'utf-8')
+
+    # Test data
+    data = onmt.io.build_dataset(fields, opt.data_type,
+                                 opt.src, opt.tgt,
+                                 src_dir=opt.src_dir,
+                                 sample_rate=opt.sample_rate,
+                                 window_size=opt.window_size,
+                                 window_stride=opt.window_stride,
+                                 window=opt.window,
+                                 use_filter_pred=False)
+
+    test_data = onmt.io.OrderedIterator(
         dataset=data, device=opt.gpu,
         batch_size=opt.batch_size, train=False, sort=False,
         shuffle=False)
 
-    index = 0
-    for batch in testData:
-        predBatch, goldBatch, predScore, goldScore, attn, src \
-            = translator.translate(batch, data)
-        predScoreTotal += sum(score[0] for score in predScore)
-        predWordsTotal += sum(len(x[0]) for x in predBatch)
-        if opt.tgt:
-            goldScoreTotal += sum(goldScore)
-            goldWordsTotal += sum(len(x) for x in batch.tgt[1:])
+    # Translator
+    scorer = onmt.translate.GNMTGlobalScorer(opt.alpha, opt.beta)
+    translator = onmt.translate.Translator(model, fields,
+                                           beam_size=opt.beam_size,
+                                           n_best=opt.n_best,
+                                           global_scorer=scorer,
+                                           max_length=opt.max_sent_length,
+                                           copy_attn=model_opt.copy_attn,
+                                           cuda=opt.cuda,
+                                           beam_trace=opt.dump_beam != "")
+    builder = onmt.translate.TranslationBuilder(
+        data, translator.fields,
+        opt.n_best, opt.replace_unk, opt.tgt)
 
-        for b in range(len(predBatch)):
-            count += 1
-            try:
-                # python2 (should be the same)
-                for n in range(opt.n_best):
-                    outF.write(" ".join([i
-                               for i in predBatch[b][n]]) + '\n')
-            except AttributeError:
-                # python3: can't do .decode on a str object
-                for n in range(opt.n_best):
-                    outF.write(" ".join(predBatch[b][n]) + '\n')
-            outF.flush()
+    # Statistics
+    counter = count(1)
+    pred_score_total, pred_words_total = 0, 0
+    gold_score_total, gold_words_total = 0, 0
+
+    for batch in test_data:
+        batch_data = translator.translate_batch(batch, data)
+        translations = builder.from_batch(batch_data)
+
+        for trans in translations:
+            pred_score_total += trans.pred_scores[0]
+            pred_words_total += len(trans.pred_sents[0])
+            if opt.tgt:
+                gold_score_total += trans.gold_score
+                gold_words_total += len(trans.gold_sent)
+
+            n_best_preds = [" ".join(pred)
+                            for pred in trans.pred_sents[:opt.n_best]]
+            out_file.write('\n'.join(n_best_preds))
+            out_file.write('\n')
+            out_file.flush()
 
             if opt.verbose:
-                words = []
-                for f in src[:, b]:
-                    word = translator.fields["src"].vocab.itos[f]
-                    if word == onmt.IO.PAD_WORD:
-                        break
-                    words.append(word)
+                sent_number = next(counter)
+                output = trans.log(sent_number)
+                os.write(1, output.encode('utf-8'))
 
-                os.write(1, bytes('\nSENT %d: %s\n' %
-                                  (count, " ".join(words)), 'UTF-8'))
+    def report_score(name, score_total, words_total):
+        print("%s AVG SCORE: %.4f, %s PPL: %.4f" % (
+            name, score_total / words_total,
+            name, math.exp(-score_total/words_total)))
 
-                index += 1
-                os.write(1, bytes('PRED %d: %s\n' %
-                                  (count, " ".join(predBatch[b][0])), 'UTF-8'))
-                print("PRED SCORE: %.4f" % predScore[b][0])
-
-                if opt.tgt:
-                    tgtSent = ' '.join(goldBatch[b])
-                    os.write(1, bytes('GOLD %d: %s\n' %
-                             (count, tgtSent), 'UTF-8'))
-                    print("GOLD SCORE: %.4f" % goldScore[b])
-
-                if opt.n_best > 1:
-                    print('\nBEST HYP:')
-                    for n in range(opt.n_best):
-                        os.write(1, bytes("[%.4f] %s\n" % (predScore[b][n],
-                                 " ".join(predBatch[b][n])),
-                            'UTF-8'))
-
-    reportScore('PRED', predScoreTotal, predWordsTotal)
+    report_score('PRED', pred_score_total, pred_words_total)
     if opt.tgt:
-        reportScore('GOLD', goldScoreTotal, goldWordsTotal)
+        report_score('GOLD', gold_score_total, gold_words_total)
 
     if opt.dump_beam:
+        import json
         json.dump(translator.beam_accum,
                   codecs.open(opt.dump_beam, 'w', 'utf-8'))
 

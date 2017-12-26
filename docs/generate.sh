@@ -7,6 +7,6 @@ gen_script_options ()
     python3 $1 -md >> $2
 }
 
-gen_script_options preprocess.py docs/options/preprocess.md
-gen_script_options train.py docs/options/train.md
-gen_script_options translate.py docs/options/translate.md
+gen_script_options preprocess.py docs/source/options/preprocess.md
+gen_script_options train.py docs/source/options/train.md
+gen_script_options translate.py docs/source/options/translate.md

@@ -1,11 +1,23 @@
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
+
 from onmt.modules import BottleLinear, Elementwise
-from onmt.modules import aeq
+from onmt.Utils import aeq
 
 
 class PositionalEncoding(nn.Module):
+    """
+    Implements the sinusoidal positional encoding for
+    non-recurrent neural networks.
+
+    Implementation based on "Attention Is All You Need"
+    :cite:`DBLP:journals/corr/VaswaniSPUJGKP17`
+
+    Args:
+       dropout (float): dropout parameter
+       dim (int): embedding size
+    """
 
     def __init__(self, dropout, dim, max_len=5000):
         pe = torch.arange(0, max_len).unsqueeze(1).expand(max_len, dim)
@@ -13,61 +25,92 @@ class PositionalEncoding(nn.Module):
         pe = pe * div_term.expand_as(pe)
         pe[:, 0::2] = torch.sin(pe[:, 0::2])
         pe[:, 1::2] = torch.cos(pe[:, 1::2])
-        pe = Variable(pe.unsqueeze(1))
+        pe = pe.unsqueeze(1)
         super(PositionalEncoding, self).__init__()
         self.register_buffer('pe', pe)
         self.dropout = nn.Dropout(p=dropout)
 
     def forward(self, emb):
-        emb = emb + self.pe[:emb.size(0), :1, :emb.size(2)].expand_as(emb)
+        # We must wrap the self.pe in Variable to compute, not the other
+        # way - unwrap emb(i.e. emb.data). Otherwise the computation
+        # wouldn't be watched to build the compute graph.
+        emb = emb + Variable(self.pe[:emb.size(0), :1, :emb.size(2)]
+                             .expand_as(emb), requires_grad=False)
         emb = self.dropout(emb)
         return emb
 
 
 class Embeddings(nn.Module):
     """
-    Words embeddings dictionary for Encoder/Decoder.
+    Words embeddings for encoder/decoder.
+
+    Additionally includes ability to add sparse input features
+    based on "Linguistic Input Features Improve Neural Machine Translation"
+    :cite:`sennrich2016linguistic`.
+
+
+    .. mermaid::
+
+       graph LR
+          A[Input]
+          C[Feature 1 Lookup]
+          A-->B[Word Lookup]
+          A-->C
+          A-->D[Feature N Lookup]
+          B-->E[MLP/Concat]
+          C-->E
+          D-->E
+          E-->F[Output]
 
     Args:
-        embedding_dim (int): size of the dictionary of embeddings.
-        position_encoding (bool): use a sin to mark relative words positions.
+        word_vec_size (int): size of the dictionary of embeddings.
+        word_padding_idx (int): padding index for words in the embeddings.
+        feats_padding_idx (list of int): padding index for a list of features
+                                   in the embeddings.
+        word_vocab_size (int): size of dictionary of embeddings for words.
+        feat_vocab_sizes ([int], optional): list of size of dictionary
+                                    of embeddings for each feature.
+
+        position_encoding (bool): see :obj:`onmt.modules.PositionalEncoding`
+
         feat_merge (string): merge action for the features embeddings:
                     concat, sum or mlp.
-        feat_dim_exponent (float): when using '-feat_merge concat', feature
+        feat_vec_exponent (float): when using `-feat_merge concat`, feature
                     embedding size is N^feat_dim_exponent, where N is the
                     number of values of feature takes.
-        feat_embedding_dim (int): embedding dimension for features when using
-                    '-feat_merge mlp'
-        dropout (float): dropout probablity.
-        padding_idx (int): padding index in the embedding dictionary.
-        num_word_embeddings (int): size of dictionary of embeddings for words.
-        num_feat_embeddings ([int], optional): list of size of dictionary
-                                    of embeddings for each feature.
+        feat_vec_size (int): embedding dimension for features when using
+                    `-feat_merge mlp`
+        dropout (float): dropout probability.
     """
-    def __init__(self, embedding_dim, position_encoding, feat_merge,
-                 feat_vec_exponent, feat_vec_size, dropout, padding_idx,
-                 feat_pads, word_vocab_size, feat_vocab_sizes=[]):
-        super(Embeddings, self).__init__()
+    def __init__(self, word_vec_size,
+                 word_vocab_size,
+                 word_padding_idx,
+                 position_encoding=False,
+                 feat_merge="concat",
+                 feat_vec_exponent=0.7, feat_vec_size=-1,
+                 feat_padding_idx=[],
+                 feat_vocab_sizes=[],
+                 dropout=0):
 
-        self.padding_idx = padding_idx
+        self.word_padding_idx = word_padding_idx
 
-        # Parameters for constructing the word embedding matrix
+        # Dimensions and padding for constructing the word embedding matrix
         vocab_sizes = [word_vocab_size]
-        emb_dims = [embedding_dim]
-        pad_indices = [padding_idx]
-        self.embedding_dim = embedding_dim
+        emb_dims = [word_vec_size]
+        pad_indices = [word_padding_idx]
 
-        # Parameters for additional feature embedding matrices
+        # Dimensions and padding for feature embedding matrices
         # (these have no effect if feat_vocab_sizes is empty)
-        if feat_merge == 'concat':
+        if feat_merge == 'sum':
+            feat_dims = [word_vec_size] * len(feat_vocab_sizes)
+        elif feat_vec_size > 0:
+            feat_dims = [feat_vec_size] * len(feat_vocab_sizes)
+        else:
             feat_dims = [int(vocab ** feat_vec_exponent)
                          for vocab in feat_vocab_sizes]
-        else:
-            feat_dim = embedding_dim if feat_merge == 'sum' else feat_vec_size
-            feat_dims = [feat_dim] * len(feat_vocab_sizes)
         vocab_sizes.extend(feat_vocab_sizes)
         emb_dims.extend(feat_dims)
-        pad_indices.extend(feat_pads)
+        pad_indices.extend(feat_padding_idx)
 
         # The embedding matrix look-up tables. The first look-up table
         # is for words. Subsequent ones are for features, if any exist.
@@ -78,20 +121,23 @@ class Embeddings(nn.Module):
 
         # The final output size of word + feature vectors. This can vary
         # from the word vector size if and only if features are defined.
+        # This is the attribute you should access if you need to know
+        # how big your embeddings are going to be.
         self.embedding_size = (sum(emb_dims) if feat_merge == 'concat'
-                               else embedding_dim)
+                               else word_vec_size)
 
         # The sequence of operations that converts the input sequence
         # into a sequence of embeddings. At minimum this consists of
         # looking up the embeddings for each word and feature in the
         # input. Model parameters may require the sequence to contain
         # additional operations as well.
+        super(Embeddings, self).__init__()
         self.make_embedding = nn.Sequential()
         self.make_embedding.add_module('emb_luts', emb_luts)
 
         if feat_merge == 'mlp':
             in_dim = sum(emb_dims)
-            out_dim = feat_vec_size
+            out_dim = word_vec_size
             mlp = nn.Sequential(BottleLinear(in_dim, out_dim), nn.ReLU())
             self.make_embedding.add_module('mlp', mlp)
 
@@ -108,6 +154,12 @@ class Embeddings(nn.Module):
         return self.make_embedding[0]
 
     def load_pretrained_vectors(self, emb_file, fixed):
+        """Load in pretrained embeddings.
+
+        Args:
+          emb_file (str) : path to torch serialized embeddings
+          fixed (bool) : if true, embeddings are not updated
+        """
         if emb_file:
             pretrained = torch.load(emb_file)
             self.word_lut.weight.data.copy_(pretrained)
@@ -116,11 +168,12 @@ class Embeddings(nn.Module):
 
     def forward(self, input):
         """
-        Return the embeddings for words, and features if there are any.
+        Computes the embeddings for words and features.
+
         Args:
-            input (LongTensor): len x batch x nfeat
+            input (`LongTensor`): index tensor `[len x batch x nfeat]`
         Return:
-            emb (FloatTensor): len x batch x self.embedding_size
+            `FloatTensor`: word embeddings `[len x batch x embedding_size]`
         """
         in_length, in_batch, nfeat = input.size()
         aeq(nfeat, len(self.emb_luts))

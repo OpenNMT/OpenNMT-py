@@ -1,9 +1,10 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from onmt.modules import aeq
+from onmt.Utils import aeq
 
-scale_weight = 0.5 ** 0.5
+
+SCALE_WEIGHT = 0.5 ** 0.5
 
 
 def seq_linear(linear, x):
@@ -15,28 +16,33 @@ def seq_linear(linear, x):
 
 
 class ConvMultiStepAttention(nn.Module):
+    """
+
+    Conv attention takes a key matrix, a value matrix and a query vector.
+    Attention weight is calculated by key matrix with the query vector
+    and sum on the value matrix. And the same operation is applied
+    in each decode conv layer.
+
+    """
+
     def __init__(self, input_size):
         super(ConvMultiStepAttention, self).__init__()
         self.linear_in = nn.Linear(input_size, input_size)
         self.mask = None
 
-    def applyMask(self, mask):
+    def apply_mask(self, mask):
         self.mask = mask
 
     def forward(self, base_target_emb, input, encoder_out_top,
                 encoder_out_combine):
         """
-        It's like Luong Attetion.
-        Conv attention takes a key matrix, a value matrix and a query vector.
-        Attention weight is calculated by key matrix with the query vector
-        and sum on the value matrix. And the same operation is applied
-        in each decode conv layer.
         Args:
             base_target_emb: target emb tensor
             input: output of decode conv
             encoder_out_t: the key matrix for calculation of attetion weight,
                 which is the top output of encode conv
-            encoder_out_c: the value matrix for the attention-weighted sum,
+            encoder_out_combine:
+                the value matrix for the attention-weighted sum,
                 which is the combination of base emb and top output of encode
 
         """
@@ -53,7 +59,7 @@ class ConvMultiStepAttention(nn.Module):
         aeq(enc_height, enc_height_)
 
         preatt = seq_linear(self.linear_in, input)
-        target = (base_target_emb + preatt) * scale_weight
+        target = (base_target_emb + preatt) * SCALE_WEIGHT
         target = torch.squeeze(target, 3)
         target = torch.transpose(target, 1, 2)
         pre_attn = torch.bmm(target, encoder_out_top)
@@ -61,7 +67,9 @@ class ConvMultiStepAttention(nn.Module):
         if self.mask is not None:
             pre_attn.data.masked_fill_(self.mask, -float('inf'))
 
+        pre_attn = pre_attn.transpose(0, 2)
         attn = F.softmax(pre_attn)
+        attn = attn.transpose(0, 2).contiguous()
         context_output = torch.bmm(
             attn, torch.transpose(encoder_out_combine, 1, 2))
         context_output = torch.transpose(

@@ -1,4 +1,4 @@
 six
 tqdm
-torchtext
+torchtext==0.1.1
 future

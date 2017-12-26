@@ -1,20 +1,34 @@
 import argparse
 import copy
 import unittest
+import glob
+import os
+from collections import Counter
+
+import torchtext
+
 import onmt
+import onmt.io
 import opts
+import preprocess
 
 
 parser = argparse.ArgumentParser(description='preprocess.py')
 opts.preprocess_opts(parser)
 
-opt = parser.parse_known_args()[0]
 
-opt.train_src = 'data/src-train.txt'
-opt.train_tgt = 'data/tgt-train.txt'
-opt.valid_src = 'data/src-val.txt'
-opt.valid_tgt = 'data/tgt-val.txt'
-print(opt)
+SAVE_DATA_PREFIX = 'data/test_preprocess'
+
+default_opts = [
+    '-data_type', 'text',
+    '-train_src', 'data/src-train.txt',
+    '-train_tgt', 'data/tgt-train.txt',
+    '-valid_src', 'data/src-val.txt',
+    '-valid_tgt', 'data/tgt-val.txt',
+    '-save_data', SAVE_DATA_PREFIX
+]
+
+opt = parser.parse_known_args(default_opts)[0]
 
 
 class TestData(unittest.TestCase):
@@ -23,41 +37,50 @@ class TestData(unittest.TestCase):
         self.opt = opt
 
     def dataset_build(self, opt):
-        fields = onmt.IO.ONMTDataset.get_fields()
+        fields = onmt.io.get_fields("text", 0, 0)
 
-        train = onmt.IO.ONMTDataset(opt.train_src,
-                                    opt.train_tgt,
-                                    fields,
-                                    opt)
+        trains = preprocess.build_save_dataset('train', fields, opt)
 
-        onmt.IO.ONMTDataset.build_vocab(train,
-                                        opt)
+        preprocess.build_save_vocab(trains, fields, opt)
 
-        onmt.IO.ONMTDataset(opt.valid_src,
-                            opt.valid_tgt,
-                            fields,
-                            opt)
+        preprocess.build_save_dataset('valid', fields, opt)
+
+        # Remove the generated *pt files.
+        for pt in glob.glob(SAVE_DATA_PREFIX + '*.pt'):
+            os.remove(pt)
+
+    def test_merge_vocab(self):
+        va = torchtext.vocab.Vocab(Counter('abbccc'))
+        vb = torchtext.vocab.Vocab(Counter('eeabbcccf'))
+
+        merged = onmt.io.merge_vocabs([va, vb], 2)
+
+        self.assertEqual(Counter({'c': 6, 'b': 4, 'a': 2, 'e': 2, 'f': 1}),
+                         merged.freqs)
+        self.assertEqual(6, len(merged.itos))
+        self.assertTrue('b' in merged.itos)
 
 
-def _add_test(paramSetting, methodname):
+def _add_test(param_setting, methodname):
     """
     Adds a Test to TestData according to settings
 
     Args:
-        paramSetting: list of tuples of (param, setting)
+        param_setting: list of tuples of (param, setting)
         methodname: name of the method that gets called
     """
 
     def test_method(self):
-        if paramSetting:
+        if param_setting:
             opt = copy.deepcopy(self.opt)
-            for param, setting in paramSetting:
+            for param, setting in param_setting:
                 setattr(opt, param, setting)
         else:
             opt = self.opt
         getattr(self, methodname)(opt)
-    if paramSetting:
-        name = 'test_' + methodname + "_" + "_".join(str(paramSetting).split())
+    if param_setting:
+        name = 'test_' + methodname + "_" + "_".join(
+            str(param_setting).split())
     else:
         name = 'test_' + methodname + '_standard'
     setattr(TestData, name, test_method)
@@ -86,4 +109,28 @@ test_databuild = [[],
                   ]
 
 for p in test_databuild:
+    _add_test(p, 'dataset_build')
+
+# Test image preprocessing
+for p in test_databuild:
+    p.append(('data_type', 'img'))
+    p.append(('src_dir', '/tmp/im2text/images'))
+    p.append(('train_src', '/tmp/im2text/src-train-head.txt'))
+    p.append(('train_tgt', '/tmp/im2text/tgt-train-head.txt'))
+    p.append(('valid_src', '/tmp/im2text/src-val-head.txt'))
+    p.append(('valid_tgt', '/tmp/im2text/tgt-val-head.txt'))
+    _add_test(p, 'dataset_build')
+
+# Test audio preprocessing
+for p in test_databuild:
+    p.append(('data_type', 'audio'))
+    p.append(('src_dir', '/tmp/speech/an4_dataset'))
+    p.append(('train_src', '/tmp/speech/src-train-head.txt'))
+    p.append(('train_tgt', '/tmp/speech/tgt-train-head.txt'))
+    p.append(('valid_src', '/tmp/speech/src-val-head.txt'))
+    p.append(('valid_tgt', '/tmp/speech/tgt-val-head.txt'))
+    p.append(('sample_rate', 16000))
+    p.append(('window_size', 0.04))
+    p.append(('window_stride', 0.02))
+    p.append(('window', 'hamming'))
     _add_test(p, 'dataset_build')

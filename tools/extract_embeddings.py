@@ -1,10 +1,11 @@
 from __future__ import division
-
-import onmt
 import torch
 import argparse
-
-import onmt.Models
+import opts
+import onmt
+import onmt.ModelConstructor
+import onmt.io
+from onmt.Utils import use_gpu
 
 parser = argparse.ArgumentParser(description='translate.py')
 
@@ -17,50 +18,44 @@ parser.add_argument('-gpu', type=int, default=-1,
 
 
 def write_embeddings(filename, dict, embeddings):
-    with open(filename, 'w') as file:
-        for i in range(len(embeddings)):
-            str = dict.idxToLabel[i].encode("utf-8")
+    with open(filename, 'wb') as file:
+        for i in range(min(len(embeddings), len(dict.itos))):
+            str = dict.itos[i].encode("utf-8")
             for j in range(len(embeddings[0])):
-                str = str + " %5f" % (embeddings[i][j])
-            file.write(str + "\n")
+                str = str + (" %5f" % (embeddings[i][j])).encode("utf-8")
+            file.write(str + b"\n")
 
 
 def main():
+    dummy_parser = argparse.ArgumentParser(description='train.py')
+    opts.model_opts(dummy_parser)
+    dummy_opt = dummy_parser.parse_known_args([])[0]
     opt = parser.parse_args()
-    checkpoint = torch.load(opt.model)
     opt.cuda = opt.gpu > -1
     if opt.cuda:
         torch.cuda.set_device(opt.gpu)
 
+    # Add in default model arguments, possibly added since training.
+    checkpoint = torch.load(opt.model,
+                            map_location=lambda storage, loc: storage)
     model_opt = checkpoint['opt']
-    src_dict = checkpoint['dicts']['src']
-    tgt_dict = checkpoint['dicts']['tgt']
+    src_dict = checkpoint['vocab'][1][1]
+    tgt_dict = checkpoint['vocab'][0][1]
 
-    embeddings = onmt.Models.build_embeddings(
-                model_opt, src_dict.stoi[onmt.IO.PAD_WORD],
-                len(src_dict), for_encoder=True)
-    encoder = onmt.Models.Encoder(model_opt.encoder_type, model_opt.brnn,
-                                  model_opt.rnn_type, model_opt.enc_layers,
-                                  model_opt.rnn_size, model_opt.dropout,
-                                  embeddings)
+    fields = onmt.io.load_fields_from_vocab(checkpoint['vocab'])
 
-    embeddings = onmt.Models.build_embeddings(
-                model_opt, tgt_dict.stoi[onmt.IO.PAD_WORD],
-                len(tgt_dict), for_encoder=False)
-    decoder = onmt.Models.make_decoder(model_opt.decoder_type,
-                                       model_opt.rnn_type,
-                                       model_opt.dec_layers,
-                                       model_opt.rnn_size,
-                                       model_opt.input_feed,
-                                       model_opt.global_attention,
-                                       model_opt.coverage_attn,
-                                       model_opt.context_gate,
-                                       model_opt.copy_attn,
-                                       model_opt.cnn_kernel_width,
-                                       model_opt.dropout, embeddings)
+    model_opt = checkpoint['opt']
+    for arg in dummy_opt.__dict__:
+        if arg not in model_opt:
+            model_opt.__dict__[arg] = dummy_opt.__dict__[arg]
 
-    encoder_embeddings = encoder.word_lut.weight.data.tolist()
-    decoder_embeddings = decoder.word_lut.weight.data.tolist()
+    model = onmt.ModelConstructor.make_base_model(
+                            model_opt, fields, use_gpu(opt), checkpoint)
+    encoder = model.encoder
+    decoder = model.decoder
+
+    encoder_embeddings = encoder.embeddings.word_lut.weight.data.tolist()
+    decoder_embeddings = decoder.embeddings.word_lut.weight.data.tolist()
 
     print("Writing source embeddings")
     write_embeddings(opt.output_dir + "/src_embeddings.txt", src_dict,
