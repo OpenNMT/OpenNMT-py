@@ -81,12 +81,19 @@ class TextDataset(ONMTDatasetBase):
         )
 
     def sort_key(self, ex):
+        """ Sort using length of source sentences. """
         return -len(ex.src)
 
     @staticmethod
     def make_text_examples_nfeats_tpl(path, truncate, side):
         """
-        Process the text corpus into (example_dict iterator, num_feats) tuple.
+        Args:
+            path (str): location of a src or tgt file.
+            truncate (int): maximum sequence length (0 for unlimited).
+            side (str): "src" or "tgt".
+
+        Returns:
+            (example_dict iterator, num_feats) tuple.
         """
         assert side in ['src', 'tgt']
 
@@ -111,9 +118,9 @@ class TextDataset(ONMTDatasetBase):
     def read_text_file(path, truncate, side):
         """
         Args:
-            path: location of a src or tgt file.
-            truncate: maximum sequence length (0 for unlimited).
-            side: "src" or "tgt".
+            path (str): location of a src or tgt file.
+            truncate (int): maximum sequence length (0 for unlimited).
+            side (str): "src" or "tgt".
 
         Yields:
             (word, features, nfeat) triples for each line.

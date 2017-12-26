@@ -270,16 +270,16 @@ def _make_examples_nfeats_tpl(data_type, src_path, src_dir,
                 src_path, src_seq_length_trunc, "src")
 
     elif data_type == 'img':
-        src_examples_iter = \
-            ImageDataset.read_img_file(src_path, src_dir, "src")
-        num_src_feats = 0  # Source side(img) has no features.
+        src_examples_iter, num_src_feats = \
+            ImageDataset.make_image_examples_nfeats_tpl(
+                src_path, src_dir)
 
     elif data_type == 'audio':
-        src_examples_iter = AudioDataset.read_audio_file(
-                    src_path, src_dir, "src", sample_rate,
-                    window_size, window_stride, window,
-                    normalize_audio)
-        num_src_feats = 0  # Source side(audio) has no features.
+        src_examples_iter, num_src_feats = \
+            AudioDataset.make_audio_examples_nfeats_tpl(
+                src_path, src_dir, sample_rate,
+                window_size, window_stride, window,
+                normalize_audio)
 
     return src_examples_iter, num_src_feats
 

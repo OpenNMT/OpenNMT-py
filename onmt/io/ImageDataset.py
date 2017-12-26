@@ -69,12 +69,27 @@ class ImageDataset(ONMTDatasetBase):
         return (-ex.src.size(2), -ex.src.size(1))
 
     @staticmethod
+    def make_image_examples_nfeats_tpl(path, img_dir):
+        """
+        Args:
+            path (str): location of a src file containing image paths
+            src_dir (str): location of source images
+
+        Returns:
+            (example_dict iterator, num_feats) tuple
+        """
+        examples_iter = ImageDataset.read_img_file(path, img_dir, 'src')
+        num_feats = 0  # Source side(img) has no features.
+
+        return (examples_iter, num_feats)
+
+    @staticmethod
     def read_img_file(path, src_dir, side, truncate=None):
         """
         Args:
-            path: location of a src file containing image paths
-            src_dir: location of source images
-            side: 'src' or 'tgt'
+            path (str): location of a src file containing image paths
+            src_dir (str): location of source images
+            side (str): 'src' or 'tgt'
             truncate: maximum img size ((0,0) or None for unlimited)
 
         Yields:

@@ -82,21 +82,49 @@ class AudioDataset(ONMTDatasetBase):
         return -ex.src.size(1)
 
     @staticmethod
+    def make_audio_examples_nfeats_tpl(path, audio_dir,
+                                       sample_rate, window_size,
+                                       window_stride, window,
+                                       normalize_audio, truncate=None):
+        """
+        Args:
+            path (str): location of a src file containing audio paths.
+            audio_dir (str): location of source audio files.
+            sample_rate (int): sample_rate.
+            window_size (float) : window size for spectrogram in seconds.
+            window_stride (float): window stride for spectrogram in seconds.
+            window (str): window type for spectrogram generation.
+            normalize_audio (bool): subtract spectrogram by mean and divide
+                by std or not.
+            truncate (int): maximum audio length (0 or None for unlimited).
+
+        Returns:
+            (example_dict iterator, num_feats) tuple
+        """
+        examples_iter = AudioDataset.read_audio_file(
+                path, audio_dir, "src", sample_rate,
+                window_size, window_stride, window,
+                normalize_audio, truncate)
+        num_feats = 0  # Source side(audio) has no features.
+
+        return (examples_iter, num_feats)
+
+    @staticmethod
     def read_audio_file(path, src_dir, side, sample_rate, window_size,
                         window_stride, window, normalize_audio,
                         truncate=None):
         """
         Args:
-            path: location of a src file containing audio paths.
-            src_dir: location of source audio files.
-            side: 'src' or 'tgt'.
-            sample_rate: sample_rate.
-            window_size: window size for spectrogram in seconds.
-            window_stride: window stride for spectrogram in seconds.
-            window: window type for spectrogram generation.
-            normalize_audio: subtract spectrogram by mean and divide
-            by std or not
-            truncate: maximum audio length (0 or None for unlimited).
+            path (str): location of a src file containing audio paths.
+            src_dir (str): location of source audio files.
+            side (str): 'src' or 'tgt'.
+            sample_rate (int): sample_rate.
+            window_size (float) : window size for spectrogram in seconds.
+            window_stride (float): window stride for spectrogram in seconds.
+            window (str): window type for spectrogram generation.
+            normalize_audio (bool): subtract spectrogram by mean and divide
+                by std or not.
+            truncate (int): maximum audio length (0 or None for unlimited).
 
         Yields:
             a dictionary containing audio data for each line.
