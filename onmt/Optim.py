@@ -17,6 +17,9 @@ class Optim(object):
       start_decay_at (int, optional): epoch to start learning rate decay
       beta1, beta2 (float, optional): parameters for adam
       adagrad_accum (float, optional): initialization parameter for adagrad
+      decay_method (str, option): custom decay options
+      warmup_steps (int, option): parameter for `noam` decay
+      model_size (int, option): parameter for `noam` decay
     """
     # We use the default parameters for Adam that are suggested by
     # the original paper https://arxiv.org/pdf/1412.6980.pdf
@@ -32,9 +35,12 @@ class Optim(object):
                  lr_decay=1, start_decay_at=None,
                  beta1=0.9, beta2=0.999,
                  adagrad_accum=0.0,
-                 opt=None):
+                 decay_method=None,
+                 warmup_steps=4000,
+                 model_size=None):
         self.last_ppl = None
         self.lr = lr
+        self.original_lr = lr
         self.max_grad_norm = max_grad_norm
         self.method = method
         self.lr_decay = lr_decay
@@ -43,7 +49,9 @@ class Optim(object):
         self._step = 0
         self.betas = [beta1, beta2]
         self.adagrad_accum = adagrad_accum
-        self.opt = opt
+        self.decay_method = decay_method
+        self.warmup_steps = warmup_steps
+        self.model_size = model_size
 
     def set_parameters(self, params):
         self.params = [p for p in params if p.requires_grad]
@@ -76,12 +84,12 @@ class Optim(object):
         self._step += 1
 
         # Decay method used in tensor2tensor.
-        if self.opt.__dict__.get("decay_method", "") == "noam":
-            self._setRate(
-                self.opt.learning_rate *
-                (self.opt.rnn_size ** (-0.5) *
+        if self.decay_method == "noam":
+            self._set_rate(
+                self.original_lr *
+                (self.model_size ** (-0.5) *
                  min(self._step ** (-0.5),
-                     self._step * self.opt.warmup_steps**(-1.5))))
+                     self._step * self.warmup_steps**(-1.5))))
 
         if self.max_grad_norm:
             clip_grad_norm(self.params, self.max_grad_norm)

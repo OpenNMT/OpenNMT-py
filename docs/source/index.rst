@@ -8,7 +8,8 @@
       onmt.modules.rst
       onmt.translation.rst
       onmt.io.rst
-      FAQ.md
+      Library.md
+
       options/preprocess.md
       options/train.md
       options/translate.md
@@ -16,6 +17,6 @@
       Summarization.md
       im2text.md
       speech2text.md
-
+      FAQ.md
       CONTRIBUTORS.md
       ref.rst

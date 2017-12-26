@@ -24,10 +24,10 @@ class Translator(object):
        beam_trace (bool): trace beam search for debugging
     """
     def __init__(self, model, fields,
-                 beam_size, n_best,
-                 max_length,
-                 global_scorer, copy_attn, cuda,
-                 beam_trace):
+                 beam_size, n_best=1,
+                 max_length=100,
+                 global_scorer=None, copy_attn=False, cuda=False,
+                 beam_trace=False):
         self.model = model
         self.fields = fields
         self.n_best = n_best
@@ -102,7 +102,8 @@ class Translator(object):
                                                   .fill_(context.size(0))
 
         # (2) Repeat src objects `beam_size` times.
-        src_map = rvar(batch.src_map.data) if data_type == 'text' else None
+        src_map = rvar(batch.src_map.data) \
+            if data_type == 'text' and self.copy_attn else None
         context = rvar(context.data)
         context_lengths = src_lengths.repeat(beam_size)
         dec_states.repeat_beam_size_times(beam_size)

@@ -136,7 +136,7 @@ the decoder side. See README for specific formatting instructions.
 Fix word embeddings on the encoder side.
 
 * **-fix_word_vecs_dec []** 
-Fix word embeddings on the encoder side.
+Fix word embeddings on the decoder side.
 
 ### **Optimization- Type**:
 * **-batch_size [64]** 

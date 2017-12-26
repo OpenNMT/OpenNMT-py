@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import argparse
-import codecs
 import os
 import glob
 import sys
@@ -41,31 +40,8 @@ def parse_args():
     return opt
 
 
-def get_num_features(side, opt):
-    """ Peek one line and get number of features of it.
-        (All lines must have same number of features).
-    """
-    assert side in ["src", "tgt"]
-
-    # Only "text" corpus has srouce-side features.
-    if side == "src":
-        data_file = opt.train_src if opt.data_type == "text" else None
-    else:
-        # side == "tgt"
-        data_file = opt.train_tgt
-
-    if data_file is not None:
-        with codecs.open(data_file, "r", "utf-8") as df:
-            f_line = df.readline().strip().split()
-            _, _, n_features = onmt.io.extract_features(f_line)
-    else:
-        n_features = 0
-
-    return n_features
-
-
 def build_save_text_dataset_in_shards(src_corpus, tgt_corpus, fields,
-                                      corpus_type, opt, save=True):
+                                      corpus_type, opt):
     '''
     Divide the big corpus into shards, and build dataset seperately.
     This is currently only for data_type=='text'.
@@ -115,12 +91,11 @@ def build_save_text_dataset_in_shards(src_corpus, tgt_corpus, fields,
                 dynamic_dict=opt.dynamic_dict)
         ret_list.append(dataset)
 
-        if save:
-            # We save fields in vocab.pt seperately, so make it empty.
-            dataset.fields = []
-            pt_file = "{:s}.{:s}.{:d}.pt".format(
-                    opt.save_data, corpus_type, index)
-            torch.save(dataset, pt_file)
+        # We save fields in vocab.pt seperately, so make it empty.
+        dataset.fields = []
+        pt_file = "{:s}.{:s}.{:d}.pt".format(
+                opt.save_data, corpus_type, index)
+        torch.save(dataset, pt_file)
 
     if index == 1:
         # Only one shard, strip the index in the filename.
@@ -129,7 +104,7 @@ def build_save_text_dataset_in_shards(src_corpus, tgt_corpus, fields,
     return ret_list
 
 
-def build_save_dataset(corpus_type, fields, opt, save=True):
+def build_save_dataset(corpus_type, fields, opt):
     assert corpus_type in ['train', 'valid']
 
     if corpus_type == 'train':
@@ -143,7 +118,7 @@ def build_save_dataset(corpus_type, fields, opt, save=True):
     if opt.data_type == 'text':
         return build_save_text_dataset_in_shards(
                 src_corpus, tgt_corpus, fields,
-                corpus_type, opt, save)
+                corpus_type, opt)
 
     # For data_type == 'img' or 'audio', currently we don't do
     # preprocess sharding. We only build a monolithic dataset.
@@ -162,16 +137,15 @@ def build_save_dataset(corpus_type, fields, opt, save=True):
                 window_stride=opt.window_stride,
                 window=opt.window)
 
-    if save:
-        # We save fields in vocab.pt seperately, so make it empty.
-        dataset.fields = []
-        pt_file = "{:s}.{:s}.pt".format(opt.save_data, corpus_type)
-        torch.save(dataset, pt_file)
+    # We save fields in vocab.pt seperately, so make it empty.
+    dataset.fields = []
+    pt_file = "{:s}.{:s}.pt".format(opt.save_data, corpus_type)
+    torch.save(dataset, pt_file)
 
     return [dataset]
 
 
-def build_save_vocab(train_dataset, fields, opt, save=True):
+def build_save_vocab(train_dataset, fields, opt):
     # We've empty'ed each dataset's `fields` attribute
     # when saving datasets, so restore them.
     for train in train_dataset:
@@ -183,19 +157,18 @@ def build_save_vocab(train_dataset, fields, opt, save=True):
                         opt.tgt_vocab_size,
                         opt.tgt_words_min_frequency)
 
-    if save:
-        # Can't save fields, so remove/reconstruct at training time.
-        vocab_file = opt.save_data + '.vocab.pt'
-        torch.save(onmt.io.save_fields_to_vocab(fields), vocab_file)
+    # Can't save fields, so remove/reconstruct at training time.
+    vocab_file = opt.save_data + '.vocab.pt'
+    torch.save(onmt.io.save_fields_to_vocab(fields), vocab_file)
 
 
 def main():
     opt = parse_args()
 
     print('Preparing for training ...')
-    n_src_features = get_num_features('src', opt)
-    n_tgt_features = get_num_features('tgt', opt)
-    fields = onmt.io.get_fields(opt.data_type, n_src_features, n_tgt_features)
+    src_nfeats = onmt.io.get_num_features(opt.data_type, opt.train_src, 'src')
+    tgt_nfeats = onmt.io.get_num_features(opt.data_type, opt.train_tgt, 'tgt')
+    fields = onmt.io.get_fields(opt.data_type, src_nfeats, tgt_nfeats)
 
     print("Building & saving training data...")
     train_datasets = build_save_dataset('train', fields, opt)
