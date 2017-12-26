@@ -46,7 +46,7 @@ def get_num_features(side, opt):
 
 
 def build_save_text_dataset_in_shards(src_corpus, tgt_corpus, fields,
-                                      corpus_type, opt, save=True):
+                                      corpus_type, opt):
     '''
     Divide the big corpus into shards, and build dataset seperately.
     This is currently only for data_type=='text'.
@@ -96,12 +96,11 @@ def build_save_text_dataset_in_shards(src_corpus, tgt_corpus, fields,
                 dynamic_dict=opt.dynamic_dict)
         ret_list.append(dataset)
 
-        if save:
-            # We save fields in vocab.pt seperately, so make it empty.
-            dataset.fields = []
-            pt_file = "{:s}.{:s}.{:d}.pt".format(
-                    opt.save_data, corpus_type, index)
-            torch.save(dataset, pt_file)
+        # We save fields in vocab.pt seperately, so make it empty.
+        dataset.fields = []
+        pt_file = "{:s}.{:s}.{:d}.pt".format(
+                opt.save_data, corpus_type, index)
+        torch.save(dataset, pt_file)
 
     if index == 1:
         # Only one shard, strip the index in the filename.
@@ -110,7 +109,7 @@ def build_save_text_dataset_in_shards(src_corpus, tgt_corpus, fields,
     return ret_list
 
 
-def build_save_dataset(corpus_type, fields, opt, save=True):
+def build_save_dataset(corpus_type, fields, opt):
     assert corpus_type in ['train', 'valid']
 
     if corpus_type == 'train':
@@ -124,7 +123,7 @@ def build_save_dataset(corpus_type, fields, opt, save=True):
     if opt.data_type == 'text':
         return build_save_text_dataset_in_shards(
                 src_corpus, tgt_corpus, fields,
-                corpus_type, opt, save)
+                corpus_type, opt)
 
     # For data_type == 'img' or 'audio', currently we don't do
     # preprocess sharding. We only build a monolithic dataset.
@@ -143,16 +142,15 @@ def build_save_dataset(corpus_type, fields, opt, save=True):
                 window_stride=opt.window_stride,
                 window=opt.window)
 
-    if save:
-        # We save fields in vocab.pt seperately, so make it empty.
-        dataset.fields = []
-        pt_file = "{:s}.{:s}.pt".format(opt.save_data, corpus_type)
-        torch.save(dataset, pt_file)
+    # We save fields in vocab.pt seperately, so make it empty.
+    dataset.fields = []
+    pt_file = "{:s}.{:s}.pt".format(opt.save_data, corpus_type)
+    torch.save(dataset, pt_file)
 
     return [dataset]
 
 
-def build_save_vocab(train_dataset, fields, opt, save=True):
+def build_save_vocab(train_dataset, fields, opt):
     # We've empty'ed each dataset's `fields` attribute
     # when saving datasets, so restore them.
     for train in train_dataset:
@@ -164,10 +162,9 @@ def build_save_vocab(train_dataset, fields, opt, save=True):
                         opt.tgt_vocab_size,
                         opt.tgt_words_min_frequency)
 
-    if save:
-        # Can't save fields, so remove/reconstruct at training time.
-        vocab_file = opt.save_data + '.vocab.pt'
-        torch.save(onmt.io.save_fields_to_vocab(fields), vocab_file)
+    # Can't save fields, so remove/reconstruct at training time.
+    vocab_file = opt.save_data + '.vocab.pt'
+    torch.save(onmt.io.save_fields_to_vocab(fields), vocab_file)
 
 
 def main():
