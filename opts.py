@@ -252,7 +252,9 @@ def train_opts(parser):
     # Optimization options
     group = parser.add_argument_group('Optimization- Type')
     group.add_argument('-batch_size', type=int, default=64,
-                       help='Maximum batch size')
+                       help='Maximum batch size for training')
+    group.add_argument('-valid_batch_size', type=int, default=32,
+                       help='Maximum batch size for validation')
     group.add_argument('-max_generator_batches', type=int, default=32,
                        help="""Maximum batches of words in a sequence to run
                         the generator on in parallel. Higher is faster, but
