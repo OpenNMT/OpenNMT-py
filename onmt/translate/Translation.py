@@ -146,7 +146,7 @@ class Translation(object):
 
         if len(self.pred_sents) > 1:
             print('\nBEST HYP:')
-            for score, sent in zip(self.pred_score, self.pred_sents):
+            for score, sent in zip(self.pred_scores, self.pred_sents):
                 output += "[{:.4f}] {}\n".format(score, sent)
 
         return output
