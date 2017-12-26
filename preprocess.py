@@ -40,11 +40,6 @@ def parse_args():
     return opt
 
 
-def get_num_features(side, opt):
-    corpus_file = opt.train_src if side == "src" else opt.train_tgt
-    return onmt.io.get_num_features(opt.data_type, corpus_file, side)
-
-
 def build_save_text_dataset_in_shards(src_corpus, tgt_corpus, fields,
                                       corpus_type, opt):
     '''
@@ -171,9 +166,9 @@ def main():
     opt = parse_args()
 
     print('Preparing for training ...')
-    n_src_features = get_num_features('src', opt)
-    n_tgt_features = get_num_features('tgt', opt)
-    fields = onmt.io.get_fields(opt.data_type, n_src_features, n_tgt_features)
+    src_nfeats = onmt.io.get_num_features(opt.data_type, opt.train_src, 'src')
+    tgt_nfeats = onmt.io.get_num_features(opt.data_type, opt.train_tgt, 'tgt')
+    fields = onmt.io.get_fields(opt.data_type, src_nfeats, tgt_nfeats)
 
     print("Building & saving training data...")
     train_datasets = build_save_dataset('train', fields, opt)
