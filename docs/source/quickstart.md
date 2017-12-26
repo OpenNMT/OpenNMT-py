@@ -30,7 +30,7 @@ Federal Master Trainer and Senior Instructor of the Italian Federation of Aerobi
 ### Step 2: Train the model
 
 ```bash
-python train.py -data data/demo.train.pt -save_model demo-model 
+python train.py -data data/demo.train.pt -save_model demo-model
 ```
 
 The main train command is quite simple. Minimally it takes a data file
@@ -46,5 +46,6 @@ python translate.py -model demo-model_epochX_PPL.pt -src data/src-test.txt -outp
 
 Now you have a model which you can use to predict on new data. We do this by running beam search. This will output predictions into `pred.txt`.
 
-!!! note "Note"
-    The predictions are going to be quite terrible, as the demo dataset is small. Try running on some larger datasets! For example you can download millions of parallel sentences for [translation](http://www.statmt.org/wmt16/translation-task.html) or [summarization](https://github.com/harvardnlp/sent-summary).
+Note:
+
+The predictions are going to be quite terrible, as the demo dataset is small. Try running on some larger datasets! For example you can download millions of parallel sentences for [translation](http://www.statmt.org/wmt16/translation-task.html) or [summarization](https://github.com/harvardnlp/sent-summary).

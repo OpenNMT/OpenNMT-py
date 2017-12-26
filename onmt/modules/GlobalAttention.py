@@ -7,36 +7,58 @@ from onmt.Utils import aeq, sequence_mask
 
 class GlobalAttention(nn.Module):
     """
-    Luong Attention.
-
     Global attention takes a matrix and a query vector. It
     then computes a parameterized convex combination of the matrix
     based on the input query.
 
+    Constructs a unit mapping a query `q` of size `dim`
+    and a source matrix `H` of size `n x dim`, to an output
+    of size `dim`.
 
-        H_1 H_2 H_3 ... H_n
-          q   q   q       q
-            |  |   |       |
-              \ |   |      /
-                      .....
-                  \   |  /
-                      a
 
-    Constructs a unit mapping.
-    $$(H_1 + H_n, q) => (a)$$
-    Where H is of `batch x n x dim` and q is of `batch x dim`.
+    .. mermaid::
 
-    Luong Attention (dot, general):
-    The full function is
-    $$\tanh(W_2 [(softmax((W_1 q + b_1) H) H), q] + b_2)$$.
+       graph BT
+          A[Query]
+          subgraph RNN
+            C[H 1]
+            D[H 2]
+            E[H N]
+          end
+          F[Attn]
+          G[Output]
+          A --> F
+          C --> F
+          D --> F
+          E --> F
+          C -.-> G
+          D -.-> G
+          E -.-> G
+          F --> G
 
-    * dot: $$score(h_t,{\overline{h}}_s) = h_t^T{\overline{h}}_s$$
-    * general: $$score(h_t,{\overline{h}}_s) = h_t^T W_a {\overline{h}}_s$$
+    All models compute the output as
+    :math:`c = \sum_{j=1}^{SeqLength} a_j H_j` where
+    :math:`a_j` is the softmax of a score function.
+    Then then apply a projection layer to [q, c].
 
-    Bahdanau Attention (mlp):
-    $$c = \sum_{j=1}^{SeqLength}\a_jh_j$$.
-    The Alignment-function $$a$$ computes an alignment as:
-    $$a_j = softmax(v_a^T \tanh(W_a q + U_a h_j) )$$.
+    However they
+    differ on how they compute the attention score.
+
+    * Luong Attention (dot, general):
+       * dot: :math:`score(H_j,q) = H_j^T q`
+       * general: :math:`score(H_j, q) = H_j^T W_a q`
+
+
+    * Bahdanau Attention (mlp):
+       * :math:`score(H_j, q) = v_a^T tanh(W_a q + U_a h_j)`
+
+
+
+
+    Args:
+       dim (int): dimensionality of query and key
+       coverage (bool): use coverage term
+       attn_type (str): type of attention to use, options [dot,general,mlp]
 
     """
     def __init__(self, dim, coverage=False, attn_type="dot"):
@@ -65,10 +87,15 @@ class GlobalAttention(nn.Module):
 
     def score(self, h_t, h_s):
         """
-        h_t (FloatTensor): batch x tgt_len x dim
-        h_s (FloatTensor): batch x src_len x dim
-        returns scores (FloatTensor): batch x tgt_len x src_len:
-            raw attention scores for each src index
+        Args:
+          h_t (`FloatTensor`): sequence of queries `[batch x tgt_len x dim]`
+          h_s (`FloatTensor`): sequence of sources `[batch x src_len x dim]`
+
+        Returns:
+          :obj:`FloatTensor`:
+           raw attention scores (unnormalized) for each src index
+          `[batch x tgt_len x src_len]`
+
         """
 
         # Check input sizes
@@ -103,10 +130,19 @@ class GlobalAttention(nn.Module):
 
     def forward(self, input, context, context_lengths=None, coverage=None):
         """
-        input (FloatTensor): batch x tgt_len x dim: decoder's rnn's output.
-        context (FloatTensor): batch x src_len x dim: src hidden states
-        context_lengths (LongTensor): the source context lengths.
-        coverage (FloatTensor): None (not supported yet)
+
+        Args:
+          input (`FloatTensor`): query vectors `[batch x tgt_len x dim]`
+          context (`FloatTensor`): source vectors `[batch x src_len x dim]`
+          context_lengths (`LongTensor`): the source context lengths `[batch]`
+          coverage (`FloatTensor`): None (not supported yet)
+
+        Returns:
+          (`FloatTensor`, `FloatTensor`):
+
+          * Computed vector `[tgt_len x batch x dim]`
+          * Attention distribtutions for each query
+             `[tgt_len x batch x src_len]`
         """
 
         # one step input

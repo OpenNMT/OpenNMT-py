@@ -22,7 +22,7 @@ cd OpenNMT-py
 pip install -r requirements.txt
 ```
 
-And you are ready to go! Take a look at the [quickstart](quickstart.md) to familiarize yourself with the main training workflow.
+And you are ready to go! Take a look at the [quickstart](quickstart) to familiarize yourself with the main training workflow.
 
 Alternatively you can use Docker to install with `nvidia-docker`. The main Dockerfile is included
 in the root directory.
