@@ -19,7 +19,8 @@ class TranslationBuilder(object):
        replace_unk (bool): replace unknown words using attention
        has_tgt (bool): will the batch have gold targets
     """
-    def __init__(self, data, fields, n_best, replace_unk, has_tgt):
+    def __init__(self, data, fields, n_best=1, replace_unk=False,
+                 has_tgt=False):
         self.data = data
         self.fields = fields
         self.n_best = n_best
@@ -74,7 +75,8 @@ class TranslationBuilder(object):
         translations = []
         for b in range(batch_size):
             if data_type == 'text':
-                src_vocab = self.data.src_vocabs[inds[b]]
+                src_vocab = self.data.src_vocabs[inds[b]] \
+                  if self.data.src_vocabs else None
                 src_raw = self.data.examples[inds[b]].src
             else:
                 src_vocab = None

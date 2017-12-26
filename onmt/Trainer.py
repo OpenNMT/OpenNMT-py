@@ -99,7 +99,7 @@ class Trainer(object):
 
     def __init__(self, model, train_iter, valid_iter,
                  train_loss, valid_loss, optim,
-                 trunc_size, shard_size, data_type='text'):
+                 trunc_size=0, shard_size=32, data_type='text'):
         # Basic attributes.
         self.model = model
         self.train_iter = train_iter
@@ -109,7 +109,6 @@ class Trainer(object):
         self.optim = optim
         self.trunc_size = trunc_size
         self.shard_size = shard_size
-        self.model_type = self.model.model_type
         self.data_type = data_type
 
         # Set model in training mode.

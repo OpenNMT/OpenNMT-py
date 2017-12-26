@@ -92,8 +92,9 @@ class RNNEncoder(EncoderBase):
        embeddings (:obj:`onmt.modules.Embeddings`): embedding module to use
     """
     def __init__(self, rnn_type, bidirectional, num_layers,
-                 hidden_size, dropout, embeddings):
+                 hidden_size, dropout=0.0, embeddings=None):
         super(RNNEncoder, self).__init__()
+        assert embeddings is not None
 
         num_directions = 2 if bidirectional else 1
         assert hidden_size % num_directions == 0
@@ -187,8 +188,9 @@ class RNNDecoderBase(nn.Module):
        embeddings (:obj:`onmt.modules.Embeddings`): embedding module to use
     """
     def __init__(self, rnn_type, bidirectional_encoder, num_layers,
-                 hidden_size, attn_type, coverage_attn, context_gate,
-                 copy_attn, dropout, embeddings):
+                 hidden_size, attn_type="general",
+                 coverage_attn=False, context_gate=None,
+                 copy_attn=False, dropout=0.0, embeddings=None):
         super(RNNDecoderBase, self).__init__()
 
         # Basic attributes.
