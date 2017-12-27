@@ -118,7 +118,7 @@ def make_valid_data_iter(valid_dataset, opt):
     is ok too.
     """
     return onmt.io.OrderedIterator(
-                dataset=valid_dataset, batch_size=opt.batch_size,
+                dataset=valid_dataset, batch_size=opt.valid_batch_size,
                 device=opt.gpuid[0] if opt.gpuid else -1,
                 train=False, sort=True)
 
