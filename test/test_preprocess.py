@@ -41,7 +41,7 @@ class TestData(unittest.TestCase):
 
         trains = preprocess.build_save_dataset('train', fields, opt)
 
-        preprocess.build_save_vocab(trains, fields, opt)
+        preprocess.build_save_vocab(trains, opt)
 
         preprocess.build_save_dataset('valid', fields, opt)
 

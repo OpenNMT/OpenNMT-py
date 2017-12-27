@@ -89,13 +89,16 @@ def build_save_text_dataset_in_shards(src_corpus, tgt_corpus, fields,
                 src_seq_length=opt.src_seq_length,
                 tgt_seq_length=opt.tgt_seq_length,
                 dynamic_dict=opt.dynamic_dict)
-        ret_list.append(dataset)
 
         # We save fields in vocab.pt seperately, so make it empty.
+        saved_fields = dataset.fields
         dataset.fields = []
         pt_file = "{:s}.{:s}.{:d}.pt".format(
                 opt.save_data, corpus_type, index)
         torch.save(dataset, pt_file)
+
+        dataset.fields = saved_fields
+        ret_list.append(dataset)
 
     if index == 1:
         # Only one shard, strip the index in the filename.
@@ -138,24 +141,22 @@ def build_save_dataset(corpus_type, fields, opt):
                 window=opt.window)
 
     # We save fields in vocab.pt seperately, so make it empty.
+    saved_fields = dataset.fields
     dataset.fields = []
     pt_file = "{:s}.{:s}.pt".format(opt.save_data, corpus_type)
     torch.save(dataset, pt_file)
+    dataset.fields = saved_fields
 
     return [dataset]
 
 
-def build_save_vocab(train_dataset, fields, opt):
-    # We've empty'ed each dataset's `fields` attribute
-    # when saving datasets, so restore them.
-    for train in train_dataset:
-        train.fields = fields
-
-    onmt.io.build_vocab(train_dataset, opt.data_type, opt.share_vocab,
-                        opt.src_vocab_size,
-                        opt.src_words_min_frequency,
-                        opt.tgt_vocab_size,
-                        opt.tgt_words_min_frequency)
+def build_save_vocab(train_dataset, opt):
+    fields = onmt.io.build_vocab(train_dataset, opt.data_type,
+                                 opt.share_vocab,
+                                 opt.src_vocab_size,
+                                 opt.src_words_min_frequency,
+                                 opt.tgt_vocab_size,
+                                 opt.tgt_words_min_frequency)
 
     # Can't save fields, so remove/reconstruct at training time.
     vocab_file = opt.save_data + '.vocab.pt'
@@ -174,7 +175,7 @@ def main():
     train_datasets = build_save_dataset('train', fields, opt)
 
     print("Building & saving vocabulary...")
-    build_save_vocab(train_datasets, fields, opt)
+    build_save_vocab(train_datasets, opt)
 
     print("Building & saving validation data...")
     build_save_dataset('valid', fields, opt)

@@ -68,7 +68,7 @@ def save_fields_to_vocab(fields):
     """
     vocab = []
     for k, f in fields.items():
-        if 'vocab' in f.__dict__:
+        if f is not None and 'vocab' in f.__dict__:
             f.vocab.stoi = dict(f.vocab.stoi)
             vocab.append((k, f.vocab))
     return vocab
@@ -230,6 +230,9 @@ def build_vocab(train_datasets, data_type, share_vocab,
         tgt_vocab_size(int): size of the target vocabulary.
         tgt_words_min_frequency(int): the minimum frequency needed to
                 include a target word in the vocabulary.
+
+    Returns:
+        Dict of Fields
     """
     # All datasets have same fields, get the first one is OK.
     fields = train_datasets[0].fields
@@ -253,6 +256,8 @@ def build_vocab(train_datasets, data_type, share_vocab,
                 vocab_size=src_vocab_size)
             fields["src"].vocab = merged_vocab
             fields["tgt"].vocab = merged_vocab
+
+    return fields
 
 
 def _make_examples_nfeats_tpl(data_type, src_path, src_dir,
