@@ -39,16 +39,16 @@ def make_embeddings(opt, word_dict, feature_dicts, for_encoder=True):
     num_feat_embeddings = [len(feat_dict) for feat_dict in
                            feature_dicts]
 
-    return Embeddings(embedding_dim,
-                      opt.position_encoding,
-                      opt.feat_merge,
-                      opt.feat_vec_exponent,
-                      opt.feat_vec_size,
-                      opt.dropout,
-                      word_padding_idx,
-                      feats_padding_idx,
-                      num_word_embeddings,
-                      num_feat_embeddings)
+    return Embeddings(word_vec_size=embedding_dim,
+                      position_encoding=opt.position_encoding,
+                      feat_merge=opt.feat_merge,
+                      feat_vec_exponent=opt.feat_vec_exponent,
+                      feat_vec_size=opt.feat_vec_size,
+                      dropout=opt.dropout,
+                      word_padding_idx=word_padding_idx,
+                      feat_padding_idx=feats_padding_idx,
+                      word_vocab_size=num_word_embeddings,
+                      feat_vocab_sizes=num_feat_embeddings)
 
 
 def make_encoder(opt, embeddings):

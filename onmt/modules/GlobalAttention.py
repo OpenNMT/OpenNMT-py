@@ -53,8 +53,6 @@ class GlobalAttention(nn.Module):
        * :math:`score(H_j, q) = v_a^T tanh(W_a q + U_a h_j)`
 
 
-
-
     Args:
        dim (int): dimensionality of query and key
        coverage (bool): use coverage term
