@@ -18,5 +18,5 @@
       im2text.md
       speech2text.md
       FAQ.md
-      CONTRIBUTORS.md
+      CONTRIBUTING.md
       ref.rst
