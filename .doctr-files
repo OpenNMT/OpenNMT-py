@@ -22,7 +22,6 @@
 ./_sources/options/translate.md.txt
 ./_sources/quickstart.md.txt
 ./_sources/ref.rst.txt
-./_sources/references.md.txt
 ./_sources/speech2text.md.txt
 ./_static/ajax-loader.gif
 ./_static/basic.css
@@ -75,7 +74,6 @@
 ./options/translate.html
 ./quickstart.html
 ./ref.html
-./references.html
 ./search.html
 ./searchindex.js
 ./speech2text.html
