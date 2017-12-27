@@ -88,7 +88,7 @@ class CopyGenerator(nn.Module):
         # Original probabilities.
         logits = self.linear(hidden)
         logits[:, self.tgt_dict.stoi[onmt.io.PAD_WORD]] = -float('inf')
-        prob = F.softmax(logits)
+        prob = F.softmax(logits, dim=1)
 
         # Probability of copying p(z=1) batch.
         copy = F.sigmoid(self.linear_copy(hidden))
