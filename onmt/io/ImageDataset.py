@@ -65,8 +65,8 @@ class ImageDataset(ONMTDatasetBase):
         )
 
     def sort_key(self, ex):
-        "Sort using the size of the image."
-        return (-ex.src.size(2), -ex.src.size(1))
+        """ Sort using the size of the image: (width, height)."""
+        return (ex.src.size(2), ex.src.size(1))
 
     @staticmethod
     def make_image_examples_nfeats_tpl(path, img_dir):

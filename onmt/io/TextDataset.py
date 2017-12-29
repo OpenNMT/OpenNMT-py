@@ -82,7 +82,7 @@ class TextDataset(ONMTDatasetBase):
 
     def sort_key(self, ex):
         """ Sort using length of source sentences. """
-        return -len(ex.src)
+        return len(ex.src)
 
     @staticmethod
     def make_text_examples_nfeats_tpl(path, truncate, side):

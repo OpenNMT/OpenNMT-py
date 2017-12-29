@@ -79,7 +79,8 @@ class AudioDataset(ONMTDatasetBase):
         )
 
     def sort_key(self, ex):
-        return -ex.src.size(1)
+        """ Sort using duration time of the sound spectrogram. """
+        return ex.src.size(1)
 
     @staticmethod
     def make_audio_examples_nfeats_tpl(path, audio_dir,
