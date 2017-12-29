@@ -359,6 +359,10 @@ def translate_opts(parser):
     group.add_argument('-output', default='pred.txt',
                        help="""Path to output the predictions (each line will
                        be the decoded sequence""")
+    group.add_argument('-report_bleu', action='store_true',
+                       help="Report Bleu Score After Translation")
+    group.add_argument('-report_rouge', action='store_true',
+                       help="Report Rouge 1/2/3/L/SU4 Score After Translation")
 
     # Options most relevant to summarization.
     group.add_argument('-dynamic_dict', action='store_true',

@@ -102,9 +102,29 @@ def main():
             name, score_total / words_total,
             name, math.exp(-score_total/words_total)))
 
+    def report_bleu():
+        import subprocess
+        print()
+        res = subprocess.check_output("perl tools/multi-bleu.perl %s < %s" % (opt.tgt, opt.output),
+                                      shell=True).decode("utf-8")
+        print(">> " + res.strip())
+
+    def report_rouge():
+        from tools.test_rouge import test_rouge
+        results_dict = test_rouge(opt.output, opt.tgt)
+        print("\n>> ROUGE(1/2/3/L/SU4): {:.2f}/{:.2f}/{:.2f}/{:.2f}/{:.2f}".format(
+            results_dict["rouge_1_f_score"] * 100, results_dict["rouge_2_f_score"] * 100,
+            results_dict["rouge_3_f_score"] * 100, results_dict["rouge_l_f_score"] * 100,
+            results_dict["rouge_su*_f_score"] * 100))
+        pass
+
     report_score('PRED', pred_score_total, pred_words_total)
     if opt.tgt:
         report_score('GOLD', gold_score_total, gold_words_total)
+        if opt.report_bleu:
+            report_bleu()
+        if opt.report_rouge:
+            report_rouge()
 
     if opt.dump_beam:
         import json
