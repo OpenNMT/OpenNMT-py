@@ -15,10 +15,12 @@ def test_rouge(cand_file, ref_file):
         os.mkdir(tmp_dir + "/candidate")
         os.mkdir(tmp_dir + "/reference")
     for i, line in enumerate(f_cand):
-        with open(tmp_dir + "/candidate/cand.{}.txt".format(str(i).zfill(3)), "w", encoding="utf-8") as f:
+        with open(tmp_dir + "/candidate/cand.{}.txt".format(
+                str(i).zfill(3)), "w", encoding="utf-8") as f:
             f.write(line)
     for i, line in enumerate(f_ref):
-        with open(tmp_dir + "/reference/ref.{}.txt".format(str(i).zfill(3)), "w", encoding="utf-8") as f:
+        with open(tmp_dir + "/reference/ref.{}.txt".format(
+                str(i).zfill(3)), "w", encoding="utf-8") as f:
             f.write(line)
     f_cand.close()
     f_ref.close()
@@ -36,11 +38,15 @@ def test_rouge(cand_file, ref_file):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', type=str, default="candidate.txt", help='candidate file')
-    parser.add_argument('-r', type=str, default="reference.txt", help='reference file')
+    parser.add_argument('-c', type=str, default="candidate.txt",
+                        help='candidate file')
+    parser.add_argument('-r', type=str, default="reference.txt",
+                        help='reference file')
     args = parser.parse_args()
     results_dict = test_rouge(args.c, args.r)
     print(">> ROUGE(1/2/3/L/SU4): {:.2f}/{:.2f}/{:.2f}/{:.2f}/{:.2f}".format(
-        results_dict["rouge_1_f_score"] * 100, results_dict["rouge_2_f_score"] * 100,
-        results_dict["rouge_3_f_score"] * 100, results_dict["rouge_l_f_score"] * 100,
+        results_dict["rouge_1_f_score"] * 100,
+        results_dict["rouge_2_f_score"] * 100,
+        results_dict["rouge_3_f_score"] * 100,
+        results_dict["rouge_l_f_score"] * 100,
         results_dict["rouge_su*_f_score"] * 100))
