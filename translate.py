@@ -117,7 +117,6 @@ def main():
             shell=True).decode("utf-8")
         print(res.strip())
 
-
     report_score('PRED', pred_score_total, pred_words_total)
     if opt.tgt:
         report_score('GOLD', gold_score_total, gold_words_total)

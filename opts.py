@@ -360,7 +360,7 @@ def translate_opts(parser):
                        help="""Path to output the predictions (each line will
                        be the decoded sequence""")
     group.add_argument('-report_bleu', action='store_true',
-                       help="""Report bleu score after translation, 
+                       help="""Report bleu score after translation,
                        call tools/multi-bleu.perl on command line""")
     group.add_argument('-report_rouge', action='store_true',
                        help="""Report rouge 1/2/3/L/SU4 score after translation
