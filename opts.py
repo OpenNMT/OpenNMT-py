@@ -360,9 +360,11 @@ def translate_opts(parser):
                        help="""Path to output the predictions (each line will
                        be the decoded sequence""")
     group.add_argument('-report_bleu', action='store_true',
-                       help="Report Bleu Score After Translation")
+                       help="""Report bleu score after translation, 
+                       call tools/multi-bleu.perl on command line""")
     group.add_argument('-report_rouge', action='store_true',
-                       help="Report Rouge 1/2/3/L/SU4 Score After Translation")
+                       help="""Report rouge 1/2/3/L/SU4 score after translation
+                       call tools/test_rouge.py on command line""")
 
     # Options most relevant to summarization.
     group.add_argument('-dynamic_dict', action='store_true',
