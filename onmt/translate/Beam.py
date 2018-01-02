@@ -17,7 +17,8 @@ class Beam(object):
     """
     def __init__(self, size, pad, bos, eos,
                  n_best=1, cuda=False,
-                 global_scorer=None):
+                 global_scorer=None,
+                 min_length=0):
 
         self.size = size
         self.tt = torch.cuda if cuda else torch
@@ -49,6 +50,9 @@ class Beam(object):
         self.global_scorer = global_scorer
         self.global_state = {}
 
+        # Minimum prediction length
+        self.min_length = min_length
+
     def get_current_state(self):
         "Get the outputs for the current timestep."
         return self.next_ys[-1]
@@ -70,6 +74,12 @@ class Beam(object):
         Returns: True if beam search is complete.
         """
         num_words = word_probs.size(1)
+
+        # force the output to be longer than self.min_length
+        cur_len = len(self.next_ys)
+        if cur_len < self.min_length:
+            for k in range(len(word_probs)):
+                word_probs[k][self._eos] = -1e20
 
         # Sum the previous scores.
         if len(self.prev_ks) > 0:

@@ -375,6 +375,8 @@ def translate_opts(parser):
     group = parser.add_argument_group('Beam')
     group.add_argument('-beam_size',  type=int, default=5,
                        help='Beam size')
+    group.add_argument('-min_length', type=int, default=0,
+                        help='Minimum prediction length')
 
     # Alpha and Beta values for Google Length + Coverage penalty
     # Described here: https://arxiv.org/pdf/1609.08144.pdf, Section 7
