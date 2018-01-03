@@ -188,7 +188,7 @@
 <span class="pre">`</span></code></p>
 <p>### Step 2: Train the model</p>
 <p><code class="docutils literal"><span class="pre">`bash</span>
-<span class="pre">python</span> <span class="pre">train.py</span> <span class="pre">-data</span> <span class="pre">data/demo.train.pt</span> <span class="pre">-save_model</span> <span class="pre">demo-model</span>
+<span class="pre">python</span> <span class="pre">train.py</span> <span class="pre">-data</span> <span class="pre">data/demo</span> <span class="pre">-save_model</span> <span class="pre">demo-model</span>
 <span class="pre">`</span></code></p>
 <p>The main train command is quite simple. Minimally it takes a data file
 and a save file.  This will run the default model, which consists of a
@@ -196,7 +196,7 @@ and a save file.  This will run the default model, which consists of a
 can also add <cite>-gpuid 1</cite> to use (say) GPU 1.</p>
 <p>### Step 3: Translate</p>
 <p><code class="docutils literal"><span class="pre">`bash</span>
-<span class="pre">python</span> <span class="pre">translate.py</span> <span class="pre">-model</span> <span class="pre">demo-model_epochX_PPL.pt</span> <span class="pre">-src</span> <span class="pre">data/src-test.txt</span> <span class="pre">-output</span> <span class="pre">pred.txt</span> <span class="pre">-replace_unk</span> <span class="pre">-verbose</span>
+<span class="pre">python</span> <span class="pre">translate.py</span> <span class="pre">-model</span> <span class="pre">demo-model_XYZ.pt</span> <span class="pre">-src</span> <span class="pre">data/src-test.txt</span> <span class="pre">-output</span> <span class="pre">pred.txt</span> <span class="pre">-replace_unk</span> <span class="pre">-verbose</span>
 <span class="pre">`</span></code></p>
 <p>Now you have a model which you can use to predict on new data. We do this by running beam search. This will output predictions into <cite>pred.txt</cite>.</p>
 <p>Note:</p>

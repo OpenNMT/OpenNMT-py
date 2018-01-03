@@ -197,7 +197,7 @@ Federal Master Trainer and Senior Instructor of the Italian Federation of Aerobi
 </div>
 <div class="section" id="step-2-train-the-model">
 <span id="step-2-train-the-model"></span><h2>Step 2: Train the model<a class="headerlink" href="#step-2-train-the-model" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-bash"><div class="highlight"><pre><span></span>python train.py -data data/demo.train.pt -save_model demo-model
+<div class="highlight-bash"><div class="highlight"><pre><span></span>python train.py -data data/demo -save_model demo-model
 </pre></div>
 </div>
 <p>The main train command is quite simple. Minimally it takes a data file
@@ -207,7 +207,7 @@ can also add <code class="docutils literal"><span class="pre">-gpuid</span> <spa
 </div>
 <div class="section" id="step-3-translate">
 <span id="step-3-translate"></span><h2>Step 3: Translate<a class="headerlink" href="#step-3-translate" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-bash"><div class="highlight"><pre><span></span>python translate.py -model demo-model_epochX_PPL.pt -src data/src-test.txt -output pred.txt -replace_unk -verbose
+<div class="highlight-bash"><div class="highlight"><pre><span></span>python translate.py -model demo-model_XYZ.pt -src data/src-test.txt -output pred.txt -replace_unk -verbose
 </pre></div>
 </div>
 <p>Now you have a model which you can use to predict on new data. We do this by running beam search. This will output predictions into <code class="docutils literal"><span class="pre">pred.txt</span></code>.</p>
