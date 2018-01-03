@@ -30,7 +30,7 @@ Federal Master Trainer and Senior Instructor of the Italian Federation of Aerobi
 ### Step 2: Train the model
 
 ```bash
-python train.py -data data/demo.train.pt -save_model demo-model
+python train.py -data data/demo -save_model demo-model
 ```
 
 The main train command is quite simple. Minimally it takes a data file
@@ -41,7 +41,7 @@ can also add `-gpuid 1` to use (say) GPU 1.
 ### Step 3: Translate
 
 ```bash
-python translate.py -model demo-model_epochX_PPL.pt -src data/src-test.txt -output pred.txt -replace_unk -verbose
+python translate.py -model demo-model_XYZ.pt -src data/src-test.txt -output pred.txt -replace_unk -verbose
 ```
 
 Now you have a model which you can use to predict on new data. We do this by running beam search. This will output predictions into `pred.txt`.

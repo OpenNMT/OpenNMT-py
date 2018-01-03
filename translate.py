@@ -74,10 +74,12 @@ def main():
                                  window=opt.window,
                                  use_filter_pred=False)
 
-    test_data = onmt.io.OrderedIterator(
+    # Sort batch by decreasing lengths of sentence required by pytorch.
+    # sort=False means "Use dataset's sortkey instead of iterator's".
+    data_iter = onmt.io.OrderedIterator(
         dataset=data, device=opt.gpu,
         batch_size=opt.batch_size, train=False, sort=False,
-        shuffle=False)
+        sort_within_batch=True, shuffle=False)
 
     # Translator
     scorer = onmt.translate.GNMTGlobalScorer(opt.alpha, opt.beta)
@@ -98,7 +100,7 @@ def main():
     pred_score_total, pred_words_total = 0, 0
     gold_score_total, gold_words_total = 0, 0
 
-    for batch in test_data:
+    for batch in data_iter:
         batch_data = translator.translate_batch(batch, data)
         translations = builder.from_batch(batch_data)
 
