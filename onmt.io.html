@@ -417,7 +417,7 @@ we can extract its text features.</p>
 <dl class="method">
 <dt id="onmt.io.ImageDataset.sort_key">
 <code class="descname">sort_key</code><span class="sig-paren">(</span><em>ex</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.ImageDataset.sort_key" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sort using the size of the image.</p>
+<dd><p>Sort using the size of the image: (width, height).</p>
 </dd></dl>
 
 </dd></dl>
@@ -553,6 +553,12 @@ by std or not.</li>
 </tr>
 </tbody>
 </table>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.io.AudioDataset.sort_key">
+<code class="descname">sort_key</code><span class="sig-paren">(</span><em>ex</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.AudioDataset.sort_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sort using duration time of the sound spectrogram.</p>
 </dd></dl>
 
 </dd></dl>
