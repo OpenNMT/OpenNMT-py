@@ -132,7 +132,7 @@ class MultiHeadedAttention(nn.Module):
 
             scaled = scaled.view(b, self.head_count, l, dim_per_head)
             mask = mask.unsqueeze(1).expand_as(scaled)
-            scaled = scaled.masked_fill(Variable(mask), -float('inf')) \
+            scaled = scaled.masked_fill(Variable(mask), -1e18) \
                            .view(bh, l, dim_per_head)
         attn = self.sm(scaled)
         # Return one attn
