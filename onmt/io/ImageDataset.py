@@ -51,6 +51,10 @@ class ImageDataset(ONMTDatasetBase):
         out_examples = (self._construct_example_fromlist(
                             ex_values, out_fields)
                         for ex_values in example_values)
+        # If out_examples is a generator, we need to save the filter_pred
+        # function in serialization too, which would cause a problem when
+        # `torch.save()`. Thus we materialize it as a list.
+        out_examples = list(out_examples)
 
         def filter_pred(example):
             if tgt_examples_iter is not None:
