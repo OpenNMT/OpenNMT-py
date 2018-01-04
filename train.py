@@ -121,6 +121,17 @@ def make_valid_data_iter(valid_dataset, opt):
     """
     # Sort batch by decreasing lengths of sentence required by pytorch.
     # sort=False means "Use dataset's sortkey instead of iterator's".
+    # CHECK
+    train_space = opt.max_generator_batches * opt.batch_size
+    max_valid_length = max([len(x.tgt) for x in valid_dataset.examples])
+    valid_space = max_valid_length * opt.valid_batch_size
+    if valid_space > train_space:
+        opt.valid_batch_size = int(train_space / max_valid_length)
+        if opt.valid_batch_size == 0:
+            opt.valid_batch_size = 1
+        print("WARNING: Resize valid_batch_size as %d to avoid OOM."
+              % opt.valid_batch_size)
+    # END CHECK
     return onmt.io.OrderedIterator(
                 dataset=valid_dataset, batch_size=opt.valid_batch_size,
                 device=opt.gpuid[0] if opt.gpuid else -1,
