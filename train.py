@@ -126,10 +126,12 @@ def make_valid_data_iter(valid_dataset, opt):
     max_valid_length = max([len(x.tgt) for x in valid_dataset.examples])
     valid_space = max_valid_length * opt.valid_batch_size
     if valid_space > train_space:
+        print("""WARNING: Current valid_batch_size may potentially
+         cause OOM after the first epoch.""")
         opt.valid_batch_size = int(train_space / max_valid_length)
         if opt.valid_batch_size == 0:
             opt.valid_batch_size = 1
-        print("WARNING: Resize valid_batch_size as %d to avoid OOM."
+        print("WARNING: Reducing valid_batch_size to %d (force)"
               % opt.valid_batch_size)
     # END CHECK
     return onmt.io.OrderedIterator(
