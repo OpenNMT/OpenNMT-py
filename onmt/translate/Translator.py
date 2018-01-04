@@ -27,7 +27,7 @@ class Translator(object):
                  beam_size, n_best=1,
                  max_length=100,
                  global_scorer=None, copy_attn=False, cuda=False,
-                 beam_trace=False):
+                 beam_trace=False, min_length=0):
         self.model = model
         self.fields = fields
         self.n_best = n_best
@@ -36,6 +36,7 @@ class Translator(object):
         self.copy_attn = copy_attn
         self.beam_size = beam_size
         self.cuda = cuda
+        self.min_length = min_length
 
         # for debugging
         self.beam_accum = None
@@ -72,7 +73,8 @@ class Translator(object):
                                     global_scorer=self.global_scorer,
                                     pad=vocab.stoi[onmt.io.PAD_WORD],
                                     eos=vocab.stoi[onmt.io.EOS_WORD],
-                                    bos=vocab.stoi[onmt.io.BOS_WORD])
+                                    bos=vocab.stoi[onmt.io.BOS_WORD],
+                                    min_length=self.min_length)
                 for __ in range(batch_size)]
 
         # Help functions for working with beams and batches
