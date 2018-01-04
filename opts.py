@@ -376,7 +376,11 @@ def translate_opts(parser):
     group.add_argument('-beam_size',  type=int, default=5,
                        help='Beam size')
     group.add_argument('-min_length', type=int, default=0,
-                        help='Minimum prediction length')
+                       help='Minimum prediction length')
+    group.add_argument('-max_length', type=int, default=100,
+                       help='Maximum prediction length.')
+    group.add_argument('-max_sent_length', action=DeprecateAction,
+                       help="Deprecated, use `-max_length` instead")
 
     # Alpha and Beta values for Google Length + Coverage penalty
     # Described here: https://arxiv.org/pdf/1609.08144.pdf, Section 7
@@ -385,8 +389,6 @@ def translate_opts(parser):
                         (higher = longer generation)""")
     group.add_argument('-beta', type=float, default=-0.,
                        help="""Coverage penalty parameter""")
-    group.add_argument('-max_sent_length', type=int, default=100,
-                       help='Maximum sentence length.')
     group.add_argument('-replace_unk', action="store_true",
                        help="""Replace the generated UNK tokens with the
                        source token that had highest attention weight. If

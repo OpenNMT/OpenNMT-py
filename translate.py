@@ -87,7 +87,7 @@ def main():
                                            beam_size=opt.beam_size,
                                            n_best=opt.n_best,
                                            global_scorer=scorer,
-                                           max_length=opt.max_sent_length,
+                                           max_length=opt.max_length,
                                            copy_attn=model_opt.copy_attn,
                                            cuda=opt.cuda,
                                            beam_trace=opt.dump_beam != "",
