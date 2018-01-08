@@ -223,7 +223,7 @@ def _build_field_vocab(field, counter, **kwargs):
         if tok is not None))
 
     field.vocab = field.vocab_cls(counter, specials=specials, **kwargs)
-    
+
 
 def build_vocab(train_datasets, fields, data_type, share_vocab,
                 src_vocab_size, src_words_min_frequency,
@@ -248,7 +248,7 @@ def build_vocab(train_datasets, fields, data_type, share_vocab,
     counter = {}
     for k in fields:
         counter[k] = Counter()
-        
+
     for path in train_datasets:
         data = torch.load(path)
         for x in data.examples:
@@ -257,7 +257,7 @@ def build_vocab(train_datasets, fields, data_type, share_vocab,
                 if not fields[k].sequential:
                     ex = [ex]
                 counter[k].update(ex)
-                
+
     # All datasets have same fields, get the first one is OK.
     _build_field_vocab(fields["tgt"], counter["tgt"],
                        max_size=tgt_vocab_size,
@@ -276,7 +276,7 @@ def build_vocab(train_datasets, fields, data_type, share_vocab,
             key = "src_feat_" + str(j)
             _build_field_vocab(fields[key], counter[key])
             print("Building", key, "size", len(fields[key].vocab))
-        
+
         # Merge the input and output vocabularies.
         if share_vocab:
             # `tgt_vocab_size` is ignored when sharing vocabularies

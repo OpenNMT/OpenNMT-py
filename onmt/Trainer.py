@@ -134,7 +134,8 @@ class Trainer(object):
                 total_batches += 1
                 target_size = batch.tgt.size(0)
                 # Truncated BPTT
-                trunc_size = self.trunc_size if self.trunc_size else target_size
+                trunc_size = self.trunc_size \
+                    if self.trunc_size else target_size
 
                 dec_state = None
                 src = onmt.io.make_features(batch, 'src', self.data_type)
@@ -170,8 +171,9 @@ class Trainer(object):
 
                 if report_func is not None:
                     report_stats = report_func(
-                            epoch, total_batches, len(train_iter) * len(self.train_iter),
-                            total_stats.start_time, self.optim.lr, report_stats)
+                        epoch, total_batches,
+                        len(train_iter) * len(self.train_iter),
+                        total_stats.start_time, self.optim.lr, report_stats)
 
         return total_stats
 

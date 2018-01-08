@@ -96,7 +96,7 @@ def build_save_text_dataset_in_shards(src_corpus, tgt_corpus, fields,
         pt_file = "{:s}.{:s}.{:d}.pt".format(
                 opt.save_data, corpus_type, index)
         torch.save(dataset, pt_file)
-        print("Saving shard %s"%pt_file)
+        print("Saving shard %s" % pt_file)
         dataset.fields = saved_fields
         ret_list.append(pt_file)
 

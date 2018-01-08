@@ -102,7 +102,7 @@ class LazyIter(object):
         self.path = path
         self.is_train = is_train
         self.fields = None
-        
+
     def load_iterator(self):
         """
         This returns user-defined train data iterator for the trainer
@@ -118,7 +118,8 @@ class LazyIter(object):
             return onmt.io.OrderedIterator(
                 dataset=train_dataset, batch_size=opt.batch_size,
                 device=opt.gpuid[0] if opt.gpuid else -1,
-                sort=False, sort_within_batch=True, repeat=False), train_dataset
+                sort=False, sort_within_batch=True, repeat=False), \
+                train_dataset
         else:
             # Sort batch by decreasing lengths of sentence required by pytorch.
             # sort=False means "Use dataset's sortkey instead of iterator's".
@@ -152,8 +153,8 @@ def make_loss_compute(model, tgt_vocab, opt):
 def train_model(model, train_dataset, valid_dataset, data_type,
                 fields, optim, model_opt):
 
-    train_iter = train_dataset #make_train_data_iter(train_dataset, opt)
-    valid_iter = valid_dataset #make_valid_data_iter(valid_dataset, opt)
+    train_iter = train_dataset
+    valid_iter = valid_dataset
 
     train_loss = make_loss_compute(model, fields["tgt"].vocab, opt)
     valid_loss = make_loss_compute(model, fields["tgt"].vocab, opt)
@@ -227,12 +228,12 @@ def load_dataset(data_type):
         # data to be loaded. So it seams we don't have a good way
         # to avoid this now.
         for pt in pts:
-            datasets.append(LazyIter(pt, data_type=="train"))
+            datasets.append(LazyIter(pt, data_type == "train"))
         # dataset = onmt.io.ONMTDatasetBase.coalesce_datasets(datasets)
     else:
         # Only one onmt.io.*Dataset, simple!
         datasets.append(LazyIter(opt.data + '.' + data_type + '.pt',
-                                 data_type=="train"))
+                                 data_type == "train"))
 
     print(' * number of %s dataset: %d' % (data_type, len(datasets)))
     return datasets
@@ -330,7 +331,7 @@ def main():
     fields = load_fields(data, checkpoint)
     for wrap in train_dataset + valid_dataset:
         wrap.fields = fields
-    
+
     # Report src/tgt features.
     collect_report_features(fields)
 
