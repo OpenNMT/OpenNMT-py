@@ -12,62 +12,88 @@ from onmt.Models import EncoderBase
 from onmt.Models import DecoderState
 from onmt.Utils import aeq
 
-
 MAX_SIZE = 5000
 
 
 class PositionwiseFeedForward(nn.Module):
-    """ A two-layer Feed-Forward-Network."""
-    def __init__(self, size, hidden_size, dropout=0.1):
-        """
+    """ A two-layer Feed-Forward-Network with residual layer norm.
+
         Args:
-            size(int): the size of input for the first-layer of the FFN.
-            hidden_size(int): the hidden layer size of the second-layer
+            size (int): the size of input for the first-layer of the FFN.
+            hidden_size (int): the hidden layer size of the second-layer
                               of the FNN.
-            droput(float): dropout probability(0-1.0).
-        """
+            dropout (float): dropout probability(0-1.0).
+    """
+    def __init__(self, size, hidden_size, dropout=0.1):
         super(PositionwiseFeedForward, self).__init__()
         self.w_1 = onmt.modules.BottleLinear(size, hidden_size)
         self.w_2 = onmt.modules.BottleLinear(hidden_size, size)
         self.layer_norm = onmt.modules.BottleLayerNorm(size)
-        self.dropout = nn.Dropout(dropout)
+        self.dropout_1 = nn.Dropout(dropout)
+        self.dropout_2 = nn.Dropout(dropout)
         self.relu = nn.ReLU()
 
     def forward(self, x):
-        residual = x
-        output = self.dropout(self.w_2(self.relu(self.w_1(x))))
-        return self.layer_norm(output + residual)
+        inter = self.dropout_1(self.relu(self.w_1(self.layer_norm(x))))
+        output = self.dropout_2(self.w_2(inter))
+        return output + x
 
 
 class TransformerEncoderLayer(nn.Module):
-    def __init__(self, size, dropout,
-                 head_count=8, hidden_size=2048):
-        """
-        Args:
+    """
+    A single layer of the transformer encoder.
+
+    Args:
             size(int): the dimension of keys/values/queries in
                        MultiHeadedAttention, also the input size of
                        the first-layer of the PositionwiseFeedForward.
             droput(float): dropout probability(0-1.0).
             head_count(int): the number of head for MultiHeadedAttention.
             hidden_size(int): the second-layer of the PositionwiseFeedForward.
-        """
+    """
+
+    def __init__(self, size, dropout,
+                 head_count=8, hidden_size=2048):
         super(TransformerEncoderLayer, self).__init__()
 
         self.self_attn = onmt.modules.MultiHeadedAttention(
-            head_count, size, p=dropout)
+            head_count, size, dropout=dropout)
         self.feed_forward = PositionwiseFeedForward(size,
                                                     hidden_size,
                                                     dropout)
+        self.layer_norm = onmt.modules.BottleLayerNorm(size)
 
     def forward(self, input, mask):
-        mid, _ = self.self_attn(input, input, input, mask=mask)
-        out = self.feed_forward(mid)
+        input_norm = self.layer_norm(input)
+        mid, _ = self.self_attn(input_norm, input_norm, input_norm, mask=mask)
+        out = self.feed_forward(mid + input)
         return out
 
 
 class TransformerEncoder(EncoderBase):
     """
     The Transformer encoder from "Attention is All You Need".
+
+
+    .. mermaid::
+
+       graph BT
+          A[input]
+          B[multi-head self-attn]
+          C[feed forward]
+          O[output]
+          A --> B
+          B --> C
+          C --> O
+
+
+
+    Args:
+       num_layers (int): number of encoder layers
+       hidden_size (int): number of hidden units
+       dropout (float): dropout parameters
+       embeddings (:obj:`onmt.modules.Embeddings`):
+          embeddings to use, should have positional encodings
     """
     def __init__(self, num_layers, hidden_size,
                  dropout, embeddings):
@@ -78,9 +104,10 @@ class TransformerEncoder(EncoderBase):
         self.transformer = nn.ModuleList(
             [TransformerEncoderLayer(hidden_size, dropout)
              for i in range(num_layers)])
+        self.layer_norm = onmt.modules.BottleLayerNorm(hidden_size)
 
     def forward(self, input, lengths=None, hidden=None):
-        """ See EncoderBase.forward() for description of args and returns."""
+        """ See :obj:`EncoderBase.forward()`"""
         self._check_args(input, lengths, hidden)
 
         emb = self.embeddings(input)
@@ -103,30 +130,33 @@ class TransformerEncoder(EncoderBase):
         # Run the forward pass of every layer of the tranformer.
         for i in range(self.num_layers):
             out = self.transformer[i](out, mask)
+        out = self.layer_norm(out)
 
         return Variable(emb.data), out.transpose(0, 1).contiguous()
 
 
 class TransformerDecoderLayer(nn.Module):
-    def __init__(self, size, dropout,
-                 head_count=8, hidden_size=2048):
-        """
-        Args:
-            size(int): the dimension of keys/values/queries in
+    """
+    Args:
+      size(int): the dimension of keys/values/queries in
                        MultiHeadedAttention, also the input size of
                        the first-layer of the PositionwiseFeedForward.
-            droput(float): dropout probability(0-1.0).
-            head_count(int): the number of head for MultiHeadedAttention.
-            hidden_size(int): the second-layer of the PositionwiseFeedForward.
-        """
+      droput(float): dropout probability(0-1.0).
+      head_count(int): the number of heads for MultiHeadedAttention.
+      hidden_size(int): the second-layer of the PositionwiseFeedForward.
+    """
+    def __init__(self, size, dropout,
+                 head_count=8, hidden_size=2048):
         super(TransformerDecoderLayer, self).__init__()
         self.self_attn = onmt.modules.MultiHeadedAttention(
-                head_count, size, p=dropout)
+                head_count, size, dropout=dropout)
         self.context_attn = onmt.modules.MultiHeadedAttention(
-                head_count, size, p=dropout)
+                head_count, size, dropout=dropout)
         self.feed_forward = PositionwiseFeedForward(size,
                                                     hidden_size,
                                                     dropout)
+        self.layer_norm_1 = onmt.modules.BottleLayerNorm(size)
+        self.layer_norm_2 = onmt.modules.BottleLayerNorm(size)
         self.dropout = dropout
         mask = self._get_attn_subsequent_mask(MAX_SIZE)
         # Register self.mask as a buffer in TransformerDecoderLayer, so
@@ -149,10 +179,13 @@ class TransformerDecoderLayer(nn.Module):
         dec_mask = torch.gt(tgt_pad_mask + self.mask[:, :tgt_pad_mask.size(1),
                             :tgt_pad_mask.size(1)]
                             .expand_as(tgt_pad_mask), 0)
-        query, attn = self.self_attn(input, input, input, mask=dec_mask)
-        mid, attn = self.context_attn(context, context, query,
+        input_norm = self.layer_norm_1(input)
+        query, attn = self.self_attn(input_norm, input_norm, input_norm,
+                                     mask=dec_mask)
+        query_norm = self.layer_norm_2(query+input)
+        mid, attn = self.context_attn(context, context, query_norm,
                                       mask=src_pad_mask)
-        output = self.feed_forward(mid)
+        output = self.feed_forward(mid+query+input)
 
         # CHECKS
         output_batch, output_len, _ = output.size()
@@ -178,6 +211,30 @@ class TransformerDecoderLayer(nn.Module):
 class TransformerDecoder(nn.Module):
     """
     The Transformer decoder from "Attention is All You Need".
+
+
+    .. mermaid::
+
+       graph BT
+          A[input]
+          B[multi-head self-attn]
+          BB[multi-head src-attn]
+          C[feed forward]
+          O[output]
+          A --> B
+          B --> BB
+          BB --> C
+          C --> O
+
+
+    Args:
+       num_layers (int): number of encoder layers.
+       hidden_size (int): number of hidden units
+       dropout (float): dropout parameters
+       embeddings (:obj:`onmt.modules.Embeddings`):
+          embeddings to use, should have positional encodings
+
+       attn_type (str): if using a seperate copy attention
     """
     def __init__(self, num_layers, hidden_size, attn_type,
                  copy_attn, dropout, embeddings):
@@ -200,24 +257,11 @@ class TransformerDecoder(nn.Module):
             self.copy_attn = onmt.modules.GlobalAttention(
                 hidden_size, attn_type=attn_type)
             self._copy = True
+        self.layer_norm = onmt.modules.BottleLayerNorm(hidden_size)
 
-    def forward(self, input, context, state):
+    def forward(self, input, context, state, context_lengths=None):
         """
-        Forward through the TransformerDecoder.
-        Args:
-            input (LongTensor): a sequence of input tokens tensors
-                                of size (len x batch x nfeats).
-            context (FloatTensor): output(tensor sequence) from the encoder
-                                of size (src_len x batch x hidden_size).
-            state (FloatTensor): hidden state from the encoder RNN for
-                                 initializing the decoder.
-        Returns:
-            outputs (FloatTensor): a Tensor sequence of output from the decoder
-                                   of shape (len x batch x hidden_size).
-            state (FloatTensor): final hidden state from the decoder.
-            attns (dict of (str, FloatTensor)): a dictionary of different
-                                type of attention Tensor from the decoder
-                                of shape (src_len x batch).
+        See :obj:`onmt.modules.RNNDecoderBase.forward()`
         """
         # CHECKS
         assert isinstance(state, TransformerDecoderState)
@@ -262,6 +306,7 @@ class TransformerDecoder(nn.Module):
                 = self.transformer_layers[i](output, src_context,
                                              src_pad_mask, tgt_pad_mask)
 
+        output = self.layer_norm(output)
         # Process the result and update the attentions.
         outputs = output.transpose(0, 1).contiguous()
         if state.previous_input is not None:

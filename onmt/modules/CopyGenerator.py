@@ -4,24 +4,79 @@ import torch
 import torch.cuda
 
 import onmt
+import onmt.io
 from onmt.Utils import aeq
 
 
 class CopyGenerator(nn.Module):
-    """
-    Generator module that additionally considers copying
+    """Generator module that additionally considers copying
     words directly from the source.
+
+    The main idea is that we have an extended "dynamic dictionary".
+    It contains `|tgt_dict|` words plus an arbitrary number of
+    additional words introduced by the source sentence.
+    For each source sentence we have a `src_map` that maps
+    each source word to an index in `tgt_dict` if it known, or
+    else to an extra word.
+
+    The copy generator is an extended version of the standard
+    generator that computse three values.
+
+    * :math:`p_{softmax}` the standard softmax over `tgt_dict`
+    * :math:`p(z)` the probability of instead copying a
+      word from the source, computed using a bernoulli
+    * :math:`p_{copy}` the probility of copying a word instead.
+      taken from the attention distribution directly.
+
+    The model returns a distribution over the extend dictionary,
+    computed as
+
+    :math:`p(w) = p(z=1)  p_{copy}(w)  +  p(z=0)  p_{softmax}(w)`
+
+
+    .. mermaid::
+
+       graph BT
+          A[input]
+          S[src_map]
+          B[softmax]
+          BB[switch]
+          C[attn]
+          D[copy]
+          O[output]
+          A --> B
+          A --> BB
+          S --> D
+          C --> D
+          D --> O
+          B --> O
+          BB --> O
+
+
+    Args:
+       input_size (int): size of input representation
+       tgt_dict (Vocab): output target dictionary
+
     """
-    def __init__(self, opt, src_dict, tgt_dict):
+    def __init__(self, input_size, tgt_dict):
         super(CopyGenerator, self).__init__()
-        self.linear = nn.Linear(opt.rnn_size, len(tgt_dict))
-        self.linear_copy = nn.Linear(opt.rnn_size, 1)
-        self.src_dict = src_dict
+        self.linear = nn.Linear(input_size, len(tgt_dict))
+        self.linear_copy = nn.Linear(input_size, 1)
         self.tgt_dict = tgt_dict
 
     def forward(self, hidden, attn, src_map):
         """
-        Computes p(w) = p(z=1) p_{copy}(w|z=0)  +  p(z=0) * p_{softmax}(w|z=0)
+        Compute a distribution over the target dictionary
+        extended by the dynamic dictionary implied by compying
+        source words.
+
+        Args:
+           hidden (`FloatTensor`): hidden outputs `[batch*tlen, input_size]`
+           attn (`FloatTensor`): attn for each `[batch*tlen, input_size]`
+           src_map (`FloatTensor`):
+             A sparse indicator matrix mapping each source word to
+             its index in the "extended" vocab containing.
+             `[src_len, batch, extra_words]`
         """
         # CHECKS
         batch_by_tlen, _ = hidden.size()
@@ -32,7 +87,7 @@ class CopyGenerator(nn.Module):
 
         # Original probabilities.
         logits = self.linear(hidden)
-        logits[:, self.tgt_dict.stoi[onmt.IO.PAD_WORD]] = -float('inf')
+        logits[:, self.tgt_dict.stoi[onmt.io.PAD_WORD]] = -float('inf')
         prob = F.softmax(logits)
 
         # Probability of copying p(z=1) batch.
@@ -89,7 +144,7 @@ class CopyGeneratorLossCompute(onmt.Loss.LossComputeBase):
         self.criterion = CopyGeneratorCriterion(len(tgt_vocab), force_copy,
                                                 self.padding_idx)
 
-    def make_shard_state(self, batch, output, range_, attns):
+    def _make_shard_state(self, batch, output, range_, attns):
         """ See base class for args description. """
         if getattr(batch, "alignment", None) is None:
             raise AssertionError("using -copy_attn you need to pass in "
@@ -102,9 +157,9 @@ class CopyGeneratorLossCompute(onmt.Loss.LossComputeBase):
             "align": batch.alignment[range_[0] + 1: range_[1]]
         }
 
-    def compute_loss(self, batch, output, target, copy_attn, align):
+    def _compute_loss(self, batch, output, target, copy_attn, align):
         """
-        Compute the loss. The args must match self.make_shard_state().
+        Compute the loss. The args must match self._make_shard_state().
         Args:
             batch: the current batch.
             output: the predict output from the model.
@@ -114,28 +169,29 @@ class CopyGeneratorLossCompute(onmt.Loss.LossComputeBase):
         """
         target = target.view(-1)
         align = align.view(-1)
-        scores = self.generator(self.bottle(output),
-                                self.bottle(copy_attn),
+        scores = self.generator(self._bottle(output),
+                                self._bottle(copy_attn),
                                 batch.src_map)
 
         loss = self.criterion(scores, align, target)
 
         scores_data = scores.data.clone()
         scores_data = self.dataset.collapse_copy_scores(
-                self.unbottle(scores_data, batch.batch_size),
+                self._unbottle(scores_data, batch.batch_size),
                 batch, self.tgt_vocab)
-        scores_data = self.bottle(scores_data)
+        scores_data = self._bottle(scores_data)
 
-        # Correct target is copy when only option.
-        # TODO: replace for loop with masking or boolean indexing
+        # Correct target copy token instead of <unk>
+        # tgt[i] = align[i] + len(tgt_vocab)
+        # for i such that tgt[i] == 0 and align[i] != 0
         target_data = target.data.clone()
-        for i in range(target_data.size(0)):
-            if target_data[i] == 0 and align.data[i] != 0:
-                target_data[i] = align.data[i] + len(self.tgt_vocab)
+        correct_mask = target_data.eq(0) * align.data.ne(0)
+        correct_copy = (align.data + len(self.tgt_vocab)) * correct_mask.long()
+        target_data = target_data + correct_copy
 
         # Coverage loss term.
         loss_data = loss.data.clone()
 
-        stats = self.stats(loss_data, scores_data, target_data)
+        stats = self._stats(loss_data, scores_data, target_data)
 
         return loss, stats

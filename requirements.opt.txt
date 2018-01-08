@@ -1,0 +1,6 @@
+cffi
+torchvision
+librosa
+Pillow
+git+https://github.com/pytorch/audio
+pyrouge

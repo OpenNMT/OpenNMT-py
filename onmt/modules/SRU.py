@@ -1,10 +1,5 @@
-"""
-Implementation of "Training RNNs as Fast as CNNs".
-TODO: turn to pytorch's implementation when it is available.
+# flake8: noqa
 
-This implementation is adpoted from the author of the paper:
-https://github.com/taolei87/sru/blob/master/cuda_functional.py.
-"""
 import subprocess
 import platform
 import os
@@ -389,7 +384,7 @@ class SRU_Compute(Function):
         k_ = k // 2 if self.bidirectional else k
         ncols = batch * d * bidir
         thread_per_block = min(512, ncols)
-        num_block = (ncols-1)/thread_per_block+1
+        num_block = (ncols-1) // thread_per_block+1
 
         init_ = x.new(ncols).zero_() if init is None else init
         size = (length, batch, d*bidir) if x.dim() == 3 else (batch, d*bidir)
@@ -438,7 +433,7 @@ class SRU_Compute(Function):
         k_ = k//2 if self.bidirectional else k
         ncols = batch*d*bidir
         thread_per_block = min(512, ncols)
-        num_block = (ncols-1)/thread_per_block+1
+        num_block = (ncols-1) // thread_per_block+1
 
         init_ = x.new(ncols).zero_() if init is None else init
         grad_u = u.new(*u.size())
@@ -552,6 +547,26 @@ class SRUCell(nn.Module):
 
 
 class SRU(nn.Module):
+    """
+    Implementation of "Training RNNs as Fast as CNNs"
+    :cite:`DBLP:journals/corr/abs-1709-02755`
+
+    TODO: turn to pytorch's implementation when it is available.
+
+    This implementation is adpoted from the author of the paper:
+    https://github.com/taolei87/sru/blob/master/cuda_functional.py.
+
+    Args:
+      input_size (int): input to model
+      hidden_size (int): hidden dimension
+      num_layers (int): number of layers
+      dropout (float): dropout to use (stacked)
+      rnn_dropout (float): dropout to use (recurrent)
+      bidirectional (bool): bidirectional
+      use_tanh (bool): activation
+      use_relu (bool): activation
+
+    """
     def __init__(self, input_size, hidden_size,
                  num_layers=2, dropout=0, rnn_dropout=0,
                  bidirectional=False, use_tanh=1, use_relu=0):
@@ -569,7 +584,7 @@ class SRU(nn.Module):
         self.out_size = hidden_size*2 if bidirectional else hidden_size
 
         for i in range(num_layers):
-            l = SRUCell(
+            sru_cell = SRUCell(
                 n_in=self.n_in if i == 0 else self.out_size,
                 n_out=self.n_out,
                 dropout=dropout if i+1 != num_layers else 0,
@@ -578,7 +593,7 @@ class SRU(nn.Module):
                 use_tanh=use_tanh,
                 use_relu=use_relu,
             )
-            self.rnn_lst.append(l)
+            self.rnn_lst.append(sru_cell)
 
     def set_bias(self, bias_val=0):
         for l in self.rnn_lst:
