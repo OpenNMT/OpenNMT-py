@@ -97,37 +97,41 @@ def report_func(epoch, batch, num_batches,
     return report_stats
 
 
-def make_train_data_iter(train_dataset, opt):
-    """
-    This returns user-defined train data iterator for the trainer
-    to iterate over during each train epoch. We implement simple
-    ordered iterator strategy here, but more sophisticated strategy
-    like curriculum learning is ok too.
-    """
-    # Sort batch by decreasing lengths of sentence required by pytorch.
-    # sort=False means "Use dataset's sortkey instead of iterator's".
-    return onmt.io.OrderedIterator(
+class LazyIter(object):
+    def __init__(self, path, is_train):
+        self.path = path
+        self.is_train = is_train
+        self.fields = None
+
+    def load_iterator(self):
+        """
+        This returns user-defined train data iterator for the trainer
+        to iterate over during each train epoch. We implement simple
+        ordered iterator strategy here, but more sophisticated strategy
+        like curriculum learning is ok too.
+        """
+        if self.is_train:
+            train_dataset = torch.load(self.path)
+            train_dataset.fields = self.fields
+            # Sort batch by decreasing lengths of sentence required by pytorch.
+            # sort=False means "Use dataset's sortkey instead of iterator's".
+            return onmt.io.OrderedIterator(
                 dataset=train_dataset, batch_size=opt.batch_size,
                 device=opt.gpuid[0] if opt.gpuid else -1,
-                sort=False, sort_within_batch=True, repeat=False)
-
-
-def make_valid_data_iter(valid_dataset, opt):
-    """
-    This returns user-defined validate data iterator for the trainer
-    to iterate over during each validate epoch. We implement simple
-    ordered iterator strategy here, but more sophisticated strategy
-    is ok too.
-    """
-    # Sort batch by decreasing lengths of sentence required by pytorch.
-    # sort=False means "Use dataset's sortkey instead of iterator's".
-    return onmt.io.OrderedIterator(
+                sort=False, sort_within_batch=True, repeat=False), \
+                train_dataset
+        else:
+            # Sort batch by decreasing lengths of sentence required by pytorch.
+            # sort=False means "Use dataset's sortkey instead of iterator's".
+            valid_dataset = torch.load(self.path)
+            valid_dataset.fields = self.fields
+            return onmt.io.OrderedIterator(
                 dataset=valid_dataset, batch_size=opt.valid_batch_size,
                 device=opt.gpuid[0] if opt.gpuid else -1,
-                train=False, sort=False, sort_within_batch=True)
+                train=False, sort=False, sort_within_batch=True), valid_dataset
 
 
-def make_loss_compute(model, tgt_vocab, dataset, opt):
+def make_loss_compute(model, tgt_vocab, opt):
     """
     This returns user-defined LossCompute object, which is used to
     compute loss in train/validate process. You can implement your
@@ -135,7 +139,7 @@ def make_loss_compute(model, tgt_vocab, dataset, opt):
     """
     if opt.copy_attn:
         compute = onmt.modules.CopyGeneratorLossCompute(
-            model.generator, tgt_vocab, dataset, opt.copy_attn_force)
+            model.generator, tgt_vocab, None, opt.copy_attn_force)
     else:
         compute = onmt.Loss.NMTLossCompute(model.generator, tgt_vocab,
                                            opt.label_smoothing)
@@ -146,20 +150,17 @@ def make_loss_compute(model, tgt_vocab, dataset, opt):
     return compute
 
 
-def train_model(model, train_dataset, valid_dataset,
+def train_model(model, train_dataset, valid_dataset, data_type,
                 fields, optim, model_opt):
 
-    train_iter = make_train_data_iter(train_dataset, opt)
-    valid_iter = make_valid_data_iter(valid_dataset, opt)
+    train_iter = train_dataset
+    valid_iter = valid_dataset
 
-    train_loss = make_loss_compute(model, fields["tgt"].vocab,
-                                   train_dataset, opt)
-    valid_loss = make_loss_compute(model, fields["tgt"].vocab,
-                                   valid_dataset, opt)
+    train_loss = make_loss_compute(model, fields["tgt"].vocab, opt)
+    valid_loss = make_loss_compute(model, fields["tgt"].vocab, opt)
 
     trunc_size = opt.truncated_decoder  # Badly named...
     shard_size = opt.max_generator_batches
-    data_type = train_dataset.data_type
 
     trainer = onmt.Trainer(model, train_iter, valid_iter,
                            train_loss, valid_loss, optim,
@@ -218,6 +219,7 @@ def load_dataset(data_type):
     print("Loading %s data from '%s'" % (data_type, opt.data))
 
     pts = glob.glob(opt.data + '.' + data_type + '.[0-9]*.pt')
+    datasets = []
     if pts:
         # Multiple onmt.io.*Dataset's, coalesce all.
         # torch.load loads them imemediately, which might eat up
@@ -225,30 +227,24 @@ def load_dataset(data_type):
         # when we create data iterator, it still requires these
         # data to be loaded. So it seams we don't have a good way
         # to avoid this now.
-        datasets = []
         for pt in pts:
-            datasets.append(torch.load(pt))
-        dataset = onmt.io.ONMTDatasetBase.coalesce_datasets(datasets)
+            datasets.append(LazyIter(pt, data_type == "train"))
+        # dataset = onmt.io.ONMTDatasetBase.coalesce_datasets(datasets)
     else:
         # Only one onmt.io.*Dataset, simple!
-        dataset = torch.load(opt.data + '.' + data_type + '.pt')
+        datasets.append(LazyIter(opt.data + '.' + data_type + '.pt',
+                                 data_type == "train"))
 
-    print(' * number of %s sentences: %d' % (data_type, len(dataset)))
+    print(' * number of %s dataset: %d' % (data_type, len(datasets)))
+    return datasets
 
-    return dataset
 
-
-def load_fields(train_dataset, valid_dataset, checkpoint):
-    data_type = train_dataset.data_type
-
+def load_fields(dataset, checkpoint):
+    data_type = dataset.data_type
     fields = onmt.io.load_fields_from_vocab(
                 torch.load(opt.data + '.vocab.pt'), data_type)
     fields = dict([(k, f) for (k, f) in fields.items()
-                  if k in train_dataset.examples[0].__dict__])
-
-    # We save fields in vocab.pt, so assign them back to dataset here.
-    train_dataset.fields = fields
-    valid_dataset.fields = fields
+                  if k in dataset.examples[0].__dict__])
 
     if opt.train_from:
         print('Loading vocab from checkpoint at %s.' % opt.train_from)
@@ -331,7 +327,10 @@ def main():
         model_opt = opt
 
     # Load fields generated from preprocess phase.
-    fields = load_fields(train_dataset, valid_dataset, checkpoint)
+    _, data = train_dataset[0].load_iterator()
+    fields = load_fields(data, checkpoint)
+    for wrap in train_dataset + valid_dataset:
+        wrap.fields = fields
 
     # Report src/tgt features.
     collect_report_features(fields)
@@ -345,7 +344,8 @@ def main():
     optim = build_optim(model, checkpoint)
 
     # Do training.
-    train_model(model, train_dataset, valid_dataset, fields, optim, model_opt)
+    train_model(model, train_dataset, valid_dataset, data.data_type,
+                fields, optim, model_opt)
 
 
 if __name__ == "__main__":

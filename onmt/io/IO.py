@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from collections import Counter, defaultdict
+from collections import Counter, defaultdict, OrderedDict
 from itertools import count
 
 import torch
@@ -216,12 +216,22 @@ def build_dataset(fields, data_type, src_path, tgt_path, src_dir=None,
     return dataset
 
 
-def build_vocab(train_datasets, data_type, share_vocab,
+def _build_field_vocab(field, counter, **kwargs):
+    specials = list(OrderedDict.fromkeys(
+        tok for tok in [field.unk_token, field.pad_token, field.init_token,
+                        field.eos_token]
+        if tok is not None))
+
+    field.vocab = field.vocab_cls(counter, specials=specials, **kwargs)
+
+
+def build_vocab(train_datasets, fields, data_type, share_vocab,
                 src_vocab_size, src_words_min_frequency,
                 tgt_vocab_size, tgt_words_min_frequency):
     """
     Args:
         train_datasets: a list of train dataset.
+        fields (dict): fields to build vocab for
         data_type: "text", "img" or "audio"?
         share_vocab(bool): share source and target vocabulary?
         src_vocab_size(int): size of the source vocabulary.
@@ -234,29 +244,49 @@ def build_vocab(train_datasets, data_type, share_vocab,
     Returns:
         Dict of Fields
     """
+    print("Building vocab:")
+    counter = {}
+    for k in fields:
+        counter[k] = Counter()
+
+    for path in train_datasets:
+        data = torch.load(path)
+        for x in data.examples:
+            for k in fields:
+                ex = getattr(x, k)
+                if not fields[k].sequential:
+                    ex = [ex]
+                counter[k].update(ex)
+
     # All datasets have same fields, get the first one is OK.
-    fields = train_datasets[0].fields
-
-    fields["tgt"].build_vocab(*train_datasets, max_size=tgt_vocab_size,
-                              min_freq=tgt_words_min_frequency)
-    for j in range(train_datasets[0].n_tgt_feats):
-        fields["tgt_feat_" + str(j)].build_vocab(*train_datasets)
-
+    _build_field_vocab(fields["tgt"], counter["tgt"],
+                       max_size=tgt_vocab_size,
+                       min_freq=tgt_words_min_frequency)
+    print("Building tgt size", len(fields["tgt"].vocab))
+    for j in range(data.n_tgt_feats):
+        key = "tgt_feat_" + str(j)
+        _build_field_vocab(fields[key], counter[key])
+        print("Building", key, "size", len(fields[key].vocab))
     if data_type == 'text':
-        fields["src"].build_vocab(*train_datasets, max_size=src_vocab_size,
-                                  min_freq=src_words_min_frequency)
-        for j in range(train_datasets[0].n_src_feats):
-            fields["src_feat_" + str(j)].build_vocab(*train_datasets)
+        _build_field_vocab(fields["src"], counter["src"],
+                           max_size=src_vocab_size,
+                           min_freq=src_words_min_frequency)
+        print("Building src size", len(fields["src"].vocab))
+        for j in range(data.n_src_feats):
+            key = "src_feat_" + str(j)
+            _build_field_vocab(fields[key], counter[key])
+            print("Building", key, "size", len(fields[key].vocab))
 
         # Merge the input and output vocabularies.
         if share_vocab:
             # `tgt_vocab_size` is ignored when sharing vocabularies
+
             merged_vocab = merge_vocabs(
                 [fields["src"].vocab, fields["tgt"].vocab],
                 vocab_size=src_vocab_size)
             fields["src"].vocab = merged_vocab
             fields["tgt"].vocab = merged_vocab
-
+            print("Merging src and tgt")
     return fields
 
 
