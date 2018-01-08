@@ -104,10 +104,12 @@ def make_train_data_iter(train_dataset, opt):
     ordered iterator strategy here, but more sophisticated strategy
     like curriculum learning is ok too.
     """
+    # Sort batch by decreasing lengths of sentence required by pytorch.
+    # sort=False means "Use dataset's sortkey instead of iterator's".
     return onmt.io.OrderedIterator(
                 dataset=train_dataset, batch_size=opt.batch_size,
                 device=opt.gpuid[0] if opt.gpuid else -1,
-                repeat=False)
+                sort=False, sort_within_batch=True, repeat=False)
 
 
 def make_valid_data_iter(valid_dataset, opt):
@@ -117,10 +119,12 @@ def make_valid_data_iter(valid_dataset, opt):
     ordered iterator strategy here, but more sophisticated strategy
     is ok too.
     """
+    # Sort batch by decreasing lengths of sentence required by pytorch.
+    # sort=False means "Use dataset's sortkey instead of iterator's".
     return onmt.io.OrderedIterator(
-                dataset=valid_dataset, batch_size=opt.batch_size,
+                dataset=valid_dataset, batch_size=opt.valid_batch_size,
                 device=opt.gpuid[0] if opt.gpuid else -1,
-                train=False, sort=True)
+                train=False, sort=False, sort_within_batch=True)
 
 
 def make_loss_compute(model, tgt_vocab, dataset, opt):

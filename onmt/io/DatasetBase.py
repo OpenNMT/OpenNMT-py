@@ -34,6 +34,18 @@ class ONMTDatasetBase(torchtext.data.Dataset):
         "This is a hack. Something is broken with torch pickle."
         return super(ONMTDatasetBase, self).__reduce_ex__()
 
+    def load_fields(self, vocab_dict):
+        """ Load fields from vocab.pt, and set the `fields` attribute.
+
+        Args:
+            vocab_dict (dict): a dict of loaded vocab from vocab.pt file.
+        """
+        from onmt.io.IO import load_fields_from_vocab
+
+        fields = load_fields_from_vocab(vocab_dict.items(), self.data_type)
+        self.fields = dict([(k, f) for (k, f) in fields.items()
+                           if k in self.examples[0].__dict__])
+
     def collapse_copy_scores(self, scores, batch, tgt_vocab):
         """
         Given scores from an expanded dictionary

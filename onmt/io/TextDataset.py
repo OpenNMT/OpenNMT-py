@@ -69,6 +69,10 @@ class TextDataset(ONMTDatasetBase):
         out_examples = (self._construct_example_fromlist(
                             ex_values, out_fields)
                         for ex_values in example_values)
+        # If out_examples is a generator, we need to save the filter_pred
+        # function in serialization too, which would cause a problem when
+        # `torch.save()`. Thus we materialize it as a list.
+        out_examples = list(out_examples)
 
         def filter_pred(example):
             return 0 < len(example.src) <= src_seq_length \
@@ -82,7 +86,7 @@ class TextDataset(ONMTDatasetBase):
 
     def sort_key(self, ex):
         """ Sort using length of source sentences. """
-        return -len(ex.src)
+        return len(ex.src)
 
     @staticmethod
     def make_text_examples_nfeats_tpl(path, truncate, side):
@@ -173,7 +177,7 @@ class TextDataset(ONMTDatasetBase):
                 torchtext.data.Field(init_token=BOS_WORD, eos_token=EOS_WORD,
                                      pad_token=PAD_WORD)
 
-        def make_src(data, _):
+        def make_src(data, vocab, is_train):
             src_size = max([t.size(0) for t in data])
             src_vocab_size = max([t.max() for t in data]) + 1
             alignment = torch.zeros(src_size, len(data), src_vocab_size)
@@ -186,7 +190,7 @@ class TextDataset(ONMTDatasetBase):
             use_vocab=False, tensor_type=torch.FloatTensor,
             postprocessing=make_src, sequential=False)
 
-        def make_tgt(data, _):
+        def make_tgt(data, vocab, is_train):
             tgt_size = max([t.size(0) for t in data])
             alignment = torch.zeros(tgt_size, len(data)).long()
             for i, sent in enumerate(data):

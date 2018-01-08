@@ -549,7 +549,8 @@ class NMTModel(nn.Module):
         enc_state = self.decoder.init_decoder_state(src, context, enc_hidden)
         out, dec_state, attns = self.decoder(tgt, context,
                                              enc_state if dec_state is None
-                                             else dec_state)
+                                             else dec_state,
+                                             context_lengths=lengths)
         if self.multigpu:
             # Not yet supported on multi-gpu
             dec_state = None

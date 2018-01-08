@@ -1,3 +1,5 @@
+Contents
+--------
 
 .. toctree::
       :maxdepth: 2
@@ -18,5 +20,5 @@
       im2text.md
       speech2text.md
       FAQ.md
-      CONTRIBUTORS.md
+      CONTRIBUTING.md
       ref.rst

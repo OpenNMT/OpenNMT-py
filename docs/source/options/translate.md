@@ -82,3 +82,13 @@ Window stride for spectrogram in seconds
 
 * **-window [hamming]** 
 Window type for spectrogram generation
+
+### **Score**:
+* **-report_bleu []**
+Report bleu score after translation by calling tools/multi-bleu.perl
+on command line.
+
+* **-report_rouge []**
+Report Report rouge 1/2/3/L/SU4 score after translation by calling
+tools/multi-bleu.perl on command line. Use pyrouge as backend. Scores may be
+slightly different with those by calling files2rouge.

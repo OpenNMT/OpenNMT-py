@@ -51,6 +51,10 @@ class ImageDataset(ONMTDatasetBase):
         out_examples = (self._construct_example_fromlist(
                             ex_values, out_fields)
                         for ex_values in example_values)
+        # If out_examples is a generator, we need to save the filter_pred
+        # function in serialization too, which would cause a problem when
+        # `torch.save()`. Thus we materialize it as a list.
+        out_examples = list(out_examples)
 
         def filter_pred(example):
             if tgt_examples_iter is not None:
@@ -65,8 +69,8 @@ class ImageDataset(ONMTDatasetBase):
         )
 
     def sort_key(self, ex):
-        "Sort using the size of the image."
-        return (-ex.src.size(2), -ex.src.size(1))
+        """ Sort using the size of the image: (width, height)."""
+        return (ex.src.size(2), ex.src.size(1))
 
     @staticmethod
     def make_image_examples_nfeats_tpl(path, img_dir):
@@ -140,7 +144,7 @@ class ImageDataset(ONMTDatasetBase):
         """
         fields = {}
 
-        def make_img(data, _):
+        def make_img(data, vocab, is_train):
             c = data[0].size(0)
             h = max([t.size(1) for t in data])
             w = max([t.size(2) for t in data])
@@ -166,7 +170,7 @@ class ImageDataset(ONMTDatasetBase):
                 torchtext.data.Field(init_token=BOS_WORD, eos_token=EOS_WORD,
                                      pad_token=PAD_WORD)
 
-        def make_src(data, _):
+        def make_src(data, vocab, is_train):
             src_size = max([t.size(0) for t in data])
             src_vocab_size = max([t.max() for t in data]) + 1
             alignment = torch.zeros(src_size, len(data), src_vocab_size)
@@ -179,7 +183,7 @@ class ImageDataset(ONMTDatasetBase):
             use_vocab=False, tensor_type=torch.FloatTensor,
             postprocessing=make_src, sequential=False)
 
-        def make_tgt(data, _):
+        def make_tgt(data, vocab, is_train):
             tgt_size = max([t.size(0) for t in data])
             alignment = torch.zeros(tgt_size, len(data)).long()
             for i, sent in enumerate(data):
