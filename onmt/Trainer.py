@@ -126,48 +126,52 @@ class Trainer(object):
         total_stats = Statistics()
         report_stats = Statistics()
 
-        for i, batch in enumerate(self.train_iter):
-            target_size = batch.tgt.size(0)
-            # Truncated BPTT
-            trunc_size = self.trunc_size if self.trunc_size else target_size
+        total_batches = -1
+        for shard_num, shard in enumerate(self.train_iter):
+            train_iter, dataset = shard.load_iterator()
+            self.train_loss.dataset = dataset
+            for i, batch in enumerate(train_iter):
+                total_batches += 1
+                target_size = batch.tgt.size(0)
+                # Truncated BPTT
+                trunc_size = self.trunc_size if self.trunc_size else target_size
 
-            dec_state = None
-            src = onmt.io.make_features(batch, 'src', self.data_type)
-            if self.data_type == 'text':
-                _, src_lengths = batch.src
-                report_stats.n_src_words += src_lengths.sum()
-            else:
-                src_lengths = None
+                dec_state = None
+                src = onmt.io.make_features(batch, 'src', self.data_type)
+                if self.data_type == 'text':
+                    _, src_lengths = batch.src
+                    report_stats.n_src_words += src_lengths.sum()
+                else:
+                    src_lengths = None
+                tgt_outer = onmt.io.make_features(batch, 'tgt')
 
-            tgt_outer = onmt.io.make_features(batch, 'tgt')
+                for j in range(0, target_size-1, trunc_size):
+                    # 1. Create truncated target.
+                    tgt = tgt_outer[j: j + trunc_size]
 
-            for j in range(0, target_size-1, trunc_size):
-                # 1. Create truncated target.
-                tgt = tgt_outer[j: j + trunc_size]
+                    # 2. F-prop all but generator.
+                    self.model.zero_grad()
+                    outputs, attns, dec_state = \
+                        self.model(src, tgt, src_lengths, dec_state)
 
-                # 2. F-prop all but generator.
-                self.model.zero_grad()
-                outputs, attns, dec_state = \
-                    self.model(src, tgt, src_lengths, dec_state)
+                    # 3. Compute loss in shards for memory efficiency.
+                    batch_stats = self.train_loss.sharded_compute_loss(
+                            batch, outputs, attns, j,
+                            trunc_size, self.shard_size)
 
-                # 3. Compute loss in shards for memory efficiency.
-                batch_stats = self.train_loss.sharded_compute_loss(
-                        batch, outputs, attns, j,
-                        trunc_size, self.shard_size)
+                    # 4. Update the parameters and statistics.
+                    self.optim.step()
+                    total_stats.update(batch_stats)
+                    report_stats.update(batch_stats)
 
-                # 4. Update the parameters and statistics.
-                self.optim.step()
-                total_stats.update(batch_stats)
-                report_stats.update(batch_stats)
+                    # If truncated, don't backprop fully.
+                    if dec_state is not None:
+                        dec_state.detach()
 
-                # If truncated, don't backprop fully.
-                if dec_state is not None:
-                    dec_state.detach()
-
-            if report_func is not None:
-                report_stats = report_func(
-                        epoch, i, len(self.train_iter),
-                        total_stats.start_time, self.optim.lr, report_stats)
+                if report_func is not None:
+                    report_stats = report_func(
+                            epoch, total_batches, len(train_iter) * len(self.train_iter),
+                            total_stats.start_time, self.optim.lr, report_stats)
 
         return total_stats
 
@@ -182,24 +186,27 @@ class Trainer(object):
 
         stats = Statistics()
 
-        for batch in self.valid_iter:
-            src = onmt.io.make_features(batch, 'src', self.data_type)
-            if self.data_type == 'text':
-                _, src_lengths = batch.src
-            else:
-                src_lengths = None
+        for shard_num, shard in enumerate(self.valid_iter):
+            valid_iter, dataset = shard.load_iterator()
+            self.valid_loss.dataset = dataset
+            for batch in valid_iter:
+                src = onmt.io.make_features(batch, 'src', self.data_type)
+                if self.data_type == 'text':
+                    _, src_lengths = batch.src
+                else:
+                    src_lengths = None
 
-            tgt = onmt.io.make_features(batch, 'tgt')
+                tgt = onmt.io.make_features(batch, 'tgt')
 
-            # F-prop through the model.
-            outputs, attns, _ = self.model(src, tgt, src_lengths)
+                # F-prop through the model.
+                outputs, attns, _ = self.model(src, tgt, src_lengths)
 
-            # Compute loss.
-            batch_stats = self.valid_loss.monolithic_compute_loss(
-                    batch, outputs, attns)
+                # Compute loss.
+                batch_stats = self.valid_loss.monolithic_compute_loss(
+                        batch, outputs, attns)
 
-            # Update statistics.
-            stats.update(batch_stats)
+                # Update statistics.
+                stats.update(batch_stats)
 
         # Set model back to training mode.
         self.model.train()

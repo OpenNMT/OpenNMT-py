@@ -289,6 +289,7 @@ class ShardedTextCorpusIterator(object):
         On each call, it iterates over as many (example_dict, nfeats) tuples
         until this shard's size equals to or approximates `self.shard_size`.
         """
+        iteration_index = -1
         if self.assoc_iter is not None:
             # We have associate iterator, just yields tuples
             # util we run parallel with it.
@@ -299,7 +300,8 @@ class ShardedTextCorpusIterator(object):
                         "Two corpuses must have same number of lines!")
 
                 self.line_index += 1
-                yield self._example_dict_iter(line)
+                iteration_index += 1
+                yield self._example_dict_iter(line, iteration_index)
 
             if self.assoc_iter.eof:
                 self.eof = True
@@ -326,7 +328,8 @@ class ShardedTextCorpusIterator(object):
                     raise StopIteration
 
                 self.line_index += 1
-                yield self._example_dict_iter(line)
+                iteration_index += 1
+                yield self._example_dict_iter(line, iteration_index)
 
     def hit_end(self):
         return self.eof
@@ -346,12 +349,12 @@ class ShardedTextCorpusIterator(object):
 
         return self.n_feats
 
-    def _example_dict_iter(self, line):
+    def _example_dict_iter(self, line, index):
         line = line.split()
         if self.line_truncate:
             line = line[:self.line_truncate]
         words, feats, n_feats = TextDataset.extract_text_features(line)
-        example_dict = {self.side: words, "indices": self.line_index}
+        example_dict = {self.side: words, "indices": index}
         if feats:
             # All examples must have same number of features.
             aeq(self.n_feats, n_feats)

@@ -36,6 +36,7 @@ class LossComputeBase(nn.Module):
         self.generator = generator
         self.tgt_vocab = tgt_vocab
         self.padding_idx = tgt_vocab.stoi[onmt.io.PAD_WORD]
+        self.dataset = None
 
     def _make_shard_state(self, batch, output, range_, attns=None):
         """

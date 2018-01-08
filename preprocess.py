@@ -96,9 +96,9 @@ def build_save_text_dataset_in_shards(src_corpus, tgt_corpus, fields,
         pt_file = "{:s}.{:s}.{:d}.pt".format(
                 opt.save_data, corpus_type, index)
         torch.save(dataset, pt_file)
-
+        print("Saving shard %s"%pt_file)
         dataset.fields = saved_fields
-        ret_list.append(dataset)
+        ret_list.append(pt_file)
 
     if index == 1:
         # Only one shard, strip the index in the filename.
@@ -150,8 +150,8 @@ def build_save_dataset(corpus_type, fields, opt):
     return [dataset]
 
 
-def build_save_vocab(train_dataset, opt):
-    fields = onmt.io.build_vocab(train_dataset, opt.data_type,
+def build_save_vocab(train_dataset, fields, opt):
+    fields = onmt.io.build_vocab(train_dataset, fields, opt.data_type,
                                  opt.share_vocab,
                                  opt.src_vocab_size,
                                  opt.src_words_min_frequency,
@@ -170,12 +170,13 @@ def main():
     src_nfeats = onmt.io.get_num_features(opt.data_type, opt.train_src, 'src')
     tgt_nfeats = onmt.io.get_num_features(opt.data_type, opt.train_tgt, 'tgt')
     fields = onmt.io.get_fields(opt.data_type, src_nfeats, tgt_nfeats)
-
+    print('Src features:', src_nfeats)
+    print('Tgt features:', tgt_nfeats)
     print("Building & saving training data...")
     train_datasets = build_save_dataset('train', fields, opt)
 
     print("Building & saving vocabulary...")
-    build_save_vocab(train_datasets, opt)
+    build_save_vocab(train_datasets, fields, opt)
 
     print("Building & saving validation data...")
     build_save_dataset('valid', fields, opt)
