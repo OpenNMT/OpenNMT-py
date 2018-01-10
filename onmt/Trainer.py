@@ -165,8 +165,13 @@ class Trainer(object):
                     dec_state.detach()
 
             if report_func is not None:
+                try:
+                    size = len(self.train_iter)
+                except NotImplementedError:
+                    # Dynamic batching
+                    size = -1
                 report_stats = report_func(
-                        epoch, i, len(self.train_iter),
+                        epoch, i, size,
                         total_stats.start_time, self.optim.lr, report_stats)
 
         return total_stats

@@ -106,8 +106,14 @@ def make_train_data_iter(train_dataset, opt):
     """
     # Sort batch by decreasing lengths of sentence required by pytorch.
     # sort=False means "Use dataset's sortkey instead of iterator's".
+    batch_size_fn = None
+    if opt.batch_type == "tokens":
+        def batch_size_fn(new, count, sofar):
+            return sofar + len(new.tgt) + 1
+
     return onmt.io.OrderedIterator(
                 dataset=train_dataset, batch_size=opt.batch_size,
+                batch_size_fn=batch_size_fn,
                 device=opt.gpuid[0] if opt.gpuid else -1,
                 sort=False, sort_within_batch=True, repeat=False)
 
@@ -135,10 +141,13 @@ def make_loss_compute(model, tgt_vocab, dataset, opt):
     """
     if opt.copy_attn:
         compute = onmt.modules.CopyGeneratorLossCompute(
-            model.generator, tgt_vocab, dataset, opt.copy_attn_force)
+            model.generator, tgt_vocab, dataset, opt.copy_attn_force,
+            normalization=opt.normalization)
     else:
-        compute = onmt.Loss.NMTLossCompute(model.generator, tgt_vocab,
-                                           opt.label_smoothing)
+        compute = onmt.Loss.NMTLossCompute(
+            model.generator, tgt_vocab,
+            label_smoothing=opt.label_smoothing,
+            normalization=opt.normalization)
 
     if use_gpu(opt):
         compute.cuda()
