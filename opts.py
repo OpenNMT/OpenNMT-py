@@ -255,7 +255,7 @@ def train_opts(parser):
                        help='Maximum batch size for training')
     group.add_argument('-batch_type', default='sents',
                        choices=["sents", "tokens"],
-                       help="""Batch grouping for batch_size. Standard 
+                       help="""Batch grouping for batch_size. Standard
                                is sents. Tokens will do dynamic batching""")
     group.add_argument('-normalization', default='sents',
                        choices=["sents", "tokens"],

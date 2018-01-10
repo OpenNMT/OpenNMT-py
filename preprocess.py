@@ -67,9 +67,9 @@ def build_save_text_dataset_in_shards(src_corpus, tgt_corpus, fields,
 
     corpus_size = os.path.getsize(src_corpus)
     if corpus_size > 10 * (1024**2) and opt.max_shard_size == 0:
-        print("Warning! The corpus %s is larger than 10M bytes, you can "
+        print("Warning. The corpus %s is larger than 10M bytes, you can "
               "set '-max_shard_size' to process it by small shards "
-              "to avoid memory hogging problem !!!" % src_corpus)
+              "to use less memory." % src_corpus)
 
     ret_list = []
     src_iter = onmt.io.ShardedTextCorpusIterator(
