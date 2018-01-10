@@ -110,7 +110,7 @@ def make_train_data_iter(train_dataset, opt):
     if opt.batch_type == "tokens":
         def batch_size_fn(new, count, sofar):
             return sofar + len(new.tgt) + 1
-    
+
     return onmt.io.OrderedIterator(
                 dataset=train_dataset, batch_size=opt.batch_size,
                 batch_size_fn=batch_size_fn,

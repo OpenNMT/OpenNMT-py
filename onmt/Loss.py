@@ -30,7 +30,7 @@ class LossComputeBase(nn.Module):
              distribution over the target vocabulary.
         tgt_vocab (:obj:`Vocab`) :
              torchtext vocab object representing the target output
-        normalzation (str): normalize by "sents" or "tokens" 
+        normalzation (str): normalize by "sents" or "tokens"
     """
     def __init__(self, generator, tgt_vocab, normalization="sents"):
         super(LossComputeBase, self).__init__()
@@ -38,7 +38,7 @@ class LossComputeBase(nn.Module):
         self.tgt_vocab = tgt_vocab
         self.padding_idx = tgt_vocab.stoi[onmt.io.PAD_WORD]
         self.normalization = normalization
-        
+
     def _make_shard_state(self, batch, output, range_, attns=None):
         """
         Make shard state dictionary for shards() to return iterable
@@ -122,7 +122,7 @@ class LossComputeBase(nn.Module):
 
         for shard in shards(shard_state, shard_size):
             loss, stats = self._compute_loss(batch, **shard)
-            
+
             normalization = batch.batch_size
             if self.normalization == "tokens":
                 normalization = num_non_padding
