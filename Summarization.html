@@ -184,7 +184,7 @@
 In the following, we assume access to a tokenized form of the corpus split into train/valid/test set.</p>
 <p>An example article-title pair from Gigaword should look like this:</p>
 <p><strong>Input</strong>
-<em>australia 's current account deficit shrunk by a record #.## billion dollars -lrb- #.## billion us -rrb- in the june quarter due to soaring commodity prices , figures released monday showed .</em></p>
+<em>australia ‘s current account deficit shrunk by a record #.## billion dollars -lrb- #.## billion us -rrb- in the june quarter due to soaring commodity prices , figures released monday showed .</em></p>
 <p><strong>Output</strong>
 <em>australian current account deficit narrows sharply</em></p>
 <div class="section" id="preprocessing-the-data">
@@ -205,10 +205,10 @@ For CNNDM we follow See et al. [2] and additionally truncate the source length a
 <div class="section" id="training">
 <span id="training"></span><h2>Training<a class="headerlink" href="#training" title="Permalink to this headline">¶</a></h2>
 <p>The training procedure described in this section for the most part follows parameter choices and implementation similar to that of See et al. [2].  As mentioned above, we use copy attention as a mechanism for the model to decide whether to either generate a new word or to copy from the source (<code class="docutils literal"><span class="pre">copy_attn</span></code>).
-A notable difference to See's model is that we are using the attention mechanism introduced by Bahdanau et al. [3] (<code class="docutils literal"><span class="pre">global_attention</span> <span class="pre">mlp</span></code>) instead of that by Luong et al. [4] (<code class="docutils literal"><span class="pre">global_attention</span> <span class="pre">dot</span></code>). Both options typically perform very similar to each other with Luong attention often having a slight advantage.
+A notable difference to See’s model is that we are using the attention mechanism introduced by Bahdanau et al. [3] (<code class="docutils literal"><span class="pre">global_attention</span> <span class="pre">mlp</span></code>) instead of that by Luong et al. [4] (<code class="docutils literal"><span class="pre">global_attention</span> <span class="pre">dot</span></code>). Both options typically perform very similar to each other with Luong attention often having a slight advantage.
 We are using using a 128-dimensional word-embedding, and 512-dimensional 1 layer LSTM. On the encoder side, we use a bidirectional LSTM (<code class="docutils literal"><span class="pre">brnn</span></code>), which means that the 512 dimensions are split into 256 dimensions per direction.
 We also share the word embeddings between encoder and decoder (<code class="docutils literal"><span class="pre">share_embeddings</span></code>). This option drastically reduces the number of parameters the model has to learn. However, we found only minimal impact on performance of a model without this option.</p>
-<p>For the training procedure, we are using SGD with an initial learning rate of 1 for a total of 16 epochs. In most cases, the lowest validation perplexity is achieved around epoch 10-12. We also use OpenNMT's default learning rate decay, which halves the learning rate after every epoch once the validation perplexity increased after an epoch (or after epoch 8).
+<p>For the training procedure, we are using SGD with an initial learning rate of 1 for a total of 16 epochs. In most cases, the lowest validation perplexity is achieved around epoch 10-12. We also use OpenNMT’s default learning rate decay, which halves the learning rate after every epoch once the validation perplexity increased after an epoch (or after epoch 8).
 Alternative training procedures such as adam with initial learning rate 0.001 converge faster than sgd, but achieve slightly worse. We additionally set the maximum norm of the gradient to 2, and renormalize if the gradient norm exceeds this value.</p>
 <p><strong>commands used</strong>:</p>
 <p>(1) CNNDM</p>

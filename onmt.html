@@ -363,7 +363,7 @@ Currently calculates:</p>
 <h2>Loss<a class="headerlink" href="#loss" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.Loss.LossComputeBase">
-<em class="property">class </em><code class="descclassname">onmt.Loss.</code><code class="descname">LossComputeBase</code><span class="sig-paren">(</span><em>generator</em>, <em>tgt_vocab</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Loss.LossComputeBase" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.Loss.</code><code class="descname">LossComputeBase</code><span class="sig-paren">(</span><em>generator</em>, <em>tgt_vocab</em>, <em>normalization='sents'</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Loss.LossComputeBase" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class for managing efficient loss computation. Handles
 sharding next step predictions and accumulating mutiple
 loss computations</p>
@@ -378,6 +378,7 @@ and make_shard_state() methods.</p>
 <li><strong>generator</strong> (<code class="xref py py-obj docutils literal"><span class="pre">nn.Module</span></code>) – module that maps the output of the decoder to a
 distribution over the target vocabulary.</li>
 <li><strong>tgt_vocab</strong> (<code class="xref py py-obj docutils literal"><span class="pre">Vocab</span></code>) – torchtext vocab object representing the target output</li>
+<li><strong>normalzation</strong> (<em>str</em>) – normalize by “sents” or “tokens”</li>
 </ul>
 </td>
 </tr>
