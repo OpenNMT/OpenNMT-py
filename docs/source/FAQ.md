@@ -69,11 +69,12 @@ effectively you need to set a bunch of different options that mimic the Google
 setup.
 
 ```
-python train.py -data mydata/data -save_model mydata/model -gpuid 0 -epochs 50 
--layers 4 -rnn_size 1024 -word_vec_size 1024 -epochs 50 -max_grad_norm 0
--optim adam -encoder_type transformer -decoder_type transformer
--position_encoding -dropout 0.2 -param_init 0 -warmup_steps 2000
--learning_rate 0.05 -decay_method noam
+python train.py -gpuid 0 -save_model models/ja-en-1M/ja-en -data database/ja-en -layers 6 \
+        -rnn_size 512 -word_vec_size 512 -epochs 30 -max_grad_norm 0 -optim adam \
+        -encoder_type transformer -decoder_type transformer -position_encoding \
+        -dropout 0.1 -param_init 0 -warmup_steps 12000 -learning_rate 0.2 \
+        -decay_method noam -label_smoothing 0.1 -adam_beta2 0.98 -batch_size 80 \
+        -start_decay_at 31
 ```
 
 

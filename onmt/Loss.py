@@ -30,12 +30,14 @@ class LossComputeBase(nn.Module):
              distribution over the target vocabulary.
         tgt_vocab (:obj:`Vocab`) :
              torchtext vocab object representing the target output
+        normalzation (str): normalize by "sents" or "tokens"
     """
-    def __init__(self, generator, tgt_vocab):
+    def __init__(self, generator, tgt_vocab, normalization="sents"):
         super(LossComputeBase, self).__init__()
         self.generator = generator
         self.tgt_vocab = tgt_vocab
         self.padding_idx = tgt_vocab.stoi[onmt.io.PAD_WORD]
+        self.normalization = normalization
 
     def _make_shard_state(self, batch, output, range_, attns=None):
         """
@@ -116,9 +118,15 @@ class LossComputeBase(nn.Module):
         range_ = (cur_trunc, cur_trunc + trunc_size)
         shard_state = self._make_shard_state(batch, output, range_, attns)
 
+        num_non_padding = batch.tgt.data.ne(self.padding_idx).sum()
+
         for shard in shards(shard_state, shard_size):
             loss, stats = self._compute_loss(batch, **shard)
-            loss.div(batch.batch_size).backward()
+
+            normalization = batch.batch_size
+            if self.normalization == "tokens":
+                normalization = num_non_padding
+            loss.div(normalization).backward()
             batch_stats.update(stats)
 
         return batch_stats
@@ -151,8 +159,10 @@ class NMTLossCompute(LossComputeBase):
     """
     Standard NMT Loss Computation.
     """
-    def __init__(self, generator, tgt_vocab, label_smoothing=0.0):
-        super(NMTLossCompute, self).__init__(generator, tgt_vocab)
+    def __init__(self, generator, tgt_vocab, normalization="sents",
+                 label_smoothing=0.0):
+        super(NMTLossCompute, self).__init__(generator, tgt_vocab,
+                                             normalization)
         assert (label_smoothing >= 0.0 and label_smoothing <= 1.0)
 
         if label_smoothing > 0:
