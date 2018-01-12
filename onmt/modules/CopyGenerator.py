@@ -136,9 +136,9 @@ class CopyGeneratorLossCompute(onmt.Loss.LossComputeBase):
     Copy Generator Loss Computation.
     """
     def __init__(self, generator, tgt_vocab, dataset,
-                 force_copy, normalization="sents", eps=1e-20):
+                 force_copy, eps=1e-20):
         super(CopyGeneratorLossCompute, self).__init__(
-            generator, tgt_vocab, normalization)
+            generator, tgt_vocab)
 
         self.dataset = dataset
         self.force_copy = force_copy

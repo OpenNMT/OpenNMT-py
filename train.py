@@ -141,13 +141,11 @@ def make_loss_compute(model, tgt_vocab, dataset, opt):
     """
     if opt.copy_attn:
         compute = onmt.modules.CopyGeneratorLossCompute(
-            model.generator, tgt_vocab, dataset, opt.copy_attn_force,
-            normalization=opt.normalization)
+            model.generator, tgt_vocab, dataset, opt.copy_attn_force)
     else:
         compute = onmt.Loss.NMTLossCompute(
             model.generator, tgt_vocab,
-            label_smoothing=opt.label_smoothing,
-            normalization=opt.normalization)
+            label_smoothing=opt.label_smoothing)
 
     if use_gpu(opt):
         compute.cuda()
@@ -172,7 +170,8 @@ def train_model(model, train_dataset, valid_dataset,
 
     trainer = onmt.Trainer(model, train_iter, valid_iter,
                            train_loss, valid_loss, optim,
-                           trunc_size, shard_size, data_type)
+                           trunc_size, shard_size, data_type,
+                           opt.normalization, opt.accum_count)
 
     for epoch in range(opt.start_epoch, opt.epochs + 1):
         print('')

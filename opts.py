@@ -260,6 +260,11 @@ def train_opts(parser):
     group.add_argument('-normalization', default='sents',
                        choices=["sents", "tokens"],
                        help='Normalization method of the gradient.')
+    group.add_argument('-accum_count', type=int, default=1,
+                       help="""Accumulate gradient this many times.
+                       Approximately equivalent to updating 
+                       batch_size * accum_count batches at once.
+                       Recommended for Transformer.""")
     group.add_argument('-valid_batch_size', type=int, default=32,
                        help='Maximum batch size for validation')
     group.add_argument('-max_generator_batches', type=int, default=32,
@@ -332,7 +337,7 @@ def train_opts(parser):
                        help="""Number of warmup steps for custom decay.""")
 
     group = parser.add_argument_group('Logging')
-    group.add_argument('-report_every', type=int, default=50,
+    group.add_argument('-report_every', type=int, default=100,
                        help="Print stats at this interval.")
     group.add_argument('-exp_host', type=str, default="",
                        help="Send logs to this crayon server.")
