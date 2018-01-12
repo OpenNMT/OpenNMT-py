@@ -337,7 +337,7 @@ def train_opts(parser):
                        help="""Number of warmup steps for custom decay.""")
 
     group = parser.add_argument_group('Logging')
-    group.add_argument('-report_every', type=int, default=100,
+    group.add_argument('-report_every', type=int, default=50,
                        help="Print stats at this interval.")
     group.add_argument('-exp_host', type=str, default="",
                        help="Send logs to this crayon server.")
