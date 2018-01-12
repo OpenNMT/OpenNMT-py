@@ -148,15 +148,17 @@ class Trainer(object):
             num_batches = -1
 
         def gradient_accumulation(truebatch_, total_stats_,
-                report_stats_, nt_):
+                                  report_stats_, nt_):
             if self.accum_count > 1:
                 self.model.zero_grad()
 
             for batch in truebatch_:
                 target_size = batch.tgt.size(0)
                 # Truncated BPTT
-                trunc_size = self.trunc_size if self.trunc_size \
-                                             else target_size
+                if self.trunc_size:
+                    trunc_size = self.trunc_size
+                else:
+                    trunc_size = target_size
 
                 dec_state = None
                 src = onmt.io.make_features(batch, 'src', self.data_type)
