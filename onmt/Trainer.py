@@ -147,14 +147,16 @@ class Trainer(object):
             # Dynamic batching
             num_batches = -1
 
-        def gradient_accumulation(truebatch_, total_stats_, report_stats_, nt_):
+        def gradient_accumulation(truebatch_, total_stats_,
+                report_stats_, nt_):
             if self.accum_count > 1:
                 self.model.zero_grad()
 
             for batch in truebatch_:
                 target_size = batch.tgt.size(0)
                 # Truncated BPTT
-                trunc_size = self.trunc_size if self.trunc_size else target_size
+                trunc_size = self.trunc_size if self.trunc_size \
+                                             else target_size
 
                 dec_state = None
                 src = onmt.io.make_features(batch, 'src', self.data_type)
@@ -190,7 +192,7 @@ class Trainer(object):
                     # If truncated, don't backprop fully.
                     if dec_state is not None:
                         dec_state.detach()
-            
+
             if self.accum_count > 1:
                 self.optim.step()
 
@@ -198,18 +200,21 @@ class Trainer(object):
             truebatch.append(batch_)
             accum += 1
             if self.normalization is "tokens":
-                normalization += batch_.tgt[1:].data.view(-1).ne(self.padding_idx)
+                normalization += batch_.tgt[1:].data.view(-1)
+                                       .ne(self.padding_idx)
             else:
                 normalization += batch_.batch_size
 
             if accum == self.accum_count:
-                gradient_accumulation(truebatch, total_stats,
+                gradient_accumulation(
+                        truebatch, total_stats,
                         report_stats, normalization)
 
                 if report_func is not None:
                     report_stats = report_func(
                             epoch, idx, num_batches,
-                            total_stats.start_time, self.optim.lr, report_stats)
+                            total_stats.start_time, self.optim.lr,
+                            report_stats)
 
                 truebatch = []
                 accum = 0
@@ -217,7 +222,8 @@ class Trainer(object):
                 idx += 1
 
         if len(truebatch) > 0:
-            gradient_accumulation(truebatch, total_stats,
+            gradient_accumulation(
+                    truebatch, total_stats,
                     report_stats, normalization)
             truebatch = []
 
