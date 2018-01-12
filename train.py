@@ -127,19 +127,6 @@ def make_valid_data_iter(valid_dataset, opt):
     """
     # Sort batch by decreasing lengths of sentence required by pytorch.
     # sort=False means "Use dataset's sortkey instead of iterator's".
-    # CHECK
-    train_space = opt.max_generator_batches * opt.batch_size
-    max_valid_length = max([len(x.tgt) for x in valid_dataset.examples])
-    valid_space = max_valid_length * opt.valid_batch_size
-    if valid_space > train_space:
-        print("""WARNING: Current valid_batch_size may potentially
-         cause OOM after the first epoch.""")
-        opt.valid_batch_size = int(train_space / max_valid_length)
-        if opt.valid_batch_size == 0:
-            opt.valid_batch_size = 1
-        print("WARNING: Reducing valid_batch_size to %d (force)"
-              % opt.valid_batch_size)
-    # END CHECK
     return onmt.io.OrderedIterator(
                 dataset=valid_dataset, batch_size=opt.valid_batch_size,
                 device=opt.gpuid[0] if opt.gpuid else -1,
@@ -154,13 +141,11 @@ def make_loss_compute(model, tgt_vocab, dataset, opt):
     """
     if opt.copy_attn:
         compute = onmt.modules.CopyGeneratorLossCompute(
-            model.generator, tgt_vocab, dataset, opt.copy_attn_force,
-            normalization=opt.normalization)
+            model.generator, tgt_vocab, dataset, opt.copy_attn_force)
     else:
         compute = onmt.Loss.NMTLossCompute(
             model.generator, tgt_vocab,
-            label_smoothing=opt.label_smoothing,
-            normalization=opt.normalization)
+            label_smoothing=opt.label_smoothing)
 
     if use_gpu(opt):
         compute.cuda()
@@ -185,7 +170,8 @@ def train_model(model, train_dataset, valid_dataset,
 
     trainer = onmt.Trainer(model, train_iter, valid_iter,
                            train_loss, valid_loss, optim,
-                           trunc_size, shard_size, data_type)
+                           trunc_size, shard_size, data_type,
+                           opt.normalization, opt.accum_count)
 
     for epoch in range(opt.start_epoch, opt.epochs + 1):
         print('')
