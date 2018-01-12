@@ -247,7 +247,7 @@ input_feeding and non-recurrent models.</p>
 <h2>Trainer<a class="headerlink" href="#trainer" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.Trainer">
-<em class="property">class </em><code class="descclassname">onmt.</code><code class="descname">Trainer</code><span class="sig-paren">(</span><em>model</em>, <em>train_iter</em>, <em>valid_iter</em>, <em>train_loss</em>, <em>valid_loss</em>, <em>optim</em>, <em>trunc_size=0</em>, <em>shard_size=32</em>, <em>data_type='text'</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Trainer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.</code><code class="descname">Trainer</code><span class="sig-paren">(</span><em>model</em>, <em>train_iter</em>, <em>valid_iter</em>, <em>train_loss</em>, <em>valid_loss</em>, <em>optim</em>, <em>trunc_size=0</em>, <em>shard_size=32</em>, <em>data_type='text'</em>, <em>normalization='sents'</em>, <em>accum_count=1</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Trainer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class that controls the training process.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -363,7 +363,7 @@ Currently calculates:</p>
 <h2>Loss<a class="headerlink" href="#loss" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.Loss.LossComputeBase">
-<em class="property">class </em><code class="descclassname">onmt.Loss.</code><code class="descname">LossComputeBase</code><span class="sig-paren">(</span><em>generator</em>, <em>tgt_vocab</em>, <em>normalization='sents'</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Loss.LossComputeBase" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.Loss.</code><code class="descname">LossComputeBase</code><span class="sig-paren">(</span><em>generator</em>, <em>tgt_vocab</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Loss.LossComputeBase" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class for managing efficient loss computation. Handles
 sharding next step predictions and accumulating mutiple
 loss computations</p>
@@ -412,7 +412,7 @@ distribution over the target vocabulary.</li>
 
 <dl class="method">
 <dt id="onmt.Loss.LossComputeBase.sharded_compute_loss">
-<code class="descname">sharded_compute_loss</code><span class="sig-paren">(</span><em>batch</em>, <em>output</em>, <em>attns</em>, <em>cur_trunc</em>, <em>trunc_size</em>, <em>shard_size</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Loss.LossComputeBase.sharded_compute_loss" title="Permalink to this definition">¶</a></dt>
+<code class="descname">sharded_compute_loss</code><span class="sig-paren">(</span><em>batch</em>, <em>output</em>, <em>attns</em>, <em>cur_trunc</em>, <em>trunc_size</em>, <em>shard_size</em>, <em>normalization</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Loss.LossComputeBase.sharded_compute_loss" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute the forward loss and backpropagate.  Computation is done
 with shards and optionally truncation for memory efficiency.</p>
 <p>Also supports truncated BPTT for long sequences by taking a
