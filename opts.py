@@ -262,7 +262,7 @@ def train_opts(parser):
                        help='Normalization method of the gradient.')
     group.add_argument('-accum_count', type=int, default=1,
                        help="""Accumulate gradient this many times.
-                       Approximately equivalent to updating 
+                       Approximately equivalent to updating
                        batch_size * accum_count batches at once.
                        Recommended for Transformer.""")
     group.add_argument('-valid_batch_size', type=int, default=32,
