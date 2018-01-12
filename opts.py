@@ -260,6 +260,11 @@ def train_opts(parser):
     group.add_argument('-normalization', default='sents',
                        choices=["sents", "tokens"],
                        help='Normalization method of the gradient.')
+    group.add_argument('-accum_count', type=int, default=1,
+                       help="""Accumulate gradient this many times.
+                       Approximately equivalent to updating
+                       batch_size * accum_count batches at once.
+                       Recommended for Transformer.""")
     group.add_argument('-valid_batch_size', type=int, default=32,
                        help='Maximum batch size for validation')
     group.add_argument('-max_generator_batches', type=int, default=32,
