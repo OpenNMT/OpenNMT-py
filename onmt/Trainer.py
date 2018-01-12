@@ -117,8 +117,8 @@ class Trainer(object):
         assert(accum_count > 0)
         if accum_count > 1:
             assert(self.trunc_size == 0), \
-                "To enable accumulated gradients, \
-                 you must disable target sequence truncating."
+                """To enable accumulated gradients,
+                   you must disable target sequence truncating."""
 
         # Set model in training mode.
         self.model.train()
