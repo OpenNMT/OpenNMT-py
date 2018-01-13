@@ -46,23 +46,9 @@ class ONMTDatasetBase(torchtext.data.Dataset):
         self.fields = dict([(k, f) for (k, f) in fields.items()
                            if k in self.examples[0].__dict__])
 
-    def collapse_copy_scores(self, scores, batch, tgt_vocab):
-        """
-        Given scores from an expanded dictionary
-        corresponeding to a batch, sums together copies,
-        with a dictionary word when it is ambigious.
-        """
-        offset = len(tgt_vocab)
-        for b in range(batch.batch_size):
-            index = batch.indices.data[b]
-            src_vocab = self.src_vocabs[index]
-            for i in range(1, len(src_vocab)):
-                sw = src_vocab.itos[i]
-                ti = tgt_vocab.stoi[sw]
-                if ti != 0:
-                    scores[:, b, ti] += scores[:, b, offset + i]
-                    scores[:, b, offset + i].fill_(1e-20)
-        return scores
+    def get_src_vocabs(self):
+        # Only when src side is in text form, dataset has `src_vocabs`.
+        return getattr(self, 'src_vocabs', None)
 
     @staticmethod
     def coalesce_datasets(datasets):

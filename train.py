@@ -133,7 +133,7 @@ def make_valid_data_iter(valid_dataset, opt):
                 train=False, sort=False, sort_within_batch=True)
 
 
-def make_loss_compute(model, tgt_vocab, dataset, opt):
+def make_loss_compute(model, tgt_vocab, src_vocabs, opt):
     """
     This returns user-defined LossCompute object, which is used to
     compute loss in train/validate process. You can implement your
@@ -141,7 +141,7 @@ def make_loss_compute(model, tgt_vocab, dataset, opt):
     """
     if opt.copy_attn:
         compute = onmt.modules.CopyGeneratorLossCompute(
-            model.generator, tgt_vocab, dataset, opt.copy_attn_force)
+            model.generator, tgt_vocab, src_vocabs, opt.copy_attn_force)
     else:
         compute = onmt.Loss.NMTLossCompute(
             model.generator, tgt_vocab,
@@ -160,9 +160,9 @@ def train_model(model, train_dataset, valid_dataset,
     valid_iter = make_valid_data_iter(valid_dataset, opt)
 
     train_loss = make_loss_compute(model, fields["tgt"].vocab,
-                                   train_dataset, opt)
+                                   train_dataset.get_src_vocabs(), opt)
     valid_loss = make_loss_compute(model, fields["tgt"].vocab,
-                                   valid_dataset, opt)
+                                   valid_dataset.get_src_vocabs(), opt)
 
     trunc_size = opt.truncated_decoder  # Badly named...
     shard_size = opt.max_generator_batches
