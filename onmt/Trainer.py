@@ -199,6 +199,9 @@ class Trainer(object):
                 self.optim.step()
 
         for i, batch_ in enumerate(self.train_iter):
+            cur_dataset = self.train_iter.get_cur_dataset()
+            self.train_loss.cur_dataset = cur_dataset
+
             truebatch.append(batch_)
             accum += 1
             if self.normalization is "tokens":
@@ -243,6 +246,9 @@ class Trainer(object):
         stats = Statistics()
 
         for batch in self.valid_iter:
+            cur_dataset = self.valid_iter.get_cur_dataset()
+            self.valid_loss.cur_dataset = cur_dataset
+
             src = onmt.io.make_features(batch, 'src', self.data_type)
             if self.data_type == 'text':
                 _, src_lengths = batch.src
