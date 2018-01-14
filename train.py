@@ -119,15 +119,16 @@ class DatasetLazyIter(object):
         self.device = device
         self.is_train = is_train
 
-        self.cur_iter = self._next_dataset_iterator()
+        self.cur_iter = self._next_dataset_iterator(datasets)
         # We have at least one dataset.
         assert self.cur_iter is not None
 
     def __iter__(self):
+        dataset_iter = (d for d in self.datasets)
         while self.cur_iter is not None:
             for batch in self.cur_iter:
                 yield batch
-            self.cur_iter = self._next_dataset_iterator()
+            self.cur_iter = self._next_dataset_iterator(dataset_iter)
 
     def __len__(self):
         # We return the len of cur_dataset, otherwise we need to load
@@ -139,9 +140,9 @@ class DatasetLazyIter(object):
     def get_cur_dataset(self):
         return self.cur_dataset
 
-    def _next_dataset_iterator(self):
+    def _next_dataset_iterator(self, dataset_iter):
         try:
-            self.cur_dataset = next(self.datasets)
+            self.cur_dataset = next(dataset_iter)
         except StopIteration:
             return None
 
@@ -197,12 +198,7 @@ def make_loss_compute(model, tgt_vocab, opt):
     return compute
 
 
-def train_model(model, train_datasets, valid_datasets,
-                fields, optim, data_type, model_opt):
-
-    train_iter = make_dataset_iter(train_datasets, fields, opt)
-    valid_iter = make_dataset_iter(valid_datasets, fields, opt,
-                                   is_train=False)
+def train_model(model, fields, optim, data_type, model_opt):
 
     train_loss = make_loss_compute(model, fields["tgt"].vocab, opt)
     valid_loss = make_loss_compute(model, fields["tgt"].vocab, opt)
@@ -210,8 +206,7 @@ def train_model(model, train_datasets, valid_datasets,
     trunc_size = opt.truncated_decoder  # Badly named...
     shard_size = opt.max_generator_batches
 
-    trainer = onmt.Trainer(model, train_iter, valid_iter,
-                           train_loss, valid_loss, optim,
+    trainer = onmt.Trainer(model, train_loss, valid_loss, optim,
                            trunc_size, shard_size, data_type,
                            opt.normalization, opt.accum_count)
 
@@ -219,12 +214,18 @@ def train_model(model, train_datasets, valid_datasets,
         print('')
 
         # 1. Train for one epoch on the training set.
-        train_stats = trainer.train(epoch, report_func)
+        train_datasets = lazily_load_dataset("train")
+        train_iter = make_dataset_iter(train_datasets, fields, opt)
+        train_stats = trainer.train(train_iter, epoch, report_func)
         print('Train perplexity: %g' % train_stats.ppl())
         print('Train accuracy: %g' % train_stats.accuracy())
 
         # 2. Validate on the validation set.
-        valid_stats = trainer.validate()
+        valid_iter = make_dataset_iter(lazily_load_dataset("valid"),
+                                       fields, opt,
+                                       is_train=False)
+
+        valid_stats = trainer.validate(valid_iter)
         print('Validation perplexity: %g' % valid_stats.ppl())
         print('Validation accuracy: %g' % valid_stats.accuracy())
 
@@ -363,7 +364,6 @@ def main():
     # Lazily load a list of train/validate dataset.
     print("Lazily loading train/validate datasets from '%s'" % opt.data)
     train_datasets = lazily_load_dataset("train")
-    valid_datasets = lazily_load_dataset("valid")
     print(' * maximum batch size: %d' % opt.batch_size)
 
     # Peek the fisrt dataset to determine the data_type.
@@ -399,8 +399,7 @@ def main():
     optim = build_optim(model, checkpoint)
 
     # Do training.
-    train_model(model, train_datasets, valid_datasets,
-                fields, optim, data_type, model_opt)
+    train_model(model, fields, optim, data_type, model_opt)
 
 
 if __name__ == "__main__":
