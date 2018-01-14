@@ -204,6 +204,14 @@ out examples?</li>
 </tbody>
 </table>
 <dl class="staticmethod">
+<dt id="onmt.io.TextDataset.collapse_copy_scores">
+<em class="property">static </em><code class="descname">collapse_copy_scores</code><span class="sig-paren">(</span><em>scores</em>, <em>batch</em>, <em>tgt_vocab</em>, <em>src_vocabs</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.TextDataset.collapse_copy_scores" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given scores from an expanded dictionary
+corresponeding to a batch, sums together copies,
+with a dictionary word when it is ambigious.</p>
+</dd></dl>
+
+<dl class="staticmethod">
 <dt id="onmt.io.TextDataset.get_fields">
 <em class="property">static </em><code class="descname">get_fields</code><span class="sig-paren">(</span><em>n_src_features</em>, <em>n_tgt_features</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.TextDataset.get_fields" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
