@@ -247,7 +247,7 @@ input_feeding and non-recurrent models.</p>
 <h2>Trainer<a class="headerlink" href="#trainer" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.Trainer">
-<em class="property">class </em><code class="descclassname">onmt.</code><code class="descname">Trainer</code><span class="sig-paren">(</span><em>model</em>, <em>train_iter</em>, <em>valid_iter</em>, <em>train_loss</em>, <em>valid_loss</em>, <em>optim</em>, <em>trunc_size=0</em>, <em>shard_size=32</em>, <em>data_type='text'</em>, <em>normalization='sents'</em>, <em>accum_count=1</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Trainer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.</code><code class="descname">Trainer</code><span class="sig-paren">(</span><em>model</em>, <em>train_loss</em>, <em>valid_loss</em>, <em>optim</em>, <em>trunc_size=0</em>, <em>shard_size=32</em>, <em>data_type='text'</em>, <em>normalization='sents'</em>, <em>accum_count=1</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Trainer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class that controls the training process.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -255,8 +255,6 @@ input_feeding and non-recurrent models.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>model</strong> (<code class="xref py py-class docutils literal"><span class="pre">onmt.Model.NMTModel</span></code>) – translation model to train</li>
-<li><strong>train_iter</strong> – training data iterator</li>
-<li><strong>valid_iter</strong> – validate data iterator</li>
 <li><strong>train_loss</strong> (<a class="reference internal" href="#onmt.Loss.LossComputeBase" title="onmt.Loss.LossComputeBase"><code class="xref py py-obj docutils literal"><span class="pre">onmt.Loss.LossComputeBase</span></code></a>) – training loss computation</li>
 <li><strong>valid_loss</strong> (<a class="reference internal" href="#onmt.Loss.LossComputeBase" title="onmt.Loss.LossComputeBase"><code class="xref py py-obj docutils literal"><span class="pre">onmt.Loss.LossComputeBase</span></code></a>) – training loss computation</li>
 <li><strong>optim</strong> (<a class="reference internal" href="#onmt.Optim.Optim" title="onmt.Optim.Optim"><code class="xref py py-obj docutils literal"><span class="pre">onmt.Optim.Optim</span></code></a>) – the optimizer responsible for update</li>
@@ -290,8 +288,9 @@ input_feeding and non-recurrent models.</p>
 
 <dl class="method">
 <dt id="onmt.Trainer.train">
-<code class="descname">train</code><span class="sig-paren">(</span><em>epoch</em>, <em>report_func=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Trainer.train" title="Permalink to this definition">¶</a></dt>
+<code class="descname">train</code><span class="sig-paren">(</span><em>train_iter</em>, <em>epoch</em>, <em>report_func=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Trainer.train" title="Permalink to this definition">¶</a></dt>
 <dd><p>Train next epoch.
+:param train_iter: training data iterator
 :param epoch: the epoch number
 :type epoch: int
 :param report_func: function for logging
@@ -310,8 +309,11 @@ input_feeding and non-recurrent models.</p>
 
 <dl class="method">
 <dt id="onmt.Trainer.validate">
-<code class="descname">validate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Trainer.validate" title="Permalink to this definition">¶</a></dt>
-<dd><p>Validate model.</p>
+<code class="descname">validate</code><span class="sig-paren">(</span><em>valid_iter</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Trainer.validate" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Validate model.</dt>
+<dd>valid_iter: validate data iterator</dd>
+</dl>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
