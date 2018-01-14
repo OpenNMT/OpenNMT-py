@@ -84,8 +84,7 @@ class Trainer(object):
 
     Args:
             model(:py:class:`onmt.Model.NMTModel`): translation model to train
-            train_iter: training data iterator
-            valid_iter: validate data iterator
+
             train_loss(:obj:`onmt.Loss.LossComputeBase`):
                training loss computation
             valid_loss(:obj:`onmt.Loss.LossComputeBase`):
@@ -97,14 +96,12 @@ class Trainer(object):
             data_type(string): type of the source input: [text|img|audio]
     """
 
-    def __init__(self, model, train_iter, valid_iter,
+    def __init__(self, model,
                  train_loss, valid_loss, optim,
                  trunc_size=0, shard_size=32, data_type='text',
                  normalization="sents", accum_count=1):
         # Basic attributes.
         self.model = model
-        self.train_iter = train_iter
-        self.valid_iter = valid_iter
         self.train_loss = train_loss
         self.valid_loss = valid_loss
         self.optim = optim
@@ -123,9 +120,10 @@ class Trainer(object):
         # Set model in training mode.
         self.model.train()
 
-    def train(self, epoch, report_func=None):
+    def train(self, train_iter, epoch, report_func=None):
         """ Train next epoch.
         Args:
+            train_iter: training data iterator
             epoch(int): the epoch number
             report_func(fn): function for logging
 
@@ -140,9 +138,9 @@ class Trainer(object):
         normalization = 0
         try:
             add_on = 0
-            if len(self.train_iter) % self.accum_count > 0:
+            if len(train_iter) % self.accum_count > 0:
                 add_on += 1
-            num_batches = len(self.train_iter) / self.accum_count + add_on
+            num_batches = len(train_iter) / self.accum_count + add_on
         except NotImplementedError:
             # Dynamic batching
             num_batches = -1
@@ -198,8 +196,8 @@ class Trainer(object):
             if self.accum_count > 1:
                 self.optim.step()
 
-        for i, batch_ in enumerate(self.train_iter):
-            cur_dataset = self.train_iter.get_cur_dataset()
+        for i, batch_ in enumerate(train_iter):
+            cur_dataset = train_iter.get_cur_dataset()
             self.train_loss.cur_dataset = cur_dataset
 
             truebatch.append(batch_)
@@ -234,9 +232,9 @@ class Trainer(object):
 
         return total_stats
 
-    def validate(self):
+    def validate(self, valid_iter):
         """ Validate model.
-
+            valid_iter: validate data iterator
         Returns:
             :obj:`onmt.Statistics`: validation loss statistics
         """
@@ -245,8 +243,8 @@ class Trainer(object):
 
         stats = Statistics()
 
-        for batch in self.valid_iter:
-            cur_dataset = self.valid_iter.get_cur_dataset()
+        for batch in valid_iter:
+            cur_dataset = valid_iter.get_cur_dataset()
             self.valid_loss.cur_dataset = cur_dataset
 
             src = onmt.io.make_features(batch, 'src', self.data_type)
