@@ -135,6 +135,13 @@ class DatasetLazyIter(object):
                 for batch in self.cur_iter:
                     yield batch
 
+    def __len__(self):
+        # We return the len of cur_dataset, otherwise we need to load
+        # all datasets to determine the real len, which loses the benefit
+        # of lazy loading.
+        assert self.cur_iter is not None
+        return len(self.cur_iter)
+
     def get_cur_dataset(self):
         return self.cur_dataset
 
