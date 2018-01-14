@@ -46,10 +46,6 @@ class ONMTDatasetBase(torchtext.data.Dataset):
         self.fields = dict([(k, f) for (k, f) in fields.items()
                            if k in self.examples[0].__dict__])
 
-    def get_src_vocabs(self):
-        # Only when src side is in text form, dataset has `src_vocabs`.
-        return getattr(self, 'src_vocabs', None)
-
     @staticmethod
     def coalesce_datasets(datasets):
         """Coalesce all dataset instances. """
