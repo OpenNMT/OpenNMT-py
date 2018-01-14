@@ -43,7 +43,7 @@ def parse_args():
 def build_save_text_dataset_in_shards(src_corpus, tgt_corpus, fields,
                                       corpus_type, opt):
     '''
-    Divide the big corpus into shards, and build dataset seperately.
+    Divide the big corpus into shards, and build dataset separately.
     This is currently only for data_type=='text'.
 
     The reason we do this is to avoid taking up too much memory due
@@ -80,6 +80,9 @@ def build_save_text_dataset_in_shards(src_corpus, tgt_corpus, fields,
                 "tgt", opt.max_shard_size,
                 assoc_iter=src_iter)
 
+    print(' * divide corpus into shards and build dataset separately'
+          '(shard_size = %d bytes).' % opt.max_shard_size)
+
     index = 0
     while not src_iter.hit_end():
         index += 1
@@ -91,18 +94,14 @@ def build_save_text_dataset_in_shards(src_corpus, tgt_corpus, fields,
                 dynamic_dict=opt.dynamic_dict)
 
         # We save fields in vocab.pt seperately, so make it empty.
-        saved_fields = dataset.fields
         dataset.fields = []
+
         pt_file = "{:s}.{:s}.{:d}.pt".format(
                 opt.save_data, corpus_type, index)
+        print(" * saving train data shard to %s." % pt_file)
         torch.save(dataset, pt_file)
 
-        dataset.fields = saved_fields
-        ret_list.append(dataset)
-
-    if index == 1:
-        # Only one shard, strip the index in the filename.
-        os.rename(pt_file, opt.save_data + '.' + corpus_type + '.pt')
+        ret_list.append(pt_file)
 
     return ret_list
 
@@ -141,17 +140,17 @@ def build_save_dataset(corpus_type, fields, opt):
                 window=opt.window)
 
     # We save fields in vocab.pt seperately, so make it empty.
-    saved_fields = dataset.fields
     dataset.fields = []
+
     pt_file = "{:s}.{:s}.pt".format(opt.save_data, corpus_type)
+    print(" * saving train dataset to %s." % pt_file)
     torch.save(dataset, pt_file)
-    dataset.fields = saved_fields
 
-    return [dataset]
+    return [pt_file]
 
 
-def build_save_vocab(train_dataset, opt):
-    fields = onmt.io.build_vocab(train_dataset, opt.data_type,
+def build_save_vocab(train_dataset, fields, opt):
+    fields = onmt.io.build_vocab(train_dataset, fields, opt.data_type,
                                  opt.share_vocab,
                                  opt.src_vocab_size,
                                  opt.src_words_min_frequency,
@@ -166,16 +165,20 @@ def build_save_vocab(train_dataset, opt):
 def main():
     opt = parse_args()
 
-    print('Preparing for training ...')
+    print("Extracting features...")
     src_nfeats = onmt.io.get_num_features(opt.data_type, opt.train_src, 'src')
     tgt_nfeats = onmt.io.get_num_features(opt.data_type, opt.train_tgt, 'tgt')
+    print(" * number of source features: %d." % src_nfeats)
+    print(" * number of target features: %d." % tgt_nfeats)
+
+    print("Loading Fields object...")
     fields = onmt.io.get_fields(opt.data_type, src_nfeats, tgt_nfeats)
 
     print("Building & saving training data...")
-    train_datasets = build_save_dataset('train', fields, opt)
+    train_dataset_files = build_save_dataset('train', fields, opt)
 
     print("Building & saving vocabulary...")
-    build_save_vocab(train_datasets, opt)
+    build_save_vocab(train_dataset_files, fields, opt)
 
     print("Building & saving validation data...")
     build_save_dataset('valid', fields, opt)
