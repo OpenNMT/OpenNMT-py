@@ -124,16 +124,10 @@ class DatasetLazyIter(object):
         assert self.cur_iter is not None
 
     def __iter__(self):
-        try:
+        while self.cur_iter is not None:
             for batch in self.cur_iter:
                 yield batch
-        except StopIteration:
             self.cur_iter = self._next_dataset_iterator()
-            if self.cur_iter is None:
-                raise StopIteration
-            else:
-                for batch in self.cur_iter:
-                    yield batch
 
     def __len__(self):
         # We return the len of cur_dataset, otherwise we need to load
