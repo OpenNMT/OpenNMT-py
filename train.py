@@ -7,7 +7,6 @@ import glob
 import os
 import sys
 import random
-from itertools import chain
 
 import torch
 import torch.nn as nn
@@ -98,92 +97,43 @@ def report_func(epoch, batch, num_batches,
     return report_stats
 
 
-class DatasetLazyIter(object):
-    """ An Ordered Dataset Iterator, supporting multiple datasets,
-        and lazy loading.
-
-    Args:
-        datsets (list): a list of datasets, which are lazily loaded.
-        fields (dict): fields dict for the datasets.
-        batch_size (int): batch size.
-        batch_size_fn: custom batch process function.
-        device: the GPU device.
-        is_train (bool): train or valid?
+def make_train_data_iter(train_dataset, opt):
     """
-    def __init__(self, datasets, fields, batch_size, batch_size_fn,
-                 device, is_train):
-        self.datasets = datasets
-        self.fields = fields
-        self.batch_size = batch_size
-        self.batch_size_fn = batch_size_fn
-        self.device = device
-        self.is_train = is_train
-
-        self.cur_iter = self._next_dataset_iterator()
-        # We have at least one dataset.
-        assert self.cur_iter is not None
-
-    def __iter__(self):
-        try:
-            for batch in self.cur_iter:
-                yield batch
-        except StopIteration:
-            self.cur_iter = self._next_dataset_iterator()
-            if self.cur_iter is None:
-                raise StopIteration
-            else:
-                for batch in self.cur_iter:
-                    yield batch
-
-    def __len__(self):
-        # We return the len of cur_dataset, otherwise we need to load
-        # all datasets to determine the real len, which loses the benefit
-        # of lazy loading.
-        assert self.cur_iter is not None
-        return len(self.cur_iter)
-
-    def get_cur_dataset(self):
-        return self.cur_dataset
-
-    def _next_dataset_iterator(self):
-        try:
-            self.cur_dataset = next(self.datasets)
-        except StopIteration:
-            return None
-
-        # We clear `fields` when saving, restore when loading.
-        self.cur_dataset.fields = self.fields
-
-        # Sort batch by decreasing lengths of sentence required by pytorch.
-        # sort=False means "Use dataset's sortkey instead of iterator's".
-        return onmt.io.OrderedIterator(
-                dataset=self.cur_dataset, batch_size=self.batch_size,
-                batch_size_fn=self.batch_size_fn,
-                device=self.device, train=self.is_train,
-                sort=False, sort_within_batch=True,
-                repeat=False)
-
-
-def make_dataset_iter(datasets, fields, opt, is_train=True):
-    """
-    This returns user-defined train/validate data iterator for the trainer
+    This returns user-defined train data iterator for the trainer
     to iterate over during each train epoch. We implement simple
     ordered iterator strategy here, but more sophisticated strategy
     like curriculum learning is ok too.
     """
-    batch_size = opt.batch_size if is_train else opt.valid_batch_size
+    # Sort batch by decreasing lengths of sentence required by pytorch.
+    # sort=False means "Use dataset's sortkey instead of iterator's".
     batch_size_fn = None
-    if is_train and opt.batch_type == "tokens":
+    if opt.batch_type == "tokens":
         def batch_size_fn(new, count, sofar):
             return sofar + len(new.tgt) + 1
 
-    device = opt.gpuid[0] if opt.gpuid else -1
+    return onmt.io.OrderedIterator(
+                dataset=train_dataset, batch_size=opt.batch_size,
+                batch_size_fn=batch_size_fn,
+                device=opt.gpuid[0] if opt.gpuid else -1,
+                sort=False, sort_within_batch=True, repeat=False)
 
-    return DatasetLazyIter(datasets, fields, batch_size, batch_size_fn,
-                           device, is_train)
+
+def make_valid_data_iter(valid_dataset, opt):
+    """
+    This returns user-defined validate data iterator for the trainer
+    to iterate over during each validate epoch. We implement simple
+    ordered iterator strategy here, but more sophisticated strategy
+    is ok too.
+    """
+    # Sort batch by decreasing lengths of sentence required by pytorch.
+    # sort=False means "Use dataset's sortkey instead of iterator's".
+    return onmt.io.OrderedIterator(
+                dataset=valid_dataset, batch_size=opt.valid_batch_size,
+                device=opt.gpuid[0] if opt.gpuid else -1,
+                train=False, sort=False, sort_within_batch=True)
 
 
-def make_loss_compute(model, tgt_vocab, opt):
+def make_loss_compute(model, tgt_vocab, dataset, opt):
     """
     This returns user-defined LossCompute object, which is used to
     compute loss in train/validate process. You can implement your
@@ -191,7 +141,7 @@ def make_loss_compute(model, tgt_vocab, opt):
     """
     if opt.copy_attn:
         compute = onmt.modules.CopyGeneratorLossCompute(
-            model.generator, tgt_vocab, opt.copy_attn_force)
+            model.generator, tgt_vocab, dataset, opt.copy_attn_force)
     else:
         compute = onmt.Loss.NMTLossCompute(
             model.generator, tgt_vocab,
@@ -203,18 +153,20 @@ def make_loss_compute(model, tgt_vocab, opt):
     return compute
 
 
-def train_model(model, train_datasets, valid_datasets,
-                fields, optim, data_type, model_opt):
+def train_model(model, train_dataset, valid_dataset,
+                fields, optim, model_opt):
 
-    train_iter = make_dataset_iter(train_datasets, fields, opt)
-    valid_iter = make_dataset_iter(valid_datasets, fields, opt,
-                                   is_train=False)
+    train_iter = make_train_data_iter(train_dataset, opt)
+    valid_iter = make_valid_data_iter(valid_dataset, opt)
 
-    train_loss = make_loss_compute(model, fields["tgt"].vocab, opt)
-    valid_loss = make_loss_compute(model, fields["tgt"].vocab, opt)
+    train_loss = make_loss_compute(model, fields["tgt"].vocab,
+                                   train_dataset, opt)
+    valid_loss = make_loss_compute(model, fields["tgt"].vocab,
+                                   valid_dataset, opt)
 
     trunc_size = opt.truncated_decoder  # Badly named...
     shard_size = opt.max_generator_batches
+    data_type = train_dataset.data_type
 
     trainer = onmt.Trainer(model, train_iter, valid_iter,
                            train_loss, valid_loss, optim,
@@ -268,43 +220,45 @@ def tally_parameters(model):
     print('decoder: ', dec)
 
 
-def lazily_load_dataset(corpus_type):
-    """
-    Dataset generator. Don't do extra stuff here, like printing,
-    because they will be postponed to the first loading time.
+def load_dataset(data_type):
+    assert data_type in ["train", "valid"]
 
-    Args:
-        corpus_type: 'train' or 'valid'
-    Returns:
-        A list of dataset, the dataset(s) are lazily loaded.
-    """
-    assert corpus_type in ["train", "valid"]
+    print("Loading %s data from '%s'" % (data_type, opt.data))
 
-    def lazy_dataset_loader(pt_file, corpus_type):
-        dataset = torch.load(pt_file)
-        print('Loading %s dataset from %s, number of examples: %d' %
-              (corpus_type, pt_file, len(dataset)))
-        return dataset
-
-    # Sort the glob output by file name (by increasing indexes).
-    pts = sorted(glob.glob(opt.data + '.' + corpus_type + '.[0-9]*.pt'))
+    pts = glob.glob(opt.data + '.' + data_type + '.[0-9]*.pt')
     if pts:
+        # Multiple onmt.io.*Dataset's, coalesce all.
+        # torch.load loads them imemediately, which might eat up
+        # too much memory. A lazy load would be better, but later
+        # when we create data iterator, it still requires these
+        # data to be loaded. So it seams we don't have a good way
+        # to avoid this now.
+        datasets = []
         for pt in pts:
-            yield lazy_dataset_loader(pt, corpus_type)
+            datasets.append(torch.load(pt))
+        dataset = onmt.io.ONMTDatasetBase.coalesce_datasets(datasets)
     else:
         # Only one onmt.io.*Dataset, simple!
-        pt = opt.data + '.' + corpus_type + '.pt'
-        yield lazy_dataset_loader(pt, corpus_type)
+        dataset = torch.load(opt.data + '.' + data_type + '.pt')
+
+    print(' * number of %s sentences: %d' % (data_type, len(dataset)))
+
+    return dataset
 
 
-def load_fields(dataset, data_type, checkpoint):
+def load_fields(train_dataset, valid_dataset, checkpoint):
+    data_type = train_dataset.data_type
 
     fields = onmt.io.load_fields_from_vocab(
                 torch.load(opt.data + '.vocab.pt'), data_type)
     fields = dict([(k, f) for (k, f) in fields.items()
-                  if k in dataset.examples[0].__dict__])
+                  if k in train_dataset.examples[0].__dict__])
 
-    if checkpoint is not None:
+    # We save fields in vocab.pt, so assign them back to dataset here.
+    train_dataset.fields = fields
+    valid_dataset.fields = fields
+
+    if opt.train_from:
         print('Loading vocab from checkpoint at %s.' % opt.train_from)
         fields = onmt.io.load_fields_from_vocab(
                     checkpoint['vocab'], data_type)
@@ -348,6 +302,7 @@ def build_optim(model, checkpoint):
         optim.optimizer.load_state_dict(
             checkpoint['optim'].optimizer.state_dict())
     else:
+        # what members of opt does Optim need?
         optim = onmt.Optim(
             opt.optim, opt.learning_rate, opt.max_grad_norm,
             lr_decay=opt.learning_rate_decay,
@@ -366,17 +321,10 @@ def build_optim(model, checkpoint):
 
 def main():
 
-    # Lazily load a list of train/validate dataset.
-    print("Lazily loading train/validate datasets from '%s'" % opt.data)
-    train_datasets = lazily_load_dataset("train")
-    valid_datasets = lazily_load_dataset("valid")
+    # Load train and validate data.
+    train_dataset = load_dataset("train")
+    valid_dataset = load_dataset("valid")
     print(' * maximum batch size: %d' % opt.batch_size)
-
-    # Peek the fisrt dataset to determine the data_type.
-    # (This will load the first dataset.)
-    first_dataset = next(train_datasets)
-    train_datasets = chain([first_dataset], train_datasets)
-    data_type = first_dataset.data_type
 
     # Load checkpoint if we resume from a previous training.
     if opt.train_from:
@@ -391,7 +339,7 @@ def main():
         model_opt = opt
 
     # Load fields generated from preprocess phase.
-    fields = load_fields(first_dataset, data_type, checkpoint)
+    fields = load_fields(train_dataset, valid_dataset, checkpoint)
 
     # Report src/tgt features.
     collect_report_features(fields)
@@ -405,8 +353,7 @@ def main():
     optim = build_optim(model, checkpoint)
 
     # Do training.
-    train_model(model, train_datasets, valid_datasets,
-                fields, optim, data_type, model_opt)
+    train_model(model, train_dataset, valid_dataset, fields, optim, model_opt)
 
 
 if __name__ == "__main__":
