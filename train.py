@@ -7,6 +7,7 @@ import glob
 import os
 import sys
 import random
+import re
 
 import torch
 import torch.nn as nn
@@ -234,8 +235,11 @@ def load_dataset(data_type):
         # when we create data iterator, it still requires these
         # data to be loaded. So it seams we don't have a good way
         # to avoid this now.
+        pts = [(int(re.match('.*?([0-9]+).*?', pt).group(1)), pt)
+               for pt in pts]
+        pts = sorted(pts)
         datasets = []
-        for pt in pts:
+        for _, pt in pts:
             datasets.append(torch.load(pt))
         dataset = onmt.io.ONMTDatasetBase.coalesce_datasets(datasets)
     else:
