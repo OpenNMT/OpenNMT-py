@@ -89,6 +89,25 @@ class TextDataset(ONMTDatasetBase):
         return len(ex.src)
 
     @staticmethod
+    def collapse_copy_scores(scores, batch, tgt_vocab, src_vocabs):
+        """
+        Given scores from an expanded dictionary
+        corresponeding to a batch, sums together copies,
+        with a dictionary word when it is ambigious.
+        """
+        offset = len(tgt_vocab)
+        for b in range(batch.batch_size):
+            index = batch.indices.data[b]
+            src_vocab = src_vocabs[index]
+            for i in range(1, len(src_vocab)):
+                sw = src_vocab.itos[i]
+                ti = tgt_vocab.stoi[sw]
+                if ti != 0:
+                    scores[:, b, ti] += scores[:, b, offset + i]
+                    scores[:, b, offset + i].fill_(1e-20)
+        return scores
+
+    @staticmethod
     def make_text_examples_nfeats_tpl(path, truncate, side):
         """
         Args:
@@ -228,7 +247,7 @@ class TextDataset(ONMTDatasetBase):
 
         return num_feats
 
-    # Below are helper functions for intra-class use only.self.
+    # Below are helper functions for intra-class use only.
     def _dynamic_dict(self, examples_iter):
         for example in examples_iter:
             src = example["src"]

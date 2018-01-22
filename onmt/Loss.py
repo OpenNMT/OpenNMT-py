@@ -30,6 +30,7 @@ class LossComputeBase(nn.Module):
              distribution over the target vocabulary.
         tgt_vocab (:obj:`Vocab`) :
              torchtext vocab object representing the target output
+        normalzation (str): normalize by "sents" or "tokens"
     """
     def __init__(self, generator, tgt_vocab):
         super(LossComputeBase, self).__init__()
@@ -85,7 +86,8 @@ class LossComputeBase(nn.Module):
         return batch_stats
 
     def sharded_compute_loss(self, batch, output, attns,
-                             cur_trunc, trunc_size, shard_size):
+                             cur_trunc, trunc_size, shard_size,
+                             normalization):
         """Compute the forward loss and backpropagate.  Computation is done
         with shards and optionally truncation for memory efficiency.
 
@@ -118,7 +120,8 @@ class LossComputeBase(nn.Module):
 
         for shard in shards(shard_state, shard_size):
             loss, stats = self._compute_loss(batch, **shard)
-            loss.div(batch.batch_size).backward()
+
+            loss.div(normalization).backward()
             batch_stats.update(stats)
 
         return batch_stats
@@ -151,7 +154,8 @@ class NMTLossCompute(LossComputeBase):
     """
     Standard NMT Loss Computation.
     """
-    def __init__(self, generator, tgt_vocab, label_smoothing=0.0):
+    def __init__(self, generator, tgt_vocab, normalization="sents",
+                 label_smoothing=0.0):
         super(NMTLossCompute, self).__init__(generator, tgt_vocab)
         assert (label_smoothing >= 0.0 and label_smoothing <= 1.0)
 
