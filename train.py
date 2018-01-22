@@ -294,15 +294,16 @@ def lazily_load_dataset(corpus_type):
 
 def load_fields(dataset, data_type, checkpoint):
 
-    fields = onmt.io.load_fields_from_vocab(
-                torch.load(opt.data + '.vocab.pt'), data_type)
-    fields = dict([(k, f) for (k, f) in fields.items()
-                  if k in dataset.examples[0].__dict__])
-
     if checkpoint is not None:
         print('Loading vocab from checkpoint at %s.' % opt.train_from)
         fields = onmt.io.load_fields_from_vocab(
                     checkpoint['vocab'], data_type)
+    else:
+        fields = onmt.io.load_fields_from_vocab(
+                    torch.load(opt.data + '.vocab.pt'), data_type)
+    fields = dict([(k, f) for (k, f) in fields.items()
+                  if k in dataset.examples[0].__dict__])
+
 
     if data_type == 'text':
         print(' * vocabulary size. source = %d; target = %d' %
