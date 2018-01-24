@@ -247,7 +247,7 @@ input_feeding and non-recurrent models.</p>
 <h2>Trainer<a class="headerlink" href="#trainer" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.Trainer">
-<em class="property">class </em><code class="descclassname">onmt.</code><code class="descname">Trainer</code><span class="sig-paren">(</span><em>model</em>, <em>train_loss</em>, <em>valid_loss</em>, <em>optim</em>, <em>trunc_size=0</em>, <em>shard_size=32</em>, <em>data_type='text'</em>, <em>normalization='sents'</em>, <em>accum_count=1</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Trainer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.</code><code class="descname">Trainer</code><span class="sig-paren">(</span><em>model</em>, <em>train_loss</em>, <em>valid_loss</em>, <em>optim</em>, <em>trunc_size=0</em>, <em>shard_size=32</em>, <em>data_type='text'</em>, <em>norm_method='sents'</em>, <em>grad_accum_count=1</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Trainer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class that controls the training process.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -261,6 +261,8 @@ input_feeding and non-recurrent models.</p>
 <li><strong>trunc_size</strong> (<em>int</em>) – length of truncated back propagation through time</li>
 <li><strong>shard_size</strong> (<em>int</em>) – compute loss in shards of this size for efficiency</li>
 <li><strong>data_type</strong> (<em>string</em>) – type of the source input: [text|img|audio]</li>
+<li><strong>norm_method</strong> (<em>string</em>) – normalization methods: [sents|tokens]</li>
+<li><strong>grad_accum_count</strong> (<em>int</em>) – accumulate gradients this many times.</li>
 </ul>
 </td>
 </tr>
