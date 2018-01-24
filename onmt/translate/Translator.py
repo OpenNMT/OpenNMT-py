@@ -148,7 +148,7 @@ class Translator(object):
                 # beam x (tgt_vocab + extra_vocab)
                 out = data.collapse_copy_scores(
                     unbottle(out.data),
-                    batch, self.fields["tgt"].vocab)
+                    batch, self.fields["tgt"].vocab, data.src_vocabs)
                 # beam x tgt_vocab
                 out = out.log()
 
