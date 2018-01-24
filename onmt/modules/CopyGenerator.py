@@ -135,12 +135,14 @@ class CopyGeneratorLossCompute(onmt.Loss.LossComputeBase):
     """
     Copy Generator Loss Computation.
     """
-    def __init__(self, generator, tgt_vocab, dataset,
-                 force_copy, normalization="sents", eps=1e-20):
+    def __init__(self, generator, tgt_vocab,
+                 force_copy, eps=1e-20):
         super(CopyGeneratorLossCompute, self).__init__(
-            generator, tgt_vocab, normalization)
+            generator, tgt_vocab)
 
-        self.dataset = dataset
+        # We lazily load datasets when there are more than one, so postpone
+        # the setting of cur_dataset.
+        self.cur_dataset = None
         self.force_copy = force_copy
         self.criterion = CopyGeneratorCriterion(len(tgt_vocab), force_copy,
                                                 self.padding_idx)
@@ -177,9 +179,9 @@ class CopyGeneratorLossCompute(onmt.Loss.LossComputeBase):
         loss = self.criterion(scores, align, target)
 
         scores_data = scores.data.clone()
-        scores_data = self.dataset.collapse_copy_scores(
+        scores_data = onmt.io.TextDataset.collapse_copy_scores(
                 self._unbottle(scores_data, batch.batch_size),
-                batch, self.tgt_vocab)
+                batch, self.tgt_vocab, self.cur_dataset.src_vocabs)
         scores_data = self._bottle(scores_data)
 
         # Correct target copy token instead of <unk>
