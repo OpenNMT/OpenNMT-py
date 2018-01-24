@@ -7,6 +7,7 @@ import glob
 import os
 import sys
 import random
+import re
 from itertools import chain
 
 import torch
@@ -282,7 +283,8 @@ def lazily_load_dataset(corpus_type):
         return dataset
 
     # Sort the glob output by file name (by increasing indexes).
-    pts = sorted(glob.glob(opt.data + '.' + corpus_type + '.[0-9]*.pt'))
+    pts = sorted(glob.glob(opt.data + '.' + corpus_type + '.[0-9]*.pt'),
+                 key=lambda x: int(re.match('.*?([0-9]+).*?', x).group(1)))
     if pts:
         for pt in pts:
             yield lazy_dataset_loader(pt, corpus_type)
