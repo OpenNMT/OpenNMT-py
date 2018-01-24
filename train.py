@@ -7,6 +7,8 @@ import glob
 import os
 import sys
 import random
+import re
+from itertools import chain
 
 import torch
 import torch.nn as nn
@@ -19,7 +21,6 @@ import onmt.ModelConstructor
 import onmt.modules
 from onmt.Utils import use_gpu
 import opts
-
 
 parser = argparse.ArgumentParser(
     description='train.py',
@@ -59,10 +60,10 @@ if len(opt.gpuid) > 1:
     sys.stderr.write("Sorry, multigpu isn't supported yet, coming soon!\n")
     sys.exit(1)
 
-
 # Set up the Crayon logging server.
 if opt.exp_host != "":
     from pycrayon import CrayonClient
+
     cc = CrayonClient(hostname=opt.exp_host)
 
     experiments = cc.get_experiment_names()
@@ -89,7 +90,7 @@ def report_func(epoch, batch, num_batches,
         report_stats(Statistics): updated Statistics instance.
     """
     if batch % opt.report_every == -1 % opt.report_every:
-        report_stats.output(epoch, batch+1, num_batches, start_time)
+        report_stats.output(epoch, batch + 1, num_batches, start_time)
         if opt.exp_host:
             report_stats.log("progress", experiment, lr)
         report_stats = onmt.Statistics()
@@ -109,6 +110,7 @@ class DatasetLazyIter(object):
         device: the GPU device.
         is_train (bool): train or valid?
     """
+
     def __init__(self, datasets, fields, batch_size, batch_size_fn,
                  device, is_train):
         self.datasets = datasets
@@ -151,11 +153,11 @@ class DatasetLazyIter(object):
         # Sort batch by decreasing lengths of sentence required by pytorch.
         # sort=False means "Use dataset's sortkey instead of iterator's".
         return onmt.io.OrderedIterator(
-                dataset=self.cur_dataset, batch_size=self.batch_size,
-                batch_size_fn=self.batch_size_fn,
-                device=self.device, train=self.is_train,
-                sort=False, sort_within_batch=True,
-                repeat=False)
+            dataset=self.cur_dataset, batch_size=self.batch_size,
+            batch_size_fn=self.batch_size_fn,
+            device=self.device, train=self.is_train,
+            sort=False, sort_within_batch=True,
+            repeat=False)
 
 
 def make_dataset_iter(datasets, fields, opt, is_train=True):
@@ -198,7 +200,6 @@ def make_loss_compute(model, tgt_vocab, opt):
 
 
 def train_model(model, fields, optim, data_type, model_opt):
-
     train_loss = make_loss_compute(model, fields["tgt"].vocab, opt)
     valid_loss = make_loss_compute(model, fields["tgt"].vocab, opt)
 
@@ -287,7 +288,8 @@ def lazily_load_dataset(corpus_type):
         return dataset
 
     # Sort the glob output by file name (by increasing indexes).
-    pts = sorted(glob.glob(opt.data + '.' + corpus_type + '.[0-9]*.pt'))
+    pts = sorted(glob.glob(opt.data + '.' + corpus_type + '.[0-9]*.pt'),
+                 key=lambda x: int(re.match('.*?([0-9]+).*?', x).group(1)))
     if pts:
         for pt in pts:
             yield lazy_dataset_loader(pt, corpus_type)
@@ -298,16 +300,15 @@ def lazily_load_dataset(corpus_type):
 
 
 def load_fields(dataset, data_type, checkpoint):
-
-    fields = onmt.io.load_fields_from_vocab(
-                torch.load(opt.data + '.vocab.pt'), data_type)
-    fields = dict([(k, f) for (k, f) in fields.items()
-                  if k in dataset.examples[0].__dict__])
-
     if checkpoint is not None:
         print('Loading vocab from checkpoint at %s.' % opt.train_from)
         fields = onmt.io.load_fields_from_vocab(
-                    checkpoint['vocab'], data_type)
+            checkpoint['vocab'], data_type)
+    else:
+        fields = onmt.io.load_fields_from_vocab(
+            torch.load(opt.data + '.vocab.pt'), data_type)
+    fields = dict([(k, f) for (k, f) in fields.items()
+                   if k in dataset.examples[0].__dict__])
 
     if data_type == 'text':
         print(' * vocabulary size. source = %d; target = %d' %
@@ -366,6 +367,16 @@ def build_optim(model, checkpoint):
 
 
 def main():
+    # Lazily load a list of train/validate dataset.
+    print("Lazily loading train/validate datasets from '%s'" % opt.data)
+    train_datasets = lazily_load_dataset("train")
+    print(' * maximum batch size: %d' % opt.batch_size)
+
+    # Peek the fisrt dataset to determine the data_type.
+    # (This will load the first dataset.)
+    first_dataset = next(train_datasets)
+    train_datasets = chain([first_dataset], train_datasets)
+    data_type = first_dataset.data_type
 
     # Load checkpoint if we resume from a previous training.
     if opt.train_from:
