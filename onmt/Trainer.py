@@ -152,9 +152,9 @@ class Trainer(object):
 
             true_batchs.append(batch)
             accum += 1
-            if self.norm_method is "tokens":
+            if self.norm_method == "tokens":
                 normalization += batch.tgt[1:].data.view(-1) \
-                    .ne(self.train_loss.padding_idx)
+                    .ne(self.train_loss.padding_idx).sum()
             else:
                 normalization += batch.batch_size
 

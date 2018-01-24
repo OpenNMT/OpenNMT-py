@@ -169,7 +169,7 @@ def make_dataset_iter(datasets, fields, opt, is_train=True):
     batch_size_fn = None
     if is_train and opt.batch_type == "tokens":
         def batch_size_fn(new, count, sofar):
-            return sofar + len(new.tgt) + 1
+            return sofar + max(len(new.tgt), len(new.src)) + 1
 
     device = opt.gpuid[0] if opt.gpuid else -1
 
