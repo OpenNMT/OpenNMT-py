@@ -84,8 +84,7 @@ class Trainer(object):
 
     Args:
             model(:py:class:`onmt.Model.NMTModel`): translation model to train
-            train_iter: training data iterator
-            valid_iter: validate data iterator
+
             train_loss(:obj:`onmt.Loss.LossComputeBase`):
                training loss computation
             valid_loss(:obj:`onmt.Loss.LossComputeBase`):
@@ -95,27 +94,26 @@ class Trainer(object):
             trunc_size(int): length of truncated back propagation through time
             shard_size(int): compute loss in shards of this size for efficiency
             data_type(string): type of the source input: [text|img|audio]
+            norm_method(string): normalization methods: [sents|tokens]
+            grad_accum_count(int): accumulate gradients this many times.
     """
 
-    def __init__(self, model, train_iter, valid_iter,
-                 train_loss, valid_loss, optim,
+    def __init__(self, model, train_loss, valid_loss, optim,
                  trunc_size=0, shard_size=32, data_type='text',
-                 normalization="sents", accum_count=1):
+                 norm_method="sents", grad_accum_count=1):
         # Basic attributes.
         self.model = model
-        self.train_iter = train_iter
-        self.valid_iter = valid_iter
         self.train_loss = train_loss
         self.valid_loss = valid_loss
         self.optim = optim
         self.trunc_size = trunc_size
         self.shard_size = shard_size
         self.data_type = data_type
-        self.accum_count = accum_count
-        self.padding_idx = self.train_loss.padding_idx
-        self.normalization = normalization
-        assert(accum_count > 0)
-        if accum_count > 1:
+        self.norm_method = norm_method
+        self.grad_accum_count = grad_accum_count
+
+        assert(grad_accum_count > 0)
+        if grad_accum_count > 1:
             assert(self.trunc_size == 0), \
                 """To enable accumulated gradients,
                    you must disable target sequence truncating."""
@@ -123,9 +121,10 @@ class Trainer(object):
         # Set model in training mode.
         self.model.train()
 
-    def train(self, epoch, report_func=None):
+    def train(self, train_iter, epoch, report_func=None):
         """ Train next epoch.
         Args:
+            train_iter: training data iterator
             epoch(int): the epoch number
             report_func(fn): function for logging
 
@@ -135,84 +134,33 @@ class Trainer(object):
         total_stats = Statistics()
         report_stats = Statistics()
         idx = 0
-        truebatch = []
+        true_batchs = []
         accum = 0
         normalization = 0
         try:
             add_on = 0
-            if len(self.train_iter) % self.accum_count > 0:
+            if len(train_iter) % self.grad_accum_count > 0:
                 add_on += 1
-            num_batches = len(self.train_iter) / self.accum_count + add_on
+            num_batches = len(train_iter) / self.grad_accum_count + add_on
         except NotImplementedError:
             # Dynamic batching
             num_batches = -1
 
-        def gradient_accumulation(truebatch_, total_stats_,
-                                  report_stats_, nt_):
-            if self.accum_count > 1:
-                self.model.zero_grad()
-
-            for batch in truebatch_:
-                target_size = batch.tgt.size(0)
-                # Truncated BPTT
-                if self.trunc_size:
-                    trunc_size = self.trunc_size
-                else:
-                    trunc_size = target_size
-
-                dec_state = None
-                src = onmt.io.make_features(batch, 'src', self.data_type)
-                if self.data_type == 'text':
-                    _, src_lengths = batch.src
-                    report_stats.n_src_words += src_lengths.sum()
-                else:
-                    src_lengths = None
-
-                tgt_outer = onmt.io.make_features(batch, 'tgt')
-
-                for j in range(0, target_size-1, trunc_size):
-                    # 1. Create truncated target.
-                    tgt = tgt_outer[j: j + trunc_size]
-
-                    # 2. F-prop all but generator.
-                    if self.accum_count == 1:
-                        self.model.zero_grad()
-                    outputs, attns, dec_state = \
-                        self.model(src, tgt, src_lengths, dec_state)
-
-                    # 3. Compute loss in shards for memory efficiency.
-                    batch_stats = self.train_loss.sharded_compute_loss(
-                            batch, outputs, attns, j,
-                            trunc_size, self.shard_size, nt_)
-
-                    # 4. Update the parameters and statistics.
-                    if self.accum_count == 1:
-                        self.optim.step()
-                    total_stats_.update(batch_stats)
-                    report_stats_.update(batch_stats)
-
-                    # If truncated, don't backprop fully.
-                    if dec_state is not None:
-                        dec_state.detach()
-
-            if self.accum_count > 1:
-                self.optim.step()
-
-        for i, batch_ in enumerate(self.train_iter):
-            cur_dataset = self.train_iter.get_cur_dataset()
+        for i, batch in enumerate(train_iter):
+            cur_dataset = train_iter.get_cur_dataset()
             self.train_loss.cur_dataset = cur_dataset
 
-            truebatch.append(batch_)
+            true_batchs.append(batch)
             accum += 1
-            if self.normalization is "tokens":
-                normalization += batch_.tgt[1:].data.view(-1) \
-                                       .ne(self.padding_idx)
+            if self.norm_method == "tokens":
+                normalization += batch.tgt[1:].data.view(-1) \
+                    .ne(self.train_loss.padding_idx).sum()
             else:
-                normalization += batch_.batch_size
+                normalization += batch.batch_size
 
-            if accum == self.accum_count:
-                gradient_accumulation(
-                        truebatch, total_stats,
+            if accum == self.grad_accum_count:
+                self._gradient_accumulation(
+                        true_batchs, total_stats,
                         report_stats, normalization)
 
                 if report_func is not None:
@@ -221,22 +169,22 @@ class Trainer(object):
                             total_stats.start_time, self.optim.lr,
                             report_stats)
 
-                truebatch = []
+                true_batchs = []
                 accum = 0
                 normalization = 0
                 idx += 1
 
-        if len(truebatch) > 0:
-            gradient_accumulation(
-                    truebatch, total_stats,
+        if len(true_batchs) > 0:
+            self._gradient_accumulation(
+                    true_batchs, total_stats,
                     report_stats, normalization)
-            truebatch = []
+            true_batchs = []
 
         return total_stats
 
-    def validate(self):
+    def validate(self, valid_iter):
         """ Validate model.
-
+            valid_iter: validate data iterator
         Returns:
             :obj:`onmt.Statistics`: validation loss statistics
         """
@@ -245,8 +193,8 @@ class Trainer(object):
 
         stats = Statistics()
 
-        for batch in self.valid_iter:
-            cur_dataset = self.valid_iter.get_cur_dataset()
+        for batch in valid_iter:
+            cur_dataset = valid_iter.get_cur_dataset()
             self.valid_loss.cur_dataset = cur_dataset
 
             src = onmt.io.make_features(batch, 'src', self.data_type)
@@ -307,3 +255,54 @@ class Trainer(object):
                    '%s_acc_%.2f_ppl_%.2f_e%d.pt'
                    % (opt.save_model, valid_stats.accuracy(),
                       valid_stats.ppl(), epoch))
+
+    def _gradient_accumulation(self, true_batchs, total_stats,
+                               report_stats, normalization):
+        if self.grad_accum_count > 1:
+            self.model.zero_grad()
+
+        for batch in true_batchs:
+            target_size = batch.tgt.size(0)
+            # Truncated BPTT
+            if self.trunc_size:
+                trunc_size = self.trunc_size
+            else:
+                trunc_size = target_size
+
+            dec_state = None
+            src = onmt.io.make_features(batch, 'src', self.data_type)
+            if self.data_type == 'text':
+                _, src_lengths = batch.src
+                report_stats.n_src_words += src_lengths.sum()
+            else:
+                src_lengths = None
+
+            tgt_outer = onmt.io.make_features(batch, 'tgt')
+
+            for j in range(0, target_size-1, trunc_size):
+                # 1. Create truncated target.
+                tgt = tgt_outer[j: j + trunc_size]
+
+                # 2. F-prop all but generator.
+                if self.grad_accum_count == 1:
+                    self.model.zero_grad()
+                outputs, attns, dec_state = \
+                    self.model(src, tgt, src_lengths, dec_state)
+
+                # 3. Compute loss in shards for memory efficiency.
+                batch_stats = self.train_loss.sharded_compute_loss(
+                        batch, outputs, attns, j,
+                        trunc_size, self.shard_size, normalization)
+
+                # 4. Update the parameters and statistics.
+                if self.grad_accum_count == 1:
+                    self.optim.step()
+                total_stats.update(batch_stats)
+                report_stats.update(batch_stats)
+
+                # If truncated, don't backprop fully.
+                if dec_state is not None:
+                    dec_state.detach()
+
+        if self.grad_accum_count > 1:
+            self.optim.step()

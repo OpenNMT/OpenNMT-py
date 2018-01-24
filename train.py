@@ -7,6 +7,7 @@ import glob
 import os
 import sys
 import random
+import re
 from itertools import chain
 
 import torch
@@ -20,7 +21,6 @@ import onmt.ModelConstructor
 import onmt.modules
 from onmt.Utils import use_gpu
 import opts
-
 
 parser = argparse.ArgumentParser(
     description='train.py',
@@ -60,10 +60,10 @@ if len(opt.gpuid) > 1:
     sys.stderr.write("Sorry, multigpu isn't supported yet, coming soon!\n")
     sys.exit(1)
 
-
 # Set up the Crayon logging server.
 if opt.exp_host != "":
     from pycrayon import CrayonClient
+
     cc = CrayonClient(hostname=opt.exp_host)
 
     experiments = cc.get_experiment_names()
@@ -90,7 +90,7 @@ def report_func(epoch, batch, num_batches,
         report_stats(Statistics): updated Statistics instance.
     """
     if batch % opt.report_every == -1 % opt.report_every:
-        report_stats.output(epoch, batch+1, num_batches, start_time)
+        report_stats.output(epoch, batch + 1, num_batches, start_time)
         if opt.exp_host:
             report_stats.log("progress", experiment, lr)
         report_stats = onmt.Statistics()
@@ -110,6 +110,7 @@ class DatasetLazyIter(object):
         device: the GPU device.
         is_train (bool): train or valid?
     """
+
     def __init__(self, datasets, fields, batch_size, batch_size_fn,
                  device, is_train):
         self.datasets = datasets
@@ -119,21 +120,16 @@ class DatasetLazyIter(object):
         self.device = device
         self.is_train = is_train
 
-        self.cur_iter = self._next_dataset_iterator()
+        self.cur_iter = self._next_dataset_iterator(datasets)
         # We have at least one dataset.
         assert self.cur_iter is not None
 
     def __iter__(self):
-        try:
+        dataset_iter = (d for d in self.datasets)
+        while self.cur_iter is not None:
             for batch in self.cur_iter:
                 yield batch
-        except StopIteration:
-            self.cur_iter = self._next_dataset_iterator()
-            if self.cur_iter is None:
-                raise StopIteration
-            else:
-                for batch in self.cur_iter:
-                    yield batch
+            self.cur_iter = self._next_dataset_iterator(dataset_iter)
 
     def __len__(self):
         # We return the len of cur_dataset, otherwise we need to load
@@ -145,9 +141,9 @@ class DatasetLazyIter(object):
     def get_cur_dataset(self):
         return self.cur_dataset
 
-    def _next_dataset_iterator(self):
+    def _next_dataset_iterator(self, dataset_iter):
         try:
-            self.cur_dataset = next(self.datasets)
+            self.cur_dataset = next(dataset_iter)
         except StopIteration:
             return None
 
@@ -157,11 +153,11 @@ class DatasetLazyIter(object):
         # Sort batch by decreasing lengths of sentence required by pytorch.
         # sort=False means "Use dataset's sortkey instead of iterator's".
         return onmt.io.OrderedIterator(
-                dataset=self.cur_dataset, batch_size=self.batch_size,
-                batch_size_fn=self.batch_size_fn,
-                device=self.device, train=self.is_train,
-                sort=False, sort_within_batch=True,
-                repeat=False)
+            dataset=self.cur_dataset, batch_size=self.batch_size,
+            batch_size_fn=self.batch_size_fn,
+            device=self.device, train=self.is_train,
+            sort=False, sort_within_batch=True,
+            repeat=False)
 
 
 def make_dataset_iter(datasets, fields, opt, is_train=True):
@@ -175,7 +171,7 @@ def make_dataset_iter(datasets, fields, opt, is_train=True):
     batch_size_fn = None
     if is_train and opt.batch_type == "tokens":
         def batch_size_fn(new, count, sofar):
-            return sofar + max(len(new.src), len(new.tgt)) + 1
+            return sofar + max(len(new.tgt), len(new.src)) + 1
 
     device = opt.gpuid[0] if opt.gpuid else -1
 
@@ -203,34 +199,39 @@ def make_loss_compute(model, tgt_vocab, opt):
     return compute
 
 
-def train_model(model, train_datasets, valid_datasets,
-                fields, optim, data_type, model_opt):
-
-    train_iter = make_dataset_iter(train_datasets, fields, opt)
-    valid_iter = make_dataset_iter(valid_datasets, fields, opt,
-                                   is_train=False)
-
+def train_model(model, fields, optim, data_type, model_opt):
     train_loss = make_loss_compute(model, fields["tgt"].vocab, opt)
     valid_loss = make_loss_compute(model, fields["tgt"].vocab, opt)
 
     trunc_size = opt.truncated_decoder  # Badly named...
     shard_size = opt.max_generator_batches
+    norm_method = opt.normalization
+    grad_accum_count = opt.accum_count
 
-    trainer = onmt.Trainer(model, train_iter, valid_iter,
-                           train_loss, valid_loss, optim,
+    trainer = onmt.Trainer(model, train_loss, valid_loss, optim,
                            trunc_size, shard_size, data_type,
-                           opt.normalization, opt.accum_count)
+                           norm_method, grad_accum_count)
+
+    print('\nStart training...')
+    print(' * number of epochs: %d, starting from Epoch %d' %
+          (opt.epochs + 1 - opt.start_epoch, opt.start_epoch))
+    print(' * batch size: %d' % opt.batch_size)
 
     for epoch in range(opt.start_epoch, opt.epochs + 1):
         print('')
 
         # 1. Train for one epoch on the training set.
-        train_stats = trainer.train(epoch, report_func)
+        train_iter = make_dataset_iter(lazily_load_dataset("train"),
+                                       fields, opt)
+        train_stats = trainer.train(train_iter, epoch, report_func)
         print('Train perplexity: %g' % train_stats.ppl())
         print('Train accuracy: %g' % train_stats.accuracy())
 
         # 2. Validate on the validation set.
-        valid_stats = trainer.validate()
+        valid_iter = make_dataset_iter(lazily_load_dataset("valid"),
+                                       fields, opt,
+                                       is_train=False)
+        valid_stats = trainer.validate(valid_iter)
         print('Validation perplexity: %g' % valid_stats.ppl())
         print('Validation accuracy: %g' % valid_stats.accuracy())
 
@@ -287,7 +288,8 @@ def lazily_load_dataset(corpus_type):
         return dataset
 
     # Sort the glob output by file name (by increasing indexes).
-    pts = sorted(glob.glob(opt.data + '.' + corpus_type + '.[0-9]*.pt'))
+    pts = sorted(glob.glob(opt.data + '.' + corpus_type + '.[0-9]*.pt'),
+                 key=lambda x: int(re.match('.*?([0-9]+).*?', x).group(1)))
     if pts:
         for pt in pts:
             yield lazy_dataset_loader(pt, corpus_type)
@@ -298,16 +300,15 @@ def lazily_load_dataset(corpus_type):
 
 
 def load_fields(dataset, data_type, checkpoint):
-
-    fields = onmt.io.load_fields_from_vocab(
-                torch.load(opt.data + '.vocab.pt'), data_type)
-    fields = dict([(k, f) for (k, f) in fields.items()
-                  if k in dataset.examples[0].__dict__])
-
     if checkpoint is not None:
         print('Loading vocab from checkpoint at %s.' % opt.train_from)
         fields = onmt.io.load_fields_from_vocab(
-                    checkpoint['vocab'], data_type)
+            checkpoint['vocab'], data_type)
+    else:
+        fields = onmt.io.load_fields_from_vocab(
+            torch.load(opt.data + '.vocab.pt'), data_type)
+    fields = dict([(k, f) for (k, f) in fields.items()
+                   if k in dataset.examples[0].__dict__])
 
     if data_type == 'text':
         print(' * vocabulary size. source = %d; target = %d' %
@@ -348,6 +349,7 @@ def build_optim(model, checkpoint):
         optim.optimizer.load_state_dict(
             checkpoint['optim'].optimizer.state_dict())
     else:
+        print('Making optimizer for training.')
         optim = onmt.Optim(
             opt.optim, opt.learning_rate, opt.max_grad_norm,
             lr_decay=opt.learning_rate_decay,
@@ -365,11 +367,9 @@ def build_optim(model, checkpoint):
 
 
 def main():
-
     # Lazily load a list of train/validate dataset.
     print("Lazily loading train/validate datasets from '%s'" % opt.data)
     train_datasets = lazily_load_dataset("train")
-    valid_datasets = lazily_load_dataset("valid")
     print(' * maximum batch size: %d' % opt.batch_size)
 
     # Peek the fisrt dataset to determine the data_type.
@@ -390,6 +390,11 @@ def main():
         checkpoint = None
         model_opt = opt
 
+    # Peek the fisrt dataset to determine the data_type.
+    # (All datasets have the same data_type).
+    first_dataset = next(lazily_load_dataset("train"))
+    data_type = first_dataset.data_type
+
     # Load fields generated from preprocess phase.
     fields = load_fields(first_dataset, data_type, checkpoint)
 
@@ -405,8 +410,7 @@ def main():
     optim = build_optim(model, checkpoint)
 
     # Do training.
-    train_model(model, train_datasets, valid_datasets,
-                fields, optim, data_type, model_opt)
+    train_model(model, fields, optim, data_type, model_opt)
 
 
 if __name__ == "__main__":
