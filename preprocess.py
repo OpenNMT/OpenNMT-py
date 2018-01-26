@@ -63,6 +63,10 @@ def build_save_text_dataset_in_shards(src_corpus, tgt_corpus, fields,
 
     If `max_shard_size` is 0 or is larger than the corpus size, it is
     effectively preprocessed into one dataset, i.e. no sharding.
+
+    NOTE! `max_shard_size` is measuring the input corpus size, not the
+    output pt file size. So a shard pt file consists of examples of size
+    2 * `max_shard_size`(source + target).
     '''
 
     corpus_size = os.path.getsize(src_corpus)
@@ -70,6 +74,10 @@ def build_save_text_dataset_in_shards(src_corpus, tgt_corpus, fields,
         print("Warning. The corpus %s is larger than 10M bytes, you can "
               "set '-max_shard_size' to process it by small shards "
               "to use less memory." % src_corpus)
+
+    if opt.max_shard_size != 0:
+        print(' * divide corpus into shards and build dataset separately'
+              '(shard_size = %d bytes).' % opt.max_shard_size)
 
     ret_list = []
     src_iter = onmt.io.ShardedTextCorpusIterator(
@@ -79,9 +87,6 @@ def build_save_text_dataset_in_shards(src_corpus, tgt_corpus, fields,
                 tgt_corpus, opt.tgt_seq_length_trunc,
                 "tgt", opt.max_shard_size,
                 assoc_iter=src_iter)
-
-    print(' * divide corpus into shards and build dataset separately'
-          '(shard_size = %d bytes).' % opt.max_shard_size)
 
     index = 0
     while not src_iter.hit_end():
@@ -98,7 +103,7 @@ def build_save_text_dataset_in_shards(src_corpus, tgt_corpus, fields,
 
         pt_file = "{:s}.{:s}.{:d}.pt".format(
                 opt.save_data, corpus_type, index)
-        print(" * saving train data shard to %s." % pt_file)
+        print(" * saving %s data shard to %s." % (corpus_type, pt_file))
         torch.save(dataset, pt_file)
 
         ret_list.append(pt_file)
@@ -143,7 +148,7 @@ def build_save_dataset(corpus_type, fields, opt):
     dataset.fields = []
 
     pt_file = "{:s}.{:s}.pt".format(opt.save_data, corpus_type)
-    print(" * saving train dataset to %s." % pt_file)
+    print(" * saving %s dataset to %s." % (corpus_type, pt_file))
     torch.save(dataset, pt_file)
 
     return [pt_file]
@@ -171,7 +176,7 @@ def main():
     print(" * number of source features: %d." % src_nfeats)
     print(" * number of target features: %d." % tgt_nfeats)
 
-    print("Loading Fields object...")
+    print("Building `Fields` object...")
     fields = onmt.io.get_fields(opt.data_type, src_nfeats, tgt_nfeats)
 
     print("Building & saving training data...")
