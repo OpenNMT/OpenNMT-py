@@ -7,8 +7,6 @@ import glob
 import os
 import sys
 import random
-import re
-from itertools import chain
 
 import torch
 import torch.nn as nn
@@ -288,8 +286,7 @@ def lazily_load_dataset(corpus_type):
         return dataset
 
     # Sort the glob output by file name (by increasing indexes).
-    pts = sorted(glob.glob(opt.data + '.' + corpus_type + '.[0-9]*.pt'),
-                 key=lambda x: int(re.match('.*?([0-9]+).*?', x).group(1)))
+    pts = sorted(glob.glob(opt.data + '.' + corpus_type + '.[0-9]*.pt'))
     if pts:
         for pt in pts:
             yield lazy_dataset_loader(pt, corpus_type)
@@ -367,17 +364,6 @@ def build_optim(model, checkpoint):
 
 
 def main():
-    # Lazily load a list of train/validate dataset.
-    print("Lazily loading train/validate datasets from '%s'" % opt.data)
-    train_datasets = lazily_load_dataset("train")
-    print(' * maximum batch size: %d' % opt.batch_size)
-
-    # Peek the fisrt dataset to determine the data_type.
-    # (This will load the first dataset.)
-    first_dataset = next(train_datasets)
-    train_datasets = chain([first_dataset], train_datasets)
-    data_type = first_dataset.data_type
-
     # Load checkpoint if we resume from a previous training.
     if opt.train_from:
         print('Loading checkpoint from %s' % opt.train_from)
