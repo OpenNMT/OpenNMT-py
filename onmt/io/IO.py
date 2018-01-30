@@ -87,7 +87,8 @@ def merge_vocabs(vocabs, vocab_size=None):
     """
     merged = sum([vocab.freqs for vocab in vocabs], Counter())
     return torchtext.vocab.Vocab(merged,
-                                 specials=[UNK_WORD, PAD_WORD, BOS_WORD, EOS_WORD],
+                                 specials=[UNK_WORD, PAD_WORD,
+                                           BOS_WORD, EOS_WORD],
                                  max_size=vocab_size)
 
 
