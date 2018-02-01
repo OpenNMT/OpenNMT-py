@@ -174,6 +174,27 @@ diff ${DATA_DIR}/morph/tgt.valid /tmp/trans
 echo "Succeeded" | tee -a ${LOG_FILE}
 
 
+# NMT Preprocess w/sharding + Train w/copy
+echo -n "[+] Doing NMT {preprocess w/sharding + train w/copy} test..."
+head ${DATA_DIR}/src-val.txt > /tmp/src-val.txt
+head ${DATA_DIR}/tgt-val.txt > /tmp/tgt-val.txt
+rm -rf /tmp/q*pt
+${PYTHON} preprocess.py -train_src /tmp/src-val.txt \
+		     -train_tgt /tmp/tgt-val.txt \
+		     -valid_src /tmp/src-val.txt \
+		     -valid_tgt /tmp/tgt-val.txt \
+		     -save_data /tmp/q           \
+		     -src_vocab_size 1000        \
+		     -tgt_vocab_size 1000        \
+		     -max_shard_size 1           \
+             -dynamic_dict               >> ${LOG_FILE} 2>&1
+${PYTHON} train.py -data /tmp/q -rnn_size 2 -batch_size 10 \
+		-word_vec_size 5 -report_every 5        \
+		-rnn_size 10 -epochs 1 -copy_attn       >> ${LOG_FILE} 2>&1
+[ "$?" -eq 0 ] || error_exit
+echo "Succeeded" | tee -a ${LOG_FILE}
+
+
 echo -n "[+] Doing im2text {preprocess + train} test..."
 head /tmp/im2text/src-val.txt > /tmp/im2text/src-val-head.txt
 head /tmp/im2text/tgt-val.txt > /tmp/im2text/tgt-val-head.txt

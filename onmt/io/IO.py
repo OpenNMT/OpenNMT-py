@@ -7,7 +7,7 @@ import torch
 import torchtext.data
 import torchtext.vocab
 
-from onmt.io.DatasetBase import PAD_WORD, BOS_WORD, EOS_WORD
+from onmt.io.DatasetBase import UNK_WORD, PAD_WORD, BOS_WORD, EOS_WORD
 from onmt.io.TextDataset import TextDataset
 from onmt.io.ImageDataset import ImageDataset
 from onmt.io.AudioDataset import AudioDataset
@@ -87,7 +87,8 @@ def merge_vocabs(vocabs, vocab_size=None):
     """
     merged = sum([vocab.freqs for vocab in vocabs], Counter())
     return torchtext.vocab.Vocab(merged,
-                                 specials=[PAD_WORD, BOS_WORD, EOS_WORD],
+                                 specials=[UNK_WORD, PAD_WORD,
+                                           BOS_WORD, EOS_WORD],
                                  max_size=vocab_size)
 
 
@@ -249,7 +250,7 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
 
     for path in train_dataset_files:
         dataset = torch.load(path)
-        print(" * reloading %s" % path)
+        print(" * reloading %s." % path)
         for ex in dataset.examples:
             for k in fields:
                 val = getattr(ex, k, None)

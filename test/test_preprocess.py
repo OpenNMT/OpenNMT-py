@@ -57,8 +57,8 @@ class TestData(unittest.TestCase):
 
         self.assertEqual(Counter({'c': 6, 'b': 4, 'a': 2, 'e': 2, 'f': 1}),
                          merged.freqs)
-        # 3 specicials + 2 words (since we pass 2 to merge_vocabs)
-        self.assertEqual(5, len(merged.itos))
+        # 4 specicials + 2 words (since we pass 2 to merge_vocabs)
+        self.assertEqual(6, len(merged.itos))
         self.assertTrue('b' in merged.itos)
 
 
@@ -107,13 +107,15 @@ test_databuild = [[],
                   [('share_vocab', True)],
                   [('dynamic_dict', True),
                    ('share_vocab', True)],
+                  [('dynamic_dict', True),
+                   ('max_shard_size', 500000)],
                   ]
 
 for p in test_databuild:
     _add_test(p, 'dataset_build')
 
 # Test image preprocessing
-for p in test_databuild:
+for p in copy.deepcopy(test_databuild):
     p.append(('data_type', 'img'))
     p.append(('src_dir', '/tmp/im2text/images'))
     p.append(('train_src', '/tmp/im2text/src-train-head.txt'))
@@ -123,7 +125,7 @@ for p in test_databuild:
     _add_test(p, 'dataset_build')
 
 # Test audio preprocessing
-for p in test_databuild:
+for p in copy.deepcopy(test_databuild):
     p.append(('data_type', 'audio'))
     p.append(('src_dir', '/tmp/speech/an4_dataset'))
     p.append(('train_src', '/tmp/speech/src-train-head.txt'))

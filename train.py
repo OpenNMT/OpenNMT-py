@@ -7,8 +7,6 @@ import glob
 import os
 import sys
 import random
-import re
-from itertools import chain
 
 import torch
 import torch.nn as nn
@@ -205,17 +203,24 @@ def train_model(model, fields, optim, data_type, model_opt):
 
     trunc_size = opt.truncated_decoder  # Badly named...
     shard_size = opt.max_generator_batches
+    norm_method = opt.normalization
+    grad_accum_count = opt.accum_count
 
     trainer = onmt.Trainer(model, train_loss, valid_loss, optim,
                            trunc_size, shard_size, data_type,
-                           opt.normalization, opt.accum_count)
+                           norm_method, grad_accum_count)
+
+    print('\nStart training...')
+    print(' * number of epochs: %d, starting from Epoch %d' %
+          (opt.epochs + 1 - opt.start_epoch, opt.start_epoch))
+    print(' * batch size: %d' % opt.batch_size)
 
     for epoch in range(opt.start_epoch, opt.epochs + 1):
         print('')
 
         # 1. Train for one epoch on the training set.
-        train_datasets = lazily_load_dataset("train")
-        train_iter = make_dataset_iter(train_datasets, fields, opt)
+        train_iter = make_dataset_iter(lazily_load_dataset("train"),
+                                       fields, opt)
         train_stats = trainer.train(train_iter, epoch, report_func)
         print('Train perplexity: %g' % train_stats.ppl())
         print('Train accuracy: %g' % train_stats.accuracy())
@@ -224,7 +229,6 @@ def train_model(model, fields, optim, data_type, model_opt):
         valid_iter = make_dataset_iter(lazily_load_dataset("valid"),
                                        fields, opt,
                                        is_train=False)
-
         valid_stats = trainer.validate(valid_iter)
         print('Validation perplexity: %g' % valid_stats.ppl())
         print('Validation accuracy: %g' % valid_stats.accuracy())
@@ -282,8 +286,7 @@ def lazily_load_dataset(corpus_type):
         return dataset
 
     # Sort the glob output by file name (by increasing indexes).
-    pts = sorted(glob.glob(opt.data + '.' + corpus_type + '.[0-9]*.pt'),
-                 key=lambda x: int(re.match('.*?([0-9]+).*?', x).group(1)))
+    pts = sorted(glob.glob(opt.data + '.' + corpus_type + '.[0-9]*.pt'))
     if pts:
         for pt in pts:
             yield lazy_dataset_loader(pt, corpus_type)
@@ -343,6 +346,7 @@ def build_optim(model, checkpoint):
         optim.optimizer.load_state_dict(
             checkpoint['optim'].optimizer.state_dict())
     else:
+        print('Making optimizer for training.')
         optim = onmt.Optim(
             opt.optim, opt.learning_rate, opt.max_grad_norm,
             lr_decay=opt.learning_rate_decay,
@@ -360,17 +364,6 @@ def build_optim(model, checkpoint):
 
 
 def main():
-    # Lazily load a list of train/validate dataset.
-    print("Lazily loading train/validate datasets from '%s'" % opt.data)
-    train_datasets = lazily_load_dataset("train")
-    print(' * maximum batch size: %d' % opt.batch_size)
-
-    # Peek the fisrt dataset to determine the data_type.
-    # (This will load the first dataset.)
-    first_dataset = next(train_datasets)
-    train_datasets = chain([first_dataset], train_datasets)
-    data_type = first_dataset.data_type
-
     # Load checkpoint if we resume from a previous training.
     if opt.train_from:
         print('Loading checkpoint from %s' % opt.train_from)
@@ -382,6 +375,11 @@ def main():
     else:
         checkpoint = None
         model_opt = opt
+
+    # Peek the fisrt dataset to determine the data_type.
+    # (All datasets have the same data_type).
+    first_dataset = next(lazily_load_dataset("train"))
+    data_type = first_dataset.data_type
 
     # Load fields generated from preprocess phase.
     fields = load_fields(first_dataset, data_type, checkpoint)
