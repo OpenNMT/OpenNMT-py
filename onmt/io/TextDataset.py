@@ -97,14 +97,21 @@ class TextDataset(ONMTDatasetBase):
         """
         offset = len(tgt_vocab)
         for b in range(batch.batch_size):
+            blank = []
+            fill = []
             index = batch.indices.data[b]
             src_vocab = src_vocabs[index]
             for i in range(1, len(src_vocab)):
                 sw = src_vocab.itos[i]
                 ti = tgt_vocab.stoi[sw]
                 if ti != 0:
-                    scores[:, b, ti] += scores[:, b, offset + i]
-                    scores[:, b, offset + i].fill_(1e-20)
+                    blank.append(offset + i)
+                    fill.append(ti)
+            blank = torch.LongTensor(blank).cuda()
+            fill = torch.LongTensor(fill).cuda()
+            scores[:, b].index_add_(1, fill,
+                                    scores[:, b].index_select(1, blank))
+            scores[:, b].index_fill_(1, blank, 1e-10)
         return scores
 
     @staticmethod
