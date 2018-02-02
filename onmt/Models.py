@@ -191,7 +191,7 @@ class RNNDecoderBase(nn.Module):
                  hidden_size, attn_type="general",
                  coverage_attn=False, context_gate=None,
                  copy_attn=False, dropout=0.0, embeddings=None,
-                 reuse_attn=False):
+                 reuse_copy_attn=False):
         super(RNNDecoderBase, self).__init__()
 
         # Basic attributes.
@@ -223,13 +223,13 @@ class RNNDecoderBase(nn.Module):
 
         # Set up a separated copy attention layer, if needed.
         self._copy = False
-        if copy_attn and not reuse_attn:
+        if copy_attn and not reuse_copy_attn:
             self.copy_attn = onmt.modules.GlobalAttention(
                 hidden_size, attn_type=attn_type
             )
         if copy_attn:
             self._copy = True
-        self._reuse_attn = reuse_attn
+        self._reuse_copy_attn = reuse_copy_attn
 
     def forward(self, input, context, state, context_lengths=None):
         """
@@ -483,7 +483,7 @@ class InputFeedRNNDecoder(RNNDecoderBase):
                 attns["coverage"] += [coverage]
 
             # Run the forward pass of the copy attention layer.
-            if self._copy and not self._reuse_attn:
+            if self._copy and not self._reuse_copy_attn:
                 _, copy_attn = self.copy_attn(output,
                                               context.transpose(0, 1))
                 attns["copy"] += [copy_attn]
