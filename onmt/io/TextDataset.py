@@ -107,8 +107,8 @@ class TextDataset(ONMTDatasetBase):
                 if ti != 0:
                     blank.append(offset + i)
                     fill.append(ti)
-            blank = torch.cuda.LongTensor(blank)
-            fill = torch.cuda.LongTensor(fill)
+            blank = torch.Tensor(blank).type_as(batch.indices.data)
+            fill = torch.Tensor(fill).type_as(batch.indices.data)
             scores[:, b].index_add_(1, fill,
                                     scores[:, b].index_select(1, blank))
             scores[:, b].index_fill_(1, blank, 1e-10)
