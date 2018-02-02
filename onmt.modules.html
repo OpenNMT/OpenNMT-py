@@ -397,7 +397,7 @@ and required by <a class="reference internal" href="onmt.html#onmt.Models.NMTMod
 <h2>Decoders<a class="headerlink" href="#decoders" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.modules.RNNDecoderBase">
-<em class="property">class </em><code class="descclassname">onmt.modules.</code><code class="descname">RNNDecoderBase</code><span class="sig-paren">(</span><em>rnn_type</em>, <em>bidirectional_encoder</em>, <em>num_layers</em>, <em>hidden_size</em>, <em>attn_type='general'</em>, <em>coverage_attn=False</em>, <em>context_gate=None</em>, <em>copy_attn=False</em>, <em>dropout=0.0</em>, <em>embeddings=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.modules.RNNDecoderBase" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.modules.</code><code class="descname">RNNDecoderBase</code><span class="sig-paren">(</span><em>rnn_type</em>, <em>bidirectional_encoder</em>, <em>num_layers</em>, <em>hidden_size</em>, <em>attn_type='general'</em>, <em>coverage_attn=False</em>, <em>context_gate=None</em>, <em>copy_attn=False</em>, <em>dropout=0.0</em>, <em>embeddings=None</em>, <em>reuse_copy_attn=False</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.modules.RNNDecoderBase" title="Permalink to this definition">¶</a></dt>
 <dd><p>Base recurrent attention-based decoder class.
 Specifies the interface used by different decoder types
 and required by <a class="reference internal" href="onmt.html#onmt.Models.NMTModel" title="onmt.Models.NMTModel"><code class="xref py py-obj docutils literal"><span class="pre">onmt.Models.NMTModel</span></code></a>.</p>
@@ -497,7 +497,7 @@ and required by <a class="reference internal" href="onmt.html#onmt.Models.NMTMod
 
 <dl class="class">
 <dt id="onmt.modules.StdRNNDecoder">
-<em class="property">class </em><code class="descclassname">onmt.modules.</code><code class="descname">StdRNNDecoder</code><span class="sig-paren">(</span><em>rnn_type</em>, <em>bidirectional_encoder</em>, <em>num_layers</em>, <em>hidden_size</em>, <em>attn_type='general'</em>, <em>coverage_attn=False</em>, <em>context_gate=None</em>, <em>copy_attn=False</em>, <em>dropout=0.0</em>, <em>embeddings=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.modules.StdRNNDecoder" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.modules.</code><code class="descname">StdRNNDecoder</code><span class="sig-paren">(</span><em>rnn_type</em>, <em>bidirectional_encoder</em>, <em>num_layers</em>, <em>hidden_size</em>, <em>attn_type='general'</em>, <em>coverage_attn=False</em>, <em>context_gate=None</em>, <em>copy_attn=False</em>, <em>dropout=0.0</em>, <em>embeddings=None</em>, <em>reuse_copy_attn=False</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.modules.StdRNNDecoder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Standard fully batched RNN decoder with attention.
 Faster implementation, uses CuDNN for implementation.
 See <a class="reference internal" href="#onmt.modules.RNNDecoderBase" title="onmt.modules.RNNDecoderBase"><code class="xref py py-obj docutils literal"><span class="pre">RNNDecoderBase</span></code></a> for options.</p>
@@ -510,7 +510,7 @@ or <cite>copy_attn</cite> support.</p>
 
 <dl class="class">
 <dt id="onmt.modules.InputFeedRNNDecoder">
-<em class="property">class </em><code class="descclassname">onmt.modules.</code><code class="descname">InputFeedRNNDecoder</code><span class="sig-paren">(</span><em>rnn_type</em>, <em>bidirectional_encoder</em>, <em>num_layers</em>, <em>hidden_size</em>, <em>attn_type='general'</em>, <em>coverage_attn=False</em>, <em>context_gate=None</em>, <em>copy_attn=False</em>, <em>dropout=0.0</em>, <em>embeddings=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.modules.InputFeedRNNDecoder" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.modules.</code><code class="descname">InputFeedRNNDecoder</code><span class="sig-paren">(</span><em>rnn_type</em>, <em>bidirectional_encoder</em>, <em>num_layers</em>, <em>hidden_size</em>, <em>attn_type='general'</em>, <em>coverage_attn=False</em>, <em>context_gate=None</em>, <em>copy_attn=False</em>, <em>dropout=0.0</em>, <em>embeddings=None</em>, <em>reuse_copy_attn=False</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.modules.InputFeedRNNDecoder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Input feeding based decoder. See <a class="reference internal" href="#onmt.modules.RNNDecoderBase" title="onmt.modules.RNNDecoderBase"><code class="xref py py-obj docutils literal"><span class="pre">RNNDecoderBase</span></code></a> for options.</p>
 <p>Based around the input feeding approach from
 “Effective Approaches to Attention-based Neural Machine Translation”
