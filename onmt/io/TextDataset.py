@@ -10,7 +10,8 @@ import torch
 import torchtext
 
 from onmt.Utils import aeq
-from onmt.io.DatasetBase import ONMTDatasetBase, PAD_WORD, BOS_WORD, EOS_WORD
+from onmt.io.DatasetBase import (ONMTDatasetBase, UNK_WORD,
+                                 PAD_WORD, BOS_WORD, EOS_WORD)
 
 
 class TextDataset(ONMTDatasetBase):
@@ -251,7 +252,8 @@ class TextDataset(ONMTDatasetBase):
     def _dynamic_dict(self, examples_iter):
         for example in examples_iter:
             src = example["src"]
-            src_vocab = torchtext.vocab.Vocab(Counter(src))
+            src_vocab = torchtext.vocab.Vocab(Counter(src),
+                                              specials=[UNK_WORD, PAD_WORD])
             self.src_vocabs.append(src_vocab)
             # Mapping source tokens to indices in the dynamic dict.
             src_map = torch.LongTensor([src_vocab.stoi[w] for w in src])
@@ -260,7 +262,7 @@ class TextDataset(ONMTDatasetBase):
             if "tgt" in example:
                 tgt = example["tgt"]
                 mask = torch.LongTensor(
-                        [0] + [src_vocab.stoi[w] for w in tgt] + [0])
+                    [0] + [src_vocab.stoi[w] for w in tgt] + [0])
                 example["alignment"] = mask
             yield example
 
