@@ -44,7 +44,7 @@
 ./_static/fonts/fontawesome-webfont.svg
 ./_static/fonts/fontawesome-webfont.ttf
 ./_static/fonts/fontawesome-webfont.woff
-./_static/jquery-3.1.0.js
+./_static/jquery-3.2.1.js
 ./_static/jquery.js
 ./_static/js/modernizr.min.js
 ./_static/js/theme.js
