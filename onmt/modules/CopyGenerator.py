@@ -111,23 +111,31 @@ class CopyGeneratorCriterion(object):
         self.pad = pad
 
     def __call__(self, scores, align, target):
-        align = align.view(-1)
+        # Compute unks in align and target for readability
+        align_unk = align.eq(0).float()
+        align_not_unk = align.ne(0).float()
+        target_unk = target.eq(0).float()
+        target_not_unk = target.ne(0).float()
 
-        # Copy prob.
-        out = scores.gather(1, align.view(-1, 1) + self.offset) \
-                    .view(-1).mul(align.ne(0).float())
+        # Copy probability of tokens in source
+        out = scores.gather(1, align.view(-1, 1) + self.offset).view(-1)
+        # Set scores for unk to 0 and add eps
+        out = out.mul(align_not_unk) + self.eps
+        # Get scores for tokens in target
         tmp = scores.gather(1, target.view(-1, 1)).view(-1)
 
         # Regular prob (no unks and unks that can't be copied)
         if not self.force_copy:
-            out = out + self.eps + tmp.mul(target.ne(0).float()) + \
-                  tmp.mul(align.eq(0).float()).mul(target.eq(0).float())
+            # Add score for non-unks in target
+            out = out + tmp.mul(target_not_unk)
+            # Add score for when word is unk in both align and tgt
+            out = out + tmp.mul(align_unk).mul(target_unk)
         else:
-            # Forced copy.
-            out = out + self.eps + tmp.mul(align.eq(0).float())
+            # Forced copy. Add only probability for not-copied tokens
+            out = out + tmp.mul(align_unk)
 
         # Drop padding.
-        loss = -out.log().mul(target.ne(self.pad).float()).sum()
+        loss = -out.log().mul(target.ne(self.pad).float())
         return loss
 
 
@@ -175,9 +183,7 @@ class CopyGeneratorLossCompute(onmt.Loss.LossComputeBase):
         scores = self.generator(self._bottle(output),
                                 self._bottle(copy_attn),
                                 batch.src_map)
-
         loss = self.criterion(scores, align, target)
-
         scores_data = scores.data.clone()
         scores_data = onmt.io.TextDataset.collapse_copy_scores(
                 self._unbottle(scores_data, batch.batch_size),
@@ -192,9 +198,17 @@ class CopyGeneratorLossCompute(onmt.Loss.LossComputeBase):
         correct_copy = (align.data + len(self.tgt_vocab)) * correct_mask.long()
         target_data = target_data + correct_copy
 
-        # Coverage loss term.
-        loss_data = loss.data.clone()
-
+        # Compute sum of perplexities for stats
+        loss_data = loss.sum().data.clone()
         stats = self._stats(loss_data, scores_data, target_data)
+
+        # Compute Loss as NLL divided by seq length
+        # Compute Sequence Lengths
+        pad_ix = batch.dataset.fields['tgt'].vocab.stoi[onmt.io.PAD_WORD]
+        tgt_lens = batch.tgt.ne(pad_ix).sum(0).float()
+        # Compute Total Loss per sequence in batch
+        loss = loss.view(-1, batch.batch_size).sum(0)
+        # Divide by length of each sequence and sum
+        loss = torch.div(loss, tgt_lens).sum()
 
         return loss, stats
