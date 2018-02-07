@@ -70,6 +70,10 @@ if opt.exp_host != "":
         cc.remove_experiment(opt.exp)
     experiment = cc.create_experiment(opt.exp)
 
+if opt.tensorboard:
+    from tensorboardX import SummaryWriter
+    writer = SummaryWriter(opt.tensorboard_log_dir, comment="Onmt")
+
 
 def report_func(epoch, batch, num_batches,
                 start_time, lr, report_stats):
@@ -91,6 +95,8 @@ def report_func(epoch, batch, num_batches,
         report_stats.output(epoch, batch + 1, num_batches, start_time)
         if opt.exp_host:
             report_stats.log("progress", experiment, lr)
+        if opt.tensorboard:
+            report_stats.log_tensorboard("progress", writer, lr, epoch)
         report_stats = onmt.Statistics()
 
     return report_stats
@@ -237,6 +243,9 @@ def train_model(model, fields, optim, data_type, model_opt):
         if opt.exp_host:
             train_stats.log("train", experiment, optim.lr)
             valid_stats.log("valid", experiment, optim.lr)
+        if opt.tensorboard:
+            train_stats.log_tensorboard("train", writer, optim.lr, epoch)
+            train_stats.log_tensorboard("valid", writer, optim.lr, epoch)
 
         # 4. Update the learning rate
         trainer.epoch_step(valid_stats.ppl(), epoch)
@@ -397,6 +406,10 @@ def main():
 
     # Do training.
     train_model(model, fields, optim, data_type, model_opt)
+
+    # If using tensorboard for logging, close the writer after training.
+    if opt.tensorboard:
+        writer.close()
 
 
 if __name__ == "__main__":

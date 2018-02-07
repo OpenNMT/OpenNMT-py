@@ -77,6 +77,16 @@ class Statistics(object):
         experiment.add_scalar_value(prefix + "_tgtper",  self.n_words / t)
         experiment.add_scalar_value(prefix + "_lr", lr)
 
+    def log_tensorboard(self, prefix, writer, lr, epoch):
+        t = self.elapsed_time()
+        values = {
+            "ppl": self.ppl(),
+            "accuracy": self.accuracy(),
+            "tgtper": self.n_words / t,
+            "lr": lr,
+        }
+        writer.add_scalars(prefix, values, epoch)
+
 
 class Trainer(object):
     """
@@ -302,7 +312,11 @@ class Trainer(object):
 
                 # If truncated, don't backprop fully.
                 if dec_state is not None:
-                    dec_state.detach()
+                    # Allow pytorch 0.4 compatibility
+                    if int(torch.__version__.split(".")[1]) < 4:
+                        dec_state.detach()
+                    else:
+                        dec_state = dec_state.detach()
 
         if self.grad_accum_count > 1:
             self.optim.step()
