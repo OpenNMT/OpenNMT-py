@@ -95,7 +95,7 @@ class LossComputeBase(nn.Module):
         range in the decoder output sequence to back propagate in.
         Range is from `(cur_trunc, cur_trunc + trunc_size)`.
 
-        Note harding is an exact efficiency trick to relieve memory
+        Note sharding is an exact efficiency trick to relieve memory
         required for the generation buffers. Truncation is an
         approximate efficiency trick to relieve the memory required
         in the RNN buffers.
@@ -109,6 +109,9 @@ class LossComputeBase(nn.Module):
           cur_trunc (int) : starting position of truncation window
           trunc_size (int) : length of truncation window
           shard_size (int) : maximum number of examples in a shard
+          normalization (int) : Loss is divided by this number
+          tgt_lens (:obj: `LongTensor`) :
+              lengths of the targets in batch [batch_size]
 
         Returns:
             :obj:`onmt.Statistics`: validation loss statistics
@@ -117,10 +120,8 @@ class LossComputeBase(nn.Module):
         batch_stats = onmt.Statistics()
         range_ = (cur_trunc, cur_trunc + trunc_size)
         shard_state = self._make_shard_state(batch, output, range_, attns)
-
         for shard in shards(shard_state, shard_size):
             loss, stats = self._compute_loss(batch, **shard)
-
             loss.div(normalization).backward()
             batch_stats.update(stats)
 
