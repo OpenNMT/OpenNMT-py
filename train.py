@@ -185,7 +185,8 @@ def make_loss_compute(model, tgt_vocab, opt):
     """
     if opt.copy_attn:
         compute = onmt.modules.CopyGeneratorLossCompute(
-            model.generator, tgt_vocab, opt.copy_attn_force)
+            model.generator, tgt_vocab, opt.copy_attn_force,
+            opt.copy_loss_by_seqlength)
     else:
         compute = onmt.Loss.NMTLossCompute(
             model.generator, tgt_vocab,

@@ -110,6 +110,8 @@ def model_opts(parser):
                        help='When available, train to copy.')
     group.add_argument('-reuse_copy_attn', action="store_true",
                        help="Reuse standard attention for copy")
+    group.add_argument('-copy_loss_by_seqlength', action="store_true",
+                       help="Divide copy loss by length of sequence")
     group.add_argument('-coverage_attn', action="store_true",
                        help='Train a coverage attention layer.')
     group.add_argument('-lambda_coverage', type=float, default=1,

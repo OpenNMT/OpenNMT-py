@@ -144,7 +144,8 @@ class CopyGeneratorLossCompute(onmt.Loss.LossComputeBase):
     Copy Generator Loss Computation.
     """
     def __init__(self, generator, tgt_vocab,
-                 force_copy, eps=1e-20):
+                 force_copy, normalize_by_length,
+                 eps=1e-20):
         super(CopyGeneratorLossCompute, self).__init__(
             generator, tgt_vocab)
 
@@ -152,6 +153,7 @@ class CopyGeneratorLossCompute(onmt.Loss.LossComputeBase):
         # the setting of cur_dataset.
         self.cur_dataset = None
         self.force_copy = force_copy
+        self.normalize_by_length = normalize_by_length
         self.criterion = CopyGeneratorCriterion(len(tgt_vocab), force_copy,
                                                 self.padding_idx)
 
@@ -202,13 +204,16 @@ class CopyGeneratorLossCompute(onmt.Loss.LossComputeBase):
         loss_data = loss.sum().data.clone()
         stats = self._stats(loss_data, scores_data, target_data)
 
-        # Compute Loss as NLL divided by seq length
-        # Compute Sequence Lengths
-        pad_ix = batch.dataset.fields['tgt'].vocab.stoi[onmt.io.PAD_WORD]
-        tgt_lens = batch.tgt.ne(pad_ix).sum(0).float()
-        # Compute Total Loss per sequence in batch
-        loss = loss.view(-1, batch.batch_size).sum(0)
-        # Divide by length of each sequence and sum
-        loss = torch.div(loss, tgt_lens).sum()
+        if self.normalize_by_length:
+            # Compute Loss as NLL divided by seq length
+            # Compute Sequence Lengths
+            pad_ix = batch.dataset.fields['tgt'].vocab.stoi[onmt.io.PAD_WORD]
+            tgt_lens = batch.tgt.ne(pad_ix).sum(0).float()
+            # Compute Total Loss per sequence in batch
+            loss = loss.view(-1, batch.batch_size).sum(0)
+            # Divide by length of each sequence and sum
+            loss = torch.div(loss, tgt_lens).sum()
+        else:
+            loss = loss.sum()
 
         return loss, stats
