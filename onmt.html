@@ -422,7 +422,7 @@ with shards and optionally truncation for memory efficiency.</p>
 <p>Also supports truncated BPTT for long sequences by taking a
 range in the decoder output sequence to back propagate in.
 Range is from <cite>(cur_trunc, cur_trunc + trunc_size)</cite>.</p>
-<p>Note harding is an exact efficiency trick to relieve memory
+<p>Note sharding is an exact efficiency trick to relieve memory
 required for the generation buffers. Truncation is an
 approximate efficiency trick to relieve the memory required
 in the RNN buffers.</p>
@@ -438,6 +438,7 @@ in the RNN buffers.</p>
 <li><strong>cur_trunc</strong> (<em>int</em>) – starting position of truncation window</li>
 <li><strong>trunc_size</strong> (<em>int</em>) – length of truncation window</li>
 <li><strong>shard_size</strong> (<em>int</em>) – maximum number of examples in a shard</li>
+<li><strong>normalization</strong> (<em>int</em>) – Loss is divided by this number</li>
 </ul>
 </td>
 </tr>
