@@ -107,3 +107,6 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+# Tensorboard
+runs/

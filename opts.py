@@ -347,6 +347,12 @@ def train_opts(parser):
                        help="Send logs to this crayon server.")
     group.add_argument('-exp', type=str, default="",
                        help="Name of the experiment for logging.")
+    # Use TensorboardX for visualization during training
+    group.add_argument('-tensorboard', action="store_true",
+                       help="""Use tensorboardX for visualization during training.
+                       Must have the library tensorboardX.""")
+    group.add_argument("-tensorboard_log_dir", type=str, default="runs",
+                       help="Log directory for Tensorboard.")
 
     group = parser.add_argument_group('Speech')
     # Options most relevant to speech

@@ -77,6 +77,16 @@ class Statistics(object):
         experiment.add_scalar_value(prefix + "_tgtper",  self.n_words / t)
         experiment.add_scalar_value(prefix + "_lr", lr)
 
+    def log_tensorboard(self, prefix, writer, lr, epoch):
+        t = self.elapsed_time()
+        values = {
+            "ppl": self.ppl(),
+            "accuracy": self.accuracy(),
+            "tgtper": self.n_words / t,
+            "lr": lr,
+        }
+        writer.add_scalars(prefix, values, epoch)
+
 
 class Trainer(object):
     """
