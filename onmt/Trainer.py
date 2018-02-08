@@ -312,11 +312,7 @@ class Trainer(object):
 
                 # If truncated, don't backprop fully.
                 if dec_state is not None:
-                    # Allow pytorch 0.4 compatibility
-                    if int(torch.__version__.split(".")[1]) < 4:
-                        dec_state.detach()
-                    else:
-                        dec_state = dec_state.detach()
+                    dec_state.detach()
 
         if self.grad_accum_count > 1:
             self.optim.step()
