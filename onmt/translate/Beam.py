@@ -85,7 +85,9 @@ class Beam(object):
         if len(self.prev_ks) > 0:
             beam_scores = word_probs + \
                 self.scores.unsqueeze(1).expand_as(word_probs)
-
+            # normalize by length (made redundant by code below)
+            # if cur_len > 1:
+            #    beam_scores = beam_scores * (cur_len-1) / cur_len
             # Don't let EOS have children.
             for i in range(self.next_ys[-1].size(0)):
                 if self.next_ys[-1][i] == self._eos:
@@ -105,22 +107,20 @@ class Beam(object):
         self.prev_ks.append(prev_k)
         self.next_ys.append((best_scores_id - prev_k * num_words))
         self.attn.append(attn_out.index_select(0, prev_k))
-
-        if self.global_scorer is not None:
-            self.global_scorer.update_global_state(self)
+        self.global_scorer.update_global_state(self)
 
         for i in range(self.next_ys[-1].size(0)):
             if self.next_ys[-1][i] == self._eos:
-                s = self.scores[i]
+                s = self.scores[i]/(len(self.next_ys))
                 if self.global_scorer is not None:
                     global_scores = self.global_scorer.score(self, self.scores)
-                    s = global_scores[i]
+                    s = global_scores[i]/(len(self.next_ys))
                 self.finished.append((s, len(self.next_ys) - 1, i))
 
         # End condition is when top-of-beam is EOS and no global score.
-        if self.next_ys[-1][0] == self._eos:
+        # if self.next_ys[-1][0] == self._eos:
             # self.all_scores.append(self.scores)
-            self.eos_top = True
+            # self.eos_top = True
 
     def done(self):
         return self.eos_top and len(self.finished) >= self.n_best
@@ -130,10 +130,8 @@ class Beam(object):
             i = 0
             # Add from beam until we have minimum outputs.
             while len(self.finished) < minimum:
-                s = self.scores[i]
-                if self.global_scorer is not None:
-                    global_scores = self.global_scorer.score(self, self.scores)
-                    s = global_scores[i]
+                global_scores = self.global_scorer.score(self, self.scores)
+                s = global_scores[i]
                 self.finished.append((s, len(self.next_ys) - 1, i))
 
         self.finished.sort(key=lambda a: -a[0])
@@ -165,6 +163,7 @@ class GNMTGlobalScorer(object):
     def __init__(self, alpha, beta):
         self.alpha = alpha
         self.beta = beta
+        self.coverage_total = 0.0
 
     def score(self, beam, logprobs):
         "Additional term add to log probability"
@@ -178,6 +177,8 @@ class GNMTGlobalScorer(object):
         "Keeps the coverage vector as sum of attens"
         if len(beam.prev_ks) == 1:
             beam.global_state["coverage"] = beam.attn[-1]
+            self.coverage_total = beam.attn[-1].sum(1)
         else:
+            self.coverage_total += torch.min(beam.attn[-1], beam.global_state['coverage']).sum()
             beam.global_state["coverage"] = beam.global_state["coverage"] \
                 .index_select(0, beam.prev_ks[-1]).add(beam.attn[-1])
