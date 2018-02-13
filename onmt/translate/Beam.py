@@ -163,12 +163,12 @@ class GNMTGlobalScorer(object):
     def __init__(self, alpha, beta):
         self.alpha = alpha
         self.beta = beta
-        self.coverage_total = 0.0
 
     def score(self, beam, logprobs):
         "Additional term add to log probability"
         cov = beam.global_state["coverage"]
-        pen = self.beta * torch.min(cov, cov.clone().fill_(1.0)).log().sum(1)
+        # pen = self.beta * torch.min(cov, cov.clone().fill_(1.0)).log().sum(1)
+        pen = self.beta * self.cov_total / len(beam.next_ys)
         l_term = (((5 + len(beam.next_ys)) ** self.alpha) /
                   ((5 + 1) ** self.alpha))
         return (logprobs / l_term) + pen
@@ -177,8 +177,9 @@ class GNMTGlobalScorer(object):
         "Keeps the coverage vector as sum of attens"
         if len(beam.prev_ks) == 1:
             beam.global_state["coverage"] = beam.attn[-1]
-            self.coverage_total = beam.attn[-1].sum(1)
+            self.cov_total = beam.attn[-1].sum(1)
         else:
-            self.coverage_total += torch.min(beam.attn[-1], beam.global_state['coverage']).sum()
+            self.cov_total += torch.min(beam.attn[-1],
+                                        beam.global_state['coverage']).sum(1)
             beam.global_state["coverage"] = beam.global_state["coverage"] \
                 .index_select(0, beam.prev_ks[-1]).add(beam.attn[-1])
