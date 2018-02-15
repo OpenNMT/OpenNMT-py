@@ -141,7 +141,7 @@ class Translator(object):
                 out = self.model.generator.forward(dec_out).data
                 out = unbottle(out)
                 # beam x tgt_vocab
-                beam_attn = unbottle(attn["std"]).data[:, j, :context_lengths[j]]
+                beam_attn = unbottle(attn["std"])
             else:
                 out = self.model.generator.forward(dec_out,
                                                    attn["copy"].squeeze(0),
@@ -152,10 +152,11 @@ class Translator(object):
                     batch, self.fields["tgt"].vocab, data.src_vocabs)
                 # beam x tgt_vocab
                 out = out.log()
-                beam_attn = unbottle(attn["copy"]).data[:, j, :context_lengths[j]]
+                beam_attn = unbottle(attn["copy"])
             # (c) Advance each beam.
             for j, b in enumerate(beam):
-                b.advance(out[:, j], beam_attn)
+                b.advance(out[:, j],
+                          beam_attn.data[:, j, :context_lengths[j]])
                 dec_states.beam_update(j, b.get_current_origin(), beam_size)
 
         # (4) Extract sentences from beam.

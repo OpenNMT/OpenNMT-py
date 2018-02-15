@@ -168,7 +168,8 @@ class GNMTGlobalScorer(object):
         "Additional term add to log probability"
         cov = beam.global_state["coverage"]
         # pen = self.beta * torch.min(cov, cov.clone().fill_(1.0)).log().sum(1)
-        pen = self.beta * self.cov_total / len(beam.next_ys)
+        pen = self.beta * torch.max(cov, cov.clone().fill_(1.0)).sum(1) / len(beam.next_ys)
+        # pen = self.beta * self.cov_total / len(beam.next_ys)
         l_term = (((5 + len(beam.next_ys)) ** self.alpha) /
                   ((5 + 1) ** self.alpha))
         return (logprobs / l_term) + pen
