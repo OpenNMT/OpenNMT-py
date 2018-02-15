@@ -64,7 +64,7 @@ class CopyGenerator(nn.Module):
         self.linear_copy = nn.Linear(input_size, 1)
         self.tgt_dict = tgt_dict
 
-    def forward(self, hidden, attn, src_map):
+    def forward(self, hidden, attn, src_map, copy):
         """
         Compute a distribution over the target dictionary
         extended by the dynamic dictionary implied by compying
@@ -91,8 +91,7 @@ class CopyGenerator(nn.Module):
         prob = F.softmax(logits)
 
         # Probability of copying p(z=1) batch.
-        copy = F.sigmoid(self.linear_copy(hidden))
-
+        #copy = F.sigmoid(self.linear_copy(hidden))
         # Probibility of not copying: p_{word}(w) * (1 - p(z))
         out_prob = torch.mul(prob,  1 - copy.expand_as(prob))
         mul_attn = torch.mul(attn, copy.expand_as(attn))
@@ -167,10 +166,11 @@ class CopyGeneratorLossCompute(onmt.Loss.LossComputeBase):
             "output": output,
             "target": batch.tgt[range_[0] + 1: range_[1]],
             "copy_attn": attns.get("copy"),
-            "align": batch.alignment[range_[0] + 1: range_[1]]
+            "align": batch.alignment[range_[0] + 1: range_[1]],
+            "copy_prob": attns.get("pgen")
         }
 
-    def _compute_loss(self, batch, output, target, copy_attn, align):
+    def _compute_loss(self, batch, output, target, copy_attn, align, copy_prob):
         """
         Compute the loss. The args must match self._make_shard_state().
         Args:
@@ -184,7 +184,8 @@ class CopyGeneratorLossCompute(onmt.Loss.LossComputeBase):
         align = align.view(-1)
         scores = self.generator(self._bottle(output),
                                 self._bottle(copy_attn),
-                                batch.src_map)
+                                batch.src_map,
+                                self._bottle(copy_prob))
         loss = self.criterion(scores, align, target)
         scores_data = scores.data.clone()
         scores_data = onmt.io.TextDataset.collapse_copy_scores(
