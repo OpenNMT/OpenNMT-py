@@ -1,6 +1,8 @@
 from __future__ import division
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+
 from torch.autograd import Variable
 from torch.nn.utils.rnn import pack_padded_sequence as pack
 from torch.nn.utils.rnn import pad_packed_sequence as unpack
@@ -92,7 +94,8 @@ class RNNEncoder(EncoderBase):
        embeddings (:obj:`onmt.modules.Embeddings`): embedding module to use
     """
     def __init__(self, rnn_type, bidirectional, num_layers,
-                 hidden_size, dropout=0.0, embeddings=None):
+                 hidden_size, dropout=0.0, embeddings=None,
+                 use_bridge=False):
         super(RNNEncoder, self).__init__()
         assert embeddings is not None
 
@@ -120,6 +123,13 @@ class RNNEncoder(EncoderBase):
                     dropout=dropout,
                     bidirectional=bidirectional)
 
+        # Initialize the bridge layer
+        self.use_bridge = use_bridge
+        if self.use_bridge:
+            self._initialize_bridge(rnn_type,
+                                    hidden_size,
+                                    num_layers)
+
     def forward(self, input, lengths=None, hidden=None):
         "See :obj:`EncoderBase.forward()`"
         self._check_args(input, lengths, hidden)
@@ -133,12 +143,49 @@ class RNNEncoder(EncoderBase):
             lengths = lengths.view(-1).tolist()
             packed_emb = pack(emb, lengths)
 
-        outputs, hidden_t = self.rnn(packed_emb, hidden)
+        outputs, encoder_final = self.rnn(packed_emb, hidden)
 
         if lengths is not None and not self.no_pack_padded_seq:
             outputs = unpack(outputs)[0]
 
-        return hidden_t, outputs
+        if self.use_bridge:
+            encoder_final = self._bridge(encoder_final)
+        return outputs, encoder_final
+
+    def _initialize_bridge(self, rnn_type,
+                           hidden_size,
+                           num_layers):
+
+        # LSTM has hidden and cell state, other only one
+        number_of_states = 2 if rnn_type == "LSTM" else 1
+        # Total number of states
+        self.total_hidden_dim = hidden_size * num_layers
+
+        # Build a linear layer for each
+        self.bridge = [nn.Linear(self.total_hidden_dim,
+                                 self.total_hidden_dim,
+                                 bias=True)
+                       for i in range(number_of_states)]
+
+    def _bottle_hidden(self, linear, states):
+        """
+        Transform from 3D to 2D, apply linear and return initial size
+        """
+        size = states.size()
+        result = linear(states.view(-1, self.total_hidden_dim))
+        return F.relu(result).view(size)
+
+    def _bridge(self, hidden):
+        """
+        Forward hidden state through bridge
+        """
+
+        if isinstance(hidden, tuple):  # LSTM
+            outs = tuple([self._bottle_hidden(layer, hidden[ix])
+                          for ix, layer in enumerate(self.bridge)])
+        else:
+            outs = self._bottle_hidden(self.bridge[0], hidden)
+        return outs
 
 
 class RNNDecoderBase(nn.Module):
@@ -549,8 +596,10 @@ class NMTModel(nn.Module):
                  * final decoder state
         """
         tgt = tgt[:-1]  # exclude last target from inputs
-        enc_hidden, context = self.encoder(src, lengths)
-        enc_state = self.decoder.init_decoder_state(src, context, enc_hidden)
+        context, encoder_final = self.encoder(src, lengths)
+        enc_state = self.decoder.init_decoder_state(src,
+                                                    context,
+                                                    encoder_final)
         out, dec_state, attns = self.decoder(tgt, context,
                                              enc_state if dec_state is None
                                              else dec_state,
