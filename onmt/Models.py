@@ -279,7 +279,7 @@ class RNNDecoderBase(nn.Module):
 
         return decoder_outputs, state, attns
 
-    def init_decoder_state(self, encoder_final):
+    def init_decoder_state(self, src, memory_bank, encoder_final):
         def _fix_enc_hidden(h):
             # The encoder hidden is  (layers*directions) x batch x dim.
             # We need to convert it to layers x batch x (directions*dim).
@@ -453,7 +453,7 @@ class InputFeedRNNDecoder(RNNDecoderBase):
                 # TODO: context gate should be employed
                 # instead of second RNN transform.
                 decoder_output = self.context_gate(
-                    emb_t, rnn_output, decoder_output
+                    decoder_input, rnn_output, decoder_output
                 )
             decoder_output = self.dropout(decoder_output)
 
@@ -534,7 +534,8 @@ class NMTModel(nn.Module):
         """
         tgt = tgt[:-1]  # exclude last target from inputs
         enc_final, memory_bank = self.encoder(src, lengths)
-        enc_state = self.decoder.init_decoder_state(enc_final)
+        enc_state = \
+            self.decoder.init_decoder_state(src, memory_bank, enc_final)
         decoder_outputs, dec_state, attns = \
             self.decoder(tgt, memory_bank,
                          enc_state if dec_state is None
