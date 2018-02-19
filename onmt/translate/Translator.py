@@ -144,7 +144,8 @@ class Translator(object):
             else:
                 out = self.model.generator.forward(dec_out,
                                                    attn["copy"].squeeze(0),
-                                                   src_map)
+                                                   src_map,
+                                                   attn["pgen"].squeeze(0))
                 # beam x (tgt_vocab + extra_vocab)
                 out = data.collapse_copy_scores(
                     unbottle(out.data),
