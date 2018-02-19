@@ -176,10 +176,10 @@
 <span id="faq"></span><h1>FAQ<a class="headerlink" href="#faq" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="how-do-i-use-pretrained-embeddings-e-g-glove">
 <span id="how-do-i-use-pretrained-embeddings-e-g-glove"></span><h2>How do I use Pretrained embeddings (e.g. GloVe)?<a class="headerlink" href="#how-do-i-use-pretrained-embeddings-e-g-glove" title="Permalink to this headline">¶</a></h2>
-<p>Using vocabularies from OpenNMT-py preprocessing outputs, <code class="docutils literal"><span class="pre">embeddings_to_torch.py</span></code> to generate encoder and decoder embeddings initialized with GloVe’s values.</p>
+<p>Using vocabularies from OpenNMT-py preprocessing outputs, <code class="docutils literal notranslate"><span class="pre">embeddings_to_torch.py</span></code> to generate encoder and decoder embeddings initialized with GloVe’s values.</p>
 <p>the script is a slightly modified version of ylhsieh’s one2.</p>
 <p>Usage:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">embeddings_to_torch</span><span class="o">.</span><span class="n">py</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="o">-</span><span class="n">emb_file</span> <span class="n">EMB_FILE</span> <span class="o">-</span><span class="n">output_file</span> <span class="n">OUTPUT_FILE</span> <span class="o">-</span><span class="n">dict_file</span> <span class="n">DICT_FILE</span> <span class="p">[</span><span class="o">-</span><span class="n">verbose</span><span class="p">]</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">embeddings_to_torch</span><span class="o">.</span><span class="n">py</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="o">-</span><span class="n">emb_file</span> <span class="n">EMB_FILE</span> <span class="o">-</span><span class="n">output_file</span> <span class="n">OUTPUT_FILE</span> <span class="o">-</span><span class="n">dict_file</span> <span class="n">DICT_FILE</span> <span class="p">[</span><span class="o">-</span><span class="n">verbose</span><span class="p">]</span>
 
 <span class="n">emb_file</span><span class="p">:</span> <span class="n">GloVe</span> <span class="n">like</span> <span class="n">embedding</span> <span class="n">file</span> <span class="n">i</span><span class="o">.</span><span class="n">e</span><span class="o">.</span> <span class="n">CSV</span> <span class="p">[</span><span class="n">word</span><span class="p">]</span> <span class="p">[</span><span class="n">dim1</span><span class="p">]</span> <span class="o">...</span> <span class="p">[</span><span class="n">dim_d</span><span class="p">]</span>
 
@@ -192,7 +192,7 @@
 <ol class="simple">
 <li>get GloVe files:</li>
 </ol>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">mkdir</span> <span class="s2">&quot;glove_dir&quot;</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">mkdir</span> <span class="s2">&quot;glove_dir&quot;</span>
 <span class="n">wget</span> <span class="n">http</span><span class="p">:</span><span class="o">//</span><span class="n">nlp</span><span class="o">.</span><span class="n">stanford</span><span class="o">.</span><span class="n">edu</span><span class="o">/</span><span class="n">data</span><span class="o">/</span><span class="n">glove</span><span class="o">.</span><span class="mi">6</span><span class="n">B</span><span class="o">.</span><span class="n">zip</span>
 <span class="n">unzip</span> <span class="n">glove</span><span class="o">.</span><span class="mi">6</span><span class="n">B</span><span class="o">.</span><span class="n">zip</span> <span class="o">-</span><span class="n">d</span> <span class="s2">&quot;glove_dir&quot;</span>
 </pre></div>
@@ -200,7 +200,7 @@
 <ol class="simple">
 <li>prepare data:</li>
 </ol>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">preprocess</span><span class="o">.</span><span class="n">py</span> \
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">preprocess</span><span class="o">.</span><span class="n">py</span> \
 <span class="o">-</span><span class="n">train_src</span> <span class="n">data</span><span class="o">/</span><span class="n">train</span><span class="o">.</span><span class="n">src</span><span class="o">.</span><span class="n">txt</span> \
 <span class="o">-</span><span class="n">train_tgt</span> <span class="n">data</span><span class="o">/</span><span class="n">train</span><span class="o">.</span><span class="n">tgt</span><span class="o">.</span><span class="n">txt</span> \
 <span class="o">-</span><span class="n">valid_src</span> <span class="n">data</span><span class="o">/</span><span class="n">valid</span><span class="o">.</span><span class="n">src</span><span class="o">.</span><span class="n">txt</span> \
@@ -211,7 +211,7 @@
 <ol class="simple">
 <li>prepare embeddings:</li>
 </ol>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">tools</span><span class="o">/</span><span class="n">embeddings_to_torch</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">emb_file</span> <span class="s2">&quot;glove_dir/glove.6B.100d.txt&quot;</span> \
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">tools</span><span class="o">/</span><span class="n">embeddings_to_torch</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">emb_file</span> <span class="s2">&quot;glove_dir/glove.6B.100d.txt&quot;</span> \
 <span class="o">-</span><span class="n">dict_file</span> <span class="s2">&quot;data/data.vocab.pt&quot;</span> \
 <span class="o">-</span><span class="n">output_file</span> <span class="s2">&quot;data/embeddings&quot;</span>
 </pre></div>
@@ -219,7 +219,7 @@
 <ol class="simple">
 <li>train using pre-trained embeddings:</li>
 </ol>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">train</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">save_model</span> <span class="n">data</span><span class="o">/</span><span class="n">model</span> \
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">train</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">save_model</span> <span class="n">data</span><span class="o">/</span><span class="n">model</span> \
 <span class="o">-</span><span class="n">batch_size</span> <span class="mi">64</span> \
 <span class="o">-</span><span class="n">layers</span> <span class="mi">2</span> \
 <span class="o">-</span><span class="n">rnn_size</span> <span class="mi">200</span> \
@@ -235,7 +235,7 @@
 <p>The transformer model is very sensitive to hyperparameters. To run it
 effectively you need to set a bunch of different options that mimic the Google
 setup.</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">train</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">gpuid</span> <span class="mi">0</span> <span class="o">-</span><span class="n">save_model</span> <span class="n">models</span><span class="o">/</span><span class="n">ja</span><span class="o">-</span><span class="n">en</span><span class="o">-</span><span class="mi">1</span><span class="n">M</span><span class="o">/</span><span class="n">ja</span><span class="o">-</span><span class="n">en</span> <span class="o">-</span><span class="n">data</span> <span class="n">database</span><span class="o">/</span><span class="n">ja</span><span class="o">-</span><span class="n">en</span> <span class="o">-</span><span class="n">layers</span> <span class="mi">6</span> \
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">train</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">gpuid</span> <span class="mi">0</span> <span class="o">-</span><span class="n">save_model</span> <span class="n">models</span><span class="o">/</span><span class="n">ja</span><span class="o">-</span><span class="n">en</span><span class="o">-</span><span class="mi">1</span><span class="n">M</span><span class="o">/</span><span class="n">ja</span><span class="o">-</span><span class="n">en</span> <span class="o">-</span><span class="n">data</span> <span class="n">database</span><span class="o">/</span><span class="n">ja</span><span class="o">-</span><span class="n">en</span> <span class="o">-</span><span class="n">layers</span> <span class="mi">6</span> \
         <span class="o">-</span><span class="n">rnn_size</span> <span class="mi">512</span> <span class="o">-</span><span class="n">word_vec_size</span> <span class="mi">512</span> <span class="o">-</span><span class="n">epochs</span> <span class="mi">30</span> <span class="o">-</span><span class="n">max_grad_norm</span> <span class="mi">0</span> <span class="o">-</span><span class="n">optim</span> <span class="n">adam</span> \
         <span class="o">-</span><span class="n">encoder_type</span> <span class="n">transformer</span> <span class="o">-</span><span class="n">decoder_type</span> <span class="n">transformer</span> <span class="o">-</span><span class="n">position_encoding</span> \
         <span class="o">-</span><span class="n">dropout</span> <span class="mf">0.1</span> <span class="o">-</span><span class="n">param_init</span> <span class="mi">0</span> <span class="o">-</span><span class="n">warmup_steps</span> <span class="mi">12000</span> <span class="o">-</span><span class="n">learning_rate</span> <span class="mf">0.2</span> \

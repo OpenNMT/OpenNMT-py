@@ -220,7 +220,7 @@ in the embeddings.</li>
 <li><strong>word_vocab_size</strong> (<em>int</em>) – size of dictionary of embeddings for words.</li>
 <li><strong>feat_vocab_sizes</strong> (<em>[</em><em>int</em><em>]</em><em>, </em><em>optional</em>) – list of size of dictionary
 of embeddings for each feature.</li>
-<li><strong>position_encoding</strong> (<em>bool</em>) – see <a class="reference internal" href="#onmt.modules.PositionalEncoding" title="onmt.modules.PositionalEncoding"><code class="xref py py-obj docutils literal"><span class="pre">onmt.modules.PositionalEncoding</span></code></a></li>
+<li><strong>position_encoding</strong> (<em>bool</em>) – see <a class="reference internal" href="#onmt.modules.PositionalEncoding" title="onmt.modules.PositionalEncoding"><code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.modules.PositionalEncoding</span></code></a></li>
 <li><strong>feat_merge</strong> (<em>string</em>) – merge action for the features embeddings:
 concat, sum or mlp.</li>
 <li><strong>feat_vec_exponent</strong> (<em>float</em>) – when using <cite>-feat_merge concat</cite>, feature
@@ -279,7 +279,7 @@ number of values of feature takes.</li>
 <dt id="onmt.modules.EncoderBase">
 <em class="property">class </em><code class="descclassname">onmt.modules.</code><code class="descname">EncoderBase</code><a class="headerlink" href="#onmt.modules.EncoderBase" title="Permalink to this definition">¶</a></dt>
 <dd><p>Base encoder class. Specifies the interface used by different encoder types
-and required by <a class="reference internal" href="onmt.html#onmt.Models.NMTModel" title="onmt.Models.NMTModel"><code class="xref py py-obj docutils literal"><span class="pre">onmt.Models.NMTModel</span></code></a>.</p>
+and required by <a class="reference internal" href="onmt.html#onmt.Models.NMTModel" title="onmt.Models.NMTModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.Models.NMTModel</span></code></a>.</p>
 
             <style>
             /* mermaid issue 527 workaround */
@@ -295,7 +295,7 @@ and required by <a class="reference internal" href="onmt.html#onmt.Models.NMTMod
      D[Pos 2]
      E[Pos N]
    end
-   F[Context]
+   F[Memory_Bank]
    G[Final]
    A--&gt;C
    A--&gt;D
@@ -306,36 +306,30 @@ and required by <a class="reference internal" href="onmt.html#onmt.Models.NMTMod
    E--&gt;G
         </div><dl class="method">
 <dt id="onmt.modules.EncoderBase.forward">
-<code class="descname">forward</code><span class="sig-paren">(</span><em>input</em>, <em>lengths=None</em>, <em>hidden=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.modules.EncoderBase.forward" title="Permalink to this definition">¶</a></dt>
+<code class="descname">forward</code><span class="sig-paren">(</span><em>src</em>, <em>lengths=None</em>, <em>encoder_state=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.modules.EncoderBase.forward" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>input</strong> (<code class="xref py py-obj docutils literal"><span class="pre">LongTensor</span></code>) – padded sequences of sparse indices <cite>[src_len x batch x nfeat]</cite></li>
-<li><strong>lengths</strong> (<code class="xref py py-obj docutils literal"><span class="pre">LongTensor</span></code>) – length of each sequence <cite>[batch]</cite></li>
-<li><strong>hidden</strong> (<em>class specific</em>) – initial hidden state.</li>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>src</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">LongTensor</span></code>) – padded sequences of sparse indices <cite>[src_len x batch x nfeat]</cite></li>
+<li><strong>lengths</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">LongTensor</span></code>) – length of each sequence <cite>[batch]</cite></li>
+<li><strong>encoder_state</strong> (<em>rnn-class specific</em>) – initial encoder_state state.</li>
 </ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><ul class="simple">
+<li>final encoder state, used to initialize decoder</li>
+<li>memory bank for attention, <cite>[src_len x batch x hidden]</cite></li>
+</ul>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">(tuple of <code class="xref py py-obj docutils literal notranslate"><span class="pre">FloatTensor</span></code>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">FloatTensor</span></code>)</p>
 </td>
 </tr>
 </tbody>
 </table>
-<dl class="docutils">
-<dt>Returns:k</dt>
-<dd><dl class="first last docutils">
-<dt>(tuple of <code class="xref py py-obj docutils literal"><span class="pre">FloatTensor</span></code>, <code class="xref py py-obj docutils literal"><span class="pre">FloatTensor</span></code>):</dt>
-<dd><ul class="first last simple">
-<li><dl class="first docutils">
-<dt>final encoder state, used to initialize decoder</dt>
-<dd><cite>[layers x batch x hidden]</cite></dd>
-</dl>
-</li>
-<li>contexts for attention, <cite>[src_len x batch x hidden]</cite></li>
-</ul>
-</dd>
-</dl>
-</dd>
-</dl>
 </dd></dl>
 
 </dd></dl>
@@ -350,7 +344,7 @@ and required by <a class="reference internal" href="onmt.html#onmt.Models.NMTMod
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>num_layers</strong> (<em>int</em>) – number of replicated layers</li>
-<li><strong>embeddings</strong> (<a class="reference internal" href="#onmt.modules.Embeddings" title="onmt.modules.Embeddings"><code class="xref py py-obj docutils literal"><span class="pre">onmt.modules.Embeddings</span></code></a>) – embedding module to use</li>
+<li><strong>embeddings</strong> (<a class="reference internal" href="#onmt.modules.Embeddings" title="onmt.modules.Embeddings"><code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.modules.Embeddings</span></code></a>) – embedding module to use</li>
 </ul>
 </td>
 </tr>
@@ -358,8 +352,8 @@ and required by <a class="reference internal" href="onmt.html#onmt.Models.NMTMod
 </table>
 <dl class="method">
 <dt id="onmt.modules.MeanEncoder.forward">
-<code class="descname">forward</code><span class="sig-paren">(</span><em>input</em>, <em>lengths=None</em>, <em>hidden=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.modules.MeanEncoder.forward" title="Permalink to this definition">¶</a></dt>
-<dd><p>See <a class="reference internal" href="#onmt.modules.EncoderBase.forward" title="onmt.modules.EncoderBase.forward"><code class="xref py py-obj docutils literal"><span class="pre">EncoderBase.forward()</span></code></a></p>
+<code class="descname">forward</code><span class="sig-paren">(</span><em>src</em>, <em>lengths=None</em>, <em>encoder_state=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.modules.MeanEncoder.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference internal" href="#onmt.modules.EncoderBase.forward" title="onmt.modules.EncoderBase.forward"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EncoderBase.forward()</span></code></a></p>
 </dd></dl>
 
 </dd></dl>
@@ -373,12 +367,12 @@ and required by <a class="reference internal" href="onmt.html#onmt.Models.NMTMod
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>rnn_type</strong> (<code class="xref py py-obj docutils literal"><span class="pre">str</span></code>) – style of recurrent unit to use, one of [RNN, LSTM, GRU, SRU]</li>
+<li><strong>rnn_type</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">str</span></code>) – style of recurrent unit to use, one of [RNN, LSTM, GRU, SRU]</li>
 <li><strong>bidirectional</strong> (<em>bool</em>) – use a bidirectional RNN</li>
 <li><strong>num_layers</strong> (<em>int</em>) – number of stacked layers</li>
 <li><strong>hidden_size</strong> (<em>int</em>) – hidden size of each layer</li>
-<li><strong>dropout</strong> (<em>float</em>) – dropout value for <code class="xref py py-obj docutils literal"><span class="pre">nn.Dropout</span></code></li>
-<li><strong>embeddings</strong> (<a class="reference internal" href="#onmt.modules.Embeddings" title="onmt.modules.Embeddings"><code class="xref py py-obj docutils literal"><span class="pre">onmt.modules.Embeddings</span></code></a>) – embedding module to use</li>
+<li><strong>dropout</strong> (<em>float</em>) – dropout value for <code class="xref py py-obj docutils literal notranslate"><span class="pre">nn.Dropout</span></code></li>
+<li><strong>embeddings</strong> (<a class="reference internal" href="#onmt.modules.Embeddings" title="onmt.modules.Embeddings"><code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.modules.Embeddings</span></code></a>) – embedding module to use</li>
 </ul>
 </td>
 </tr>
@@ -386,8 +380,8 @@ and required by <a class="reference internal" href="onmt.html#onmt.Models.NMTMod
 </table>
 <dl class="method">
 <dt id="onmt.modules.RNNEncoder.forward">
-<code class="descname">forward</code><span class="sig-paren">(</span><em>input</em>, <em>lengths=None</em>, <em>hidden=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.modules.RNNEncoder.forward" title="Permalink to this definition">¶</a></dt>
-<dd><p>See <a class="reference internal" href="#onmt.modules.EncoderBase.forward" title="onmt.modules.EncoderBase.forward"><code class="xref py py-obj docutils literal"><span class="pre">EncoderBase.forward()</span></code></a></p>
+<code class="descname">forward</code><span class="sig-paren">(</span><em>src</em>, <em>lengths=None</em>, <em>encoder_state=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.modules.RNNEncoder.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference internal" href="#onmt.modules.EncoderBase.forward" title="onmt.modules.EncoderBase.forward"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EncoderBase.forward()</span></code></a></p>
 </dd></dl>
 
 </dd></dl>
@@ -400,7 +394,7 @@ and required by <a class="reference internal" href="onmt.html#onmt.Models.NMTMod
 <em class="property">class </em><code class="descclassname">onmt.modules.</code><code class="descname">RNNDecoderBase</code><span class="sig-paren">(</span><em>rnn_type</em>, <em>bidirectional_encoder</em>, <em>num_layers</em>, <em>hidden_size</em>, <em>attn_type='general'</em>, <em>coverage_attn=False</em>, <em>context_gate=None</em>, <em>copy_attn=False</em>, <em>dropout=0.0</em>, <em>embeddings=None</em>, <em>reuse_copy_attn=False</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.modules.RNNDecoderBase" title="Permalink to this definition">¶</a></dt>
 <dd><p>Base recurrent attention-based decoder class.
 Specifies the interface used by different decoder types
-and required by <a class="reference internal" href="onmt.html#onmt.Models.NMTModel" title="onmt.Models.NMTModel"><code class="xref py py-obj docutils literal"><span class="pre">onmt.Models.NMTModel</span></code></a>.</p>
+and required by <a class="reference internal" href="onmt.html#onmt.Models.NMTModel" title="onmt.Models.NMTModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.Models.NMTModel</span></code></a>.</p>
 
             <style>
             /* mermaid issue 527 workaround */
@@ -419,7 +413,7 @@ and required by <a class="reference internal" href="onmt.html#onmt.Models.NMTMod
    G[Decoder State]
    H[Decoder State]
    I[Outputs]
-   F[Context]
+   F[Memory_Bank]
    A--emb--&gt;C
    A--emb--&gt;D
    A--emb--&gt;E
@@ -437,16 +431,16 @@ and required by <a class="reference internal" href="onmt.html#onmt.Models.NMTMod
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>rnn_type</strong> (<code class="xref py py-obj docutils literal"><span class="pre">str</span></code>) – style of recurrent unit to use, one of [RNN, LSTM, GRU, SRU]</li>
+<li><strong>rnn_type</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">str</span></code>) – style of recurrent unit to use, one of [RNN, LSTM, GRU, SRU]</li>
 <li><strong>bidirectional_encoder</strong> (<em>bool</em>) – use with a bidirectional encoder</li>
 <li><strong>num_layers</strong> (<em>int</em>) – number of stacked layers</li>
 <li><strong>hidden_size</strong> (<em>int</em>) – hidden size of each layer</li>
-<li><strong>attn_type</strong> (<em>str</em>) – see <a class="reference internal" href="#onmt.modules.GlobalAttention" title="onmt.modules.GlobalAttention"><code class="xref py py-obj docutils literal"><span class="pre">onmt.modules.GlobalAttention</span></code></a></li>
-<li><strong>coverage_attn</strong> (<em>str</em>) – see <a class="reference internal" href="#onmt.modules.GlobalAttention" title="onmt.modules.GlobalAttention"><code class="xref py py-obj docutils literal"><span class="pre">onmt.modules.GlobalAttention</span></code></a></li>
-<li><strong>context_gate</strong> (<em>str</em>) – see <code class="xref py py-obj docutils literal"><span class="pre">onmt.modules.ContextGate</span></code></li>
+<li><strong>attn_type</strong> (<em>str</em>) – see <a class="reference internal" href="#onmt.modules.GlobalAttention" title="onmt.modules.GlobalAttention"><code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.modules.GlobalAttention</span></code></a></li>
+<li><strong>coverage_attn</strong> (<em>str</em>) – see <a class="reference internal" href="#onmt.modules.GlobalAttention" title="onmt.modules.GlobalAttention"><code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.modules.GlobalAttention</span></code></a></li>
+<li><strong>context_gate</strong> (<em>str</em>) – see <code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.modules.ContextGate</span></code></li>
 <li><strong>copy_attn</strong> (<em>bool</em>) – setup a separate copy attention mechanism</li>
-<li><strong>dropout</strong> (<em>float</em>) – dropout value for <code class="xref py py-obj docutils literal"><span class="pre">nn.Dropout</span></code></li>
-<li><strong>embeddings</strong> (<a class="reference internal" href="#onmt.modules.Embeddings" title="onmt.modules.Embeddings"><code class="xref py py-obj docutils literal"><span class="pre">onmt.modules.Embeddings</span></code></a>) – embedding module to use</li>
+<li><strong>dropout</strong> (<em>float</em>) – dropout value for <code class="xref py py-obj docutils literal notranslate"><span class="pre">nn.Dropout</span></code></li>
+<li><strong>embeddings</strong> (<a class="reference internal" href="#onmt.modules.Embeddings" title="onmt.modules.Embeddings"><code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.modules.Embeddings</span></code></a>) – embedding module to use</li>
 </ul>
 </td>
 </tr>
@@ -454,29 +448,29 @@ and required by <a class="reference internal" href="onmt.html#onmt.Models.NMTMod
 </table>
 <dl class="method">
 <dt id="onmt.modules.RNNDecoderBase.forward">
-<code class="descname">forward</code><span class="sig-paren">(</span><em>input</em>, <em>context</em>, <em>state</em>, <em>context_lengths=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.modules.RNNDecoderBase.forward" title="Permalink to this definition">¶</a></dt>
+<code class="descname">forward</code><span class="sig-paren">(</span><em>tgt</em>, <em>memory_bank</em>, <em>state</em>, <em>memory_lengths=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.modules.RNNDecoderBase.forward" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>input</strong> (<cite>LongTensor</cite>) – sequences of padded tokens
+<li><strong>tgt</strong> (<cite>LongTensor</cite>) – sequences of padded tokens
 <cite>[tgt_len x batch x nfeats]</cite>.</li>
-<li><strong>context</strong> (<cite>FloatTensor</cite>) – vectors from the encoder
+<li><strong>memory_bank</strong> (<cite>FloatTensor</cite>) – vectors from the encoder
 <cite>[src_len x batch x hidden]</cite>.</li>
-<li><strong>state</strong> (<a class="reference internal" href="onmt.html#onmt.Models.DecoderState" title="onmt.Models.DecoderState"><code class="xref py py-obj docutils literal"><span class="pre">onmt.Models.DecoderState</span></code></a>) – decoder state object to initialize the decoder</li>
-<li><strong>context_lengths</strong> (<cite>LongTensor</cite>) – the padded source lengths
+<li><strong>state</strong> (<a class="reference internal" href="onmt.html#onmt.Models.DecoderState" title="onmt.Models.DecoderState"><code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.Models.DecoderState</span></code></a>) – decoder state object to initialize the decoder</li>
+<li><strong>memory_lengths</strong> (<cite>LongTensor</cite>) – the padded source lengths
 <cite>[batch]</cite>.</li>
 </ul>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><ul class="simple">
 <li><dl class="first docutils">
-<dt>outputs: output from the decoder</dt>
+<dt>decoder_outputs: output from the decoder (after attn)</dt>
 <dd><cite>[tgt_len x batch x hidden]</cite>.</dd>
 </dl>
 </li>
-<li>state: final hidden state from the decoder</li>
+<li>decoder_state: final hidden state from the decoder</li>
 <li><dl class="first docutils">
 <dt>attns: distribution over src at each tgt</dt>
 <dd><cite>[tgt_len x batch x src_len]</cite>.</dd>
@@ -500,7 +494,7 @@ and required by <a class="reference internal" href="onmt.html#onmt.Models.NMTMod
 <em class="property">class </em><code class="descclassname">onmt.modules.</code><code class="descname">StdRNNDecoder</code><span class="sig-paren">(</span><em>rnn_type</em>, <em>bidirectional_encoder</em>, <em>num_layers</em>, <em>hidden_size</em>, <em>attn_type='general'</em>, <em>coverage_attn=False</em>, <em>context_gate=None</em>, <em>copy_attn=False</em>, <em>dropout=0.0</em>, <em>embeddings=None</em>, <em>reuse_copy_attn=False</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.modules.StdRNNDecoder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Standard fully batched RNN decoder with attention.
 Faster implementation, uses CuDNN for implementation.
-See <a class="reference internal" href="#onmt.modules.RNNDecoderBase" title="onmt.modules.RNNDecoderBase"><code class="xref py py-obj docutils literal"><span class="pre">RNNDecoderBase</span></code></a> for options.</p>
+See <a class="reference internal" href="#onmt.modules.RNNDecoderBase" title="onmt.modules.RNNDecoderBase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RNNDecoderBase</span></code></a> for options.</p>
 <p>Based around the approach from
 “Neural Machine Translation By Jointly Learning To Align and Translate”
 <a class="reference internal" href="ref.html#bahdanau2015" id="id2">[BCB14]</a></p>
@@ -511,7 +505,7 @@ or <cite>copy_attn</cite> support.</p>
 <dl class="class">
 <dt id="onmt.modules.InputFeedRNNDecoder">
 <em class="property">class </em><code class="descclassname">onmt.modules.</code><code class="descname">InputFeedRNNDecoder</code><span class="sig-paren">(</span><em>rnn_type</em>, <em>bidirectional_encoder</em>, <em>num_layers</em>, <em>hidden_size</em>, <em>attn_type='general'</em>, <em>coverage_attn=False</em>, <em>context_gate=None</em>, <em>copy_attn=False</em>, <em>dropout=0.0</em>, <em>embeddings=None</em>, <em>reuse_copy_attn=False</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.modules.InputFeedRNNDecoder" title="Permalink to this definition">¶</a></dt>
-<dd><p>Input feeding based decoder. See <a class="reference internal" href="#onmt.modules.RNNDecoderBase" title="onmt.modules.RNNDecoderBase"><code class="xref py py-obj docutils literal"><span class="pre">RNNDecoderBase</span></code></a> for options.</p>
+<dd><p>Input feeding based decoder. See <a class="reference internal" href="#onmt.modules.RNNDecoderBase" title="onmt.modules.RNNDecoderBase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RNNDecoderBase</span></code></a> for options.</p>
 <p>Based around the input feeding approach from
 “Effective Approaches to Attention-based Neural Machine Translation”
 <a class="reference internal" href="ref.html#luong2015" id="id3">[LPM15]</a></p>
@@ -532,7 +526,7 @@ or <cite>copy_attn</cite> support.</p>
      E --&gt; F
    end
    G[Encoder]
-   H[Context n-1]
+   H[Memory_Bank n-1]
    A --&gt; E
    AB --&gt; F
    E --&gt; H
@@ -577,8 +571,8 @@ of size <cite>dim</cite>.</p>
    E -.-&gt; G
    F --&gt; G
         </div><p>All models compute the output as
-<span class="math">\(c = \sum_{j=1}^{SeqLength} a_j H_j\)</span> where
-<span class="math">\(a_j\)</span> is the softmax of a score function.
+<span class="math notranslate">\(c = \sum_{j=1}^{SeqLength} a_j H_j\)</span> where
+<span class="math notranslate">\(a_j\)</span> is the softmax of a score function.
 Then then apply a projection layer to [q, c].</p>
 <p>However they
 differ on how they compute the attention score.</p>
@@ -586,8 +580,8 @@ differ on how they compute the attention score.</p>
 <li><dl class="first docutils">
 <dt>Luong Attention (dot, general):</dt>
 <dd><ul class="first last">
-<li>dot: <span class="math">\(score(H_j,q) = H_j^T q\)</span></li>
-<li>general: <span class="math">\(score(H_j, q) = H_j^T W_a q\)</span></li>
+<li>dot: <span class="math notranslate">\(score(H_j,q) = H_j^T q\)</span></li>
+<li>general: <span class="math notranslate">\(score(H_j, q) = H_j^T W_a q\)</span></li>
 </ul>
 </dd>
 </dl>
@@ -595,7 +589,7 @@ differ on how they compute the attention score.</p>
 <li><dl class="first docutils">
 <dt>Bahdanau Attention (mlp):</dt>
 <dd><ul class="first last">
-<li><span class="math">\(score(H_j, q) = v_a^T tanh(W_a q + U_a h_j)\)</span></li>
+<li><span class="math notranslate">\(score(H_j, q) = v_a^T tanh(W_a q + U_a h_j)\)</span></li>
 </ul>
 </dd>
 </dl>
@@ -616,15 +610,15 @@ differ on how they compute the attention score.</p>
 </table>
 <dl class="method">
 <dt id="onmt.modules.GlobalAttention.forward">
-<code class="descname">forward</code><span class="sig-paren">(</span><em>input</em>, <em>context</em>, <em>context_lengths=None</em>, <em>coverage=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.modules.GlobalAttention.forward" title="Permalink to this definition">¶</a></dt>
+<code class="descname">forward</code><span class="sig-paren">(</span><em>input</em>, <em>memory_bank</em>, <em>memory_lengths=None</em>, <em>coverage=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.modules.GlobalAttention.forward" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>input</strong> (<cite>FloatTensor</cite>) – query vectors <cite>[batch x tgt_len x dim]</cite></li>
-<li><strong>context</strong> (<cite>FloatTensor</cite>) – source vectors <cite>[batch x src_len x dim]</cite></li>
-<li><strong>context_lengths</strong> (<cite>LongTensor</cite>) – the source context lengths <cite>[batch]</cite></li>
+<li><strong>memory_bank</strong> (<cite>FloatTensor</cite>) – source vectors <cite>[batch x src_len x dim]</cite></li>
+<li><strong>memory_lengths</strong> (<cite>LongTensor</cite>) – the source context lengths <cite>[batch]</cite></li>
 <li><strong>coverage</strong> (<cite>FloatTensor</cite>) – None (not supported yet)</li>
 </ul>
 </td>
@@ -664,7 +658,7 @@ differ on how they compute the attention score.</p>
 <cite>[batch x tgt_len x src_len]</cite></p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><code class="xref py py-obj docutils literal"><span class="pre">FloatTensor</span></code></p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FloatTensor</span></code></p>
 </td>
 </tr>
 </tbody>
@@ -695,6 +689,13 @@ non-recurrent neural networks.</p>
 </tr>
 </tbody>
 </table>
+<dl class="method">
+<dt id="onmt.modules.PositionalEncoding.forward">
+<code class="descname">forward</code><span class="sig-paren">(</span><em>emb</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.modules.PositionalEncoding.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overriden by all subclasses.</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="class">
@@ -715,6 +716,13 @@ of the FNN.</li>
 </tr>
 </tbody>
 </table>
+<dl class="method">
+<dt id="onmt.modules.PositionwiseFeedForward.forward">
+<code class="descname">forward</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.modules.PositionwiseFeedForward.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overriden by all subclasses.</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="class">
@@ -745,7 +753,7 @@ of the FNN.</li>
 <li><strong>num_layers</strong> (<em>int</em>) – number of encoder layers</li>
 <li><strong>hidden_size</strong> (<em>int</em>) – number of hidden units</li>
 <li><strong>dropout</strong> (<em>float</em>) – dropout parameters</li>
-<li><strong>embeddings</strong> (<a class="reference internal" href="#onmt.modules.Embeddings" title="onmt.modules.Embeddings"><code class="xref py py-obj docutils literal"><span class="pre">onmt.modules.Embeddings</span></code></a>) – embeddings to use, should have positional encodings</li>
+<li><strong>embeddings</strong> (<a class="reference internal" href="#onmt.modules.Embeddings" title="onmt.modules.Embeddings"><code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.modules.Embeddings</span></code></a>) – embeddings to use, should have positional encodings</li>
 </ul>
 </td>
 </tr>
@@ -754,7 +762,7 @@ of the FNN.</li>
 <dl class="method">
 <dt id="onmt.modules.TransformerEncoder.forward">
 <code class="descname">forward</code><span class="sig-paren">(</span><em>input</em>, <em>lengths=None</em>, <em>hidden=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.modules.TransformerEncoder.forward" title="Permalink to this definition">¶</a></dt>
-<dd><p>See <a class="reference internal" href="#onmt.modules.EncoderBase.forward" title="onmt.modules.EncoderBase.forward"><code class="xref py py-obj docutils literal"><span class="pre">EncoderBase.forward()</span></code></a></p>
+<dd><p>See <a class="reference internal" href="#onmt.modules.EncoderBase.forward" title="onmt.modules.EncoderBase.forward"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EncoderBase.forward()</span></code></a></p>
 </dd></dl>
 
 </dd></dl>
@@ -789,7 +797,7 @@ of the FNN.</li>
 <li><strong>num_layers</strong> (<em>int</em>) – number of encoder layers.</li>
 <li><strong>hidden_size</strong> (<em>int</em>) – number of hidden units</li>
 <li><strong>dropout</strong> (<em>float</em>) – dropout parameters</li>
-<li><strong>embeddings</strong> (<a class="reference internal" href="#onmt.modules.Embeddings" title="onmt.modules.Embeddings"><code class="xref py py-obj docutils literal"><span class="pre">onmt.modules.Embeddings</span></code></a>) – embeddings to use, should have positional encodings</li>
+<li><strong>embeddings</strong> (<a class="reference internal" href="#onmt.modules.Embeddings" title="onmt.modules.Embeddings"><code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.modules.Embeddings</span></code></a>) – embeddings to use, should have positional encodings</li>
 <li><strong>attn_type</strong> (<em>str</em>) – if using a seperate copy attention</li>
 </ul>
 </td>
@@ -798,8 +806,8 @@ of the FNN.</li>
 </table>
 <dl class="method">
 <dt id="onmt.modules.TransformerDecoder.forward">
-<code class="descname">forward</code><span class="sig-paren">(</span><em>input</em>, <em>context</em>, <em>state</em>, <em>context_lengths=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.modules.TransformerDecoder.forward" title="Permalink to this definition">¶</a></dt>
-<dd><p>See <a class="reference internal" href="#onmt.modules.RNNDecoderBase.forward" title="onmt.modules.RNNDecoderBase.forward"><code class="xref py py-obj docutils literal"><span class="pre">onmt.modules.RNNDecoderBase.forward()</span></code></a></p>
+<code class="descname">forward</code><span class="sig-paren">(</span><em>tgt</em>, <em>memory_bank</em>, <em>state</em>, <em>memory_lengths=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.modules.TransformerDecoder.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference internal" href="#onmt.modules.RNNDecoderBase.forward" title="onmt.modules.RNNDecoderBase.forward"><code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.modules.RNNDecoderBase.forward()</span></code></a></p>
 </dd></dl>
 
 </dd></dl>
@@ -905,7 +913,7 @@ and have not been thoroughly tested.)</p>
 <dl class="method">
 <dt id="onmt.modules.CNNEncoder.forward">
 <code class="descname">forward</code><span class="sig-paren">(</span><em>input</em>, <em>lengths=None</em>, <em>hidden=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.modules.CNNEncoder.forward" title="Permalink to this definition">¶</a></dt>
-<dd><p>See <a class="reference internal" href="#onmt.modules.EncoderBase.forward" title="onmt.modules.EncoderBase.forward"><code class="xref py py-obj docutils literal"><span class="pre">onmt.modules.EncoderBase.forward()</span></code></a></p>
+<dd><p>See <a class="reference internal" href="#onmt.modules.EncoderBase.forward" title="onmt.modules.EncoderBase.forward"><code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.modules.EncoderBase.forward()</span></code></a></p>
 </dd></dl>
 
 </dd></dl>
@@ -917,8 +925,8 @@ and have not been thoroughly tested.)</p>
 <p>Consists of residual convolutional layers, with ConvMultiStepAttention.</p>
 <dl class="method">
 <dt id="onmt.modules.CNNDecoder.forward">
-<code class="descname">forward</code><span class="sig-paren">(</span><em>input</em>, <em>context</em>, <em>state</em>, <em>context_lengths=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.modules.CNNDecoder.forward" title="Permalink to this definition">¶</a></dt>
-<dd><p>See <a class="reference internal" href="#onmt.modules.RNNDecoderBase.forward" title="onmt.modules.RNNDecoderBase.forward"><code class="xref py py-obj docutils literal"><span class="pre">onmt.modules.RNNDecoderBase.forward()</span></code></a></p>
+<code class="descname">forward</code><span class="sig-paren">(</span><em>tgt</em>, <em>memory_bank</em>, <em>state</em>, <em>memory_lengths=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.modules.CNNDecoder.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference internal" href="#onmt.modules.RNNDecoderBase.forward" title="onmt.modules.RNNDecoderBase.forward"><code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.modules.RNNDecoderBase.forward()</span></code></a></p>
 </dd></dl>
 
 </dd></dl>
@@ -956,7 +964,7 @@ which is the combination of base emb and top output of encode</li>
 <dl class="attribute">
 <dt id="onmt.modules.WeightNorm">
 <code class="descclassname">onmt.modules.</code><code class="descname">WeightNorm</code><a class="headerlink" href="#onmt.modules.WeightNorm" title="Permalink to this definition">¶</a></dt>
-<dd><p>alias of <a class="reference internal" href="#onmt.modules.WeightNorm" title="onmt.modules.WeightNorm"><code class="xref py py-class docutils literal"><span class="pre">onmt.modules.WeightNorm</span></code></a></p>
+<dd><p>alias of <a class="reference internal" href="#onmt.modules.WeightNorm" title="onmt.modules.WeightNorm"><code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.modules.WeightNorm</span></code></a></p>
 </dd></dl>
 
 </div>
@@ -965,7 +973,7 @@ which is the combination of base emb and top output of encode</li>
 <dl class="attribute">
 <dt id="onmt.modules.SRU">
 <code class="descclassname">onmt.modules.</code><code class="descname">SRU</code><a class="headerlink" href="#onmt.modules.SRU" title="Permalink to this definition">¶</a></dt>
-<dd><p>alias of <a class="reference internal" href="#onmt.modules.SRU" title="onmt.modules.SRU"><code class="xref py py-class docutils literal"><span class="pre">onmt.modules.SRU</span></code></a></p>
+<dd><p>alias of <a class="reference internal" href="#onmt.modules.SRU" title="onmt.modules.SRU"><code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.modules.SRU</span></code></a></p>
 </dd></dl>
 
 </div>
@@ -996,7 +1004,7 @@ audio input.</p>
 <dl class="method">
 <dt id="onmt.modules.AudioEncoder.forward">
 <code class="descname">forward</code><span class="sig-paren">(</span><em>input</em>, <em>lengths=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.modules.AudioEncoder.forward" title="Permalink to this definition">¶</a></dt>
-<dd><p>See <a class="reference internal" href="#onmt.modules.EncoderBase.forward" title="onmt.modules.EncoderBase.forward"><code class="xref py py-obj docutils literal"><span class="pre">onmt.modules.EncoderBase.forward()</span></code></a></p>
+<dd><p>See <a class="reference internal" href="#onmt.modules.EncoderBase.forward" title="onmt.modules.EncoderBase.forward"><code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.modules.EncoderBase.forward()</span></code></a></p>
 </dd></dl>
 
 </dd></dl>
@@ -1024,7 +1032,7 @@ image input.</p>
 <dl class="method">
 <dt id="onmt.modules.ImageEncoder.forward">
 <code class="descname">forward</code><span class="sig-paren">(</span><em>input</em>, <em>lengths=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.modules.ImageEncoder.forward" title="Permalink to this definition">¶</a></dt>
-<dd><p>See <a class="reference internal" href="#onmt.modules.EncoderBase.forward" title="onmt.modules.EncoderBase.forward"><code class="xref py py-obj docutils literal"><span class="pre">onmt.modules.EncoderBase.forward()</span></code></a></p>
+<dd><p>See <a class="reference internal" href="#onmt.modules.EncoderBase.forward" title="onmt.modules.EncoderBase.forward"><code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.modules.EncoderBase.forward()</span></code></a></p>
 </dd></dl>
 
 </dd></dl>
@@ -1046,15 +1054,15 @@ else to an extra word.</p>
 <p>The copy generator is an extended version of the standard
 generator that computse three values.</p>
 <ul class="simple">
-<li><span class="math">\(p_{softmax}\)</span> the standard softmax over <cite>tgt_dict</cite></li>
-<li><span class="math">\(p(z)\)</span> the probability of instead copying a
+<li><span class="math notranslate">\(p_{softmax}\)</span> the standard softmax over <cite>tgt_dict</cite></li>
+<li><span class="math notranslate">\(p(z)\)</span> the probability of instead copying a
 word from the source, computed using a bernoulli</li>
-<li><span class="math">\(p_{copy}\)</span> the probility of copying a word instead.
+<li><span class="math notranslate">\(p_{copy}\)</span> the probility of copying a word instead.
 taken from the attention distribution directly.</li>
 </ul>
 <p>The model returns a distribution over the extend dictionary,
 computed as</p>
-<p><span class="math">\(p(w) = p(z=1)  p_{copy}(w)  +  p(z=0)  p_{softmax}(w)\)</span></p>
+<p><span class="math notranslate">\(p(w) = p(z=1)  p_{copy}(w)  +  p(z=0)  p_{softmax}(w)\)</span></p>
 
             <style>
             /* mermaid issue 527 workaround */
@@ -1125,6 +1133,13 @@ its index in the “extended” vocab containing.
 of non-projective dependency parsing. This attention layer is used
 in the paper “Learning Structured Text Representations.”</p>
 <p><a class="reference internal" href="ref.html#dblp-journals-corr-liul17d" id="id8">[LL17]</a></p>
+<dl class="method">
+<dt id="onmt.modules.MatrixTree.forward">
+<code class="descname">forward</code><span class="sig-paren">(</span><em>input</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.modules.MatrixTree.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overriden by all subclasses.</p>
+</dd></dl>
+
 </dd></dl>
 
 </div>

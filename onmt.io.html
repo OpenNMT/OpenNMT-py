@@ -205,7 +205,7 @@ out examples?</li>
 </table>
 <dl class="staticmethod">
 <dt id="onmt.io.TextDataset.collapse_copy_scores">
-<em class="property">static </em><code class="descname">collapse_copy_scores</code><span class="sig-paren">(</span><em>scores</em>, <em>batch</em>, <em>tgt_vocab</em>, <em>src_vocabs</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.TextDataset.collapse_copy_scores" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="descname">collapse_copy_scores</code><span class="sig-paren">(</span><em>batch</em>, <em>tgt_vocab</em>, <em>src_vocabs</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.TextDataset.collapse_copy_scores" title="Permalink to this definition">¶</a></dt>
 <dd><p>Given scores from an expanded dictionary
 corresponeding to a batch, sums together copies,
 with a dictionary word when it is ambigious.</p>
@@ -213,7 +213,7 @@ with a dictionary word when it is ambigious.</p>
 
 <dl class="staticmethod">
 <dt id="onmt.io.TextDataset.get_fields">
-<em class="property">static </em><code class="descname">get_fields</code><span class="sig-paren">(</span><em>n_src_features</em>, <em>n_tgt_features</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.TextDataset.get_fields" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="descname">get_fields</code><span class="sig-paren">(</span><em>n_tgt_features</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.TextDataset.get_fields" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -236,7 +236,7 @@ are the corresponding Field objects.</p>
 
 <dl class="staticmethod">
 <dt id="onmt.io.TextDataset.get_num_features">
-<em class="property">static </em><code class="descname">get_num_features</code><span class="sig-paren">(</span><em>corpus_file</em>, <em>side</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.TextDataset.get_num_features" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="descname">get_num_features</code><span class="sig-paren">(</span><em>side</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.TextDataset.get_num_features" title="Permalink to this definition">¶</a></dt>
 <dd><p>Peek one line and get number of features of it.
 (All lines must have same number of features).
 For text corpus, both sides are in text form, thus
@@ -260,7 +260,7 @@ it works the same.</p>
 
 <dl class="staticmethod">
 <dt id="onmt.io.TextDataset.make_text_examples_nfeats_tpl">
-<em class="property">static </em><code class="descname">make_text_examples_nfeats_tpl</code><span class="sig-paren">(</span><em>path</em>, <em>truncate</em>, <em>side</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.TextDataset.make_text_examples_nfeats_tpl" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="descname">make_text_examples_nfeats_tpl</code><span class="sig-paren">(</span><em>truncate</em>, <em>side</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.TextDataset.make_text_examples_nfeats_tpl" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -281,7 +281,7 @@ it works the same.</p>
 
 <dl class="staticmethod">
 <dt id="onmt.io.TextDataset.read_text_file">
-<em class="property">static </em><code class="descname">read_text_file</code><span class="sig-paren">(</span><em>path</em>, <em>truncate</em>, <em>side</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.TextDataset.read_text_file" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="descname">read_text_file</code><span class="sig-paren">(</span><em>truncate</em>, <em>side</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.TextDataset.read_text_file" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -336,7 +336,7 @@ out examples?</li>
 </table>
 <dl class="staticmethod">
 <dt id="onmt.io.ImageDataset.get_fields">
-<em class="property">static </em><code class="descname">get_fields</code><span class="sig-paren">(</span><em>n_src_features</em>, <em>n_tgt_features</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.ImageDataset.get_fields" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="descname">get_fields</code><span class="sig-paren">(</span><em>n_tgt_features</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.ImageDataset.get_fields" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -359,7 +359,7 @@ are the corresponding Field objects.</p>
 
 <dl class="staticmethod">
 <dt id="onmt.io.ImageDataset.get_num_features">
-<em class="property">static </em><code class="descname">get_num_features</code><span class="sig-paren">(</span><em>corpus_file</em>, <em>side</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.ImageDataset.get_num_features" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="descname">get_num_features</code><span class="sig-paren">(</span><em>side</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.ImageDataset.get_num_features" title="Permalink to this definition">¶</a></dt>
 <dd><p>For image corpus, source side is in form of image, thus
 no feature; while target side is in form of text, thus
 we can extract its text features.</p>
@@ -382,7 +382,7 @@ we can extract its text features.</p>
 
 <dl class="staticmethod">
 <dt id="onmt.io.ImageDataset.make_image_examples_nfeats_tpl">
-<em class="property">static </em><code class="descname">make_image_examples_nfeats_tpl</code><span class="sig-paren">(</span><em>path</em>, <em>img_dir</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.ImageDataset.make_image_examples_nfeats_tpl" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="descname">make_image_examples_nfeats_tpl</code><span class="sig-paren">(</span><em>img_dir</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.ImageDataset.make_image_examples_nfeats_tpl" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -402,7 +402,7 @@ we can extract its text features.</p>
 
 <dl class="staticmethod">
 <dt id="onmt.io.ImageDataset.read_img_file">
-<em class="property">static </em><code class="descname">read_img_file</code><span class="sig-paren">(</span><em>path</em>, <em>src_dir</em>, <em>side</em>, <em>truncate=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.ImageDataset.read_img_file" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="descname">read_img_file</code><span class="sig-paren">(</span><em>src_dir</em>, <em>side</em>, <em>truncate=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.ImageDataset.read_img_file" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -464,7 +464,7 @@ out examples?</li>
 </table>
 <dl class="staticmethod">
 <dt id="onmt.io.AudioDataset.get_fields">
-<em class="property">static </em><code class="descname">get_fields</code><span class="sig-paren">(</span><em>n_src_features</em>, <em>n_tgt_features</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.AudioDataset.get_fields" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="descname">get_fields</code><span class="sig-paren">(</span><em>n_tgt_features</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.AudioDataset.get_fields" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -487,7 +487,7 @@ are the corresponding Field objects.</p>
 
 <dl class="staticmethod">
 <dt id="onmt.io.AudioDataset.get_num_features">
-<em class="property">static </em><code class="descname">get_num_features</code><span class="sig-paren">(</span><em>corpus_file</em>, <em>side</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.AudioDataset.get_num_features" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="descname">get_num_features</code><span class="sig-paren">(</span><em>side</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.AudioDataset.get_num_features" title="Permalink to this definition">¶</a></dt>
 <dd><p>For audio corpus, source side is in form of audio, thus
 no feature; while target side is in form of text, thus
 we can extract its text features.</p>
@@ -510,7 +510,7 @@ we can extract its text features.</p>
 
 <dl class="staticmethod">
 <dt id="onmt.io.AudioDataset.make_audio_examples_nfeats_tpl">
-<em class="property">static </em><code class="descname">make_audio_examples_nfeats_tpl</code><span class="sig-paren">(</span><em>path</em>, <em>audio_dir</em>, <em>sample_rate</em>, <em>window_size</em>, <em>window_stride</em>, <em>window</em>, <em>normalize_audio</em>, <em>truncate=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.AudioDataset.make_audio_examples_nfeats_tpl" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="descname">make_audio_examples_nfeats_tpl</code><span class="sig-paren">(</span><em>audio_dir</em>, <em>sample_rate</em>, <em>window_size</em>, <em>window_stride</em>, <em>window</em>, <em>normalize_audio</em>, <em>truncate=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.AudioDataset.make_audio_examples_nfeats_tpl" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -537,7 +537,7 @@ by std or not.</li>
 
 <dl class="staticmethod">
 <dt id="onmt.io.AudioDataset.read_audio_file">
-<em class="property">static </em><code class="descname">read_audio_file</code><span class="sig-paren">(</span><em>path</em>, <em>src_dir</em>, <em>side</em>, <em>sample_rate</em>, <em>window_size</em>, <em>window_stride</em>, <em>window</em>, <em>normalize_audio</em>, <em>truncate=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.AudioDataset.read_audio_file" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="descname">read_audio_file</code><span class="sig-paren">(</span><em>src_dir</em>, <em>side</em>, <em>sample_rate</em>, <em>window_size</em>, <em>window_stride</em>, <em>window</em>, <em>normalize_audio</em>, <em>truncate=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.AudioDataset.read_audio_file" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />

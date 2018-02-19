@@ -242,12 +242,12 @@
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>model</strong> (<code class="xref py py-obj docutils literal"><span class="pre">onmt.modules.NMTModel</span></code>) – NMT model to use for translation</li>
+<li><strong>model</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.modules.NMTModel</span></code>) – NMT model to use for translation</li>
 <li><strong>fields</strong> (<em>dict of Fields</em>) – data fields</li>
 <li><strong>beam_size</strong> (<em>int</em>) – size of beam to use</li>
 <li><strong>n_best</strong> (<em>int</em>) – number of translations produced</li>
 <li><strong>max_length</strong> (<em>int</em>) – maximum length output to produce</li>
-<li><strong>global_scores</strong> (<code class="xref py py-obj docutils literal"><span class="pre">GlobalScorer</span></code>) – object to rescore final translations</li>
+<li><strong>global_scores</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">GlobalScorer</span></code>) – object to rescore final translations</li>
 <li><strong>copy_attn</strong> (<em>bool</em>) – use copy attention during translation</li>
 <li><strong>cuda</strong> (<em>bool</em>) – use cuda</li>
 <li><strong>beam_trace</strong> (<em>bool</em>) – trace beam search for debugging</li>
@@ -260,14 +260,14 @@
 <dt id="onmt.translate.Translator.translate_batch">
 <code class="descname">translate_batch</code><span class="sig-paren">(</span><em>batch</em>, <em>data</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.translate.Translator.translate_batch" title="Permalink to this definition">¶</a></dt>
 <dd><p>Translate a batch of sentences.</p>
-<p>Mostly a wrapper around <a class="reference internal" href="#onmt.translate.Beam" title="onmt.translate.Beam"><code class="xref py py-obj docutils literal"><span class="pre">Beam</span></code></a>.</p>
+<p>Mostly a wrapper around <a class="reference internal" href="#onmt.translate.Beam" title="onmt.translate.Beam"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Beam</span></code></a>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>batch</strong> (<code class="xref py py-obj docutils literal"><span class="pre">Batch</span></code>) – a batch from a dataset object</li>
-<li><strong>data</strong> (<code class="xref py py-obj docutils literal"><span class="pre">Dataset</span></code>) – the dataset object</li>
+<li><strong>batch</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Batch</span></code>) – a batch from a dataset object</li>
+<li><strong>data</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Dataset</span></code>) – the dataset object</li>
 </ul>
 </td>
 </tr>
@@ -318,7 +318,7 @@ Problem in Neural Machine Translation” <a class="reference internal" href="ref
 <li><strong>bos</strong><strong>, </strong><strong>eos</strong> (<em>pad</em><em>,</em>) – indices of padding, beginning, and ending.</li>
 <li><strong>n_best</strong> (<em>int</em>) – nbest size to use</li>
 <li><strong>cuda</strong> (<em>bool</em>) – use gpu</li>
-<li><strong>global_scorer</strong> (<code class="xref py py-obj docutils literal"><span class="pre">GlobalScorer</span></code>) – </li>
+<li><strong>global_scorer</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">GlobalScorer</span></code>) – </li>
 </ul>
 </td>
 </tr>
