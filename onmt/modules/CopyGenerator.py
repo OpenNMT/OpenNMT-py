@@ -64,7 +64,7 @@ class CopyGenerator(nn.Module):
         self.linear_copy = nn.Linear(input_size, 1)
         self.tgt_dict = tgt_dict
 
-    def forward(self, hidden, attn, src_map, copy):
+    def forward(self, hidden, attn, src_map, p_copy):
         """
         Compute a distribution over the target dictionary
         extended by the dynamic dictionary implied by compying
@@ -91,10 +91,10 @@ class CopyGenerator(nn.Module):
         prob = F.softmax(logits)
 
         # Probability of copying p(z=1) batch.
-        #copy = F.sigmoid(self.linear_copy(hidden))
+        # p_copy = F.sigmoid(self.linear_copy(hidden))
         # Probibility of not copying: p_{word}(w) * (1 - p(z))
-        out_prob = torch.mul(prob,  1 - copy.expand_as(prob))
-        mul_attn = torch.mul(attn, copy.expand_as(attn))
+        out_prob = torch.mul(prob,  1 - p_copy.expand_as(prob))
+        mul_attn = torch.mul(attn, p_copy.expand_as(attn))
         copy_prob = torch.bmm(mul_attn.view(-1, batch, slen)
                               .transpose(0, 1),
                               src_map.transpose(0, 1)).transpose(0, 1)
@@ -167,10 +167,10 @@ class CopyGeneratorLossCompute(onmt.Loss.LossComputeBase):
             "target": batch.tgt[range_[0] + 1: range_[1]],
             "copy_attn": attns.get("copy"),
             "align": batch.alignment[range_[0] + 1: range_[1]],
-            "copy_prob": attns.get("pgen")
+            "p_copy": attns.get("p_copy")
         }
 
-    def _compute_loss(self, batch, output, target, copy_attn, align, copy_prob):
+    def _compute_loss(self, batch, output, target, copy_attn, align, p_copy):
         """
         Compute the loss. The args must match self._make_shard_state().
         Args:
@@ -185,7 +185,7 @@ class CopyGeneratorLossCompute(onmt.Loss.LossComputeBase):
         scores = self.generator(self._bottle(output),
                                 self._bottle(copy_attn),
                                 batch.src_map,
-                                self._bottle(copy_prob))
+                                self._bottle(p_copy))
         loss = self.criterion(scores, align, target)
         scores_data = scores.data.clone()
         scores_data = onmt.io.TextDataset.collapse_copy_scores(

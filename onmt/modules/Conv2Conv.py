@@ -131,17 +131,17 @@ class CNNDecoder(nn.Module):
                 hidden_size, attn_type=attn_type)
             self._copy = True
 
-    def forward(self, input, context, state, context_lengths=None):
+    def forward(self, tgt, memory_bank, state, memory_lengths=None):
         """ See :obj:`onmt.modules.RNNDecoderBase.forward()`"""
         # CHECKS
         assert isinstance(state, CNNDecoderState)
-        input_len, input_batch, _ = input.size()
-        contxt_len, contxt_batch, _ = context.size()
-        aeq(input_batch, contxt_batch)
+        tgt_len, tgt_batch, _ = tgt.size()
+        contxt_len, contxt_batch, _ = memory_bank.size()
+        aeq(tgt_batch, contxt_batch)
         # END CHECKS
 
         if state.previous_input is not None:
-            input = torch.cat([state.previous_input, input], 0)
+            tgt = torch.cat([state.previous_input, tgt], 0)
 
         # Initialize return variables.
         outputs = []
@@ -150,14 +150,14 @@ class CNNDecoder(nn.Module):
         if self._copy:
             attns["copy"] = []
 
-        emb = self.embeddings(input)
+        emb = self.embeddings(tgt)
         assert emb.dim() == 3  # len x batch x embedding_dim
 
         tgt_emb = emb.transpose(0, 1).contiguous()
         # The output of CNNEncoder.
-        src_context_t = context.transpose(0, 1).contiguous()
+        src_memory_bank_t = memory_bank.transpose(0, 1).contiguous()
         # The combination of output of CNNEncoder and source embeddings.
-        src_context_c = state.init_src.transpose(0, 1).contiguous()
+        src_memory_bank_c = state.init_src.transpose(0, 1).contiguous()
 
         # Run the forward pass of the CNNDecoder.
         emb_reshape = tgt_emb.contiguous().view(
@@ -175,7 +175,7 @@ class CNNDecoder(nn.Module):
             new_target_input = torch.cat([pad, x], 2)
             out = conv(new_target_input)
             c, attn = attention(base_target_emb, out,
-                                src_context_t, src_context_c)
+                                src_memory_bank_t, src_memory_bank_c)
             x = (x + (c + out) * SCALE_WEIGHT) * SCALE_WEIGHT
         output = x.squeeze(3).transpose(1, 2)
 
@@ -190,17 +190,17 @@ class CNNDecoder(nn.Module):
             attns["copy"] = attn
 
         # Update the state.
-        state.update_state(input)
+        state.update_state(tgt)
 
         return outputs, state, attns
 
-    def init_decoder_state(self, src, context, enc_hidden):
-        return CNNDecoderState(context, enc_hidden)
+    def init_decoder_state(self, src, memory_bank, enc_hidden):
+        return CNNDecoderState(memory_bank, enc_hidden)
 
 
 class CNNDecoderState(DecoderState):
-    def __init__(self, context, enc_hidden):
-        self.init_src = (context + enc_hidden) * SCALE_WEIGHT
+    def __init__(self, memory_bank, enc_hidden):
+        self.init_src = (memory_bank + enc_hidden) * SCALE_WEIGHT
         self.previous_input = None
 
     @property
