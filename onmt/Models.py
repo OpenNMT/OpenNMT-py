@@ -501,7 +501,7 @@ class InputFeedRNNDecoder(RNNDecoderBase):
                 memory_lengths=memory_lengths)
 
             c = torch.bmm(p_attn.unsqueeze(1),
-                          memory_bank.transpose(0, 1)).squeeze()
+                          memory_bank.transpose(0, 1)).squeeze(1)
             p_copy = self.pgen(torch.cat([c,
                                           rnn_output,
                                           hidden[1][-1],
