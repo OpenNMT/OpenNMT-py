@@ -111,10 +111,8 @@ class Beam(object):
 
         for i in range(self.next_ys[-1].size(0)):
             if self.next_ys[-1][i] == self._eos:
-                s = self.scores[i]
-                if self.global_scorer is not None:
-                    global_scores = self.global_scorer.score(self, self.scores)
-                    s = global_scores[i]
+                global_scores = self.global_scorer.score(self, self.scores)
+                s = global_scores[i]/(len(self.next_ys))
                 self.finished.append((s, len(self.next_ys) - 1, i))
 
         # End condition is when top-of-beam is EOS and no global score.
@@ -130,10 +128,8 @@ class Beam(object):
             i = 0
             # Add from beam until we have minimum outputs.
             while len(self.finished) < minimum:
-                s = self.scores[i]
-                if self.global_scorer is not None:
-                    global_scores = self.global_scorer.score(self, self.scores)
-                    s = global_scores[i]
+                global_scores = self.global_scorer.score(self, self.scores)
+                s = global_scores[i]/(len(self.next_ys))
                 self.finished.append((s, len(self.next_ys) - 1, i))
 
         self.finished.sort(key=lambda a: -a[0])
