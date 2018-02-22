@@ -153,7 +153,8 @@ class Translator(object):
                     batch, self.fields["tgt"].vocab, data.src_vocabs)
                 # beam x tgt_vocab
                 out = out.log()
-                beam_attn = unbottle(attn["copy"])
+                beam_attn = unbottle(attn["copy"]*attn["pgen"])
+                #print(beam_attn.size(), attn["pgen"].size())
             # (c) Advance each beam.
             for j, b in enumerate(beam):
                 b.advance(out[:, j],
