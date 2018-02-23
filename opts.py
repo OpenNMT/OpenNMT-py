@@ -77,7 +77,9 @@ def model_opts(parser):
                        help="""Feed the context vector at each time step as
                        additional input (via concatenation with the word
                        embeddings) to the decoder.""")
-
+    group.add_argument('-bridge', action="store_true",
+                       help="""Have an additional layer between the last encoder
+                       state and the first decoder state""")
     group.add_argument('-rnn_type', type=str, default='LSTM',
                        choices=['LSTM', 'GRU', 'SRU'],
                        action=CheckSRU,
