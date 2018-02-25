@@ -38,7 +38,7 @@ class TestModel(unittest.TestCase):
         # len x batch x nfeat
         test_src = Variable(torch.ones(source_l, bsize, 1)).long()
         test_tgt = Variable(torch.ones(source_l, bsize, 1)).long()
-        test_length = torch.ones(bsize).fill_(source_l)
+        test_length = torch.ones(bsize).fill_(source_l).long()
         return test_src, test_tgt, test_length
 
     def get_batch_image(self, tgt_l=3, bsize=1, h=15, w=17):

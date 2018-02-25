@@ -163,10 +163,10 @@ class TransformerDecoderLayer(nn.Module):
         # it gets TransformerDecoderLayer's cuda behavior automatically.
         self.register_buffer('mask', mask)
 
-    def forward(self, input, context, src_pad_mask, tgt_pad_mask):
+    def forward(self, input, memory_bank, src_pad_mask, tgt_pad_mask):
         # Args Checks
         input_batch, input_len, _ = input.size()
-        contxt_batch, contxt_len, _ = context.size()
+        contxt_batch, contxt_len, _ = memory_bank.size()
         aeq(input_batch, contxt_batch)
 
         src_batch, t_len, s_len = src_pad_mask.size()
@@ -183,7 +183,7 @@ class TransformerDecoderLayer(nn.Module):
         query, attn = self.self_attn(input_norm, input_norm, input_norm,
                                      mask=dec_mask)
         query_norm = self.layer_norm_2(query+input)
-        mid, attn = self.context_attn(context, context, query_norm,
+        mid, attn = self.context_attn(memory_bank, memory_bank, query_norm,
                                       mask=src_pad_mask)
         output = self.feed_forward(mid+query+input)
 
@@ -259,27 +259,27 @@ class TransformerDecoder(nn.Module):
             self._copy = True
         self.layer_norm = onmt.modules.BottleLayerNorm(hidden_size)
 
-    def forward(self, input, context, state, context_lengths=None):
+    def forward(self, tgt, memory_bank, state, memory_lengths=None):
         """
         See :obj:`onmt.modules.RNNDecoderBase.forward()`
         """
         # CHECKS
         assert isinstance(state, TransformerDecoderState)
-        input_len, input_batch, _ = input.size()
-        contxt_len, contxt_batch, _ = context.size()
-        aeq(input_batch, contxt_batch)
+        tgt_len, tgt_batch, _ = tgt.size()
+        memory_len, memory_batch, _ = memory_bank.size()
+        aeq(tgt_batch, memory_batch)
 
         if state.previous_input is not None:
-            input = torch.cat([state.previous_input, input], 0)
+            tgt = torch.cat([state.previous_input, tgt], 0)
 
         src = state.src
         src_words = src[:, :, 0].transpose(0, 1)
-        tgt_words = input[:, :, 0].transpose(0, 1)
+        tgt_words = tgt[:, :, 0].transpose(0, 1)
         src_batch, src_len = src_words.size()
         tgt_batch, tgt_len = tgt_words.size()
-        aeq(input_batch, contxt_batch, src_batch, tgt_batch)
-        aeq(contxt_len, src_len)
-        # aeq(input_len, tgt_len)
+        aeq(tgt_batch, memory_batch, src_batch, tgt_batch)
+        aeq(memory_len, src_len)
+        # aeq(tgt_len, tgt_len)
         # END CHECKS
 
         # Initialize return variables.
@@ -289,11 +289,11 @@ class TransformerDecoder(nn.Module):
             attns["copy"] = []
 
         # Run the forward pass of the TransformerDecoder.
-        emb = self.embeddings(input)
+        emb = self.embeddings(tgt)
         assert emb.dim() == 3  # len x batch x embedding_dim
 
         output = emb.transpose(0, 1).contiguous()
-        src_context = context.transpose(0, 1).contiguous()
+        src_memory_bank = memory_bank.transpose(0, 1).contiguous()
 
         padding_idx = self.embeddings.word_padding_idx
         src_pad_mask = src_words.data.eq(padding_idx).unsqueeze(1) \
@@ -303,7 +303,7 @@ class TransformerDecoder(nn.Module):
 
         for i in range(self.num_layers):
             output, attn \
-                = self.transformer_layers[i](output, src_context,
+                = self.transformer_layers[i](output, src_memory_bank,
                                              src_pad_mask, tgt_pad_mask)
 
         output = self.layer_norm(output)
@@ -318,11 +318,11 @@ class TransformerDecoder(nn.Module):
             attns["copy"] = attn
 
         # Update the state.
-        state.update_state(input)
+        state.update_state(tgt)
 
         return outputs, state, attns
 
-    def init_decoder_state(self, src, context, enc_hidden):
+    def init_decoder_state(self, src, memory_bank, enc_hidden):
         return TransformerDecoderState(src)
 
 
