@@ -382,6 +382,7 @@ def main():
         model_opt = checkpoint['opt']
         # I don't like reassigning attributes of opt: it's not clear.
         opt.start_epoch = checkpoint['epoch'] + 1
+        model_opt.save_model = opt.save_model
     else:
         checkpoint = None
         model_opt = opt
