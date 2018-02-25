@@ -94,20 +94,20 @@ class Translator(object):
         if data_type == 'text':
             _, src_lengths = batch.src
 
-        enc_states, context = self.model.encoder(src, src_lengths)
+        enc_states, memory_bank = self.model.encoder(src, src_lengths)
         dec_states = self.model.decoder.init_decoder_state(
-                                        src, context, enc_states)
+                                        src, memory_bank, enc_states)
 
         if src_lengths is None:
-            src_lengths = torch.Tensor(batch_size).type_as(context.data)\
+            src_lengths = torch.Tensor(batch_size).type_as(memory_bank.data)\
                                                   .long()\
-                                                  .fill_(context.size(0))
+                                                  .fill_(memory_bank.size(0))
 
         # (2) Repeat src objects `beam_size` times.
         src_map = rvar(batch.src_map.data) \
             if data_type == 'text' and self.copy_attn else None
-        context = rvar(context.data)
-        context_lengths = src_lengths.repeat(beam_size)
+        memory_bank = rvar(memory_bank.data)
+        memory_lengths = src_lengths.repeat(beam_size)
         dec_states.repeat_beam_size_times(beam_size)
 
         # (3) run the decoder to generate sentences, using beam search.
@@ -132,7 +132,7 @@ class Translator(object):
 
             # Run one step.
             dec_out, dec_states, attn = self.model.decoder(
-                inp, context, dec_states, context_lengths=context_lengths)
+                inp, memory_bank, dec_states, memory_lengths=memory_lengths)
             dec_out = dec_out.squeeze(0)
             # dec_out: beam x rnn_size
 
@@ -146,19 +146,19 @@ class Translator(object):
                 out = self.model.generator.forward(dec_out,
                                                    attn["copy"].squeeze(0),
                                                    src_map,
-                                                   attn["pgen"].squeeze(0))
+                                                   attn["p_copy"].squeeze(0))
                 # beam x (tgt_vocab + extra_vocab)
                 out = data.collapse_copy_scores(
                     unbottle(out.data),
                     batch, self.fields["tgt"].vocab, data.src_vocabs)
                 # beam x tgt_vocab
                 out = out.log()
-                beam_attn = unbottle(attn["copy"]*attn["pgen"])
+                beam_attn = unbottle(attn["copy"]*attn["p_copy"])
                 #print(beam_attn.size(), attn["pgen"].size())
             # (c) Advance each beam.
             for j, b in enumerate(beam):
                 b.advance(out[:, j],
-                          beam_attn.data[:, j, :context_lengths[j]])
+                          beam_attn.data[:, j, :memory_lengths[j]])
                 dec_states.beam_update(j, b.get_current_origin(), beam_size)
 
         # (4) Extract sentences from beam.
@@ -196,16 +196,16 @@ class Translator(object):
         tgt_in = onmt.io.make_features(batch, 'tgt')[:-1]
 
         #  (1) run the encoder on the src
-        enc_states, context = self.model.encoder(src, src_lengths)
-        dec_states = self.model.decoder.init_decoder_state(src,
-                                                           context, enc_states)
+        enc_states, memory_bank = self.model.encoder(src, src_lengths)
+        dec_states = \
+            self.model.decoder.init_decoder_state(src, memory_bank, enc_states)
 
         #  (2) if a target is specified, compute the 'goldScore'
         #  (i.e. log likelihood) of the target under the model
         tt = torch.cuda if self.cuda else torch
         gold_scores = tt.FloatTensor(batch.batch_size).fill_(0)
         dec_out, dec_states, attn = self.model.decoder(
-            tgt_in, context, dec_states, context_lengths=src_lengths)
+            tgt_in, memory_bank, dec_states, memory_lengths=src_lengths)
 
         tgt_pad = self.fields["tgt"].vocab.stoi[onmt.io.PAD_WORD]
         for dec, tgt in zip(dec_out, batch.tgt[1:].data):
