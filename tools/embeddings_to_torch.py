@@ -21,7 +21,17 @@ opt = parser.parse_args()
 
 def get_vocabs(dict_file):
     vocabs = torch.load(dict_file)
-    enc_vocab, dec_vocab = vocabs[0][1], vocabs[-1][1]
+
+    enc_vocab, dec_vocab = None, None
+
+    # the vocab object is a list of tuple (name, torchtext.Vocab)
+    # we iterate over this list and associate vocabularies based on the name
+    for vocab in vocabs:
+        if vocab[0] == 'src':
+            enc_vocab = vocab[1]
+        if vocab[0] == 'tgt':
+            dec_vocab = vocab[1]
+    assert None not in [enc_vocab, dec_vocab]
 
     print("From: %s" % dict_file)
     print("\t* source vocab: %d words" % len(enc_vocab))
