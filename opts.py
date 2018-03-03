@@ -273,7 +273,7 @@ def train_opts(parser):
                        Recommended for Transformer.""")
     group.add_argument('-valid_batch_size', type=int, default=32,
                        help='Maximum batch size for validation')
-    group.add_argument('-max_generator_batches', type=int, default=32,
+    group.add_argument('-max_generator_batches', type=int, default=1,
                        help="""Maximum batches of words in a sequence to run
                         the generator on in parallel. Higher is faster, but
                         uses more memory.""")
