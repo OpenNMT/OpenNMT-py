@@ -255,7 +255,7 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
     src_vocab = None
     if len(src_vocab_path) > 0:
         src_vocab = set([])
-        print ('Loading source vocab from %s' % src_vocab_path)
+        print('Loading source vocab from %s' % src_vocab_path)
         assert os.path.exists(src_vocab_path), \
             'src vocab %s not found!' % src_vocab_path
         with open(src_vocab_path) as f:
@@ -266,7 +266,7 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
     tgt_vocab = None
     if len(tgt_vocab_path) > 0:
         tgt_vocab = set([])
-        print ('Loading target vocab from %s' % tgt_vocab_path)
+        print('Loading target vocab from %s' % tgt_vocab_path)
         assert os.path.exists(tgt_vocab_path), \
             'tgt vocab %s not found!' % tgt_vocab_path
         with open(tgt_vocab_path) as f:
