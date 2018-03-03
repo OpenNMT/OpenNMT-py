@@ -117,7 +117,7 @@ class Beam(object):
 
         # End condition is when top-of-beam is EOS and no global score.
         if self.next_ys[-1][0] == self._eos:
-            # self.all_scores.append(self.scores)
+            self.all_scores.append(self.scores)
             self.eos_top = True
 
     def done(self):
