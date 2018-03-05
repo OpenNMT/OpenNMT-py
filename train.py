@@ -174,14 +174,19 @@ def make_dataset_iter(datasets, fields, opt, is_train=True):
     batch_size = opt.batch_size if is_train else opt.valid_batch_size
     batch_size_fn = None
     if is_train and opt.batch_type == "tokens":
-        global max_src_in_batch, max_tgt_in_batch
-
+        # In token batching scheme, the number of sequences is limited
+        # such that the total number of src/tgt tokens (including padding)
+        # in a batch <= batch_size
         def batch_size_fn(new, count, sofar):
+            # Maintains the longest src and tgt length in the current batch
             global max_src_in_batch, max_tgt_in_batch
+            # Reset current longest length at a new batch (count=1)
             if count == 1:
                 max_src_in_batch = 0
                 max_tgt_in_batch = 0
+            # Src: <bos> w1 ... wN <eos>
             max_src_in_batch = max(max_src_in_batch,  len(new.src) + 2)
+            # Tgt: w1 ... wN <eos>
             max_tgt_in_batch = max(max_tgt_in_batch,  len(new.tgt) + 1)
             src_elements = count * max_src_in_batch
             tgt_elements = count * max_tgt_in_batch
