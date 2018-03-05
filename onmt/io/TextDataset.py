@@ -87,7 +87,9 @@ class TextDataset(ONMTDatasetBase):
 
     def sort_key(self, ex):
         """ Sort using length of source sentences. """
-        return len(ex.src)
+        # Default to a balanced sort, prioritizing tgt len match.
+        # TODO: make this configurable.
+        return (int(len(ex.tgt) / 5), int(len(ex.src) / 5))
 
     @staticmethod
     def collapse_copy_scores(scores, batch, tgt_vocab, src_vocabs):
