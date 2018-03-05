@@ -1,24 +1,4 @@
 import torch
-import gc
-
-
-def get_total_memory(verbose=True):
-    total = 0
-    for obj in gc.get_objects():
-        try:
-            if torch.is_tensor(obj) or (hasattr(obj, 'data')
-                                        and torch.is_tensor(obj.data)):
-                try:
-                    csize = obj.clone().numpy().nbytes
-                except:
-                    csize = obj.clone().data.numpy().nbytes
-                total += csize
-        except:
-            # Happens when hasattr is not implemented
-            pass
-    if verbose:
-        print("total params in GB: {:.2f}".format(total / 1024 / 1024 / 1014))
-    return total
 
 
 def aeq(*args):
