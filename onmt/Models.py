@@ -516,6 +516,7 @@ class InputFeedRNNDecoder(RNNDecoderBase):
                     decoder_input, rnn_output, decoder_output
                 )
             decoder_output = self.dropout(decoder_output)
+            input_feed = decoder_output
 
             decoder_outputs += [decoder_output]
             attns["std"] += [p_attn]

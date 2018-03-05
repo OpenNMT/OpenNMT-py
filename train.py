@@ -174,8 +174,18 @@ def make_dataset_iter(datasets, fields, opt, is_train=True):
     batch_size = opt.batch_size if is_train else opt.valid_batch_size
     batch_size_fn = None
     if is_train and opt.batch_type == "tokens":
+        global max_src_in_batch, max_tgt_in_batch
+
         def batch_size_fn(new, count, sofar):
-            return sofar + max(len(new.tgt), len(new.src)) + 1
+            global max_src_in_batch, max_tgt_in_batch
+            if count == 1:
+                max_src_in_batch = 0
+                max_tgt_in_batch = 0
+            max_src_in_batch = max(max_src_in_batch,  len(new.src) + 2)
+            max_tgt_in_batch = max(max_tgt_in_batch,  len(new.tgt) + 1)
+            src_elements = count * max_src_in_batch
+            tgt_elements = count * max_tgt_in_batch
+            return max(src_elements, tgt_elements)
 
     device = opt.gpuid[0] if opt.gpuid else -1
 
