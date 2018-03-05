@@ -210,11 +210,12 @@ class NMTLossCompute(LossComputeBase):
         return loss, stats
 
 
-def filter_shard_state(state):
+def filter_shard_state(state, requires_grad=True, volatile=False):
     for k, v in state.items():
         if v is not None:
             if isinstance(v, Variable) and v.requires_grad:
-                v = Variable(v.data, requires_grad=True, volatile=False)
+                v = Variable(v.data, requires_grad=requires_grad,
+                             volatile=volatile)
             yield k, v
 
 
@@ -235,7 +236,7 @@ def shards(state, shard_size, eval=False):
         After the last shard, this function does back-propagation.
     """
     if eval:
-        yield state
+        yield filter_shard_state(state, False, True)
     else:
         # non_none: the subdict of the state dictionary where the values
         # are not None.
