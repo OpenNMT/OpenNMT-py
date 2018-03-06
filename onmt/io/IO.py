@@ -74,6 +74,11 @@ def save_fields_to_vocab(fields):
     return vocab
 
 
+def trunc_vocab(vocab, trunc_size):
+    return torchtext.vocab.Vocab(vocab.freqs,
+                                 specials=[UNK_WORD, PAD_WORD, BOS_WORD, EOS_WORD],
+                                 max_size=trunc_size)
+
 def merge_vocabs(vocabs, vocab_size=None):
     """
     Merge individual vocabularies (assumed to be generated from disjoint
@@ -227,7 +232,7 @@ def _build_field_vocab(field, counter, **kwargs):
 
 def build_vocab(train_dataset_files, fields, data_type, share_vocab,
                 src_vocab_size, src_words_min_frequency,
-                tgt_vocab_size, tgt_words_min_frequency):
+                tgt_vocab_size, tgt_words_min_frequency, trunc_tgt_vocab):
     """
     Args:
         train_dataset_files: a list of train dataset pt file.
@@ -291,8 +296,11 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
                 [fields["src"].vocab, fields["tgt"].vocab],
                 vocab_size=src_vocab_size)
             fields["src"].vocab = merged_vocab
-            fields["tgt"].vocab = merged_vocab
-
+            if trunc_tgt_vocab == -1: 
+                fields["tgt"].vocab = merged_vocab
+            else:
+                fields["tgt"].vocab = trunc_vocab(
+                    merged_vocab, trunc_tgt_vocab)
     return fields
 
 

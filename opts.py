@@ -118,6 +118,11 @@ def model_opts(parser):
                        help='Train a coverage attention layer.')
     group.add_argument('-lambda_coverage', type=float, default=1,
                        help='Lambda value for coverage.')
+    group.add_argument('-reinforced', action='store_true',
+                       help='Use reinforcement model of Paulus (2017)')
+    group.add_argument('-partial_embedding', action="store_true",
+                       help="""Share part of source embedding as in Paulus
+                       et al. (2017). See '-reinforced'""")
 
 
 def preprocess_opts(parser):
@@ -156,6 +161,8 @@ def preprocess_opts(parser):
                        help="Path to an existing source vocabulary")
     group.add_argument('-tgt_vocab',
                        help="Path to an existing target vocabulary")
+    group.add_argument('-trunc_tgt_vocab', type=int, default=-1,
+                        help="Truncate shared vocabulary (see `-share_vocab`)")
     group.add_argument('-features_vocabs_prefix', type=str, default='',
                        help="Path prefix to existing features vocabularies")
     group.add_argument('-src_vocab_size', type=int, default=50000,

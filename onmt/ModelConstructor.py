@@ -4,6 +4,7 @@ and creates each encoder and decoder accordingly.
 """
 import torch
 import torch.nn as nn
+import torchtext.vocab
 
 import onmt
 import onmt.io
@@ -13,7 +14,8 @@ from onmt.Models import NMTModel, MeanEncoder, RNNEncoder, \
                         StdRNNDecoder, InputFeedRNNDecoder
 from onmt.modules import Embeddings, ImageEncoder, CopyGenerator, \
                          TransformerEncoder, TransformerDecoder, \
-                         CNNEncoder, CNNDecoder, AudioEncoder
+                         CNNEncoder, CNNDecoder, AudioEncoder, \
+                         PartialEmbedding
 from onmt.Utils import use_gpu
 
 
@@ -90,6 +92,9 @@ def make_decoder(opt, embeddings):
                           opt.global_attention, opt.copy_attn,
                           opt.cnn_kernel_width, opt.dropout,
                           embeddings)
+    elif opt.reinforced:
+        return onmt.Reinforced.ReinforcedDecoder(
+            opt, embeddings, bidirectional_encoder=opt.brnn)
     elif opt.input_feed:
         return InputFeedRNNDecoder(opt.rnn_type, opt.brnn,
                                    opt.dec_layers, opt.rnn_size,
@@ -165,10 +170,16 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
                                model_opt.window_size)
 
     # Make decoder.
-    tgt_dict = fields["tgt"].vocab
-    feature_dicts = onmt.io.collect_feature_vocabs(fields, 'tgt')
-    tgt_embeddings = make_embeddings(model_opt, tgt_dict,
-                                     feature_dicts, for_encoder=False)
+    if model_opt.partial_embedding:
+        tgt_vocab = fields["tgt"].vocab
+        tgt_embeddings = PartialEmbedding(len(tgt_vocab),
+                                          src_embeddings,
+                                          tgt_vocab.stoi[onmt.io.PAD_WORD])
+    else:
+        tgt_dict = fields["tgt"].vocab
+        feature_dicts = onmt.io.collect_feature_vocabs(fields, 'tgt')
+        tgt_embeddings = make_embeddings(model_opt, tgt_dict,
+                                         feature_dicts, for_encoder=False)
 
     # Share the embedding matrix - preprocess with share_vocab required.
     if model_opt.share_embeddings:
@@ -181,21 +192,30 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
 
     decoder = make_decoder(model_opt, tgt_embeddings)
 
-    # Make NMTModel(= encoder + decoder).
-    model = NMTModel(encoder, decoder)
-    model.model_type = model_opt.model_type
+    if model_opt.reinforced:
+        model = onmt.Reinforced.ReinforcedModel(encoder, decoder)
+        model.model_type = "Reinforced"
+    else:
+        # Make NMTModel(= encoder + decoder).
+        model = NMTModel(encoder, decoder)
+        model.model_type = model_opt.model_type
 
     # Make Generator.
-    if not model_opt.copy_attn:
+    if model_opt.reinforced:
+        # NOTE: we could maybe use copy_attn?!
+        generator = onmt.Reinforced.PointerGenerator(model_opt,
+                                                     tgt_vocab,
+                                                     tgt_embeddings)
+    elif model_opt.copy_attn:
+        generator = CopyGenerator(model_opt.rnn_size,
+                                  fields["tgt"].vocab)
+    else:
         generator = nn.Sequential(
             nn.Linear(model_opt.rnn_size, len(fields["tgt"].vocab)),
             nn.LogSoftmax())
         if model_opt.share_decoder_embeddings:
             generator[0].weight = decoder.embeddings.word_lut.weight
-    else:
-        generator = CopyGenerator(model_opt.rnn_size,
-                                  fields["tgt"].vocab)
-
+    
     # Load the model states from checkpoint or initialize them.
     if checkpoint is not None:
         print('Loading model parameters.')
