@@ -281,7 +281,7 @@ class RNNDecoderBase(nn.Module):
             self._copy = True
         self._reuse_copy_attn = reuse_copy_attn
 
-        self.pgen = nn.Linear(hidden_size * 2 + self._input_size, 1)
+        self.pgen = nn.Linear(hidden_size * 3 + self._input_size, 1)
 
 
     def forward(self, tgt, memory_bank, state, memory_lengths=None):
@@ -505,7 +505,7 @@ class InputFeedRNNDecoder(RNNDecoderBase):
             p_copy = self.pgen(torch.cat([c,
                                           rnn_output,
                                           hidden[1][-1],
-                                          emb_t], 1))
+                                          decoder_input], 1))
             p_copy = F.sigmoid(p_copy)
             attns["p_copy"] += [p_copy]
 
