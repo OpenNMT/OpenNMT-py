@@ -137,6 +137,7 @@ class Beam(object):
                 global_scores = self.global_scorer.score(self, self.scores)
                 s = global_scores[i]#/(len(self.next_ys))
                 self.finished.append((s, len(self.next_ys) - 1, i))
+                i += 1
 
         self.finished.sort(key=lambda a: -a[0])
         scores = [sc for sc, _, _ in self.finished]
