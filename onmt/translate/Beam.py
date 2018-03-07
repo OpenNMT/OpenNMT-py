@@ -184,7 +184,7 @@ class GNMTGlobalScorer(object):
                                                logprobs,
                                                self.alpha)
 
-        return normalized_probs - penalty
+        return normalized_probs # - penalty
 
     def update_score(self, beam, attn):
         """
@@ -192,11 +192,9 @@ class GNMTGlobalScorer(object):
         """
         if "prev_penalty" in beam.global_state.keys():
             beam.scores.add_(beam.global_state["prev_penalty"])
-            cov = beam.global_state["coverage"] + attn
             penalty = self.cov_penalty(beam,
-                                       beam.global_state["coverage"],
+                                       beam.global_state["coverage"] + attn,
                                        self.beta)
-            beam.global_state["prev_penalty"] = penalty
             beam.scores.sub_(penalty)
 
     def update_global_state(self, beam):
@@ -210,4 +208,9 @@ class GNMTGlobalScorer(object):
                                         beam.global_state['coverage']).sum(1)
             beam.global_state["coverage"] = beam.global_state["coverage"] \
                 .index_select(0, beam.prev_ks[-1]).add(beam.attn[-1])
+
+            prev_penalty = self.cov_penalty(beam,
+                                            beam.global_state["coverage"],
+                                            self.beta)
+            beam.global_state["prev_penalty"] = prev_penalty
 
