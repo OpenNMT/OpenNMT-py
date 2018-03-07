@@ -188,7 +188,6 @@ class TransformerDecoderLayer(nn.Module):
         if previous_input is not None:
             all_input = torch.cat((previous_input, input_norm), dim=1)
             dec_mask = None
-            
         query, attn = self.self_attn(all_input, all_input, input_norm,
                                      mask=dec_mask)
         query_norm = self.layer_norm_2(query+input)
@@ -285,7 +284,7 @@ class TransformerDecoder(nn.Module):
         tgt_batch, tgt_len = tgt_words.size()
         aeq(tgt_batch, memory_batch, src_batch, tgt_batch)
         aeq(memory_len, src_len)
-        
+
         if state.previous_input is not None:
             tgt = torch.cat([state.previous_input, tgt], 0)
         # END CHECKS
@@ -324,7 +323,7 @@ class TransformerDecoder(nn.Module):
 
         saved_inputs = torch.stack(saved_inputs)
         output = self.layer_norm(output)
-        
+
         # Process the result and update the attentions.
         outputs = output.transpose(0, 1).contiguous()
         attn = attn.transpose(0, 1).contiguous()
@@ -351,7 +350,7 @@ class TransformerDecoderState(DecoderState):
         self.src = src
         self.previous_input = None
         self.previous_layer_inputs = None
-        
+
     @property
     def _all(self):
         """

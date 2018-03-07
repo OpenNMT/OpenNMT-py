@@ -67,24 +67,22 @@ class TextDataset(ONMTDatasetBase):
         out_fields = [(k, fields[k]) if k in fields else (k, None)
                       for k in keys]
         example_values = ([ex[k] for k in keys] for ex in examples_iter)
-        
+
         # If out_examples is a generator, we need to save the filter_pred
         # function in serialization too, which would cause a problem when
         # `torch.save()`. Thus we materialize it as a list.
         src_size = 0
-        # tgt_size = 0
-        
+
         out_examples = []
         for ex_values in example_values:
             example = self._construct_example_fromlist(
                 ex_values, out_fields)
             src_size += len(example.src)
-            # tgt_size += len(example.tgt)
             out_examples.append(example)
 
-        # print("average src", src_size / len(out_examples), len(out_examples))
-        # print("average tgt", tgt_size / len(out_examples), len(out_examples))
-        
+        print("average src size", src_size / len(out_examples),
+              len(out_examples))
+
         def filter_pred(example):
             return 0 < len(example.src) <= src_seq_length \
                and 0 < len(example.tgt) <= tgt_seq_length
@@ -99,8 +97,7 @@ class TextDataset(ONMTDatasetBase):
         """ Sort using length of source sentences. """
         # Default to a balanced sort, prioritizing tgt len match.
         # TODO: make this configurable.
-        return len(ex.src) #(int(len(ex.tgt) / 5), int(len(ex.src) / 5))
-        #return (int(len(ex.tgt) / 5), int(len(ex.src) / 5))
+        return len(ex.src)
 
     @staticmethod
     def collapse_copy_scores(scores, batch, tgt_vocab, src_vocabs):

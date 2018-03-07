@@ -1,6 +1,7 @@
 import torch.optim as optim
 from torch.nn.utils import clip_grad_norm
-            
+
+
 class Optim(object):
     """
     Controller class for optimization. Mostly a thin

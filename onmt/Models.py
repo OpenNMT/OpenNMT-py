@@ -614,9 +614,13 @@ class DecoderState(object):
             sizes = e.size()
             br = sizes[1]
             if len(sizes) == 3:
-                sent_states = e.view(sizes[0], beam_size, br // beam_size, sizes[2])[:, :, idx]
+                sent_states = e.view(sizes[0], beam_size, br // beam_size,
+                                     sizes[2])[:, :, idx]
             else:
-                sent_states = e.view(sizes[0], beam_size, br // beam_size, sizes[2], sizes[3])[:, :, idx]
+                sent_states = e.view(sizes[0], beam_size,
+                                     br // beam_size,
+                                     sizes[2],
+                                     sizes[3])[:, :, idx]
 
             sent_states.data.copy_(
                 sent_states.data.index_select(1, positions))
