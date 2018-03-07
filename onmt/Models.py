@@ -2,6 +2,7 @@ from __future__ import division
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from torch.autograd import Variable
 from torch.nn.utils.rnn import pack_padded_sequence as pack
 from torch.nn.utils.rnn import pad_packed_sequence as unpack
@@ -281,8 +282,6 @@ class RNNDecoderBase(nn.Module):
             self._copy = True
         self._reuse_copy_attn = reuse_copy_attn
 
-        self.pgen = nn.Linear(hidden_size * 2 + self._input_size, 1)
-
     def forward(self, tgt, memory_bank, state, memory_lengths=None):
         """
         Args:
@@ -498,15 +497,6 @@ class InputFeedRNNDecoder(RNNDecoderBase):
                 rnn_output,
                 memory_bank.transpose(0, 1),
                 memory_lengths=memory_lengths)
-
-            c = torch.bmm(p_attn.unsqueeze(1),
-                          memory_bank.transpose(0, 1)).squeeze(1)
-            p_copy = self.pgen(torch.cat([c,
-                                          rnn_output,
-                                          hidden[1][-1],
-                                          emb_t], 1))
-            p_copy = F.sigmoid(p_copy)
-            attns["p_copy"] += [p_copy]
 
             if self.context_gate is not None:
                 # TODO: context gate should be employed
