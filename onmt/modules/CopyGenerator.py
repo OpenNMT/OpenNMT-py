@@ -166,10 +166,10 @@ class CopyGeneratorLossCompute(onmt.Loss.LossComputeBase):
             "output": output,
             "target": batch.tgt[range_[0] + 1: range_[1]],
             "copy_attn": attns.get("copy"),
-            "align": batch.alignment[range_[0] + 1: range_[1]],
+            "align": batch.alignment[range_[0] + 1: range_[1]]
         }
 
-    def _compute_loss(self, batch, output, target, copy_attn, align, p_copy):
+    def _compute_loss(self, batch, output, target, copy_attn, align):
         """
         Compute the loss. The args must match self._make_shard_state().
         Args:
