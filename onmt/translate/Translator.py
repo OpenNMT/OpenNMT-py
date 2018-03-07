@@ -28,6 +28,7 @@ class Translator(object):
                  max_length=100,
                  global_scorer=None, copy_attn=False, cuda=False,
                  beam_trace=False, min_length=0):
+        print(copy_attn)
         self.model = model
         self.fields = fields
         self.n_best = n_best
