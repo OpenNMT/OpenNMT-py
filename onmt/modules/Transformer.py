@@ -188,9 +188,8 @@ class TransformerDecoderLayer(nn.Module):
         if previous_input is not None:
             all_input = torch.cat((previous_input, input_norm), dim=1)
             dec_mask = None
-        else:
-            previous_input = input_norm
-        query, attn = self.self_attn(previous_input, previous_input, input_norm,
+            
+        query, attn = self.self_attn(all_input, all_input, input_norm,
                                      mask=dec_mask)
         query_norm = self.layer_norm_2(query+input)
         mid, attn = self.context_attn(memory_bank, memory_bank, query_norm,
@@ -336,9 +335,9 @@ class TransformerDecoder(nn.Module):
         attns["std"] = attn
         if self._copy:
             attns["copy"] = attn
-        print(attn[0, 0, :5])
-        if tgt.size(0) == 2:
-            exit()
+        # print(attn[0, 0, :5])
+        # if tgt.size(0) == 2:
+        #     exit()
 
         # Update the state.
         state.update_state(tgt, saved_inputs)
