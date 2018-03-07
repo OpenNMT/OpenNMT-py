@@ -142,7 +142,7 @@ class Translator(object):
             dec_out = dec_out.squeeze(0)
             # dec_out: beam x rnn_size
 
-            # (b) Compute a vector of batch*beam word scores.
+            # (b) Compute a vector of batch x beam word scores.
             if not self.copy_attn:
                 out = self.model.generator.forward(dec_out).data
                 out = unbottle(out)
