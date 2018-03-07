@@ -178,8 +178,8 @@ class GNMTGlobalScorer(object):
         Rescores a prediction based on penalty functions
         """
         penalty = self.cov_penalty(beam,
-                               beam.global_state["coverage"],
-                               self.beta)
+                                   beam.global_state["coverage"],
+                                   self.beta)
         normalized_probs = self.length_penalty(beam,
                                                logprobs,
                                                self.alpha)
