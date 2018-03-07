@@ -1,7 +1,6 @@
 from __future__ import division
 import torch
-
-from onmt.translate import PenaltyBuilder
+from onmt.translate import Penalties
 
 
 class Beam(object):
@@ -167,19 +166,18 @@ class GNMTGlobalScorer(object):
     def __init__(self, alpha, beta, cov_penalty, length_penalty):
         self.alpha = alpha
         self.beta = beta
-        penalty_builder = PenaltyBuilder(cov_penalty,
-                                         length_penalty)
+        penalty_builder = Penalties.PenaltyBuilder(cov_penalty,
+                                                   length_penalty)
         # Term will be subtracted from probability
-        self.cov_penalty = penalty_builder.cov_penalty
+        self.cov_penalty = penalty_builder.coverage_penalty()
         # Probability will be divided by this
-        self.length_penalty = penalty_builder.length_penalty
+        self.length_penalty = penalty_builder.length_penalty()
 
     def score(self, beam, logprobs):
         """
         Rescores a prediction based on penalty functions
         """
         penalty = self.cov_penalty(beam,
-                               logprobs,
                                beam.global_state["coverage"],
                                self.beta)
         normalized_probs = self.length_penalty(beam,
@@ -196,7 +194,6 @@ class GNMTGlobalScorer(object):
             beam.scores.add_(beam.global_state["prev_penalty"])
             cov = beam.global_state["coverage"] + attn
             penalty = self.cov_penalty(beam,
-                                       logprobs,
                                        beam.global_state["coverage"],
                                        self.beta)
             beam.global_state["prev_penalty"] = penalty
