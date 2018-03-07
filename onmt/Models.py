@@ -475,7 +475,6 @@ class InputFeedRNNDecoder(RNNDecoderBase):
         attns = {"std": []}
         if self._copy:
             attns["copy"] = []
-            attns["p_copy"] = []
         if self._coverage:
             attns["coverage"] = []
 
@@ -497,7 +496,6 @@ class InputFeedRNNDecoder(RNNDecoderBase):
                 rnn_output,
                 memory_bank.transpose(0, 1),
                 memory_lengths=memory_lengths)
-
             if self.context_gate is not None:
                 # TODO: context gate should be employed
                 # instead of second RNN transform.
