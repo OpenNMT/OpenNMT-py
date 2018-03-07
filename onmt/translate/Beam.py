@@ -1,6 +1,8 @@
 from __future__ import division
 import torch
 
+from onmt.translate.Penalties import PenaltyBuilder
+
 
 class Beam(object):
     """
@@ -84,9 +86,6 @@ class Beam(object):
         if len(self.prev_ks) > 0:
             beam_scores = word_probs + \
                 self.scores.unsqueeze(1).expand_as(word_probs)
-            # normalize by length (made redundant by code below)
-            # if cur_len > 1:
-            #    beam_scores = beam_scores * (cur_len-1) / cur_len
             # Don't let EOS have children.
             for i in range(self.next_ys[-1].size(0)):
                 if self.next_ys[-1][i] == self._eos:
@@ -135,7 +134,7 @@ class Beam(object):
             # Add from beam until we have minimum outputs.
             while len(self.finished) < minimum:
                 global_scores = self.global_scorer.score(self, self.scores)
-                s = global_scores[i]#/(len(self.next_ys))
+                s = global_scores[i]
                 self.finished.append((s, len(self.next_ys) - 1, i))
                 i += 1
 
@@ -165,41 +164,53 @@ class GNMTGlobalScorer(object):
        alpha (float): length parameter
        beta (float):  coverage parameter
     """
-    def __init__(self, alpha, beta):
+    def __init__(self, alpha, beta, cov_penalty, length_penalty):
         self.alpha = alpha
         self.beta = beta
+        penalty_builder = PenaltyBuilder(cov_penalty,
+                                         length_penalty)
+        # Term will be subtracted from probability
+        self.cov_penalty = penalty_builder.cov_penalty
+        # Probability will be divided by this
+        self.length_penalty = penalty_builder.length_penalty
 
     def score(self, beam, logprobs):
-        "Additional term add to log probability"
-        cov = beam.global_state["coverage"]
-        # pen = self.beta * torch.min(cov, cov.clone().fill_(1.0)).log().sum(1)
-        pen = self.beta * torch.max(cov, cov.clone().fill_(1.0)).sum(1) / len(beam.next_ys)
-        # pen = self.beta * self.cov_total / len(beam.next_ys)
-        l_term = (((5 + len(beam.next_ys)) ** self.alpha) /
-                  ((5 + 1) ** self.alpha))
-        return (logprobs / l_term) #+ pen
+        """
+        Rescores a prediction based on penalty functions
+        """
+        penalty = self.cov_penalty(beam,
+                               logprobs,
+                               beam.global_state["coverage"],
+                               self.beta)
+        normalized_probs = self.length_penalty(beam,
+                                               logprobs,
+                                               self.alpha)
+
+        return normalized_probs - penalty
 
     def update_score(self, beam, attn):
+        """
+        Function to update scores of a Beam that is not finished
+        """
         if "prev_penalty" in beam.global_state.keys():
             beam.scores.add_(beam.global_state["prev_penalty"])
             cov = beam.global_state["coverage"] + attn
-            penalty = self.beta * (torch.max(cov, cov.clone().fill_(1.0)).sum(1) - cov.size(1))
+            penalty = self.cov_penalty(beam,
+                                       logprobs,
+                                       beam.global_state["coverage"],
+                                       self.beta)
+            beam.global_state["prev_penalty"] = penalty
             beam.scores.sub_(penalty)
 
     def update_global_state(self, beam):
-        "Keeps the coverage vector as sum of attens"
+        "Keeps the coverage vector as sum of attentions"
         if len(beam.prev_ks) == 1:
+            beam.global_state["prev_penalty"] = beam.scores.clone().fill_(0.0)
             beam.global_state["coverage"] = beam.attn[-1]
             self.cov_total = beam.attn[-1].sum(1)
-            beam.global_state["prev_penalty"] = beam.scores.clone().fill_(0.0)
         else:
             self.cov_total += torch.min(beam.attn[-1],
                                         beam.global_state['coverage']).sum(1)
             beam.global_state["coverage"] = beam.global_state["coverage"] \
                 .index_select(0, beam.prev_ks[-1]).add(beam.attn[-1])
-            # Compute Penalty during
-            # beam.scores.add_(self.prev_penalty.index_select(0, beam.prev_ks[-1]))
-            cov = beam.global_state["coverage"]
-            penalty = self.beta * (torch.max(cov, cov.clone().fill_(1.0)).sum(1) - cov.size(1))
-            # beam.scores.sub_(penalty)
-            beam.global_state["prev_penalty"] = penalty
+

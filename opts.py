@@ -408,6 +408,12 @@ def translate_opts(parser):
 
     # Alpha and Beta values for Google Length + Coverage penalty
     # Described here: https://arxiv.org/pdf/1609.08144.pdf, Section 7
+    group.add_argument('-length_penalty', default='none',
+                       choices=['none', 'wu', 'avg'],
+                       help="""Length Penalty to use.""")
+    group.add_argument('-coverage_penalty', default='none',
+                       choices=['none', 'wu', 'summary'],
+                       help="""Coverage Penalty to use.""")
     group.add_argument('-alpha', type=float, default=0.,
                        help="""Google NMT length penalty parameter
                         (higher = longer generation)""")
