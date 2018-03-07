@@ -1,9 +1,6 @@
 import torch.optim as optim
 from torch.nn.utils import clip_grad_norm
-
-
-
-
+            
 class Optim(object):
     """
     Controller class for optimization. Mostly a thin
@@ -70,9 +67,6 @@ class Optim(object):
         elif self.method == 'adam':
             self.optimizer = optim.Adam(self.params, lr=self.lr,
                                         betas=self.betas, eps=1e-9)
-            # self.optimizer = optim.SparseAdam(self.params, lr=self.lr,
-            #                                   betas=self.betas, eps=1e-9)
-
         else:
             raise RuntimeError("Invalid optim method: " + self.method)
 

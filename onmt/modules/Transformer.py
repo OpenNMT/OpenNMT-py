@@ -328,16 +328,10 @@ class TransformerDecoder(nn.Module):
         # Process the result and update the attentions.
         outputs = output.transpose(0, 1).contiguous()
         attn = attn.transpose(0, 1).contiguous()
-        # if state.previous_input is not None:
-        #     attn = torch.stack([attn.squeeze()])
-        # else:
 
         attns["std"] = attn
         if self._copy:
             attns["copy"] = attn
-        # print(attn[0, 0, :5])
-        # if tgt.size(0) == 2:
-        #     exit()
 
         # Update the state.
         state.update_state(tgt, saved_inputs)
