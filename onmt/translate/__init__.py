@@ -5,4 +5,4 @@ from onmt.translate.Penalties import PenaltyBuilder
 
 __all__ = [Translator, Translation, Beam,
 		   GNMTGlobalScorer, TranslationBuilder,
-		   PenaltyBuildera]
+		   PenaltyBuilder]
