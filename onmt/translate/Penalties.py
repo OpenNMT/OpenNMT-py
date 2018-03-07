@@ -1,6 +1,7 @@
 from __future__ import division
 import torch
 
+
 class PenaltyBuilder(object):
     """
     Returns the Length and Coverage Penalty function for Beam Search.
@@ -38,13 +39,16 @@ class PenaltyBuilder(object):
         NMT coverage re-ranking score from
         "Google's Neural Machine Translation System" :cite:`wu2016google`.
         """
-        return -beta * torch.min(cov, cov.clone().fill_(1.0)).log().sum(1)
+        penalty = -torch.min(cov, cov.clone().fill_(1.0)).log().sum(1)
+        return beta * penalty
 
     def coverage_summary(self, beam, cov, beta=0.):
         """
         Our summary penalty.
         """
-        return beta * (torch.max(cov, cov.clone().fill_(1.0)).sum(1) - cov.size(1))
+        penalty = torch.max(cov, cov.clone().fill_(1.0)).sum(1)
+        penalty -= cov.size(1)
+        return beta * penalty
 
     def coverage_none(self, beam, cov, beta=0.):
         """
@@ -73,6 +77,3 @@ class PenaltyBuilder(object):
         Returns unmodified scores.
         """
         return logprobs
-
-
-

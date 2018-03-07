@@ -110,18 +110,11 @@ class Beam(object):
         self.next_ys.append((best_scores_id - prev_k * num_words))
         self.attn.append(attn_out.index_select(0, prev_k))
         self.global_scorer.update_global_state(self)
-        #for k in range(self.next_ys[-1].size(0)):
-        #    hyp, _ = self.get_hyp(len(self.next_ys), k)
-        #    for j in range(len(hyp)):
-        #        print(hyp[j], end=" ")
-        #    print(self.scores[k])
-        #    print(self.global_state["prev_penalty"][k])
-        #    print()
-        #print("-----")
+
         for i in range(self.next_ys[-1].size(0)):
             if self.next_ys[-1][i] == self._eos:
                 global_scores = self.global_scorer.score(self, self.scores)
-                s = global_scores[i]#/(len(self.next_ys))
+                s = global_scores[i]
                 self.finished.append((s, len(self.next_ys) - 1, i))
 
         # End condition is when top-of-beam is EOS and no global score.
@@ -189,7 +182,7 @@ class GNMTGlobalScorer(object):
                                                logprobs,
                                                self.alpha)
 
-        return normalized_probs # - penalty
+        return normalized_probs - penalty
 
     def update_score(self, beam, attn):
         """
@@ -218,4 +211,3 @@ class GNMTGlobalScorer(object):
                                             beam.global_state["coverage"],
                                             self.beta)
             beam.global_state["prev_penalty"] = prev_penalty
-

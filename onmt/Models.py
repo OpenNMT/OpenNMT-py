@@ -283,7 +283,6 @@ class RNNDecoderBase(nn.Module):
 
         self.pgen = nn.Linear(hidden_size * 2 + self._input_size, 1)
 
-
     def forward(self, tgt, memory_bank, state, memory_lengths=None):
         """
         Args:
