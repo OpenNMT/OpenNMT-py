@@ -588,9 +588,9 @@ class ReinforcedDecoder(_Module):
         input_size, _bs = list(inputs.size())
         assert bs == _bs
 
-        if self.training:
-            loss_compute.generator.W_out(True)
-            assert tgt is not None
+        #if self.training:
+        #    loss_compute.generator.W_out(True)
+        #    assert tgt is not None
         if tgt is not None:
             assert loss_compute is not None
             if generator is not None:
