@@ -477,32 +477,37 @@ class PointerGenerator(CopyGenerator):
         self.tanh = nn.Tanh()
         self._W_out = None
 
-    def W_out(self, force=False):
+        # refresh W_out matrix after each backward pass
+        self.register_backward_hook(self.refresh_W_out)
+
+    def refresh_W_out(self, *args, **kwargs):
+        self.W_out(True)
+
+    def W_out(self, refresh=False):
         """ Sect. (2.4) Sharing decoder weights
             The function returns the W_out matrix which is a projection of the
-            target embedding weight matrix. It needs to be updated after each
-            backward pass. It is done by running it with force=True which is
-            executed at each `ReinforcedDecoder.forward` call
+            target embedding weight matrix. 
+            The W_out matrix needs to recalculated after each backward pass,
+            which is done automatically. This is done to avoid calculating it
+            at each decoding step (which usually leads to OOM)
 
             Returns:
                 W_out (FloaTensor): [n_emb, 3*dim]
         """
-        # NOTE: Initially the idea behind "force" was to overcome
-        # side effects with @property, it is called once per batch
-        # with force=True (in ReinforcedDecoder.forward)
-        if self._W_out is None or force:
+        if self._W_out is None or refresh:
             _ = self.emb_proj(self.embeddings.weight)
             self._W_out = self.tanh(_)
         return self._W_out
 
-    def linear(self, V, force=False):
+    def linear(self, V):
         """Calculate the output projection of `v` as in eq. (9)
             Args:
                 V (FloatTensor): [bs, 3*dim]
             Returns:
                 logits (FloatTensor): logits = W_out * V + b_out, [3*dim]
         """
-        W = self.W_out(force)
+        W = self.W_out()
+
         nonan(W, "pointergenerator.W_out")
         nonan(self.b_out, "pointergenerator.b_out")
         nonan(V, "pointergenerator.V")
@@ -588,9 +593,8 @@ class ReinforcedDecoder(_Module):
         input_size, _bs = list(inputs.size())
         assert bs == _bs
 
-        #if self.training:
-        #    loss_compute.generator.W_out(True)
-        #    assert tgt is not None
+        if self.training:
+            assert tgt is not None
         if tgt is not None:
             assert loss_compute is not None
             if generator is not None:
