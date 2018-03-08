@@ -25,8 +25,7 @@ class RougeScorer:
 
     def _score(self, hyps, refs):
         scores = self.rouge.get_scores(hyps, refs)
-        
-        # NOTE: here we use score = r1 * r2 * rl 
+        # NOTE: here we use score = r1 * r2 * rl
         #       I'm not sure how relevant it is
         single_scores = [_['rouge-1']['f']*_['rouge-2']['f']*_['rouge-l']['f']
                          for _ in scores]
@@ -48,7 +47,7 @@ class RougeScorer:
                         break
                     sentence += [str(word)]
                 if len(sentence) == 0:
-                    # NOTE just a trick not to score empty sente,ce
+                    # NOTE just a trick not to score empty sentence
                     #      this has not consequence
                     sentence = ["0", "0", "0"]
                 sentences += [" ".join(sentence)]
@@ -87,26 +86,15 @@ class EachStepGeneratorLossCompute(CopyGeneratorLossCompute):
             copy_attn:  [bs x src_len]
             output:     [bs x 3*dim]
         """
-        verbose = False
-        collapse = True
-        experimental_collapse = True
-        collapse_both = False
-        profiler = False
-
-        prof_out = prof.STDOUT if profiler else prof.DEVNULL
-        t = Timer("loss", prefix=prof.tabs(2), output=prof_out)
         align = align.view(-1)
         target = target.view(-1)
 
-        #
         # GENERATOR: generating scores
-        #
         # scores: [bs x vocab + c_vocab]
         scores = self.generator(
             output,
             copy_attn,
             batch.src_map)
-        t.chkpt("generator")
         nonan(scores, "compute_loss.scores")
         _scores_incorrect = scores.data
 
@@ -117,90 +105,43 @@ class EachStepGeneratorLossCompute(CopyGeneratorLossCompute):
         # but using dataset.collapse_copy_scores at each step is
         # inefficient.
         # We do the same only using tensor operations
-        if collapse and (collapse_both or experimental_collapse):
-            _src_map = batch.src_map.float().data.cuda()
-            _scores = scores.data.clone()
+        _src_map = batch.src_map.float().data.cuda()
+        _scores = scores.data.clone()
 
-            _src = src.clone().data
-            offset = len(self.tgt_vocab)
-            src_l, bs, c_vocab = _src_map.size()
+        _src = src.clone().data
+        offset = len(self.tgt_vocab)
+        src_l, bs, c_vocab = _src_map.size()
 
-            # [bs x src_len], mask of src_idx being in tgt_vocab
-            src_invoc_mask = (_src.lt(offset) * _src.gt(1)).float()
+        # [bs x src_len], mask of src_idx being in tgt_vocab
+        src_invoc_mask = (_src.lt(offset) * _src.gt(1)).float()
 
-            # [bs x c_voc], mask of cvocab_idx related to invoc src token
-            cvoc_invoc_mask = src_invoc_mask.unsqueeze(1) \
-                                            .bmm(_src_map.transpose(0, 1)) \
-                                            .squeeze(1) \
-                                            .gt(0)
+        # [bs x c_voc], mask of cvocab_idx related to invoc src token
+        cvoc_invoc_mask = src_invoc_mask.unsqueeze(1) \
+                                        .bmm(_src_map.transpose(0, 1)) \
+                                        .squeeze(1) \
+                                        .gt(0)
 
-            # [bs x src_len], copy scores of invoc src tokens
-            # [bs x 1 x cvocab] @bmm [bs x cvocab x src_len] = [bs x 1 x src_len]
-            src_copy_scores = _scores[:, offset:].unsqueeze(1) \
-                                                 .bmm(_src_map.transpose(0, 1)
-                                                              .transpose(1, 2)) \
-                                                 .squeeze()
+        # [bs x src_len], copy scores of invoc src tokens
+        # [bs x 1 x cvocab] @bmm [bs x cvocab x src_len] = [bs x 1 x src_len]
+        src_copy_scores = _scores[:, offset:].unsqueeze(1) \
+                                             .bmm(_src_map.transpose(0, 1)
+                                                          .transpose(1, 2)) \
+                                             .squeeze()
 
-            # [bs x src_len], invoc src tokens, or 1 (=pad)
-            src_token_invoc = _src.clone().masked_fill_(1-src_invoc_mask.byte(), 1)
+        # [bs x src_len], invoc src tokens, or 1 (=pad)
+        src_token_invoc = _src.clone().masked_fill_(1-src_invoc_mask.byte(), 1)
 
-            if verbose:
-                print("cvoc_invoc_mask", cvoc_invoc_mask.size(),
-                      cvoc_invoc_mask[0])
-                print("src_invoc_mask", src_invoc_mask.size(),
-                      src_invoc_mask[0])
-                print("src_token_invoc", src_token_invoc.size(),
-                      src_token_invoc[0])
-                print("src_copy_scores", src_copy_scores.size(),
-                      src_copy_scores[0])
-                print(_src_map.size())
-                print("src", src.size(), src[0])
-                print("tgt", target.size(), target[0])
-                print(src_copy_scores.size())
-                print(src_token_invoc.size())
+        src_token_invoc = src_token_invoc.view(bs, -1)
+        src_copy_scores = src_copy_scores.view(bs, -1)
 
-            src_token_invoc = src_token_invoc.view(bs, -1)
-            src_copy_scores = src_copy_scores.view(bs, -1)
-            
-            try:
-                _scores.scatter_add_(
-                    1, src_token_invoc.long(), src_copy_scores)
-            except Exception as e:
-                print(_scores.size())
-                print(src_token_invoc.size())
-                print(src_copy_scores.size())
-                print(scores)
-                print(src_token_invoc)
-                print(src_copy_scores)
-                print(e)
-                exit()
+        _scores.scatter_add_(
+            1, src_token_invoc.long(), src_copy_scores)
 
-            _scores[:, offset:] *= (1-cvoc_invoc_mask.float())
-            _scores[:, 1] = 0
+        _scores[:, offset:] *= (1-cvoc_invoc_mask.float())
+        _scores[:, 1] = 0
 
-            _scores_data = _scores
-            scores_data = _scores_data
-
-        if collapse and (collapse_both or not experimental_collapse):
-            scores_data = scores.data.clone()
-            scores_data = self.dataset.collapse_copy_scores(
-                self.unbottle(scores_data, batch.batch_size),
-                batch, self.tgt_vocab)
-            scores_data = self.bottle(scores_data)
-
-        if collapse_both:
-            # Experimental: comparing two collapsing techniques outputs
-            #               in order to validate our solution
-            _s = list(_scores_data.size())
-            _t = _s[0] * _s[1]
-            _err = (_scores_data != scores_data).sum()
-            print("collapse diff: %d %d %f" % ((_err, _t, _err/_t)))
-            print("collapse (scores, collapse, exp): ", torch.stack(
-                [scores.data[0], _scores_data[0], scores_data[0]], 1)[:50, :])
-            print("collapse sums: ", _scores_data.sum(), scores_data.sum())
-            scores_data = _scores_data
-
-        t.chkpt("collapse_scores")
+        _scores_data = _scores
+        scores_data = _scores_data
 
         #
         # CRITERION & PREDICTION: Predicting & Calculating the loss
@@ -223,35 +164,32 @@ class EachStepGeneratorLossCompute(CopyGeneratorLossCompute):
             loss_data = loss.sum().data
         else:
             raise ValueError("Incorrect prediction_type %s" % prediction_type)
+        pred.cuda()
 
-        t.chkpt("criterion")
-
+        #
+        # FIXING TARGET
+        #
         target_data = target.data.clone()
         correct_mask = target_data.eq(0) * align.data.ne(0)
         correct_copy = (align.data + len(self.tgt_vocab)) * correct_mask.long()
         target_data = target_data + correct_copy
-        t.chkpt("fix_tgt2")
-
-        if verbose:
-            print("targets: ", torch.stack(
-                [target.data, target_data, _target_data], 1))
-        t.chkpt("fix_tgt")
 
         stats = self._stats(loss_data, scores_data, target_data)
-        
-        pred.cuda()
-        t.stop()
-        return loss, pred, stats, None
+        return loss, pred, stats
 
 
 class RTrainer(onmt.Trainer.Trainer):
     """Special Trainer for the Reinforced Model
+       It uses an older version of the Trainer
+       The main difference is that we do not compute loss because the decoder
+       is expected to do it.
+
     """
 
     def __init__(self, model, train_loss,
                  valid_loss, optim, trunc_size):
         self.model = model
-        
+
         # TODO Remove this
         # self.train_iter = train_iter
         # self.valid_iter = valid_iter
@@ -428,7 +366,6 @@ class IntraAttention(_Module):
 
         # e_t = [bs, 1, dim] bmm [bs, dim, n] = [bs, n] (after squeeze)
         E = _h_t.bmm(_h.transpose(0, 1).transpose(1, 2)).squeeze(1)
-        nonan(E, "E")
 
         next_E_history = None
         alpha = None
@@ -436,26 +373,20 @@ class IntraAttention(_Module):
             if E_history is None:
                 next_E_history = E.unsqueeze(0)
             else:
+                # we manually computes the softmax because it must not include
+                # E itself. We substract the maximum value in order to ensure
+                # numerical stability
                 next_E_history = torch.cat([E_history, E.unsqueeze(0)], 0)
                 M = next_E_history.max(0)[0]
                 E = (E - M).exp() / (E_history - M).exp().sum(0)
-                # alpha = self.softmax(E)
-                assert_size(E, [bs, n])
                 S = E.sum(1)
-                assert_size(S, [bs])
                 alpha = E / S.unsqueeze(1)
 
         if alpha is None:
             alpha = self.softmax(E)
 
-        nonan(alpha, "alpha")
-        assert_size(alpha, [bs, n])
-        # [bs, 1, n] bmm [n, bs, dim] = [bs, 1, n]
-        # [bs, dim, n] bmm [bs, n, 1] = [bs, dim, 1]
-        # [bs, 1, n] bmm [bs, n, dim] = [bs, 1, dim]
         C_t = alpha.unsqueeze(1).bmm(_h.transpose(0, 1)).squeeze(1)
-        assert_size(C_t, [bs, dim])
-        nonan(C_t, "C_t")
+
         if self.temporal:
             return C_t, alpha, next_E_history
         return C_t, alpha
@@ -507,32 +438,45 @@ class PointerGenerator(CopyGenerator):
                 logits (FloatTensor): logits = W_out * V + b_out, [3*dim]
         """
         W = self.W_out()
-
-        nonan(W, "pointergenerator.W_out")
-        nonan(self.b_out, "pointergenerator.b_out")
-        nonan(V, "pointergenerator.V")
-
-        o = (W @ V.t() + self.b_out).t()
-        nonan(o, "pointergenerator.output")
-        return o
+        logits = (W @ V.t() + self.b_out).t()
+        return logits
 
 
 class ReinforcedDecoder(_Module):
-    def __init__(self, opt, embeddings, bidirectional_encoder=False):
+    def __init__(self, opt, embeddings, dec_attn=True,
+                 exp_bias_reduction=0.25, bidirectional_encoder=False):
+        """
+        Implementation of a decoder following Paulus et al., (2017)
+        By default, we refer to this paper when mentioning a section 
+
+
+        Args:
+            opt:
+            embeddings: target embeddings
+            dec_attn: boolean, use decoder intra attention or not (sect. 2.2)
+            exp_bias_reduction: float in [0, 1], exposure bias reduction by
+                                feeding predicted token with a given
+                                probability as mentionned in sect. 6.1
+            bidirectional_encoder
+        """
         super(ReinforcedDecoder, self).__init__(opt)
         self.embeddings = embeddings
-        print(embeddings)
         W_emb = embeddings.weight
         self.tgt_vocab_size, self.input_size = W_emb.size()
         self.dim = opt.rnn_size
 
+        # TODO use parameter instead of hardcoding nlayer
         self.rnn = onmt.modules.StackedLSTM(1, self.input_size,
                                             self.dim, opt.dropout)
 
         self.enc_attn = IntraAttention(opt, self.dim, temporal=True)
-        self.dec_attn = IntraAttention(opt, self.dim)
+
+        self.dec_attn = None
+        if dec_attn:
+            self.dec_attn = IntraAttention(opt, self.dim)
 
         self.pad_id = embeddings.word_padding_idx
+        self.exp_bias_reduction = exp_bias_reduction
 
         # For compatibility reasons, TODO refactor
         self.hidden_size = self.dim
@@ -576,18 +520,14 @@ class ReinforcedDecoder(_Module):
             tgt (LongTensor): [tgt_len x bs]
 
         Returns:
-            stats: onmt.Statistics
-            hidden
-            None: TODO refactor
-            None: TODO refactor
+            stats:
+            state:
+            scores:
+            attns:
+            hd_history: memory for decoder intra attention
+            E_hist: memory for temporal attention
+
         """
-        nonan(state.hidden[0], "h0")
-        nonan(state.hidden[1], "h1")
-
-        # experimental parameters
-        no_dec_attn = False   # does not uses intradec attn if set
-        run_profiler = False  # profiling (printing execution times)
-
         dim = self.dim
         src_len, bs, _ = list(src.size())
         input_size, _bs = list(inputs.size())
@@ -609,38 +549,21 @@ class ReinforcedDecoder(_Module):
         stats = onmt.Statistics()
         hidden = state.hidden
         loss = None
-        scores, attns, dec_attns, ipreds, outputs = [], [], [], [], []
+        scores, attns, dec_attns, outputs = [], [], [], []
         preds = []
         inputs_t = inputs[0, :]
 
-        devout_timer = prof.STDOUT if run_profiler else prof.DEVNULL
-        gtimer = Timer("global_decoder", output=devout_timer)
-        timer = Timer("decoder", output=devout_timer, prefix=prof.tabs())
-        t = 0
         continue_generation = True
-        while continue_generation:
+        for t in range(input_size):
             # Embedding & intra-temporal attention on source
-            src_mask = src.eq(self.pad_id)
             emb_t = self.embeddings(inputs_t.view(1, -1, 1)).squeeze(0)
-            timer.chkpt("embedding")
 
             hd_t, hidden = self.rnn(emb_t, hidden)
-            timer.chkpt("rnn    ")
-
-            try:
-                nonan(hd_t, "hd_t")
-            except ValueError:
-                print("timestep: ", t)
-                print("hidden: ", hidden)
-                print("embd: ", emb_t)
-                print("input_t: ", inputs_t)
-                print("whole inp: ", inputs)
 
             c_e, alpha_e, E_hist = self.enc_attn(hd_t, h_e, E_history=E_hist)
-            timer.chkpt("encoder attn")
 
             # Intra-decoder Attention
-            if no_dec_attn or hd_history is None:
+            if self.dec_attn is None or hd_history is None:
                 # no decoder intra attn at first step
                 cd_t = self.mkvar(torch.zeros([bs, dim]))
                 alpha_d = cd_t
@@ -648,8 +571,6 @@ class ReinforcedDecoder(_Module):
             else:
                 cd_t, alpha_d = self.dec_attn(hd_t, hd_history)
                 hd_history = torch.cat([hd_history, hd_t.unsqueeze(0)], dim=0)
-
-            timer.chkpt("decoder attn")
 
             # Prediction - Computing Loss
             if tgt is not None:
@@ -666,7 +587,7 @@ class ReinforcedDecoder(_Module):
                     prediction_type = "greedy"
                     align = batch.alignment[t, :].contiguous()
 
-                loss_t, pred_t, stats_t, i_pred_t = loss_compute.compute_loss(
+                loss_t, pred_t, stats_t = loss_compute.compute_loss(
                     batch,
                     output,
                     tgt_t,
@@ -677,49 +598,33 @@ class ReinforcedDecoder(_Module):
                 outputs += [output]
                 attns += [alpha_e]
                 preds += [pred_t]
-                # ipreds += [i_pred_t]
 
-                try:
-                    nonan(alpha_e, "alpha_e")
-                    nonan(pred_t, "pred_t")
-                    nonan(output, "output")
-                    nonan(loss_t, "loss")
-                except ValueError as e:
-                    print(e)
-                    print("t=%d" % t)
-                    print("hd_t", hd_t)
-                    print("c_e", c_e)
-                    print("cd_t", cd_t)
-                    print("attn", alpha_e)
-                    print("pred", pred_t)
-                    raise ValueError()
                 stats.update(stats_t)
                 loss = loss + loss_t if loss is not None else loss_t
+
             else:
                 # In translation case we just want scores
                 # prediction itself will be done with beam search
                 output = torch.cat([hd_t, c_e, cd_t], dim=1)
-                # , entity_mask=batch.entity_mask)
                 scores_t = generator(output, alpha_e, batch.src_map)
                 scores += [scores_t]
                 attns += [alpha_e]
                 dec_attns += [alpha_d]
 
-                #_sort_tgt = torch.sort(inputs.data, 0)[1]
-                #print(torch.stack([scores_t.max(1)[1].data, _sort_tgt[t, :]], 1))
-
-            timer.chkpt("loss&pred")
-
             if sampling:
+                # the sampling mode correspond to generating y^s_t as
+                # described in sect. 3.2
                 inputs_t = preds[-1]
+
             elif t < input_size - 1:
                 if self.training:
                     # Exposure bias reduction by feeding predicted token
-                    # with a 0.25 probability as mentionned in sect. 6.1:Setup
+                    # with a 0.25 probability as mentionned in sect. 6.1
+
                     _pred_t = preds[-1].clone()
                     _pred_t = loss_compute.remove_oov(_pred_t)
                     exposure_mask = self.mkvar(
-                        torch.rand([bs]).lt(0.25).long())
+                        torch.rand([bs]).lt(self.exp_bias_reduction).long())
                     inputs_t = exposure_mask * _pred_t.long()
                     inputs_t += (1 - exposure_mask.float()).long() \
                         * inputs[t+1, :]
@@ -727,38 +632,6 @@ class ReinforcedDecoder(_Module):
                 else:
                     inputs_t = inputs[t+1, :]
 
-            timer.chkpt("next_input")
-            gtimer.chkpt("step: %d" % t, append="\n")
-            t += 1
-
-            if t >= input_size:
-                # NOTE I've been thinking of other stop criterion
-                # in particular for the sampling pass but kept this one for
-                # simplicity
-                break
-
-        if self.training:
-            nonan(inputs_t, "inputs_t")
-            nonan(loss, "loss (t=%d)" % t)
-            # print("decoder call: ")
-            nonan(state.hidden[0], "sth0")
-            nonan(state.hidden[1], "sth1")
-            #nonan(self.embeddings.full_embedding.weight, "emb_weight")
-            
-            # NOTE: we're not longer running 
-            # loss.backward()
-            nonan(state.hidden[0], "sth0")
-            nonan(state.hidden[1], "sth1")
-            #nonan(self.embeddings.full_embedding.weight, "emb_weight")
-            # print("inp/tgt/pred/ipred")
-            pred0 = torch.stack(preds, 0)[:, 0]
-            # ipred0 = torch.stack(ipreds, 0)[:, 0]
-            #print(torch.stack([inputs[:, 0], tgt[:, 0], pred0, ipred0], 1))
-            # print("copy")
-            # print("attn")
-            #print(torch.stack(attns, 0)[:, 0, :])
-
-        gtimer.stop("backward", append="\n")
         state.update_state(hidden, None, None)
         if not ret_hists:
             return loss, stats, state, scores, attns, preds
@@ -766,13 +639,19 @@ class ReinforcedDecoder(_Module):
 
 
 class ReinforcedModel(onmt.Models.NMTModel):
-    def __init__(self, encoder, decoder, multigpu=False):
+    def __init__(self, encoder, decoder, multigpu=False, gamma=0.9984):
+        """
+        Args:
+            encoder:
+            decoder:
+            multigpu: not sure why its here
+            gamma: in [0;1] weight between ML and RL
+                   loss = gamma * loss_rl + (1 - gamma) * loss_ml
+                   (see Paulus et al 2017, sect. 3.3)
+        """
         super(ReinforcedModel, self).__init__(encoder, decoder)
-        # TODO: use parameters instead
-        self.use_rl = False
-        self.rl_only = False
         self.rouge = RougeScorer()
-        self.gamma = 0.9984
+        self.gamma = gamma
 
     def forward(self, src, tgt, src_lengths, batch, loss_compute,
                 dec_state=None):
@@ -797,25 +676,19 @@ class ReinforcedModel(onmt.Models.NMTModel):
                                                         state, batch, loss_compute,
                                                         tgt=tgt[1:])
 
-        # print("First decoder pass", loss.size(), len(preds), preds[0].size())
-
-        if self.use_rl:
+        if self.gamma > 0:
             loss2, stats2, hidden2, _, _, preds2 = self.decoder(tgt[:-1], src, enc_out,
                                                                 state, batch, loss_compute,
                                                                 tgt=tgt[1:],
                                                                 sampling=True)
 
-            # print("2nd decoder pass", loss2.size(), len(preds2), preds2[0].size())
             sample_preds = torch.stack(preds2, 1)
             greedy_preds = torch.stack(preds, 1)
             metric = self.rouge.score(sample_preds, greedy_preds, tgt[1:].t())
             metric = torch.autograd.Variable(metric).cuda()
             rl_loss = (loss2 * metric).sum()
-            if self.rl_only:
-                loss = rl_loss
-            else:
-                loss = (self.gamma * rl_loss) - ((1 - self.gamma * loss))
 
+            loss = (self.gamma * rl_loss) - ((1 - self.gamma * loss))
         return loss, stats, state
 
 
