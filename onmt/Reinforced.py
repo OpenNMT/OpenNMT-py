@@ -652,6 +652,7 @@ class ReinforcedModel(onmt.Models.NMTModel):
         super(ReinforcedModel, self).__init__(encoder, decoder)
         self.rouge = RougeScorer()
         self.gamma = gamma
+        self.model_type = "Reinforced"
 
     def forward(self, src, tgt, src_lengths, batch, loss_compute,
                 dec_state=None):

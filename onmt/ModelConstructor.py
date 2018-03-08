@@ -193,8 +193,9 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
     decoder = make_decoder(model_opt, tgt_embeddings)
 
     if model_opt.reinforced:
-        model = onmt.Reinforced.ReinforcedModel(encoder, decoder)
-        model.model_type = "Reinforced"
+        model = onmt.Reinforced.ReinforcedModel(encoder,
+                                                decoder,
+                                                opt.reinforced_gamma)
     else:
         # Make NMTModel(= encoder + decoder).
         model = NMTModel(encoder, decoder)

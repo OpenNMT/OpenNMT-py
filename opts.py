@@ -120,6 +120,8 @@ def model_opts(parser):
                        help='Lambda value for coverage.')
     group.add_argument('-reinforced', action='store_true',
                        help='Use reinforcement model of Paulus (2017)')
+    group.add_argument('-reinforced_gamma', type=float, default=0.9984,
+                       help="Mixed objective scaling factor for RL+ML")
     group.add_argument('-partial_embedding', action="store_true",
                        help="""Share part of source embedding as in Paulus
                        et al. (2017). See '-reinforced'""")
