@@ -23,6 +23,7 @@ class Translator(object):
        cuda (bool): use cuda
        beam_trace (bool): trace beam search for debugging
     """
+
     def __init__(self, model, fields,
                  beam_size, n_best=1,
                  max_length=100,
@@ -74,7 +75,8 @@ class Translator(object):
                                     pad=vocab.stoi[onmt.io.PAD_WORD],
                                     eos=vocab.stoi[onmt.io.EOS_WORD],
                                     bos=vocab.stoi[onmt.io.BOS_WORD],
-                                    min_length=self.min_length)
+                                    min_length=self.min_length,
+                                    avoid_trigram_repetition=avoid_trigram_repetition)
                 for __ in range(batch_size)]
 
         # Help functions for working with beams and batches

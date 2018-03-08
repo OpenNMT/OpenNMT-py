@@ -18,7 +18,7 @@ class Beam(object):
     def __init__(self, size, pad, bos, eos,
                  n_best=1, cuda=False,
                  global_scorer=None,
-                 min_length=0):
+                 min_length=0, avoid_trigram_repetition=False):
 
         self.size = size
         self.tt = torch.cuda if cuda else torch
@@ -53,6 +53,10 @@ class Beam(object):
         # Minimum prediction length
         self.min_length = min_length
 
+        # avoid generating a trigram that has already been decoded
+        # it is presented in paulus (2017), sect. 2.5
+        self.avoid_trigram_repetition = avoid_trigram_repetition
+
     def get_current_state(self):
         "Get the outputs for the current timestep."
         return self.next_ys[-1]
@@ -63,7 +67,7 @@ class Beam(object):
 
     def advance(self, word_probs, attn_out):
         """
-        Given prob over words for every last beam `wordLk` and attention
+        Given prob over words for every last beam `word_probs` and attention
         `attn_out`: Compute and update the beam search.
 
         Parameters:
@@ -81,10 +85,56 @@ class Beam(object):
             for k in range(len(word_probs)):
                 word_probs[k][self._eos] = -1e20
 
+
         # Sum the previous scores.
-        if len(self.prev_ks) > 0:
+        if len(self.prevKs) > 0:
             beam_scores = word_probs + \
                 self.scores.unsqueeze(1).expand_as(word_probs)
+
+            if t > 2 and self.avoid_trigram_repetition:
+                t = len(self.next_ys)
+                b = self.next_ys[0].size(0)                
+                
+                # [b, t]
+                sentences = torch.stack(self.hyps, 0)
+
+                # [b, 2]
+                last_bigram = sentences[:, -2:]
+
+                # [b, 2, t]
+                match_1 = (last_bigram.unsqueeze(2) ==
+                           sentences.unsqueeze(1)).float()
+
+                # [b, t-1]
+                match_2 = match_1[:, 0, :-1] * match_1[:, 1, 1:]
+
+                def _zeros(size):
+                    t = torch.zeros(size)
+                    if self.next_ys[-1].is_cuda:
+                        # TODO remove hardcoded cuda
+                        return t.cuda()
+                    return t
+
+                z = _zeros([b, 2])
+                m2 = match_2[:, :-1]
+                trigram_candidate_mask = torch.cat([z, m2], 1)
+                assert_size(trigram_candidate_mask, [b, t])
+
+                penalty = _zeros(word_probs.size())
+                penalty.scatter_add_(
+                    1, sentences, trigram_candidate_mask).gt_(0).float()
+
+                # if last two tokens are equal, penalize this token
+                last2_eq = (sentences[:, -1] ==
+                            sentences[:, -2]).unsqueeze(1).float()
+                last1 = sentences[:, -1].contiguous().view(-1, 1)
+                penalty.scatter_add_(1, last1, last2_eq)
+                assert_size(penalty, list(word_probs.size()))
+
+                penalty.gt_(0)
+                penalty *= 1e12
+
+                beam_scores -= penalty
 
             # Don't let EOS have children.
             for i in range(self.next_ys[-1].size(0)):

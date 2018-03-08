@@ -412,6 +412,8 @@ def translate_opts(parser):
                        help='Maximum prediction length.')
     group.add_argument('-max_sent_length', action=DeprecateAction,
                        help="Deprecated, use `-max_length` instead")
+    group.add_argument('-avoid_trigram_repetition', action='store_true',
+                       help='Avoid trigram repetition')
 
     # Alpha and Beta values for Google Length + Coverage penalty
     # Described here: https://arxiv.org/pdf/1609.08144.pdf, Section 7
