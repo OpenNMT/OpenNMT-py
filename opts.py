@@ -164,7 +164,7 @@ def preprocess_opts(parser):
     group.add_argument('-tgt_vocab',
                        help="Path to an existing target vocabulary")
     group.add_argument('-trunc_tgt_vocab', type=int, default=-1,
-                        help="Truncate shared vocabulary (see `-share_vocab`)")
+                       help="Truncate shared vocabulary (see `-share_vocab`)")
     group.add_argument('-features_vocabs_prefix', type=str, default='',
                        help="Path prefix to existing features vocabularies")
     group.add_argument('-src_vocab_size', type=int, default=50000,

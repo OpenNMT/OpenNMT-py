@@ -73,13 +73,11 @@ class Translator(object):
         data_type = data.data_type
         vocab = self.fields["tgt"].vocab
         beam = [onmt.translate.Beam(beam_size, n_best=self.n_best,
-                                    cuda=self.cuda,
-                                    global_scorer=self.global_scorer,
-                                    pad=vocab.stoi[onmt.io.PAD_WORD],
-                                    eos=vocab.stoi[onmt.io.EOS_WORD],
-                                    bos=vocab.stoi[onmt.io.BOS_WORD],
-                                    min_length=self.min_length,
-                                    avoid_trigram_repetition=self.avoid_trigram_repetition)
+                cuda=self.cuda, global_scorer=self.global_scorer,
+                pad=vocab.stoi[onmt.io.PAD_WORD],
+                eos=vocab.stoi[onmt.io.EOS_WORD],
+                bos=vocab.stoi[onmt.io.BOS_WORD], min_length=self.min_length,
+                avoid_trigram_repetition=self.avoid_trigram_repetition)
                 for __ in range(batch_size)]
 
         # Help functions for working with beams and batches
@@ -132,8 +130,6 @@ class Translator(object):
                 inp = inp.masked_fill(
                     inp.gt(len(self.fields["tgt"].vocab) - 1), 0)
 
-
-
             # Run one step.
             if self.model.model_type == "Reinforced":
                 # inp is [n x batch_size * beam_size]
@@ -142,10 +138,10 @@ class Translator(object):
                 src_len, bs = list(src.size())[:2]
                 _src = src.view(src_len, bs, 1)
                 _src = _src.expand([src_len, bs, beam_size]) \
-                          .contiguous() \
-                          .view([src_len, -1, 1]) \
-                          .contiguous()
-               
+                           .contiguous() \
+                           .view([src_len, -1, 1]) \
+                           .contiguous()
+
                 stats, dec_states, scores, attns, hd_hist, attn_hist = \
                     self.model.decoder(inp, _src, memory_bank, dec_states,
                                        batch, generator=self.model.generator,
@@ -164,7 +160,8 @@ class Translator(object):
                 # in the decoder
                 inp = inp.unsqueeze(2)
                 dec_out, dec_states, attn = self.model.decoder(
-                    inp, memory_bank, dec_states, memory_lengths=memory_lengths)
+                    inp, memory_bank, dec_states,
+                    memory_lengths=memory_lengths)
                 dec_out = dec_out.squeeze(0)
                 # dec_out: beam x rnn_size
 

@@ -4,8 +4,6 @@ and creates each encoder and decoder accordingly.
 """
 import torch
 import torch.nn as nn
-import torchtext.vocab
-
 import onmt
 import onmt.io
 import onmt.Models
@@ -216,7 +214,7 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
             nn.LogSoftmax())
         if model_opt.share_decoder_embeddings:
             generator[0].weight = decoder.embeddings.word_lut.weight
-    
+
     # Load the model states from checkpoint or initialize them.
     if checkpoint is not None:
         print('Loading model parameters.')

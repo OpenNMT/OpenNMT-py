@@ -187,6 +187,7 @@ class Embeddings(nn.Module):
 
         return emb
 
+
 class PartialEmbedding(nn.Embedding):
     def __init__(self, partial_num_embeddings, embedding, padding_idx):
         self.partial_num_embeddings = partial_num_embeddings
@@ -250,4 +251,3 @@ class PartialEmbedding(nn.Embedding):
         emb = _emb.transpose(0, 1)
 
         return emb
-

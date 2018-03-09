@@ -76,8 +76,10 @@ def save_fields_to_vocab(fields):
 
 def trunc_vocab(vocab, trunc_size):
     return torchtext.vocab.Vocab(vocab.freqs,
-                                 specials=[UNK_WORD, PAD_WORD, BOS_WORD, EOS_WORD],
+                                 specials=[UNK_WORD, PAD_WORD, BOS_WORD,
+                                           EOS_WORD],
                                  max_size=trunc_size)
+
 
 def merge_vocabs(vocabs, vocab_size=None):
     """
@@ -296,7 +298,7 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
                 [fields["src"].vocab, fields["tgt"].vocab],
                 vocab_size=src_vocab_size)
             fields["src"].vocab = merged_vocab
-            if trunc_tgt_vocab == -1: 
+            if trunc_tgt_vocab == -1:
                 fields["tgt"].vocab = merged_vocab
             else:
                 fields["tgt"].vocab = trunc_vocab(

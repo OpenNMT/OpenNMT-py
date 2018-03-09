@@ -6,14 +6,11 @@ https://arxiv.org/abs/1705.04304
 
 import torch
 import torch.nn as nn
-from torch.autograd import Variable
 import onmt
 import onmt.modules
 import onmt.Models
 import onmt.Trainer
 import onmt.Loss
-import onmt.Profiler as prof
-from onmt.Profiler import timefunc, Timer
 from onmt.modules import CopyGeneratorLossCompute, CopyGenerator
 
 
@@ -79,7 +76,8 @@ class EachStepGeneratorLossCompute(CopyGeneratorLossCompute):
         """
         return pred.masked_fill_(pred.gt(len(self.tgt_vocab) - 1), 0)
 
-    def compute_loss(self, batch, output, target, copy_attn, align, src, prediction_type="greedy"):
+    def compute_loss(self, batch, output, target, copy_attn, align, src,
+                     prediction_type="greedy"):
         """
             align:      [bs]
             target:     [bs]
@@ -96,7 +94,6 @@ class EachStepGeneratorLossCompute(CopyGeneratorLossCompute):
             copy_attn,
             batch.src_map)
         nonan(scores, "compute_loss.scores")
-        _scores_incorrect = scores.data
 
         # Experimental:
         # fast copy collapse:
@@ -142,7 +139,7 @@ class EachStepGeneratorLossCompute(CopyGeneratorLossCompute):
 
         _scores_data = _scores
         scores_data = _scores_data
-
+        nonan(scores_data, "scores_data")
         #
         # CRITERION & PREDICTION: Predicting & Calculating the loss
         #
@@ -159,11 +156,13 @@ class EachStepGeneratorLossCompute(CopyGeneratorLossCompute):
             # kinda hacky but seems to work
             pred = torch.autograd.Variable(d.sample()) * target
 
-            # NOTE we use collapsed scores that account copy, thus align isnt needed
+            # NOTE we use collapsed scores that account copy
             loss = self.criterion(scores, align, pred)
             loss_data = loss.sum().data
         else:
             raise ValueError("Incorrect prediction_type %s" % prediction_type)
+        nonan(loss, "loss")
+        nonan(pred, "pred")
         pred.cuda()
 
         #
@@ -232,9 +231,6 @@ class RTrainer(onmt.Trainer.Trainer):
                                                           batch,
                                                           self.train_loss,
                                                           dec_state)
-
-                dec_emb = self.model.decoder.embeddings
-
                 loss.backward()
                 # 4. Update the parameters and statistics.
                 self.optim.step()
@@ -376,7 +372,8 @@ class IntraAttention(_Module):
                 # we manually computes the softmax because it must not include
                 # E itself. We substract the maximum value in order to ensure
                 # numerical stability
-                next_attn_history = torch.cat([attn_history, E.unsqueeze(0)], 0)
+                next_attn_history = torch.cat([attn_history,
+                                               E.unsqueeze(0)], 0)
                 M = next_attn_history.max(0)[0]
                 E = (E - M).exp() / (attn_history - M).exp().sum(0)
                 S = E.sum(1)
@@ -417,7 +414,7 @@ class PointerGenerator(CopyGenerator):
     def W_out(self, refresh=False):
         """ Sect. (2.4) Sharing decoder weights
             The function returns the W_out matrix which is a projection of the
-            target embedding weight matrix. 
+            target embedding weight matrix.
             The W_out matrix needs to recalculated after each backward pass,
             which is done automatically. This is done to avoid calculating it
             at each decoding step (which usually leads to OOM)
@@ -447,7 +444,7 @@ class ReinforcedDecoder(_Module):
                  exp_bias_reduction=0.25, bidirectional_encoder=False):
         """
         Implementation of a decoder following Paulus et al., (2017)
-        By default, we refer to this paper when mentioning a section 
+        By default, we refer to this paper when mentioning a section
 
 
         Args:
@@ -553,14 +550,15 @@ class ReinforcedDecoder(_Module):
         preds = []
         inputs_t = inputs[0, :]
 
-        continue_generation = True
         for t in range(input_size):
             # Embedding & intra-temporal attention on source
             emb_t = self.embeddings(inputs_t.view(1, -1, 1)).squeeze(0)
 
             hd_t, hidden = self.rnn(emb_t, hidden)
 
-            c_e, alpha_e, attn_hist = self.enc_attn(hd_t, h_e, attn_history=attn_hist)
+            c_e, alpha_e, attn_hist = self.enc_attn(hd_t,
+                                                    h_e,
+                                                    attn_history=attn_hist)
 
             # Intra-decoder Attention
             if self.dec_attn is None or hd_history is None:
@@ -662,7 +660,6 @@ class ReinforcedModel(onmt.Models.NMTModel):
             tgt:
             dec_state: A decoder state object
         """
-        bs = src.size(1)
         n_feats = tgt.size(2)
         assert n_feats == 1, "Reinforced model does not handle features"
         tgt = tgt.squeeze(2)
@@ -673,13 +670,20 @@ class ReinforcedModel(onmt.Models.NMTModel):
                                                     context=enc_out)
         state = enc_state if dec_state is None else dec_state
 
-        loss, stats, hidden, _, _, preds = self.decoder(tgt[:-1], src, enc_out,
-                                                        state, batch, loss_compute,
+        loss, stats, hidden, _, _, preds = self.decoder(tgt[:-1],
+                                                        src,
+                                                        enc_out,
+                                                        state, batch,
+                                                        loss_compute,
                                                         tgt=tgt[1:])
 
         if self.gamma > 0:
-            loss2, stats2, hidden2, _, _, preds2 = self.decoder(tgt[:-1], src, enc_out,
-                                                                state, batch, loss_compute,
+            loss2, stats2, hidden2, _, _, preds2 = self.decoder(tgt[:-1],
+                                                                src,
+                                                                enc_out,
+                                                                state,
+                                                                batch,
+                                                                loss_compute,
                                                                 tgt=tgt[1:],
                                                                 sampling=True)
 

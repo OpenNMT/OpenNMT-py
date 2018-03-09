@@ -85,7 +85,6 @@ class Beam(object):
             for k in range(len(word_probs)):
                 word_probs[k][self._eos] = -1e20
 
-
         # Sum the previous scores.
         if len(self.prev_ks) > 0:
             beam_scores = word_probs + \
@@ -93,8 +92,8 @@ class Beam(object):
 
             t = len(self.next_ys)
             if t > 2 and self.avoid_trigram_repetition:
-                b = self.next_ys[0].size(0)                
-                
+                b = self.next_ys[0].size(0)
+
                 # [b, t]
                 sentences = torch.stack(self.next_ys, 0).transpose(0, 1)
 
