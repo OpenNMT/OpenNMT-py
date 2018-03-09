@@ -343,22 +343,22 @@ class IntraAttention(_Module):
 
         self.softmax = nn.Softmax()
 
-    def forward(self, h_t, h, E_history=None, mask=None, debug=False):
+    def forward(self, h_t, h, attn_history=None, mask=None, debug=False):
         """
         Args:
             h_t : [bs x dim]
             h   : [n x bs x dim]
-            E_history: None or [(t-1) x bs x n]
+            attn_history: None or [(t-1) x bs x n]
         Returns:
             C_t :  [bs x n]
             alpha: [bs x dim]
-            E_history: [t x bs x n]
+            attn_history: [t x bs x n]
         """
         bs, dim = h_t.size()
         n, _bs, _dim = h.size()
         assert (_bs, _dim) == (bs, dim)
-        if E_history is not None:
-            _t, __bs, _n = E_history.size()
+        if attn_history is not None:
+            _t, __bs, _n = attn_history.size()
             assert (__bs, _n) == (_bs, n)
 
         _h_t = self.linear(h_t).unsqueeze(1)
@@ -367,18 +367,18 @@ class IntraAttention(_Module):
         # e_t = [bs, 1, dim] bmm [bs, dim, n] = [bs, n] (after squeeze)
         E = _h_t.bmm(_h.transpose(0, 1).transpose(1, 2)).squeeze(1)
 
-        next_E_history = None
+        next_attn_history = None
         alpha = None
         if self.temporal:
-            if E_history is None:
-                next_E_history = E.unsqueeze(0)
+            if attn_history is None:
+                next_attn_history = E.unsqueeze(0)
             else:
                 # we manually computes the softmax because it must not include
                 # E itself. We substract the maximum value in order to ensure
                 # numerical stability
-                next_E_history = torch.cat([E_history, E.unsqueeze(0)], 0)
-                M = next_E_history.max(0)[0]
-                E = (E - M).exp() / (E_history - M).exp().sum(0)
+                next_attn_history = torch.cat([attn_history, E.unsqueeze(0)], 0)
+                M = next_attn_history.max(0)[0]
+                E = (E - M).exp() / (attn_history - M).exp().sum(0)
                 S = E.sum(1)
                 alpha = E / S.unsqueeze(1)
 
@@ -388,7 +388,7 @@ class IntraAttention(_Module):
         C_t = alpha.unsqueeze(1).bmm(_h.transpose(0, 1)).squeeze(1)
 
         if self.temporal:
-            return C_t, alpha, next_E_history
+            return C_t, alpha, next_attn_history
         return C_t, alpha
 
 
@@ -509,7 +509,7 @@ class ReinforcedDecoder(_Module):
 
     def forward(self, inputs, src, h_e, state, batch,
                 loss_compute=None, tgt=None, generator=None,
-                hd_history=None, E_hist=None, ret_hists=False,
+                hd_history=None, attn_hist=None, ret_hists=False,
                 sampling=False):
         """
         Args:
@@ -525,13 +525,13 @@ class ReinforcedDecoder(_Module):
             scores:
             attns:
             hd_history: memory for decoder intra attention
-            E_hist: memory for temporal attention
+            attn_hist: memory for temporal attention
 
         """
         dim = self.dim
         src_len, bs, _ = list(src.size())
         input_size, _bs = list(inputs.size())
-        assert bs == _bs
+        assert bs == _bs, "bs does not match %d, %d" % (bs, _bs)
 
         if self.training:
             assert tgt is not None
@@ -560,7 +560,7 @@ class ReinforcedDecoder(_Module):
 
             hd_t, hidden = self.rnn(emb_t, hidden)
 
-            c_e, alpha_e, E_hist = self.enc_attn(hd_t, h_e, E_history=E_hist)
+            c_e, alpha_e, attn_hist = self.enc_attn(hd_t, h_e, attn_history=attn_hist)
 
             # Intra-decoder Attention
             if self.dec_attn is None or hd_history is None:
@@ -635,7 +635,7 @@ class ReinforcedDecoder(_Module):
         state.update_state(hidden, None, None)
         if not ret_hists:
             return loss, stats, state, scores, attns, preds
-        return stats, state, scores, attns, hd_history, E_hist
+        return stats, state, scores, attns, hd_history, attn_hist
 
 
 class ReinforcedModel(onmt.Models.NMTModel):

@@ -195,7 +195,7 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
     if model_opt.reinforced:
         model = onmt.Reinforced.ReinforcedModel(encoder,
                                                 decoder,
-                                                opt.reinforced_gamma)
+                                                model_opt.reinforced_gamma)
     else:
         # Make NMTModel(= encoder + decoder).
         model = NMTModel(encoder, decoder)

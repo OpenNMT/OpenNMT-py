@@ -611,6 +611,9 @@ class DecoderState(object):
 
     def beam_update(self, idx, positions, beam_size):
         for e in self._all:
+            if e is None:
+                # NOTE i'm not sure why it's needed
+                continue
             a, br, d = e.size()
             sent_states = e.view(a, beam_size, br // beam_size, d)[:, :, idx]
             sent_states.data.copy_(

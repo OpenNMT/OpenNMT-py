@@ -28,7 +28,8 @@ class Translator(object):
                  beam_size, n_best=1,
                  max_length=100,
                  global_scorer=None, copy_attn=False, cuda=False,
-                 beam_trace=False, min_length=0):
+                 beam_trace=False, min_length=0,
+                 avoid_trigram_repetition=False, reinforced=False):
         self.model = model
         self.fields = fields
         self.n_best = n_best
@@ -38,6 +39,8 @@ class Translator(object):
         self.beam_size = beam_size
         self.cuda = cuda
         self.min_length = min_length
+        self.avoid_trigram_repetition = avoid_trigram_repetition
+        self.reinforced = reinforced
 
         # for debugging
         self.beam_accum = None
@@ -76,7 +79,7 @@ class Translator(object):
                                     eos=vocab.stoi[onmt.io.EOS_WORD],
                                     bos=vocab.stoi[onmt.io.BOS_WORD],
                                     min_length=self.min_length,
-                                    avoid_trigram_repetition=avoid_trigram_repetition)
+                                    avoid_trigram_repetition=self.avoid_trigram_repetition)
                 for __ in range(batch_size)]
 
         # Help functions for working with beams and batches
@@ -111,6 +114,7 @@ class Translator(object):
         memory_bank = rvar(memory_bank.data)
         memory_lengths = src_lengths.repeat(beam_size)
         dec_states.repeat_beam_size_times(beam_size)
+        hd_hist, attn_hist, = None, None
 
         # (3) run the decoder to generate sentences, using beam search.
         for i in range(self.max_length):
@@ -124,35 +128,61 @@ class Translator(object):
 
             # Turn any copied words to UNKs
             # 0 is unk
-            if self.copy_attn:
+            if self.copy_attn or self.reinforced:
                 inp = inp.masked_fill(
                     inp.gt(len(self.fields["tgt"].vocab) - 1), 0)
 
-            # Temporary kludge solution to handle changed dim expectation
-            # in the decoder
-            inp = inp.unsqueeze(2)
+
 
             # Run one step.
-            dec_out, dec_states, attn = self.model.decoder(
-                inp, memory_bank, dec_states, memory_lengths=memory_lengths)
-            dec_out = dec_out.squeeze(0)
-            # dec_out: beam x rnn_size
-
-            # (b) Compute a vector of batch*beam word scores.
-            if not self.copy_attn:
-                out = self.model.generator.forward(dec_out).data
-                out = unbottle(out)
-                # beam x tgt_vocab
-            else:
-                out = self.model.generator.forward(dec_out,
-                                                   attn["copy"].squeeze(0),
-                                                   src_map)
-                # beam x (tgt_vocab + extra_vocab)
+            if self.model.model_type == "Reinforced":
+                # inp is [n x batch_size * beam_size]
+                # src is [src_len x batch_size x 1]
+                # we use _src [src_len x batch_size * beam_size]
+                src_len, bs = list(src.size())[:2]
+                _src = src.view(src_len, bs, 1)
+                _src = _src.expand([src_len, bs, beam_size]) \
+                          .contiguous() \
+                          .view([src_len, -1, 1]) \
+                          .contiguous()
+               
+                stats, dec_states, scores, attns, hd_hist, attn_hist = \
+                    self.model.decoder(inp, _src, memory_bank, dec_states,
+                                       batch, generator=self.model.generator,
+                                       hd_history=hd_hist, attn_hist=attn_hist,
+                                       ret_hists=True)
+                scores = scores[0]
+                scores_data = scores.data
+                out = unbottle(scores_data)
                 out = data.collapse_copy_scores(
-                    unbottle(out.data),
-                    batch, self.fields["tgt"].vocab, data.src_vocabs)
-                # beam x tgt_vocab
-                out = out.log()
+                       out, batch, self.fields["tgt"].vocab, data.src_vocabs)
+                attn = {"std": torch.stack(attns, dim=0)
+                                    .squeeze(0).contiguous()}
+
+            else:
+                # Temporary kludge solution to handle changed dim expectation
+                # in the decoder
+                inp = inp.unsqueeze(2)
+                dec_out, dec_states, attn = self.model.decoder(
+                    inp, memory_bank, dec_states, memory_lengths=memory_lengths)
+                dec_out = dec_out.squeeze(0)
+                # dec_out: beam x rnn_size
+
+                # (b) Compute a vector of batch*beam word scores.
+                if not self.copy_attn:
+                    out = self.model.generator.forward(dec_out).data
+                    out = unbottle(out)
+                    # beam x tgt_vocab
+                else:
+                    out = self.model.generator.forward(dec_out,
+                                                       attn["copy"].squeeze(0),
+                                                       src_map)
+                    # beam x (tgt_vocab + extra_vocab)
+                    out = data.collapse_copy_scores(
+                        unbottle(out.data),
+                        batch, self.fields["tgt"].vocab, data.src_vocabs)
+                    # beam x tgt_vocab
+                    out = out.log()
 
             # (c) Advance each beam.
             for j, b in enumerate(beam):

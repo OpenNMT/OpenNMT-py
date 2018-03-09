@@ -87,16 +87,16 @@ class Beam(object):
 
 
         # Sum the previous scores.
-        if len(self.prevKs) > 0:
+        if len(self.prev_ks) > 0:
             beam_scores = word_probs + \
                 self.scores.unsqueeze(1).expand_as(word_probs)
 
+            t = len(self.next_ys)
             if t > 2 and self.avoid_trigram_repetition:
-                t = len(self.next_ys)
                 b = self.next_ys[0].size(0)                
                 
                 # [b, t]
-                sentences = torch.stack(self.hyps, 0)
+                sentences = torch.stack(self.next_ys, 0).transpose(0, 1)
 
                 # [b, 2]
                 last_bigram = sentences[:, -2:]
@@ -118,7 +118,6 @@ class Beam(object):
                 z = _zeros([b, 2])
                 m2 = match_2[:, :-1]
                 trigram_candidate_mask = torch.cat([z, m2], 1)
-                assert_size(trigram_candidate_mask, [b, t])
 
                 penalty = _zeros(word_probs.size())
                 penalty.scatter_add_(
@@ -129,7 +128,6 @@ class Beam(object):
                             sentences[:, -2]).unsqueeze(1).float()
                 last1 = sentences[:, -1].contiguous().view(-1, 1)
                 penalty.scatter_add_(1, last1, last2_eq)
-                assert_size(penalty, list(word_probs.size()))
 
                 penalty.gt_(0)
                 penalty *= 1e12

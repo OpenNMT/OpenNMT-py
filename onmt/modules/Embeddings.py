@@ -246,26 +246,8 @@ class PartialEmbedding(nn.Embedding):
         assert nfeat == 1, "PartialEmbedding don't handle features"
 
         _input = input.squeeze(2).t()
-        #_input.data.masked_fill_(_input.data.gt(self.partial_num_embeddings), 0)
-
         _emb = super(PartialEmbedding, self).forward(_input)
         emb = _emb.transpose(0, 1)
 
-        def nonan(variable):
-            st = variable.data
-            if not (st != st).sum() == 0:
-                print("NaN values emb")
-                print("inp: ", input)
-                print("emb: ", emb)
-                print("spe: ", self.spe)
-                print("full: ", self.full_embedding.weight)
-                raise ValueError()
-        nonan(emb)
-
-        _l, _bs, _emb_size = emb.size()
-        assert l == _l
-        assert _bs == bs
-        assert _emb_size == self.embedding_dim
-        # print(emb)
         return emb
 
