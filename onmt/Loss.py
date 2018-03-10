@@ -201,7 +201,8 @@ class NMTLossCompute(LossComputeBase):
 
         loss = self.criterion(scores, gtruth)
         if self.confidence < 1:
-            loss_data = - likelihood.sum(0)
+            loss_data = loss.data.clone()
+            # loss_data = - likelihood.sum(0)
         else:
             loss_data = loss.data.clone()
 

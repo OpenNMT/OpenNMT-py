@@ -134,8 +134,9 @@ class MultiHeadedAttention(nn.Module):
             mask = mask.unsqueeze(1).expand_as(scaled)
             scaled = scaled.masked_fill(Variable(mask), -1e18) \
                            .view(bh, l, dim_per_head)
-        attn = self.sm(scaled)
+
         # Return one attn
+        attn = self.sm(scaled)
         top_attn = attn \
             .view(b, self.head_count, l, dim_per_head)[:, 0, :, :] \
             .contiguous()
@@ -144,9 +145,8 @@ class MultiHeadedAttention(nn.Module):
 
         # values : (batch * 8) x qlen x dim
         out = unshape_projection(torch.bmm(drop_attn, value_up), residual)
-
-        # Residual and layer norm
-        ret = self.res_dropout(out)
+        
+        ret = out #self.res_dropout(out)
 
         # CHECK
         batch_, q_len_, d_ = ret.size()

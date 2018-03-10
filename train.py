@@ -20,6 +20,8 @@ import onmt.modules
 from onmt.Utils import use_gpu
 import opts
 
+
+
 parser = argparse.ArgumentParser(
     description='train.py',
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -93,6 +95,7 @@ def report_func(epoch, batch, num_batches,
     """
     if batch % opt.report_every == -1 % opt.report_every:
         report_stats.output(epoch, batch + 1, num_batches, start_time)
+        print(lr)
         if opt.exp_host:
             report_stats.log("progress", experiment, lr)
         if opt.tensorboard:
@@ -378,7 +381,7 @@ def build_optim(model, checkpoint):
             warmup_steps=opt.warmup_steps,
             model_size=opt.rnn_size)
 
-    optim.set_parameters(model.parameters())
+    optim.set_parameters(model.named_parameters())
 
     return optim
 
