@@ -163,8 +163,9 @@ class Trainer(object):
             true_batchs.append(batch)
             accum += 1
             if self.norm_method == "tokens":
-                normalization += batch.tgt[1:].data.view(-1) \
+                num_tokens = batch.tgt[1:].data.view(-1) \
                     .ne(self.train_loss.padding_idx).sum()
+                normalization += num_tokens
             else:
                 normalization += batch.batch_size
 
@@ -172,7 +173,12 @@ class Trainer(object):
                 self._gradient_accumulation(
                         true_batchs, total_stats,
                         report_stats, normalization)
-
+                # if idx % 500 == 0: 
+                #     print(idx, normalization, len(true_batchs))
+                #     for b in true_batchs:
+                #         num_tokens = b.tgt[1:].data.view(-1) \
+                #                                        .ne(self.train_loss.padding_idx).sum()
+                #         print(b.src[0].size(), b.tgt.size(), num_tokens)
                 if report_func is not None:
                     report_stats = report_func(
                             epoch, idx, num_batches,
