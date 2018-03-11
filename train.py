@@ -94,7 +94,6 @@ def report_func(epoch, batch, num_batches,
     """
     if batch % opt.report_every == -1 % opt.report_every:
         report_stats.output(epoch, batch + 1, num_batches, start_time)
-        print(lr)
         if opt.exp_host:
             report_stats.log("progress", experiment, lr)
         if opt.tensorboard:
