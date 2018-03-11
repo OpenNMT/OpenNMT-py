@@ -54,7 +54,10 @@ class Optim(object):
         self.model_size = model_size
 
     def set_parameters(self, params):
-        self.params = [p for p in params if p.requires_grad]
+        self.params = []
+        for k, p in params:
+            if p.requires_grad:
+                self.params.append(p)
         if self.method == 'sgd':
             self.optimizer = optim.SGD(self.params, lr=self.lr)
         elif self.method == 'adagrad':
