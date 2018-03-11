@@ -56,19 +56,17 @@ class MultiHeadedAttention(nn.Module):
         super(MultiHeadedAttention, self).__init__()
         self.head_count = head_count
 
-        self.linear_keys = BottleLinear(model_dim,
-                                        head_count * self.dim_per_head,
-                                        bias=False)
-        self.linear_values = BottleLinear(model_dim,
-                                          head_count * self.dim_per_head,
-                                          bias=False)
-        self.linear_query = BottleLinear(model_dim,
-                                         head_count * self.dim_per_head,
-                                         bias=False)
-        self.sm = BottleSoftmax()
-        self.activation = nn.ReLU()
+        self.linear_keys = nn.Linear(model_dim,
+                                     head_count * self.dim_per_head,
+                                     bias=False)
+        self.linear_values = nn.Linear(model_dim,
+                                       head_count * self.dim_per_head,
+                                       bias=False)
+        self.linear_query = nn.Linear(model_dim,
+                                      head_count * self.dim_per_head,
+                                      bias=False)
+        self.sm = nn.Softmax(dim=-1)
         self.dropout = nn.Dropout(dropout)
-        self.res_dropout = nn.Dropout(dropout)
 
     def forward(self, key, value, query, mask=None):
         """
@@ -129,7 +127,6 @@ class MultiHeadedAttention(nn.Module):
         bh, l, dim_per_head = scaled.size()
         b = bh // self.head_count
         if mask is not None:
-
             scaled = scaled.view(b, self.head_count, l, dim_per_head)
             mask = mask.unsqueeze(1).expand_as(scaled)
             scaled = scaled.masked_fill(Variable(mask), -1e18) \
@@ -141,7 +138,7 @@ class MultiHeadedAttention(nn.Module):
             .view(b, self.head_count, l, dim_per_head)[:, 0, :, :] \
             .contiguous()
 
-        drop_attn = self.dropout(self.sm(scaled))
+        drop_attn = self.dropout(attn)
 
         # values : (batch * 8) x qlen x dim
         out = unshape_projection(torch.bmm(drop_attn, value_up), residual)
