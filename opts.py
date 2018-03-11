@@ -364,7 +364,7 @@ def train_opts(parser):
     group.add_argument("-tensorboard_log_dir", type=str,
                        default="runs/onmt"
                        + datetime.fromtimestamp(time())
-                       .strftime(".%Y-%m-%d-%H:%M:%S"),
+                       .strftime("/%Y-%m-%d-%H:%M:%S"),
                        help="""Log directory for Tensorboard.
                        This is also the name of the run.
                        """)
