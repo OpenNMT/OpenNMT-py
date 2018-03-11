@@ -4,7 +4,6 @@ import torch.nn as nn
 from torch.autograd import Variable
 
 from onmt.Utils import aeq
-from onmt.modules.UtilClass import BottleLinear, BottleSoftmax
 
 
 class MultiHeadedAttention(nn.Module):

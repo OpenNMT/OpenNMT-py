@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 
-from onmt.modules import BottleLinear, Elementwise
+from onmt.modules import Elementwise
 from onmt.Utils import aeq
 
 
@@ -138,7 +138,7 @@ class Embeddings(nn.Module):
         if feat_merge == 'mlp':
             in_dim = sum(emb_dims)
             out_dim = word_vec_size
-            mlp = nn.Sequential(BottleLinear(in_dim, out_dim), nn.ReLU())
+            mlp = nn.Sequential(nn.Linear(in_dim, out_dim), nn.ReLU())
             self.make_embedding.add_module('mlp', mlp)
 
         if position_encoding:
