@@ -44,6 +44,9 @@ class Statistics(object):
     def accuracy(self):
         return 100 * (self.n_correct / self.n_words)
 
+    def xent(self):
+        return self.loss / self.n_words
+
     def ppl(self):
         return math.exp(min(self.loss / self.n_words, 100))
 
@@ -79,6 +82,7 @@ class Statistics(object):
 
     def log_tensorboard(self, prefix, writer, lr, epoch):
         t = self.elapsed_time()
+        writer.add_scalar(prefix + "/xent", self.xent(), epoch)
         writer.add_scalar(prefix + "/ppl", self.ppl(), epoch)
         writer.add_scalar(prefix + "/accuracy", self.accuracy(), epoch)
         writer.add_scalar(prefix + "/tgtper",  self.n_words / t, epoch)
