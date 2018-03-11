@@ -26,8 +26,12 @@ class Translator(object):
     def __init__(self, model, fields,
                  beam_size, n_best=1,
                  max_length=100,
-                 global_scorer=None, copy_attn=False, cuda=False,
-                 beam_trace=False, min_length=0):
+                 global_scorer=None,
+                 copy_attn=False,
+                 cuda=False,
+                 beam_trace=False,
+                 min_length=0,
+                 stepwise_penalty=False):
         self.model = model
         self.fields = fields
         self.n_best = n_best
@@ -37,6 +41,7 @@ class Translator(object):
         self.beam_size = beam_size
         self.cuda = cuda
         self.min_length = min_length
+        self.stepwise_penalty = stepwise_penalty
 
         # for debugging
         self.beam_accum = None
@@ -74,7 +79,8 @@ class Translator(object):
                                     pad=vocab.stoi[onmt.io.PAD_WORD],
                                     eos=vocab.stoi[onmt.io.EOS_WORD],
                                     bos=vocab.stoi[onmt.io.BOS_WORD],
-                                    min_length=self.min_length)
+                                    min_length=self.min_length,
+                                    stepwise_penalty=self.stepwise_penalty)
                 for __ in range(batch_size)]
 
         # Help functions for working with beams and batches
@@ -136,11 +142,12 @@ class Translator(object):
             dec_out = dec_out.squeeze(0)
             # dec_out: beam x rnn_size
 
-            # (b) Compute a vector of batch*beam word scores.
+            # (b) Compute a vector of batch x beam word scores.
             if not self.copy_attn:
                 out = self.model.generator.forward(dec_out).data
                 out = unbottle(out)
                 # beam x tgt_vocab
+                beam_attn = unbottle(attn["std"])
             else:
                 out = self.model.generator.forward(dec_out,
                                                    attn["copy"].squeeze(0),
@@ -151,12 +158,11 @@ class Translator(object):
                     batch, self.fields["tgt"].vocab, data.src_vocabs)
                 # beam x tgt_vocab
                 out = out.log()
-
+                beam_attn = unbottle(attn["copy"])
             # (c) Advance each beam.
             for j, b in enumerate(beam):
-                b.advance(
-                    out[:, j],
-                    unbottle(attn["std"]).data[:, j, :memory_lengths[j]])
+                b.advance(out[:, j],
+                          beam_attn.data[:, j, :memory_lengths[j]])
                 dec_states.beam_update(j, b.get_current_origin(), beam_size)
 
         # (4) Extract sentences from beam.

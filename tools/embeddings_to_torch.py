@@ -8,16 +8,6 @@ import numpy as np
 import argparse
 import torch
 
-parser = argparse.ArgumentParser(description='embeddings_to_torch.py')
-parser.add_argument('-emb_file', required=True,
-                    help="Embeddings from this file")
-parser.add_argument('-output_file', required=True,
-                    help="Output file for the prepared data")
-parser.add_argument('-dict_file', required=True,
-                    help="Dictionary file")
-parser.add_argument('-verbose', action="store_true", default=False)
-opt = parser.parse_args()
-
 
 def get_vocabs(dict_file):
     vocabs = torch.load(dict_file)
@@ -40,9 +30,17 @@ def get_vocabs(dict_file):
     return enc_vocab, dec_vocab
 
 
-def get_embeddings(file):
+def get_embeddings(file, opt):
     embs = dict()
-    for l in open(file, 'rb').readlines():
+
+    for (i, l) in enumerate(open(file, 'rb')):
+        if i < opt.skip_lines:
+            continue
+        if not l:
+            break
+        if len(l) == 0:
+            continue
+
         l_split = l.decode('utf8').strip().split()
         if len(l_split) == 2:
             continue
@@ -52,7 +50,7 @@ def get_embeddings(file):
     return embs
 
 
-def match_embeddings(vocab, emb):
+def match_embeddings(vocab, emb, opt):
     dim = len(six.next(six.itervalues(emb)))
     filtered_embeddings = np.zeros((len(vocab), dim))
     count = {"match": 0, "miss": 0}
@@ -68,14 +66,36 @@ def match_embeddings(vocab, emb):
     return torch.Tensor(filtered_embeddings), count
 
 
+TYPES = ["GloVe", "word2vec"]
+
+
 def main():
+
+    parser = argparse.ArgumentParser(description='embeddings_to_torch.py')
+    parser.add_argument('-emb_file', required=True,
+                        help="Embeddings from this file")
+    parser.add_argument('-output_file', required=True,
+                        help="Output file for the prepared data")
+    parser.add_argument('-dict_file', required=True,
+                        help="Dictionary file")
+    parser.add_argument('-verbose', action="store_true", default=False)
+    parser.add_argument('-skip_lines', type=int, default=0,
+                        help="Skip first lines of the embedding file")
+    parser.add_argument('-type', choices=TYPES, default="GloVe")
+    opt = parser.parse_args()
+
     enc_vocab, dec_vocab = get_vocabs(opt.dict_file)
-    embeddings = get_embeddings(opt.emb_file)
+    if opt.type == "word2vec":
+        opt.skip_lines = 1
+
+    embeddings = get_embeddings(opt.emb_file, opt)
 
     filtered_enc_embeddings, enc_count = match_embeddings(enc_vocab,
-                                                          embeddings)
+                                                          embeddings,
+                                                          opt)
     filtered_dec_embeddings, dec_count = match_embeddings(dec_vocab,
-                                                          embeddings)
+                                                          embeddings,
+                                                          opt)
 
     print("\nMatching: ")
     match_percent = [_['match'] / (_['match'] + _['miss']) * 100
