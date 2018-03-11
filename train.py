@@ -21,7 +21,6 @@ from onmt.Utils import use_gpu
 import opts
 
 
-
 parser = argparse.ArgumentParser(
     description='train.py',
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -188,8 +187,6 @@ def make_dataset_iter(datasets, fields, opt, is_train=True):
             max_tgt_in_batch = max(max_tgt_in_batch,  len(new.tgt) + 1)
             src_elements = count * max_src_in_batch
             tgt_elements = count * max_tgt_in_batch
-            # print(count, src_elements, tgt_elements, max_tgt_in_batch, max_src_in_bat
-                  # ch)
             return max(src_elements, tgt_elements)
 
     device = opt.gpuid[0] if opt.gpuid else -1

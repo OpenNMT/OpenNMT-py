@@ -145,9 +145,7 @@ class MultiHeadedAttention(nn.Module):
 
         # values : (batch * 8) x qlen x dim
         out = unshape_projection(torch.bmm(drop_attn, value_up), residual)
-        
-        ret = out #self.res_dropout(out)
-
+        ret = out
         # CHECK
         batch_, q_len_, d_ = ret.size()
         aeq(q_len, q_len_)

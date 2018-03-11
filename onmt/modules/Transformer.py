@@ -63,7 +63,7 @@ class TransformerEncoderLayer(nn.Module):
                                                     dropout)
         self.layer_norm = onmt.modules.BottleLayerNorm(size)
         self.dropout = nn.Dropout(dropout)
-        
+
     def forward(self, inputs, mask):
         input_norm = self.layer_norm(inputs)
         mid, _ = self.self_attn(input_norm, input_norm, input_norm, mask=mask)
@@ -186,7 +186,6 @@ class TransformerDecoderLayer(nn.Module):
         dec_mask = torch.gt(tgt_pad_mask + self.mask[:, :tgt_pad_mask.size(1),
                             :tgt_pad_mask.size(1)]
                             .expand_as(tgt_pad_mask), 0)
-        
         input_norm = self.layer_norm_1(input)
         all_input = input_norm
         if previous_input is not None:
@@ -194,13 +193,12 @@ class TransformerDecoderLayer(nn.Module):
             dec_mask = None
         query, attn = self.self_attn(all_input, all_input, input_norm,
                                      mask=dec_mask)
-        
         query = self.drop(query) + input
         query_norm = self.layer_norm_2(query)
         mid, attn = self.context_attn(memory_bank, memory_bank, query_norm,
                                       mask=src_pad_mask)
         output = self.feed_forward(self.drop(mid) + query)
-        
+
         # CHECKS
         output_batch, output_len, _ = output.size()
         aeq(input_len, output_len)
