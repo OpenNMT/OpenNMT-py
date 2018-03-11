@@ -1,6 +1,9 @@
 import argparse
 from onmt.modules.SRU import CheckSRU
 
+from time import time
+from datetime import datetime
+
 
 def model_opts(parser):
     """
@@ -353,7 +356,9 @@ def train_opts(parser):
     group.add_argument('-tensorboard', action="store_true",
                        help="""Use tensorboardX for visualization during training.
                        Must have the library tensorboardX.""")
-    group.add_argument("-tensorboard_log_dir", type=str, default="runs/onmt",
+    group.add_argument("-tensorboard_log_dir", type=str,
+                       default="runs/onmt"
+                           + datetime.fromtimestamp(time()).strftime(".%Y-%m-%d-%H:%M:%S"),
                        help="""Log directory for Tensorboard.
                        This is also the name of the run.
                        """)
