@@ -26,12 +26,13 @@ class PositionwiseFeedForward(nn.Module):
     """
     def __init__(self, size, hidden_size, dropout=0.1):
         super(PositionwiseFeedForward, self).__init__()
-        self.w_1 = onmt.modules.BottleLinear(size, hidden_size)
-        self.w_2 = onmt.modules.BottleLinear(hidden_size, size)
-        self.layer_norm = onmt.modules.BottleLayerNorm(size)
-        self.dropout_1 = nn.Dropout(dropout)
+        self.w_1 = nn.Linear(size, hidden_size)
+        self.w_2 = nn.Linear(hidden_size, size)
+        self.layer_norm = onmt.modules.LayerNorm(size)
+        # Save a little memory, by doing inplace.
+        self.dropout_1 = nn.Dropout(dropout, inplace=True)
+        self.relu = nn.ReLU(inplace=True)
         self.dropout_2 = nn.Dropout(dropout)
-        self.relu = nn.ReLU()
 
     def forward(self, x):
         inter = self.dropout_1(self.relu(self.w_1(self.layer_norm(x))))
@@ -61,7 +62,7 @@ class TransformerEncoderLayer(nn.Module):
         self.feed_forward = PositionwiseFeedForward(size,
                                                     hidden_size,
                                                     dropout)
-        self.layer_norm = onmt.modules.BottleLayerNorm(size)
+        self.layer_norm = onmt.modules.LayerNorm(size)
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, inputs, mask):
@@ -106,7 +107,7 @@ class TransformerEncoder(EncoderBase):
         self.transformer = nn.ModuleList(
             [TransformerEncoderLayer(hidden_size, dropout)
              for i in range(num_layers)])
-        self.layer_norm = onmt.modules.BottleLayerNorm(hidden_size)
+        self.layer_norm = onmt.modules.LayerNorm(hidden_size)
 
     def forward(self, input, lengths=None, hidden=None):
         """ See :obj:`EncoderBase.forward()`"""
@@ -157,8 +158,8 @@ class TransformerDecoderLayer(nn.Module):
         self.feed_forward = PositionwiseFeedForward(size,
                                                     hidden_size,
                                                     dropout)
-        self.layer_norm_1 = onmt.modules.BottleLayerNorm(size)
-        self.layer_norm_2 = onmt.modules.BottleLayerNorm(size)
+        self.layer_norm_1 = onmt.modules.LayerNorm(size)
+        self.layer_norm_2 = onmt.modules.LayerNorm(size)
         self.dropout = dropout
         self.drop = nn.Dropout(dropout)
         mask = self._get_attn_subsequent_mask(MAX_SIZE)
@@ -269,7 +270,7 @@ class TransformerDecoder(nn.Module):
             self.copy_attn = onmt.modules.GlobalAttention(
                 hidden_size, attn_type=attn_type)
             self._copy = True
-        self.layer_norm = onmt.modules.BottleLayerNorm(hidden_size)
+        self.layer_norm = onmt.modules.LayerNorm(hidden_size)
 
     def forward(self, tgt, memory_bank, state, memory_lengths=None):
         """
