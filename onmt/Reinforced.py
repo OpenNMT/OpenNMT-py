@@ -139,7 +139,6 @@ class EachStepGeneratorLossCompute(CopyGeneratorLossCompute):
 
         _scores_data = _scores
         scores_data = _scores_data
-        nonan(scores_data, "scores_data")
         #
         # CRITERION & PREDICTION: Predicting & Calculating the loss
         #
