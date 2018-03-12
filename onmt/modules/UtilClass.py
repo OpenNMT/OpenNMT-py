@@ -13,7 +13,7 @@ class LayerNorm(nn.Module):
         self.b_2 = nn.Parameter(torch.zeros(d_hid), requires_grad=True)
 
     def forward(self, z):
-        if z.size(1) == 1:
+        if z.size(-1) == 1:
             return z
         mu = torch.mean(z, dim=-1, keepdim=True)
         sigma = torch.std(z, dim=-1, keepdim=True)
