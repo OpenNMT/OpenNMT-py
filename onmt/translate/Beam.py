@@ -94,6 +94,24 @@ class Beam(object):
             for i in range(self.next_ys[-1].size(0)):
                 if self.next_ys[-1][i] == self._eos:
                     beam_scores[i] = -1e20
+
+            # Block trigram repeats
+            trigrams = []
+            l = len(self.next_ys)
+            for j in range(self.next_ys[-1].size(0)):
+                hyp, _ = self.get_hyp(l-1, j)
+                trigrams = set()
+                fail = False
+                tri = []
+                for i in range(l-1):
+                    tri = (tri + [hyp[i]])[-3:]
+                    if 4 in tri or 82 in tri or 314 in tri: continue
+
+                    if tuple(tri) in trigrams:
+                        fail = True
+                    trigrams.add(tuple(tri))
+                if fail:
+                    beam_scores[j] = -10e20
         else:
             beam_scores = word_probs[0]
         flat_beam_scores = beam_scores.view(-1)
@@ -113,14 +131,16 @@ class Beam(object):
 
         for i in range(self.next_ys[-1].size(0)):
             if self.next_ys[-1][i] == self._eos:
+                l = len(self.next_ys)
                 global_scores = self.global_scorer.score(self, self.scores)
                 s = global_scores[i]
                 self.finished.append((s, len(self.next_ys) - 1, i))
 
         # End condition is when top-of-beam is EOS and no global score.
-        if self.next_ys[-1][0] == self._eos:
-            self.all_scores.append(self.scores)
-            self.eos_top = True
+        # if self.next_ys[-1][0] == self._eos:
+        #     print(s)
+        #     self.all_scores.append(self.scores)
+        #     self.eos_top = True
 
     def done(self):
         return self.eos_top and len(self.finished) >= self.n_best

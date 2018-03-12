@@ -48,6 +48,7 @@ class PenaltyBuilder(object):
         """
         penalty = torch.max(cov, cov.clone().fill_(1.0)).sum(1)
         penalty -= cov.size(1)
+
         return beta * penalty
 
     def coverage_none(self, beam, cov, beta=0.):
