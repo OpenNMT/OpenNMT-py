@@ -92,9 +92,9 @@ class Optim(object):
         elif self.method == 'adam':
             self.optimizer = MultipleOptimizer(
                 [optim.Adam(self.params, lr=self.lr,
-                            betas=self.betas, eps=1e-9),
+                            betas=self.betas, eps=1e-8),
                  optim.SparseAdam(self.sparse_params, lr=self.lr,
-                                  betas=self.betas, eps=1e-9)])
+                                  betas=self.betas, eps=1e-8)])
         else:
             raise RuntimeError("Invalid optim method: " + self.method)
 

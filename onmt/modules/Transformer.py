@@ -128,7 +128,6 @@ class TransformerEncoder(EncoderBase):
         padding_idx = self.embeddings.word_padding_idx
         mask = words.data.eq(padding_idx).unsqueeze(1) \
             .expand(w_batch, w_len, w_len)
-
         # Run the forward pass of every layer of the tranformer.
         for i in range(self.num_layers):
             out = self.transformer[i](out, mask)
@@ -185,11 +184,9 @@ class TransformerDecoderLayer(nn.Module):
 
 
         
-        dec_mask = torch.gt(tgt_pad_mask + self.mask[:, :tgt_pad_mask.size(1),
-                            :tgt_pad_mask.size(1)]
-                            .expand_as(tgt_pad_mask), 0)
-
-        
+        dec_mask = torch.gt(tgt_pad_mask + \
+                            self.mask[:, :tgt_pad_mask.size(1),
+                                      :tgt_pad_mask.size(1)], 0)
         input_norm = self.layer_norm_1(inputs)
         all_input = input_norm
         if previous_input is not None:
