@@ -23,7 +23,8 @@ class PositionalEncoding(nn.Module):
     def __init__(self, dropout, dim, max_len=5000):
         pe = torch.zeros(max_len, dim)
         position = torch.arange(0, max_len).unsqueeze(1)
-        div_term = torch.exp(torch.arange(0, dim, 2) * -(math.log(10000.0) / dim))
+        div_term = torch.exp(torch.arange(0, dim, 2) *
+                             -(math.log(10000.0) / dim))
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
         pe = pe.unsqueeze(1)
@@ -31,7 +32,7 @@ class PositionalEncoding(nn.Module):
         self.register_buffer('pe', pe)
         self.dropout = nn.Dropout(p=dropout)
         self.dim = dim
-        
+
     def forward(self, emb):
         # We must wrap the self.pe in Variable to compute, not the other
         # way - unwrap emb(i.e. emb.data). Otherwise the computation

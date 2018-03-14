@@ -67,7 +67,8 @@ class TransformerEncoderLayer(nn.Module):
 
     def forward(self, inputs, mask):
         input_norm = self.layer_norm(inputs)
-        context, _ = self.self_attn(input_norm, input_norm, input_norm, mask=mask)
+        context, _ = self.self_attn(input_norm, input_norm, input_norm,
+                                    mask=mask)
         out = self.dropout(context) + inputs
         return self.feed_forward(out)
 
@@ -182,9 +183,7 @@ class TransformerDecoderLayer(nn.Module):
         aeq(s_len, contxt_len)
         # END Args Checks
 
-
-        
-        dec_mask = torch.gt(tgt_pad_mask + \
+        dec_mask = torch.gt(tgt_pad_mask +
                             self.mask[:, :tgt_pad_mask.size(1),
                                       :tgt_pad_mask.size(1)], 0)
         input_norm = self.layer_norm_1(inputs)
@@ -196,7 +195,6 @@ class TransformerDecoderLayer(nn.Module):
                                      mask=dec_mask)
         query = self.drop(query) + inputs
 
-        
         query_norm = self.layer_norm_2(query)
         mid, attn = self.context_attn(memory_bank, memory_bank, query_norm,
                                       mask=src_pad_mask)
@@ -341,7 +339,6 @@ class TransformerDecoder(nn.Module):
 
         # Update the state.
         state = state.update_state(tgt, saved_inputs)
-        
         return outputs, state, attns
 
     def init_decoder_state(self, src, memory_bank, enc_hidden):
@@ -368,11 +365,11 @@ class TransformerDecoderState(DecoderState):
 
     def update_state(self, input, previous_layer_inputs):
         """ Called for every decoder forward pass. """
-        state = TransformerDecoderState(self.src)    
+        state = TransformerDecoderState(self.src)
         state.previous_input = input
         state.previous_layer_inputs = previous_layer_inputs
         return state
-    
+
     def repeat_beam_size_times(self, beam_size):
         """ Repeat beam_size times along batch dimension. """
         self.src = Variable(self.src.data.repeat(1, beam_size, 1),

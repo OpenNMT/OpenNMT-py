@@ -8,7 +8,7 @@ class LayerNorm(nn.Module):
         self.a_2 = nn.Parameter(torch.ones(features))
         self.b_2 = nn.Parameter(torch.zeros(features))
         self.eps = eps
-        
+
     def forward(self, x):
         mean = x.mean(-1, keepdim=True)
         std = x.std(-1, keepdim=True)

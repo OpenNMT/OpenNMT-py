@@ -210,7 +210,7 @@ class Translator(object):
         gold_scores = tt.FloatTensor(batch.batch_size).fill_(0)
         dec_out, _, _ = self.model.decoder(
             tgt_in, memory_bank, dec_states, memory_lengths=src_lengths)
-            
+
         tgt_pad = self.fields["tgt"].vocab.stoi[onmt.io.PAD_WORD]
         for dec, tgt in zip(dec_out, batch.tgt[1:].data):
             # Log prob of each word.
@@ -219,7 +219,4 @@ class Translator(object):
             scores = out.data.gather(1, tgt)
             scores.masked_fill_(tgt.eq(tgt_pad), 0)
             gold_scores += scores
-
-
-
         return gold_scores

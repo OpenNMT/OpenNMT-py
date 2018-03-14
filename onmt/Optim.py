@@ -3,19 +3,18 @@ from torch.nn.utils import clip_grad_norm
 from torch.nn.init import xavier_uniform
 
 
-
 class MultipleOptimizer(object):
     def __init__(self, op):
         self.optimizers = op
-        
+
     def zero_grad(self):
         for op in self.optimizers:
             op.zero_grad()
-            
+
     def step(self):
         for op in self.optimizers:
             op.step()
-                                                                                    
+
 
 class Optim(object):
     """
@@ -77,7 +76,6 @@ class Optim(object):
                     self.params.append(p)
                 else:
                     self.sparse_params.append(p)
-                
             if p.dim() > 1 and self.method == 'sparseadam':
                 xavier_uniform(p)
         if self.method == 'sgd':
@@ -109,7 +107,7 @@ class Optim(object):
         else:
             for op in self.optimizer.optimizers:
                 op.param_groups[0]['lr'] = self.lr
-                
+
     def step(self):
         """Update the model parameters based on current gradients.
 

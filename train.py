@@ -219,7 +219,8 @@ def make_loss_compute(model, tgt_vocab, opt, train=True):
 
 def train_model(model, fields, optim, data_type, model_opt):
     train_loss = make_loss_compute(model, fields["tgt"].vocab, opt)
-    valid_loss = make_loss_compute(model, fields["tgt"].vocab, opt, train=False)
+    valid_loss = make_loss_compute(model, fields["tgt"].vocab, opt,
+                                   train=False)
 
     trunc_size = opt.truncated_decoder  # Badly named...
     shard_size = opt.max_generator_batches
