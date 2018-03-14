@@ -33,17 +33,19 @@ def _report_score(name, score_total, words_total):
 
 def _report_bleu():
     import subprocess
+    path = os.path.split(os.path.realpath(__file__))[0]
     print()
     res = subprocess.check_output(
-        "perl tools/multi-bleu.perl %s < %s" % (opt.tgt, opt.output),
+        "perl %s/tools/multi-bleu.perl %s < %s" % (path, opt.tgt, opt.output),
         shell=True).decode("utf-8")
     print(">> " + res.strip())
 
 
 def _report_rouge():
     import subprocess
+    path = os.path.split(os.path.realpath(__file__))[0]
     res = subprocess.check_output(
-        "python tools/test_rouge.py -r %s -c %s" % (opt.tgt, opt.output),
+        "python %s/tools/test_rouge.py -r %s -c %s" % (path, opt.tgt, opt.output),
         shell=True).decode("utf-8")
     print(res.strip())
 
