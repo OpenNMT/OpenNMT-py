@@ -75,7 +75,7 @@ class Optim(object):
             if p.requires_grad and "embed" not in k:
                 self.params.append(p)
             else:
-                self.sparse_params.append(p)
+                self.params.append(p)
                 
             if p.dim() > 1:
                 xavier_uniform(p)
@@ -90,21 +90,23 @@ class Optim(object):
         elif self.method == 'adadelta':
             self.optimizer = optim.Adadelta(self.params, lr=self.lr)
         elif self.method == 'adam':
-            self.optimizer = MultipleOptimizer(
-                [optim.Adam(self.params, lr=self.lr,
-                            betas=self.betas, eps=1e-8),
-                 optim.SparseAdam(self.sparse_params, lr=self.lr,
-                                  betas=self.betas, eps=1e-8)])
+            self.optimizer = optim.Adam(self.params, lr=self.lr,
+                            betas=self.betas, eps=1e-8)
+            # MultipleOptimizer(
+            #     [optim.Adam(self.params, lr=self.lr,
+            #                 betas=self.betas, eps=1e-8),
+            #      optim.SparseAdam(self.sparse_params, lr=self.lr,
+            #                       betas=self.betas, eps=1e-8)])
         else:
             raise RuntimeError("Invalid optim method: " + self.method)
 
     def _set_rate(self, lr):
         self.lr = lr
-        if self.method != 'adam':
-            self.optimizer.param_groups[0]['lr'] = self.lr
-        else:
-            for op in self.optimizer.optimizers:
-                op.param_groups[0]['lr'] = self.lr
+        # if self.method != 'adam':
+        self.optimizer.param_groups[0]['lr'] = self.lr
+        # else:
+        #     for op in self.optimizer.optimizers:
+        #         op.param_groups[0]['lr'] = self.lr
                 
     def step(self):
         """Update the model parameters based on current gradients.
