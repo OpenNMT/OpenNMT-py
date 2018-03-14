@@ -1,6 +1,21 @@
 import torch.optim as optim
 from torch.nn.utils import clip_grad_norm
+from torch.nn.init import xavier_uniform
 
+
+
+class MultipleOptimizer(object):
+    def __init__(self, op):
+        self.optimizers = op
+        
+    def zero_grad(self):
+        for op in self.optimizers:
+            op.zero_grad()
+            
+    def step(self):
+        for op in self.optimizers:
+            op.step()
+                                                                                    
 
 class Optim(object):
     """
@@ -55,9 +70,15 @@ class Optim(object):
 
     def set_parameters(self, params):
         self.params = []
+        self.sparse_params = []
         for k, p in params:
-            if p.requires_grad:
+            if p.requires_grad and "embed" not in k:
                 self.params.append(p)
+            else:
+                self.sparse_params.append(p)
+                
+            if p.dim() > 1:
+                xavier_uniform(p)
         if self.method == 'sgd':
             self.optimizer = optim.SGD(self.params, lr=self.lr)
         elif self.method == 'adagrad':
@@ -69,15 +90,22 @@ class Optim(object):
         elif self.method == 'adadelta':
             self.optimizer = optim.Adadelta(self.params, lr=self.lr)
         elif self.method == 'adam':
-            self.optimizer = optim.Adam(self.params, lr=self.lr,
-                                        betas=self.betas, eps=1e-9)
+            self.optimizer = MultipleOptimizer(
+                [optim.Adam(self.params, lr=self.lr,
+                            betas=self.betas, eps=1e-9),
+                 optim.SparseAdam(self.sparse_params, lr=self.lr,
+                                  betas=self.betas, eps=1e-9)])
         else:
             raise RuntimeError("Invalid optim method: " + self.method)
 
     def _set_rate(self, lr):
         self.lr = lr
-        self.optimizer.param_groups[0]['lr'] = self.lr
-
+        if self.method != 'adam':
+            self.optimizer.param_groups[0]['lr'] = self.lr
+        else:
+            for op in self.optimizer.optimizers:
+                op.param_groups[0]['lr'] = self.lr
+                
     def step(self):
         """Update the model parameters based on current gradients.
 
@@ -114,4 +142,5 @@ class Optim(object):
             print("Decaying learning rate to %g" % self.lr)
 
         self.last_ppl = ppl
-        self.optimizer.param_groups[0]['lr'] = self.lr
+        if False:
+            self.optimizer.param_groups[0]['lr'] = self.lr

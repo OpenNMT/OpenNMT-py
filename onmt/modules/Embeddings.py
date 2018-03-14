@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
+import math
 
 from onmt.modules import Elementwise
 from onmt.Utils import aeq
@@ -29,11 +30,13 @@ class PositionalEncoding(nn.Module):
         super(PositionalEncoding, self).__init__()
         self.register_buffer('pe', pe)
         self.dropout = nn.Dropout(p=dropout)
-
+        self.dim = dim
+        
     def forward(self, emb):
         # We must wrap the self.pe in Variable to compute, not the other
         # way - unwrap emb(i.e. emb.data). Otherwise the computation
         # wouldn't be watched to build the compute graph.
+        emb = emb * math.sqrt(self.dim)
         emb = emb + Variable(self.pe[:emb.size(0), :1, :emb.size(2)]
                              .expand_as(emb), requires_grad=False)
         emb = self.dropout(emb)
@@ -115,7 +118,7 @@ class Embeddings(nn.Module):
         # The embedding matrix look-up tables. The first look-up table
         # is for words. Subsequent ones are for features, if any exist.
         emb_params = zip(vocab_sizes, emb_dims, pad_indices)
-        embeddings = [nn.Embedding(vocab, dim, padding_idx=pad)
+        embeddings = [nn.Embedding(vocab, dim, padding_idx=pad, sparse=True)
                       for vocab, dim, pad in emb_params]
         emb_luts = Elementwise(feat_merge, embeddings)
 

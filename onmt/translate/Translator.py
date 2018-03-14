@@ -208,9 +208,23 @@ class Translator(object):
         #  (i.e. log likelihood) of the target under the model
         tt = torch.cuda if self.cuda else torch
         gold_scores = tt.FloatTensor(batch.batch_size).fill_(0)
-        dec_out, dec_states, attn = self.model.decoder(
+        dec_out, _, _ = self.model.decoder(
             tgt_in, memory_bank, dec_states, memory_lengths=src_lengths)
+        # print(dec_out.size())
+        # print(dec_out[0])
+        
+        # dec_states = \
+        #     self.model.decoder.init_decoder_state(src, memory_bank, enc_states)
+        # for i in range(tgt_in.size(0)):
+        #     dec_out, dec_states, attn = self.model.decoder(
+        #         tgt_in[i:i+1], memory_bank, dec_states, memory_lengths=src_lengths)
+        #     dec_out = dec_out.squeeze(0)
+        #     print(tgt_in[i: i+ 1])
+        #     print(dec_out.size())
+        #     print(i, dec_out, gdec_out[i])
 
+        # exit()  
+            
         tgt_pad = self.fields["tgt"].vocab.stoi[onmt.io.PAD_WORD]
         for dec, tgt in zip(dec_out, batch.tgt[1:].data):
             # Log prob of each word.
@@ -219,4 +233,7 @@ class Translator(object):
             scores = out.data.gather(1, tgt)
             scores.masked_fill_(tgt.eq(tgt_pad), 0)
             gold_scores += scores
+
+
+
         return gold_scores

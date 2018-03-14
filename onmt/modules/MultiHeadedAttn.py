@@ -56,16 +56,14 @@ class MultiHeadedAttention(nn.Module):
         self.head_count = head_count
 
         self.linear_keys = nn.Linear(model_dim,
-                                     head_count * self.dim_per_head,
-                                     bias=False)
+                                     head_count * self.dim_per_head)
         self.linear_values = nn.Linear(model_dim,
-                                       head_count * self.dim_per_head,
-                                       bias=False)
+                                       head_count * self.dim_per_head)
         self.linear_query = nn.Linear(model_dim,
-                                      head_count * self.dim_per_head,
-                                      bias=False)
+                                      head_count * self.dim_per_head)
         self.sm = nn.Softmax(dim=-1)
         self.dropout = nn.Dropout(dropout)
+        self.final_linear = nn.Linear(model_dim, model_dim)
 
     def forward(self, key, value, query, mask=None):
         """
@@ -104,48 +102,48 @@ class MultiHeadedAttention(nn.Module):
             aeq(q_len_ == q_len)
         # END CHECKS
 
-        def shape_projection(x):
-            b, l, d = x.size()
-            return x.view(b, l, self.head_count, self.dim_per_head) \
-                .transpose(1, 2).contiguous() \
-                .view(b * self.head_count, l, self.dim_per_head)
+        batch_size = key.size(0)
+        dim_per_head = self.dim_per_head
+        head_count = self.head_count
+        key_len = key.size(1)
+        query_len = query.size(1)
+    
+        def shape(x):
+            return x.view(batch_size, -1, head_count, dim_per_head) \
+                .transpose(1, 2)
 
-        def unshape_projection(x, q):
-            b, l, d = q.size()
-            return x.view(b, self.head_count, l, self.dim_per_head) \
-                    .transpose(1, 2).contiguous() \
-                    .view(b, l, self.head_count * self.dim_per_head)
+        def unshape(x):
+            return x.transpose(1, 2).contiguous() \
+                    .view(batch_size, -1, head_count * dim_per_head)
 
-        residual = query
-        key_up = shape_projection(self.linear_keys(key))
-        value_up = shape_projection(self.linear_values(value))
-        query_up = shape_projection(self.linear_query(query))
+        # 1) Project key, value, and query.
+        key_up = shape(self.linear_keys(key))
+        value_up = shape(self.linear_values(value))
+        query_up = shape(self.linear_query(query))
 
-        scaled = torch.bmm(query_up, key_up.transpose(1, 2))
-        scaled = scaled / math.sqrt(self.dim_per_head)
-        bh, l, dim_per_head = scaled.size()
-        b = bh // self.head_count
+        # 2) Calculate and scale scores.
+        scores = torch.matmul(query_up, key_up.transpose(2, 3))
+        scaled_scores = scores / math.sqrt(dim_per_head)
+        
         if mask is not None:
-            scaled = scaled.view(b, self.head_count, l, dim_per_head)
-            mask = mask.unsqueeze(1).expand_as(scaled)
-            scaled = scaled.masked_fill(Variable(mask), -1e18) \
-                           .view(bh, l, dim_per_head)
+            mask = mask.unsqueeze(1).expand_as(scaled_scores)
+            scaled_scores = scaled_scores.masked_fill(Variable(mask), -1e18) 
 
-        # Return one attn
-        attn = self.sm(scaled)
-        top_attn = attn \
-            .view(b, self.head_count, l, dim_per_head)[:, 0, :, :] \
-            .contiguous()
-
+        # 3) Apply attention dropout and compute context vectors.
+        attn = self.sm(scaled_scores)
         drop_attn = self.dropout(attn)
-
-        # values : (batch * 8) x qlen x dim
-        out = unshape_projection(torch.bmm(drop_attn, value_up), residual)
-        ret = out
+        context = unshape(torch.matmul(drop_attn, value_up))
+        
+        output = self.final_linear(context)
         # CHECK
-        batch_, q_len_, d_ = ret.size()
+        batch_, q_len_, d_ = output.size()
         aeq(q_len, q_len_)
         aeq(batch, batch_)
         aeq(d, d_)
+
+        # Return one attn
+        top_attn = attn \
+                   .view(batch_size, head_count, query_len, key_len)[:, 0, :, :] \
+                   .contiguous()
         # END CHECK
-        return ret, top_attn
+        return output, top_attn

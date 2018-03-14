@@ -187,6 +187,7 @@ class NMTLossCompute(LossComputeBase):
         scores = self.generator(self._bottle(output))
 
         gtruth = target.view(-1)
+        tview = target.view(-1)
         if self.confidence < 1:
             tdata = gtruth.data
             mask = torch.nonzero(tdata.eq(self.padding_idx)).squeeze()
@@ -199,9 +200,22 @@ class NMTLossCompute(LossComputeBase):
             gtruth = Variable(tmp_, requires_grad=False)
 
         loss = self.criterion(scores, gtruth)
+        # print(scores[:, self.padding_idx])
+        # print(scores.size())
+        # print(gtruth.size())
+        # print(gtruth[0, target.data[0, 0]])
+        # lsum = (loss.sum(1))
+        # print(loss[0, target.data[0, 0]])
+        # for j in range(loss.size(0)):
+        #     print("example")
+        #     print(tview.data[j],
+        #           gtruth[j,tview.data[j]],
+        #           scores[j, tview.data[j]].exp().data[0],
+        #           lsum[j].data[0])
+        # exit()
         if self.confidence < 1:
             # Default: report smoothed ppl.
-            # loss_data = -log_likelihood.sum(0)
+            # ss_data = -log_likelihood.sum(0)
             loss_data = loss.data.clone()
         else:
             loss_data = loss.data.clone()
