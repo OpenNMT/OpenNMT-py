@@ -280,7 +280,7 @@ def train_opts(parser):
     group.add_argument('-epochs', type=int, default=13,
                        help='Number of training epochs')
     group.add_argument('-optim', default='sgd',
-                       choices=['sgd', 'adagrad', 'adadelta', 'adam'],
+                       choices=['sgd', 'adagrad', 'adadelta', 'adam', 'sparseadam'],
                        help="""Optimization method.""")
     group.add_argument('-adagrad_accumulator_init', type=float, default=0,
                        help="""Initializes the accumulator values in adagrad.

@@ -72,10 +72,11 @@ class Optim(object):
         self.params = []
         self.sparse_params = []
         for k, p in params:
-            if p.requires_grad and "embed" not in k:
-                self.params.append(p)
-            else:
-                self.params.append(p)
+            if p.requires_grad:
+                if self.method != 'sparseadam' or "embed" not in k:
+                    self.params.append(p)
+                else:
+                    self.sparse_params.append(p)
                 
             if p.dim() > 1:
                 xavier_uniform(p)
@@ -91,22 +92,23 @@ class Optim(object):
             self.optimizer = optim.Adadelta(self.params, lr=self.lr)
         elif self.method == 'adam':
             self.optimizer = optim.Adam(self.params, lr=self.lr,
-                            betas=self.betas, eps=1e-8)
-            # MultipleOptimizer(
-            #     [optim.Adam(self.params, lr=self.lr,
-            #                 betas=self.betas, eps=1e-8),
-            #      optim.SparseAdam(self.sparse_params, lr=self.lr,
-            #                       betas=self.betas, eps=1e-8)])
+                                        betas=self.betas, eps=1e-9)
+        elif self.method == 'sparseadam':
+            self.optimizer = MultipleOptimizer(
+                [optim.Adam(self.params, lr=self.lr,
+                            betas=self.betas, eps=1e-8),
+                 optim.SparseAdam(self.sparse_params, lr=self.lr,
+                                  betas=self.betas, eps=1e-8)])
         else:
             raise RuntimeError("Invalid optim method: " + self.method)
 
     def _set_rate(self, lr):
         self.lr = lr
-        # if self.method != 'adam':
-        self.optimizer.param_groups[0]['lr'] = self.lr
-        # else:
-        #     for op in self.optimizer.optimizers:
-        #         op.param_groups[0]['lr'] = self.lr
+        if self.method != 'sparseadam':
+            self.optimizer.param_groups[0]['lr'] = self.lr
+        else:
+            for op in self.optimizer.optimizers:
+                op.param_groups[0]['lr'] = self.lr
                 
     def step(self):
         """Update the model parameters based on current gradients.
@@ -144,5 +146,5 @@ class Optim(object):
             print("Decaying learning rate to %g" % self.lr)
 
         self.last_ppl = ppl
-        if False:
+        if self.method != 'sparseadam':
             self.optimizer.param_groups[0]['lr'] = self.lr

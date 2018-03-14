@@ -92,7 +92,8 @@ class Embeddings(nn.Module):
                  feat_vec_exponent=0.7, feat_vec_size=-1,
                  feat_padding_idx=[],
                  feat_vocab_sizes=[],
-                 dropout=0):
+                 dropout=0,
+                 sparse=False):
 
         self.word_padding_idx = word_padding_idx
 
@@ -117,7 +118,7 @@ class Embeddings(nn.Module):
         # The embedding matrix look-up tables. The first look-up table
         # is for words. Subsequent ones are for features, if any exist.
         emb_params = zip(vocab_sizes, emb_dims, pad_indices)
-        embeddings = [nn.Embedding(vocab, dim, padding_idx=pad)
+        embeddings = [nn.Embedding(vocab, dim, padding_idx=pad, sparse=False)
                       for vocab, dim, pad in emb_params]
         emb_luts = Elementwise(feat_merge, embeddings)
 

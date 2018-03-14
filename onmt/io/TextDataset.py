@@ -98,7 +98,7 @@ class TextDataset(ONMTDatasetBase):
         # Default to a balanced sort, prioritizing tgt len match.
         # TODO: make this configurable.
         if hasattr(ex, "tgt"):
-            return len(ex.tgt), len(ex.src)
+            return len(ex.src), len(ex.tgt)
         return len(ex.src)
 
     @staticmethod
