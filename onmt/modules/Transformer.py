@@ -30,8 +30,8 @@ class PositionwiseFeedForward(nn.Module):
         self.w_2 = nn.Linear(hidden_size, size)
         self.layer_norm = onmt.modules.LayerNorm(size)
         # Save a little memory, by doing inplace.
-        self.dropout_1 = nn.Dropout(dropout, inplace=False)
-        self.relu = nn.ReLU(inplace=False)
+        self.dropout_1 = nn.Dropout(dropout, inplace=True)
+        self.relu = nn.ReLU(inplace=True)
         self.dropout_2 = nn.Dropout(dropout)
 
     def forward(self, x):
