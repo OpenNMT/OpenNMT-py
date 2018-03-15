@@ -235,7 +235,7 @@ def train_opts(parser):
                        with support (-param_init, param_init).
                        Use 0 to not use initialization""")
     group.add_argument('-param_init_glorot', action='store_true',
-                       help="""Init parameters with xavier_uniform. 
+                       help="""Init parameters with xavier_uniform.
                        Required for transfomer.""")
 
     group.add_argument('-train_from', default='', type=str,
