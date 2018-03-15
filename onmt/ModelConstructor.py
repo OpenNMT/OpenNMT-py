@@ -15,6 +15,7 @@ from onmt.modules import Embeddings, ImageEncoder, CopyGenerator, \
                          TransformerEncoder, TransformerDecoder, \
                          CNNEncoder, CNNDecoder, AudioEncoder
 from onmt.Utils import use_gpu
+from torch.nn.init import xavier_uniform
 
 
 def make_embeddings(opt, word_dict, feature_dicts, for_encoder=True):

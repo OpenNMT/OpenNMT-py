@@ -1,6 +1,5 @@
 import torch.optim as optim
 from torch.nn.utils import clip_grad_norm
-from torch.nn.init import xavier_uniform
 
 
 class MultipleOptimizer(object):
