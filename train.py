@@ -20,7 +20,6 @@ import onmt.modules
 from onmt.Utils import use_gpu
 import opts
 
-
 parser = argparse.ArgumentParser(
     description='train.py',
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)

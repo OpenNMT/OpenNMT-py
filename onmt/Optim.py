@@ -1,6 +1,5 @@
 import torch.optim as optim
 from torch.nn.utils import clip_grad_norm
-from torch.nn.init import xavier_uniform
 
 
 class MultipleOptimizer(object):
@@ -76,8 +75,6 @@ class Optim(object):
                     self.params.append(p)
                 else:
                     self.sparse_params.append(p)
-            if p.dim() > 1 and self.method == 'sparseadam':
-                xavier_uniform(p)
         if self.method == 'sgd':
             self.optimizer = optim.SGD(self.params, lr=self.lr)
         elif self.method == 'adagrad':
