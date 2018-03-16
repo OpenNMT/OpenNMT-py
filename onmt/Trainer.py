@@ -47,6 +47,9 @@ class Statistics(object):
     def ppl(self):
         return math.exp(min(self.loss / self.n_words, 100))
 
+    def xent(self):
+        return self.loss / self.n_words
+
     def elapsed_time(self):
         return time.time() - self.start_time
 
@@ -60,11 +63,12 @@ class Statistics(object):
            start (int): start time of epoch.
         """
         t = self.elapsed_time()
-        print(("Epoch %2d, %5d/%5d; acc: %6.2f; ppl: %6.2f; " +
+        print(("Epoch %2d, %5d/%5d; acc: %6.2f; ppl: %6.2f; xent: %6.2f; " +
                "%3.0f src tok/s; %3.0f tgt tok/s; %6.0f s elapsed") %
               (epoch, batch,  n_batches,
                self.accuracy(),
                self.ppl(),
+               self.xent(),
                self.n_src_words / (t + 1e-5),
                self.n_words / (t + 1e-5),
                time.time() - start))
@@ -79,13 +83,10 @@ class Statistics(object):
 
     def log_tensorboard(self, prefix, writer, lr, epoch):
         t = self.elapsed_time()
-        values = {
-            "ppl": self.ppl(),
-            "accuracy": self.accuracy(),
-            "tgtper": self.n_words / t,
-            "lr": lr,
-        }
-        writer.add_scalars(prefix, values, epoch)
+        writer.add_scalar(prefix + "/ppl", self.ppl(), epoch)
+        writer.add_scalar(prefix + "/accuracy", self.accuracy(), epoch)
+        writer.add_scalar(prefix + "/tgtper",  self.n_words / t, epoch)
+        writer.add_scalar(prefix + "/lr", lr, epoch)
 
 
 class Trainer(object):
@@ -163,8 +164,9 @@ class Trainer(object):
             true_batchs.append(batch)
             accum += 1
             if self.norm_method == "tokens":
-                normalization += batch.tgt[1:].data.view(-1) \
+                num_tokens = batch.tgt[1:].data.view(-1) \
                     .ne(self.train_loss.padding_idx).sum()
+                normalization += num_tokens
             else:
                 normalization += batch.batch_size
 

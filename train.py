@@ -96,7 +96,9 @@ def report_func(epoch, batch, num_batches,
         if opt.exp_host:
             report_stats.log("progress", experiment, lr)
         if opt.tensorboard:
-            report_stats.log_tensorboard("progress", writer, lr, epoch)
+            # Log the progress using the number of batches on the x-axis.
+            report_stats.log_tensorboard(
+                "progress", writer, lr, epoch * num_batches + batch)
         report_stats = onmt.Statistics()
 
     return report_stats
@@ -193,7 +195,7 @@ def make_dataset_iter(datasets, fields, opt, is_train=True):
                            device, is_train)
 
 
-def make_loss_compute(model, tgt_vocab, opt):
+def make_loss_compute(model, tgt_vocab, opt, train=True):
     """
     This returns user-defined LossCompute object, which is used to
     compute loss in train/validate process. You can implement your
@@ -206,7 +208,7 @@ def make_loss_compute(model, tgt_vocab, opt):
     else:
         compute = onmt.Loss.NMTLossCompute(
             model.generator, tgt_vocab,
-            label_smoothing=opt.label_smoothing)
+            label_smoothing=opt.label_smoothing if train else 0.0)
 
     if use_gpu(opt):
         compute.cuda()
@@ -216,7 +218,8 @@ def make_loss_compute(model, tgt_vocab, opt):
 
 def train_model(model, fields, optim, data_type, model_opt):
     train_loss = make_loss_compute(model, fields["tgt"].vocab, opt)
-    valid_loss = make_loss_compute(model, fields["tgt"].vocab, opt)
+    valid_loss = make_loss_compute(model, fields["tgt"].vocab, opt,
+                                   train=False)
 
     trunc_size = opt.truncated_decoder  # Badly named...
     shard_size = opt.max_generator_batches
@@ -378,7 +381,7 @@ def build_optim(model, checkpoint):
             warmup_steps=opt.warmup_steps,
             model_size=opt.rnn_size)
 
-    optim.set_parameters(model.parameters())
+    optim.set_parameters(model.named_parameters())
 
     return optim
 
