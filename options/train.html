@@ -241,6 +241,9 @@ layer</li>
 <li><strong>-input_feed [1]</strong>
 Feed the context vector at each time step as additional input (via concatenation
 with the word embeddings) to the decoder.</li>
+<li><strong>-bridge []</strong>
+Have an additional layer between the last encoder state and the first decoder
+state</li>
 <li><strong>-rnn_type [LSTM]</strong>
 The gate type to use in the RNNs</li>
 <li><strong>-brnn []</strong>
@@ -260,6 +263,10 @@ The attention type to use: dotprod or general (Luong) or MLP (Bahdanau)</li>
 Train copy attention layer.</li>
 <li><strong>-copy_attn_force []</strong>
 When available, train to copy.</li>
+<li><strong>-reuse_copy_attn []</strong>
+Reuse standard attention for copy</li>
+<li><strong>-copy_loss_by_seqlength []</strong>
+Divide copy loss by length of sequence</li>
 <li><strong>-coverage_attn []</strong>
 Train a coverage attention layer.</li>
 <li><strong>-lambda_coverage [1]</strong>
@@ -288,6 +295,8 @@ The epoch from which to start</li>
 <li><strong>-param_init [0.1]</strong>
 Parameters are initialized over uniform distribution with support (-param_init,
 param_init). Use 0 to not use initialization</li>
+<li><strong>-param_init_glorot []</strong>
+Init parameters with xavier_uniform. Required for transfomer.</li>
 <li><strong>-train_from []</strong>
 If training from a checkpoint then this is the path to the pretrained model’s
 state_dict.</li>
@@ -300,14 +309,24 @@ the decoder side. See README for specific formatting instructions.</li>
 <li><strong>-fix_word_vecs_enc []</strong>
 Fix word embeddings on the encoder side.</li>
 <li><strong>-fix_word_vecs_dec []</strong>
-Fix word embeddings on the decoder side.</li>
+Fix word embeddings on the encoder side.</li>
 </ul>
 </div>
 <div class="section" id="optimization-type">
 <span id="optimization-type"></span><h2><strong>Optimization- Type</strong>:<a class="headerlink" href="#optimization-type" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><strong>-batch_size [64]</strong>
-Maximum batch size</li>
+Maximum batch size for training</li>
+<li><strong>-batch_type [sents]</strong>
+Batch grouping for batch_size. Standard is sents. Tokens will do dynamic
+batching</li>
+<li><strong>-normalization [sents]</strong>
+Normalization method of the gradient.</li>
+<li><strong>-accum_count [1]</strong>
+Accumulate gradient this many times. Approximately equivalent to updating
+batch_size * accum_count batches at once. Recommended for Transformer.</li>
+<li><strong>-valid_batch_size [32]</strong>
+Maximum batch size for validation</li>
 <li><strong>-max_generator_batches [32]</strong>
 Maximum batches of words in a sequence to run the generator on in parallel.
 Higher is faster, but uses more memory.</li>
@@ -338,6 +357,10 @@ https://www.tensorflow.org/api_docs/python/tf/train/AdamOptimizer
 https://keras.io/optimizers/ . Whereas recently the paper “Attention is All You
 Need” suggested a value of 0.98 for beta2, this parameter may not work well for
 normal models / default baselines.</li>
+<li><strong>-label_smoothing []</strong>
+Label smoothing value epsilon. Probabilities of all non-true labels will be
+smoothed by epsilon / (vocab_size - 1). Set to zero to turn off label smoothing.
+For more detailed information, see: https://arxiv.org/abs/1512.00567</li>
 </ul>
 </div>
 <div class="section" id="optimization-rate">
@@ -368,6 +391,11 @@ Print stats at this interval.</li>
 Send logs to this crayon server.</li>
 <li><strong>-exp []</strong>
 Name of the experiment for logging.</li>
+<li><strong>-tensorboard []</strong>
+Use tensorboardX for visualization during training. Must have the library
+tensorboardX.</li>
+<li><strong>-tensorboard_log_dir [runs/onmt]</strong>
+Log directory for Tensorboard. This is also the name of the run.</li>
 </ul>
 </div>
 <div class="section" id="speech">
