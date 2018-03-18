@@ -111,10 +111,10 @@ Go to tutorial: [How to use GloVe pre-trained embeddings in OpenNMT-py](http://f
 
 ## Pretrained Models
 
-The following pretrained models can be downloaded and used with translate.py (These were trained with an older version of the code; they will be updated soon).
+The following pretrained models can be downloaded and used with translate.py.
 
-- [onmt_model_en_de_200k](https://drive.google.com/file/d/0B6N7tANPyVeBWE9WazRYaUd2QTg/view?usp=sharing): An English-German translation model based on the 200k sentence dataset at [OpenNMT/IntegrationTesting](https://github.com/OpenNMT/IntegrationTesting/tree/master/data). Perplexity: 20.
-- onmt_model_en_fr_b1M (coming soon): An English-French model trained on benchmark-1M. Perplexity: 4.85.
+http://opennmt.net/Models-py/
+
 
 
 ## Citation
