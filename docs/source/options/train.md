@@ -70,6 +70,10 @@ layer
 Feed the context vector at each time step as additional input (via concatenation
 with the word embeddings) to the decoder.
 
+* **-bridge []** 
+Have an additional layer between the last encoder state and the first decoder
+state
+
 * **-rnn_type [LSTM]** 
 The gate type to use in the RNNs
 
@@ -91,6 +95,12 @@ Train copy attention layer.
 
 * **-copy_attn_force []** 
 When available, train to copy.
+
+* **-reuse_copy_attn []** 
+Reuse standard attention for copy
+
+* **-copy_loss_by_seqlength []** 
+Divide copy loss by length of sequence
 
 * **-coverage_attn []** 
 Train a coverage attention layer.
@@ -120,6 +130,9 @@ The epoch from which to start
 Parameters are initialized over uniform distribution with support (-param_init,
 param_init). Use 0 to not use initialization
 
+* **-param_init_glorot []** 
+Init parameters with xavier_uniform. Required for transfomer.
+
 * **-train_from []** 
 If training from a checkpoint then this is the path to the pretrained model's
 state_dict.
@@ -136,11 +149,25 @@ the decoder side. See README for specific formatting instructions.
 Fix word embeddings on the encoder side.
 
 * **-fix_word_vecs_dec []** 
-Fix word embeddings on the decoder side.
+Fix word embeddings on the encoder side.
 
 ### **Optimization- Type**:
 * **-batch_size [64]** 
-Maximum batch size
+Maximum batch size for training
+
+* **-batch_type [sents]** 
+Batch grouping for batch_size. Standard is sents. Tokens will do dynamic
+batching
+
+* **-normalization [sents]** 
+Normalization method of the gradient.
+
+* **-accum_count [1]** 
+Accumulate gradient this many times. Approximately equivalent to updating
+batch_size * accum_count batches at once. Recommended for Transformer.
+
+* **-valid_batch_size [32]** 
+Maximum batch size for validation
 
 * **-max_generator_batches [32]** 
 Maximum batches of words in a sequence to run the generator on in parallel.
@@ -181,6 +208,11 @@ https://keras.io/optimizers/ . Whereas recently the paper "Attention is All You
 Need" suggested a value of 0.98 for beta2, this parameter may not work well for
 normal models / default baselines.
 
+* **-label_smoothing []** 
+Label smoothing value epsilon. Probabilities of all non-true labels will be
+smoothed by epsilon / (vocab_size - 1). Set to zero to turn off label smoothing.
+For more detailed information, see: https://arxiv.org/abs/1512.00567
+
 ### **Optimization- Rate**:
 * **-learning_rate [1.0]** 
 Starting learning rate. Recommended settings: sgd = 1, adagrad = 0.1, adadelta =
@@ -211,6 +243,13 @@ Send logs to this crayon server.
 
 * **-exp []** 
 Name of the experiment for logging.
+
+* **-tensorboard []** 
+Use tensorboardX for visualization during training. Must have the library
+tensorboardX.
+
+* **-tensorboard_log_dir [runs/onmt]** 
+Log directory for Tensorboard. This is also the name of the run.
 
 ### **Speech**:
 * **-sample_rate [16000]** 
