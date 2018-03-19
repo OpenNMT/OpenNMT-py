@@ -1,10 +1,10 @@
 from __future__ import division
 import torch
 import argparse
-import opts
 import onmt
 import onmt.ModelConstructor
 import onmt.io
+import onmt.opts
 from onmt.Utils import use_gpu
 
 parser = argparse.ArgumentParser(description='translate.py')
@@ -28,7 +28,7 @@ def write_embeddings(filename, dict, embeddings):
 
 def main():
     dummy_parser = argparse.ArgumentParser(description='train.py')
-    opts.model_opts(dummy_parser)
+    onmt.opts.model_opts(dummy_parser)
     dummy_opt = dummy_parser.parse_known_args([])[0]
     opt = parser.parse_args()
     opt.cuda = opt.gpu > -1
@@ -50,7 +50,7 @@ def main():
             model_opt.__dict__[arg] = dummy_opt.__dict__[arg]
 
     model = onmt.ModelConstructor.make_base_model(
-                            model_opt, fields, use_gpu(opt), checkpoint)
+        model_opt, fields, use_gpu(opt), checkpoint)
     encoder = model.encoder
     decoder = model.decoder
 
