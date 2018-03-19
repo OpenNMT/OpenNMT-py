@@ -72,7 +72,6 @@ if opt.exp_host != "":
 
 if opt.tensorboard:
     from tensorboardX import SummaryWriter
-
     writer = SummaryWriter(opt.tensorboard_log_dir, comment="Onmt")
 
 
