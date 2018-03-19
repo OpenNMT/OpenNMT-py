@@ -382,20 +382,20 @@ def build_optim(model, checkpoint):
             model_size=opt.rnn_size)
 
         # Essentially optim.set_parameters makes a new optimizer with a
-        # blank optimizer state. So this should only be executed when we are not loading an
-        # existing optimizer, because it will erase parameters such as Adams "exp_avg"
-        # "exp_avg_sq" etc. Also, the  name of this method is somewhat misleading, and should
-        # perhaps be changed.
+        # blank optimizer state. So this should only be executed when we are
+        # not loading an existing optimizer, because it will erase parameters
+        # such as Adams "exp_avg" , "exp_avg_sq" etc. Also, the  name of this
+        # method is somewhat misleading, and should perhaps be changed.
         optim.set_parameters(model.named_parameters())
 
     if opt.train_from:
-        # We want to make sure that indeed we have a non-empty optimizer state
-        # when we loaded an existing model. This should be at least the case for Adam,
-        # which saves "exp_avg" and "exp_avg_sq" state (Exponential moving average
-        # of gradient and squared gradient values)
+        # We want to make sure that indeed we have a non-empty optimizer
+        # state when we loaded an existing model. This should be at least the
+        # case for Adam, which saves "exp_avg" and "exp_avg_sq" state
+        # (Exponential moving average of gradient and squared gradient values)
         if (optim.method == 'adam') and (len(optim.optimizer.state) < 1):
-            raise RuntimeError("Error: loaded Adam optimizer from existing model" +
-                               " but optimizer state is empty")
+            raise RuntimeError("Error: loaded Adam optimizer from existing" +
+                               "model but optimizer state is empty")
 
     return optim
 
