@@ -395,7 +395,7 @@ def build_optim(model, checkpoint):
     # Importantly, this method does not yet load the optimizer state, as
     # essentially it builds a new optimizer with empty optimizer state and
     # parameters from the model.
-    optim.set_parameters(model.parameters())
+    optim.set_parameters(model.named_parameters())
     print(
         "Stage 1: Keys after executing optim.set_parameters" +
         "(model.parameters())")
