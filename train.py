@@ -75,6 +75,8 @@ if opt.tensorboard:
     writer = SummaryWriter(opt.tensorboard_log_dir, comment="Onmt")
 
 progress_step = 0
+
+
 def report_func(epoch, batch, num_batches,
                 start_time, lr, report_stats):
     """
