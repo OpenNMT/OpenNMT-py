@@ -411,10 +411,11 @@ def build_optim(model, checkpoint):
         # See also: https://github.com/pytorch/pytorch/issues/2830
         optim.optimizer.load_state_dict(saved_optimizer_state_dict)
         # Convert back the state values to cuda type if applicable
-        for state in optim.optimizer.state.values():
-            for k, v in state.items():
-                if torch.is_tensor(v):
-                    state[k] = v.cuda()
+        if use_gpu(opt):
+            for state in optim.optimizer.state.values():
+                for k, v in state.items():
+                    if torch.is_tensor(v):
+                        state[k] = v.cuda()
 
         print(
             "Stage 2: Keys after executing  optim.optimizer.load_state_dict" +
