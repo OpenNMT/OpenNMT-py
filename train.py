@@ -74,7 +74,7 @@ if opt.tensorboard:
     from tensorboardX import SummaryWriter
     writer = SummaryWriter(opt.tensorboard_log_dir, comment="Onmt")
 
-
+progress_step = 0
 def report_func(epoch, batch, num_batches,
                 start_time, lr, report_stats):
     """
@@ -91,6 +91,7 @@ def report_func(epoch, batch, num_batches,
     Returns:
         report_stats(Statistics): updated Statistics instance.
     """
+    global progress_step
     if batch % opt.report_every == -1 % opt.report_every:
         report_stats.output(epoch, batch + 1, num_batches, start_time)
         if opt.exp_host:
@@ -98,7 +99,8 @@ def report_func(epoch, batch, num_batches,
         if opt.tensorboard:
             # Log the progress using the number of batches on the x-axis.
             report_stats.log_tensorboard(
-                "progress", writer, lr, epoch * num_batches + batch)
+                "progress", writer, lr, progress_step)
+            progress_step += 1
         report_stats = onmt.Statistics()
 
     return report_stats
