@@ -123,6 +123,7 @@ class Trainer(object):
         self.data_type = data_type
         self.norm_method = norm_method
         self.grad_accum_count = grad_accum_count
+        self.progress_step = 0
 
         assert(grad_accum_count > 0)
         if grad_accum_count > 1:
@@ -179,8 +180,10 @@ class Trainer(object):
                 if report_func is not None:
                     report_stats = report_func(
                             epoch, idx, num_batches,
+                            self.progress_step,
                             total_stats.start_time, self.optim.lr,
                             report_stats)
+                    self.progress_step += 1
 
                 true_batchs = []
                 accum = 0
