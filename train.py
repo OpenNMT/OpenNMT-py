@@ -7,6 +7,7 @@ import glob
 import os
 import sys
 import random
+from datetime import datetime
 
 import torch
 import torch.nn as nn
@@ -19,6 +20,7 @@ import onmt.ModelConstructor
 import onmt.modules
 from onmt.Utils import use_gpu
 import opts
+
 
 parser = argparse.ArgumentParser(
     description='train.py',
@@ -72,10 +74,15 @@ if opt.exp_host != "":
 
 if opt.tensorboard:
     from tensorboardX import SummaryWriter
-    writer = SummaryWriter(opt.tensorboard_log_dir, comment="Onmt")
+    writer = SummaryWriter(
+        opt.tensorboard_log_dir + datetime.now().strftime("/%b-%d_%H-%M-%S"),
+        comment="Onmt")
+
+progress_step = 0
 
 
 def report_func(epoch, batch, num_batches,
+                progress_step,
                 start_time, lr, report_stats):
     """
     This is the user-defined batch-level traing progress
@@ -85,6 +92,7 @@ def report_func(epoch, batch, num_batches,
         epoch(int): current epoch count.
         batch(int): current batch count.
         num_batches(int): total number of batches.
+        progress_step(int): the progress step.
         start_time(float): last report time.
         lr(float): current learning rate.
         report_stats(Statistics): old Statistics instance.
@@ -98,7 +106,7 @@ def report_func(epoch, batch, num_batches,
         if opt.tensorboard:
             # Log the progress using the number of batches on the x-axis.
             report_stats.log_tensorboard(
-                "progress", writer, lr, epoch * num_batches + batch)
+                "progress", writer, lr, progress_step)
         report_stats = onmt.Statistics()
 
     return report_stats
