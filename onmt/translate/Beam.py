@@ -22,7 +22,7 @@ class Beam(object):
                  min_length=0,
                  stepwise_penalty=False,
                  block_ngram_repeat=0,
-                 exclusion_tokens=[]):
+                 exclusion_tokens=set()):
 
         self.size = size
         self.tt = torch.cuda if cuda else torch
@@ -112,7 +112,7 @@ class Beam(object):
                         # Last n tokens, n = block_ngram_repeat
                         gram = (gram + [hyp[i]])[-self.block_ngram_repeat:]
                         # Skip the blocking if it is in the exclusion list
-                        if any(x in gram for x in self.exclusion_tokens):
+                        if set(gram) & self.exclusion_tokens:
                             continue
                         if tuple(gram) in ngrams:
                             fail = True
