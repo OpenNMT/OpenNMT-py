@@ -234,6 +234,10 @@ def train_opts(parser):
                        help="""Parameters are initialized over uniform distribution
                        with support (-param_init, param_init).
                        Use 0 to not use initialization""")
+    group.add_argument('-param_init_glorot', action='store_true',
+                       help="""Init parameters with xavier_uniform.
+                       Required for transfomer.""")
+
     group.add_argument('-train_from', default='', type=str,
                        help="""If training from a checkpoint then this is the
                        path to the pretrained model's state_dict.""")
@@ -280,7 +284,8 @@ def train_opts(parser):
     group.add_argument('-epochs', type=int, default=13,
                        help='Number of training epochs')
     group.add_argument('-optim', default='sgd',
-                       choices=['sgd', 'adagrad', 'adadelta', 'adam'],
+                       choices=['sgd', 'adagrad', 'adadelta', 'adam',
+                                'sparseadam'],
                        help="""Optimization method.""")
     group.add_argument('-adagrad_accumulator_init', type=float, default=0,
                        help="""Initializes the accumulator values in adagrad.

@@ -121,7 +121,6 @@ class LossComputeBase(nn.Module):
 
         for shard in shards(shard_state, shard_size):
             loss, stats = self._compute_loss(batch, **shard)
-
             loss.div(normalization).backward()
             batch_stats.update(stats)
 
@@ -197,7 +196,6 @@ class NMTLossCompute(LossComputeBase):
                 log_likelihood.index_fill_(0, mask, 0)
                 tmp_.index_fill_(0, mask, 0)
             gtruth = Variable(tmp_, requires_grad=False)
-
         loss = self.criterion(scores, gtruth)
         if self.confidence < 1:
             # Default: report smoothed ppl.
