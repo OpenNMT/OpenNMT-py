@@ -129,7 +129,7 @@ python -u train.py -data data/cnndm/CNNDM \
                    -share_embeddings \
                    -copy_attn \
                    -param_init_glorot \
-                   -gpuid 3 
+                   -gpuid 3
 ```
 
 (3) Gigaword
@@ -138,7 +138,7 @@ Gigaword can be trained equivalently. As a baseline, we show a model trained wit
 
 ```
 python train.py -data data/giga/GIGA \
-                -save_model models/giga \ 
+                -save_model models/giga \
                 -copy_attn \
                 -reuse_copy_attn \
                 -epochs 20
@@ -149,11 +149,13 @@ python train.py -data data/giga/GIGA \
 
 During inference, we use beam-search with a beam-size of 5. We also added specific penalties that we can use during decoding, described in the following.
 
-- `stepwise_penalty`:
-- `coverage_penalty summary`
-- `beta 5`
-- `length_penalty wu`
-- `alpha 0.8`
+- `stepwise_penalty`: Applies penalty at every step
+- `coverage_penalty summary`: Uses a penalty that prevents repeated attention to the same source word
+- `beta 5`: Parameter for the Coverage Penalty
+- `length_penalty wu`: Uses the Length Penalty by Wu et al.
+- `alpha 0.8`: Parameter for the Length Penalty.
+- `block_ngram_repeat 3`: Prevent the model from repeating trigrams.
+- `ignore_when_blocking "." "</t>" "<t>"`: Allow the model to repeat trigrams with the sentence boundary tokens.
 
 **commands used**:
 
@@ -173,7 +175,9 @@ python translate.py -gpu X \
                     -beta 5 \
                     -length_penalty wu \
                     -alpha 0.9 \
-                    -verbose
+                    -verbose \
+                    -block_ngram_repeat 3 \
+                    -ignore_when_blocking "." "</t>" "<t>"
 ```
 
 
