@@ -31,7 +31,8 @@ class Translator(object):
                  cuda=False,
                  beam_trace=False,
                  min_length=0,
-                 stepwise_penalty=False):
+                 stepwise_penalty=False,
+                 block_ngram_repeat=0):
         self.model = model
         self.fields = fields
         self.n_best = n_best
@@ -42,6 +43,7 @@ class Translator(object):
         self.cuda = cuda
         self.min_length = min_length
         self.stepwise_penalty = stepwise_penalty
+        self.block_ngram_repeat = block_ngram_repeat
 
         # for debugging
         self.beam_accum = None
@@ -73,6 +75,11 @@ class Translator(object):
         batch_size = batch.batch_size
         data_type = data.data_type
         vocab = self.fields["tgt"].vocab
+
+        # Define a list of tokens to exclude from ngram-blocking
+        exclusion_list = ["<t>", "</t>", "."]
+        exclusion_tokens = [vocab.stoi[t] for t in exclusion_list]
+
         beam = [onmt.translate.Beam(beam_size, n_best=self.n_best,
                                     cuda=self.cuda,
                                     global_scorer=self.global_scorer,
@@ -80,7 +87,9 @@ class Translator(object):
                                     eos=vocab.stoi[onmt.io.EOS_WORD],
                                     bos=vocab.stoi[onmt.io.BOS_WORD],
                                     min_length=self.min_length,
-                                    stepwise_penalty=self.stepwise_penalty)
+                                    stepwise_penalty=self.stepwise_penalty,
+                                    block_ngram_repeat=self.block_ngram_repeat,
+                                    exclusion_tokens=exclusion_tokens)
                 for __ in range(batch_size)]
 
         # Help functions for working with beams and batches

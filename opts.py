@@ -358,7 +358,8 @@ def train_opts(parser):
     group.add_argument('-tensorboard', action="store_true",
                        help="""Use tensorboardX for visualization during training.
                        Must have the library tensorboardX.""")
-    group.add_argument("-tensorboard_log_dir", type=str, default="runs/onmt",
+    group.add_argument("-tensorboard_log_dir", type=str,
+                       default="runs/onmt",
                        help="""Log directory for Tensorboard.
                        This is also the name of the run.
                        """)
@@ -429,6 +430,8 @@ def translate_opts(parser):
                         (higher = longer generation)""")
     group.add_argument('-beta', type=float, default=-0.,
                        help="""Coverage penalty parameter""")
+    group.add_argument('-block_ngram_repeat', , type=int, default=0,
+                       help='Block repetition of ngrams during decoding.')
     group.add_argument('-replace_unk', action="store_true",
                        help="""Replace the generated UNK tokens with the
                        source token that had highest attention weight. If
