@@ -100,7 +100,8 @@ def main():
         cuda=opt.cuda,
         beam_trace=opt.dump_beam != "",
         min_length=opt.min_length,
-        stepwise_penalty=opt.stepwise_penalty)
+        stepwise_penalty=opt.stepwise_penalty,
+        block_ngram_repeat=opt.block_ngram_repeat)
     builder = onmt.translate.TranslationBuilder(
         data, translator.fields,
         opt.n_best, opt.replace_unk, opt.tgt)
