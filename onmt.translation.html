@@ -235,7 +235,7 @@
 <h2>Translator Class<a class="headerlink" href="#translator-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.translate.Translator">
-<em class="property">class </em><code class="descclassname">onmt.translate.</code><code class="descname">Translator</code><span class="sig-paren">(</span><em>model</em>, <em>fields</em>, <em>beam_size</em>, <em>n_best=1</em>, <em>max_length=100</em>, <em>global_scorer=None</em>, <em>copy_attn=False</em>, <em>cuda=False</em>, <em>beam_trace=False</em>, <em>min_length=0</em>, <em>stepwise_penalty=False</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.translate.Translator" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.translate.</code><code class="descname">Translator</code><span class="sig-paren">(</span><em>model</em>, <em>fields</em>, <em>beam_size</em>, <em>n_best=1</em>, <em>max_length=100</em>, <em>global_scorer=None</em>, <em>copy_attn=False</em>, <em>cuda=False</em>, <em>beam_trace=False</em>, <em>min_length=0</em>, <em>stepwise_penalty=False</em>, <em>block_ngram_repeat=0</em>, <em>ignore_when_blocking=[]</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.translate.Translator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Uses a model to translate a batch of sentences.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -306,7 +306,7 @@ Problem in Neural Machine Translation” <a class="reference internal" href="ref
 <h2>Beam Search<a class="headerlink" href="#beam-search" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.translate.Beam">
-<em class="property">class </em><code class="descclassname">onmt.translate.</code><code class="descname">Beam</code><span class="sig-paren">(</span><em>size</em>, <em>pad</em>, <em>bos</em>, <em>eos</em>, <em>n_best=1</em>, <em>cuda=False</em>, <em>global_scorer=None</em>, <em>min_length=0</em>, <em>stepwise_penalty=False</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.translate.Beam" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.translate.</code><code class="descname">Beam</code><span class="sig-paren">(</span><em>size</em>, <em>pad</em>, <em>bos</em>, <em>eos</em>, <em>n_best=1</em>, <em>cuda=False</em>, <em>global_scorer=None</em>, <em>min_length=0</em>, <em>stepwise_penalty=False</em>, <em>block_ngram_repeat=0</em>, <em>exclusion_tokens=set()</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.translate.Beam" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class for managing the internals of the beam search process.</p>
 <p>Takes care of beams, back pointers, and scores.</p>
 <table class="docutils field-list" frame="void" rules="none">

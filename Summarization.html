@@ -266,10 +266,42 @@ We additionally set the maximum norm of the gradient to 2, and renormalize if th
                 <span class="o">-</span><span class="n">gpuid</span> <span class="n">X</span>
 </pre></div>
 </div>
-<p>(2) Gigaword</p>
+<p>(2) CNNDM Transformer</p>
+<p>The following script trains the transformer model on CNNDM</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="o">-</span><span class="n">u</span> <span class="n">train</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">data</span> <span class="n">data</span><span class="o">/</span><span class="n">cnndm</span><span class="o">/</span><span class="n">CNNDM</span> \
+                   <span class="o">-</span><span class="n">save_model</span> <span class="n">models</span><span class="o">/</span><span class="n">cnndm</span> \
+                   <span class="o">-</span><span class="n">layers</span> <span class="mi">4</span> \
+                   <span class="o">-</span><span class="n">rnn_size</span> <span class="mi">512</span> \
+                   <span class="o">-</span><span class="n">word_vec_size</span> <span class="mi">512</span> \
+                   <span class="o">-</span><span class="n">max_grad_norm</span> <span class="mi">0</span> \
+                   <span class="o">-</span><span class="n">optim</span> <span class="n">adam</span> \
+                   <span class="o">-</span><span class="n">encoder_type</span> <span class="n">transformer</span> \
+                   <span class="o">-</span><span class="n">decoder_type</span> <span class="n">transformer</span> \
+                   <span class="o">-</span><span class="n">position_encoding</span> \
+                   <span class="o">-</span><span class="n">dropout</span> <span class="mi">0</span>\<span class="o">.</span><span class="mi">2</span> \
+                   <span class="o">-</span><span class="n">param_init</span> <span class="mi">0</span> \
+                   <span class="o">-</span><span class="n">warmup_steps</span> <span class="mi">8000</span> \
+                   <span class="o">-</span><span class="n">learning_rate</span> <span class="mi">2</span> \
+                   <span class="o">-</span><span class="n">decay_method</span> <span class="n">noam</span> \
+                   <span class="o">-</span><span class="n">label_smoothing</span> <span class="mf">0.1</span> \
+                   <span class="o">-</span><span class="n">adam_beta2</span> <span class="mf">0.998</span> \
+                   <span class="o">-</span><span class="n">batch_size</span> <span class="mi">4096</span> \
+                   <span class="o">-</span><span class="n">batch_type</span> <span class="n">tokens</span> \
+                   <span class="o">-</span><span class="n">normalization</span> <span class="n">tokens</span> \
+                   <span class="o">-</span><span class="n">max_generator_batches</span> <span class="mi">2</span> \
+                   <span class="o">-</span><span class="n">epochs</span> <span class="mi">25</span> \
+                   <span class="o">-</span><span class="n">start_checkpoint_at</span> <span class="mi">8</span> \
+                   <span class="o">-</span><span class="n">accum_count</span> <span class="mi">4</span> \
+                   <span class="o">-</span><span class="n">share_embeddings</span> \
+                   <span class="o">-</span><span class="n">copy_attn</span> \
+                   <span class="o">-</span><span class="n">param_init_glorot</span> \
+                   <span class="o">-</span><span class="n">gpuid</span> <span class="mi">3</span>
+</pre></div>
+</div>
+<p>(3) Gigaword</p>
 <p>Gigaword can be trained equivalently. As a baseline, we show a model trained with the following command:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">train</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">data</span> <span class="n">data</span><span class="o">/</span><span class="n">giga</span><span class="o">/</span><span class="n">GIGA</span> \
-                <span class="o">-</span><span class="n">save_model</span> <span class="n">models</span><span class="o">/</span><span class="n">giga</span> \ 
+                <span class="o">-</span><span class="n">save_model</span> <span class="n">models</span><span class="o">/</span><span class="n">giga</span> \
                 <span class="o">-</span><span class="n">copy_attn</span> \
                 <span class="o">-</span><span class="n">reuse_copy_attn</span> \
                 <span class="o">-</span><span class="n">epochs</span> <span class="mi">20</span>
@@ -280,11 +312,13 @@ We additionally set the maximum norm of the gradient to 2, and renormalize if th
 <span id="inference"></span><h2>Inference<a class="headerlink" href="#inference" title="Permalink to this headline">¶</a></h2>
 <p>During inference, we use beam-search with a beam-size of 5. We also added specific penalties that we can use during decoding, described in the following.</p>
 <ul class="simple">
-<li><code class="docutils literal notranslate"><span class="pre">stepwise_penalty</span></code>:</li>
-<li><code class="docutils literal notranslate"><span class="pre">coverage_penalty</span> <span class="pre">summary</span></code></li>
-<li><code class="docutils literal notranslate"><span class="pre">beta</span> <span class="pre">5</span></code></li>
-<li><code class="docutils literal notranslate"><span class="pre">length_penalty</span> <span class="pre">wu</span></code></li>
-<li><code class="docutils literal notranslate"><span class="pre">alpha</span> <span class="pre">0.8</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">stepwise_penalty</span></code>: Applies penalty at every step</li>
+<li><code class="docutils literal notranslate"><span class="pre">coverage_penalty</span> <span class="pre">summary</span></code>: Uses a penalty that prevents repeated attention to the same source word</li>
+<li><code class="docutils literal notranslate"><span class="pre">beta</span> <span class="pre">5</span></code>: Parameter for the Coverage Penalty</li>
+<li><code class="docutils literal notranslate"><span class="pre">length_penalty</span> <span class="pre">wu</span></code>: Uses the Length Penalty by Wu et al.</li>
+<li><code class="docutils literal notranslate"><span class="pre">alpha</span> <span class="pre">0.8</span></code>: Parameter for the Length Penalty.</li>
+<li><code class="docutils literal notranslate"><span class="pre">block_ngram_repeat</span> <span class="pre">3</span></code>: Prevent the model from repeating trigrams.</li>
+<li><code class="docutils literal notranslate"><span class="pre">ignore_when_blocking</span> <span class="pre">&quot;.&quot;</span> <span class="pre">&quot;&lt;/t&gt;&quot;</span> <span class="pre">&quot;&lt;t&gt;&quot;</span></code>: Allow the model to repeat trigrams with the sentence boundary tokens.</li>
 </ul>
 <p><strong>commands used</strong>:</p>
 <p>(1) CNNDM</p>
@@ -301,7 +335,9 @@ We additionally set the maximum norm of the gradient to 2, and renormalize if th
                     <span class="o">-</span><span class="n">beta</span> <span class="mi">5</span> \
                     <span class="o">-</span><span class="n">length_penalty</span> <span class="n">wu</span> \
                     <span class="o">-</span><span class="n">alpha</span> <span class="mf">0.9</span> \
-                    <span class="o">-</span><span class="n">verbose</span>
+                    <span class="o">-</span><span class="n">verbose</span> \
+                    <span class="o">-</span><span class="n">block_ngram_repeat</span> <span class="mi">3</span> \
+                    <span class="o">-</span><span class="n">ignore_when_blocking</span> <span class="s2">&quot;.&quot;</span> <span class="s2">&quot;&lt;/t&gt;&quot;</span> <span class="s2">&quot;&lt;t&gt;&quot;</span>
 </pre></div>
 </div>
 </div>
