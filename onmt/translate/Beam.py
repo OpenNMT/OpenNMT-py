@@ -102,13 +102,13 @@ class Beam(object):
             # Block ngram repeats
             if self.block_ngram_repeat > 0:
                 ngrams = []
-                l = len(self.next_ys)
+                le = len(self.next_ys)
                 for j in range(self.next_ys[-1].size(0)):
                     hyp, _ = self.get_hyp(l-1, j)
                     ngrams = set()
                     fail = False
                     gram = []
-                    for i in range(l-1):
+                    for i in range(le-1):
                         # Last n tokens, n = block_ngram_repeat
                         gram = (gram + [hyp[i]])[-self.block_ngram_repeat:]
                         # Skip the blocking if it is in the exclusion list
