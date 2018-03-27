@@ -97,13 +97,48 @@ python train.py -save_model models/cnndm \
                 -gpuid X
 ```
 
-(2) Gigaword
+(2) CNNDM Transformer
+
+The following script trains the transformer model on CNNDM
+
+```
+python -u train.py -data data/cnndm/CNNDM \
+                   -save_model models/cnndm \
+                   -layers 4 \
+                   -rnn_size 512 \
+                   -word_vec_size 512 \
+                   -max_grad_norm 0 \
+                   -optim adam \
+                   -encoder_type transformer \
+                   -decoder_type transformer \
+                   -position_encoding \
+                   -dropout 0\.2 \
+                   -param_init 0 \
+                   -warmup_steps 8000 \
+                   -learning_rate 2 \
+                   -decay_method noam \
+                   -label_smoothing 0.1 \
+                   -adam_beta2 0.998 \
+                   -batch_size 4096 \
+                   -batch_type tokens \
+                   -normalization tokens \
+                   -max_generator_batches 2 \
+                   -epochs 25 \
+                   -start_checkpoint_at 8 \
+                   -accum_count 4 \
+                   -share_embeddings \
+                   -copy_attn \
+                   -param_init_glorot \
+                   -gpuid 3
+```
+
+(3) Gigaword
 
 Gigaword can be trained equivalently. As a baseline, we show a model trained with the following command:
 
 ```
 python train.py -data data/giga/GIGA \
-                -save_model models/giga \ 
+                -save_model models/giga \
                 -copy_attn \
                 -reuse_copy_attn \
                 -epochs 20
@@ -114,11 +149,13 @@ python train.py -data data/giga/GIGA \
 
 During inference, we use beam-search with a beam-size of 5. We also added specific penalties that we can use during decoding, described in the following.
 
-- `stepwise_penalty`:
-- `coverage_penalty summary`
-- `beta 5`
-- `length_penalty wu`
-- `alpha 0.8`
+- `stepwise_penalty`: Applies penalty at every step
+- `coverage_penalty summary`: Uses a penalty that prevents repeated attention to the same source word
+- `beta 5`: Parameter for the Coverage Penalty
+- `length_penalty wu`: Uses the Length Penalty by Wu et al.
+- `alpha 0.8`: Parameter for the Length Penalty.
+- `block_ngram_repeat 3`: Prevent the model from repeating trigrams.
+- `ignore_when_blocking "." "</t>" "<t>"`: Allow the model to repeat trigrams with the sentence boundary tokens.
 
 **commands used**:
 
@@ -138,7 +175,9 @@ python translate.py -gpu X \
                     -beta 5 \
                     -length_penalty wu \
                     -alpha 0.9 \
-                    -verbose
+                    -verbose \
+                    -block_ngram_repeat 3 \
+                    -ignore_when_blocking "." "</t>" "<t>"
 ```
 
 
