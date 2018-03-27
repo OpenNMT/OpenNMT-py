@@ -107,6 +107,11 @@
 <li class="toctree-l3"><a class="reference internal" href="#gigaword">Gigaword</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="#scores-and-models">Scores and Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#cnndm">CNNDM</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gigaword">Gigaword</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#references">References</a></li>
 </ul>
 </li>
@@ -181,7 +186,7 @@
   <div class="section" id="example-summarization">
 <span id="example-summarization"></span><h1>Example: Summarization<a class="headerlink" href="#example-summarization" title="Permalink to this headline">¶</a></h1>
 <p>This document describes how to replicate summarization experiments on the CNNDM and gigaword datasets using OpenNMT-py.
-In the following, we assume access to a tokenized form of the corpus split into train/valid/test set.</p>
+In the following, we assume access to a tokenized form of the corpus split into train/valid/test set. You can find the data <a class="reference external" href="https://github.com/harvardnlp/sent-summary">here</a>.</p>
 <p>An example article-title pair from Gigaword should look like this:</p>
 <p><strong>Input</strong>
 <em>australia ‘s current account deficit shrunk by a record #.## billion dollars -lrb- #.## billion us -rrb- in the june quarter due to soaring commodity prices , figures released monday showed .</em></p>
@@ -191,46 +196,112 @@ In the following, we assume access to a tokenized form of the corpus split into 
 <span id="preprocessing-the-data"></span><h2>Preprocessing the data<a class="headerlink" href="#preprocessing-the-data" title="Permalink to this headline">¶</a></h2>
 <p>Since we are using copy-attention [1] in the model, we need to preprocess the dataset such that source and target are aligned and use the same dictionary. This is achieved by using the options <code class="docutils literal notranslate"><span class="pre">dynamic_dict</span></code> and <code class="docutils literal notranslate"><span class="pre">share_vocab</span></code>.
 We additionally turn off truncation of the source to ensure that inputs longer than 50 words are not truncated.
-For CNNDM we follow See et al. [2] and additionally truncate the source length at 400 tokens and the target at 100.</p>
-<p><strong>command used</strong>:</p>
+For CNNDM we follow See et al. [2] and additionally truncate the source length at 400 tokens and the target at 100. We also note that in CNNDM, we found models to work better if the target surrounds sentences with tags such that a sentence looks like <code class="docutils literal notranslate"><span class="pre">&lt;t&gt;</span> <span class="pre">w1</span> <span class="pre">w2</span> <span class="pre">w3</span> <span class="pre">.</span> <span class="pre">&lt;/t&gt;</span></code>. If you use this formatting, you can remove the tags after the inference step with the commands <code class="docutils literal notranslate"><span class="pre">sed</span> <span class="pre">-i</span> <span class="pre">'s/</span> <span class="pre">&lt;\/t&gt;//g'</span> <span class="pre">FILE.txt</span></code> and <code class="docutils literal notranslate"><span class="pre">sed</span> <span class="pre">-i</span> <span class="pre">'s/&lt;t&gt;</span> <span class="pre">//g'</span> <span class="pre">FILE.txt</span></code>.</p>
+<p><strong>Command used</strong>:</p>
 <p>(1) CNNDM</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">preprocess</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">train_src</span> <span class="n">data</span><span class="o">/</span><span class="n">cnndm</span><span class="o">/</span><span class="n">train</span><span class="o">.</span><span class="n">txt</span><span class="o">.</span><span class="n">src</span> <span class="o">-</span><span class="n">train_tgt</span> <span class="n">data</span><span class="o">/</span><span class="n">cnn</span><span class="o">-</span><span class="n">no</span><span class="o">-</span><span class="n">sent</span><span class="o">-</span><span class="n">tag</span><span class="o">/</span><span class="n">train</span><span class="o">.</span><span class="n">txt</span><span class="o">.</span><span class="n">tgt</span> <span class="o">-</span><span class="n">valid_src</span> <span class="n">data</span><span class="o">/</span><span class="n">cnndm</span><span class="o">/</span><span class="n">val</span><span class="o">.</span><span class="n">txt</span><span class="o">.</span><span class="n">src</span> <span class="o">-</span><span class="n">valid_tgt</span> <span class="n">data</span><span class="o">/</span><span class="n">cnn</span><span class="o">-</span><span class="n">no</span><span class="o">-</span><span class="n">sent</span><span class="o">-</span><span class="n">tag</span><span class="o">/</span><span class="n">val</span><span class="o">.</span><span class="n">txt</span><span class="o">.</span><span class="n">tgt</span> <span class="o">-</span><span class="n">save_data</span> <span class="n">data</span><span class="o">/</span><span class="n">cnn</span><span class="o">-</span><span class="n">no</span><span class="o">-</span><span class="n">sent</span><span class="o">-</span><span class="n">tag</span><span class="o">/</span><span class="n">cnndm</span> <span class="o">-</span><span class="n">src_seq_length</span> <span class="mi">10000</span> <span class="o">-</span><span class="n">tgt_seq_length</span> <span class="mi">10000</span> <span class="o">-</span><span class="n">src_seq_length_trunc</span> <span class="mi">400</span> <span class="o">-</span><span class="n">tgt_seq_length_trunc</span> <span class="mi">100</span> <span class="o">-</span><span class="n">dynamic_dict</span> <span class="o">-</span><span class="n">share_vocab</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">preprocess</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">train_src</span> <span class="n">data</span><span class="o">/</span><span class="n">cnndm</span><span class="o">/</span><span class="n">train</span><span class="o">.</span><span class="n">txt</span><span class="o">.</span><span class="n">src</span> \
+                     <span class="o">-</span><span class="n">train_tgt</span> <span class="n">data</span><span class="o">/</span><span class="n">cnndm</span><span class="o">/</span><span class="n">train</span><span class="o">.</span><span class="n">txt</span><span class="o">.</span><span class="n">tgt</span> \
+                     <span class="o">-</span><span class="n">valid_src</span> <span class="n">data</span><span class="o">/</span><span class="n">cnndm</span><span class="o">/</span><span class="n">val</span><span class="o">.</span><span class="n">txt</span><span class="o">.</span><span class="n">src</span> \
+                     <span class="o">-</span><span class="n">valid_tgt</span> <span class="n">data</span><span class="o">/</span><span class="n">cnndm</span><span class="o">/</span><span class="n">val</span><span class="o">.</span><span class="n">txt</span><span class="o">.</span><span class="n">tgt</span> \
+                     <span class="o">-</span><span class="n">save_data</span> <span class="n">data</span><span class="o">/</span><span class="n">cnndm</span><span class="o">/</span><span class="n">CNNDM</span> \
+                     <span class="o">-</span><span class="n">src_seq_length</span> <span class="mi">10000</span> \
+                     <span class="o">-</span><span class="n">tgt_seq_length</span> <span class="mi">10000</span> \
+                     <span class="o">-</span><span class="n">src_seq_length_trunc</span> <span class="mi">400</span> \
+                     <span class="o">-</span><span class="n">tgt_seq_length_trunc</span> <span class="mi">100</span> \
+                     <span class="o">-</span><span class="n">dynamic_dict</span> \
+                     <span class="o">-</span><span class="n">share_vocab</span> \
+                     <span class="o">-</span><span class="n">max_shard_size</span> <span class="p">(</span><span class="mi">500</span> <span class="o">*</span> <span class="mi">1024</span> <span class="o">*</span> <span class="mi">1024</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>(2) Gigaword</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">preprocess</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">train_src</span> <span class="n">data</span><span class="o">/</span><span class="n">giga</span><span class="o">/</span><span class="n">train</span><span class="o">.</span><span class="n">article</span><span class="o">.</span><span class="n">txt</span> <span class="o">-</span><span class="n">train_tgt</span> <span class="n">data</span><span class="o">/</span><span class="n">giga</span><span class="o">/</span><span class="n">train</span><span class="o">.</span><span class="n">title</span><span class="o">.</span><span class="n">txt</span> <span class="o">-</span><span class="n">valid_src</span> <span class="n">data</span><span class="o">/</span><span class="n">giga</span><span class="o">/</span><span class="n">valid</span><span class="o">.</span><span class="n">article</span><span class="o">.</span><span class="n">txt</span> <span class="o">-</span><span class="n">valid_tgt</span> <span class="n">data</span><span class="o">/</span><span class="n">giga</span><span class="o">/</span><span class="n">valid</span><span class="o">.</span><span class="n">title</span><span class="o">.</span><span class="n">txt</span> <span class="o">-</span><span class="n">save_data</span> <span class="n">data</span><span class="o">/</span><span class="n">giga</span><span class="o">/</span><span class="n">giga</span> <span class="o">-</span><span class="n">src_seq_length</span> <span class="mi">10000</span> <span class="o">-</span><span class="n">dynamic_dict</span> <span class="o">-</span><span class="n">share_vocab</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">preprocess</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">train_src</span> <span class="n">data</span><span class="o">/</span><span class="n">giga</span><span class="o">/</span><span class="n">train</span><span class="o">.</span><span class="n">article</span><span class="o">.</span><span class="n">txt</span> \
+                     <span class="o">-</span><span class="n">train_tgt</span> <span class="n">data</span><span class="o">/</span><span class="n">giga</span><span class="o">/</span><span class="n">train</span><span class="o">.</span><span class="n">title</span><span class="o">.</span><span class="n">txt</span> \
+                     <span class="o">-</span><span class="n">valid_src</span> <span class="n">data</span><span class="o">/</span><span class="n">giga</span><span class="o">/</span><span class="n">valid</span><span class="o">.</span><span class="n">article</span><span class="o">.</span><span class="n">txt</span> \
+                     <span class="o">-</span><span class="n">valid_tgt</span> <span class="n">data</span><span class="o">/</span><span class="n">giga</span><span class="o">/</span><span class="n">valid</span><span class="o">.</span><span class="n">title</span><span class="o">.</span><span class="n">txt</span> \
+                     <span class="o">-</span><span class="n">save_data</span> <span class="n">data</span><span class="o">/</span><span class="n">giga</span><span class="o">/</span><span class="n">GIGA</span> \
+                     <span class="o">-</span><span class="n">src_seq_length</span> <span class="mi">10000</span> \
+                     <span class="o">-</span><span class="n">dynamic_dict</span> \
+                     <span class="o">-</span><span class="n">share_vocab</span> \
+                     <span class="o">-</span><span class="n">max_shard_size</span> <span class="p">(</span><span class="mi">500</span> <span class="o">*</span> <span class="mi">1024</span> <span class="o">*</span> <span class="mi">1024</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="training">
 <span id="training"></span><h2>Training<a class="headerlink" href="#training" title="Permalink to this headline">¶</a></h2>
-<p>The training procedure described in this section for the most part follows parameter choices and implementation similar to that of See et al. [2].  As mentioned above, we use copy attention as a mechanism for the model to decide whether to either generate a new word or to copy from the source (<code class="docutils literal notranslate"><span class="pre">copy_attn</span></code>).
-A notable difference to See’s model is that we are using the attention mechanism introduced by Bahdanau et al. [3] (<code class="docutils literal notranslate"><span class="pre">global_attention</span> <span class="pre">mlp</span></code>) instead of that by Luong et al. [4] (<code class="docutils literal notranslate"><span class="pre">global_attention</span> <span class="pre">dot</span></code>). Both options typically perform very similar to each other with Luong attention often having a slight advantage.
-We are using using a 128-dimensional word-embedding, and 512-dimensional 1 layer LSTM. On the encoder side, we use a bidirectional LSTM (<code class="docutils literal notranslate"><span class="pre">brnn</span></code>), which means that the 512 dimensions are split into 256 dimensions per direction.
-We also share the word embeddings between encoder and decoder (<code class="docutils literal notranslate"><span class="pre">share_embeddings</span></code>). This option drastically reduces the number of parameters the model has to learn. However, we found only minimal impact on performance of a model without this option.</p>
-<p>For the training procedure, we are using SGD with an initial learning rate of 1 for a total of 16 epochs. In most cases, the lowest validation perplexity is achieved around epoch 10-12. We also use OpenNMT’s default learning rate decay, which halves the learning rate after every epoch once the validation perplexity increased after an epoch (or after epoch 8).
-Alternative training procedures such as adam with initial learning rate 0.001 converge faster than sgd, but achieve slightly worse. We additionally set the maximum norm of the gradient to 2, and renormalize if the gradient norm exceeds this value.</p>
+<p>The training procedure described in this section for the most part follows parameter choices and implementation similar to that of See et al. [2]. We describe notable options in the following list:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">copy_attn</span></code>: This is the most important option, since it allows the model to copy words from the source.</li>
+<li><code class="docutils literal notranslate"><span class="pre">global_attention</span> <span class="pre">mlp</span></code>: This makes the model use the  attention mechanism introduced by Bahdanau et al. [3] instead of that by Luong et al. [4] (<code class="docutils literal notranslate"><span class="pre">global_attention</span> <span class="pre">dot</span></code>).</li>
+<li><code class="docutils literal notranslate"><span class="pre">share_embeddings</span></code>: This shares the word embeddings between encoder and decoder. This option drastically decreases the number of parameters a model has to learn. We did not find this option to helpful, but you can try it out by adding it to the command below.</li>
+<li><code class="docutils literal notranslate"><span class="pre">reuse_copy_attn</span></code>: This option reuses the standard attention as copy attention. Without this, the model learns an additional attention that is only used for copying.</li>
+<li><code class="docutils literal notranslate"><span class="pre">copy_loss_by_seqlength</span></code>: This modifies the loss to divide the loss of a sequence by the number of tokens in it. In practice, we found this to generate longer sequences during inference. However, this effect can also be achieved by using penalties during decoding.</li>
+<li><code class="docutils literal notranslate"><span class="pre">bridge</span></code>: This is an additional layer that uses the final hidden state of the encoder as input and computes an initial hidden state for the decoder. Without this, the decoder is initialized with the final hidden state of the encoder directly.</li>
+<li><code class="docutils literal notranslate"><span class="pre">optim</span> <span class="pre">adagrad</span></code>: Adagrad outperforms SGD when coupled with the following option.</li>
+<li><code class="docutils literal notranslate"><span class="pre">adagrad_accumulator_init</span> <span class="pre">0.1</span></code>: PyTorch does not initialize the accumulator in adagrad with any values. To match the optimization algorithm with the Tensorflow version, this option needs to be added.</li>
+</ul>
+<p>We are using using a 128-dimensional word-embedding, and 512-dimensional 1 layer LSTM. On the encoder side, we use a bidirectional LSTM (<code class="docutils literal notranslate"><span class="pre">brnn</span></code>), which means that the 512 dimensions are split into 256 dimensions per direction.
+We also use OpenNMT’s default learning rate decay, which halves the learning rate after every epoch once the validation perplexity increased after an epoch (or after epoch 8).
+We additionally set the maximum norm of the gradient to 2, and renormalize if the gradient norm exceeds this value and do not use any dropout.</p>
 <p><strong>commands used</strong>:</p>
 <p>(1) CNNDM</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">train</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">save_model</span> <span class="n">logs</span><span class="o">/</span><span class="n">notag_sgd3</span> <span class="o">-</span><span class="n">data</span> <span class="n">data</span><span class="o">/</span><span class="n">cnn</span><span class="o">-</span><span class="n">no</span><span class="o">-</span><span class="n">sent</span><span class="o">-</span><span class="n">tag</span><span class="o">/</span><span class="n">CNNDM</span> <span class="o">-</span><span class="n">copy_attn</span> <span class="o">-</span><span class="n">global_attention</span> <span class="n">mlp</span> <span class="o">-</span><span class="n">word_vec_size</span> <span class="mi">128</span> <span class="o">-</span><span class="n">rnn_size</span> <span class="mi">256</span> <span class="o">-</span><span class="n">layers</span> <span class="mi">1</span> <span class="o">-</span><span class="n">brnn</span> <span class="o">-</span><span class="n">epochs</span> <span class="mi">16</span> <span class="o">-</span><span class="n">seed</span> <span class="mi">777</span> <span class="o">-</span><span class="n">batch_size</span> <span class="mi">32</span> <span class="o">-</span><span class="n">max_grad_norm</span> <span class="mi">2</span> <span class="o">-</span><span class="n">share_embeddings</span> <span class="o">-</span><span class="n">gpuid</span> <span class="mi">0</span> <span class="o">-</span><span class="n">start_checkpoint_at</span> <span class="mi">9</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">train</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">save_model</span> <span class="n">models</span><span class="o">/</span><span class="n">cnndm</span> \
+                <span class="o">-</span><span class="n">data</span> <span class="n">data</span><span class="o">/</span><span class="n">cnndm</span><span class="o">/</span><span class="n">CNNDM</span> \
+                <span class="o">-</span><span class="n">copy_attn</span> \
+                <span class="o">-</span><span class="n">global_attention</span> <span class="n">mlp</span> \
+                <span class="o">-</span><span class="n">word_vec_size</span> <span class="mi">128</span> \
+                <span class="o">-</span><span class="n">rnn_size</span> <span class="mi">512</span> \
+                <span class="o">-</span><span class="n">layers</span> <span class="mi">1</span> \
+                <span class="o">-</span><span class="n">encoder_type</span> <span class="n">brnn</span> \
+                <span class="o">-</span><span class="n">epochs</span> <span class="mi">20</span> \
+                <span class="o">-</span><span class="n">max_grad_norm</span> <span class="mi">2</span> \
+                <span class="o">-</span><span class="n">dropout</span> <span class="mf">0.</span> \
+                <span class="o">-</span><span class="n">batch_size</span> <span class="mi">16</span> \
+                <span class="o">-</span><span class="n">optim</span> <span class="n">adagrad</span> \
+                <span class="o">-</span><span class="n">learning_rate</span> <span class="mf">0.15</span> \
+                <span class="o">-</span><span class="n">adagrad_accumulator_init</span> <span class="mf">0.1</span> \
+                <span class="o">-</span><span class="n">reuse_copy_attn</span> \
+                <span class="o">-</span><span class="n">copy_loss_by_seqlength</span> \
+                <span class="o">-</span><span class="n">bridge</span> \
+                <span class="o">-</span><span class="n">seed</span> <span class="mi">777</span> \
+                <span class="o">-</span><span class="n">gpuid</span> <span class="n">X</span>
 </pre></div>
 </div>
 <p>(2) Gigaword</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">train</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">save_model</span> <span class="n">logs</span><span class="o">/</span><span class="n">giga_sgd3_512</span> <span class="o">-</span><span class="n">data</span> <span class="n">data</span><span class="o">/</span><span class="n">giga</span><span class="o">/</span><span class="n">giga</span> <span class="o">-</span><span class="n">copy_attn</span> <span class="o">-</span><span class="n">global_attention</span> <span class="n">mlp</span> <span class="o">-</span><span class="n">word_vec_size</span> <span class="mi">128</span> <span class="o">-</span><span class="n">rnn_size</span> <span class="mi">512</span> <span class="o">-</span><span class="n">layers</span> <span class="mi">1</span> <span class="o">-</span><span class="n">brnn</span> <span class="o">-</span><span class="n">epochs</span> <span class="mi">16</span> <span class="o">-</span><span class="n">seed</span> <span class="mi">777</span> <span class="o">-</span><span class="n">batch_size</span> <span class="mi">32</span> <span class="o">-</span><span class="n">max_grad_norm</span> <span class="mi">2</span> <span class="o">-</span><span class="n">share_embeddings</span> <span class="o">-</span><span class="n">gpuid</span> <span class="mi">0</span> <span class="o">-</span><span class="n">start_checkpoint_at</span> <span class="mi">9</span>
+<p>Gigaword can be trained equivalently. As a baseline, we show a model trained with the following command:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">train</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">data</span> <span class="n">data</span><span class="o">/</span><span class="n">giga</span><span class="o">/</span><span class="n">GIGA</span> \
+                <span class="o">-</span><span class="n">save_model</span> <span class="n">models</span><span class="o">/</span><span class="n">giga</span> \ 
+                <span class="o">-</span><span class="n">copy_attn</span> \
+                <span class="o">-</span><span class="n">reuse_copy_attn</span> \
+                <span class="o">-</span><span class="n">epochs</span> <span class="mi">20</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="inference">
 <span id="inference"></span><h2>Inference<a class="headerlink" href="#inference" title="Permalink to this headline">¶</a></h2>
-<p>During inference, we use beam-search with a beam-size of 10.
-We additionally use the <code class="docutils literal notranslate"><span class="pre">replace_unk</span></code> option which replaces generated <code class="docutils literal notranslate"><span class="pre">&lt;UNK&gt;</span></code> tokens with the source token of highest attention. This acts as safety-net should the copy attention fail which should learn to copy such words.</p>
+<p>During inference, we use beam-search with a beam-size of 5. We also added specific penalties that we can use during decoding, described in the following.</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">stepwise_penalty</span></code>:</li>
+<li><code class="docutils literal notranslate"><span class="pre">coverage_penalty</span> <span class="pre">summary</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">beta</span> <span class="pre">5</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">length_penalty</span> <span class="pre">wu</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">alpha</span> <span class="pre">0.8</span></code></li>
+</ul>
 <p><strong>commands used</strong>:</p>
 <p>(1) CNNDM</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">translate</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">gpu</span> <span class="mi">2</span> <span class="o">-</span><span class="n">batch_size</span> <span class="mi">1</span> <span class="o">-</span><span class="n">model</span> <span class="n">logs</span><span class="o">/</span><span class="n">notag_try3_acc_49</span><span class="o">.</span><span class="mi">29</span><span class="n">_ppl_14</span><span class="o">.</span><span class="mi">62</span><span class="n">_e16</span><span class="o">.</span><span class="n">pt</span> <span class="o">-</span><span class="n">src</span> <span class="n">data</span><span class="o">/</span><span class="n">cnndm</span><span class="o">/</span><span class="n">test</span><span class="o">.</span><span class="n">txt</span><span class="o">.</span><span class="n">src</span> <span class="o">-</span><span class="n">output</span> <span class="n">sgd3_out</span><span class="o">.</span><span class="n">txt</span> <span class="o">-</span><span class="n">beam_size</span> <span class="mi">10</span> <span class="o">-</span><span class="n">replace_unk</span>
-</pre></div>
-</div>
-<p>(2) Gigaword</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">translate</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">gpu</span> <span class="mi">2</span> <span class="o">-</span><span class="n">batch_size</span> <span class="mi">1</span> <span class="o">-</span><span class="n">model</span> <span class="n">logs</span><span class="o">/</span><span class="n">giga_sgd3_512_acc_51</span><span class="o">.</span><span class="mi">10</span><span class="n">_ppl_12</span><span class="o">.</span><span class="mi">04</span><span class="n">_e16</span><span class="o">.</span><span class="n">pt</span> <span class="o">-</span><span class="n">src</span> <span class="n">data</span><span class="o">/</span><span class="n">giga</span><span class="o">/</span><span class="n">test</span><span class="o">.</span><span class="n">article</span><span class="o">.</span><span class="n">txt</span> <span class="o">-</span><span class="n">output</span> <span class="n">giga_sgd3</span><span class="o">.</span><span class="n">out</span><span class="o">.</span><span class="n">txt</span> <span class="o">-</span><span class="n">beam_size</span> <span class="mi">10</span> <span class="o">-</span><span class="n">replace_unk</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">translate</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">gpu</span> <span class="n">X</span> \
+                    <span class="o">-</span><span class="n">batch_size</span> <span class="mi">20</span> \
+                    <span class="o">-</span><span class="n">beam_size</span> <span class="mi">5</span> \
+                    <span class="o">-</span><span class="n">model</span> <span class="n">models</span><span class="o">/</span><span class="n">cnndm</span><span class="o">...</span> \
+                    <span class="o">-</span><span class="n">src</span> <span class="n">data</span><span class="o">/</span><span class="n">cnndm</span><span class="o">/</span><span class="n">test</span><span class="o">.</span><span class="n">txt</span><span class="o">.</span><span class="n">src</span> \
+                    <span class="o">-</span><span class="n">output</span> <span class="n">testout</span><span class="o">/</span><span class="n">cnndm</span><span class="o">.</span><span class="n">out</span> \
+                    <span class="o">-</span><span class="n">min_length</span> <span class="mi">35</span> \
+                    <span class="o">-</span><span class="n">verbose</span> \
+                    <span class="o">-</span><span class="n">stepwise_penalty</span> \
+                    <span class="o">-</span><span class="n">coverage_penalty</span> <span class="n">summary</span> \
+                    <span class="o">-</span><span class="n">beta</span> <span class="mi">5</span> \
+                    <span class="o">-</span><span class="n">length_penalty</span> <span class="n">wu</span> \
+                    <span class="o">-</span><span class="n">alpha</span> <span class="mf">0.9</span> \
+                    <span class="o">-</span><span class="n">verbose</span>
 </pre></div>
 </div>
 </div>
@@ -238,26 +309,39 @@ We additionally use the <code class="docutils literal notranslate"><span class="
 <span id="evaluation"></span><h2>Evaluation<a class="headerlink" href="#evaluation" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="cnndm">
 <span id="cnndm"></span><h3>CNNDM<a class="headerlink" href="#cnndm" title="Permalink to this headline">¶</a></h3>
-<p>To evaluate the ROUGE scores on CNNDM, we extended the pyrouge wrapper with additional evaluations such as the amount of repeated n-grams (typically found in models with copy attention), found <a class="reference external" href="https://github.com/falcondai/pyrouge/">here</a>.</p>
+<p>To evaluate the ROUGE scores on CNNDM, we extended the pyrouge wrapper with additional evaluations such as the amount of repeated n-grams (typically found in models with copy attention), found <a class="reference external" href="https://github.com/sebastianGehrmann/rouge-baselines">here</a>. The repository includes a sub-repo called pyrouge. Make sure to clone the code with the <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">clone</span> <span class="pre">--recurse-submodules</span> <span class="pre">https://github.com/sebastianGehrmann/rouge-baselines</span></code> command to check this out as well and follow the installation instructions on the pyrouge repository before calling this script.
+The installation instructions can be found <a class="reference external" href="https://github.com/falcondai/pyrouge/tree/9cdbfbda8b8d96e7c2646ffd048743ddcf417ed9#installation">here</a>. Note that on MacOS, we found that the pointer to your perl installation in line 1 of <code class="docutils literal notranslate"><span class="pre">pyrouge/RELEASE-1.5.5/ROUGE-1.5.5.pl</span></code> might be different from the one you have installed. A simple fix is to change this line to <code class="docutils literal notranslate"><span class="pre">#!/usr/local/bin/perl</span> <span class="pre">-w</span></code> if it fails.</p>
 <p>It can be run with the following command:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">baseline</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">s</span> <span class="n">sgd3_out</span><span class="o">.</span><span class="n">txt</span> <span class="o">-</span><span class="n">t</span> <span class="o">~/</span><span class="n">datasets</span><span class="o">/</span><span class="n">cnn</span><span class="o">-</span><span class="n">dailymail</span><span class="o">/</span><span class="n">sent</span><span class="o">-</span><span class="n">tagged</span><span class="o">/</span><span class="n">test</span><span class="o">.</span><span class="n">txt</span><span class="o">.</span><span class="n">tgt</span> <span class="o">-</span><span class="n">m</span> <span class="n">no_sent_tag</span> <span class="o">-</span><span class="n">r</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">baseline</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">s</span> <span class="n">testout</span><span class="o">/</span><span class="n">cnndm</span><span class="o">.</span><span class="n">out</span> <span class="o">-</span><span class="n">t</span> <span class="n">data</span><span class="o">/</span><span class="n">cnndm</span><span class="o">/</span><span class="n">test</span><span class="o">.</span><span class="n">txt</span><span class="o">.</span><span class="n">tgt</span> <span class="o">-</span><span class="n">m</span> <span class="n">no_sent_tag</span> <span class="o">-</span><span class="n">r</span>
 </pre></div>
 </div>
-<p>Note that the <code class="docutils literal notranslate"><span class="pre">no_sent_tag</span></code> option strips tags around sentences - when a sentence previously was <code class="docutils literal notranslate"><span class="pre">&lt;s&gt;</span> <span class="pre">w</span> <span class="pre">w</span> <span class="pre">w</span> <span class="pre">w</span> <span class="pre">.</span> <span class="pre">&lt;/s&gt;</span></code>, it becomes <code class="docutils literal notranslate"><span class="pre">w</span> <span class="pre">w</span> <span class="pre">w</span> <span class="pre">w</span> <span class="pre">.</span></code>.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">no_sent_tag</span></code> option strips tags around sentences - when a sentence previously was <code class="docutils literal notranslate"><span class="pre">&lt;s&gt;</span> <span class="pre">w</span> <span class="pre">w</span> <span class="pre">w</span> <span class="pre">w</span> <span class="pre">.</span> <span class="pre">&lt;/s&gt;</span></code>, it becomes <code class="docutils literal notranslate"><span class="pre">w</span> <span class="pre">w</span> <span class="pre">w</span> <span class="pre">w</span> <span class="pre">.</span></code>.</p>
 </div>
 <div class="section" id="gigaword">
 <span id="gigaword"></span><h3>Gigaword<a class="headerlink" href="#gigaword" title="Permalink to this headline">¶</a></h3>
 <p>For evaluation of large test sets such as Gigaword, we use the a parallel python wrapper around ROUGE, found <a class="reference external" href="https://github.com/pltrdy/files2rouge">here</a>.</p>
 <p><strong>command used</strong>:
-<code class="docutils literal notranslate"><span class="pre">files2rouge</span> <span class="pre">giga_sgd3.out.txt</span> <span class="pre">test.title.txt</span> <span class="pre">--verbose</span></code></p>
-<p>Running the commands above should yield the following scores:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ROUGE</span><span class="o">-</span><span class="mi">1</span> <span class="p">(</span><span class="n">F</span><span class="p">):</span> <span class="mf">0.352127</span>
-<span class="n">ROUGE</span><span class="o">-</span><span class="mi">2</span> <span class="p">(</span><span class="n">F</span><span class="p">):</span> <span class="mf">0.173109</span>
-<span class="n">ROUGE</span><span class="o">-</span><span class="mi">3</span> <span class="p">(</span><span class="n">F</span><span class="p">):</span> <span class="mf">0.098244</span>
-<span class="n">ROUGE</span><span class="o">-</span><span class="n">L</span> <span class="p">(</span><span class="n">F</span><span class="p">):</span> <span class="mf">0.327742</span>
-<span class="n">ROUGE</span><span class="o">-</span><span class="n">S4</span> <span class="p">(</span><span class="n">F</span><span class="p">):</span> <span class="mf">0.155524</span>
-</pre></div>
+<code class="docutils literal notranslate"><span class="pre">files2rouge</span> <span class="pre">giga.out</span> <span class="pre">test.title.txt</span> <span class="pre">--verbose</span></code></p>
 </div>
+</div>
+<div class="section" id="scores-and-models">
+<span id="scores-and-models"></span><h2>Scores and Models<a class="headerlink" href="#scores-and-models" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="cnndm">
+<span id="id1"></span><h3>CNNDM<a class="headerlink" href="#cnndm" title="Permalink to this headline">¶</a></h3>
+<p>| Model Type    | Model    | R1 R  | R1 P  | R1 F  | R2 R  | R2 P  | R2 F  | RL R  | RL P  | RL F  |
+| ————- |  ——– | —–:| —–:| —–:|——:| —–:| —–:|—–: | —–:| —–:|
+| Pointer-Generator + Coverage [2]     | <a class="reference external" href="https://github.com/abisee/pointer-generator">link</a>  | 39.05 | 43.02 | 39.53 | 17.16 | 18.77 | 17.28  | 35.98 | 39.56 | 36.38 |
+| Pointer-Generator [2]  |  <a class="reference external" href="https://github.com/abisee/pointer-generator">link</a>  | 37.76 | 37.60| 36.44| 16.31| 16.12| 15.66| 34.66| 34.46| 33.42 |
+| OpenNMT BRNN  (1 layer, emb 128, hid 512)  |  <a class="reference external" href="https://s3.amazonaws.com/opennmt-models/Summary/ada6_bridge_oldcopy_tagged_acc_54.17_ppl_11.17_e20.pt">link</a>     | 40.90| 40.20|   39.02|  17.91|  17.99|  17.25|  37.76   | 37.18|    36.05 |
+| OpenNMT BRNN  (1 layer, emb 128, hid 512, shared embeddings)  |  <a class="reference external" href="https://s3.amazonaws.com/opennmt-models/Summary/ada6_bridge_oldcopy_tagged_share_acc_54.50_ppl_10.89_e20.pt">link</a>     | 38.59  | 40.60 | 37.97 | 16.75 | 17.93 | 16.59 | 35.67 | 37.60 | 35.13 |
+| OpenNMT BRNN (2 layer, emb 256, hid 1024)   |  <a class="reference external" href="https://s3.amazonaws.com/opennmt-models/Summary/ada6_bridge_oldcopy_tagged_larger_acc_54.84_ppl_10.58_e17.ptt">link</a>     | 40.41  | 40.94 | 39.12 | 17.76 | 18.38 | 17.35 | 37.27 | 37.83 | 36.12 |
+| OpenNMT Transformer  |  <a class="reference external" href="https://s3.amazonaws.com/opennmt-models/sum_transformer_model_acc_57.25_ppl_9.22_e16.pt">link</a>  | 40.31  | 41.09 | 39.25 | 17.97 | 18.46 | 17.54 | 37.41 | 38.18 | 36.45 |</p>
+</div>
+<div class="section" id="gigaword">
+<span id="id2"></span><h3>Gigaword<a class="headerlink" href="#gigaword" title="Permalink to this headline">¶</a></h3>
+<p>| Model Type    | Model    | R1 R  | R1 P  | R1 F  | R2 R  | R2 P  | R2 F  | RL R  | RL P  | RL F  |
+| ————- |  ——– | —–:| —–:| —–:|——:| —–:| —–:|—–: | —–:| —–:|
+| OpenNMT, no penalties | <a class="reference external" href="https://s3.amazonaws.com/opennmt-models/gigaword_copy_acc_51.78_ppl_11.71_e20.pt">link</a>  | ? |   ? | 35.51 | ? | ? | 17.35  | ? | ? | 33.17 |</p>
 </div>
 </div>
 <div class="section" id="references">
