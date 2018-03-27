@@ -32,7 +32,8 @@ class Translator(object):
                  beam_trace=False,
                  min_length=0,
                  stepwise_penalty=False,
-                 block_ngram_repeat=0):
+                 block_ngram_repeat=0,
+                 ignore_when_blocking=[]):
         self.model = model
         self.fields = fields
         self.n_best = n_best
@@ -44,6 +45,7 @@ class Translator(object):
         self.min_length = min_length
         self.stepwise_penalty = stepwise_penalty
         self.block_ngram_repeat = block_ngram_repeat
+        self.ignore_when_blocking = set(ignore_when_blocking)
 
         # for debugging
         self.beam_accum = None
@@ -77,8 +79,8 @@ class Translator(object):
         vocab = self.fields["tgt"].vocab
 
         # Define a list of tokens to exclude from ngram-blocking
-        exclusion_list = ["<t>", "</t>", "."]
-        exclusion_tokens = set([vocab.stoi[t] for t in exclusion_list])
+        # exclusion_list = ["<t>", "</t>", "."]
+        exclusion_tokens = set([vocab.stoi[t] for t in self.ignore_when_blocking])
 
         beam = [onmt.translate.Beam(beam_size, n_best=self.n_best,
                                     cuda=self.cuda,
