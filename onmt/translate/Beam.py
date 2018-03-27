@@ -138,16 +138,14 @@ class Beam(object):
 
         for i in range(self.next_ys[-1].size(0)):
             if self.next_ys[-1][i] == self._eos:
-                l = len(self.next_ys)
                 global_scores = self.global_scorer.score(self, self.scores)
                 s = global_scores[i]
                 self.finished.append((s, len(self.next_ys) - 1, i))
 
         # End condition is when top-of-beam is EOS and no global score.
-        # if self.next_ys[-1][0] == self._eos:
-        #     print(s)
-        #     self.all_scores.append(self.scores)
-        #     self.eos_top = True
+        if self.next_ys[-1][0] == self._eos:
+            self.all_scores.append(self.scores)
+            self.eos_top = True
 
     def done(self):
         return self.eos_top and len(self.finished) >= self.n_best
