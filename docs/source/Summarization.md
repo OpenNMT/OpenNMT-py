@@ -97,7 +97,17 @@ python train.py -save_model models/cnndm \
                 -gpuid X
 ```
 
-Gigaword can be trained equivalently.
+(2) Gigaword
+
+Gigaword can be trained equivalently. As a baseline, we show a model trained with the following command:
+
+```
+python train.py -data data/giga/GIGA \
+                -save_model models/giga \ 
+                -copy_attn \
+                -reuse_copy_attn \
+                -epochs 20
+```
 
 
 ### Inference
@@ -130,7 +140,6 @@ python translate.py -gpu X \
                     -alpha 0.9 \
                     -verbose
 ```
-
 
 
 
@@ -169,6 +178,12 @@ For evaluation of large test sets such as Gigaword, we use the a parallel python
 | OpenNMT BRNN (2 layer, emb 256, hid 1024)                           |  link     | 40.41	| 40.94 | 39.12 | 17.76 | 18.38 | 17.35 | 37.27 | 37.83 | 36.12 |
 | OpenNMT Transformer  |  link  | 40.31	| 41.09	| 39.25	| 17.97	| 18.46	| 17.54	| 37.41	| 38.18	| 36.45 |
 
+
+#### Gigaword
+
+| Model Type    | Model    | R1 R  | R1 P  | R1 F  | R2 R  | R2 P  | R2 F  | RL R  | RL P  | RL F  |
+| ------------- |  -------- | -----:| -----:| -----:|------:| -----:| -----:|-----: | -----:| -----:|
+| OpenNMT, no penalties | [link](#)  | ? |	? |	35.51 |	? | ? | 17.35  | ? | ? | 33.17 |
 
 
 
