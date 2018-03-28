@@ -104,7 +104,7 @@ class Beam(object):
                 ngrams = []
                 le = len(self.next_ys)
                 for j in range(self.next_ys[-1].size(0)):
-                    hyp, _ = self.get_hyp(l-1, j)
+                    hyp, _ = self.get_hyp(le-1, j)
                     ngrams = set()
                     fail = False
                     gram = []
