@@ -374,8 +374,14 @@ def build_optim(model, checkpoint):
     if opt.train_from:
         print('Loading optimizer from checkpoint.')
         optim = checkpoint['optim']
-        optim.optimizer.load_state_dict(
-            checkpoint['optim'].optimizer.state_dict())
+        if not hasattr(optim.optimizer, 'optimizers'):
+            optim.optimizer.load_state_dict(
+                checkpoint['optim'].optimizer.state_dict())
+        else:
+            for i, op in enumerate(optim.optimizer.optimizers):
+                op.load_state_dict(
+                    checkpoint['optim'].optimizer.optimizers[i].state_dict())
+
     else:
         print('Making optimizer for training.')
         optim = onmt.Optim(
