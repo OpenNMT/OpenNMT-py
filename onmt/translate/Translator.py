@@ -80,7 +80,7 @@ class Translator(object):
 
         # Define a list of tokens to exclude from ngram-blocking
         # exclusion_list = ["<t>", "</t>", "."]
-        exclusion_tokens = set([vocab.stoi[t] 
+        exclusion_tokens = set([vocab.stoi[t]
                                 for t in self.ignore_when_blocking])
 
         beam = [onmt.translate.Beam(beam_size, n_best=self.n_best,
