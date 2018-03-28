@@ -2,6 +2,7 @@ import argparse
 import torch
 import codecs
 import os
+import math
 
 from torch.autograd import Variable
 from itertools import count
@@ -51,10 +52,9 @@ class Translator(object):
             self.out_file = codecs.open(opt.output, 'w', 'utf-8')
 
         # Scorer
-        self.global_scorer = onmt.translate.GNMTGlobalScorer(self.opt.alpha,
-                                                 self.opt.beta,
-                                                 self.opt.coverage_penalty,
-                                                 self.opt.length_penalty)
+        self.global_scorer = onmt.translate.GNMTGlobalScorer(
+            self.opt.alpha, self.opt.beta, self.opt.coverage_penalty,
+            self.opt.length_penalty)
 
         self.model = model
         self.fields = fields
@@ -68,7 +68,7 @@ class Translator(object):
         self.beam_trace = opt.dump_beam != ""
         self.block_ngram_repeat = opt.block_ngram_repeat
         self.ignore_when_blocking = set(opt.ignore_when_blocking)
-        
+
         # for debugging
         self.beam_accum = None
         if self.beam_trace:
@@ -100,6 +100,7 @@ class Translator(object):
             self.opt.n_best, self.opt.replace_unk, self.opt.tgt)
 
         # Statistics
+        counter = count(1)
         pred_score_total, pred_words_total = 0, 0
         gold_score_total, gold_words_total = 0, 0
 
@@ -129,7 +130,7 @@ class Translator(object):
             self.report_score('PRED', pred_score_total, pred_words_total)
             if tgt_path is not None:
                 self.report_score('GOLD', gold_score_total, gold_words_total)
-                if opt.report_bleu:
+                if self.opt.report_bleu:
                     self.report_bleu()
                 if self.opt.report_rouge:
                     self.report_rouge()
@@ -330,7 +331,6 @@ class Translator(object):
                                       % (path, self.opt.tgt, self.opt.output),
                                       shell=True).decode("utf-8")
         print(">> " + res.strip())
-
 
     def report_rouge(self):
         import subprocess

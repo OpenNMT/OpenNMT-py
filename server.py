@@ -1,38 +1,23 @@
 #!/usr/bin/env python
 import os
-import onmt
 from flask import Flask, jsonify, request
-from onmt.translate import TranslationServer
+from onmt.translate import TranslationServer, ServerModelError
 
 AVAILABLE_MODEL_PATH = "./available_models"
 STATUS_OK = "ok"
 STATUS_ERROR = "error"
 
-translation_server = TranslationServer()
+translation_server = TranslationServer(
+    models_root="./available_models",
+    available_models="./available_models/conf.json")
 app = Flask(__name__)
-
-
-@app.route('/')
-def index():
-    return "Hello, World!"
 
 
 @app.route('/models', methods=['GET'])
 def get_models():
     global translation_server
-    out = {}
-    try:
-        model_list = os.listdir(AVAILABLE_MODEL_PATH)
-        out['available'] = model_list
-    except Exception as e:
-        out['available'] = str(e)
+    out = translation_server.list_models()
 
-    loaded = []
-    for (id, model) in translation_server.models.items():
-        if model is not None:
-            loaded += [{"model_id": id,
-                        "model": model.opt.model, "gpu": model.opt.gpu}]
-    out['loaded'] = loaded
     return jsonify(out)
 
 
@@ -79,17 +64,17 @@ def translate(model_id):
     out = {'model_id': model_id}
 
     try:
-        text = data['text']
+        inputs = data['inputs']
     except KeyError:
-        out['error'] = "Parameter 'text' is required"
+        out['error'] = "Parameter 'inputs' is required"
         out['status'] = STATUS_ERROR
     else:
         try:
-            translation, times = translation_server.run_model(model_id, text)
+            translation, times = translation_server.run_model(model_id, inputs)
             out['result'] = translation
             out['status'] = STATUS_OK
             out['time'] = times
-        except onmt.ServerModelError as e:
+        except ServerModelError as e:
             out['error'] = str(e)
             out['status'] = STATUS_ERROR
 

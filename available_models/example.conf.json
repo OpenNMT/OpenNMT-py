@@ -1,0 +1,19 @@
+{
+"models": [
+    {
+        "model": "model_0.pt",
+        "timeout": 600,
+        "load": true,
+        "opt": {
+            "gpu": 0,
+            "beam_size": 5
+        }
+    },{
+        "model": "model_0.light.pt",
+        "timeout": -1,
+        "opt": {
+            "batch_size": 1,
+            "beam_size": 10
+        }
+    }
+]}
