@@ -127,13 +127,13 @@ class Translator(object):
                     os.write(1, output.encode('utf-8'))
 
         if self.report_score:
-            self.report_score('PRED', pred_score_total, pred_words_total)
+            self._report_score('PRED', pred_score_total, pred_words_total)
             if tgt_path is not None:
-                self.report_score('GOLD', gold_score_total, gold_words_total)
+                self._report_score('GOLD', gold_score_total, gold_words_total)
                 if self.opt.report_bleu:
-                    self.report_bleu()
+                    self._report_bleu()
                 if self.opt.report_rouge:
-                    self.report_rouge()
+                    self._report_rouge()
 
         if self.opt.dump_beam:
             import json
@@ -317,12 +317,12 @@ class Translator(object):
             gold_scores += scores
         return gold_scores
 
-    def report_score(self, name, score_total, words_total):
+    def _report_score(self, name, score_total, words_total):
         print("%s AVG SCORE: %.4f, %s PPL: %.4f" % (
                name, score_total / words_total,
                name, math.exp(-score_total / words_total)))
 
-    def report_bleu(self):
+    def _report_bleu(self):
         import subprocess
         path = os.path.split(os.path.realpath(__file__))[0]
         print()
@@ -332,7 +332,7 @@ class Translator(object):
                                       shell=True).decode("utf-8")
         print(">> " + res.strip())
 
-    def report_rouge(self):
+    def _report_rouge(self):
         import subprocess
         path = os.path.split(os.path.realpath(__file__))[0]
         res = subprocess.check_output(
