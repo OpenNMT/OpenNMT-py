@@ -2,13 +2,13 @@
 import os
 import onmt
 from flask import Flask, jsonify, request
-
+from onmt.translate import TranslationServer
 
 AVAILABLE_MODEL_PATH = "./available_models"
 STATUS_OK = "ok"
 STATUS_ERROR = "error"
 
-models = onmt.ServerModels()
+translation_server = TranslationServer()
 app = Flask(__name__)
 
 
@@ -19,7 +19,7 @@ def index():
 
 @app.route('/models', methods=['GET'])
 def get_models():
-    global models
+    global translation_server
     out = {}
     try:
         model_list = os.listdir(AVAILABLE_MODEL_PATH)
@@ -28,7 +28,7 @@ def get_models():
         out['available'] = str(e)
 
     loaded = []
-    for (id, model) in models.models.items():
+    for (id, model) in translation_server.models.items():
         if model is not None:
             loaded += [{"model_id": id,
                         "model": model.opt.model, "gpu": model.opt.gpu}]
@@ -38,7 +38,7 @@ def get_models():
 
 @app.route('/load_model', methods=['POST'])
 def load_model():
-    global models
+    global translation_server
     out = {}
     data = request.get_json(force=True)
 
@@ -50,7 +50,7 @@ def load_model():
         out['error'] = "Parameter 'model' is required"
         out['status'] = STATUS_ERROR
     else:
-        model_id, load_time = models.load(data)
+        model_id, load_time = translation_server.load_model(data)
         out['status'] = STATUS_OK
         out['model_id'] = model_id
         out['load_time'] = load_time
@@ -60,11 +60,11 @@ def load_model():
 
 @app.route('/unload_model/<int:model_id>', methods=['GET'])
 def unload_model(model_id):
-    global models
+    global translation_server
     out = {"model_id": model_id}
 
     try:
-        models.unload(model_id)
+        translation_server.unload_model(model_id)
         out['status'] = STATUS_OK
     except Exception as e:
         out['status'] = STATUS_ERROR
@@ -85,7 +85,7 @@ def translate(model_id):
         out['status'] = STATUS_ERROR
     else:
         try:
-            translation, times = models.run(model_id, text)
+            translation, times = translation_server.run_model(model_id, text)
             out['result'] = translation
             out['status'] = STATUS_OK
             out['time'] = times

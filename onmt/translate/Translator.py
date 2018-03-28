@@ -1,8 +1,15 @@
+import argparse
 import torch
-from torch.autograd import Variable
+import codecs
+import os
 
+from torch.autograd import Variable
+from itertools import count
+
+import onmt.ModelConstructor
 import onmt.translate.Beam
 import onmt.io
+import onmt.opts
 
 
 class Translator(object):
@@ -23,38 +30,114 @@ class Translator(object):
        cuda (bool): use cuda
        beam_trace (bool): trace beam search for debugging
     """
-    def __init__(self, model, fields,
-                 beam_size, n_best=1,
-                 max_length=100,
-                 global_scorer=None,
-                 copy_attn=False,
-                 cuda=False,
-                 beam_trace=False,
-                 min_length=0,
-                 stepwise_penalty=False,
-                 block_ngram_repeat=0,
-                 ignore_when_blocking=[]):
+    def __init__(self, opt, report_score=True, out_file=None):
+        self.opt = opt
+        self.report_score = report_score
+
+        dummy_parser = argparse.ArgumentParser(description='train.py')
+        onmt.opts.model_opts(dummy_parser)
+        dummy_opt = dummy_parser.parse_known_args([])[0]
+
+        self.opt.cuda = opt.gpu > -1
+        if self.opt.cuda:
+            torch.cuda.set_device(self.opt.gpu)
+
+        fields, model, model_opt = \
+            onmt.ModelConstructor.load_test_model(opt, dummy_opt.__dict__)
+
+        # File to write sentences to.
+        self.out_file = out_file
+        if out_file is None:
+            self.out_file = codecs.open(opt.output, 'w', 'utf-8')
+
+        # Scorer
+        self.global_scorer = onmt.translate.GNMTGlobalScorer(self.opt.alpha,
+                                                 self.opt.beta,
+                                                 self.opt.coverage_penalty,
+                                                 self.opt.length_penalty)
+
         self.model = model
         self.fields = fields
-        self.n_best = n_best
-        self.max_length = max_length
-        self.global_scorer = global_scorer
-        self.copy_attn = copy_attn
-        self.beam_size = beam_size
-        self.cuda = cuda
-        self.min_length = min_length
-        self.stepwise_penalty = stepwise_penalty
-        self.block_ngram_repeat = block_ngram_repeat
-        self.ignore_when_blocking = set(ignore_when_blocking)
-
+        self.n_best = opt.n_best
+        self.max_length = opt.max_length
+        self.copy_attn = model_opt.copy_attn
+        self.beam_size = opt.beam_size
+        self.cuda = opt.cuda
+        self.min_length = opt.min_length
+        self.stepwise_penalty = opt.stepwise_penalty
+        self.beam_trace = opt.dump_beam != ""
+        self.block_ngram_repeat = opt.block_ngram_repeat
+        self.ignore_when_blocking = set(opt.ignore_when_blocking)
+        
         # for debugging
         self.beam_accum = None
-        if beam_trace:
+        if self.beam_trace:
             self.beam_accum = {
                 "predicted_ids": [],
                 "beam_parent_ids": [],
                 "scores": [],
                 "log_probs": []}
+
+    def translate(self, src_dir, src_path, tgt_path):
+        data = onmt.io.build_dataset(self.fields,
+                                     self.opt.data_type,
+                                     src_path,
+                                     tgt_path,
+                                     src_dir=src_dir,
+                                     sample_rate=self.opt.sample_rate,
+                                     window_size=self.opt.window_size,
+                                     window_stride=self.opt.window_stride,
+                                     window=self.opt.window,
+                                     use_filter_pred=False)
+
+        data_iter = onmt.io.OrderedIterator(
+            dataset=data, device=self.opt.gpu,
+            batch_size=self.opt.batch_size, train=False, sort=False,
+            sort_within_batch=True, shuffle=False)
+
+        builder = onmt.translate.TranslationBuilder(
+            data, self.fields,
+            self.opt.n_best, self.opt.replace_unk, self.opt.tgt)
+
+        # Statistics
+        pred_score_total, pred_words_total = 0, 0
+        gold_score_total, gold_words_total = 0, 0
+
+        for batch in data_iter:
+            batch_data = self.translate_batch(batch, data)
+            translations = builder.from_batch(batch_data)
+
+            for trans in translations:
+                pred_score_total += trans.pred_scores[0]
+                pred_words_total += len(trans.pred_sents[0])
+                if self.opt.tgt:
+                    gold_score_total += trans.gold_score
+                    gold_words_total += len(trans.gold_sent) + 1
+
+                n_best_preds = [" ".join(pred)
+                                for pred in trans.pred_sents[:self.opt.n_best]]
+                self.out_file.write('\n'.join(n_best_preds))
+                self.out_file.write('\n')
+                self.out_file.flush()
+
+                if self.opt.verbose:
+                    sent_number = next(counter)
+                    output = trans.log(sent_number)
+                    os.write(1, output.encode('utf-8'))
+
+        if self.report_score:
+            self.report_score('PRED', pred_score_total, pred_words_total)
+            if tgt_path is not None:
+                self.report_score('GOLD', gold_score_total, gold_words_total)
+                if opt.report_bleu:
+                    self.report_bleu()
+                if self.opt.report_rouge:
+                    self.report_rouge()
+
+        if self.opt.dump_beam:
+            import json
+            json.dump(self.translator.beam_accum,
+                      codecs.open(self.opt.dump_beam, 'w', 'utf-8'))
 
     def translate_batch(self, batch, data):
         """
@@ -232,3 +315,28 @@ class Translator(object):
             scores.masked_fill_(tgt.eq(tgt_pad), 0)
             gold_scores += scores
         return gold_scores
+
+    def report_score(self, name, score_total, words_total):
+        print("%s AVG SCORE: %.4f, %s PPL: %.4f" % (
+               name, score_total / words_total,
+               name, math.exp(-score_total / words_total)))
+
+    def report_bleu(self):
+        import subprocess
+        path = os.path.split(os.path.realpath(__file__))[0]
+        print()
+
+        res = subprocess.check_output("perl %s/tools/multi-bleu.perl %s < %s"
+                                      % (path, self.opt.tgt, self.opt.output),
+                                      shell=True).decode("utf-8")
+        print(">> " + res.strip())
+
+
+    def report_rouge(self):
+        import subprocess
+        path = os.path.split(os.path.realpath(__file__))[0]
+        res = subprocess.check_output(
+            "python %s/tools/test_rouge.py -r %s -c %s"
+            % (path, self.opt.tgt, self.opt.output),
+            shell=True).decode("utf-8")
+        print(res.strip())
