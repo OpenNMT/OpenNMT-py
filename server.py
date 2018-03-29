@@ -7,10 +7,11 @@ AVAILABLE_MODEL_PATH = "./available_models"
 STATUS_OK = "ok"
 STATUS_ERROR = "error"
 
+
+app = Flask(__name__)
 translation_server = TranslationServer(
     models_root="./available_models",
     available_models="./available_models/conf.json")
-app = Flask(__name__)
 
 
 @app.route('/models', methods=['GET'])
@@ -63,6 +64,7 @@ def unload_model(model_id):
 
 @app.route('/translate/<int:model_id>', methods=['POST'])
 def translate(model_id):
+    global translation_server
     data = request.get_json(force=True)
     out = {'model_id': model_id}
 
@@ -81,6 +83,22 @@ def translate(model_id):
             out['error'] = str(e)
             out['status'] = STATUS_ERROR
 
+    return jsonify(out)
+
+@app.route('/to_cpu/<int:model_id>', methods=['GET'])
+def to_cpu(model_id):
+    out = {'model_id': model_id}
+    translation_server.models[model_id].to_cpu()
+
+    out['status'] = STATUS_OK
+    return jsonify(out)
+
+@app.route('/to_gpu/<int:model_id>', methods=['GET'])
+def to_gpu(model_id):
+    out = {'model_id': model_id}
+    translation_server.models[model_id].to_gpu()
+
+    out['status'] = STATUS_OK
     return jsonify(out)
 
 

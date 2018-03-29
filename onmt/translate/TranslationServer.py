@@ -15,14 +15,27 @@ import onmt.translate
 class Timer:
     def __init__(self, start=False):
         self.stime = -1
+        self.prev = -1
+        self.times = {}
         if start:
             self.start()
 
     def start(self):
         self.stime = time.time()
+        self.prev = self.stime
+        self.times = {}
 
-    def tick(self):
-        return time.time() - self.stime
+    def tick(self, name=None, tot=False):
+        t = time.time()
+        if not tot:
+            elapsed = t - self.prev
+        else:
+            elapsed = t - self.stime
+        self.prev = t
+
+        if name is not None:
+            self.times[name] = elapsed
+        return elapsed
 
 
 class ServerModelError(Exception):
@@ -76,6 +89,7 @@ class TranslationServer():
            It will effectively load the model if `load` is set
         """
         model_id = self.next_id
+        print("Pre-loading model %d" % model_id)
         model = ServerModel(opt, model_id, timeout=timeout, load=load)
         self.models[model_id] = model
         self.next_id += 1
@@ -111,13 +125,14 @@ class TranslationServer():
 
 
 class ServerModel:
-    def __init__(self, opt, model_id, load=False, timeout=-1):
+    def __init__(self, opt, model_id, load=False, timeout=-1, on_timeout="to_cpu"):
         self.opt = self.parse_opt(opt)
         self.timer = Timer()
         self.timeout = timeout
         self.unload_timer = None
         self.user_opt = opt
         self.model_id = model_id
+        self.on_timeout = on_timeout
 
         if load:
             self.load()
@@ -145,8 +160,8 @@ class ServerModel:
         return hasattr(self, 'translator')
 
     def load(self):
+        print("Loading model %d" % self.model_id)
         self.timer.start()
-
         self.out_file = io.StringIO()
         try:
             self.translator = onmt.translate.Translator(self.opt,
@@ -164,12 +179,15 @@ class ServerModel:
            e.g. [{"src": "..."},{"src": ...}]
         """
         print("Running translation using %d" % self.model_id)
-        load_time = 0
-        if not self.loaded:
-            self.load()
-            load_time = self.load_time
 
         self.timer.start()
+        if not self.loaded:
+            self.load()
+            self.timer.tick(name="load")
+        elif self.opt.cuda:
+            self.to_gpu()
+            self.timer.tick(name="to_gpu")
+
         # NOTE: the translator exept a filepath as parameter
         #       therefore we write the data as a temp file.
         tmp_root = "/tmp/onmt_server"
@@ -178,19 +196,26 @@ class ServerModel:
         with codecs.open(src_path, 'w', 'utf-8') as f:
             for inp in inputs:
                 f.write(inp['src'] + "\n")
+        self.timer.tick(name="writing")
         try:
             self.translator.translate(None, src_path, None)
         except RuntimeError as e:
             raise ServerModelError("Runtime Error: %s" % str(e))
 
-        tr_time = self.timer.tick()
-        times = {"translation": tr_time,
-                 "loading": load_time,
-                 "total": tr_time + load_time}
-        print("Model %d, translation time: %s" % (self.model_id, str(times)))
+        self.timer.tick(name="translation")
+        print("Model %d, translation time: %s" %
+              (self.model_id, str(self.timer.times)))
         self.reset_unload_timer()
         result = self.out_file.getvalue().split("\n")
-        return result, times
+        return result, self.timer.times
+
+    def do_timeout(self):
+        if self.on_timeout == "unload":
+            print("Timeout: unloading model %d" % self.model_id)
+            self.unload()
+        if self.on_timeout == "to_cpu":
+            print("Timeout: sending model %d to CPU" % self.model_id)
+            self.to_cpu()
 
     def unload(self):
         print("Unloading model %d" % self.model_id)
@@ -205,7 +230,7 @@ class ServerModel:
 
         if self.unload_timer is not None:
             self.unload_timer.cancel()
-        self.unload_timer = threading.Timer(self.timeout, self.unload)
+        self.unload_timer = threading.Timer(self.timeout, self.do_timeout)
         self.unload_timer.start()
 
     def toJSON(self):
@@ -217,3 +242,11 @@ class ServerModel:
                 "loaded": self.loaded,
                 "timeout": self.timeout
                 }
+
+    def to_cpu(self):
+        self.translator.model.cpu()
+        if self.opt.cuda:
+            torch.cuda.empty_cache()
+
+    def to_gpu(self):
+        self.translator.model.cuda()
