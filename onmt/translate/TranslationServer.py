@@ -43,25 +43,31 @@ class ServerModelError(Exception):
 
 
 class TranslationServer():
-    def __init__(self, models_root, available_models):
+    def __init__(self):
         self.models = {}
-        self.models_root = models_root
-        self.available_models = available_models
-
         self.next_id = 0
-        with open(available_models) as f:
+
+    def start(self, config_file):
+        self.config_file = config_file
+        with open(self.config_file) as f:
             self.confs = json.load(f)
 
+        self.models_root = self.confs.get('models_root', './available_models')
         for i, conf in enumerate(self.confs["models"]):
             if "model" not in conf:
                 raise ValueError("""Incorrect config file: missing 'model'
                                     parameter for model #%d""" % i)
-            path = os.path.join(self.models_root, conf["model"])
-            timeout = conf.get('timeout', -1)
-            opt = conf.get('opt', {})
-            load = conf.get('load', False)
-            opt["model"] = path
-            self.preload_model(opt, timeout=timeout, load=load)
+            kwargs = {'timeout': conf.get('timeout', None),
+                      'load': conf.get('load', None),
+                      'tokenizer_opt': conf.get('tokenizer', None),
+                      'on_timeout': conf.get('on_timeout', None),
+                      'model_root': conf.get('model_root', self.models_root)
+                      }
+            kwargs = {k: v for (k, v) in kwargs.items() if v is not None}
+            model_id = conf.get("id", None)
+            opt = conf["opt"]
+            opt["model"] = conf["model"]
+            self.preload_model(opt, model_id=model_id, **kwargs)
 
     def clone_model(self, model_id, opt, timeout=-1):
         """Clone a model `model_id`.
@@ -76,23 +82,30 @@ class TranslationServer():
         else:
             raise ServerModelError("No such model '%s'" % str(model_id))
 
-    def load_model(self, opt, timeout=-1):
+    def load_model(self, opt, model_id=None, **model_kwargs):
         """Loading a model given a set of options
         """
-        model_id = self.preload_model(opt, timeout, load=True)
+        model_id = self.preload_model(opt, model_id=model_id, **model_kwargs)
         load_time = self.models[model_id].load_time
 
         return model_id, load_time
 
-    def preload_model(self, opt, timeout=-1, load=False):
+    def preload_model(self, opt, model_id=None, **model_kwargs):
         """Preloading the model: updating internal datastructure
            It will effectively load the model if `load` is set
         """
-        model_id = self.next_id
+        if model_id is not None:
+            if model_id in self.models.keys():
+                raise ValueError("Model ID %d already exists" % model_id)
+        else:
+            model_id = self.next_id
+            while model_id in self.models.keys():
+                model_id += 1
+            self.next_id = model_id + 1
         print("Pre-loading model %d" % model_id)
-        model = ServerModel(opt, model_id, timeout=timeout, load=load)
+        model = ServerModel(opt, model_id, **model_kwargs)
         self.models[model_id] = model
-        self.next_id += 1
+
         return model_id
 
     def run_model(self, model_id, inputs):
@@ -100,9 +113,11 @@ class TranslationServer():
            Inputs must be formatted as a list of sequence
            e.g. [{"src": "..."},{"src": ...}]
         """
+        model_id = inputs[0].get("id", 0)
         if model_id in self.models and self.models[model_id] is not None:
             return self.models[model_id].run(inputs)
         else:
+            print("Error No such model '%s'" % str(model_id))
             raise ServerModelError("No such model '%s'" % str(model_id))
 
     def unload_model(self, model_id):
@@ -125,14 +140,18 @@ class TranslationServer():
 
 
 class ServerModel:
-    def __init__(self, opt, model_id, load=False, timeout=-1, on_timeout="to_cpu"):
+    def __init__(self, opt, model_id, tokenizer_opt=None, load=False, timeout=-1, on_timeout="to_cpu",
+                 model_root="./"):
+        self.model_root = model_root
         self.opt = self.parse_opt(opt)
-        self.timer = Timer()
+        self.model_id = model_id
+        self.tokenizer_opt = tokenizer_opt
         self.timeout = timeout
+        self.on_timeout = on_timeout
+
         self.unload_timer = None
         self.user_opt = opt
-        self.model_id = model_id
-        self.on_timeout = on_timeout
+        self.tokenizer = None
 
         if load:
             self.load()
@@ -141,9 +160,11 @@ class ServerModel:
         """Parse the option set passed by the user using `onmt.opts`
         """
         prec_argv = sys.argv
+        sys.argv = sys.argv[:1]
         parser = argparse.ArgumentParser()
         onmt.opts.translate_opts(parser)
 
+        opt['model'] = os.path.join(self.model_root, opt['model'])
         opt['src'] = "dummy_src"
 
         for (k, v) in opt.items():
@@ -160,8 +181,9 @@ class ServerModel:
         return hasattr(self, 'translator')
 
     def load(self):
+        timer = Timer()
         print("Loading model %d" % self.model_id)
-        self.timer.start()
+        timer.start()
         self.out_file = io.StringIO()
         try:
             self.translator = onmt.translate.Translator(self.opt,
@@ -170,7 +192,25 @@ class ServerModel:
         except RuntimeError as e:
             raise ServerModelError("Runtime Error: %s" % str(e))
 
-        self.load_time = self.timer.tick()
+        timer.tick("model_loading")
+        if self.tokenizer_opt is not None:
+            print("Loading tokenizer")
+            mandatory = ["type", "model"]
+            for m in mandatory:
+                if not m in self.tokenizer_opt:
+                    raise ValueError("Missing mandatory tokenizer option '%s'"
+                                     % m)
+            if self.tokenizer_opt['type'] == 'sentencepiece':
+                import sentencepiece as spm
+                sp = spm.SentencePieceProcessor()
+                model_path = os.path.join(self.model_root,
+                                          self.tokenizer_opt['model'])
+                sp.Load(model_path)
+                self.tokenizer = sp
+            else:
+                raise ValueError("Invalid value for tokenizer type")
+
+        self.load_time = timer.tick()
         self.reset_unload_timer()
 
     def run(self, inputs):
@@ -178,15 +218,16 @@ class ServerModel:
            Inputs must be formatted as a list of sequence
            e.g. [{"src": "..."},{"src": ...}]
         """
+        timer = Timer()
         print("Running translation using %d" % self.model_id)
 
-        self.timer.start()
+        timer.start()
         if not self.loaded:
             self.load()
-            self.timer.tick(name="load")
+            timer.tick(name="load")
         elif self.opt.cuda:
             self.to_gpu()
-            self.timer.tick(name="to_gpu")
+            timer.tick(name="to_gpu")
 
         # NOTE: the translator exept a filepath as parameter
         #       therefore we write the data as a temp file.
@@ -195,19 +236,21 @@ class ServerModel:
         src_path = os.path.join(tmp_root, "tmp_src")
         with codecs.open(src_path, 'w', 'utf-8') as f:
             for inp in inputs:
-                f.write(inp['src'] + "\n")
-        self.timer.tick(name="writing")
+                f.write(self.maybe_tokenize(inp['src']) + "\n")
+        timer.tick(name="writing")
         try:
             self.translator.translate(None, src_path, None)
         except RuntimeError as e:
             raise ServerModelError("Runtime Error: %s" % str(e))
 
-        self.timer.tick(name="translation")
+        timer.tick(name="translation")
         print("Model %d, translation time: %s" %
-              (self.model_id, str(self.timer.times)))
+              (self.model_id, str(timer.times)))
         self.reset_unload_timer()
         result = self.out_file.getvalue().split("\n")
-        return result, self.timer.times
+        result = [self.maybe_detokenize(_) for _ in result]
+        self.clear_out_file()
+        return result, timer.times
 
     def do_timeout(self):
         if self.on_timeout == "unload":
@@ -235,13 +278,16 @@ class ServerModel:
 
     def toJSON(self):
         hide_opt = ["model", "src"]
-        return {"model_id": self.model_id,
-                "opt": {k: self.user_opt[k] for k in self.user_opt.keys()
-                        if k not in hide_opt},
-                "model": self.user_opt["model"],
-                "loaded": self.loaded,
-                "timeout": self.timeout
-                }
+        d = {"model_id": self.model_id,
+             "opt": {k: self.user_opt[k] for k in self.user_opt.keys()
+                     if k not in hide_opt},
+             "model": self.user_opt["model"],
+             "loaded": self.loaded,
+             "timeout": self.timeout,
+             }
+        if self.tokenizer_opt is not None:
+            d["tokenizer"] = self.tokenizer_opt
+        return d
 
     def to_cpu(self):
         self.translator.model.cpu()
@@ -249,4 +295,37 @@ class ServerModel:
             torch.cuda.empty_cache()
 
     def to_gpu(self):
+        torch.cuda.set_device(self.opt.gpu)
         self.translator.model.cuda()
+
+    def clear_out_file(self):
+        # Creating a new object is faster
+        self.out_file = io.StringIO()
+        self.translator.out_file = self.out_file
+
+    def maybe_tokenize(self, sequence):
+        if self.tokenizer_opt is not None:
+            return self.tokenize(sequence)
+        return sequence
+
+    def tokenize(self, sequence):
+        if self.tokenizer is None:
+            raise ValueError("No tokenizer loaded")
+
+        if self.tokenizer_opt["type"] == "sentencepiece":
+            tok = self.tokenizer.EncodeAsPieces(sequence)
+            tok = " ".join(tok)
+        return tok
+
+    def maybe_detokenize(self, sequence):
+        if self.tokenizer_opt is not None:
+            return self.detokenize(sequence)
+        return sequence
+
+    def detokenize(self, sequence):
+        if self.tokenizer is None:
+            raise ValueError("No tokenizer loaded")
+
+        if self.tokenizer_opt["type"] == "sentencepiece":
+            detok = self.tokenizer.DecodePieces(sequence.split())
+        return detok
