@@ -21,21 +21,24 @@ def get_models():
     return jsonify(out)
 
 
-@app.route('/load_model', methods=['POST'])
-def load_model():
+@app.route('/clone_model/<int:model_id>', methods=['POST'])
+def clone_model(model_id):
     global translation_server
     out = {}
     data = request.get_json(force=True)
 
+    timeout = -1
+    if 'timeout' in data:
+        timeout = data['timeout']
+        del data['timeout']
+
+    opt = data.get('opt', None)
     try:
-        model_name = data['model']
-        model_path = os.path.join(AVAILABLE_MODEL_PATH, model_name)
-        data['model'] = model_path
-    except KeyError:
-        out['error'] = "Parameter 'model' is required"
+        model_id, load_time = translation_server.clone_model(model_id, opt, timeout)
+    except ServerModelError as e:
         out['status'] = STATUS_ERROR
+        out['error'] = str(e)
     else:
-        model_id, load_time = translation_server.load_model(data)
         out['status'] = STATUS_OK
         out['model_id'] = model_id
         out['load_time'] = load_time
