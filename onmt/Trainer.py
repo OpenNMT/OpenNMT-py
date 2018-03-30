@@ -44,11 +44,11 @@ class Statistics(object):
     def accuracy(self):
         return 100 * (self.n_correct / self.n_words)
 
-    def ppl(self):
-        return math.exp(min(self.loss / self.n_words, 100))
-
     def xent(self):
         return self.loss / self.n_words
+
+    def ppl(self):
+        return math.exp(min(self.loss / self.n_words, 100))
 
     def elapsed_time(self):
         return time.time() - self.start_time
@@ -81,12 +81,13 @@ class Statistics(object):
         experiment.add_scalar_value(prefix + "_tgtper",  self.n_words / t)
         experiment.add_scalar_value(prefix + "_lr", lr)
 
-    def log_tensorboard(self, prefix, writer, lr, epoch):
+    def log_tensorboard(self, prefix, writer, lr, step):
         t = self.elapsed_time()
-        writer.add_scalar(prefix + "/ppl", self.ppl(), epoch)
-        writer.add_scalar(prefix + "/accuracy", self.accuracy(), epoch)
-        writer.add_scalar(prefix + "/tgtper",  self.n_words / t, epoch)
-        writer.add_scalar(prefix + "/lr", lr, epoch)
+        writer.add_scalar(prefix + "/xent", self.xent(), step)
+        writer.add_scalar(prefix + "/ppl", self.ppl(), step)
+        writer.add_scalar(prefix + "/accuracy", self.accuracy(), step)
+        writer.add_scalar(prefix + "/tgtper",  self.n_words / t, step)
+        writer.add_scalar(prefix + "/lr", lr, step)
 
 
 class Trainer(object):
@@ -122,6 +123,7 @@ class Trainer(object):
         self.data_type = data_type
         self.norm_method = norm_method
         self.grad_accum_count = grad_accum_count
+        self.progress_step = 0
 
         assert(grad_accum_count > 0)
         if grad_accum_count > 1:
@@ -178,8 +180,10 @@ class Trainer(object):
                 if report_func is not None:
                     report_stats = report_func(
                             epoch, idx, num_batches,
+                            self.progress_step,
                             total_stats.start_time, self.optim.lr,
                             report_stats)
+                    self.progress_step += 1
 
                 true_batchs = []
                 accum = 0
