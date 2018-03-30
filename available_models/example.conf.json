@@ -1,19 +1,29 @@
 {
-"models": [
-    {
-        "model": "model_0.pt",
-        "timeout": 600,
-        "load": true,
-        "opt": {
-            "gpu": 0,
-            "beam_size": 5
+    "models_root": "./available_models",
+    "models": [
+        {
+            "id": 100,
+            "model": "model_0.pt",
+            "timeout": 600,
+            "on_timeout": "to_cpu",
+            "load": true,
+            "opt": {
+                "gpu": 0,
+                "beam_size": 5
+            },
+            "tokenizer": {
+                "type": "sentencepiece",
+                "model": "wmtenfr.model"
+            }
+        },{
+            "model": "model_0.light.pt",
+            "timeout": -1,
+            "on_timeout": "unload",
+            "model_root": "../other_models"
+            "opt": {
+                "batch_size": 1,
+                "beam_size": 10
+            }
         }
-    },{
-        "model": "model_0.light.pt",
-        "timeout": -1,
-        "opt": {
-            "batch_size": 1,
-            "beam_size": 10
-        }
-    }
-]}
+    ]
+}

@@ -48,6 +48,8 @@ class TranslationServer():
         self.next_id = 0
 
     def start(self, config_file):
+        """Read the config file and pre-/load the models
+        """
         self.config_file = config_file
         with open(self.config_file) as f:
             self.confs = json.load(f)
@@ -108,10 +110,12 @@ class TranslationServer():
 
         return model_id
 
-    def run_model(self, model_id, inputs):
-        """Translate `inputs` using the model `model_id`
-           Inputs must be formatted as a list of sequence
-           e.g. [{"src": "..."},{"src": ...}]
+    def run(self, inputs):
+        """Translate `inputs`
+           We keep the same format as the Lua version i.e.
+             [{"id": model_id, "src": "sequence to translate"},{ ...}]
+
+           We use inputs[0]["id"] as the model id
         """
         model_id = inputs[0].get("id", 0)
         if model_id in self.models and self.models[model_id] is not None:
@@ -130,18 +134,31 @@ class TranslationServer():
             raise ServerModelError("No such model '%s'" % str(model_id))
 
     def list_models(self):
-        """Lists available models
+        """Return the list of available models
         """
         models = []
-
         for i, model in self.models.items():
-            models += [model.toJSON()]
+            models += [model.to_dict()]
         return models
 
 
 class ServerModel:
-    def __init__(self, opt, model_id, tokenizer_opt=None, load=False, timeout=-1, on_timeout="to_cpu",
-                 model_root="./"):
+    def __init__(self, opt, model_id, tokenizer_opt=None, load=False,
+                 timeout=-1, on_timeout="to_cpu", model_root="./"):
+        """
+            Args:
+                opt: (dict) options for the Translator
+                model_id: (int) model id
+                tokenizer_opt: (dict) options for the tokenizer or None
+                load: (bool) whether to load the model during __init__
+                timeout: (int) seconds before running `do_timeout`
+                         Negative values means no timeout
+                on_timeout: (str) in ["to_cpu", "unload"] set what to do on
+                            timeout (see function `do_timeout`)
+                model_root: (str) path to the model directory
+                            it must contain de model and tokenizer file
+
+        """
         self.model_root = model_root
         self.opt = self.parse_opt(opt)
         self.model_id = model_id
@@ -158,6 +175,11 @@ class ServerModel:
 
     def parse_opt(self, opt):
         """Parse the option set passed by the user using `onmt.opts`
+           Args:
+               opt: (dict) options passed by the user
+
+           Returns:
+               opt: (Namespace) full set of options for the Translator
         """
         prec_argv = sys.argv
         sys.argv = sys.argv[:1]
@@ -197,7 +219,7 @@ class ServerModel:
             print("Loading tokenizer")
             mandatory = ["type", "model"]
             for m in mandatory:
-                if not m in self.tokenizer_opt:
+                if m not in self.tokenizer_opt:
                     raise ValueError("Missing mandatory tokenizer option '%s'"
                                      % m)
             if self.tokenizer_opt['type'] == 'sentencepiece':
@@ -215,8 +237,13 @@ class ServerModel:
 
     def run(self, inputs):
         """Translate `inputs` using this model
-           Inputs must be formatted as a list of sequence
-           e.g. [{"src": "..."},{"src": ...}]
+
+            Args:
+                inputs: [{"src": "..."},{"src": ...}]
+
+            Returns:
+                result: (list) translations
+                times: (dict) containing times
         """
         timer = Timer()
         print("Running translation using %d" % self.model_id)
@@ -253,6 +280,9 @@ class ServerModel:
         return result, timer.times
 
     def do_timeout(self):
+        """Timeout function that free GPU memory by moving the model to CPU
+           or unloading it; depending on `self.on_timemout` value
+        """
         if self.on_timeout == "unload":
             print("Timeout: unloading model %d" % self.model_id)
             self.unload()
@@ -276,7 +306,7 @@ class ServerModel:
         self.unload_timer = threading.Timer(self.timeout, self.do_timeout)
         self.unload_timer.start()
 
-    def toJSON(self):
+    def to_dict(self):
         hide_opt = ["model", "src"]
         d = {"model_id": self.model_id,
              "opt": {k: self.user_opt[k] for k in self.user_opt.keys()
@@ -290,11 +320,15 @@ class ServerModel:
         return d
 
     def to_cpu(self):
+        """Move the model to CPU and clear CUDA cache
+        """
         self.translator.model.cpu()
         if self.opt.cuda:
             torch.cuda.empty_cache()
 
     def to_gpu(self):
+        """Move the model to GPU
+        """
         torch.cuda.set_device(self.opt.gpu)
         self.translator.model.cuda()
 
@@ -304,11 +338,24 @@ class ServerModel:
         self.translator.out_file = self.out_file
 
     def maybe_tokenize(self, sequence):
+        """Tokenize the sequence (or not)
+
+           Same args/returns as `tokenize`
+        """
         if self.tokenizer_opt is not None:
             return self.tokenize(sequence)
         return sequence
 
     def tokenize(self, sequence):
+        """Tokenize a single sequence
+
+            Args:
+                sequence: (str) the sequence to tokenize
+
+            Returns:
+                tok: (str) the tokenized sequence
+
+        """
         if self.tokenizer is None:
             raise ValueError("No tokenizer loaded")
 
@@ -318,11 +365,19 @@ class ServerModel:
         return tok
 
     def maybe_detokenize(self, sequence):
+        """De-tokenize the sequence (or not)
+
+           Same args/returns as `tokenize`
+        """
         if self.tokenizer_opt is not None:
             return self.detokenize(sequence)
         return sequence
 
     def detokenize(self, sequence):
+        """Detokenize a single sequence
+
+           Same args/returns as `tokenize`
+        """
         if self.tokenizer is None:
             raise ValueError("No tokenizer loaded")
 
