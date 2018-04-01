@@ -9,45 +9,37 @@ import argparse
 import torch
 
 
-def get_vocabs(dict_file):
-    vocabs = torch.load(dict_file)
-
-    enc_vocab, dec_vocab = None, None
-
-    # the vocab object is a list of tuple (name, torchtext.Vocab)
-    # we iterate over this list and associate vocabularies based on the name
-    for vocab in vocabs:
-        if vocab[0] == 'src':
-            enc_vocab = vocab[1]
-        if vocab[0] == 'tgt':
-            dec_vocab = vocab[1]
-    assert None not in [enc_vocab, dec_vocab]
-
-    print("From: %s" % dict_file)
-    print("\t* source vocab: %d words" % len(enc_vocab))
-    print("\t* target vocab: %d words" % len(dec_vocab))
-
-    return enc_vocab, dec_vocab
-
-
-def get_embeddings(file, opt):
+def get_embeddings(file_enc, opt, flag):
     embs = dict()
+    if flag == 'enc' :
+        for (i, l) in enumerate(open(file_enc, 'rb')):
+            if i < opt.skip_lines:
+                continue
+            if not l:
+                break
+            if len(l) == 0:
+                continue
 
-    for (i, l) in enumerate(open(file, 'rb')):
-        if i < opt.skip_lines:
-            continue
-        if not l:
-            break
-        if len(l) == 0:
-            continue
+            l_split = l.decode('utf8').strip().split(' ')
+            if len(l_split) == 2:
+                continue
+            embs[l_split[0]] = [float(em) for em in l_split[1:51]]
+        print("Got {} encryption embeddings from {}".format(len(embs), file_enc))
+    else:
 
-        l_split = l.decode('utf8').strip().split()
-        if len(l_split) == 2:
-            continue
-        embs[l_split[0]] = [float(em) for em in l_split[1:]]
-    print("Got {} embeddings from {}".format(len(embs), file))
+        for (i, l) in enumerate(open(file_enc, 'rb')):
+            if not l:
+                break
+            if len(l) == 0:
+                continue
 
-    return embs
+            l_split = l.decode('utf8').strip().split(' ')
+            if len(l_split) == 2:
+                continue
+            embs[l_split[0]] = [float(em) for em in l_split[1:]]
+        print("Got {} decryption embeddings from {}".format(len(embs), file_enc))
+
+    return embs 
 
 
 def match_embeddings(vocab, emb, opt):
@@ -72,8 +64,10 @@ TYPES = ["GloVe", "word2vec"]
 def main():
 
     parser = argparse.ArgumentParser(description='embeddings_to_torch.py')
-    parser.add_argument('-emb_file', required=True,
-                        help="Embeddings from this file")
+    parser.add_argument('-emb_file_enc', required=True,
+                        help="source Embeddings from this file")
+    parser.add_argument('-emb_file_dec', required=True,
+                        help="target Embeddings from this file")
     parser.add_argument('-output_file', required=True,
                         help="Output file for the prepared data")
     parser.add_argument('-dict_file', required=True,
@@ -88,15 +82,15 @@ def main():
     if opt.type == "word2vec":
         opt.skip_lines = 1
 
-    embeddings = get_embeddings(opt.emb_file, opt)
+    embeddings_enc = get_embeddings(opt.emb_file_enc, opt, flag='enc')
+    embeddings_dec = get_embeddings(opt.emb_file_dec, opt, flag='dec')
 
     filtered_enc_embeddings, enc_count = match_embeddings(enc_vocab,
-                                                          embeddings,
+                                                          embeddings_enc,
                                                           opt)
     filtered_dec_embeddings, dec_count = match_embeddings(dec_vocab,
-                                                          embeddings,
+                                                          embeddings_dec,
                                                           opt)
-
     print("\nMatching: ")
     match_percent = [_['match'] / (_['match'] + _['miss']) * 100
                      for _ in [enc_count, dec_count]]
