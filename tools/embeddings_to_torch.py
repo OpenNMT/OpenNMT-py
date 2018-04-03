@@ -62,7 +62,7 @@ def get_embeddings(file_enc, opt, flag):
         print("Got {} decryption embeddings from {}".format(len(embs),
                                                             file_enc))
 
-    return embs 
+    return embs
 
 
 def match_embeddings(vocab, emb, opt):
