@@ -27,9 +27,16 @@ class Translator(object):
     def __init__(self, model, fields,
                  beam_size, n_best=1,
                  max_length=100,
-                 global_scorer=None, copy_attn=False, cuda=False,
-                 beam_trace=False, min_length=0,
-                 avoid_trigram_repetition=False, reinforced=False):
+                 global_scorer=None,
+                 copy_attn=False,
+                 cuda=False,
+                 beam_trace=False,
+                 min_length=0,
+                 avoid_trigram_repetition=False,
+                 reinforced=False,
+                 stepwise_penalty=False,
+                 block_ngram_repeat=0,
+                 ignore_when_blocking=[]):
         self.model = model
         self.fields = fields
         self.n_best = n_best
@@ -41,6 +48,9 @@ class Translator(object):
         self.min_length = min_length
         self.avoid_trigram_repetition = avoid_trigram_repetition
         self.reinforced = reinforced
+        self.stepwise_penalty = stepwise_penalty
+        self.block_ngram_repeat = block_ngram_repeat
+        self.ignore_when_blocking = set(ignore_when_blocking)
 
         # for debugging
         self.beam_accum = None
@@ -72,12 +82,23 @@ class Translator(object):
         batch_size = batch.batch_size
         data_type = data.data_type
         vocab = self.fields["tgt"].vocab
+
+        # Define a list of tokens to exclude from ngram-blocking
+        # exclusion_list = ["<t>", "</t>", "."]
+        exclusion_tokens = set([vocab.stoi[t]
+                                for t in self.ignore_when_blocking])
+
         beam = [onmt.translate.Beam(beam_size, n_best=self.n_best,
-                cuda=self.cuda, global_scorer=self.global_scorer,
+                cuda=self.cuda,
+                global_scorer=self.global_scorer,
                 pad=vocab.stoi[onmt.io.PAD_WORD],
                 eos=vocab.stoi[onmt.io.EOS_WORD],
-                bos=vocab.stoi[onmt.io.BOS_WORD], min_length=self.min_length,
+                bos=vocab.stoi[onmt.io.BOS_WORD],
+                min_length=self.min_length,
                 avoid_trigram_repetition=self.avoid_trigram_repetition)
+                stepwise_penalty=self.stepwise_penalty,
+                block_ngram_repeat=self.block_ngram_repeat,
+                exclusion_tokens=exclusion_tokens)
                 for __ in range(batch_size)]
 
         # Help functions for working with beams and batches
@@ -156,20 +177,17 @@ class Translator(object):
                                     .squeeze(0).contiguous()}
 
             else:
-                # Temporary kludge solution to handle changed dim expectation
-                # in the decoder
-                inp = inp.unsqueeze(2)
                 dec_out, dec_states, attn = self.model.decoder(
-                    inp, memory_bank, dec_states,
-                    memory_lengths=memory_lengths)
+                    inp, memory_bank, dec_states, memory_lengths=memory_lengths)
                 dec_out = dec_out.squeeze(0)
                 # dec_out: beam x rnn_size
 
-                # (b) Compute a vector of batch*beam word scores.
+                # (b) Compute a vector of batch x beam word scores.
                 if not self.copy_attn:
                     out = self.model.generator.forward(dec_out).data
                     out = unbottle(out)
                     # beam x tgt_vocab
+                    beam_attn = unbottle(attn["std"])
                 else:
                     out = self.model.generator.forward(dec_out,
                                                        attn["copy"].squeeze(0),
@@ -180,12 +198,12 @@ class Translator(object):
                         batch, self.fields["tgt"].vocab, data.src_vocabs)
                     # beam x tgt_vocab
                     out = out.log()
+                    beam_attn = unbottle(attn["copy"])
 
             # (c) Advance each beam.
             for j, b in enumerate(beam):
-                b.advance(
-                    out[:, j],
-                    unbottle(attn["std"]).data[:, j, :memory_lengths[j]])
+                b.advance(out[:, j],
+                          beam_attn.data[:, j, :memory_lengths[j]])
                 dec_states.beam_update(j, b.get_current_origin(), beam_size)
 
         # (4) Extract sentences from beam.
@@ -231,7 +249,7 @@ class Translator(object):
         #  (i.e. log likelihood) of the target under the model
         tt = torch.cuda if self.cuda else torch
         gold_scores = tt.FloatTensor(batch.batch_size).fill_(0)
-        dec_out, dec_states, attn = self.model.decoder(
+        dec_out, _, _ = self.model.decoder(
             tgt_in, memory_bank, dec_states, memory_lengths=src_lengths)
 
         tgt_pad = self.fields["tgt"].vocab.stoi[onmt.io.PAD_WORD]

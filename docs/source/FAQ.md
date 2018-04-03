@@ -66,21 +66,30 @@ python train.py -save_model data/model \
 
 The transformer model is very sensitive to hyperparameters. To run it
 effectively you need to set a bunch of different options that mimic the Google
-setup.
+setup. We have confirmed the following command can replicate their WMT results.
 
 ```
-python train.py -gpuid 0 -save_model models/ja-en-1M/ja-en -data database/ja-en -layers 6 \
-        -rnn_size 512 -word_vec_size 512 -epochs 30 -max_grad_norm 0 -optim adam \
+python  train.py -data /tmp/de2/data -save_model /tmp/extra -gpuid 1 \
+        -layers 6 -rnn_size 512 -word_vec_size 512   \
         -encoder_type transformer -decoder_type transformer -position_encoding \
-        -dropout 0.1 -param_init 0 -warmup_steps 12000 -learning_rate 0.2 \
-        -decay_method noam -label_smoothing 0.1 -adam_beta2 0.98 -batch_size 80 \
-        -start_decay_at 31
+        -epochs 50  -max_generator_batches 32 -dropout 0.1 \
+        -batch_size 4096 -batch_type tokens -normalization tokens  -accum_count 4 \
+        -optim adam -adam_beta2 0.998 -decay_method noam -warmup_steps 8000 -learning_rate 2 \
+        -max_grad_norm 0 -param_init 0  -param_init_glorot \
+        -label_smoothing 0.1  
 ```
 
+Here are what each of the parameters mean:
+
+* `param_init_glorot` `-param_init 0`: correct initialization of parameters
+* `position_encoding`: add sinusoidal position encoding to each embedding
+* `optim adam`, `decay_method noam`, `warmup_steps 8000`: use special learning rate.
+* `batch_type tokens`, `normalization tokens`, `accum_count 4`: batch and normalize based on number of tokens and not sentences. Compute gradients based on four batches. 
+- `label_smoothing 0.1`: use label smoothing loss. 
 
 
 ## Do you support multi-gpu?
 
-Currently our system does not support
+Currently our system does not support multi-gpu. It will be coming soon. 
 
 

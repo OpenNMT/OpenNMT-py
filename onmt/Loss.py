@@ -121,7 +121,6 @@ class LossComputeBase(nn.Module):
 
         for shard in shards(shard_state, shard_size):
             loss, stats = self._compute_loss(batch, **shard)
-
             loss.div(normalization).backward()
             batch_stats.update(stats)
 
@@ -159,7 +158,6 @@ class NMTLossCompute(LossComputeBase):
                  label_smoothing=0.0):
         super(NMTLossCompute, self).__init__(generator, tgt_vocab)
         assert (label_smoothing >= 0.0 and label_smoothing <= 1.0)
-
         if label_smoothing > 0:
             # When label smoothing is turned on,
             # KL-divergence between q_{smoothed ground truth prob.}(w)
@@ -191,17 +189,18 @@ class NMTLossCompute(LossComputeBase):
         if self.confidence < 1:
             tdata = gtruth.data
             mask = torch.nonzero(tdata.eq(self.padding_idx)).squeeze()
-            likelihood = torch.gather(scores.data, 1, tdata.unsqueeze(1))
+            log_likelihood = torch.gather(scores.data, 1, tdata.unsqueeze(1))
             tmp_ = self.one_hot.repeat(gtruth.size(0), 1)
             tmp_.scatter_(1, tdata.unsqueeze(1), self.confidence)
             if mask.dim() > 0:
-                likelihood.index_fill_(0, mask, 0)
+                log_likelihood.index_fill_(0, mask, 0)
                 tmp_.index_fill_(0, mask, 0)
             gtruth = Variable(tmp_, requires_grad=False)
-
         loss = self.criterion(scores, gtruth)
         if self.confidence < 1:
-            loss_data = - likelihood.sum(0)
+            # Default: report smoothed ppl.
+            # loss_data = -log_likelihood.sum(0)
+            loss_data = loss.data.clone()
         else:
             loss_data = loss.data.clone()
 
@@ -210,11 +209,12 @@ class NMTLossCompute(LossComputeBase):
         return loss, stats
 
 
-def filter_shard_state(state):
+def filter_shard_state(state, requires_grad=True, volatile=False):
     for k, v in state.items():
         if v is not None:
             if isinstance(v, Variable) and v.requires_grad:
-                v = Variable(v.data, requires_grad=True, volatile=False)
+                v = Variable(v.data, requires_grad=requires_grad,
+                             volatile=volatile)
             yield k, v
 
 
@@ -235,7 +235,7 @@ def shards(state, shard_size, eval=False):
         After the last shard, this function does back-propagation.
     """
     if eval:
-        yield state
+        yield filter_shard_state(state, False, True)
     else:
         # non_none: the subdict of the state dictionary where the values
         # are not None.

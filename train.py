@@ -7,6 +7,7 @@ import glob
 import os
 import sys
 import random
+from datetime import datetime
 
 import torch
 import torch.nn as nn
@@ -19,6 +20,7 @@ import onmt.ModelConstructor
 import onmt.modules
 from onmt.Utils import use_gpu
 import opts
+
 
 parser = argparse.ArgumentParser(
     description='train.py',
@@ -72,10 +74,15 @@ if opt.exp_host != "":
 
 if opt.tensorboard:
     from tensorboardX import SummaryWriter
-    writer = SummaryWriter(opt.tensorboard_log_dir, comment="Onmt")
+    writer = SummaryWriter(
+        opt.tensorboard_log_dir + datetime.now().strftime("/%b-%d_%H-%M-%S"),
+        comment="Onmt")
+
+progress_step = 0
 
 
 def report_func(epoch, batch, num_batches,
+                progress_step,
                 start_time, lr, report_stats):
     """
     This is the user-defined batch-level traing progress
@@ -85,6 +92,7 @@ def report_func(epoch, batch, num_batches,
         epoch(int): current epoch count.
         batch(int): current batch count.
         num_batches(int): total number of batches.
+        progress_step(int): the progress step.
         start_time(float): last report time.
         lr(float): current learning rate.
         report_stats(Statistics): old Statistics instance.
@@ -96,7 +104,9 @@ def report_func(epoch, batch, num_batches,
         if opt.exp_host:
             report_stats.log("progress", experiment, lr)
         if opt.tensorboard:
-            report_stats.log_tensorboard("progress", writer, lr, epoch)
+            # Log the progress using the number of batches on the x-axis.
+            report_stats.log_tensorboard(
+                "progress", writer, lr, progress_step)
         report_stats = onmt.Statistics()
 
     return report_stats
@@ -174,8 +184,18 @@ def make_dataset_iter(datasets, fields, opt, is_train=True):
     batch_size = opt.batch_size if is_train else opt.valid_batch_size
     batch_size_fn = None
     if is_train and opt.batch_type == "tokens":
+        global max_src_in_batch, max_tgt_in_batch
+
         def batch_size_fn(new, count, sofar):
-            return sofar + max(len(new.tgt), len(new.src)) + 1
+            global max_src_in_batch, max_tgt_in_batch
+            if count == 1:
+                max_src_in_batch = 0
+                max_tgt_in_batch = 0
+            max_src_in_batch = max(max_src_in_batch,  len(new.src) + 2)
+            max_tgt_in_batch = max(max_tgt_in_batch,  len(new.tgt) + 1)
+            src_elements = count * max_src_in_batch
+            tgt_elements = count * max_tgt_in_batch
+            return max(src_elements, tgt_elements)
 
     device = opt.gpuid[0] if opt.gpuid else -1
 
@@ -183,7 +203,7 @@ def make_dataset_iter(datasets, fields, opt, is_train=True):
                            device, is_train)
 
 
-def make_loss_compute(model, tgt_vocab, opt):
+def make_loss_compute(model, tgt_vocab, opt, train=True):
     """
     This returns user-defined LossCompute object, which is used to
     compute loss in train/validate process. You can implement your
@@ -199,7 +219,7 @@ def make_loss_compute(model, tgt_vocab, opt):
     else:
         compute = onmt.Loss.NMTLossCompute(
             model.generator, tgt_vocab,
-            label_smoothing=opt.label_smoothing)
+            label_smoothing=opt.label_smoothing if train else 0.0)
 
     if use_gpu(opt):
         compute.cuda()
@@ -209,7 +229,8 @@ def make_loss_compute(model, tgt_vocab, opt):
 
 def train_model(model, fields, optim, data_type, model_opt):
     train_loss = make_loss_compute(model, fields["tgt"].vocab, opt)
-    valid_loss = make_loss_compute(model, fields["tgt"].vocab, opt)
+    valid_loss = make_loss_compute(model, fields["tgt"].vocab, opt,
+                                   train=False)
 
     trunc_size = opt.truncated_decoder  # Badly named...
     shard_size = opt.max_generator_batches
@@ -375,7 +396,7 @@ def build_optim(model, checkpoint):
             warmup_steps=opt.warmup_steps,
             model_size=opt.rnn_size)
 
-    optim.set_parameters(model.parameters())
+    optim.set_parameters(model.named_parameters())
 
     return optim
 

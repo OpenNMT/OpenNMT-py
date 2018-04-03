@@ -1,8 +1,9 @@
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
+import math
 
-from onmt.modules import BottleLinear, Elementwise
+from onmt.modules import Elementwise
 from onmt.Utils import aeq
 
 
@@ -20,22 +21,24 @@ class PositionalEncoding(nn.Module):
     """
 
     def __init__(self, dropout, dim, max_len=5000):
-        pe = torch.arange(0, max_len).unsqueeze(1).expand(max_len, dim)
-        div_term = 1 / torch.pow(10000, torch.arange(0, dim * 2, 2) / dim)
-        pe = pe * div_term.expand_as(pe)
-        pe[:, 0::2] = torch.sin(pe[:, 0::2])
-        pe[:, 1::2] = torch.cos(pe[:, 1::2])
+        pe = torch.zeros(max_len, dim)
+        position = torch.arange(0, max_len).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, dim, 2) *
+                             -(math.log(10000.0) / dim))
+        pe[:, 0::2] = torch.sin(position * div_term)
+        pe[:, 1::2] = torch.cos(position * div_term)
         pe = pe.unsqueeze(1)
         super(PositionalEncoding, self).__init__()
         self.register_buffer('pe', pe)
         self.dropout = nn.Dropout(p=dropout)
+        self.dim = dim
 
     def forward(self, emb):
         # We must wrap the self.pe in Variable to compute, not the other
         # way - unwrap emb(i.e. emb.data). Otherwise the computation
         # wouldn't be watched to build the compute graph.
-        emb = emb + Variable(self.pe[:emb.size(0), :1, :emb.size(2)]
-                             .expand_as(emb), requires_grad=False)
+        emb = emb * math.sqrt(self.dim)
+        emb = emb + Variable(self.pe[:emb.size(0)], requires_grad=False)
         emb = self.dropout(emb)
         return emb
 
@@ -90,7 +93,8 @@ class Embeddings(nn.Module):
                  feat_vec_exponent=0.7, feat_vec_size=-1,
                  feat_padding_idx=[],
                  feat_vocab_sizes=[],
-                 dropout=0):
+                 dropout=0,
+                 sparse=False):
 
         self.word_padding_idx = word_padding_idx
 
@@ -115,7 +119,7 @@ class Embeddings(nn.Module):
         # The embedding matrix look-up tables. The first look-up table
         # is for words. Subsequent ones are for features, if any exist.
         emb_params = zip(vocab_sizes, emb_dims, pad_indices)
-        embeddings = [nn.Embedding(vocab, dim, padding_idx=pad)
+        embeddings = [nn.Embedding(vocab, dim, padding_idx=pad, sparse=sparse)
                       for vocab, dim, pad in emb_params]
         emb_luts = Elementwise(feat_merge, embeddings)
 
@@ -135,10 +139,10 @@ class Embeddings(nn.Module):
         self.make_embedding = nn.Sequential()
         self.make_embedding.add_module('emb_luts', emb_luts)
 
-        if feat_merge == 'mlp':
+        if feat_merge == 'mlp' and len(feat_vocab_sizes) > 0:
             in_dim = sum(emb_dims)
             out_dim = word_vec_size
-            mlp = nn.Sequential(BottleLinear(in_dim, out_dim), nn.ReLU())
+            mlp = nn.Sequential(nn.Linear(in_dim, out_dim), nn.ReLU())
             self.make_embedding.add_module('mlp', mlp)
 
         if position_encoding:

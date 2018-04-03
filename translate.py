@@ -33,17 +33,21 @@ def _report_score(name, score_total, words_total):
 
 def _report_bleu():
     import subprocess
+    path = os.path.split(os.path.realpath(__file__))[0]
     print()
     res = subprocess.check_output(
-        "perl tools/multi-bleu.perl %s < %s" % (opt.tgt, opt.output),
+        "perl %s/tools/multi-bleu.perl %s < %s"
+        % (path, opt.tgt, opt.output),
         shell=True).decode("utf-8")
     print(">> " + res.strip())
 
 
 def _report_rouge():
     import subprocess
+    path = os.path.split(os.path.realpath(__file__))[0]
     res = subprocess.check_output(
-        "python tools/test_rouge.py -r %s -c %s" % (opt.tgt, opt.output),
+        "python %s/tools/test_rouge.py -r %s -c %s"
+        % (path, opt.tgt, opt.output),
         shell=True).decode("utf-8")
     print(res.strip())
 
@@ -82,15 +86,25 @@ def main():
         sort_within_batch=True, shuffle=False)
 
     # Translator
-    scorer = onmt.translate.GNMTGlobalScorer(opt.alpha, opt.beta)
+    scorer = onmt.translate.GNMTGlobalScorer(opt.alpha,
+                                             opt.beta,
+                                             opt.coverage_penalty,
+                                             opt.length_penalty)
     translator = onmt.translate.Translator(
-        model, fields, beam_size=opt.beam_size, n_best=opt.n_best,
-        global_scorer=scorer, max_length=opt.max_length,
-        copy_attn=model_opt.copy_attn, cuda=opt.cuda,
+        model, fields,
+        beam_size=opt.beam_size,
+        n_best=opt.n_best,
+        global_scorer=scorer,
+        max_length=opt.max_length,
+        copy_attn=model_opt.copy_attn,
+        cuda=opt.cuda,
         beam_trace=opt.dump_beam != "",
         min_length=opt.min_length,
+        reinforced=model_opt.reinforced,
         avoid_trigram_repetition=opt.avoid_trigram_repetition,
-        reinforced=model_opt.reinforced)
+        stepwise_penalty=opt.stepwise_penalty,
+        block_ngram_repeat=opt.block_ngram_repeat,
+        ignore_when_blocking=opt.ignore_when_blocking)
     builder = onmt.translate.TranslationBuilder(
         data, translator.fields,
         opt.n_best, opt.replace_unk, opt.tgt)
@@ -109,7 +123,7 @@ def main():
             pred_words_total += len(trans.pred_sents[0])
             if opt.tgt:
                 gold_score_total += trans.gold_score
-                gold_words_total += len(trans.gold_sent)
+                gold_words_total += len(trans.gold_sent) + 1
 
             n_best_preds = [" ".join(pred)
                             for pred in trans.pred_sents[:opt.n_best]]
