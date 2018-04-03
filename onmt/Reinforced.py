@@ -433,7 +433,7 @@ class PointerGenerator(CopyGenerator):
                 logits (FloatTensor): logits = W_out * V + b_out, [3*dim]
         """
         W = self.W_out()
-        logits = (W @ V.t() + self.b_out).t()
+        logits = (W.matmul(V.t()) + self.b_out).t()
         return logits
 
 
