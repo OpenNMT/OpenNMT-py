@@ -95,7 +95,7 @@ class Translator(object):
                 eos=vocab.stoi[onmt.io.EOS_WORD],
                 bos=vocab.stoi[onmt.io.BOS_WORD],
                 min_length=self.min_length,
-                avoid_trigram_repetition=self.avoid_trigram_repetition)
+                avoid_trigram_repetition=self.avoid_trigram_repetition,
                 stepwise_penalty=self.stepwise_penalty,
                 block_ngram_repeat=self.block_ngram_repeat,
                 exclusion_tokens=exclusion_tokens)
@@ -178,7 +178,8 @@ class Translator(object):
 
             else:
                 dec_out, dec_states, attn = self.model.decoder(
-                    inp, memory_bank, dec_states, memory_lengths=memory_lengths)
+                    inp, memory_bank, dec_states,
+                    memory_lengths=memory_lengths)
                 dec_out = dec_out.squeeze(0)
                 # dec_out: beam x rnn_size
 

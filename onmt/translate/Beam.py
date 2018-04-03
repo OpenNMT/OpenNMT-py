@@ -20,7 +20,7 @@ class Beam(object):
                  n_best=1, cuda=False,
                  global_scorer=None,
                  min_length=0,
-                 avoid_trigram_repetition=False):
+                 avoid_trigram_repetition=False,
                  stepwise_penalty=False,
                  block_ngram_repeat=0,
                  exclusion_tokens=set()):
