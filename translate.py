@@ -144,8 +144,10 @@ def main():
                 output = header_format.format("", *trans.src_raw) + '\n'
                 for word, row in zip(preds, attns):
                     max_index = row.index(max(row))
-                    row_format = row_format.replace("{:>10.7f} ", "{:*>10.7f} ", max_index + 1)
-                    row_format = row_format.replace("{:*>10.7f} ", "{:>10.7f} ", max_index)
+                    row_format = row_format.replace(
+                        "{:>10.7f} ", "{:*>10.7f} ", max_index + 1)
+                    row_format = row_format.replace(
+                        "{:*>10.7f} ", "{:>10.7f} ", max_index)
                     output += row_format.format(word, *row) + '\n'
                     row_format = "{:>10.10} " + "{:>10.7f} " * len(srcs)
                 os.write(1, output.encode('utf-8'))
