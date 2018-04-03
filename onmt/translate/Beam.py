@@ -34,6 +34,7 @@ class Beam(object):
         self.next_ys = [self.tt.LongTensor(size)
                         .fill_(pad)]
         self.next_ys[0][0] = bos
+        self.hyps = self.next_ys[0].split(1)
 
         # Has EOS topped the beam yet.
         self._eos = eos
@@ -86,6 +87,7 @@ class Beam(object):
                 word_probs[k][self._eos] = -1e20
 
         # Sum the previous scores.
+
         if len(self.prev_ks) > 0:
             beam_scores = word_probs + \
                 self.scores.unsqueeze(1).expand_as(word_probs)
@@ -95,7 +97,7 @@ class Beam(object):
                 b = self.next_ys[0].size(0)
 
                 # [b, t]
-                sentences = torch.stack(self.next_ys, 0).transpose(0, 1)
+                sentences = torch.stack(self.hyps, 0)
 
                 # [b, 2]
                 last_bigram = sentences[:, -2:]
@@ -156,14 +158,20 @@ class Beam(object):
         if self.global_scorer is not None:
             self.global_scorer.update_global_state(self)
 
+        nexthyps = []
         for i in range(self.next_ys[-1].size(0)):
+            ik = prev_k[i]
+            prevhyp = self.hyps[ik]
+            next_y = self.next_ys[-1][i:i+1]
+            nexthyp = torch.cat([prevhyp, next_y])
+            nexthyps += [nexthyp]
             if self.next_ys[-1][i] == self._eos:
                 s = self.scores[i]
                 if self.global_scorer is not None:
                     global_scores = self.global_scorer.score(self, self.scores)
                     s = global_scores[i]
                 self.finished.append((s, len(self.next_ys) - 1, i))
-
+        self.hyps = nexthyps
         # End condition is when top-of-beam is EOS and no global score.
         if self.next_ys[-1][0] == self._eos:
             # self.all_scores.append(self.scores)

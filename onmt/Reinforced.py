@@ -86,7 +86,6 @@ class EachStepGeneratorLossCompute(CopyGeneratorLossCompute):
         """
         align = align.view(-1)
         target = target.view(-1)
-
         # GENERATOR: generating scores
         # scores: [bs x vocab + c_vocab]
         scores = self.generator(
