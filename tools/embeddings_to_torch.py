@@ -9,6 +9,27 @@ import argparse
 import torch
 
 
+def get_vocabs(dict_file):
+    vocabs = torch.load(dict_file)
+
+    enc_vocab, dec_vocab = None, None
+
+    # the vocab object is a list of tuple (name, torchtext.Vocab)
+    # we iterate over this list and associate vocabularies based on the name
+    for vocab in vocabs:
+        if vocab[0] == 'src':
+            enc_vocab = vocab[1]
+        if vocab[0] == 'tgt':
+            dec_vocab = vocab[1]
+    assert type(None) not in [type(enc_vocab), type(dec_vocab)]
+
+    print("From: %s" % dict_file)
+    print("\t* source vocab: %d words" % len(enc_vocab))
+    print("\t* target vocab: %d words" % len(dec_vocab))
+
+    return enc_vocab, dec_vocab
+
+
 def get_embeddings(file_enc, opt, flag):
     embs = dict()
     if flag == 'enc':
