@@ -11,7 +11,7 @@ import torch
 
 def get_embeddings(file_enc, opt, flag):
     embs = dict()
-    if flag == 'enc' :
+    if flag == 'enc':
         for (i, l) in enumerate(open(file_enc, 'rb')):
             if i < opt.skip_lines:
                 continue
@@ -24,7 +24,8 @@ def get_embeddings(file_enc, opt, flag):
             if len(l_split) == 2:
                 continue
             embs[l_split[0]] = [float(em) for em in l_split[1:51]]
-        print("Got {} encryption embeddings from {}".format(len(embs), file_enc))
+        print("Got {} encryption embeddings from {}".format(len(embs),
+                                                            file_enc))
     else:
 
         for (i, l) in enumerate(open(file_enc, 'rb')):
@@ -37,7 +38,8 @@ def get_embeddings(file_enc, opt, flag):
             if len(l_split) == 2:
                 continue
             embs[l_split[0]] = [float(em) for em in l_split[1:]]
-        print("Got {} decryption embeddings from {}".format(len(embs), file_enc))
+        print("Got {} decryption embeddings from {}".format(len(embs),
+                                                            file_enc))
 
     return embs 
 
