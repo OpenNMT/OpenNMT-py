@@ -19,7 +19,7 @@
             "model": "model_0.light.pt",
             "timeout": -1,
             "on_timeout": "unload",
-            "model_root": "../other_models"
+            "model_root": "../other_models",
             "opt": {
                 "batch_size": 1,
                 "beam_size": 10
