@@ -117,8 +117,7 @@ class Translator(object):
 
                 n_best_preds = [" ".join(pred)
                                 for pred in trans.pred_sents[:self.opt.n_best]]
-                self.out_file.write('\n'.join(n_best_preds))
-                self.out_file.write('\n')
+                self.out_file.write('\n'.join(n_best_preds) + '\n')
                 self.out_file.flush()
 
                 if self.opt.verbose:

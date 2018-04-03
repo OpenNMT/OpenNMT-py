@@ -1,3 +1,4 @@
+from __future__ import print_function
 import sys
 import os
 import argparse
@@ -259,7 +260,8 @@ class ServerModel:
         # NOTE: the translator exept a filepath as parameter
         #       therefore we write the data as a temp file.
         tmp_root = "/tmp/onmt_server"
-        os.makedirs(tmp_root, exist_ok=True)
+        if not os.path.exists(tmp_root):
+            os.makedirs(tmp_root)
         src_path = os.path.join(tmp_root, "tmp_src")
         with codecs.open(src_path, 'w', 'utf-8') as f:
             # NOTE: If an input contains an line separator \n we split it
