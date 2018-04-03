@@ -23,7 +23,7 @@ def get_embeddings(file_enc, opt, flag):
             l_split = l.decode('utf8').strip().split(' ')
             if len(l_split) == 2:
                 continue
-            embs[l_split[0]] = [float(em) for em in l_split[1:51]]
+            embs[l_split[0]] = [float(em) for em in l_split[1:]]
         print("Got {} encryption embeddings from {}".format(len(embs),
                                                             file_enc))
     else:
