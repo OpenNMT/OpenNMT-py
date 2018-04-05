@@ -274,10 +274,11 @@ class ServerModel:
         print("Model %d, translation time: %s" %
               (self.model_id, str(timer.times)))
         self.reset_unload_timer()
-        result = self.out_file.getvalue().split("\n")
-        result = [self.maybe_detokenize(_) for _ in result]
+        results = self.out_file.getvalue().split("\n")
+        results = [self.maybe_detokenize(result) for result in results
+                   if len(result) > 0]
         self.clear_out_file()
-        return result, timer.times
+        return results, timer.times
 
     def do_timeout(self):
         """Timeout function that free GPU memory by moving the model to CPU
