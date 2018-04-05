@@ -41,7 +41,8 @@ class MatrixTree(nn.Module):
 
 
 if __name__ == "__main__":
+    logging = onmt.io.IO.set_logger('StructuredAttention.py')
     dtree = MatrixTree()
     q = torch.rand(1, 5, 5).cuda()
     marg = dtree.forward(Variable(q))
-    print(marg.sum(1))
+    logging.info(marg.sum(1))

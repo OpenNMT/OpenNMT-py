@@ -138,7 +138,7 @@ class Optim(object):
 
         if self.start_decay:
             self.lr = self.lr * self.lr_decay
-            print("Decaying learning rate to %g" % self.lr)
+            logging.info("Decaying learning rate to %g" % self.lr)
 
         self.last_ppl = ppl
         if self.method != 'sparseadam':

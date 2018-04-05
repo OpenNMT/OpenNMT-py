@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import logging
 from collections import Counter, defaultdict, OrderedDict
 from itertools import count
 
@@ -12,6 +12,20 @@ from onmt.io.TextDataset import TextDataset
 from onmt.io.ImageDataset import ImageDataset
 from onmt.io.AudioDataset import AudioDataset
 
+def set_logger(script):
+    log_format = logging.Formatter("%(message)s")
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.DEBUG)
+
+    file_handler = logging.file_handler(script+".logs")
+    file_handler.setFormatter(log_format)
+    root_logger.addHandler(file_handler)
+
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(log_format)
+    root_logger.addHandler(console_handler)
+
+    return root_logger
 
 def _getstate(self):
     return dict(self.__dict__, stoi=dict(self.stoi))
@@ -250,7 +264,7 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
 
     for path in train_dataset_files:
         dataset = torch.load(path)
-        print(" * reloading %s." % path)
+        logging.info(" * reloading %s." % path)
         for ex in dataset.examples:
             for k in fields:
                 val = getattr(ex, k, None)
@@ -261,32 +275,32 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
     _build_field_vocab(fields["tgt"], counter["tgt"],
                        max_size=tgt_vocab_size,
                        min_freq=tgt_words_min_frequency)
-    print(" * tgt vocab size: %d." % len(fields["tgt"].vocab))
+    logging.info(" * tgt vocab size: %d." % len(fields["tgt"].vocab))
 
     # All datasets have same num of n_tgt_features,
     # getting the last one is OK.
     for j in range(dataset.n_tgt_feats):
         key = "tgt_feat_" + str(j)
         _build_field_vocab(fields[key], counter[key])
-        print(" * %s vocab size: %d." % (key, len(fields[key].vocab)))
+        logging.info(" * %s vocab size: %d." % (key, len(fields[key].vocab)))
 
     if data_type == 'text':
         _build_field_vocab(fields["src"], counter["src"],
                            max_size=src_vocab_size,
                            min_freq=src_words_min_frequency)
-        print(" * src vocab size: %d." % len(fields["src"].vocab))
+        logging.info(" * src vocab size: %d." % len(fields["src"].vocab))
 
         # All datasets have same num of n_src_features,
         # getting the last one is OK.
         for j in range(dataset.n_src_feats):
             key = "src_feat_" + str(j)
             _build_field_vocab(fields[key], counter[key])
-            print(" * %s vocab size: %d." % (key, len(fields[key].vocab)))
+            logging.info(" * %s vocab size: %d." % (key, len(fields[key].vocab)))
 
         # Merge the input and output vocabularies.
         if share_vocab:
             # `tgt_vocab_size` is ignored when sharing vocabularies
-            print(" * merging src and tgt vocab...")
+            logging.info(" * merging src and tgt vocab...")
             merged_vocab = merge_vocabs(
                 [fields["src"].vocab, fields["tgt"].vocab],
                 vocab_size=src_vocab_size)

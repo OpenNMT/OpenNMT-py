@@ -131,21 +131,24 @@ class Translation(object):
         """
         Log translation to stdout.
         """
+
+        logging = onmt.io.IO.set_logger('translate.py')
+
         output = '\nSENT {}: {}\n'.format(sent_number, self.src_raw)
 
         best_pred = self.pred_sents[0]
         best_score = self.pred_scores[0]
         pred_sent = ' '.join(best_pred)
         output += 'PRED {}: {}\n'.format(sent_number, pred_sent)
-        print("PRED SCORE: {:.4f}".format(best_score))
+        logging.info("PRED SCORE: {:.4f}".format(best_score))
 
         if self.gold_sent is not None:
             tgt_sent = ' '.join(self.gold_sent)
             output += 'GOLD {}: {}\n'.format(sent_number, tgt_sent)
             # output += ("GOLD SCORE: {:.4f}".format(self.gold_score))
-            print("GOLD SCORE: {:.4f}".format(self.gold_score))
+            logging.info("GOLD SCORE: {:.4f}".format(self.gold_score))
         if len(self.pred_sents) > 1:
-            print('\nBEST HYP:')
+            logging.info('\nBEST HYP:')
             for score, sent in zip(self.pred_scores, self.pred_sents):
                 output += "[{:.4f}] {}\n".format(score, sent)
 
