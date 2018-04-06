@@ -47,6 +47,7 @@ class MultiHeadedAttention(nn.Module):
            must be divisible by head_count
        dropout (float): dropout parameter
     """
+
     def __init__(self, head_count, model_dim, dropout=0.1):
         assert model_dim % head_count == 0
         self.dim_per_head = model_dim // head_count

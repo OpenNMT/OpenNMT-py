@@ -240,7 +240,7 @@ def train_model(model, fields, optim, data_type, model_opt):
 
     logging.info('\nStart training...')
     logging.info(' * number of epochs: %d, starting from Epoch %d' %
-          (opt.epochs + 1 - opt.start_epoch, opt.start_epoch))
+                 (opt.epochs + 1 - opt.start_epoch, opt.start_epoch))
     logging.info(' * batch size: %d' % opt.batch_size)
 
     for epoch in range(opt.start_epoch, opt.epochs + 1):
@@ -313,7 +313,7 @@ def lazily_load_dataset(corpus_type):
     def lazy_dataset_loader(pt_file, corpus_type):
         dataset = torch.load(pt_file)
         logging.info('Loading %s dataset from %s, number of examples: %d' %
-              (corpus_type, pt_file, len(dataset)))
+                     (corpus_type, pt_file, len(dataset)))
         return dataset
 
     # Sort the glob output by file name (by increasing indexes).
@@ -340,10 +340,10 @@ def load_fields(dataset, data_type, checkpoint):
 
     if data_type == 'text':
         logging.info(' * vocabulary size. source = %d; target = %d' %
-              (len(fields['src'].vocab), len(fields['tgt'].vocab)))
+                     (len(fields['src'].vocab), len(fields['tgt'].vocab)))
     else:
         logging.info(' * vocabulary size. target = %d' %
-              (len(fields['tgt'].vocab)))
+                     (len(fields['tgt'].vocab)))
 
     return fields
 
@@ -353,9 +353,11 @@ def collect_report_features(fields):
     tgt_features = onmt.io.collect_features(fields, side='tgt')
 
     for j, feat in enumerate(src_features):
-        logging.info(' * src feature %d size = %d' % (j, len(fields[feat].vocab)))
+        logging.info(' * src feature %d size = %d' %
+                     (j, len(fields[feat].vocab)))
     for j, feat in enumerate(tgt_features):
-        logging.info(' * tgt feature %d size = %d' % (j, len(fields[feat].vocab)))
+        logging.info(' * tgt feature %d size = %d' %
+                     (j, len(fields[feat].vocab)))
 
 
 def build_model(model_opt, opt, fields, checkpoint):

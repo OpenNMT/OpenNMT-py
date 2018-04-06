@@ -12,12 +12,13 @@ from onmt.io.TextDataset import TextDataset
 from onmt.io.ImageDataset import ImageDataset
 from onmt.io.AudioDataset import AudioDataset
 
+
 def set_logger(script):
     log_format = logging.Formatter("%(message)s")
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.DEBUG)
 
-    file_handler = logging.file_handler(script+".logs")
+    file_handler = logging.fileHandler(script + ".logs")
     file_handler.setFormatter(log_format)
     root_logger.addHandler(file_handler)
 
@@ -26,6 +27,7 @@ def set_logger(script):
     root_logger.addHandler(console_handler)
 
     return root_logger
+
 
 def _getstate(self):
     return dict(self.__dict__, stoi=dict(self.stoi))
@@ -295,7 +297,8 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
         for j in range(dataset.n_src_feats):
             key = "src_feat_" + str(j)
             _build_field_vocab(fields[key], counter[key])
-            logging.info(" * %s vocab size: %d." % (key, len(fields[key].vocab)))
+            logging.info(" * %s vocab size: %d." %
+                         (key, len(fields[key].vocab)))
 
         # Merge the input and output vocabularies.
         if share_vocab:

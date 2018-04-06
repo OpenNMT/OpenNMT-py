@@ -36,6 +36,7 @@ class WeightNormLinear(nn.Linear):
     As a reparameterization method, weight normalization is same
     as BatchNormalization, but it doesn't depend on minibatch.
     """
+
     def __init__(self, in_features, out_features,
                  init_scale=1., polyak_decay=0.9995):
         super(WeightNormLinear, self).__init__(

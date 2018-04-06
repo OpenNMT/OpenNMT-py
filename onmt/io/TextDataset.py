@@ -35,6 +35,7 @@ class TextDataset(ONMTDatasetBase):
             use_filter_pred (bool): use a custom filter predicate to filter
                 out examples?
     """
+
     def __init__(self, fields, src_examples_iter, tgt_examples_iter,
                  num_src_feats=0, num_tgt_feats=0,
                  src_seq_length=0, tgt_seq_length=0,
@@ -82,7 +83,7 @@ class TextDataset(ONMTDatasetBase):
 
         def filter_pred(example):
             return 0 < len(example.src) <= src_seq_length \
-               and 0 < len(example.tgt) <= tgt_seq_length
+                and 0 < len(example.tgt) <= tgt_seq_length
 
         filter_pred = filter_pred if use_filter_pred else lambda x: True
 
@@ -202,7 +203,7 @@ class TextDataset(ONMTDatasetBase):
             include_lengths=True)
 
         for j in range(n_src_features):
-            fields["src_feat_"+str(j)] = \
+            fields["src_feat_" + str(j)] = \
                 torchtext.data.Field(pad_token=PAD_WORD)
 
         fields["tgt"] = torchtext.data.Field(
@@ -210,7 +211,7 @@ class TextDataset(ONMTDatasetBase):
             pad_token=PAD_WORD)
 
         for j in range(n_tgt_features):
-            fields["tgt_feat_"+str(j)] = \
+            fields["tgt_feat_" + str(j)] = \
                 torchtext.data.Field(init_token=BOS_WORD, eos_token=EOS_WORD,
                                      pad_token=PAD_WORD)
 
@@ -293,6 +294,7 @@ class ShardedTextCorpusIterator(object):
     shards of size `shard_size`. Then, for each shard, it processes
     into (example_dict, n_features) tuples when iterates.
     """
+
     def __init__(self, corpus_path, line_truncate, side, shard_size,
                  assoc_iter=None):
         """

@@ -24,6 +24,7 @@ class PositionwiseFeedForward(nn.Module):
                               of the FNN.
             dropout (float): dropout probability(0-1.0).
     """
+
     def __init__(self, size, hidden_size, dropout=0.1):
         super(PositionwiseFeedForward, self).__init__()
         self.w_1 = nn.Linear(size, hidden_size)
@@ -98,6 +99,7 @@ class TransformerEncoder(EncoderBase):
        embeddings (:obj:`onmt.modules.Embeddings`):
           embeddings to use, should have positional encodings
     """
+
     def __init__(self, num_layers, hidden_size,
                  dropout, embeddings):
         super(TransformerEncoder, self).__init__()
@@ -147,13 +149,14 @@ class TransformerDecoderLayer(nn.Module):
       head_count(int): the number of heads for MultiHeadedAttention.
       hidden_size(int): the second-layer of the PositionwiseFeedForward.
     """
+
     def __init__(self, size, dropout,
                  head_count=8, hidden_size=2048):
         super(TransformerDecoderLayer, self).__init__()
         self.self_attn = onmt.modules.MultiHeadedAttention(
-                head_count, size, dropout=dropout)
+            head_count, size, dropout=dropout)
         self.context_attn = onmt.modules.MultiHeadedAttention(
-                head_count, size, dropout=dropout)
+            head_count, size, dropout=dropout)
         self.feed_forward = PositionwiseFeedForward(size,
                                                     hidden_size,
                                                     dropout)
@@ -249,6 +252,7 @@ class TransformerDecoder(nn.Module):
 
        attn_type (str): if using a seperate copy attention
     """
+
     def __init__(self, num_layers, hidden_size, attn_type,
                  copy_attn, dropout, embeddings):
         super(TransformerDecoder, self).__init__()
