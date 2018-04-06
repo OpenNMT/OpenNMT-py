@@ -246,7 +246,7 @@ class ServerModel:
                 times: (dict) containing times
         """
         timer = Timer()
-        print("Running translation using %d" % self.model_id)
+        print("\nRunning translation using %d" % self.model_id)
 
         timer.start()
         if not self.loaded:
@@ -262,8 +262,19 @@ class ServerModel:
         os.makedirs(tmp_root, exist_ok=True)
         src_path = os.path.join(tmp_root, "tmp_src")
         with codecs.open(src_path, 'w', 'utf-8') as f:
-            for inp in inputs:
-                f.write(self.maybe_tokenize(inp['src']) + "\n")
+            # NOTE: If an input contains an line separator \n we split it
+            #       into subsegments that we translate independantly
+            #       we then merge the translations together with the same
+            #       line breaks
+            subsegment = {}
+            sscount = 0
+            for (i, inp) in enumerate(inputs):
+                src = inp['src']
+                lines = src.split("\n")
+                subsegment[i] = slice(sscount, sscount + len(lines))
+                sscount += len(lines)
+                for line in lines:
+                    f.write(self.maybe_tokenize(line) + "\n")
         timer.tick(name="writing")
         try:
             self.translator.translate(None, src_path, None)
@@ -271,12 +282,15 @@ class ServerModel:
             raise ServerModelError("Runtime Error: %s" % str(e))
 
         timer.tick(name="translation")
-        print("Model %d, translation time: %s" %
-              (self.model_id, str(timer.times)))
+        print("Using model #%d\t%d inputs (%d subsegment)\ttranslation time: %f" %
+              (self.model_id, len(subsegment), sscount,
+               timer.times['translation']))
         self.reset_unload_timer()
         results = self.out_file.getvalue().split("\n")
-        results = [self.maybe_detokenize(result) for result in results
-                   if len(result) > 0]
+        results = ['\n'.join([self.maybe_detokenize(_)
+                              for _ in results[subsegment[i]]
+                              if len(_) > 0])
+                   for i in sorted(subsegment.keys())]
         self.clear_out_file()
         return results, timer.times
 
