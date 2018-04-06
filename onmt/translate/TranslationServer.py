@@ -8,6 +8,9 @@ import time
 import codecs
 import json
 import threading
+
+from onmt.translate.Translator import make_translator
+
 import onmt
 import onmt.opts
 import onmt.translate
@@ -209,9 +212,9 @@ class ServerModel:
         timer.start()
         self.out_file = io.StringIO()
         try:
-            self.translator = onmt.translate.Translator(self.opt,
-                                                        report_score=False,
-                                                        out_file=self.out_file)
+            self.translator = make_translator(self.opt,
+                                              report_score=False,
+                                              out_file=self.out_file)
         except RuntimeError as e:
             raise ServerModelError("Runtime Error: %s" % str(e))
 
@@ -279,14 +282,16 @@ class ServerModel:
                     f.write(self.maybe_tokenize(line) + "\n")
         timer.tick(name="writing")
         try:
-            self.translator.translate(None, src_path, None)
+            self.translator.translate(None, src_path, None,
+                                      self.opt.batch_size)
         except RuntimeError as e:
             raise ServerModelError("Runtime Error: %s" % str(e))
 
         timer.tick(name="translation")
-        print("Using model #%d\t%d inputs (%d subsegment)\ttranslation time: %f" %
-              (self.model_id, len(subsegment), sscount,
-               timer.times['translation']))
+        print("""Using model #%d\t%d inputs (%d subsegment)
+               \ttranslation time: %f""" % (self.model_id, len(subsegment),
+                                            sscount,
+                                            timer.times['translation']))
         self.reset_unload_timer()
         results = self.out_file.getvalue().split("\n")
         results = ['\n'.join([self.maybe_detokenize(_)

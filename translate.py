@@ -2,6 +2,8 @@
 from __future__ import division, unicode_literals
 import argparse
 
+from onmt.translate.Translator import make_translator
+
 import onmt.io
 import onmt.translate
 import onmt
@@ -11,9 +13,8 @@ import onmt.opts
 
 
 def main(opt):
-    translator = onmt.translate.Translator(opt,
-                                           report_score=True)
-    translator.translate(opt.src_dir, opt.src, opt.tgt)
+    translator = make_translator(opt, report_score=True)
+    translator.translate(opt.src_dir, opt.src, opt.tgt, opt.batch_size)
 
 
 if __name__ == "__main__":
