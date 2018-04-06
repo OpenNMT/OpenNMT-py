@@ -1,6 +1,6 @@
 language: python
 python:
-  - "2.7" 
+  - "2.7"
   - "3.5"
 cache: pip
 before_install:
@@ -68,7 +68,7 @@ matrix:
     - env: LINT_CHECK
       python: "2.7"
       install: pip install flake8 pep8-naming
-      script: flake8
+      script: flake8 --builtins='logging'
     - python: "3.5"
       install:
         - python setup.py install

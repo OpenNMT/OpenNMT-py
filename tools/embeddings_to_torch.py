@@ -7,6 +7,7 @@ import sys
 import numpy as np
 import argparse
 import torch
+import onmt
 
 
 def get_vocabs(dict_file):
