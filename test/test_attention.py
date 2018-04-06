@@ -8,6 +8,8 @@ import onmt
 
 from torch.autograd import Variable
 
+logging = onmt.io.IO.set_logger('test_attention.py')
+
 
 class TestAttention(unittest.TestCase):
 

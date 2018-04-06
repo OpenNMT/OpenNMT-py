@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 import argparse
-import os, onmt
+import os
+import onmt
 import time
 import pyrouge
 import shutil

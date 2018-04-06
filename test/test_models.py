@@ -20,6 +20,8 @@ opts.train_opts(parser)
 # -data option is required, but not used in this test, so dummy.
 opt = parser.parse_known_args(['-data', 'dummy'])[0]
 
+logging = onmt.io.IO.set_logger('test_models.py')
+
 
 class TestModel(unittest.TestCase):
 
