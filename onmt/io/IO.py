@@ -18,7 +18,7 @@ def set_logger(script):
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.DEBUG)
 
-    file_handler = logging.fileHandler(script + ".logs")
+    file_handler = logging.FileHandler(script + ".logs")
     file_handler.setFormatter(log_format)
     root_logger.addHandler(file_handler)
 
