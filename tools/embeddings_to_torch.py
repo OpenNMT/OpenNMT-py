@@ -100,14 +100,14 @@ def main():
     logging.info("\nMatching: ")
     match_percent = [_['match'] / (_['match'] + _['miss']) * 100
                      for _ in [enc_count, dec_count]]
-    logging.info("\t* enc: %d match, %d missing, (%.2f%%)" \
-                                                       % (enc_count['match'],
-                                                       enc_count['miss'],
-                                                       match_percent[0]))
-    logging.info("\t* dec: %d match, %d missing, (%.2f%%)" \
-                                                       % (dec_count['match'],
-                                                       dec_count['miss'],
-                                                       match_percent[1]))
+    logging.info("\t* enc: %d match, %d missing, (%.2f%%)"
+                 % (enc_count['match'],
+                    enc_count['miss'],
+                    match_percent[0]))
+    logging.info("\t* dec: %d match, %d missing, (%.2f%%)"
+                 % (dec_count['match'],
+                    dec_count['miss'],
+                    match_percent[1]))
 
     logging.info("\nFiltered embeddings:")
     logging.info("\t* enc: ", filtered_enc_embeddings.size())
@@ -116,7 +116,7 @@ def main():
     enc_output_file = opt.output_file + ".enc.pt"
     dec_output_file = opt.output_file + ".dec.pt"
     logging.info("\nSaving embedding as:\n\t* enc: %s\n\t* dec: %s"
-          % (enc_output_file, dec_output_file))
+                 % (enc_output_file, dec_output_file))
     torch.save(filtered_enc_embeddings, enc_output_file)
     torch.save(filtered_dec_embeddings, dec_output_file)
     logging.info("\nDone.")

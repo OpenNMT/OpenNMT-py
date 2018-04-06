@@ -54,9 +54,10 @@ if __name__ == "__main__":
                         help='reference file')
     args = parser.parse_args()
     results_dict = test_rouge(args.c, args.r)
-    logging.info(">> ROUGE(1/2/3/L/SU4): {:.2f}/{:.2f}/{:.2f}/{:.2f}/{:.2f}".format(
-        results_dict["rouge_1_f_score"] * 100,
-        results_dict["rouge_2_f_score"] * 100,
-        results_dict["rouge_3_f_score"] * 100,
-        results_dict["rouge_l_f_score"] * 100,
-        results_dict["rouge_su*_f_score"] * 100))
+    logging.info(">> ROUGE(1/2/3/L/SU4): {:.2f}/{:.2f}/{:.2f}/{:.2f}/{:.2f}".
+                 format(
+                     results_dict["rouge_1_f_score"] * 100,
+                     results_dict["rouge_2_f_score"] * 100,
+                     results_dict["rouge_3_f_score"] * 100,
+                     results_dict["rouge_l_f_score"] * 100,
+                     results_dict["rouge_su*_f_score"] * 100))

@@ -10,7 +10,7 @@ import onmt
 import onmt.io
 import opts
 from onmt.ModelConstructor import make_embeddings, \
-                            make_encoder, make_decoder
+    make_encoder, make_decoder
 from onmt.modules import ImageEncoder, AudioEncoder
 
 parser = argparse.ArgumentParser(description='train.py')
@@ -174,9 +174,9 @@ class TestModel(unittest.TestCase):
         model = onmt.Models.NMTModel(enc, dec)
 
         test_src, test_tgt, test_length = self.get_batch_image(
-                                                         h=h, w=w,
-                                                         bsize=bsize,
-                                                         tgt_l=tgt_l)
+            h=h, w=w,
+            bsize=bsize,
+            tgt_l=tgt_l)
         outputs, attn, _ = model(test_src,
                                  test_tgt,
                                  test_length)
@@ -216,10 +216,10 @@ class TestModel(unittest.TestCase):
         model = onmt.Models.NMTModel(enc, dec)
 
         test_src, test_tgt, test_length = self.get_batch_audio(
-                                                  bsize=bsize,
-                                                  sample_rate=opt.sample_rate,
-                                                  window_size=opt.window_size,
-                                                  t=t, tgt_l=tgt_l)
+            bsize=bsize,
+            sample_rate=opt.sample_rate,
+            window_size=opt.window_size,
+            t=t, tgt_l=tgt_l)
         outputs, attn, _ = model(test_src,
                                  test_tgt,
                                  test_length)
