@@ -26,7 +26,7 @@ opt = parser.parse_args()
 
 
 def _report_score(name, score_total, words_total):
-    print("%s AVG SCORE: %.4f, %s PPL: %.4f" % (
+    logging.info("%s AVG SCORE: %.4f, %s PPL: %.4f" % (
         name, score_total / words_total,
         name, math.exp(-score_total / words_total)))
 
@@ -34,12 +34,12 @@ def _report_score(name, score_total, words_total):
 def _report_bleu():
     import subprocess
     path = os.path.split(os.path.realpath(__file__))[0]
-    print()
+    logging.info()
     res = subprocess.check_output(
         "perl %s/tools/multi-bleu.perl %s < %s"
         % (path, opt.tgt, opt.output),
         shell=True).decode("utf-8")
-    print(">> " + res.strip())
+    logging.info(">> " + res.strip())
 
 
 def _report_rouge():
@@ -49,7 +49,7 @@ def _report_rouge():
         "python %s/tools/test_rouge.py -r %s -c %s"
         % (path, opt.tgt, opt.output),
         shell=True).decode("utf-8")
-    print(res.strip())
+    logging.info(res.strip())
 
 
 def main():
@@ -132,7 +132,7 @@ def main():
             if opt.verbose:
                 sent_number = next(counter)
                 output = trans.log(sent_number)
-                os.write(1, output.encode('utf-8'))
+                logging.info(output.encode('utf-8'))
 
     _report_score('PRED', pred_score_total, pred_words_total)
     if opt.tgt:
@@ -149,4 +149,5 @@ def main():
 
 
 if __name__ == "__main__":
+    logging = onmt.io.IO.set_logger('translate.py')
     main()

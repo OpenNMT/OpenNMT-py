@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 import argparse
 import os
+import onmt
 import time
 import pyrouge
 import shutil
@@ -46,6 +47,7 @@ def test_rouge(cand_file, ref_file):
 
 
 if __name__ == "__main__":
+    logging = onmt.io.IO.set_logger('test_rouge.py')
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', type=str, default="candidate.txt",
                         help='candidate file')
@@ -53,9 +55,10 @@ if __name__ == "__main__":
                         help='reference file')
     args = parser.parse_args()
     results_dict = test_rouge(args.c, args.r)
-    print(">> ROUGE(1/2/3/L/SU4): {:.2f}/{:.2f}/{:.2f}/{:.2f}/{:.2f}".format(
-        results_dict["rouge_1_f_score"] * 100,
-        results_dict["rouge_2_f_score"] * 100,
-        results_dict["rouge_3_f_score"] * 100,
-        results_dict["rouge_l_f_score"] * 100,
-        results_dict["rouge_su*_f_score"] * 100))
+    logging.info(">> ROUGE(1/2/3/L/SU4): {:.2f}/{:.2f}/{:.2f}/{:.2f}/{:.2f}".
+                 format(
+                     results_dict["rouge_1_f_score"] * 100,
+                     results_dict["rouge_2_f_score"] * 100,
+                     results_dict["rouge_3_f_score"] * 100,
+                     results_dict["rouge_l_f_score"] * 100,
+                     results_dict["rouge_su*_f_score"] * 100))

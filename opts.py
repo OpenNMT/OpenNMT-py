@@ -499,7 +499,7 @@ class MarkdownHelpFormatter(argparse.HelpFormatter):
         return ""
 
     def format_help(self):
-        print(self._prog)
+        logging.info(self._prog)
         self._root_section.heading = '# Options: %s' % self._prog
         return super(MarkdownHelpFormatter, self).format_help()
 

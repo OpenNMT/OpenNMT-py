@@ -50,24 +50,25 @@ def main():
             model_opt.__dict__[arg] = dummy_opt.__dict__[arg]
 
     model = onmt.ModelConstructor.make_base_model(
-                            model_opt, fields, use_gpu(opt), checkpoint)
+        model_opt, fields, use_gpu(opt), checkpoint)
     encoder = model.encoder
     decoder = model.decoder
 
     encoder_embeddings = encoder.embeddings.word_lut.weight.data.tolist()
     decoder_embeddings = decoder.embeddings.word_lut.weight.data.tolist()
 
-    print("Writing source embeddings")
+    logging.info("Writing source embeddings")
     write_embeddings(opt.output_dir + "/src_embeddings.txt", src_dict,
                      encoder_embeddings)
 
-    print("Writing target embeddings")
+    logging.info("Writing target embeddings")
     write_embeddings(opt.output_dir + "/tgt_embeddings.txt", tgt_dict,
                      decoder_embeddings)
 
-    print('... done.')
-    print('Converting model...')
+    logging.info('... done.')
+    logging.info('Converting model...')
 
 
 if __name__ == "__main__":
+    logging = onmt.io.IO.set_logger('extract_embeddings.py')
     main()

@@ -23,6 +23,7 @@ class Translator(object):
        cuda (bool): use cuda
        beam_trace (bool): trace beam search for debugging
     """
+
     def __init__(self, model, fields,
                  beam_size, n_best=1,
                  max_length=100,
@@ -114,7 +115,7 @@ class Translator(object):
 
         enc_states, memory_bank = self.model.encoder(src, src_lengths)
         dec_states = self.model.decoder.init_decoder_state(
-                                        src, memory_bank, enc_states)
+            src, memory_bank, enc_states)
 
         if src_lengths is None:
             src_lengths = torch.Tensor(batch_size).type_as(memory_bank.data)\
