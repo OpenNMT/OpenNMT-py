@@ -8,12 +8,11 @@ import onmt
 
 from torch.autograd import Variable
 
-logging = onmt.io.IO.set_logger('test_attention.py')
-
 
 class TestAttention(unittest.TestCase):
 
     def test_masked_global_attention(self):
+
         source_lengths = torch.IntTensor([7, 3, 5, 2])
         # illegal_weights_mask = torch.ByteTensor([
         #     [0, 0, 0, 0, 0, 0, 0],

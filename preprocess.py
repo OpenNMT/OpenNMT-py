@@ -11,6 +11,8 @@ import torch
 import onmt.io
 import opts
 
+logging = onmt.io.IO.set_logger('preprocess.py')
+
 
 def check_existing_pt_files(opt):
     # We will use glob.glob() to find sharded {train|valid}.[0-9]*.pt
@@ -192,5 +194,4 @@ def main():
 
 
 if __name__ == "__main__":
-    logging = onmt.io.IO.set_logger('preprocess.py')
     main()
