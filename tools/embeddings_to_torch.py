@@ -21,7 +21,7 @@ def get_vocabs(dict_file):
             enc_vocab = vocab[1]
         if vocab[0] == 'tgt':
             dec_vocab = vocab[1]
-    assert None not in [enc_vocab, dec_vocab]
+    assert type(None) not in [type(enc_vocab), type(dec_vocab)]
 
     print("From: %s" % dict_file)
     print("\t* source vocab: %d words" % len(enc_vocab))
