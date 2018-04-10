@@ -165,6 +165,9 @@ class ServerModel:
         """
         self.model_root = model_root
         self.opt = self.parse_opt(opt)
+        if self.opt.n_best > 1:
+            raise ValueError("Values of n_best > 1 are not supported")
+
         self.model_id = model_id
         self.tokenizer_opt = tokenizer_opt
         self.timeout = timeout
