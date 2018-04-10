@@ -311,7 +311,7 @@ def train_opts(parser):
                        Typically a value of 0.999 is recommended, as this is
                        the value suggested by the original paper describing
                        Adam, and is also the value adopted in other frameworks
-                       such as Tensorflow and Kerras, i.e. see:
+                       such as Tensorflow and Keras, i.e. see:
                        https://www.tensorflow.org/api_docs/python/tf/train/AdamOptimizer
                        https://keras.io/optimizers/ .
                        Whereas recently the paper "Attention is All You Need"
@@ -325,6 +325,16 @@ def train_opts(parser):
                        Set to zero to turn off label smoothing.
                        For more detailed information, see:
                        https://arxiv.org/abs/1512.00567""")
+    # Early stopping
+    group = parser.add_argument_group('Early Stopping (es)')
+    group.add_argument('-es_patience', type=int, default=None,
+                       help="""Early stopping patience. Max number of consecutive checkpoints without improvement.""")
+    group.add_argument('-es_type', default="epoch", choices=["epoch", "batch"],
+                       help="""Early stopping type. End of epoch validation (epoch);
+                            validation after batches (batch, see -es_after_batches).""")
+    group.add_argument('-es_after_batches', type=int,
+                       help="""Early stopping after batches. Perform validation after N batches processed.""")
+
     # learning rate
     group = parser.add_argument_group('Optimization- Rate')
     group.add_argument('-learning_rate', type=float, default=1.0,

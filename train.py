@@ -234,47 +234,117 @@ def train_model(model, fields, optim, data_type, model_opt):
     norm_method = opt.normalization
     grad_accum_count = opt.accum_count
 
-    trainer = onmt.Trainer(model, train_loss, valid_loss, optim,
-                           trunc_size, shard_size, data_type,
-                           norm_method, grad_accum_count)
+    use_simple_trainer = opt.es_patience is None or (opt.es_patience is not None and opt.es_type == "epoch")
+
+    trainer = onmt.Trainer(model, train_loss, valid_loss, optim, trunc_size,
+                           shard_size, data_type,
+                           norm_method, grad_accum_count) if use_simple_trainer \
+        else onmt.EarlyStoppingTrainer(model, train_loss, valid_loss, optim,
+                                       opt.es_patience, opt.epochs, model_opt, fields,
+                                       trunc_size, shard_size, data_type, norm_method,
+                                       grad_accum_count,
+                                       start_val_after_batches=opt.es_after_batches)
 
     print('\nStart training...')
     print(' * number of epochs: %d, starting from Epoch %d' %
           (opt.epochs + 1 - opt.start_epoch, opt.start_epoch))
     print(' * batch size: %d' % opt.batch_size)
 
+    if opt.es_patience:
+        patience = onmt.EarlyStopping(opt.es_patience, opt.epochs, trainer)
+
+    def build_lazy_valid():
+        return make_dataset_iter(lazily_load_dataset("valid"), fields, opt,
+                                 is_train=False)
+
+    def validate():
+        valid_iterator = build_lazy_valid()
+        valid_statistics = trainer.validate(valid_iterator)
+        print('Validation perplexity: %g' % valid_statistics.ppl())
+        print('Validation accuracy: %g' % valid_statistics.accuracy())
+        return valid_statistics
+
     for epoch in range(opt.start_epoch, opt.epochs + 1):
         print('')
-
         # 1. Train for one epoch on the training set.
         train_iter = make_dataset_iter(lazily_load_dataset("train"),
                                        fields, opt)
-        train_stats = trainer.train(train_iter, epoch, report_func)
-        print('Train perplexity: %g' % train_stats.ppl())
-        print('Train accuracy: %g' % train_stats.accuracy())
 
-        # 2. Validate on the validation set.
-        valid_iter = make_dataset_iter(lazily_load_dataset("valid"),
-                                       fields, opt,
-                                       is_train=False)
-        valid_stats = trainer.validate(valid_iter)
-        print('Validation perplexity: %g' % valid_stats.ppl())
-        print('Validation accuracy: %g' % valid_stats.accuracy())
+        if use_simple_trainer:
+
+            train_stats = trainer.train(train_iter, epoch, report_func)
+            print('Train perplexity: %g' % train_stats.ppl())
+            print('Train accuracy: %g' % train_stats.accuracy())
+
+            # 2. Validate on the validation set.
+            valid_stats = validate()()
+        else:
+            # 1.1 Validate on the validation set if the number of
+            # batches is achieved.
+
+            trainer_stats, valid_stats, patience = trainer.train(train_iter,
+                                                                 epoch,
+                                                                 build_lazy_valid,
+                                                                 report_func)
+            if patience.has_stopped():
+                break
+
+            # If for some reason the number of batches to
+            # validate is larger than the number of batches per epoch.
+            # Note this should never ever happen!
+            if len(valid_stats) == 0:
+                import warnings
+                warnings.warn("WARNING: Your number of batches to perform \
+                              validation is larger than an epoch. \n\
+                              Using default end of epoch validation.")
+                # 2. Validate on the validation set.
+                valid_stats_epoch = validate()
+                valid_stats = [valid_stats_epoch]
+                patience(valid_stats_epoch, epoch, model_opt, fields)
 
         # 3. Log to remote server.
         if opt.exp_host:
             train_stats.log("train", experiment, optim.lr)
-            valid_stats.log("valid", experiment, optim.lr)
+            if use_simple_trainer:
+                valid_stats.log("valid", experiment, optim.lr)
+            else:
+                for valid_stat in valid_stats:
+                    valid_stat.log("valid", experiment, optim.lr)
+
         if opt.tensorboard:
-            train_stats.log_tensorboard("train", writer, optim.lr, epoch)
-            train_stats.log_tensorboard("valid", writer, optim.lr, epoch)
+            train_stats.log_tensorboard("train", writer, optim.lr,
+                                        epoch)
+            if use_simple_trainer:
+                valid_stats.log_tensorboard("valid", writer, optim.lr,
+                                            epoch)
+            else:
+                for valid_stat in valid_stats:
+                    valid_stat.log_tensorboard("valid", writer, optim.lr,
+                                               epoch)
 
         # 4. Update the learning rate
-        trainer.epoch_step(valid_stats.ppl(), epoch)
+        if use_simple_trainer:
+            epoch_ppl = valid_stats.ppl()
+        else:
+            epoch_ppl = valid_stats[-1].ppl()
+        trainer.epoch_step(epoch_ppl, epoch)
 
-        # 5. Drop a checkpoint if needed.
+        # 5.1. Check patience
+        if opt.es_patience:
+            if use_simple_trainer:
+                patience(valid_stats, epoch, model_opt, fields)
+            if patience.has_stopped():
+                break
+
+        # 5.2 Drop a checkpoint if needed.
         if epoch >= opt.start_checkpoint_at:
-            trainer.drop_checkpoint(model_opt, epoch, fields, valid_stats)
+            if use_simple_trainer:
+                trainer.drop_checkpoint(model_opt, epoch, fields,
+                                        valid_stats)
+            else:
+                for valid_stat in valid_stats:
+                    trainer.drop_checkpoint(model_opt, epoch, fields,
+                                            valid_stat)
 
 
 def check_save_model_path():

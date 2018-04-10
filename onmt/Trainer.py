@@ -12,6 +12,10 @@ users of this library) for the strategy things we do.
 import time
 import sys
 import math
+
+#FIXME enum import
+from enum import Enum
+
 import torch
 import torch.nn as nn
 
@@ -134,7 +138,7 @@ class Trainer(object):
         # Set model in training mode.
         self.model.train()
 
-    def train(self, train_iter, epoch, report_func=None):
+    def train(self, train_iter, epoch, report_func=None, **kwargs):
         """ Train next epoch.
         Args:
             train_iter: training data iterator
@@ -248,6 +252,13 @@ class Trainer(object):
             fields (dict): fields and vocabulary
             valid_stats : statistics of last validation run
         """
+        checkpoint = self._generate_checkpoint(opt, epoch, fields)
+        torch.save(checkpoint,
+                   '%s_acc_%.2f_ppl_%.2f_e%d.pt'
+                   % (opt.save_model, valid_stats.accuracy(),
+                      valid_stats.ppl(), epoch))
+
+    def _generate_checkpoint(self, opt, epoch, fields):
         real_model = (self.model.module
                       if isinstance(self.model, nn.DataParallel)
                       else self.model)
@@ -267,10 +278,19 @@ class Trainer(object):
             'epoch': epoch,
             'optim': self.optim,
         }
+        return checkpoint
+
+    def drop_best_earlystopping(self, opt, epoch, fields):
+        """ Save a resumable checkpoint (the best model so far).
+
+        Args:
+            opt (dict): option object
+            epoch (int): epoch number
+            fields (dict): fields and vocabulary
+        """
+        checkpoint = self._generate_checkpoint(opt, epoch, fields)
         torch.save(checkpoint,
-                   '%s_acc_%.2f_ppl_%.2f_e%d.pt'
-                   % (opt.save_model, valid_stats.accuracy(),
-                      valid_stats.ppl(), epoch))
+                   'best_{}.pt'.format(opt.save_model))
 
     def _gradient_accumulation(self, true_batchs, total_stats,
                                report_stats, normalization):
@@ -322,3 +342,183 @@ class Trainer(object):
 
         if self.grad_accum_count > 1:
             self.optim.step()
+
+
+class EarlyStoppingTrainer(Trainer):
+    """
+    Class that controls the training process with early stopping after N batches.
+
+    Args:
+            model(:py:class:`onmt.Model.NMTModel`): translation model to train
+
+            train_loss(:obj:`onmt.Loss.LossComputeBase`):
+               training loss computation
+            valid_loss(:obj:`onmt.Loss.LossComputeBase`):
+               training loss computation
+            optim(:obj:`onmt.Optim.Optim`):
+               the optimizer responsible for update
+            tolerance(int): maximum number of validation steps without improving
+            epochs(int): number of epochs
+            model_opt(list): options
+            fields(list): vocab fields
+            trunc_size(int): length of truncated back propagation through time
+            shard_size(int): compute loss in shards of this size for efficiency
+            data_type(string): type of the source input: [text|img|audio]
+            norm_method(string): normalization methods: [sents|tokens]
+            grad_accum_count(int): accumulate gradients this many times.
+    """
+
+    def __init__(self, model, train_loss, valid_loss, optim, tolerance, epochs,
+                 model_opt, fields,
+                 trunc_size=0, shard_size=32, data_type='text',
+                 norm_method="sents", grad_accum_count=1,
+                 start_val_after_batches=1000):
+
+        # Basic attributes. Trainer holds every generic information.
+        super(EarlyStoppingTrainer, self).__init__(model, train_loss, valid_loss,
+                                                   optim, trunc_size=trunc_size,
+                                                   shard_size=shard_size, data_type=data_type,
+                                                   norm_method=norm_method,
+                                                   grad_accum_count=grad_accum_count)
+
+        self.model_opt = model_opt
+        self.fields = fields
+        self.start_val_after_batches = start_val_after_batches
+        self.current_batches_processed = 0
+        if epochs is None:
+            epochs = 10
+        self.patience = EarlyStopping(tolerance=tolerance, epochs=epochs, trainer=self)
+
+    def train(self, train_iter, epoch, valid_iter=None, report_func=None, **kwargs):
+        """ Train next epoch.
+        Args:
+            train_iter: training data iterator
+            epoch(int): the epoch number
+            valid_iter(funfnction): validation data builder, needs to be callable
+            report_func(fn): function for logging
+
+        Returns:
+            stats (:obj:`onmt.Statistics`): epoch loss statistics
+        """
+        if valid_iter is None:
+            import warnings
+            warnings.warn("Validation iterator not provided. Not performing early stopping.")
+
+        total_stats = Statistics()
+        report_stats = Statistics()
+        idx = 0
+        true_batchs = []
+        accum = 0
+        normalization = 0
+        try:
+            add_on = 0
+            if len(train_iter) % self.grad_accum_count > 0:
+                add_on += 1
+            num_batches = len(train_iter) / self.grad_accum_count + add_on
+        except NotImplementedError:
+            # Dynamic batching
+            num_batches = -1
+
+        valid_stats_epoch = []
+
+        for i, batch in enumerate(train_iter):
+            # Increment number of batches processed
+            self.current_batches_processed += 1
+
+            cur_dataset = train_iter.get_cur_dataset()
+            self.train_loss.cur_dataset = cur_dataset
+
+            true_batchs.append(batch)
+            accum += 1
+            if self.norm_method == "tokens":
+                num_tokens = batch.tgt[1:].data.view(-1) \
+                    .ne(self.train_loss.padding_idx).sum()
+                normalization += num_tokens
+            else:
+                normalization += batch.batch_size
+
+            if accum == self.grad_accum_count:
+                self._gradient_accumulation(
+                        true_batchs, total_stats,
+                        report_stats, normalization)
+
+                if report_func is not None:
+                    report_stats = report_func(
+                            epoch, idx, num_batches,
+                            self.progress_step,
+                            total_stats.start_time, self.optim.lr,
+                            report_stats)
+                    self.progress_step += 1
+
+                true_batchs = []
+                accum = 0
+                normalization = 0
+                idx += 1
+            # Perform validation when the number of batches to validate is achieved
+            if self.current_batches_processed == self.start_val_after_batches and valid_iter is not None:
+                self.current_batches_processed = 0
+                valid_iter_lazy = valid_iter()
+                valid_stats = self.validate(valid_iter_lazy)
+                print('Validation perplexity: %g' % valid_stats.ppl())
+                print('Validation accuracy: %g' % valid_stats.accuracy())
+                valid_stats_epoch.append(valid_stats)
+                self.patience(valid_stats, epoch, self.model_opt, self.fields)
+                if self.patience.has_stopped():
+                    break
+
+        if len(true_batchs) > 0:
+            self._gradient_accumulation(
+                    true_batchs, total_stats,
+                    report_stats, normalization)
+            true_batchs = []
+
+        return total_stats, valid_stats_epoch if valid_iter is not None else None, self.patience
+
+
+class EarlyStopping(object):
+    """
+        Callable class to keep track of early stopping.
+
+        Args:
+                tolerance(int): maximum number of validation steps without improving
+                epochs(int): number of epochs
+                trainer(:py:class:`onmt.Trainer`): trainer
+                scorer(fn): score of the stats to compare with previous best model
+        """
+
+    class PatienceEnum(Enum):
+        IMPROVING = 0
+        DECREASING = 1
+        STOPPED = 2
+
+    def __init__(self, tolerance, epochs, trainer, scorer=lambda x: x.ppl()):
+
+        self.epochs = epochs
+        self.tolerance = tolerance
+        self.current_tolerance = self.tolerance
+        self.best_score = float("inf")
+        self.early_stopping_scorer = scorer
+        self.trainer = trainer
+        self.status = EarlyStopping.PatienceEnum.IMPROVING
+
+    def __call__(self, valid_stats, epoch, model_opt, fields):
+        if self.early_stopping_scorer(valid_stats) < self.best_score:
+            print("Model is improving: {:g} --> {:g}.".format(self.best_score,
+                                                              self.early_stopping_scorer(valid_stats)))
+            self.trainer.drop_best_earlystopping(model_opt, epoch, fields)
+            self.current_tolerance = self.tolerance
+            self.best_score = self.early_stopping_scorer(valid_stats)
+            self.status = EarlyStopping.PatienceEnum.IMPROVING
+        else:
+            if self.early_stopping_scorer(valid_stats) > self.best_score:
+                self.current_tolerance -= 1
+                print("Decreasing patience: {}/{}".format(self.current_tolerance,
+                                                          self.tolerance))
+                if self.current_tolerance == 0:
+                    print("Training finished. Early Stop! Best validation {:g}".format(self.best_score))
+
+            self.status = EarlyStopping.PatienceEnum.DECREASING if self.current_tolerance > 0 \
+                else EarlyStopping.PatienceEnum.STOPPED
+
+    def has_stopped(self):
+        return self.status == EarlyStopping.PatienceEnum.STOPPED
