@@ -276,17 +276,20 @@ class ServerModel:
             #       line breaks
             subsegment = {}
             sscount = 0
+            sslength = []
             for (i, inp) in enumerate(inputs):
                 src = inp['src']
                 lines = src.split("\n")
                 subsegment[i] = slice(sscount, sscount + len(lines))
                 sscount += len(lines)
                 for line in lines:
-                    f.write(self.maybe_tokenize(line) + "\n")
+                    tok = self.maybe_tokenize(line)
+                    f.write(tok + "\n")
+                    sslength += [len(tok.split())]
         timer.tick(name="writing")
         try:
-            self.translator.translate(None, src_path, None,
-                                      self.opt.batch_size)
+            scores = self.translator.translate(None, src_path, None,
+                                               self.opt.batch_size)
         except RuntimeError as e:
             raise ServerModelError("Runtime Error: %s" % str(e))
 
@@ -297,12 +300,19 @@ class ServerModel:
                                             timer.times['translation']))
         self.reset_unload_timer()
         results = self.out_file.getvalue().split("\n")
+        print("Results: ", len(results))
         results = ['\n'.join([self.maybe_detokenize(_)
                               for _ in results[subsegment[i]]
                               if len(_) > 0])
                    for i in sorted(subsegment.keys())]
+
+        avg_scores = [sum([s * l for s, l in zip(scores[sub], sslength[sub])])
+                      / sum(sslength[sub])
+                      for k, sub
+                      in sorted(subsegment.items(), key=lambda x: x[0])]
+
         self.clear_out_file()
-        return results, timer.times
+        return results, avg_scores, self.opt.n_best, timer.times
 
     def do_timeout(self):
         """Timeout function that free GPU memory by moving the model to CPU
