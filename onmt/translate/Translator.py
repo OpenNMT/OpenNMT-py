@@ -153,11 +153,13 @@ class Translator(object):
         pred_score_total, pred_words_total = 0, 0
         gold_score_total, gold_words_total = 0, 0
 
+        all_scores = []
         for batch in data_iter:
             batch_data = self.translate_batch(batch, data)
             translations = builder.from_batch(batch_data)
 
             for trans in translations:
+                all_scores += [trans.pred_scores[0]]
                 pred_score_total += trans.pred_scores[0]
                 pred_words_total += len(trans.pred_sents[0])
                 if tgt_path is not None:
@@ -188,6 +190,7 @@ class Translator(object):
             import json
             json.dump(self.translator.beam_accum,
                       codecs.open(self.dump_beam, 'w', 'utf-8'))
+        return all_scores
 
     def translate_batch(self, batch, data):
         """
