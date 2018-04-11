@@ -148,7 +148,7 @@ class ImageDataset(ONMTDatasetBase):
             c = data[0].size(0)
             h = max([t.size(1) for t in data])
             w = max([t.size(2) for t in data])
-            imgs = torch.zeros(len(data), c, h, w)
+            imgs = torch.zeros(len(data), c, h, w).fill_(1)
             for i, img in enumerate(data):
                 imgs[i, :, 0:img.size(1), 0:img.size(2)] = img
             return imgs
