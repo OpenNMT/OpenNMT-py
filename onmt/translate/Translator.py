@@ -127,7 +127,8 @@ class Translator(object):
                 "scores": [],
                 "log_probs": []}
 
-    def translate(self, src_dir, src_path, tgt_path, batch_size):
+    def translate(self, src_dir, src_path, tgt_path,
+                  batch_size, attn_debug=False):
         data = onmt.io.build_dataset(self.fields,
                                      self.data_type,
                                      src_path,
@@ -174,6 +175,25 @@ class Translator(object):
                 if self.verbose:
                     sent_number = next(counter)
                     output = trans.log(sent_number)
+                    os.write(1, output.encode('utf-8'))
+
+                # Debug attention.
+                if attn_debug:
+                    srcs = trans.src_raw
+                    preds = trans.pred_sents[0]
+                    preds.append('</s>')
+                    attns = trans.attns[0].tolist()
+                    header_format = "{:>10.10} " + "{:>10.7} " * len(srcs)
+                    row_format = "{:>10.10} " + "{:>10.7f} " * len(srcs)
+                    output = header_format.format("", *trans.src_raw) + '\n'
+                    for word, row in zip(preds, attns):
+                        max_index = row.index(max(row))
+                        row_format = row_format.replace(
+                            "{:>10.7f} ", "{:*>10.7f} ", max_index + 1)
+                        row_format = row_format.replace(
+                            "{:*>10.7f} ", "{:>10.7f} ", max_index)
+                        output += row_format.format(word, *row) + '\n'
+                        row_format = "{:>10.10} " + "{:>10.7f} " * len(srcs)
                     os.write(1, output.encode('utf-8'))
 
         if self.report_score:
