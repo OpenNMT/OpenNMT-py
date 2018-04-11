@@ -1,8 +1,47 @@
+import argparse
 import torch
-from torch.autograd import Variable
+import codecs
+import os
+import math
 
+from torch.autograd import Variable
+from itertools import count
+
+import onmt.ModelConstructor
 import onmt.translate.Beam
 import onmt.io
+import onmt.opts
+
+
+def make_translator(opt, report_score=True, out_file=None):
+    if out_file is None:
+        out_file = codecs.open(opt.output, 'w', 'utf-8')
+
+    if opt.gpu > -1:
+        torch.cuda.set_device(opt.gpu)
+
+    dummy_parser = argparse.ArgumentParser(description='train.py')
+    onmt.opts.model_opts(dummy_parser)
+    dummy_opt = dummy_parser.parse_known_args([])[0]
+
+    fields, model, model_opt = \
+        onmt.ModelConstructor.load_test_model(opt, dummy_opt.__dict__)
+
+    scorer = onmt.translate.GNMTGlobalScorer(opt.alpha,
+                                             opt.beta,
+                                             opt.coverage_penalty,
+                                             opt.length_penalty)
+
+    kwargs = {k: getattr(opt, k)
+              for k in ["beam_size", "n_best", "max_length", "min_length",
+                        "stepwise_penalty", "block_ngram_repeat",
+                        "ignore_when_blocking", "dump_beam",
+                        "data_type", "replace_unk", "gpu", "verbose"]}
+
+    translator = Translator(model, fields, global_scorer=scorer,
+                            out_file=out_file, report_score=report_score,
+                            copy_attn=model_opt.copy_attn, **kwargs)
+    return translator
 
 
 class Translator(object):
@@ -23,17 +62,36 @@ class Translator(object):
        cuda (bool): use cuda
        beam_trace (bool): trace beam search for debugging
     """
-    def __init__(self, model, fields,
-                 beam_size, n_best=1,
+
+    def __init__(self,
+                 model,
+                 fields,
+                 beam_size,
+                 n_best=1,
                  max_length=100,
                  global_scorer=None,
                  copy_attn=False,
-                 cuda=False,
-                 beam_trace=False,
+                 gpu=False,
+                 dump_beam="",
                  min_length=0,
                  stepwise_penalty=False,
                  block_ngram_repeat=0,
-                 ignore_when_blocking=[]):
+                 ignore_when_blocking=[],
+                 sample_rate='16000',
+                 window_size=.02,
+                 window_stride=.01,
+                 window='hamming',
+                 use_filter_pred=False,
+                 data_type="text",
+                 replace_unk=False,
+                 report_score=True,
+                 report_bleu=False,
+                 report_rouge=False,
+                 verbose=False,
+                 out_file=None):
+        self.gpu = gpu
+        self.cuda = gpu > -1
+
         self.model = model
         self.fields = fields
         self.n_best = n_best
@@ -41,20 +99,97 @@ class Translator(object):
         self.global_scorer = global_scorer
         self.copy_attn = copy_attn
         self.beam_size = beam_size
-        self.cuda = cuda
         self.min_length = min_length
         self.stepwise_penalty = stepwise_penalty
+        self.dump_beam = dump_beam
         self.block_ngram_repeat = block_ngram_repeat
         self.ignore_when_blocking = set(ignore_when_blocking)
+        self.sample_rate = sample_rate
+        self.window_size = window_size
+        self.window_stride = window_stride
+        self.window = window
+        self.use_filter_pred = use_filter_pred
+        self.replace_unk = replace_unk
+        self.data_type = data_type
+        self.verbose = verbose
+        self.out_file = out_file
+        self.report_score = report_score
+        self.report_bleu = report_bleu
+        self.report_rouge = report_rouge
 
         # for debugging
+        self.beam_trace = self.dump_beam != ""
         self.beam_accum = None
-        if beam_trace:
+        if self.beam_trace:
             self.beam_accum = {
                 "predicted_ids": [],
                 "beam_parent_ids": [],
                 "scores": [],
                 "log_probs": []}
+
+    def translate(self, src_dir, src_path, tgt_path, batch_size):
+        data = onmt.io.build_dataset(self.fields,
+                                     self.data_type,
+                                     src_path,
+                                     tgt_path,
+                                     src_dir=src_dir,
+                                     sample_rate=self.sample_rate,
+                                     window_size=self.window_size,
+                                     window_stride=self.window_stride,
+                                     window=self.window,
+                                     use_filter_pred=self.use_filter_pred)
+
+        data_iter = onmt.io.OrderedIterator(
+            dataset=data, device=self.gpu,
+            batch_size=batch_size, train=False, sort=False,
+            sort_within_batch=True, shuffle=False)
+
+        builder = onmt.translate.TranslationBuilder(
+            data, self.fields,
+            self.n_best, self.replace_unk, tgt_path)
+
+        # Statistics
+        counter = count(1)
+        pred_score_total, pred_words_total = 0, 0
+        gold_score_total, gold_words_total = 0, 0
+
+        all_scores = []
+        for batch in data_iter:
+            batch_data = self.translate_batch(batch, data)
+            translations = builder.from_batch(batch_data)
+
+            for trans in translations:
+                all_scores += [trans.pred_scores[0]]
+                pred_score_total += trans.pred_scores[0]
+                pred_words_total += len(trans.pred_sents[0])
+                if tgt_path is not None:
+                    gold_score_total += trans.gold_score
+                    gold_words_total += len(trans.gold_sent) + 1
+
+                n_best_preds = [" ".join(pred)
+                                for pred in trans.pred_sents[:self.n_best]]
+                self.out_file.write('\n'.join(n_best_preds) + '\n')
+                self.out_file.flush()
+
+                if self.verbose:
+                    sent_number = next(counter)
+                    output = trans.log(sent_number)
+                    os.write(1, output.encode('utf-8'))
+
+        if self.report_score:
+            self._report_score('PRED', pred_score_total, pred_words_total)
+            if tgt_path is not None:
+                self._report_score('GOLD', gold_score_total, gold_words_total)
+                if self.report_bleu:
+                    self._report_bleu(tgt_path)
+                if self.report_rouge:
+                    self._report_rouge(tgt_path)
+
+        if self.dump_beam:
+            import json
+            json.dump(self.translator.beam_accum,
+                      codecs.open(self.dump_beam, 'w', 'utf-8'))
+        return all_scores
 
     def translate_batch(self, batch, data):
         """
@@ -114,7 +249,7 @@ class Translator(object):
 
         enc_states, memory_bank = self.model.encoder(src, src_lengths)
         dec_states = self.model.decoder.init_decoder_state(
-                                        src, memory_bank, enc_states)
+            src, memory_bank, enc_states)
 
         if src_lengths is None:
             src_lengths = torch.Tensor(batch_size).type_as(memory_bank.data)\
@@ -232,3 +367,30 @@ class Translator(object):
             scores.masked_fill_(tgt.eq(tgt_pad), 0)
             gold_scores += scores
         return gold_scores
+
+    def _report_score(self, name, score_total, words_total):
+        print("%s AVG SCORE: %.4f, %s PPL: %.4f" % (
+            name, score_total / words_total,
+            name, math.exp(-score_total / words_total)))
+
+    def _report_bleu(self, tgt_path):
+        import subprocess
+        path = os.path.split(os.path.realpath(__file__))[0]
+        print()
+
+        res = subprocess.check_output("perl %s/tools/multi-bleu.perl %s"
+                                      % (path, tgt_path, self.output),
+                                      stdin=self.out_file,
+                                      shell=True).decode("utf-8")
+
+        print(">> " + res.strip())
+
+    def _report_rouge(self, tgt_path):
+        import subprocess
+        path = os.path.split(os.path.realpath(__file__))[0]
+        res = subprocess.check_output(
+            "python %s/tools/test_rouge.py -r %s -c STDIN"
+            % (path, tgt_path),
+            shell=True,
+            stdin=self.out_file).decode("utf-8")
+        print(res.strip())

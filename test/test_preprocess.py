@@ -9,12 +9,12 @@ import torchtext
 
 import onmt
 import onmt.io
-import opts
+import onmt.opts
 import preprocess
 
 
 parser = argparse.ArgumentParser(description='preprocess.py')
-opts.preprocess_opts(parser)
+onmt.opts.preprocess_opts(parser)
 
 
 SAVE_DATA_PREFIX = 'data/test_preprocess'
