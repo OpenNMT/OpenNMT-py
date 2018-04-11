@@ -142,8 +142,8 @@ class Translation(object):
         if self.gold_sent is not None:
             tgt_sent = ' '.join(self.gold_sent)
             output += 'GOLD {}: {}\n'.format(sent_number, tgt_sent)
-            output += ("GOLD SCORE: {:.4f}".format(self.gold_score))
-
+            # output += ("GOLD SCORE: {:.4f}".format(self.gold_score))
+            print("GOLD SCORE: {:.4f}".format(self.gold_score))
         if len(self.pred_sents) > 1:
             print('\nBEST HYP:')
             for score, sent in zip(self.pred_scores, self.pred_sents):
