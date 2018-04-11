@@ -20,7 +20,9 @@ class Beam(object):
                  n_best=1, cuda=False,
                  global_scorer=None,
                  min_length=0,
-                 stepwise_penalty=False):
+                 stepwise_penalty=False,
+                 block_ngram_repeat=0,
+                 exclusion_tokens=set()):
 
         self.size = size
         self.tt = torch.cuda if cuda else torch
@@ -57,6 +59,8 @@ class Beam(object):
 
         # Apply Penalty at every step
         self.stepwise_penalty = stepwise_penalty
+        self.block_ngram_repeat = block_ngram_repeat
+        self.exclusion_tokens = exclusion_tokens
 
     def get_current_state(self):
         "Get the outputs for the current timestep."
@@ -94,6 +98,27 @@ class Beam(object):
             for i in range(self.next_ys[-1].size(0)):
                 if self.next_ys[-1][i] == self._eos:
                     beam_scores[i] = -1e20
+
+            # Block ngram repeats
+            if self.block_ngram_repeat > 0:
+                ngrams = []
+                le = len(self.next_ys)
+                for j in range(self.next_ys[-1].size(0)):
+                    hyp, _ = self.get_hyp(le-1, j)
+                    ngrams = set()
+                    fail = False
+                    gram = []
+                    for i in range(le-1):
+                        # Last n tokens, n = block_ngram_repeat
+                        gram = (gram + [hyp[i]])[-self.block_ngram_repeat:]
+                        # Skip the blocking if it is in the exclusion list
+                        if set(gram) & self.exclusion_tokens:
+                            continue
+                        if tuple(gram) in ngrams:
+                            fail = True
+                        ngrams.add(tuple(gram))
+                    if fail:
+                        beam_scores[j] = -10e20
         else:
             beam_scores = word_probs[0]
         flat_beam_scores = beam_scores.view(-1)

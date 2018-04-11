@@ -9,7 +9,7 @@ import sys
 import torch
 
 import onmt.io
-import opts
+import onmt.opts
 
 
 def check_existing_pt_files(opt):
@@ -29,8 +29,8 @@ def parse_args():
         description='preprocess.py',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    opts.add_md_help_argument(parser)
-    opts.preprocess_opts(parser)
+    onmt.opts.add_md_help_argument(parser)
+    onmt.opts.preprocess_opts(parser)
 
     opt = parser.parse_args()
     torch.manual_seed(opt.seed)
@@ -81,28 +81,28 @@ def build_save_text_dataset_in_shards(src_corpus, tgt_corpus, fields,
 
     ret_list = []
     src_iter = onmt.io.ShardedTextCorpusIterator(
-                src_corpus, opt.src_seq_length_trunc,
-                "src", opt.max_shard_size)
+        src_corpus, opt.src_seq_length_trunc,
+        "src", opt.max_shard_size)
     tgt_iter = onmt.io.ShardedTextCorpusIterator(
-                tgt_corpus, opt.tgt_seq_length_trunc,
-                "tgt", opt.max_shard_size,
-                assoc_iter=src_iter)
+        tgt_corpus, opt.tgt_seq_length_trunc,
+        "tgt", opt.max_shard_size,
+        assoc_iter=src_iter)
 
     index = 0
     while not src_iter.hit_end():
         index += 1
         dataset = onmt.io.TextDataset(
-                fields, src_iter, tgt_iter,
-                src_iter.num_feats, tgt_iter.num_feats,
-                src_seq_length=opt.src_seq_length,
-                tgt_seq_length=opt.tgt_seq_length,
-                dynamic_dict=opt.dynamic_dict)
+            fields, src_iter, tgt_iter,
+            src_iter.num_feats, tgt_iter.num_feats,
+            src_seq_length=opt.src_seq_length,
+            tgt_seq_length=opt.tgt_seq_length,
+            dynamic_dict=opt.dynamic_dict)
 
         # We save fields in vocab.pt seperately, so make it empty.
         dataset.fields = []
 
         pt_file = "{:s}.{:s}.{:d}.pt".format(
-                opt.save_data, corpus_type, index)
+            opt.save_data, corpus_type, index)
         print(" * saving %s data shard to %s." % (corpus_type, pt_file))
         torch.save(dataset, pt_file)
 
@@ -124,25 +124,25 @@ def build_save_dataset(corpus_type, fields, opt):
     # Currently we only do preprocess sharding for corpus: data_type=='text'.
     if opt.data_type == 'text':
         return build_save_text_dataset_in_shards(
-                src_corpus, tgt_corpus, fields,
-                corpus_type, opt)
+            src_corpus, tgt_corpus, fields,
+            corpus_type, opt)
 
     # For data_type == 'img' or 'audio', currently we don't do
     # preprocess sharding. We only build a monolithic dataset.
     # But since the interfaces are uniform, it would be not hard
     # to do this should users need this feature.
     dataset = onmt.io.build_dataset(
-                fields, opt.data_type, src_corpus, tgt_corpus,
-                src_dir=opt.src_dir,
-                src_seq_length=opt.src_seq_length,
-                tgt_seq_length=opt.tgt_seq_length,
-                src_seq_length_trunc=opt.src_seq_length_trunc,
-                tgt_seq_length_trunc=opt.tgt_seq_length_trunc,
-                dynamic_dict=opt.dynamic_dict,
-                sample_rate=opt.sample_rate,
-                window_size=opt.window_size,
-                window_stride=opt.window_stride,
-                window=opt.window)
+        fields, opt.data_type, src_corpus, tgt_corpus,
+        src_dir=opt.src_dir,
+        src_seq_length=opt.src_seq_length,
+        tgt_seq_length=opt.tgt_seq_length,
+        src_seq_length_trunc=opt.src_seq_length_trunc,
+        tgt_seq_length_trunc=opt.tgt_seq_length_trunc,
+        dynamic_dict=opt.dynamic_dict,
+        sample_rate=opt.sample_rate,
+        window_size=opt.window_size,
+        window_stride=opt.window_stride,
+        window=opt.window)
 
     # We save fields in vocab.pt seperately, so make it empty.
     dataset.fields = []
