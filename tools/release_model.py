@@ -11,6 +11,6 @@ if __name__ == "__main__":
                         help="The output filename (*.pt)", required=True)
     opt = parser.parse_args()
 
-    model = torch.load(opt.model)
+    model = torch.load(opt.model, map_location=lambda storage, loc: storage)
     model['optim'] = None
     torch.save(model, opt.output)
