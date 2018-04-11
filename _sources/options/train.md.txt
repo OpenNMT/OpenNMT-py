@@ -19,8 +19,7 @@ Use a shared weight matrix for the input and output word embeddings in the
 decoder.
 
 * **-share_embeddings []** 
-Share the word embeddings between encoder and decoder. Need to use shared
-dictionary for this option.
+Share the word embeddings between encoder and decoder. It requires using `-share_vocab` during pre-processing.
 
 * **-position_encoding []** 
 Use a sin to mark relative words positions. Necessary for non-RNN style models.

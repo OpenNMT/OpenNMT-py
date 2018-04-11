@@ -190,8 +190,7 @@ Word embedding size for src and tgt.</li>
 Use a shared weight matrix for the input and output word embeddings in the
 decoder.</li>
 <li><strong>-share_embeddings []</strong>
-Share the word embeddings between encoder and decoder. Need to use shared
-dictionary for this option.</li>
+Share the word embeddings between encoder and decoder. It requires using <code class="docutils literal notranslate"><span class="pre">-share_vocab</span></code> during pre-processing.</li>
 <li><strong>-position_encoding []</strong>
 Use a sin to mark relative words positions. Necessary for non-RNN style models.</li>
 </ul>
