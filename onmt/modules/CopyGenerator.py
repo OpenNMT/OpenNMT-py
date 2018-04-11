@@ -58,6 +58,7 @@ class CopyGenerator(nn.Module):
        tgt_dict (Vocab): output target dictionary
 
     """
+
     def __init__(self, input_size, tgt_dict):
         super(CopyGenerator, self).__init__()
         self.linear = nn.Linear(input_size, len(tgt_dict))
@@ -142,6 +143,7 @@ class CopyGeneratorLossCompute(onmt.Loss.LossComputeBase):
     """
     Copy Generator Loss Computation.
     """
+
     def __init__(self, generator, tgt_vocab,
                  force_copy, normalize_by_length,
                  eps=1e-20):
@@ -187,8 +189,8 @@ class CopyGeneratorLossCompute(onmt.Loss.LossComputeBase):
         loss = self.criterion(scores, align, target)
         scores_data = scores.data.clone()
         scores_data = onmt.io.TextDataset.collapse_copy_scores(
-                self._unbottle(scores_data, batch.batch_size),
-                batch, self.tgt_vocab, self.cur_dataset.src_vocabs)
+            self._unbottle(scores_data, batch.batch_size),
+            batch, self.tgt_vocab, self.cur_dataset.src_vocabs)
         scores_data = self._bottle(scores_data)
 
         # Correct target copy token instead of <unk>

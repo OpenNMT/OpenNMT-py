@@ -49,7 +49,7 @@ if opt.rnn_type == "SRU" and not opt.gpuid:
     raise AssertionError("Using SRU requires -gpuid set.")
 
 if torch.cuda.is_available() and not opt.gpuid:
-    print("WARNING: You have a CUDA device, should run with -gpuid 0")
+    logging.info("WARNING: You have a CUDA device, should run with -gpuid 0")
 
 if opt.gpuid:
     cuda.set_device(opt.gpuid[0])
@@ -67,7 +67,7 @@ if opt.exp_host != "":
     cc = CrayonClient(hostname=opt.exp_host)
 
     experiments = cc.get_experiment_names()
-    print(experiments)
+    logging.info(experiments)
     if opt.exp in experiments:
         cc.remove_experiment(opt.exp)
     experiment = cc.create_experiment(opt.exp)
@@ -238,28 +238,28 @@ def train_model(model, fields, optim, data_type, model_opt):
                            trunc_size, shard_size, data_type,
                            norm_method, grad_accum_count)
 
-    print('\nStart training...')
-    print(' * number of epochs: %d, starting from Epoch %d' %
-          (opt.epochs + 1 - opt.start_epoch, opt.start_epoch))
-    print(' * batch size: %d' % opt.batch_size)
+    logging.info('\nStart training...')
+    logging.info(' * number of epochs: %d, starting from Epoch %d' %
+                 (opt.epochs + 1 - opt.start_epoch, opt.start_epoch))
+    logging.info(' * batch size: %d' % opt.batch_size)
 
     for epoch in range(opt.start_epoch, opt.epochs + 1):
-        print('')
+        logging.info('')
 
         # 1. Train for one epoch on the training set.
         train_iter = make_dataset_iter(lazily_load_dataset("train"),
                                        fields, opt)
         train_stats = trainer.train(train_iter, epoch, report_func)
-        print('Train perplexity: %g' % train_stats.ppl())
-        print('Train accuracy: %g' % train_stats.accuracy())
+        logging.info('Train perplexity: %g' % train_stats.ppl())
+        logging.info('Train accuracy: %g' % train_stats.accuracy())
 
         # 2. Validate on the validation set.
         valid_iter = make_dataset_iter(lazily_load_dataset("valid"),
                                        fields, opt,
                                        is_train=False)
         valid_stats = trainer.validate(valid_iter)
-        print('Validation perplexity: %g' % valid_stats.ppl())
-        print('Validation accuracy: %g' % valid_stats.accuracy())
+        logging.info('Validation perplexity: %g' % valid_stats.ppl())
+        logging.info('Validation accuracy: %g' % valid_stats.accuracy())
 
         # 3. Log to remote server.
         if opt.exp_host:
@@ -286,7 +286,7 @@ def check_save_model_path():
 
 def tally_parameters(model):
     n_params = sum([p.nelement() for p in model.parameters()])
-    print('* number of parameters: %d' % n_params)
+    logging.info('* number of parameters: %d' % n_params)
     enc = 0
     dec = 0
     for name, param in model.named_parameters():
@@ -294,8 +294,8 @@ def tally_parameters(model):
             enc += param.nelement()
         elif 'decoder' or 'generator' in name:
             dec += param.nelement()
-    print('encoder: ', enc)
-    print('decoder: ', dec)
+    logging.info('encoder: ' + str(enc))
+    logging.info('decoder: ' + str(dec))
 
 
 def lazily_load_dataset(corpus_type):
@@ -312,8 +312,8 @@ def lazily_load_dataset(corpus_type):
 
     def lazy_dataset_loader(pt_file, corpus_type):
         dataset = torch.load(pt_file)
-        print('Loading %s dataset from %s, number of examples: %d' %
-              (corpus_type, pt_file, len(dataset)))
+        logging.info('Loading %s dataset from %s, number of examples: %d' %
+                     (corpus_type, pt_file, len(dataset)))
         return dataset
 
     # Sort the glob output by file name (by increasing indexes).
@@ -329,7 +329,7 @@ def lazily_load_dataset(corpus_type):
 
 def load_fields(dataset, data_type, checkpoint):
     if checkpoint is not None:
-        print('Loading vocab from checkpoint at %s.' % opt.train_from)
+        logging.info('Loading vocab from checkpoint at %s.' % opt.train_from)
         fields = onmt.io.load_fields_from_vocab(
             checkpoint['vocab'], data_type)
     else:
@@ -339,11 +339,11 @@ def load_fields(dataset, data_type, checkpoint):
                    if k in dataset.examples[0].__dict__])
 
     if data_type == 'text':
-        print(' * vocabulary size. source = %d; target = %d' %
-              (len(fields['src'].vocab), len(fields['tgt'].vocab)))
+        logging.info(' * vocabulary size. source = %d; target = %d' %
+                     (len(fields['src'].vocab), len(fields['tgt'].vocab)))
     else:
-        print(' * vocabulary size. target = %d' %
-              (len(fields['tgt'].vocab)))
+        logging.info(' * vocabulary size. target = %d' %
+                     (len(fields['tgt'].vocab)))
 
     return fields
 
@@ -353,31 +353,33 @@ def collect_report_features(fields):
     tgt_features = onmt.io.collect_features(fields, side='tgt')
 
     for j, feat in enumerate(src_features):
-        print(' * src feature %d size = %d' % (j, len(fields[feat].vocab)))
+        logging.info(' * src feature %d size = %d' %
+                     (j, len(fields[feat].vocab)))
     for j, feat in enumerate(tgt_features):
-        print(' * tgt feature %d size = %d' % (j, len(fields[feat].vocab)))
+        logging.info(' * tgt feature %d size = %d' %
+                     (j, len(fields[feat].vocab)))
 
 
 def build_model(model_opt, opt, fields, checkpoint):
-    print('Building model...')
+    logging.info('Building model...')
     model = onmt.ModelConstructor.make_base_model(model_opt, fields,
                                                   use_gpu(opt), checkpoint)
     if len(opt.gpuid) > 1:
-        print('Multi gpu training: ', opt.gpuid)
+        logging.info('Multi gpu training: ', opt.gpuid)
         model = nn.DataParallel(model, device_ids=opt.gpuid, dim=1)
-    print(model)
+    logging.info(model)
 
     return model
 
 
 def build_optim(model, checkpoint):
     if opt.train_from:
-        print('Loading optimizer from checkpoint.')
+        logging.info('Loading optimizer from checkpoint.')
         optim = checkpoint['optim']
         optim.optimizer.load_state_dict(
             checkpoint['optim'].optimizer.state_dict())
     else:
-        print('Making optimizer for training.')
+        logging.info('Making optimizer for training.')
         optim = onmt.Optim(
             opt.optim, opt.learning_rate, opt.max_grad_norm,
             lr_decay=opt.learning_rate_decay,
@@ -397,7 +399,7 @@ def build_optim(model, checkpoint):
 def main():
     # Load checkpoint if we resume from a previous training.
     if opt.train_from:
-        print('Loading checkpoint from %s' % opt.train_from)
+        logging.info('Loading checkpoint from %s' % opt.train_from)
         checkpoint = torch.load(opt.train_from,
                                 map_location=lambda storage, loc: storage)
         model_opt = checkpoint['opt']
@@ -435,4 +437,5 @@ def main():
 
 
 if __name__ == "__main__":
+    logging = onmt.io.IO.set_logger('train.py')
     main()

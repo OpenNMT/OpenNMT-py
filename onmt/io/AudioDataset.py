@@ -33,6 +33,7 @@ class AudioDataset(ONMTDatasetBase):
             use_filter_pred (bool): use a custom filter predicate to filter
                 out examples?
     """
+
     def __init__(self, fields, src_examples_iter, tgt_examples_iter,
                  num_src_feats=0, num_tgt_feats=0,
                  tgt_seq_length=0, sample_rate=0,
@@ -63,8 +64,8 @@ class AudioDataset(ONMTDatasetBase):
                       for k in keys]
         example_values = ([ex[k] for k in keys] for ex in examples_iter)
         out_examples = (self._construct_example_fromlist(
-                            ex_values, out_fields)
-                        for ex_values in example_values)
+            ex_values, out_fields)
+            for ex_values in example_values)
         # If out_examples is a generator, we need to save the filter_pred
         # function in serialization too, which would cause a problem when
         # `torch.save()`. Thus we materialize it as a list.
@@ -107,9 +108,9 @@ class AudioDataset(ONMTDatasetBase):
             (example_dict iterator, num_feats) tuple
         """
         examples_iter = AudioDataset.read_audio_file(
-                path, audio_dir, "src", sample_rate,
-                window_size, window_stride, window,
-                normalize_audio, truncate)
+            path, audio_dir, "src", sample_rate,
+            window_size, window_stride, window,
+            normalize_audio, truncate)
         num_feats = 0  # Source side(audio) has no features.
 
         return (examples_iter, num_feats)
@@ -218,7 +219,7 @@ class AudioDataset(ONMTDatasetBase):
             postprocessing=make_audio, sequential=False)
 
         for j in range(n_src_features):
-            fields["src_feat_"+str(j)] = \
+            fields["src_feat_" + str(j)] = \
                 torchtext.data.Field(pad_token=PAD_WORD)
 
         fields["tgt"] = torchtext.data.Field(
@@ -226,7 +227,7 @@ class AudioDataset(ONMTDatasetBase):
             pad_token=PAD_WORD)
 
         for j in range(n_tgt_features):
-            fields["tgt_feat_"+str(j)] = \
+            fields["tgt_feat_" + str(j)] = \
                 torchtext.data.Field(init_token=BOS_WORD, eos_token=EOS_WORD,
                                      pad_token=PAD_WORD)
 

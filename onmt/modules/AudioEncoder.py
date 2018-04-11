@@ -17,6 +17,7 @@ class AudioEncoder(nn.Module):
         window_size (int): input spec
 
     """
+
     def __init__(self, num_layers, bidirectional, rnn_size, dropout,
                  sample_rate, window_size):
         super(AudioEncoder, self).__init__()

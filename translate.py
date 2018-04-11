@@ -25,4 +25,5 @@ if __name__ == "__main__":
     onmt.opts.translate_opts(parser)
 
     opt = parser.parse_args()
+    logging = onmt.io.IO.set_logger('translate.py')
     main(opt)

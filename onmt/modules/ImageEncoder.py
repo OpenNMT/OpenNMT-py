@@ -15,6 +15,7 @@ class ImageEncoder(nn.Module):
         rnn_size (int): size of hidden states of the rnn.
         dropout (float): dropout probablity.
     """
+
     def __init__(self, num_layers, bidirectional, rnn_size, dropout):
         super(ImageEncoder, self).__init__()
         self.num_layers = num_layers
@@ -55,7 +56,7 @@ class ImageEncoder(nn.Module):
         batch_size = input.size(0)
         # (batch_size, 64, imgH, imgW)
         # layer 1
-        input = F.relu(self.layer1(input[:, :, :, :]-0.5), True)
+        input = F.relu(self.layer1(input[:, :, :, :] - 0.5), True)
 
         # (batch_size, 64, imgH/2, imgW/2)
         input = F.max_pool2d(input, kernel_size=(2, 2), stride=(2, 2))

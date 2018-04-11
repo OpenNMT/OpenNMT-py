@@ -16,7 +16,6 @@ import preprocess
 parser = argparse.ArgumentParser(description='preprocess.py')
 onmt.opts.preprocess_opts(parser)
 
-
 SAVE_DATA_PREFIX = 'data/test_preprocess'
 
 default_opts = [
