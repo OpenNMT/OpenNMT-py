@@ -25,25 +25,17 @@
   
 
   
-  
     <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  
-
-  
-
-  
-        <link rel="index" title="Index"
-              href="../../../genindex.html"/>
-        <link rel="search" title="Search" href="../../../search.html"/>
-    <link rel="top" title="OpenNMT-py  documentation" href="../../../index.html"/>
-        <link rel="up" title="Module code" href="../../index.html"/> 
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
 
   
   <script src="../../../_static/js/modernizr.min.js"></script>
 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
@@ -88,17 +80,21 @@
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../main.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.html">Doc: Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.modules.html">Doc: Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.translation.html">Doc: Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.io.html">Doc: Data Loaders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../Library.html">Library: Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/preprocess.html">Options: preprocess.py:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/train.html">Options: train.py:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/translate.html">Options: translate.py:</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../extended.html">Example: Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../Summarization.html">Example: Summarization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../im2text.html">Example: Image to Text</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../speech2text.html">Example: Speech to Text</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">FAQ</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../options/preprocess.html">Options: preprocess.py:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../options/train.html">Options: train.py:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../options/translate.html">Options: translate.py:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../onmt.html">onmt package</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../onmt.modules.html">onmt.modules package</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../CONTRIBUTORS.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../CONTRIBUTING.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../ref.html">References</a></li>
 </ul>
 
             
@@ -110,7 +106,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+      <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../index.html">OpenNMT-py</a>
@@ -118,9 +114,10 @@
       </nav>
 
 
-      
       <div class="wy-nav-content">
+        
         <div class="rst-content">
+        
           
 
 
@@ -150,8 +147,6 @@
     
       <li class="wy-breadcrumbs-aside">
         
-            
-        
       </li>
     
   </ul>
@@ -169,32 +164,19 @@
 <span class="kn">from</span> <span class="nn">torch.autograd</span> <span class="k">import</span> <span class="n">Variable</span>
 
 
-<div class="viewcode-block" id="MatrixTree"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.StructuredAttention.MatrixTree">[docs]</a><span class="k">class</span> <span class="nc">MatrixTree</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<div class="viewcode-block" id="MatrixTree"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.MatrixTree">[docs]</a><span class="k">class</span> <span class="nc">MatrixTree</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Implementation of the matrix-tree theorem for computing marginals</span>
 <span class="sd">    of non-projective dependency parsing. This attention layer is used</span>
 <span class="sd">    in the paper &quot;Learning Structured Text Representations.&quot;</span>
 
-<span class="sd">    qq</span>
 
-<span class="sd">    .. mermaid::</span>
-
-<span class="sd">       sequenceDiagram</span>
-<span class="sd">          participant Alice</span>
-<span class="sd">          participant Bob</span>
-<span class="sd">          Alice-&gt;John: Hello John, how are you?</span>
-<span class="sd">          loop Healthcheck</span>
-<span class="sd">              John-&gt;John: Fight against hypochondria</span>
-<span class="sd">          end</span>
-<span class="sd">          Note right of John: Rational thoughts &lt;br/&gt;prevail...</span>
-<span class="sd">          John--&gt;Alice: Great!</span>
-<span class="sd">          John-&gt;Bob: How about you?</span>
-<span class="sd">          Bob--&gt;John: Jolly good!</span>
+<span class="sd">    :cite:`DBLP:journals/corr/LiuL17d`</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">eps</span> <span class="o">=</span> <span class="n">eps</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">MatrixTree</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
-<div class="viewcode-block" id="MatrixTree.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.StructuredAttention.MatrixTree.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">):</span>
+<div class="viewcode-block" id="MatrixTree.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.MatrixTree.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">):</span>
         <span class="n">laplacian</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">exp</span><span class="p">()</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">eps</span>
         <span class="n">output</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">input</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)):</span>
@@ -226,9 +208,7 @@
 </pre></div>
 
            </div>
-           <div class="articleComments">
-            
-           </div>
+           
           </div>
           <footer>
   
@@ -241,7 +221,7 @@
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -260,6 +240,7 @@
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../',
             VERSION:'',
+            LANGUAGE:'None',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
@@ -270,6 +251,7 @@
       <script type="text/javascript" src="../../../_static/underscore.js"></script>
       <script type="text/javascript" src="../../../_static/doctools.js"></script>
       <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script>
 
   
 
@@ -278,14 +260,13 @@
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
   
 
-  
-  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
       });
-  </script>
-   
+  </script> 
 
 </body>
 </html>

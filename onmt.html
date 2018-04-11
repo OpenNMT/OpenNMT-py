@@ -25,26 +25,19 @@
   
 
   
-  
     <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  
-
-  
-
-  
-        <link rel="index" title="Index"
-              href="genindex.html"/>
-        <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="OpenNMT-py  documentation" href="index.html"/>
-        <link rel="next" title="Doc: Modules" href="onmt.modules.html"/>
-        <link rel="prev" title="Quickstart" href="quickstart.html"/> 
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Doc: Modules" href="onmt.modules.html" />
+    <link rel="prev" title="Quickstart" href="quickstart.html" /> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
@@ -121,7 +114,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+      <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="index.html">OpenNMT-py</a>
@@ -129,9 +122,10 @@
       </nav>
 
 
-      
       <div class="wy-nav-content">
+        
         <div class="rst-content">
+        
           
 
 
@@ -179,7 +173,7 @@
 <h2>Model<a class="headerlink" href="#model" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.Models.NMTModel">
-<em class="property">class </em><code class="descclassname">onmt.Models.</code><code class="descname">NMTModel</code><span class="sig-paren">(</span><em>encoder</em>, <em>decoder</em>, <em>multigpu=False</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Models.NMTModel" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.Models.</code><code class="descname">NMTModel</code><span class="sig-paren">(</span><em>encoder</em>, <em>decoder</em>, <em>multigpu=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/Models.html#NMTModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Models.NMTModel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Core trainable object in OpenNMT. Implements a trainable interface
 for a simple, generic encoder + decoder model.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -197,7 +191,7 @@ for a simple, generic encoder + decoder model.</p>
 </table>
 <dl class="method">
 <dt id="onmt.Models.NMTModel.forward">
-<code class="descname">forward</code><span class="sig-paren">(</span><em>src</em>, <em>tgt</em>, <em>lengths</em>, <em>dec_state=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Models.NMTModel.forward" title="Permalink to this definition">¶</a></dt>
+<code class="descname">forward</code><span class="sig-paren">(</span><em>src</em>, <em>tgt</em>, <em>lengths</em>, <em>dec_state=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/Models.html#NMTModel.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Models.NMTModel.forward" title="Permalink to this definition">¶</a></dt>
 <dd><p>Forward propagate a <cite>src</cite> and <cite>tgt</cite> pair for training.
 Possible initialized with a beginning decoder state.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -234,7 +228,7 @@ image or other generic input depending on encoder.</li>
 
 <dl class="class">
 <dt id="onmt.Models.DecoderState">
-<em class="property">class </em><code class="descclassname">onmt.Models.</code><code class="descname">DecoderState</code><a class="headerlink" href="#onmt.Models.DecoderState" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.Models.</code><code class="descname">DecoderState</code><a class="reference internal" href="_modules/onmt/Models.html#DecoderState"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Models.DecoderState" title="Permalink to this definition">¶</a></dt>
 <dd><p>Interface for grouping together the current state of a recurrent
 decoder. In the simplest case just represents the hidden state of
 the model.  But can also be used for implementing various forms of
@@ -247,7 +241,7 @@ input_feeding and non-recurrent models.</p>
 <h2>Trainer<a class="headerlink" href="#trainer" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.Trainer">
-<em class="property">class </em><code class="descclassname">onmt.</code><code class="descname">Trainer</code><span class="sig-paren">(</span><em>model</em>, <em>train_loss</em>, <em>valid_loss</em>, <em>optim</em>, <em>trunc_size=0</em>, <em>shard_size=32</em>, <em>data_type='text'</em>, <em>norm_method='sents'</em>, <em>grad_accum_count=1</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Trainer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.</code><code class="descname">Trainer</code><span class="sig-paren">(</span><em>model</em>, <em>train_loss</em>, <em>valid_loss</em>, <em>optim</em>, <em>trunc_size=0</em>, <em>shard_size=32</em>, <em>data_type='text'</em>, <em>norm_method='sents'</em>, <em>grad_accum_count=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/Trainer.html#Trainer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class that controls the training process.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -270,7 +264,7 @@ input_feeding and non-recurrent models.</p>
 </table>
 <dl class="method">
 <dt id="onmt.Trainer.drop_checkpoint">
-<code class="descname">drop_checkpoint</code><span class="sig-paren">(</span><em>opt</em>, <em>epoch</em>, <em>fields</em>, <em>valid_stats</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Trainer.drop_checkpoint" title="Permalink to this definition">¶</a></dt>
+<code class="descname">drop_checkpoint</code><span class="sig-paren">(</span><em>opt</em>, <em>epoch</em>, <em>fields</em>, <em>valid_stats</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/Trainer.html#Trainer.drop_checkpoint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer.drop_checkpoint" title="Permalink to this definition">¶</a></dt>
 <dd><p>Save a resumable checkpoint.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -290,7 +284,7 @@ input_feeding and non-recurrent models.</p>
 
 <dl class="method">
 <dt id="onmt.Trainer.train">
-<code class="descname">train</code><span class="sig-paren">(</span><em>train_iter</em>, <em>epoch</em>, <em>report_func=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Trainer.train" title="Permalink to this definition">¶</a></dt>
+<code class="descname">train</code><span class="sig-paren">(</span><em>train_iter</em>, <em>epoch</em>, <em>report_func=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/Trainer.html#Trainer.train"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer.train" title="Permalink to this definition">¶</a></dt>
 <dd><p>Train next epoch.
 :param train_iter: training data iterator
 :param epoch: the epoch number
@@ -311,7 +305,7 @@ input_feeding and non-recurrent models.</p>
 
 <dl class="method">
 <dt id="onmt.Trainer.validate">
-<code class="descname">validate</code><span class="sig-paren">(</span><em>valid_iter</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Trainer.validate" title="Permalink to this definition">¶</a></dt>
+<code class="descname">validate</code><span class="sig-paren">(</span><em>valid_iter</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/Trainer.html#Trainer.validate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer.validate" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="docutils">
 <dt>Validate model.</dt>
 <dd>valid_iter: validate data iterator</dd>
@@ -332,7 +326,7 @@ input_feeding and non-recurrent models.</p>
 
 <dl class="class">
 <dt id="onmt.Statistics">
-<em class="property">class </em><code class="descclassname">onmt.</code><code class="descname">Statistics</code><span class="sig-paren">(</span><em>loss=0</em>, <em>n_words=0</em>, <em>n_correct=0</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Statistics" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.</code><code class="descname">Statistics</code><span class="sig-paren">(</span><em>loss=0</em>, <em>n_words=0</em>, <em>n_correct=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/Trainer.html#Statistics"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Statistics" title="Permalink to this definition">¶</a></dt>
 <dd><p>Accumulator for loss statistics.
 Currently calculates:</p>
 <ul class="simple">
@@ -342,7 +336,7 @@ Currently calculates:</p>
 </ul>
 <dl class="method">
 <dt id="onmt.Statistics.output">
-<code class="descname">output</code><span class="sig-paren">(</span><em>epoch</em>, <em>batch</em>, <em>n_batches</em>, <em>start</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Statistics.output" title="Permalink to this definition">¶</a></dt>
+<code class="descname">output</code><span class="sig-paren">(</span><em>epoch</em>, <em>batch</em>, <em>n_batches</em>, <em>start</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/Trainer.html#Statistics.output"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Statistics.output" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write out statistics to stdout.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -367,7 +361,7 @@ Currently calculates:</p>
 <h2>Loss<a class="headerlink" href="#loss" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.Loss.LossComputeBase">
-<em class="property">class </em><code class="descclassname">onmt.Loss.</code><code class="descname">LossComputeBase</code><span class="sig-paren">(</span><em>generator</em>, <em>tgt_vocab</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Loss.LossComputeBase" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.Loss.</code><code class="descname">LossComputeBase</code><span class="sig-paren">(</span><em>generator</em>, <em>tgt_vocab</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/Loss.html#LossComputeBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Loss.LossComputeBase" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class for managing efficient loss computation. Handles
 sharding next step predictions and accumulating mutiple
 loss computations</p>
@@ -390,7 +384,7 @@ distribution over the target vocabulary.</li>
 </table>
 <dl class="method">
 <dt id="onmt.Loss.LossComputeBase.monolithic_compute_loss">
-<code class="descname">monolithic_compute_loss</code><span class="sig-paren">(</span><em>batch</em>, <em>output</em>, <em>attns</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Loss.LossComputeBase.monolithic_compute_loss" title="Permalink to this definition">¶</a></dt>
+<code class="descname">monolithic_compute_loss</code><span class="sig-paren">(</span><em>batch</em>, <em>output</em>, <em>attns</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/Loss.html#LossComputeBase.monolithic_compute_loss"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Loss.LossComputeBase.monolithic_compute_loss" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute the forward loss for the batch.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -416,7 +410,7 @@ distribution over the target vocabulary.</li>
 
 <dl class="method">
 <dt id="onmt.Loss.LossComputeBase.sharded_compute_loss">
-<code class="descname">sharded_compute_loss</code><span class="sig-paren">(</span><em>batch</em>, <em>output</em>, <em>attns</em>, <em>cur_trunc</em>, <em>trunc_size</em>, <em>shard_size</em>, <em>normalization</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Loss.LossComputeBase.sharded_compute_loss" title="Permalink to this definition">¶</a></dt>
+<code class="descname">sharded_compute_loss</code><span class="sig-paren">(</span><em>batch</em>, <em>output</em>, <em>attns</em>, <em>cur_trunc</em>, <em>trunc_size</em>, <em>shard_size</em>, <em>normalization</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/Loss.html#LossComputeBase.sharded_compute_loss"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Loss.LossComputeBase.sharded_compute_loss" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute the forward loss and backpropagate.  Computation is done
 with shards and optionally truncation for memory efficiency.</p>
 <p>Also supports truncated BPTT for long sequences by taking a
@@ -459,7 +453,7 @@ in the RNN buffers.</p>
 <h2>Optim<a class="headerlink" href="#optim" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.Optim.Optim">
-<em class="property">class </em><code class="descclassname">onmt.Optim.</code><code class="descname">Optim</code><span class="sig-paren">(</span><em>method</em>, <em>lr</em>, <em>max_grad_norm</em>, <em>lr_decay=1</em>, <em>start_decay_at=None</em>, <em>beta1=0.9</em>, <em>beta2=0.999</em>, <em>adagrad_accum=0.0</em>, <em>decay_method=None</em>, <em>warmup_steps=4000</em>, <em>model_size=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Optim.Optim" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.Optim.</code><code class="descname">Optim</code><span class="sig-paren">(</span><em>method</em>, <em>lr</em>, <em>max_grad_norm</em>, <em>lr_decay=1</em>, <em>start_decay_at=None</em>, <em>beta1=0.9</em>, <em>beta2=0.999</em>, <em>adagrad_accum=0.0</em>, <em>decay_method=None</em>, <em>warmup_steps=4000</em>, <em>model_size=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/Optim.html#Optim"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Optim.Optim" title="Permalink to this definition">¶</a></dt>
 <dd><p>Controller class for optimization. Mostly a thin
 wrapper for <cite>optim</cite>, but also useful for implementing
 rate scheduling beyond what is currently available.
@@ -486,7 +480,7 @@ as grad manipulations.</p>
 </table>
 <dl class="method">
 <dt id="onmt.Optim.Optim.step">
-<code class="descname">step</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Optim.Optim.step" title="Permalink to this definition">¶</a></dt>
+<code class="descname">step</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/Optim.html#Optim.step"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Optim.Optim.step" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update the model parameters based on current gradients.</p>
 <p>Optionally, will employ gradient modification or update learning
 rate.</p>
@@ -494,7 +488,7 @@ rate.</p>
 
 <dl class="method">
 <dt id="onmt.Optim.Optim.update_learning_rate">
-<code class="descname">update_learning_rate</code><span class="sig-paren">(</span><em>ppl</em>, <em>epoch</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.Optim.Optim.update_learning_rate" title="Permalink to this definition">¶</a></dt>
+<code class="descname">update_learning_rate</code><span class="sig-paren">(</span><em>ppl</em>, <em>epoch</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/Optim.html#Optim.update_learning_rate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Optim.Optim.update_learning_rate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Decay learning rate if val perf does not improve
 or we hit the start_decay_at limit.</p>
 </dd></dl>
@@ -506,9 +500,7 @@ or we hit the start_decay_at limit.</p>
 
 
            </div>
-           <div class="articleComments">
-            
-           </div>
+           
           </div>
           <footer>
   
@@ -530,7 +522,7 @@ or we hit the start_decay_at limit.</p>
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -549,6 +541,7 @@ or we hit the start_decay_at limit.</p>
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
             VERSION:'',
+            LANGUAGE:'None',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
@@ -567,14 +560,13 @@ or we hit the start_decay_at limit.</p>
     <script type="text/javascript" src="_static/js/theme.js"></script>
   
 
-  
-  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
       });
-  </script>
-   
+  </script> 
 
 </body>
 </html>

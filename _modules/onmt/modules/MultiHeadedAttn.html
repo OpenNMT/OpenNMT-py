@@ -25,25 +25,17 @@
   
 
   
-  
     <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  
-
-  
-
-  
-        <link rel="index" title="Index"
-              href="../../../genindex.html"/>
-        <link rel="search" title="Search" href="../../../search.html"/>
-    <link rel="top" title="OpenNMT-py  documentation" href="../../../index.html"/>
-        <link rel="up" title="Module code" href="../../index.html"/> 
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
 
   
   <script src="../../../_static/js/modernizr.min.js"></script>
 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
@@ -88,17 +80,21 @@
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../main.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.html">Doc: Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.modules.html">Doc: Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.translation.html">Doc: Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.io.html">Doc: Data Loaders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../Library.html">Library: Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/preprocess.html">Options: preprocess.py:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/train.html">Options: train.py:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/translate.html">Options: translate.py:</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../extended.html">Example: Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../Summarization.html">Example: Summarization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../im2text.html">Example: Image to Text</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../speech2text.html">Example: Speech to Text</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">FAQ</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../options/preprocess.html">Options: preprocess.py:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../options/train.html">Options: train.py:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../options/translate.html">Options: translate.py:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../onmt.html">onmt package</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../onmt.modules.html">onmt.modules package</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../CONTRIBUTORS.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../CONTRIBUTING.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../ref.html">References</a></li>
 </ul>
 
             
@@ -110,7 +106,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+      <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../index.html">OpenNMT-py</a>
@@ -118,9 +114,10 @@
       </nav>
 
 
-      
       <div class="wy-nav-content">
+        
         <div class="rst-content">
+        
           
 
 
@@ -150,8 +147,6 @@
     
       <li class="wy-breadcrumbs-aside">
         
-            
-        
       </li>
     
   </ul>
@@ -169,21 +164,50 @@
 <span class="kn">from</span> <span class="nn">torch.autograd</span> <span class="k">import</span> <span class="n">Variable</span>
 
 <span class="kn">from</span> <span class="nn">onmt.Utils</span> <span class="k">import</span> <span class="n">aeq</span>
-<span class="kn">from</span> <span class="nn">onmt.modules.UtilClass</span> <span class="k">import</span> <span class="n">BottleLinear</span><span class="p">,</span> \
-                    <span class="n">BottleLayerNorm</span><span class="p">,</span> <span class="n">BottleSoftmax</span>
 
 
-<div class="viewcode-block" id="MultiHeadedAttention"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.MultiHeadedAttn.MultiHeadedAttention">[docs]</a><span class="k">class</span> <span class="nc">MultiHeadedAttention</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39; Multi-Head Attention module from</span>
-<span class="sd">        &quot;Attention is All You Need&quot;.</span>
-<span class="sd">    &#39;&#39;&#39;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">head_count</span><span class="p">,</span> <span class="n">model_dim</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Args:</span>
-<span class="sd">            head_count(int): number of parallel heads.</span>
-<span class="sd">            model_dim(int): the dimension of keys/values/queries in this</span>
-<span class="sd">                MultiHeadedAttention, must be divisible by head_count.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="MultiHeadedAttention"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.MultiHeadedAttention">[docs]</a><span class="k">class</span> <span class="nc">MultiHeadedAttention</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Multi-Head Attention module from</span>
+<span class="sd">    &quot;Attention is All You Need&quot;</span>
+<span class="sd">    :cite:`DBLP:journals/corr/VaswaniSPUJGKP17`.</span>
+
+<span class="sd">    Similar to standard `dot` attention but uses</span>
+<span class="sd">    multiple attention distributions simulataneously</span>
+<span class="sd">    to select relevant items.</span>
+
+<span class="sd">    .. mermaid::</span>
+
+<span class="sd">       graph BT</span>
+<span class="sd">          A[key]</span>
+<span class="sd">          B[value]</span>
+<span class="sd">          C[query]</span>
+<span class="sd">          O[output]</span>
+<span class="sd">          subgraph Attn</span>
+<span class="sd">            D[Attn 1]</span>
+<span class="sd">            E[Attn 2]</span>
+<span class="sd">            F[Attn N]</span>
+<span class="sd">          end</span>
+<span class="sd">          A --&gt; D</span>
+<span class="sd">          C --&gt; D</span>
+<span class="sd">          A --&gt; E</span>
+<span class="sd">          C --&gt; E</span>
+<span class="sd">          A --&gt; F</span>
+<span class="sd">          C --&gt; F</span>
+<span class="sd">          D --&gt; O</span>
+<span class="sd">          E --&gt; O</span>
+<span class="sd">          F --&gt; O</span>
+<span class="sd">          B --&gt; O</span>
+
+<span class="sd">    Also includes several additional tricks.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">       head_count (int): number of parallel heads</span>
+<span class="sd">       model_dim (int): the dimension of keys/values/queries,</span>
+<span class="sd">           must be divisible by head_count</span>
+<span class="sd">       dropout (float): dropout parameter</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">head_count</span><span class="p">,</span> <span class="n">model_dim</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
         <span class="k">assert</span> <span class="n">model_dim</span> <span class="o">%</span> <span class="n">head_count</span> <span class="o">==</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span> <span class="o">=</span> <span class="n">model_dim</span> <span class="o">//</span> <span class="n">head_count</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model_dim</span> <span class="o">=</span> <span class="n">model_dim</span>
@@ -191,22 +215,36 @@
         <span class="nb">super</span><span class="p">(</span><span class="n">MultiHeadedAttention</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">head_count</span> <span class="o">=</span> <span class="n">head_count</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">linear_keys</span> <span class="o">=</span> <span class="n">BottleLinear</span><span class="p">(</span><span class="n">model_dim</span><span class="p">,</span>
-                                        <span class="n">head_count</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">,</span>
-                                        <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">linear_values</span> <span class="o">=</span> <span class="n">BottleLinear</span><span class="p">(</span><span class="n">model_dim</span><span class="p">,</span>
-                                          <span class="n">head_count</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">,</span>
-                                          <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">linear_query</span> <span class="o">=</span> <span class="n">BottleLinear</span><span class="p">(</span><span class="n">model_dim</span><span class="p">,</span>
-                                         <span class="n">head_count</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">,</span>
-                                         <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">sm</span> <span class="o">=</span> <span class="n">BottleSoftmax</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">activation</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span> <span class="o">=</span> <span class="n">BottleLayerNorm</span><span class="p">(</span><span class="n">model_dim</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">res_dropout</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">linear_keys</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">model_dim</span><span class="p">,</span>
+                                     <span class="n">head_count</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">linear_values</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">model_dim</span><span class="p">,</span>
+                                       <span class="n">head_count</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">linear_query</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">model_dim</span><span class="p">,</span>
+                                      <span class="n">head_count</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sm</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Softmax</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">final_linear</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">model_dim</span><span class="p">,</span> <span class="n">model_dim</span><span class="p">)</span>
 
-<div class="viewcode-block" id="MultiHeadedAttention.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.MultiHeadedAttn.MultiHeadedAttention.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="MultiHeadedAttention.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.MultiHeadedAttention.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the context vector and the attention vectors.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">           key (`FloatTensor`): set of `key_len`</span>
+<span class="sd">                key vectors `[batch, key_len, dim]`</span>
+<span class="sd">           value (`FloatTensor`): set of `key_len`</span>
+<span class="sd">                value vectors `[batch, key_len, dim]`</span>
+<span class="sd">           query (`FloatTensor`): set of `query_len`</span>
+<span class="sd">                 query vectors  `[batch, query_len, dim]`</span>
+<span class="sd">           mask: binary mask indicating which keys have</span>
+<span class="sd">                 non-zero attention `[batch, query_len, key_len]`</span>
+<span class="sd">        Returns:</span>
+<span class="sd">           (`FloatTensor`, `FloatTensor`) :</span>
+
+<span class="sd">           * output context vectors `[batch, query_len, dim]`</span>
+<span class="sd">           * one of the attention vectors `[batch, query_len, key_len]`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="c1"># CHECKS</span>
         <span class="n">batch</span><span class="p">,</span> <span class="n">k_len</span><span class="p">,</span> <span class="n">d</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
         <span class="n">batch_</span><span class="p">,</span> <span class="n">k_len_</span><span class="p">,</span> <span class="n">d_</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
@@ -224,61 +262,56 @@
             <span class="n">aeq</span><span class="p">(</span><span class="n">q_len_</span> <span class="o">==</span> <span class="n">q_len</span><span class="p">)</span>
         <span class="c1"># END CHECKS</span>
 
-        <span class="k">def</span> <span class="nf">shape_projection</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-            <span class="n">b</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="n">d</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
-            <span class="k">return</span> <span class="n">x</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">head_count</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">)</span> \
-                <span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span> \
-                <span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">b</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">head_count</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">)</span>
+        <span class="n">batch_size</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">dim_per_head</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span>
+        <span class="n">head_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">head_count</span>
+        <span class="n">key_len</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">query_len</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 
-        <span class="k">def</span> <span class="nf">unshape_projection</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">q</span><span class="p">):</span>
-            <span class="n">b</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="n">d</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
-            <span class="k">return</span> <span class="n">x</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">head_count</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">)</span> \
-                    <span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span> \
-                    <span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">head_count</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">shape</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">x</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">head_count</span><span class="p">,</span> <span class="n">dim_per_head</span><span class="p">)</span> \
+                <span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
 
-        <span class="n">residual</span> <span class="o">=</span> <span class="n">query</span>
-        <span class="n">key_up</span> <span class="o">=</span> <span class="n">shape_projection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">linear_keys</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
-        <span class="n">value_up</span> <span class="o">=</span> <span class="n">shape_projection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">linear_values</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
-        <span class="n">query_up</span> <span class="o">=</span> <span class="n">shape_projection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">linear_query</span><span class="p">(</span><span class="n">query</span><span class="p">))</span>
+        <span class="k">def</span> <span class="nf">unshape</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">x</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span> \
+                    <span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">head_count</span> <span class="o">*</span> <span class="n">dim_per_head</span><span class="p">)</span>
 
-        <span class="n">scaled</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">bmm</span><span class="p">(</span><span class="n">query_up</span><span class="p">,</span> <span class="n">key_up</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
-        <span class="n">scaled</span> <span class="o">=</span> <span class="n">scaled</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">)</span>
-        <span class="n">bh</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="n">dim_per_head</span> <span class="o">=</span> <span class="n">scaled</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
-        <span class="n">b</span> <span class="o">=</span> <span class="n">bh</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">head_count</span>
+        <span class="c1"># 1) Project key, value, and query.</span>
+        <span class="n">key_up</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">linear_keys</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
+        <span class="n">value_up</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">linear_values</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+        <span class="n">query_up</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">linear_query</span><span class="p">(</span><span class="n">query</span><span class="p">))</span>
+
+        <span class="c1"># 2) Calculate and scale scores.</span>
+        <span class="n">query_up</span> <span class="o">=</span> <span class="n">query_up</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">dim_per_head</span><span class="p">)</span>
+        <span class="n">scores</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">query_up</span><span class="p">,</span> <span class="n">key_up</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+
         <span class="k">if</span> <span class="n">mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">expand_as</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span>
+            <span class="n">scores</span> <span class="o">=</span> <span class="n">scores</span><span class="o">.</span><span class="n">masked_fill</span><span class="p">(</span><span class="n">Variable</span><span class="p">(</span><span class="n">mask</span><span class="p">),</span> <span class="o">-</span><span class="mf">1e18</span><span class="p">)</span>
 
-            <span class="n">scaled</span> <span class="o">=</span> <span class="n">scaled</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">head_count</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="n">dim_per_head</span><span class="p">)</span>
-            <span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">expand_as</span><span class="p">(</span><span class="n">scaled</span><span class="p">)</span>
-            <span class="n">scaled</span> <span class="o">=</span> <span class="n">scaled</span><span class="o">.</span><span class="n">masked_fill</span><span class="p">(</span><span class="n">Variable</span><span class="p">(</span><span class="n">mask</span><span class="p">),</span> <span class="o">-</span><span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">))</span> \
-                           <span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">bh</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="n">dim_per_head</span><span class="p">)</span>
-        <span class="n">attn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sm</span><span class="p">(</span><span class="n">scaled</span><span class="p">)</span>
-        <span class="c1"># Return one attn</span>
-        <span class="n">top_attn</span> <span class="o">=</span> <span class="n">attn</span> \
-            <span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">head_count</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="n">dim_per_head</span><span class="p">)[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> \
-            <span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
+        <span class="c1"># 3) Apply attention dropout and compute context vectors.</span>
+        <span class="n">attn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sm</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span>
+        <span class="n">drop_attn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">(</span><span class="n">attn</span><span class="p">)</span>
+        <span class="n">context</span> <span class="o">=</span> <span class="n">unshape</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">drop_attn</span><span class="p">,</span> <span class="n">value_up</span><span class="p">))</span>
 
-        <span class="n">drop_attn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sm</span><span class="p">(</span><span class="n">scaled</span><span class="p">))</span>
-
-        <span class="c1"># values : (batch * 8) x qlen x dim</span>
-        <span class="n">out</span> <span class="o">=</span> <span class="n">unshape_projection</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">bmm</span><span class="p">(</span><span class="n">drop_attn</span><span class="p">,</span> <span class="n">value_up</span><span class="p">),</span> <span class="n">residual</span><span class="p">)</span>
-
-        <span class="c1"># Residual and layer norm</span>
-        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">res_dropout</span><span class="p">(</span><span class="n">out</span><span class="p">)</span> <span class="o">+</span> <span class="n">residual</span>
-        <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
-
+        <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">final_linear</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
         <span class="c1"># CHECK</span>
-        <span class="n">batch_</span><span class="p">,</span> <span class="n">q_len_</span><span class="p">,</span> <span class="n">d_</span> <span class="o">=</span> <span class="n">ret</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+        <span class="n">batch_</span><span class="p">,</span> <span class="n">q_len_</span><span class="p">,</span> <span class="n">d_</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
         <span class="n">aeq</span><span class="p">(</span><span class="n">q_len</span><span class="p">,</span> <span class="n">q_len_</span><span class="p">)</span>
         <span class="n">aeq</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">batch_</span><span class="p">)</span>
         <span class="n">aeq</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">d_</span><span class="p">)</span>
+
+        <span class="c1"># Return one attn</span>
+        <span class="n">top_attn</span> <span class="o">=</span> <span class="n">attn</span> \
+            <span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">head_count</span><span class="p">,</span>
+                  <span class="n">query_len</span><span class="p">,</span> <span class="n">key_len</span><span class="p">)[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> \
+            <span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
         <span class="c1"># END CHECK</span>
-        <span class="k">return</span> <span class="n">ret</span><span class="p">,</span> <span class="n">top_attn</span></div></div>
+        <span class="k">return</span> <span class="n">output</span><span class="p">,</span> <span class="n">top_attn</span></div></div>
 </pre></div>
 
            </div>
-           <div class="articleComments">
-            
-           </div>
+           
           </div>
           <footer>
   
@@ -291,7 +324,7 @@
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -310,6 +343,7 @@
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../',
             VERSION:'',
+            LANGUAGE:'None',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
@@ -320,6 +354,7 @@
       <script type="text/javascript" src="../../../_static/underscore.js"></script>
       <script type="text/javascript" src="../../../_static/doctools.js"></script>
       <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script>
 
   
 
@@ -328,14 +363,13 @@
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
   
 
-  
-  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
       });
-  </script>
-   
+  </script> 
 
 </body>
 </html>

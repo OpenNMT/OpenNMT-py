@@ -25,25 +25,17 @@
   
 
   
-  
     <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-  
-
-  
-
-  
-        <link rel="index" title="Index"
-              href="../../genindex.html"/>
-        <link rel="search" title="Search" href="../../search.html"/>
-    <link rel="top" title="OpenNMT-py  documentation" href="../../index.html"/>
-        <link rel="up" title="Module code" href="../index.html"/> 
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
 
   
   <script src="../../_static/js/modernizr.min.js"></script>
 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
@@ -88,17 +80,21 @@
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../main.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../onmt.html">Doc: Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../onmt.modules.html">Doc: Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../onmt.translation.html">Doc: Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../onmt.io.html">Doc: Data Loaders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Library.html">Library: Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../options/preprocess.html">Options: preprocess.py:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../options/train.html">Options: train.py:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../options/translate.html">Options: translate.py:</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../extended.html">Example: Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../Summarization.html">Example: Summarization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../im2text.html">Example: Image to Text</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../speech2text.html">Example: Speech to Text</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../FAQ.html">FAQ</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../options/preprocess.html">Options: preprocess.py:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../options/train.html">Options: train.py:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../options/translate.html">Options: translate.py:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../onmt.html">onmt package</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../onmt.modules.html">onmt.modules package</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../CONTRIBUTORS.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../CONTRIBUTING.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../ref.html">References</a></li>
 </ul>
 
             
@@ -110,7 +106,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+      <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../index.html">OpenNMT-py</a>
@@ -118,9 +114,10 @@
       </nav>
 
 
-      
       <div class="wy-nav-content">
+        
         <div class="rst-content">
+        
           
 
 
@@ -150,8 +147,6 @@
     
       <li class="wy-breadcrumbs-aside">
         
-            
-        
       </li>
     
   </ul>
@@ -175,26 +170,39 @@
 <span class="kn">from</span> <span class="nn">torch.autograd</span> <span class="k">import</span> <span class="n">Variable</span>
 
 <span class="kn">import</span> <span class="nn">onmt</span>
+<span class="kn">import</span> <span class="nn">onmt.io</span>
 
 
 <div class="viewcode-block" id="LossComputeBase"><a class="viewcode-back" href="../../onmt.html#onmt.Loss.LossComputeBase">[docs]</a><span class="k">class</span> <span class="nc">LossComputeBase</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    This is the loss criterion base class. Users can implement their own</span>
-<span class="sd">    loss computation strategy by making subclass of this one.</span>
-<span class="sd">    Users need to implement the compute_loss() and make_shard_state() methods.</span>
-<span class="sd">    We inherits from nn.Module to leverage the cuda behavior.</span>
+<span class="sd">    Class for managing efficient loss computation. Handles</span>
+<span class="sd">    sharding next step predictions and accumulating mutiple</span>
+<span class="sd">    loss computations</span>
+
+
+<span class="sd">    Users can implement their own loss computation strategy by making</span>
+<span class="sd">    subclass of this one.  Users need to implement the _compute_loss()</span>
+<span class="sd">    and make_shard_state() methods.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        generator (:obj:`nn.Module`) :</span>
+<span class="sd">             module that maps the output of the decoder to a</span>
+<span class="sd">             distribution over the target vocabulary.</span>
+<span class="sd">        tgt_vocab (:obj:`Vocab`) :</span>
+<span class="sd">             torchtext vocab object representing the target output</span>
+<span class="sd">        normalzation (str): normalize by &quot;sents&quot; or &quot;tokens&quot;</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">generator</span><span class="p">,</span> <span class="n">tgt_vocab</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">LossComputeBase</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">generator</span> <span class="o">=</span> <span class="n">generator</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tgt_vocab</span> <span class="o">=</span> <span class="n">tgt_vocab</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">padding_idx</span> <span class="o">=</span> <span class="n">tgt_vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">onmt</span><span class="o">.</span><span class="n">IO</span><span class="o">.</span><span class="n">PAD_WORD</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">padding_idx</span> <span class="o">=</span> <span class="n">tgt_vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">onmt</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">PAD_WORD</span><span class="p">]</span>
 
-<div class="viewcode-block" id="LossComputeBase.make_shard_state"><a class="viewcode-back" href="../../onmt.html#onmt.Loss.LossComputeBase.make_shard_state">[docs]</a>    <span class="k">def</span> <span class="nf">make_shard_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">range_</span><span class="p">,</span> <span class="n">attns</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_make_shard_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">range_</span><span class="p">,</span> <span class="n">attns</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Make shard state dictionary for shards() to return iterable</span>
 <span class="sd">        shards for efficient loss computation. Subclass must define</span>
-<span class="sd">        this method to match its own compute_loss() interface.</span>
+<span class="sd">        this method to match its own _compute_loss() interface.</span>
 <span class="sd">        Args:</span>
 <span class="sd">            batch: the current batch.</span>
 <span class="sd">            output: the predict output from the model.</span>
@@ -202,112 +210,179 @@
 <span class="sd">                    batch or a trunc of it?</span>
 <span class="sd">            attns: the attns dictionary returned from the model.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="ne">NotImplementedError</span></div>
+        <span class="k">return</span> <span class="ne">NotImplementedError</span>
 
-<div class="viewcode-block" id="LossComputeBase.compute_loss"><a class="viewcode-back" href="../../onmt.html#onmt.Loss.LossComputeBase.compute_loss">[docs]</a>    <span class="k">def</span> <span class="nf">compute_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_compute_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compute the loss. Subclass must define this method.</span>
+
 <span class="sd">        Args:</span>
+
 <span class="sd">            batch: the current batch.</span>
 <span class="sd">            output: the predict output from the model.</span>
 <span class="sd">            target: the validate target to compare output with.</span>
 <span class="sd">            **kwargs(optional): additional info for computing loss.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="ne">NotImplementedError</span></div>
+        <span class="k">return</span> <span class="ne">NotImplementedError</span>
 
 <div class="viewcode-block" id="LossComputeBase.monolithic_compute_loss"><a class="viewcode-back" href="../../onmt.html#onmt.Loss.LossComputeBase.monolithic_compute_loss">[docs]</a>    <span class="k">def</span> <span class="nf">monolithic_compute_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">attns</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Compute the loss monolithically, not dividing into shards.</span>
+<span class="sd">        Compute the forward loss for the batch.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          batch (batch): batch of labeled examples</span>
+<span class="sd">          output (:obj:`FloatTensor`):</span>
+<span class="sd">              output of decoder model `[tgt_len x batch x hidden]`</span>
+<span class="sd">          attns (dict of :obj:`FloatTensor`) :</span>
+<span class="sd">              dictionary of attention distributions</span>
+<span class="sd">              `[tgt_len x batch x src_len]`</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            :obj:`onmt.Statistics`: loss statistics</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">range_</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">batch</span><span class="o">.</span><span class="n">tgt</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
-        <span class="n">shard_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_shard_state</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">range_</span><span class="p">,</span> <span class="n">attns</span><span class="p">)</span>
-        <span class="n">_</span><span class="p">,</span> <span class="n">batch_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_loss</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="o">**</span><span class="n">shard_state</span><span class="p">)</span>
+        <span class="n">shard_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_shard_state</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">range_</span><span class="p">,</span> <span class="n">attns</span><span class="p">)</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">batch_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_loss</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="o">**</span><span class="n">shard_state</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">batch_stats</span></div>
 
 <div class="viewcode-block" id="LossComputeBase.sharded_compute_loss"><a class="viewcode-back" href="../../onmt.html#onmt.Loss.LossComputeBase.sharded_compute_loss">[docs]</a>    <span class="k">def</span> <span class="nf">sharded_compute_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">attns</span><span class="p">,</span>
-                             <span class="n">cur_trunc</span><span class="p">,</span> <span class="n">trunc_size</span><span class="p">,</span> <span class="n">shard_size</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Compute the loss in shards for efficiency.</span>
+                             <span class="n">cur_trunc</span><span class="p">,</span> <span class="n">trunc_size</span><span class="p">,</span> <span class="n">shard_size</span><span class="p">,</span>
+                             <span class="n">normalization</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute the forward loss and backpropagate.  Computation is done</span>
+<span class="sd">        with shards and optionally truncation for memory efficiency.</span>
+
+<span class="sd">        Also supports truncated BPTT for long sequences by taking a</span>
+<span class="sd">        range in the decoder output sequence to back propagate in.</span>
+<span class="sd">        Range is from `(cur_trunc, cur_trunc + trunc_size)`.</span>
+
+<span class="sd">        Note sharding is an exact efficiency trick to relieve memory</span>
+<span class="sd">        required for the generation buffers. Truncation is an</span>
+<span class="sd">        approximate efficiency trick to relieve the memory required</span>
+<span class="sd">        in the RNN buffers.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          batch (batch) : batch of labeled examples</span>
+<span class="sd">          output (:obj:`FloatTensor`) :</span>
+<span class="sd">              output of decoder model `[tgt_len x batch x hidden]`</span>
+<span class="sd">          attns (dict) : dictionary of attention distributions</span>
+<span class="sd">              `[tgt_len x batch x src_len]`</span>
+<span class="sd">          cur_trunc (int) : starting position of truncation window</span>
+<span class="sd">          trunc_size (int) : length of truncation window</span>
+<span class="sd">          shard_size (int) : maximum number of examples in a shard</span>
+<span class="sd">          normalization (int) : Loss is divided by this number</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            :obj:`onmt.Statistics`: validation loss statistics</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">batch_stats</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">Statistics</span><span class="p">()</span>
         <span class="n">range_</span> <span class="o">=</span> <span class="p">(</span><span class="n">cur_trunc</span><span class="p">,</span> <span class="n">cur_trunc</span> <span class="o">+</span> <span class="n">trunc_size</span><span class="p">)</span>
-        <span class="n">shard_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_shard_state</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">range_</span><span class="p">,</span> <span class="n">attns</span><span class="p">)</span>
+        <span class="n">shard_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_shard_state</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">range_</span><span class="p">,</span> <span class="n">attns</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">shard</span> <span class="ow">in</span> <span class="n">shards</span><span class="p">(</span><span class="n">shard_state</span><span class="p">,</span> <span class="n">shard_size</span><span class="p">):</span>
-            <span class="n">loss</span><span class="p">,</span> <span class="n">stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_loss</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="o">**</span><span class="n">shard</span><span class="p">)</span>
-            <span class="n">loss</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">batch_size</span><span class="p">)</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+            <span class="n">loss</span><span class="p">,</span> <span class="n">stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_loss</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="o">**</span><span class="n">shard</span><span class="p">)</span>
+            <span class="n">loss</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="n">normalization</span><span class="p">)</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
             <span class="n">batch_stats</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">stats</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">batch_stats</span></div>
 
-<div class="viewcode-block" id="LossComputeBase.stats"><a class="viewcode-back" href="../../onmt.html#onmt.Loss.LossComputeBase.stats">[docs]</a>    <span class="k">def</span> <span class="nf">stats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loss</span><span class="p">,</span> <span class="n">scores</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loss</span><span class="p">,</span> <span class="n">scores</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Compute and return a Statistics object.</span>
-
 <span class="sd">        Args:</span>
-<span class="sd">            loss(Tensor): the loss computed by the loss criterion.</span>
-<span class="sd">            scores(Tensor): a sequence of predict output with scores.</span>
+<span class="sd">            loss (:obj:`FloatTensor`): the loss computed by the loss criterion.</span>
+<span class="sd">            scores (:obj:`FloatTensor`): a score for each possible output</span>
+<span class="sd">            target (:obj:`FloatTensor`): true targets</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            :obj:`Statistics` : statistics for this batch.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">pred</span> <span class="o">=</span> <span class="n">scores</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="mi">1</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
         <span class="n">non_padding</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">ne</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">padding_idx</span><span class="p">)</span>
         <span class="n">num_correct</span> <span class="o">=</span> <span class="n">pred</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">target</span><span class="p">)</span> \
                           <span class="o">.</span><span class="n">masked_select</span><span class="p">(</span><span class="n">non_padding</span><span class="p">)</span> \
                           <span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-        <span class="k">return</span> <span class="n">onmt</span><span class="o">.</span><span class="n">Statistics</span><span class="p">(</span><span class="n">loss</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">non_padding</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <span class="n">num_correct</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">onmt</span><span class="o">.</span><span class="n">Statistics</span><span class="p">(</span><span class="n">loss</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">non_padding</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <span class="n">num_correct</span><span class="p">)</span>
 
-<div class="viewcode-block" id="LossComputeBase.bottle"><a class="viewcode-back" href="../../onmt.html#onmt.Loss.LossComputeBase.bottle">[docs]</a>    <span class="k">def</span> <span class="nf">bottle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">v</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">v</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span></div>
+    <span class="k">def</span> <span class="nf">_bottle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">v</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">v</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
 
-<div class="viewcode-block" id="LossComputeBase.unbottle"><a class="viewcode-back" href="../../onmt.html#onmt.Loss.LossComputeBase.unbottle">[docs]</a>    <span class="k">def</span> <span class="nf">unbottle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">v</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">v</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span></div></div>
+    <span class="k">def</span> <span class="nf">_unbottle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">v</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">v</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span></div>
 
 
-<div class="viewcode-block" id="NMTLossCompute"><a class="viewcode-back" href="../../onmt.html#onmt.Loss.NMTLossCompute">[docs]</a><span class="k">class</span> <span class="nc">NMTLossCompute</span><span class="p">(</span><span class="n">LossComputeBase</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">NMTLossCompute</span><span class="p">(</span><span class="n">LossComputeBase</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Standard NMT Loss Computation.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">generator</span><span class="p">,</span> <span class="n">tgt_vocab</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">generator</span><span class="p">,</span> <span class="n">tgt_vocab</span><span class="p">,</span> <span class="n">normalization</span><span class="o">=</span><span class="s2">&quot;sents&quot;</span><span class="p">,</span>
+                 <span class="n">label_smoothing</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">NMTLossCompute</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">generator</span><span class="p">,</span> <span class="n">tgt_vocab</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="p">(</span><span class="n">label_smoothing</span> <span class="o">&gt;=</span> <span class="mf">0.0</span> <span class="ow">and</span> <span class="n">label_smoothing</span> <span class="o">&lt;=</span> <span class="mf">1.0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">label_smoothing</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># When label smoothing is turned on,</span>
+            <span class="c1"># KL-divergence between q_{smoothed ground truth prob.}(w)</span>
+            <span class="c1"># and p_{prob. computed by model}(w) is minimized.</span>
+            <span class="c1"># If label smoothing value is set to zero, the loss</span>
+            <span class="c1"># is equivalent to NLLLoss or CrossEntropyLoss.</span>
+            <span class="c1"># All non-true labels are uniformly set to low-confidence.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">criterion</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">KLDivLoss</span><span class="p">(</span><span class="n">size_average</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">one_hot</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">tgt_vocab</span><span class="p">))</span>
+            <span class="n">one_hot</span><span class="o">.</span><span class="n">fill_</span><span class="p">(</span><span class="n">label_smoothing</span> <span class="o">/</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tgt_vocab</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span><span class="p">))</span>
+            <span class="n">one_hot</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">padding_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s1">&#39;one_hot&#39;</span><span class="p">,</span> <span class="n">one_hot</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">weight</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tgt_vocab</span><span class="p">))</span>
+            <span class="n">weight</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">padding_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">criterion</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">NLLLoss</span><span class="p">(</span><span class="n">weight</span><span class="p">,</span> <span class="n">size_average</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">confidence</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">label_smoothing</span>
 
-        <span class="n">weight</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tgt_vocab</span><span class="p">))</span>
-        <span class="n">weight</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">padding_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">criterion</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">NLLLoss</span><span class="p">(</span><span class="n">weight</span><span class="p">,</span> <span class="n">size_average</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-
-<div class="viewcode-block" id="NMTLossCompute.make_shard_state"><a class="viewcode-back" href="../../onmt.html#onmt.Loss.NMTLossCompute.make_shard_state">[docs]</a>    <span class="k">def</span> <span class="nf">make_shard_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">range_</span><span class="p">,</span> <span class="n">attns</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; See base class for args description. &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">_make_shard_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">range_</span><span class="p">,</span> <span class="n">attns</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">{</span>
             <span class="s2">&quot;output&quot;</span><span class="p">:</span> <span class="n">output</span><span class="p">,</span>
             <span class="s2">&quot;target&quot;</span><span class="p">:</span> <span class="n">batch</span><span class="o">.</span><span class="n">tgt</span><span class="p">[</span><span class="n">range_</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span> <span class="n">range_</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span>
-        <span class="p">}</span></div>
+        <span class="p">}</span>
 
-<div class="viewcode-block" id="NMTLossCompute.compute_loss"><a class="viewcode-back" href="../../onmt.html#onmt.Loss.NMTLossCompute.compute_loss">[docs]</a>    <span class="k">def</span> <span class="nf">compute_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; See base class for args description. &quot;&quot;&quot;</span>
-        <span class="n">scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bottle</span><span class="p">(</span><span class="n">output</span><span class="p">))</span>
+    <span class="k">def</span> <span class="nf">_compute_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="n">scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_bottle</span><span class="p">(</span><span class="n">output</span><span class="p">))</span>
 
-        <span class="n">target</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">gtruth</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">confidence</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">tdata</span> <span class="o">=</span> <span class="n">gtruth</span><span class="o">.</span><span class="n">data</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">tdata</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">padding_idx</span><span class="p">))</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+            <span class="n">log_likelihood</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="n">scores</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">tdata</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+            <span class="n">tmp_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">one_hot</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">gtruth</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">tmp_</span><span class="o">.</span><span class="n">scatter_</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">tdata</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">confidence</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">mask</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">log_likelihood</span><span class="o">.</span><span class="n">index_fill_</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="n">tmp_</span><span class="o">.</span><span class="n">index_fill_</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">gtruth</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">tmp_</span><span class="p">,</span> <span class="n">requires_grad</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">criterion</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">gtruth</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">confidence</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># Default: report smoothed ppl.</span>
+            <span class="c1"># loss_data = -log_likelihood.sum(0)</span>
+            <span class="n">loss_data</span> <span class="o">=</span> <span class="n">loss</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">loss_data</span> <span class="o">=</span> <span class="n">loss</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
 
-        <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">criterion</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
-        <span class="n">loss_data</span> <span class="o">=</span> <span class="n">loss</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+        <span class="n">stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stats</span><span class="p">(</span><span class="n">loss_data</span><span class="p">,</span> <span class="n">scores</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">target</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
 
-        <span class="n">stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stats</span><span class="p">(</span><span class="n">loss_data</span><span class="p">,</span> <span class="n">scores</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">target</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">loss</span><span class="p">,</span> <span class="n">stats</span></div></div>
+        <span class="k">return</span> <span class="n">loss</span><span class="p">,</span> <span class="n">stats</span>
 
 
-<div class="viewcode-block" id="filter_shard_state"><a class="viewcode-back" href="../../onmt.html#onmt.Loss.filter_shard_state">[docs]</a><span class="k">def</span> <span class="nf">filter_shard_state</span><span class="p">(</span><span class="n">state</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">filter_shard_state</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">requires_grad</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">volatile</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">Variable</span><span class="p">)</span> <span class="ow">and</span> <span class="n">v</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
-                <span class="n">v</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">requires_grad</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">volatile</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-            <span class="k">yield</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span></div>
+                <span class="n">v</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">requires_grad</span><span class="o">=</span><span class="n">requires_grad</span><span class="p">,</span>
+                             <span class="n">volatile</span><span class="o">=</span><span class="n">volatile</span><span class="p">)</span>
+            <span class="k">yield</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span>
 
 
-<div class="viewcode-block" id="shards"><a class="viewcode-back" href="../../onmt.html#onmt.Loss.shards">[docs]</a><span class="k">def</span> <span class="nf">shards</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">shard_size</span><span class="p">,</span> <span class="nb">eval</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">shards</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">shard_size</span><span class="p">,</span> <span class="nb">eval</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Args:</span>
 <span class="sd">        state: A dictionary which corresponds to the output of</span>
-<span class="sd">               *LossCompute.make_shard_state(). The values for</span>
+<span class="sd">               *LossCompute._make_shard_state(). The values for</span>
 <span class="sd">               those keys are Tensor-like or None.</span>
 <span class="sd">        shard_size: The maximum size of the shards yielded by the model.</span>
 <span class="sd">        eval: If True, only yield the state, nothing else.</span>
@@ -320,7 +395,7 @@
 <span class="sd">        After the last shard, this function does back-propagation.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">eval</span><span class="p">:</span>
-        <span class="k">yield</span> <span class="n">state</span>
+        <span class="k">yield</span> <span class="n">filter_shard_state</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="c1"># non_none: the subdict of the state dictionary where the values</span>
         <span class="c1"># are not None.</span>
@@ -347,13 +422,11 @@
         <span class="n">variables</span> <span class="o">=</span> <span class="p">((</span><span class="n">state</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">v</span><span class="o">.</span><span class="n">grad</span><span class="o">.</span><span class="n">data</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">non_none</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
                      <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">Variable</span><span class="p">)</span> <span class="ow">and</span> <span class="n">v</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span>
         <span class="n">inputs</span><span class="p">,</span> <span class="n">grads</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">variables</span><span class="p">)</span>
-        <span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">grads</span><span class="p">)</span></div>
+        <span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">grads</span><span class="p">)</span>
 </pre></div>
 
            </div>
-           <div class="articleComments">
-            
-           </div>
+           
           </div>
           <footer>
   
@@ -366,7 +439,7 @@
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -385,6 +458,7 @@
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../',
             VERSION:'',
+            LANGUAGE:'None',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
@@ -395,6 +469,7 @@
       <script type="text/javascript" src="../../_static/underscore.js"></script>
       <script type="text/javascript" src="../../_static/doctools.js"></script>
       <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script>
 
   
 
@@ -403,14 +478,13 @@
     <script type="text/javascript" src="../../_static/js/theme.js"></script>
   
 
-  
-  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
       });
-  </script>
-   
+  </script> 
 
 </body>
 </html>

@@ -25,25 +25,17 @@
   
 
   
-  
     <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  
-
-  
-
-  
-        <link rel="index" title="Index"
-              href="../../../genindex.html"/>
-        <link rel="search" title="Search" href="../../../search.html"/>
-    <link rel="top" title="OpenNMT-py  documentation" href="../../../index.html"/>
-        <link rel="up" title="Module code" href="../../index.html"/> 
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
 
   
   <script src="../../../_static/js/modernizr.min.js"></script>
 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
@@ -88,17 +80,21 @@
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../main.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.html">Doc: Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.modules.html">Doc: Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.translation.html">Doc: Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.io.html">Doc: Data Loaders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../Library.html">Library: Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/preprocess.html">Options: preprocess.py:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/train.html">Options: train.py:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/translate.html">Options: translate.py:</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../extended.html">Example: Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../Summarization.html">Example: Summarization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../im2text.html">Example: Image to Text</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../speech2text.html">Example: Speech to Text</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">FAQ</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../options/preprocess.html">Options: preprocess.py:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../options/train.html">Options: train.py:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../options/translate.html">Options: translate.py:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../onmt.html">onmt package</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../onmt.modules.html">onmt.modules package</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../CONTRIBUTORS.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../CONTRIBUTING.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../ref.html">References</a></li>
 </ul>
 
             
@@ -110,7 +106,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+      <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../index.html">OpenNMT-py</a>
@@ -118,9 +114,10 @@
       </nav>
 
 
-      
       <div class="wy-nav-content">
+        
         <div class="rst-content">
+        
           
 
 
@@ -150,8 +147,6 @@
     
       <li class="wy-breadcrumbs-aside">
         
-            
-        
       </li>
     
   </ul>
@@ -166,42 +161,61 @@
 <span></span><span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
 
-<span class="kn">from</span> <span class="nn">onmt.modules.UtilClass</span> <span class="k">import</span> <span class="n">BottleLinear</span>
 <span class="kn">from</span> <span class="nn">onmt.Utils</span> <span class="k">import</span> <span class="n">aeq</span><span class="p">,</span> <span class="n">sequence_mask</span>
 
 
-<div class="viewcode-block" id="GlobalAttention"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.GlobalAttention.GlobalAttention">[docs]</a><span class="k">class</span> <span class="nc">GlobalAttention</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<div class="viewcode-block" id="GlobalAttention"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.GlobalAttention">[docs]</a><span class="k">class</span> <span class="nc">GlobalAttention</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Luong Attention.</span>
-
 <span class="sd">    Global attention takes a matrix and a query vector. It</span>
 <span class="sd">    then computes a parameterized convex combination of the matrix</span>
 <span class="sd">    based on the input query.</span>
 
+<span class="sd">    Constructs a unit mapping a query `q` of size `dim`</span>
+<span class="sd">    and a source matrix `H` of size `n x dim`, to an output</span>
+<span class="sd">    of size `dim`.</span>
 
-<span class="sd">        H_1 H_2 H_3 ... H_n</span>
-<span class="sd">          q   q   q       q</span>
-<span class="sd">            |  |   |       |</span>
-<span class="sd">              \ |   |      /</span>
-<span class="sd">                      .....</span>
-<span class="sd">                  \   |  /</span>
-<span class="sd">                      a</span>
 
-<span class="sd">    Constructs a unit mapping.</span>
-<span class="sd">    $$(H_1 + H_n, q) =&gt; (a)$$</span>
-<span class="sd">    Where H is of `batch x n x dim` and q is of `batch x dim`.</span>
+<span class="sd">    .. mermaid::</span>
 
-<span class="sd">    Luong Attention (dot, general):</span>
-<span class="sd">    The full function is</span>
-<span class="sd">    $$\tanh(W_2 [(softmax((W_1 q + b_1) H) H), q] + b_2)$$.</span>
+<span class="sd">       graph BT</span>
+<span class="sd">          A[Query]</span>
+<span class="sd">          subgraph RNN</span>
+<span class="sd">            C[H 1]</span>
+<span class="sd">            D[H 2]</span>
+<span class="sd">            E[H N]</span>
+<span class="sd">          end</span>
+<span class="sd">          F[Attn]</span>
+<span class="sd">          G[Output]</span>
+<span class="sd">          A --&gt; F</span>
+<span class="sd">          C --&gt; F</span>
+<span class="sd">          D --&gt; F</span>
+<span class="sd">          E --&gt; F</span>
+<span class="sd">          C -.-&gt; G</span>
+<span class="sd">          D -.-&gt; G</span>
+<span class="sd">          E -.-&gt; G</span>
+<span class="sd">          F --&gt; G</span>
 
-<span class="sd">    * dot: $$score(h_t,{\overline{h}}_s) = h_t^T{\overline{h}}_s$$</span>
-<span class="sd">    * general: $$score(h_t,{\overline{h}}_s) = h_t^T W_a {\overline{h}}_s$$</span>
+<span class="sd">    All models compute the output as</span>
+<span class="sd">    :math:`c = \sum_{j=1}^{SeqLength} a_j H_j` where</span>
+<span class="sd">    :math:`a_j` is the softmax of a score function.</span>
+<span class="sd">    Then then apply a projection layer to [q, c].</span>
 
-<span class="sd">    Bahdanau Attention (mlp):</span>
-<span class="sd">    $$c = \sum_{j=1}^{SeqLength}\a_jh_j$$.</span>
-<span class="sd">    The Alignment-function $$a$$ computes an alignment as:</span>
-<span class="sd">    $$a_j = softmax(v_a^T \tanh(W_a q + U_a h_j) )$$.</span>
+<span class="sd">    However they</span>
+<span class="sd">    differ on how they compute the attention score.</span>
+
+<span class="sd">    * Luong Attention (dot, general):</span>
+<span class="sd">       * dot: :math:`score(H_j,q) = H_j^T q`</span>
+<span class="sd">       * general: :math:`score(H_j, q) = H_j^T W_a q`</span>
+
+
+<span class="sd">    * Bahdanau Attention (mlp):</span>
+<span class="sd">       * :math:`score(H_j, q) = v_a^T tanh(W_a q + U_a h_j)`</span>
+
+
+<span class="sd">    Args:</span>
+<span class="sd">       dim (int): dimensionality of query and key</span>
+<span class="sd">       coverage (bool): use coverage term</span>
+<span class="sd">       attn_type (str): type of attention to use, options [dot,general,mlp]</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">coverage</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">attn_type</span><span class="o">=</span><span class="s2">&quot;dot&quot;</span><span class="p">):</span>
@@ -215,9 +229,9 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">attn_type</span> <span class="o">==</span> <span class="s2">&quot;general&quot;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">linear_in</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">attn_type</span> <span class="o">==</span> <span class="s2">&quot;mlp&quot;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">linear_context</span> <span class="o">=</span> <span class="n">BottleLinear</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">linear_context</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">linear_query</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">v</span> <span class="o">=</span> <span class="n">BottleLinear</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">v</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="c1"># mlp wants it with bias</span>
         <span class="n">out_bias</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">attn_type</span> <span class="o">==</span> <span class="s2">&quot;mlp&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">linear_out</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">dim</span><span class="o">*</span><span class="mi">2</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="n">out_bias</span><span class="p">)</span>
@@ -228,12 +242,17 @@
         <span class="k">if</span> <span class="n">coverage</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">linear_cover</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
-<div class="viewcode-block" id="GlobalAttention.score"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.GlobalAttention.GlobalAttention.score">[docs]</a>    <span class="k">def</span> <span class="nf">score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h_t</span><span class="p">,</span> <span class="n">h_s</span><span class="p">):</span>
+<div class="viewcode-block" id="GlobalAttention.score"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.GlobalAttention.score">[docs]</a>    <span class="k">def</span> <span class="nf">score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h_t</span><span class="p">,</span> <span class="n">h_s</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        h_t (FloatTensor): batch x tgt_len x dim</span>
-<span class="sd">        h_s (FloatTensor): batch x src_len x dim</span>
-<span class="sd">        returns scores (FloatTensor): batch x tgt_len x src_len:</span>
-<span class="sd">            raw attention scores for each src index</span>
+<span class="sd">        Args:</span>
+<span class="sd">          h_t (`FloatTensor`): sequence of queries `[batch x tgt_len x dim]`</span>
+<span class="sd">          h_s (`FloatTensor`): sequence of sources `[batch x src_len x dim]`</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          :obj:`FloatTensor`:</span>
+<span class="sd">           raw attention scores (unnormalized) for each src index</span>
+<span class="sd">          `[batch x tgt_len x src_len]`</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># Check input sizes</span>
@@ -266,12 +285,21 @@
 
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">v</span><span class="p">(</span><span class="n">wquh</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">dim</span><span class="p">))</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">tgt_batch</span><span class="p">,</span> <span class="n">tgt_len</span><span class="p">,</span> <span class="n">src_len</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="GlobalAttention.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.GlobalAttention.GlobalAttention.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">context_lengths</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">coverage</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="GlobalAttention.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.GlobalAttention.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">memory_lengths</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">coverage</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        input (FloatTensor): batch x tgt_len x dim: decoder&#39;s rnn&#39;s output.</span>
-<span class="sd">        context (FloatTensor): batch x src_len x dim: src hidden states</span>
-<span class="sd">        context_lengths (LongTensor): the source context lengths.</span>
-<span class="sd">        coverage (FloatTensor): None (not supported yet)</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          input (`FloatTensor`): query vectors `[batch x tgt_len x dim]`</span>
+<span class="sd">          memory_bank (`FloatTensor`): source vectors `[batch x src_len x dim]`</span>
+<span class="sd">          memory_lengths (`LongTensor`): the source context lengths `[batch]`</span>
+<span class="sd">          coverage (`FloatTensor`): None (not supported yet)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          (`FloatTensor`, `FloatTensor`):</span>
+
+<span class="sd">          * Computed vector `[tgt_len x batch x dim]`</span>
+<span class="sd">          * Attention distribtutions for each query</span>
+<span class="sd">             `[tgt_len x batch x src_len]`</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># one step input</span>
@@ -281,7 +309,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">one_step</span> <span class="o">=</span> <span class="kc">False</span>
 
-        <span class="n">batch</span><span class="p">,</span> <span class="n">sourceL</span><span class="p">,</span> <span class="n">dim</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+        <span class="n">batch</span><span class="p">,</span> <span class="n">sourceL</span><span class="p">,</span> <span class="n">dim</span> <span class="o">=</span> <span class="n">memory_bank</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
         <span class="n">batch_</span><span class="p">,</span> <span class="n">targetL</span><span class="p">,</span> <span class="n">dim_</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
         <span class="n">aeq</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">batch_</span><span class="p">)</span>
         <span class="n">aeq</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">dim_</span><span class="p">)</span>
@@ -293,14 +321,14 @@
 
         <span class="k">if</span> <span class="n">coverage</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">cover</span> <span class="o">=</span> <span class="n">coverage</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-            <span class="n">context</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear_cover</span><span class="p">(</span><span class="n">cover</span><span class="p">)</span><span class="o">.</span><span class="n">view_as</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
-            <span class="n">context</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+            <span class="n">memory_bank</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear_cover</span><span class="p">(</span><span class="n">cover</span><span class="p">)</span><span class="o">.</span><span class="n">view_as</span><span class="p">(</span><span class="n">memory_bank</span><span class="p">)</span>
+            <span class="n">memory_bank</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="n">memory_bank</span><span class="p">)</span>
 
         <span class="c1"># compute attention scores, as in Luong et al.</span>
-        <span class="n">align</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+        <span class="n">align</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">context_lengths</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">mask</span> <span class="o">=</span> <span class="n">sequence_mask</span><span class="p">(</span><span class="n">context_lengths</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">memory_lengths</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="n">sequence_mask</span><span class="p">(</span><span class="n">memory_lengths</span><span class="p">)</span>
             <span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># Make it broadcastable.</span>
             <span class="n">align</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">masked_fill_</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">mask</span><span class="p">,</span> <span class="o">-</span><span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">))</span>
 
@@ -310,7 +338,7 @@
 
         <span class="c1"># each context vector c_t is the weighted average</span>
         <span class="c1"># over all the source hidden states</span>
-        <span class="n">c</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">bmm</span><span class="p">(</span><span class="n">align_vectors</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">bmm</span><span class="p">(</span><span class="n">align_vectors</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">)</span>
 
         <span class="c1"># concatenate</span>
         <span class="n">concat_c</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">c</span><span class="p">,</span> <span class="nb">input</span><span class="p">],</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch</span><span class="o">*</span><span class="n">targetL</span><span class="p">,</span> <span class="n">dim</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span>
@@ -347,9 +375,7 @@
 </pre></div>
 
            </div>
-           <div class="articleComments">
-            
-           </div>
+           
           </div>
           <footer>
   
@@ -362,7 +388,7 @@
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -381,6 +407,7 @@
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../',
             VERSION:'',
+            LANGUAGE:'None',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
@@ -391,6 +418,7 @@
       <script type="text/javascript" src="../../../_static/underscore.js"></script>
       <script type="text/javascript" src="../../../_static/doctools.js"></script>
       <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script>
 
   
 
@@ -399,14 +427,13 @@
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
   
 
-  
-  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
       });
-  </script>
-   
+  </script> 
 
 </body>
 </html>

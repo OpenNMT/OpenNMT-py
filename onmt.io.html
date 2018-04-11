@@ -25,26 +25,19 @@
   
 
   
-  
     <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  
-
-  
-
-  
-        <link rel="index" title="Index"
-              href="genindex.html"/>
-        <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="OpenNMT-py  documentation" href="index.html"/>
-        <link rel="next" title="Library: Example" href="Library.html"/>
-        <link rel="prev" title="Doc: Translation" href="onmt.translation.html"/> 
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Library: Example" href="Library.html" />
+    <link rel="prev" title="Doc: Translation" href="onmt.translation.html" /> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
@@ -118,7 +111,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+      <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="index.html">OpenNMT-py</a>
@@ -126,9 +119,10 @@
       </nav>
 
 
-      
       <div class="wy-nav-content">
+        
         <div class="rst-content">
+        
           
 
 
@@ -176,7 +170,7 @@
 <h2>Datasets<a class="headerlink" href="#datasets" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.io.TextDataset">
-<em class="property">class </em><code class="descclassname">onmt.io.</code><code class="descname">TextDataset</code><span class="sig-paren">(</span><em>fields</em>, <em>src_examples_iter</em>, <em>tgt_examples_iter</em>, <em>num_src_feats=0</em>, <em>num_tgt_feats=0</em>, <em>src_seq_length=0</em>, <em>tgt_seq_length=0</em>, <em>dynamic_dict=True</em>, <em>use_filter_pred=True</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.TextDataset" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.io.</code><code class="descname">TextDataset</code><span class="sig-paren">(</span><em>fields</em>, <em>src_examples_iter</em>, <em>tgt_examples_iter</em>, <em>num_src_feats=0</em>, <em>num_tgt_feats=0</em>, <em>src_seq_length=0</em>, <em>tgt_seq_length=0</em>, <em>dynamic_dict=True</em>, <em>use_filter_pred=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/io/TextDataset.html#TextDataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.io.TextDataset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Dataset for data_type==’text’</p>
 <p>Build <cite>Example</cite> objects, <cite>Field</cite> objects, and filter_pred function
 from text corpus.</p>
@@ -205,7 +199,7 @@ out examples?</li>
 </table>
 <dl class="staticmethod">
 <dt id="onmt.io.TextDataset.collapse_copy_scores">
-<em class="property">static </em><code class="descname">collapse_copy_scores</code><span class="sig-paren">(</span><em>batch</em>, <em>tgt_vocab</em>, <em>src_vocabs</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.TextDataset.collapse_copy_scores" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="descname">collapse_copy_scores</code><span class="sig-paren">(</span><em>batch</em>, <em>tgt_vocab</em>, <em>src_vocabs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/io/TextDataset.html#TextDataset.collapse_copy_scores"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.io.TextDataset.collapse_copy_scores" title="Permalink to this definition">¶</a></dt>
 <dd><p>Given scores from an expanded dictionary
 corresponeding to a batch, sums together copies,
 with a dictionary word when it is ambigious.</p>
@@ -213,7 +207,7 @@ with a dictionary word when it is ambigious.</p>
 
 <dl class="staticmethod">
 <dt id="onmt.io.TextDataset.get_fields">
-<em class="property">static </em><code class="descname">get_fields</code><span class="sig-paren">(</span><em>n_tgt_features</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.TextDataset.get_fields" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="descname">get_fields</code><span class="sig-paren">(</span><em>n_tgt_features</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/io/TextDataset.html#TextDataset.get_fields"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.io.TextDataset.get_fields" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -236,7 +230,7 @@ are the corresponding Field objects.</p>
 
 <dl class="staticmethod">
 <dt id="onmt.io.TextDataset.get_num_features">
-<em class="property">static </em><code class="descname">get_num_features</code><span class="sig-paren">(</span><em>side</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.TextDataset.get_num_features" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="descname">get_num_features</code><span class="sig-paren">(</span><em>side</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/io/TextDataset.html#TextDataset.get_num_features"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.io.TextDataset.get_num_features" title="Permalink to this definition">¶</a></dt>
 <dd><p>Peek one line and get number of features of it.
 (All lines must have same number of features).
 For text corpus, both sides are in text form, thus
@@ -260,7 +254,7 @@ it works the same.</p>
 
 <dl class="staticmethod">
 <dt id="onmt.io.TextDataset.make_text_examples_nfeats_tpl">
-<em class="property">static </em><code class="descname">make_text_examples_nfeats_tpl</code><span class="sig-paren">(</span><em>truncate</em>, <em>side</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.TextDataset.make_text_examples_nfeats_tpl" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="descname">make_text_examples_nfeats_tpl</code><span class="sig-paren">(</span><em>truncate</em>, <em>side</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/io/TextDataset.html#TextDataset.make_text_examples_nfeats_tpl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.io.TextDataset.make_text_examples_nfeats_tpl" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -281,7 +275,7 @@ it works the same.</p>
 
 <dl class="staticmethod">
 <dt id="onmt.io.TextDataset.read_text_file">
-<em class="property">static </em><code class="descname">read_text_file</code><span class="sig-paren">(</span><em>truncate</em>, <em>side</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.TextDataset.read_text_file" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="descname">read_text_file</code><span class="sig-paren">(</span><em>truncate</em>, <em>side</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/io/TextDataset.html#TextDataset.read_text_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.io.TextDataset.read_text_file" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -302,7 +296,7 @@ it works the same.</p>
 
 <dl class="method">
 <dt id="onmt.io.TextDataset.sort_key">
-<code class="descname">sort_key</code><span class="sig-paren">(</span><em>ex</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.TextDataset.sort_key" title="Permalink to this definition">¶</a></dt>
+<code class="descname">sort_key</code><span class="sig-paren">(</span><em>ex</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/io/TextDataset.html#TextDataset.sort_key"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.io.TextDataset.sort_key" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sort using length of source sentences.</p>
 </dd></dl>
 
@@ -310,7 +304,7 @@ it works the same.</p>
 
 <dl class="class">
 <dt id="onmt.io.ImageDataset">
-<em class="property">class </em><code class="descclassname">onmt.io.</code><code class="descname">ImageDataset</code><span class="sig-paren">(</span><em>fields</em>, <em>src_examples_iter</em>, <em>tgt_examples_iter</em>, <em>num_src_feats=0</em>, <em>num_tgt_feats=0</em>, <em>tgt_seq_length=0</em>, <em>use_filter_pred=True</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.ImageDataset" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.io.</code><code class="descname">ImageDataset</code><span class="sig-paren">(</span><em>fields</em>, <em>src_examples_iter</em>, <em>tgt_examples_iter</em>, <em>num_src_feats=0</em>, <em>num_tgt_feats=0</em>, <em>tgt_seq_length=0</em>, <em>use_filter_pred=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/io/ImageDataset.html#ImageDataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.io.ImageDataset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Dataset for data_type==’img’</p>
 <p>Build <cite>Example</cite> objects, <cite>Field</cite> objects, and filter_pred function
 from image corpus.</p>
@@ -336,7 +330,7 @@ out examples?</li>
 </table>
 <dl class="staticmethod">
 <dt id="onmt.io.ImageDataset.get_fields">
-<em class="property">static </em><code class="descname">get_fields</code><span class="sig-paren">(</span><em>n_tgt_features</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.ImageDataset.get_fields" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="descname">get_fields</code><span class="sig-paren">(</span><em>n_tgt_features</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/io/ImageDataset.html#ImageDataset.get_fields"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.io.ImageDataset.get_fields" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -359,7 +353,7 @@ are the corresponding Field objects.</p>
 
 <dl class="staticmethod">
 <dt id="onmt.io.ImageDataset.get_num_features">
-<em class="property">static </em><code class="descname">get_num_features</code><span class="sig-paren">(</span><em>side</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.ImageDataset.get_num_features" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="descname">get_num_features</code><span class="sig-paren">(</span><em>side</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/io/ImageDataset.html#ImageDataset.get_num_features"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.io.ImageDataset.get_num_features" title="Permalink to this definition">¶</a></dt>
 <dd><p>For image corpus, source side is in form of image, thus
 no feature; while target side is in form of text, thus
 we can extract its text features.</p>
@@ -382,7 +376,7 @@ we can extract its text features.</p>
 
 <dl class="staticmethod">
 <dt id="onmt.io.ImageDataset.make_image_examples_nfeats_tpl">
-<em class="property">static </em><code class="descname">make_image_examples_nfeats_tpl</code><span class="sig-paren">(</span><em>img_dir</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.ImageDataset.make_image_examples_nfeats_tpl" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="descname">make_image_examples_nfeats_tpl</code><span class="sig-paren">(</span><em>img_dir</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/io/ImageDataset.html#ImageDataset.make_image_examples_nfeats_tpl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.io.ImageDataset.make_image_examples_nfeats_tpl" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -402,7 +396,7 @@ we can extract its text features.</p>
 
 <dl class="staticmethod">
 <dt id="onmt.io.ImageDataset.read_img_file">
-<em class="property">static </em><code class="descname">read_img_file</code><span class="sig-paren">(</span><em>src_dir</em>, <em>side</em>, <em>truncate=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.ImageDataset.read_img_file" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="descname">read_img_file</code><span class="sig-paren">(</span><em>src_dir</em>, <em>side</em>, <em>truncate=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/io/ImageDataset.html#ImageDataset.read_img_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.io.ImageDataset.read_img_file" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -424,7 +418,7 @@ we can extract its text features.</p>
 
 <dl class="method">
 <dt id="onmt.io.ImageDataset.sort_key">
-<code class="descname">sort_key</code><span class="sig-paren">(</span><em>ex</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.ImageDataset.sort_key" title="Permalink to this definition">¶</a></dt>
+<code class="descname">sort_key</code><span class="sig-paren">(</span><em>ex</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/io/ImageDataset.html#ImageDataset.sort_key"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.io.ImageDataset.sort_key" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sort using the size of the image: (width, height).</p>
 </dd></dl>
 
@@ -432,7 +426,7 @@ we can extract its text features.</p>
 
 <dl class="class">
 <dt id="onmt.io.AudioDataset">
-<em class="property">class </em><code class="descclassname">onmt.io.</code><code class="descname">AudioDataset</code><span class="sig-paren">(</span><em>fields</em>, <em>src_examples_iter</em>, <em>tgt_examples_iter</em>, <em>num_src_feats=0</em>, <em>num_tgt_feats=0</em>, <em>tgt_seq_length=0</em>, <em>sample_rate=0</em>, <em>window_size=0.0</em>, <em>window_stride=0.0</em>, <em>window=None</em>, <em>normalize_audio=True</em>, <em>use_filter_pred=True</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.AudioDataset" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.io.</code><code class="descname">AudioDataset</code><span class="sig-paren">(</span><em>fields</em>, <em>src_examples_iter</em>, <em>tgt_examples_iter</em>, <em>num_src_feats=0</em>, <em>num_tgt_feats=0</em>, <em>tgt_seq_length=0</em>, <em>sample_rate=0</em>, <em>window_size=0.0</em>, <em>window_stride=0.0</em>, <em>window=None</em>, <em>normalize_audio=True</em>, <em>use_filter_pred=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/io/AudioDataset.html#AudioDataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.io.AudioDataset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Dataset for data_type==’audio’</p>
 <p>Build <cite>Example</cite> objects, <cite>Field</cite> objects, and filter_pred function
 from audio corpus.</p>
@@ -464,7 +458,7 @@ out examples?</li>
 </table>
 <dl class="staticmethod">
 <dt id="onmt.io.AudioDataset.get_fields">
-<em class="property">static </em><code class="descname">get_fields</code><span class="sig-paren">(</span><em>n_tgt_features</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.AudioDataset.get_fields" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="descname">get_fields</code><span class="sig-paren">(</span><em>n_tgt_features</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/io/AudioDataset.html#AudioDataset.get_fields"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.io.AudioDataset.get_fields" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -487,7 +481,7 @@ are the corresponding Field objects.</p>
 
 <dl class="staticmethod">
 <dt id="onmt.io.AudioDataset.get_num_features">
-<em class="property">static </em><code class="descname">get_num_features</code><span class="sig-paren">(</span><em>side</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.AudioDataset.get_num_features" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="descname">get_num_features</code><span class="sig-paren">(</span><em>side</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/io/AudioDataset.html#AudioDataset.get_num_features"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.io.AudioDataset.get_num_features" title="Permalink to this definition">¶</a></dt>
 <dd><p>For audio corpus, source side is in form of audio, thus
 no feature; while target side is in form of text, thus
 we can extract its text features.</p>
@@ -510,7 +504,7 @@ we can extract its text features.</p>
 
 <dl class="staticmethod">
 <dt id="onmt.io.AudioDataset.make_audio_examples_nfeats_tpl">
-<em class="property">static </em><code class="descname">make_audio_examples_nfeats_tpl</code><span class="sig-paren">(</span><em>audio_dir</em>, <em>sample_rate</em>, <em>window_size</em>, <em>window_stride</em>, <em>window</em>, <em>normalize_audio</em>, <em>truncate=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.AudioDataset.make_audio_examples_nfeats_tpl" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="descname">make_audio_examples_nfeats_tpl</code><span class="sig-paren">(</span><em>audio_dir</em>, <em>sample_rate</em>, <em>window_size</em>, <em>window_stride</em>, <em>window</em>, <em>normalize_audio</em>, <em>truncate=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/io/AudioDataset.html#AudioDataset.make_audio_examples_nfeats_tpl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.io.AudioDataset.make_audio_examples_nfeats_tpl" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -537,7 +531,7 @@ by std or not.</li>
 
 <dl class="staticmethod">
 <dt id="onmt.io.AudioDataset.read_audio_file">
-<em class="property">static </em><code class="descname">read_audio_file</code><span class="sig-paren">(</span><em>src_dir</em>, <em>side</em>, <em>sample_rate</em>, <em>window_size</em>, <em>window_stride</em>, <em>window</em>, <em>normalize_audio</em>, <em>truncate=None</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.AudioDataset.read_audio_file" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="descname">read_audio_file</code><span class="sig-paren">(</span><em>src_dir</em>, <em>side</em>, <em>sample_rate</em>, <em>window_size</em>, <em>window_stride</em>, <em>window</em>, <em>normalize_audio</em>, <em>truncate=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/io/AudioDataset.html#AudioDataset.read_audio_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.io.AudioDataset.read_audio_file" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -565,7 +559,7 @@ by std or not.</li>
 
 <dl class="method">
 <dt id="onmt.io.AudioDataset.sort_key">
-<code class="descname">sort_key</code><span class="sig-paren">(</span><em>ex</em><span class="sig-paren">)</span><a class="headerlink" href="#onmt.io.AudioDataset.sort_key" title="Permalink to this definition">¶</a></dt>
+<code class="descname">sort_key</code><span class="sig-paren">(</span><em>ex</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/io/AudioDataset.html#AudioDataset.sort_key"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.io.AudioDataset.sort_key" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sort using duration time of the sound spectrogram.</p>
 </dd></dl>
 
@@ -576,9 +570,7 @@ by std or not.</li>
 
 
            </div>
-           <div class="articleComments">
-            
-           </div>
+           
           </div>
           <footer>
   
@@ -600,7 +592,7 @@ by std or not.</li>
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -619,6 +611,7 @@ by std or not.</li>
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
             VERSION:'',
+            LANGUAGE:'None',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
@@ -637,14 +630,13 @@ by std or not.</li>
     <script type="text/javascript" src="_static/js/theme.js"></script>
   
 
-  
-  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
       });
-  </script>
-   
+  </script> 
 
 </body>
 </html>

@@ -1,0 +1,632 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>onmt.io.TextDataset &mdash; OpenNMT-py  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> OpenNMT-py
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../main.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.html">Doc: Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.modules.html">Doc: Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.translation.html">Doc: Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.io.html">Doc: Data Loaders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../Library.html">Library: Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/preprocess.html">Options: preprocess.py:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/train.html">Options: train.py:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/translate.html">Options: translate.py:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../extended.html">Example: Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../Summarization.html">Example: Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../im2text.html">Example: Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../speech2text.html">Example: Speech to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../CONTRIBUTING.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../ref.html">References</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">OpenNMT-py</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>onmt.io.TextDataset</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for onmt.io.TextDataset</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">Counter</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="k">import</span> <span class="n">chain</span>
+<span class="kn">import</span> <span class="nn">io</span>
+<span class="kn">import</span> <span class="nn">codecs</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torchtext</span>
+
+<span class="kn">from</span> <span class="nn">onmt.Utils</span> <span class="k">import</span> <span class="n">aeq</span>
+<span class="kn">from</span> <span class="nn">onmt.io.DatasetBase</span> <span class="k">import</span> <span class="p">(</span><span class="n">ONMTDatasetBase</span><span class="p">,</span> <span class="n">UNK_WORD</span><span class="p">,</span>
+                                 <span class="n">PAD_WORD</span><span class="p">,</span> <span class="n">BOS_WORD</span><span class="p">,</span> <span class="n">EOS_WORD</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="TextDataset"><a class="viewcode-back" href="../../../onmt.io.html#onmt.io.TextDataset">[docs]</a><span class="k">class</span> <span class="nc">TextDataset</span><span class="p">(</span><span class="n">ONMTDatasetBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Dataset for data_type==&#39;text&#39;</span>
+
+<span class="sd">        Build `Example` objects, `Field` objects, and filter_pred function</span>
+<span class="sd">        from text corpus.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            fields (dict): a dictionary of `torchtext.data.Field`.</span>
+<span class="sd">                Keys are like &#39;src&#39;, &#39;tgt&#39;, &#39;src_map&#39;, and &#39;alignment&#39;.</span>
+<span class="sd">            src_examples_iter (dict iter): preprocessed source example</span>
+<span class="sd">                dictionary iterator.</span>
+<span class="sd">            tgt_examples_iter (dict iter): preprocessed target example</span>
+<span class="sd">                dictionary iterator.</span>
+<span class="sd">            num_src_feats (int): number of source side features.</span>
+<span class="sd">            num_tgt_feats (int): number of target side features.</span>
+<span class="sd">            src_seq_length (int): maximum source sequence length.</span>
+<span class="sd">            tgt_seq_length (int): maximum target sequence length.</span>
+<span class="sd">            dynamic_dict (bool): create dynamic dictionaries?</span>
+<span class="sd">            use_filter_pred (bool): use a custom filter predicate to filter</span>
+<span class="sd">                out examples?</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">src_examples_iter</span><span class="p">,</span> <span class="n">tgt_examples_iter</span><span class="p">,</span>
+                 <span class="n">num_src_feats</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_tgt_feats</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                 <span class="n">src_seq_length</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">tgt_seq_length</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                 <span class="n">dynamic_dict</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">use_filter_pred</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span> <span class="o">=</span> <span class="s1">&#39;text&#39;</span>
+
+        <span class="c1"># self.src_vocabs: mutated in dynamic_dict, used in</span>
+        <span class="c1"># collapse_copy_scores and in Translator.py</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">src_vocabs</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_src_feats</span> <span class="o">=</span> <span class="n">num_src_feats</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_tgt_feats</span> <span class="o">=</span> <span class="n">num_tgt_feats</span>
+
+        <span class="c1"># Each element of an example is a dictionary whose keys represents</span>
+        <span class="c1"># at minimum the src tokens and their indices and potentially also</span>
+        <span class="c1"># the src and tgt features and alignment information.</span>
+        <span class="k">if</span> <span class="n">tgt_examples_iter</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">examples_iter</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_join_dicts</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span> <span class="k">for</span> <span class="n">src</span><span class="p">,</span> <span class="n">tgt</span> <span class="ow">in</span>
+                             <span class="nb">zip</span><span class="p">(</span><span class="n">src_examples_iter</span><span class="p">,</span> <span class="n">tgt_examples_iter</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">examples_iter</span> <span class="o">=</span> <span class="n">src_examples_iter</span>
+
+        <span class="k">if</span> <span class="n">dynamic_dict</span><span class="p">:</span>
+            <span class="n">examples_iter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dynamic_dict</span><span class="p">(</span><span class="n">examples_iter</span><span class="p">)</span>
+
+        <span class="c1"># Peek at the first to see which fields are used.</span>
+        <span class="n">ex</span><span class="p">,</span> <span class="n">examples_iter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_peek</span><span class="p">(</span><span class="n">examples_iter</span><span class="p">)</span>
+        <span class="n">keys</span> <span class="o">=</span> <span class="n">ex</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+
+        <span class="n">out_fields</span> <span class="o">=</span> <span class="p">[(</span><span class="n">k</span><span class="p">,</span> <span class="n">fields</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">fields</span> <span class="k">else</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                      <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">]</span>
+        <span class="n">example_values</span> <span class="o">=</span> <span class="p">([</span><span class="n">ex</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">]</span> <span class="k">for</span> <span class="n">ex</span> <span class="ow">in</span> <span class="n">examples_iter</span><span class="p">)</span>
+
+        <span class="c1"># If out_examples is a generator, we need to save the filter_pred</span>
+        <span class="c1"># function in serialization too, which would cause a problem when</span>
+        <span class="c1"># `torch.save()`. Thus we materialize it as a list.</span>
+        <span class="n">src_size</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="n">out_examples</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">ex_values</span> <span class="ow">in</span> <span class="n">example_values</span><span class="p">:</span>
+            <span class="n">example</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_construct_example_fromlist</span><span class="p">(</span>
+                <span class="n">ex_values</span><span class="p">,</span> <span class="n">out_fields</span><span class="p">)</span>
+            <span class="n">src_size</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">example</span><span class="o">.</span><span class="n">src</span><span class="p">)</span>
+            <span class="n">out_examples</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">example</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;average src size&quot;</span><span class="p">,</span> <span class="n">src_size</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">out_examples</span><span class="p">),</span>
+              <span class="nb">len</span><span class="p">(</span><span class="n">out_examples</span><span class="p">))</span>
+
+        <span class="k">def</span> <span class="nf">filter_pred</span><span class="p">(</span><span class="n">example</span><span class="p">):</span>
+            <span class="k">return</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">example</span><span class="o">.</span><span class="n">src</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">src_seq_length</span> \
+               <span class="ow">and</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">example</span><span class="o">.</span><span class="n">tgt</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">tgt_seq_length</span>
+
+        <span class="n">filter_pred</span> <span class="o">=</span> <span class="n">filter_pred</span> <span class="k">if</span> <span class="n">use_filter_pred</span> <span class="k">else</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="kc">True</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">TextDataset</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">out_examples</span><span class="p">,</span> <span class="n">out_fields</span><span class="p">,</span> <span class="n">filter_pred</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="TextDataset.sort_key"><a class="viewcode-back" href="../../../onmt.io.html#onmt.io.TextDataset.sort_key">[docs]</a>    <span class="k">def</span> <span class="nf">sort_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ex</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Sort using length of source sentences. &quot;&quot;&quot;</span>
+        <span class="c1"># Default to a balanced sort, prioritizing tgt len match.</span>
+        <span class="c1"># TODO: make this configurable.</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ex</span><span class="p">,</span> <span class="s2">&quot;tgt&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">ex</span><span class="o">.</span><span class="n">src</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">ex</span><span class="o">.</span><span class="n">tgt</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">ex</span><span class="o">.</span><span class="n">src</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TextDataset.collapse_copy_scores"><a class="viewcode-back" href="../../../onmt.io.html#onmt.io.TextDataset.collapse_copy_scores">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">collapse_copy_scores</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">tgt_vocab</span><span class="p">,</span> <span class="n">src_vocabs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Given scores from an expanded dictionary</span>
+<span class="sd">        corresponeding to a batch, sums together copies,</span>
+<span class="sd">        with a dictionary word when it is ambigious.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">offset</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">tgt_vocab</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">batch_size</span><span class="p">):</span>
+            <span class="n">blank</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">fill</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">indices</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">b</span><span class="p">]</span>
+            <span class="n">src_vocab</span> <span class="o">=</span> <span class="n">src_vocabs</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">src_vocab</span><span class="p">)):</span>
+                <span class="n">sw</span> <span class="o">=</span> <span class="n">src_vocab</span><span class="o">.</span><span class="n">itos</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="n">ti</span> <span class="o">=</span> <span class="n">tgt_vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">sw</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">ti</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">blank</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">offset</span> <span class="o">+</span> <span class="n">i</span><span class="p">)</span>
+                    <span class="n">fill</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ti</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">blank</span><span class="p">:</span>
+                <span class="n">blank</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">blank</span><span class="p">)</span><span class="o">.</span><span class="n">type_as</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">indices</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+                <span class="n">fill</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">fill</span><span class="p">)</span><span class="o">.</span><span class="n">type_as</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">indices</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+                <span class="n">scores</span><span class="p">[:,</span> <span class="n">b</span><span class="p">]</span><span class="o">.</span><span class="n">index_add_</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">fill</span><span class="p">,</span>
+                                        <span class="n">scores</span><span class="p">[:,</span> <span class="n">b</span><span class="p">]</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">blank</span><span class="p">))</span>
+                <span class="n">scores</span><span class="p">[:,</span> <span class="n">b</span><span class="p">]</span><span class="o">.</span><span class="n">index_fill_</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">blank</span><span class="p">,</span> <span class="mf">1e-10</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">scores</span></div>
+
+<div class="viewcode-block" id="TextDataset.make_text_examples_nfeats_tpl"><a class="viewcode-back" href="../../../onmt.io.html#onmt.io.TextDataset.make_text_examples_nfeats_tpl">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">make_text_examples_nfeats_tpl</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">truncate</span><span class="p">,</span> <span class="n">side</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            path (str): location of a src or tgt file.</span>
+<span class="sd">            truncate (int): maximum sequence length (0 for unlimited).</span>
+<span class="sd">            side (str): &quot;src&quot; or &quot;tgt&quot;.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (example_dict iterator, num_feats) tuple.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="n">side</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">,</span> <span class="s1">&#39;tgt&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># All examples have same number of features, so we peek first one</span>
+        <span class="c1"># to get the num_feats.</span>
+        <span class="n">examples_nfeats_iter</span> <span class="o">=</span> \
+            <span class="n">TextDataset</span><span class="o">.</span><span class="n">read_text_file</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">truncate</span><span class="p">,</span> <span class="n">side</span><span class="p">)</span>
+
+        <span class="n">first_ex</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">examples_nfeats_iter</span><span class="p">)</span>
+        <span class="n">num_feats</span> <span class="o">=</span> <span class="n">first_ex</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="c1"># Chain back the first element - we only want to peek it.</span>
+        <span class="n">examples_nfeats_iter</span> <span class="o">=</span> <span class="n">chain</span><span class="p">([</span><span class="n">first_ex</span><span class="p">],</span> <span class="n">examples_nfeats_iter</span><span class="p">)</span>
+        <span class="n">examples_iter</span> <span class="o">=</span> <span class="p">(</span><span class="n">ex</span> <span class="k">for</span> <span class="n">ex</span><span class="p">,</span> <span class="n">nfeats</span> <span class="ow">in</span> <span class="n">examples_nfeats_iter</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">examples_iter</span><span class="p">,</span> <span class="n">num_feats</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TextDataset.read_text_file"><a class="viewcode-back" href="../../../onmt.io.html#onmt.io.TextDataset.read_text_file">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">read_text_file</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">truncate</span><span class="p">,</span> <span class="n">side</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            path (str): location of a src or tgt file.</span>
+<span class="sd">            truncate (int): maximum sequence length (0 for unlimited).</span>
+<span class="sd">            side (str): &quot;src&quot; or &quot;tgt&quot;.</span>
+
+<span class="sd">        Yields:</span>
+<span class="sd">            (word, features, nfeat) triples for each line.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="n">codecs</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">corpus_file</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">corpus_file</span><span class="p">):</span>
+                <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">truncate</span><span class="p">:</span>
+                    <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="p">[:</span><span class="n">truncate</span><span class="p">]</span>
+
+                <span class="n">words</span><span class="p">,</span> <span class="n">feats</span><span class="p">,</span> <span class="n">n_feats</span> <span class="o">=</span> \
+                    <span class="n">TextDataset</span><span class="o">.</span><span class="n">extract_text_features</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+
+                <span class="n">example_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">side</span><span class="p">:</span> <span class="n">words</span><span class="p">,</span> <span class="s2">&quot;indices&quot;</span><span class="p">:</span> <span class="n">i</span><span class="p">}</span>
+                <span class="k">if</span> <span class="n">feats</span><span class="p">:</span>
+                    <span class="n">prefix</span> <span class="o">=</span> <span class="n">side</span> <span class="o">+</span> <span class="s2">&quot;_feat_&quot;</span>
+                    <span class="n">example_dict</span><span class="o">.</span><span class="n">update</span><span class="p">((</span><span class="n">prefix</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">j</span><span class="p">),</span> <span class="n">f</span><span class="p">)</span>
+                                        <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">feats</span><span class="p">))</span>
+                <span class="k">yield</span> <span class="n">example_dict</span><span class="p">,</span> <span class="n">n_feats</span></div>
+
+<div class="viewcode-block" id="TextDataset.get_fields"><a class="viewcode-back" href="../../../onmt.io.html#onmt.io.TextDataset.get_fields">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">get_fields</span><span class="p">(</span><span class="n">n_src_features</span><span class="p">,</span> <span class="n">n_tgt_features</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            n_src_features (int): the number of source features to</span>
+<span class="sd">                create `torchtext.data.Field` for.</span>
+<span class="sd">            n_tgt_features (int): the number of target features to</span>
+<span class="sd">                create `torchtext.data.Field` for.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A dictionary whose keys are strings and whose values</span>
+<span class="sd">            are the corresponding Field objects.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torchtext</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Field</span><span class="p">(</span>
+            <span class="n">pad_token</span><span class="o">=</span><span class="n">PAD_WORD</span><span class="p">,</span>
+            <span class="n">include_lengths</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_src_features</span><span class="p">):</span>
+            <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;src_feat_&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">j</span><span class="p">)]</span> <span class="o">=</span> \
+                <span class="n">torchtext</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Field</span><span class="p">(</span><span class="n">pad_token</span><span class="o">=</span><span class="n">PAD_WORD</span><span class="p">)</span>
+
+        <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torchtext</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Field</span><span class="p">(</span>
+            <span class="n">init_token</span><span class="o">=</span><span class="n">BOS_WORD</span><span class="p">,</span> <span class="n">eos_token</span><span class="o">=</span><span class="n">EOS_WORD</span><span class="p">,</span>
+            <span class="n">pad_token</span><span class="o">=</span><span class="n">PAD_WORD</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_tgt_features</span><span class="p">):</span>
+            <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt_feat_&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">j</span><span class="p">)]</span> <span class="o">=</span> \
+                <span class="n">torchtext</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Field</span><span class="p">(</span><span class="n">init_token</span><span class="o">=</span><span class="n">BOS_WORD</span><span class="p">,</span> <span class="n">eos_token</span><span class="o">=</span><span class="n">EOS_WORD</span><span class="p">,</span>
+                                     <span class="n">pad_token</span><span class="o">=</span><span class="n">PAD_WORD</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">make_src</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">vocab</span><span class="p">,</span> <span class="n">is_train</span><span class="p">):</span>
+            <span class="n">src_size</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="n">t</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">data</span><span class="p">])</span>
+            <span class="n">src_vocab_size</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="n">t</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">data</span><span class="p">])</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="n">alignment</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">src_size</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">src_vocab_size</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">sent</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sent</span><span class="p">):</span>
+                    <span class="n">alignment</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">return</span> <span class="n">alignment</span>
+
+        <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;src_map&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torchtext</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Field</span><span class="p">(</span>
+            <span class="n">use_vocab</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">tensor_type</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span>
+            <span class="n">postprocessing</span><span class="o">=</span><span class="n">make_src</span><span class="p">,</span> <span class="n">sequential</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">make_tgt</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">vocab</span><span class="p">,</span> <span class="n">is_train</span><span class="p">):</span>
+            <span class="n">tgt_size</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="n">t</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">data</span><span class="p">])</span>
+            <span class="n">alignment</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">tgt_size</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))</span><span class="o">.</span><span class="n">long</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">sent</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+                <span class="n">alignment</span><span class="p">[:</span><span class="n">sent</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">sent</span>
+            <span class="k">return</span> <span class="n">alignment</span>
+
+        <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;alignment&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torchtext</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Field</span><span class="p">(</span>
+            <span class="n">use_vocab</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">tensor_type</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span>
+            <span class="n">postprocessing</span><span class="o">=</span><span class="n">make_tgt</span><span class="p">,</span> <span class="n">sequential</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;indices&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torchtext</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Field</span><span class="p">(</span>
+            <span class="n">use_vocab</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">tensor_type</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span>
+            <span class="n">sequential</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">fields</span></div>
+
+<div class="viewcode-block" id="TextDataset.get_num_features"><a class="viewcode-back" href="../../../onmt.io.html#onmt.io.TextDataset.get_num_features">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">get_num_features</span><span class="p">(</span><span class="n">corpus_file</span><span class="p">,</span> <span class="n">side</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Peek one line and get number of features of it.</span>
+<span class="sd">        (All lines must have same number of features).</span>
+<span class="sd">        For text corpus, both sides are in text form, thus</span>
+<span class="sd">        it works the same.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            corpus_file (str): file path to get the features.</span>
+<span class="sd">            side (str): &#39;src&#39; or &#39;tgt&#39;.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            number of features on `side`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="n">codecs</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">corpus_file</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">cf</span><span class="p">:</span>
+            <span class="n">f_line</span> <span class="o">=</span> <span class="n">cf</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">num_feats</span> <span class="o">=</span> <span class="n">TextDataset</span><span class="o">.</span><span class="n">extract_text_features</span><span class="p">(</span><span class="n">f_line</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">num_feats</span></div>
+
+    <span class="c1"># Below are helper functions for intra-class use only.</span>
+    <span class="k">def</span> <span class="nf">_dynamic_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">examples_iter</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">example</span> <span class="ow">in</span> <span class="n">examples_iter</span><span class="p">:</span>
+            <span class="n">src</span> <span class="o">=</span> <span class="n">example</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span>
+            <span class="n">src_vocab</span> <span class="o">=</span> <span class="n">torchtext</span><span class="o">.</span><span class="n">vocab</span><span class="o">.</span><span class="n">Vocab</span><span class="p">(</span><span class="n">Counter</span><span class="p">(</span><span class="n">src</span><span class="p">),</span>
+                                              <span class="n">specials</span><span class="o">=</span><span class="p">[</span><span class="n">UNK_WORD</span><span class="p">,</span> <span class="n">PAD_WORD</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">src_vocabs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">src_vocab</span><span class="p">)</span>
+            <span class="c1"># Mapping source tokens to indices in the dynamic dict.</span>
+            <span class="n">src_map</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">([</span><span class="n">src_vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">w</span><span class="p">]</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">src</span><span class="p">])</span>
+            <span class="n">example</span><span class="p">[</span><span class="s2">&quot;src_map&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">src_map</span>
+
+            <span class="k">if</span> <span class="s2">&quot;tgt&quot;</span> <span class="ow">in</span> <span class="n">example</span><span class="p">:</span>
+                <span class="n">tgt</span> <span class="o">=</span> <span class="n">example</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span>
+                <span class="n">mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">(</span>
+                    <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">src_vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">w</span><span class="p">]</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">tgt</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">example</span><span class="p">[</span><span class="s2">&quot;alignment&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mask</span>
+            <span class="k">yield</span> <span class="n">example</span></div>
+
+
+<span class="k">class</span> <span class="nc">ShardedTextCorpusIterator</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This is the iterator for text corpus, used for sharding large text</span>
+<span class="sd">    corpus into small shards, to avoid hogging memory.</span>
+
+<span class="sd">    Inside this iterator, it automatically divides the corpus file into</span>
+<span class="sd">    shards of size `shard_size`. Then, for each shard, it processes</span>
+<span class="sd">    into (example_dict, n_features) tuples when iterates.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">corpus_path</span><span class="p">,</span> <span class="n">line_truncate</span><span class="p">,</span> <span class="n">side</span><span class="p">,</span> <span class="n">shard_size</span><span class="p">,</span>
+                 <span class="n">assoc_iter</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            corpus_path: the corpus file path.</span>
+<span class="sd">            line_truncate: the maximum length of a line to read.</span>
+<span class="sd">                            0 for unlimited.</span>
+<span class="sd">            side: &quot;src&quot; or &quot;tgt&quot;.</span>
+<span class="sd">            shard_size: the shard size, 0 means not sharding the file.</span>
+<span class="sd">            assoc_iter: if not None, it is the associate iterator that</span>
+<span class="sd">                        this iterator should align its step with.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># The codecs module seems to have bugs with seek()/tell(),</span>
+            <span class="c1"># so we use io.open().</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">corpus</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">corpus_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;Failed to open corpus file: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">corpus_path</span><span class="p">)</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">line_truncate</span> <span class="o">=</span> <span class="n">line_truncate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">side</span> <span class="o">=</span> <span class="n">side</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shard_size</span> <span class="o">=</span> <span class="n">shard_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assoc_iter</span> <span class="o">=</span> <span class="n">assoc_iter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_pos</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">line_index</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eof</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Iterator of (example_dict, nfeats).</span>
+<span class="sd">        On each call, it iterates over as many (example_dict, nfeats) tuples</span>
+<span class="sd">        until this shard&#39;s size equals to or approximates `self.shard_size`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">iteration_index</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">assoc_iter</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># We have associate iterator, just yields tuples</span>
+            <span class="c1"># util we run parallel with it.</span>
+            <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_index</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">assoc_iter</span><span class="o">.</span><span class="n">line_index</span><span class="p">:</span>
+                <span class="n">line</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">corpus</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">line</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span>
+                        <span class="s2">&quot;Two corpuses must have same number of lines!&quot;</span><span class="p">)</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">line_index</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">iteration_index</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">_example_dict_iter</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">iteration_index</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">assoc_iter</span><span class="o">.</span><span class="n">eof</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">eof</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">corpus</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Yield tuples util this shard&#39;s size reaches the threshold.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">corpus</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">last_pos</span><span class="p">)</span>
+            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">shard_size</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_index</span> <span class="o">%</span> <span class="mi">64</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="c1"># This part of check is time consuming on Py2 (but</span>
+                    <span class="c1"># it is quite fast on Py3, weird!). So we don&#39;t bother</span>
+                    <span class="c1"># to check for very line. Instead we chekc every 64</span>
+                    <span class="c1"># lines. Thus we are not dividing exactly per</span>
+                    <span class="c1"># `shard_size`, but it is not too much difference.</span>
+                    <span class="n">cur_pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">corpus</span><span class="o">.</span><span class="n">tell</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="n">cur_pos</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_pos</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">shard_size</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">last_pos</span> <span class="o">=</span> <span class="n">cur_pos</span>
+                        <span class="k">raise</span> <span class="ne">StopIteration</span>
+
+                <span class="n">line</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">corpus</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">line</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">eof</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">corpus</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                    <span class="k">raise</span> <span class="ne">StopIteration</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">line_index</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">iteration_index</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">_example_dict_iter</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">iteration_index</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">hit_end</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">eof</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">num_feats</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># We peek the first line and seek back to</span>
+        <span class="c1"># the beginning of the file.</span>
+        <span class="n">saved_pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">corpus</span><span class="o">.</span><span class="n">tell</span><span class="p">()</span>
+
+        <span class="n">line</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">corpus</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_truncate</span><span class="p">:</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">line_truncate</span><span class="p">]</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_feats</span> <span class="o">=</span> <span class="n">TextDataset</span><span class="o">.</span><span class="n">extract_text_features</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">corpus</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">saved_pos</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_feats</span>
+
+    <span class="k">def</span> <span class="nf">_example_dict_iter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_truncate</span><span class="p">:</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">line_truncate</span><span class="p">]</span>
+        <span class="n">words</span><span class="p">,</span> <span class="n">feats</span><span class="p">,</span> <span class="n">n_feats</span> <span class="o">=</span> <span class="n">TextDataset</span><span class="o">.</span><span class="n">extract_text_features</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+        <span class="n">example_dict</span> <span class="o">=</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">side</span><span class="p">:</span> <span class="n">words</span><span class="p">,</span> <span class="s2">&quot;indices&quot;</span><span class="p">:</span> <span class="n">index</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">feats</span><span class="p">:</span>
+            <span class="c1"># All examples must have same number of features.</span>
+            <span class="n">aeq</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_feats</span><span class="p">,</span> <span class="n">n_feats</span><span class="p">)</span>
+
+            <span class="n">prefix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">side</span> <span class="o">+</span> <span class="s2">&quot;_feat_&quot;</span>
+            <span class="n">example_dict</span><span class="o">.</span><span class="n">update</span><span class="p">((</span><span class="n">prefix</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">j</span><span class="p">),</span> <span class="n">f</span><span class="p">)</span>
+                                <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">feats</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">example_dict</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, srush.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>
