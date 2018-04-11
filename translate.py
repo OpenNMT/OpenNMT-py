@@ -14,7 +14,8 @@ import onmt.opts
 
 def main(opt):
     translator = make_translator(opt, report_score=True)
-    translator.translate(opt.src_dir, opt.src, opt.tgt, opt.batch_size)
+    translator.translate(opt.src_dir, opt.src, opt.tgt,
+                         opt.batch_size, opt.attn_debug)
 
 
 if __name__ == "__main__":
