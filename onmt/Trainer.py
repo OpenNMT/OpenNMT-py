@@ -13,9 +13,6 @@ import time
 import sys
 import math
 
-#FIXME enum import
-from enum import Enum
-
 import torch
 import torch.nn as nn
 
@@ -394,7 +391,7 @@ class EarlyStoppingTrainer(Trainer):
         Args:
             train_iter: training data iterator
             epoch(int): the epoch number
-            valid_iter(funfnction): validation data builder, needs to be callable
+            valid_iter(fn): validation data builder, needs to be callable
             report_func(fn): function for logging
 
         Returns:
@@ -485,6 +482,7 @@ class EarlyStopping(object):
                 trainer(:py:class:`onmt.Trainer`): trainer
                 scorer(fn): score of the stats to compare with previous best model
         """
+    from enum import Enum
 
     class PatienceEnum(Enum):
         IMPROVING = 0

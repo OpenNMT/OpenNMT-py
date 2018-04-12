@@ -234,24 +234,31 @@ def train_model(model, fields, optim, data_type, model_opt):
     norm_method = opt.normalization
     grad_accum_count = opt.accum_count
 
-    use_simple_trainer = opt.es_patience is None or (opt.es_patience is not None and opt.es_type == "epoch")
+    use_simple_trainer = opt.earlystop_tolerance is None or (
+                opt.earlystop_tolerance is not None and opt.earlystop_type == "epoch")
+
+    if opt.earlystop_tolerance and opt.earlystop_type == "batch":
+        assert opt.earlystop_after_batches is not None and opt.earlystop_after_batches > 0, \
+            "Number of batches to perform early stopping not specified or 0. "\
+            "See earlystop_after_batches."
+
 
     trainer = onmt.Trainer(model, train_loss, valid_loss, optim, trunc_size,
                            shard_size, data_type,
                            norm_method, grad_accum_count) if use_simple_trainer \
         else onmt.EarlyStoppingTrainer(model, train_loss, valid_loss, optim,
-                                       opt.es_patience, opt.epochs, model_opt, fields,
+                                       opt.earlystop_tolerance, opt.epochs, model_opt, fields,
                                        trunc_size, shard_size, data_type, norm_method,
                                        grad_accum_count,
-                                       start_val_after_batches=opt.es_after_batches)
+                                       start_val_after_batches=opt.earlystop_after_batches)
 
     print('\nStart training...')
     print(' * number of epochs: %d, starting from Epoch %d' %
           (opt.epochs + 1 - opt.start_epoch, opt.start_epoch))
     print(' * batch size: %d' % opt.batch_size)
 
-    if opt.es_patience:
-        patience = onmt.EarlyStopping(opt.es_patience, opt.epochs, trainer)
+    if opt.earlystop_tolerance:
+        patience = onmt.EarlyStopping(opt.earlystop_tolerance, opt.epochs, trainer)
 
     def build_lazy_valid():
         return make_dataset_iter(lazily_load_dataset("valid"), fields, opt,
@@ -277,7 +284,7 @@ def train_model(model, fields, optim, data_type, model_opt):
             print('Train accuracy: %g' % train_stats.accuracy())
 
             # 2. Validate on the validation set.
-            valid_stats = validate()()
+            valid_stats = validate()
         else:
             # 1.1 Validate on the validation set if the number of
             # batches is achieved.
@@ -330,7 +337,7 @@ def train_model(model, fields, optim, data_type, model_opt):
         trainer.epoch_step(epoch_ppl, epoch)
 
         # 5.1. Check patience
-        if opt.es_patience:
+        if opt.earlystop_tolerance:
             if use_simple_trainer:
                 patience(valid_stats, epoch, model_opt, fields)
             if patience.has_stopped():
