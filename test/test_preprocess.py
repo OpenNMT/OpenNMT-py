@@ -3,6 +3,7 @@ import copy
 import unittest
 import glob
 import os
+import codecs
 from collections import Counter
 
 import torchtext
@@ -38,6 +39,13 @@ class TestData(unittest.TestCase):
     def dataset_build(self, opt):
         fields = onmt.io.get_fields("text", 0, 0)
 
+        if hasattr(opt, 'src_vocab') and len(opt.src_vocab) > 0:
+            with codecs.open(opt.src_vocab, 'w', 'utf-8') as f:
+                f.write('a\nb\nc\nd\ne\nf\n')
+        if hasattr(opt, 'tgt_vocab') and len(opt.tgt_vocab) > 0:
+            with codecs.open(opt.tgt_vocab, 'w', 'utf-8') as f:
+                f.write('a\nb\nc\nd\ne\nf\n')
+
         train_data_files = preprocess.build_save_dataset('train', fields, opt)
 
         preprocess.build_save_vocab(train_data_files, fields, opt)
@@ -47,6 +55,10 @@ class TestData(unittest.TestCase):
         # Remove the generated *pt files.
         for pt in glob.glob(SAVE_DATA_PREFIX + '*.pt'):
             os.remove(pt)
+        if hasattr(opt, 'src_vocab') and os.path.exists(opt.src_vocab):
+            os.remove(opt.src_vocab)
+        if hasattr(opt, 'tgt_vocab') and os.path.exists(opt.tgt_vocab):
+            os.remove(opt.tgt_vocab)
 
     def test_merge_vocab(self):
         va = torchtext.vocab.Vocab(Counter('abbccc'))
@@ -108,6 +120,8 @@ test_databuild = [[],
                    ('share_vocab', True)],
                   [('dynamic_dict', True),
                    ('max_shard_size', 500000)],
+                  [('src_vocab', '/tmp/src_vocab.txt'),
+                   ('tgt_vocab', '/tmp/tgt_vocab.txt')],
                   ]
 
 for p in test_databuild:

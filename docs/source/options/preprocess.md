@@ -33,10 +33,10 @@ Optimal value should be multiples of 64 bytes.
 
 ### **Vocab**:
 * **-src_vocab []** 
-Path to an existing source vocabulary
+Path to an existing source vocabulary. Format: one word per line.
 
 * **-tgt_vocab []** 
-Path to an existing target vocabulary
+Path to an existing target vocabulary. Format: one word per line.
 
 * **-features_vocabs_prefix []** 
 Path prefix to existing features vocabularies

@@ -160,8 +160,10 @@ def build_save_dataset(corpus_type, fields, opt):
 def build_save_vocab(train_dataset, fields, opt):
     fields = onmt.io.build_vocab(train_dataset, fields, opt.data_type,
                                  opt.share_vocab,
+                                 opt.src_vocab,
                                  opt.src_vocab_size,
                                  opt.src_words_min_frequency,
+                                 opt.tgt_vocab,
                                  opt.tgt_vocab_size,
                                  opt.tgt_words_min_frequency)
 

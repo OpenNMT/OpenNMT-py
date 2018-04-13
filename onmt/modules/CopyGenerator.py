@@ -209,7 +209,7 @@ class CopyGeneratorLossCompute(onmt.Loss.LossComputeBase):
             # Compute Loss as NLL divided by seq length
             # Compute Sequence Lengths
             pad_ix = batch.dataset.fields['tgt'].vocab.stoi[onmt.io.PAD_WORD]
-            tgt_lens = batch.tgt.ne(pad_ix).sum(0).float()
+            tgt_lens = batch.tgt.ne(pad_ix).float().sum(0)
             # Compute Total Loss per sequence in batch
             loss = loss.view(-1, batch.batch_size).sum(0)
             # Divide by length of each sequence and sum

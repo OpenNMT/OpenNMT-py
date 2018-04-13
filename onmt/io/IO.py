@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
+
 import logging
+import os
 from collections import Counter, defaultdict, OrderedDict
 from itertools import count
 
@@ -242,17 +244,19 @@ def _build_field_vocab(field, counter, **kwargs):
 
 
 def build_vocab(train_dataset_files, fields, data_type, share_vocab,
-                src_vocab_size, src_words_min_frequency,
-                tgt_vocab_size, tgt_words_min_frequency):
+                src_vocab_path, src_vocab_size, src_words_min_frequency,
+                tgt_vocab_path, tgt_vocab_size, tgt_words_min_frequency):
     """
     Args:
         train_dataset_files: a list of train dataset pt file.
         fields (dict): fields to build vocab for.
         data_type: "text", "img" or "audio"?
         share_vocab(bool): share source and target vocabulary?
+        src_vocab_path(string): Path to src vocabulary file.
         src_vocab_size(int): size of the source vocabulary.
         src_words_min_frequency(int): the minimum frequency needed to
                 include a source word in the vocabulary.
+        tgt_vocab_path(string): Path to tgt vocabulary file.
         tgt_vocab_size(int): size of the target vocabulary.
         tgt_words_min_frequency(int): the minimum frequency needed to
                 include a target word in the vocabulary.
@@ -264,6 +268,29 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
     for k in fields:
         counter[k] = Counter()
 
+    # Load vocabulary
+    src_vocab = None
+    if len(src_vocab_path) > 0:
+        src_vocab = set([])
+        print('Loading source vocab from %s' % src_vocab_path)
+        assert os.path.exists(src_vocab_path), \
+            'src vocab %s not found!' % src_vocab_path
+        with open(src_vocab_path) as f:
+            for line in f:
+                word = line.strip().split()[0]
+                src_vocab.add(word)
+
+    tgt_vocab = None
+    if len(tgt_vocab_path) > 0:
+        tgt_vocab = set([])
+        print('Loading target vocab from %s' % tgt_vocab_path)
+        assert os.path.exists(tgt_vocab_path), \
+            'tgt vocab %s not found!' % tgt_vocab_path
+        with open(tgt_vocab_path) as f:
+            for line in f:
+                word = line.strip().split()[0]
+                tgt_vocab.add(word)
+
     for path in train_dataset_files:
         dataset = torch.load(path)
         logging.info(" * reloading %s." % path)
@@ -272,6 +299,10 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
                 val = getattr(ex, k, None)
                 if val is not None and not fields[k].sequential:
                     val = [val]
+                elif k == 'src' and src_vocab:
+                    val = [item for item in val if item in src_vocab]
+                elif k == 'tgt' and tgt_vocab:
+                    val = [item for item in val if item in tgt_vocab]
                 counter[k].update(val)
 
     _build_field_vocab(fields["tgt"], counter["tgt"],
