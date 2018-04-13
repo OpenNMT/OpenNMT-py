@@ -192,28 +192,25 @@ class Embeddings(nn.Module):
         return emb
 
 
-class PartialEmbedding(nn.Embedding):
+class PartialEmbedding(nn.Module):
     def __init__(self, partial_num_embeddings, embedding, padding_idx):
+        super(PartialEmbedding, self).__init__()
+        
+        self.num_embeddings = partial_num_embeddings
         self.partial_num_embeddings = partial_num_embeddings
-        self.nspe = 0
+        self.embedding_size = embedding.embedding_size
 
-        super(PartialEmbedding, self).__init__(partial_num_embeddings,
-                                               embedding.embedding_size,
-                                               padding_idx)
-        if self.nspe == 2:
-            self.spe = nn.Parameter(torch.Tensor(2, embedding.embedding_size))
-        elif self.nspe == 4:
-            self.spe = nn.Parameter(torch.Tensor(4, embedding.embedding_size))
-        elif self.nspe == 0:
-            pass
-        else:
-            raise ValueError("Incorrect value for nspe")
-
+        self.word_padding_idx = padding_idx
+        
         self.full_embedding = embedding
 
     @property
     def weight(self):
-        return self.full_embedding.weight[:self.partial_num_embeddings, :]
+        try:
+            return self.full_embedding.word_lut.weight[:self.partial_num_embeddings, :]
+        except Exception as e:
+            print(e)
+            exit()
 
     def reset_parameters(self):
         pass
@@ -247,11 +244,6 @@ class PartialEmbedding(nn.Embedding):
         Raise:
             AssertionError if nfeat != 1
         """
-        l, bs, nfeat = input.size()
-        assert nfeat == 1, "PartialEmbedding don't handle features"
-
-        _input = input.squeeze(2).t()
-        _emb = super(PartialEmbedding, self).forward(_input)
-        emb = _emb.transpose(0, 1)
-
+        _input = input
+        emb = self.full_embedding.forward(_input)
         return emb

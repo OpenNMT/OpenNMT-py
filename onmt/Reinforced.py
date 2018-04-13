@@ -11,7 +11,7 @@ import onmt.modules
 import onmt.Models
 import onmt.Trainer
 import onmt.Loss
-from onmt.modules import CopyGeneratorLossCompute, CopyGenerator
+from onmt.modules import IntraAttention
 
 
 class RougeScorer:
@@ -24,9 +24,12 @@ class RougeScorer:
         scores = self.rouge.get_scores(hyps, refs)
         # NOTE: here we use score = r1 * r2 * rl
         #       I'm not sure how relevant it is
-        single_scores = [_['rouge-1']['f']*_['rouge-2']['f']*_['rouge-l']['f']
-                         for _ in scores]
-        return single_scores
+        metric_weight = {"rouge-1": 0, "rouge-2": 0, "rouge-l": 1}
+
+        scores = [sum([seq[metric]['f'] * metric_weight[metric] 
+                         for metric in seq.keys()])
+                    for seq in scores]
+        return scores
 
     def score(self, sample_pred, greedy_pred, tgt):
         """
@@ -62,381 +65,7 @@ class RougeScorer:
         return (gs - ts)
 
 
-class EachStepGeneratorLossCompute(CopyGeneratorLossCompute):
-    def __init__(self, generator, tgt_vocab, force_copy, eps=1e-20):
-        super(EachStepGeneratorLossCompute, self).__init__(
-            generator, tgt_vocab, force_copy, eps)
-        self.tgt_vocab = tgt_vocab
-
-    def remove_oov(self, pred):
-        """Remove out-of-vocabulary tokens
-           usefull when we wants to use predictions (that contains oov due
-           to copy mechanisms) as next input.
-           i.e. pred[i] == 0 foreach i such as pred[i] > tgt_vocab_size
-        """
-        return pred.masked_fill_(pred.gt(len(self.tgt_vocab) - 1), 0)
-
-    def compute_loss(self, batch, output, target, copy_attn, align, src,
-                     prediction_type="greedy"):
-        """
-            align:      [bs]
-            target:     [bs]
-            copy_attn:  [bs x src_len]
-            output:     [bs x 3*dim]
-        """
-        align = align.view(-1)
-        target = target.view(-1)
-        # GENERATOR: generating scores
-        # scores: [bs x vocab + c_vocab]
-        scores = self.generator(
-            output,
-            copy_attn,
-            batch.src_map)
-        nonan(scores, "compute_loss.scores")
-
-        # Experimental:
-        # fast copy collapse:
-        # Dataset.collapse_copy_scores is very usefull in order
-        # to sum copy scores for tokens that are in vocabulary
-        # but using dataset.collapse_copy_scores at each step is
-        # inefficient.
-        # We do the same only using tensor operations
-        _src_map = batch.src_map.float().data.cuda()
-        _scores = scores.data.clone()
-
-        _src = src.clone().data
-        offset = len(self.tgt_vocab)
-        src_l, bs, c_vocab = _src_map.size()
-
-        # [bs x src_len], mask of src_idx being in tgt_vocab
-        src_invoc_mask = (_src.lt(offset) * _src.gt(1)).float()
-
-        # [bs x c_voc], mask of cvocab_idx related to invoc src token
-        cvoc_invoc_mask = src_invoc_mask.unsqueeze(1) \
-                                        .bmm(_src_map.transpose(0, 1)) \
-                                        .squeeze(1) \
-                                        .gt(0)
-
-        # [bs x src_len], copy scores of invoc src tokens
-        # [bs x 1 x cvocab] @bmm [bs x cvocab x src_len] = [bs x 1 x src_len]
-        src_copy_scores = _scores[:, offset:].unsqueeze(1) \
-                                             .bmm(_src_map.transpose(0, 1)
-                                                          .transpose(1, 2)) \
-                                             .squeeze()
-
-        # [bs x src_len], invoc src tokens, or 1 (=pad)
-        src_token_invoc = _src.clone().masked_fill_(1-src_invoc_mask.byte(), 1)
-
-        src_token_invoc = src_token_invoc.view(bs, -1)
-        src_copy_scores = src_copy_scores.view(bs, -1)
-
-        _scores.scatter_add_(
-            1, src_token_invoc.long(), src_copy_scores)
-
-        _scores[:, offset:] *= (1-cvoc_invoc_mask.float())
-        _scores[:, 1] = 0
-
-        _scores_data = _scores
-        scores_data = _scores_data
-        #
-        # CRITERION & PREDICTION: Predicting & Calculating the loss
-        #
-        if prediction_type == "greedy":
-            _, pred = scores_data.max(1)
-            pred = torch.autograd.Variable(pred)
-            loss = self.criterion(scores, align, target).sum()
-            loss_data = loss.data.clone()
-
-        elif prediction_type == "sample":
-            d = torch.distributions.Categorical(
-                scores_data[:, :len(self.tgt_vocab)])
-            # in this context target=1 if continue generation, 0 else:
-            # kinda hacky but seems to work
-            pred = torch.autograd.Variable(d.sample()) * target
-
-            # NOTE we use collapsed scores that account copy
-            loss = self.criterion(scores, align, pred)
-            loss_data = loss.sum().data
-        else:
-            raise ValueError("Incorrect prediction_type %s" % prediction_type)
-        nonan(loss, "loss")
-        nonan(pred, "pred")
-        pred.cuda()
-
-        #
-        # FIXING TARGET
-        #
-        target_data = target.data.clone()
-        correct_mask = target_data.eq(0) * align.data.ne(0)
-        correct_copy = (align.data + len(self.tgt_vocab)) * correct_mask.long()
-        target_data = target_data + correct_copy
-
-        stats = self._stats(loss_data, scores_data, target_data)
-        return loss, pred, stats
-
-
-class RTrainer(onmt.Trainer.Trainer):
-    """Special Trainer for the Reinforced Model
-       It uses an older version of the Trainer
-       The main difference is that we do not compute loss because the decoder
-       is expected to do it.
-
-    """
-
-    def __init__(self, model, train_loss,
-                 valid_loss, optim, trunc_size):
-        self.model = model
-
-        # TODO Remove this
-        # self.train_iter = train_iter
-        # self.valid_iter = valid_iter
-        self.train_loss = train_loss
-        self.valid_loss = valid_loss
-        self.optim = optim
-        self.trunc_size = trunc_size
-
-        # Set model in training mode.
-        self.model.train()
-
-    def train(self, train_iter, epoch, report_func=None):
-        # NOTE quick workaround
-        self.train_iter = train_iter
-        total_stats = onmt.Statistics()
-        report_stats = onmt.Statistics()
-
-        for i, batch in enumerate(self.train_iter):
-            target_size = batch.tgt.size(0)
-            # Truncated BPTT
-            trunc_size = self.trunc_size if self.trunc_size else target_size
-
-            dec_state = None
-            _, src_lengths = batch.src
-
-            src = onmt.io.make_features(batch, 'src')
-            tgt_outer = onmt.io.make_features(batch, 'tgt')
-            report_stats.n_src_words += src_lengths.sum()
-            alignment = batch.alignment
-
-            for j in range(0, target_size-1, trunc_size):
-                # 1. Create truncated target.
-                tgt = tgt_outer[j: j + trunc_size]
-                batch.alignment = alignment[j + 1: j + trunc_size]
-
-                # 2. & 3. F-prop and compute loss
-                self.model.zero_grad()
-                loss, batch_stats, dec_state = self.model(src, tgt,
-                                                          src_lengths,
-                                                          batch,
-                                                          self.train_loss,
-                                                          dec_state)
-                loss.backward()
-                # 4. Update the parameters and statistics.
-                self.optim.step()
-
-                total_stats.update(batch_stats)
-                report_stats.update(batch_stats)
-
-                # If truncated, don't backprop fully.
-                if dec_state is not None:
-                    dec_state.detach()
-
-            if report_func is not None:
-                report_func(epoch, i, len(self.train_iter),
-                            total_stats.start_time, self.optim.lr,
-                            report_stats)
-                report_stats = onmt.Statistics()
-
-        return total_stats
-
-    def validate(self, valid_iter):
-        """ Called for each epoch to validate. """
-        # NOTE quick workaround
-        self.valid_iter = valid_iter
-
-        # Set model in validating mode.
-        self.model.eval()
-
-        stats = onmt.Statistics()
-
-        for batch in self.valid_iter:
-            _, src_lengths = batch.src
-            src = onmt.io.make_features(batch, 'src')
-            tgt = onmt.io.make_features(batch, 'tgt')
-
-            batch.alignment = batch.alignment[1:]
-            # F-prop through the model.
-            _, batch_stats, _ = self.model(
-                src, tgt, src_lengths, batch, self.valid_loss)
-            # Update statistics.
-            stats.update(batch_stats)
-
-        # Set model back to training mode.
-        self.model.train()
-
-        return stats
-
-
-def nonan(variable, name):
-    d = variable.data
-    nan = (d != d)
-    if not nan.sum() == 0:
-        print("NaN values in %s: %s" % (name, str(d)))
-        inan = nan.max(0)
-        print("Occuring at index: ", inan)
-
-        i = inan[1][0]
-        print("First occurence (with previous/next 5 values): ", d[i-5:i+5, :])
-        raise ValueError()
-
-
-def nparams(_):
-    return sum([p.nelement() for p in _.parameters()])
-
-
-class _Module(nn.Module):
-    def __init__(self, opt):
-        super(_Module, self).__init__()
-        self.opt = opt
-
-    def maybe_cuda(self, o):
-        """o may be a Variable or a Tensor
-        """
-        if len(self.opt.gpuid) >= 1:
-            return o.cuda()
-        return o
-
-    def mkvar(self, tensor, requires_grad=False):
-        return self.maybe_cuda(
-            torch.autograd.Variable(tensor, requires_grad=requires_grad))
-
-
-def assert_size(v, size_list):
-    """Check that variable(s) have size() == size_list
-       v may be a variable, a tensor or a list
-    """
-    if type(v) not in [tuple, list]:
-        v = [v]
-
-    for variable in v:
-        _friendly_aeq(real=list(variable.size()), expected=size_list)
-
-
-def _friendly_aeq(real, expected):
-    assert real == expected, "got %s expected: %s" % (str(real), str(expected))
-
-
-class IntraAttention(_Module):
-    """IntraAttention Module as in sect. (2)
-    """
-
-    def __init__(self, opt, dim, temporal=False):
-        super(IntraAttention, self).__init__(opt)
-        self.dim = dim
-        self.temporal = temporal
-        self.linear = nn.Linear(dim, dim, bias=False)
-
-        self.softmax = nn.Softmax(dim=1)
-
-    def forward(self, h_t, h, attn_history=None, mask=None, debug=False):
-        """
-        Args:
-            h_t : [bs x dim]
-            h   : [n x bs x dim]
-            attn_history: None or [(t-1) x bs x n]
-        Returns:
-            C_t :  [bs x n]
-            alpha: [bs x dim]
-            attn_history: [t x bs x n]
-        """
-        bs, dim = h_t.size()
-        n, _bs, _dim = h.size()
-        assert (_bs, _dim) == (bs, dim)
-        if attn_history is not None:
-            _t, __bs, _n = attn_history.size()
-            assert (__bs, _n) == (_bs, n)
-
-        h_t = self.linear(h_t).unsqueeze(1)
-        h = h.view(n, bs, dim)
-
-        # e_t = [bs, 1, dim] bmm [bs, dim, n] = [bs, n] (after squeeze)
-        e_t = h_t.bmm(h.transpose(0, 1).transpose(1, 2)).squeeze(1)
-
-        next_attn_history = None
-        alpha = None
-        if self.temporal:
-            if attn_history is None:
-                next_attn_history = E.unsqueeze(0)
-            else:
-                # We substract the maximum value in order to ensure
-                # numerical stability
-                next_attn_history = torch.cat([attn_history,
-                                               E.unsqueeze(0)], 0)
-                M = next_attn_history.max(0)[0]
-                e_t = (e_t - m).exp() / (attn_history - m).exp().sum(0)
-                s_t = e.sum(1)
-                alpha = e_t / s_t.unsqueeze(1)
-
-        if alpha is None:
-            alpha = self.softmax(e_t)
-
-        c_t = alpha.unsqueeze(1).bmm(h.transpose(0, 1)).squeeze(1)
-
-        if self.temporal:
-            return c_t, alpha, next_attn_history
-        return c_t, alpha
-
-
-class PointerGenerator(CopyGenerator):
-    def __init__(self, opt, tgt_vocab, embeddings):
-        super(PointerGenerator, self).__init__(opt.rnn_size, tgt_vocab)
-        self.input_size = opt.rnn_size * 3
-        self.embeddings = embeddings
-        W_emb = embeddings.weight
-        self.linear_copy = nn.Linear(self.input_size, 1)
-
-        n_emb, emb_dim = list(W_emb.size())
-
-        # (2.4) Sharing decoder weights
-        self.emb_proj = nn.Linear(emb_dim, self.input_size, bias=False)
-        self.b_out = nn.Parameter(torch.Tensor(n_emb, 1))
-        self.tanh = nn.Tanh()
-        self._W_out = None
-
-        # refresh W_out matrix after each backward pass
-        self.register_backward_hook(self.refresh_W_out)
-
-    def refresh_W_out(self, *args, **kwargs):
-        self.W_out(True)
-
-    def W_out(self, refresh=False):
-        """ Sect. (2.4) Sharing decoder weights
-            The function returns the W_out matrix which is a projection of the
-            target embedding weight matrix.
-            The W_out matrix needs to recalculated after each backward pass,
-            which is done automatically. This is done to avoid calculating it
-            at each decoding step (which usually leads to OOM)
-
-            Returns:
-                W_out (FloaTensor): [n_emb, 3*dim]
-        """
-        if self._W_out is None or refresh:
-            _ = self.emb_proj(self.embeddings.weight)
-            self._W_out = self.tanh(_)
-        return self._W_out
-
-    def linear(self, V):
-        """Calculate the output projection of `v` as in eq. (9)
-            Args:
-                V (FloatTensor): [bs, 3*dim]
-            Returns:
-                logits (FloatTensor): logits = W_out * V + b_out, [3*dim]
-        """
-        W = self.W_out()
-        logits = (W.matmul(V.t()) + self.b_out).t()
-        return logits
-
-
-class ReinforcedDecoder(_Module):
+class ReinforcedDecoder(nn.Module):
     def __init__(self, opt, embeddings, dec_attn=True,
                  exp_bias_reduction=0.25, bidirectional_encoder=False):
         """
@@ -463,11 +92,11 @@ class ReinforcedDecoder(_Module):
         self.rnn = onmt.modules.StackedLSTM(1, self.input_size,
                                             self.dim, opt.dropout)
 
-        self.enc_attn = IntraAttention(opt, self.dim, temporal=True)
+        self.enc_attn = IntraAttention(self.dim, temporal=True)
 
         self.dec_attn = None
         if dec_attn:
-            self.dec_attn = IntraAttention(opt, self.dim)
+            self.dec_attn = IntraAttention(self.dim)
 
         self.pad_id = embeddings.word_padding_idx
         self.exp_bias_reduction = exp_bias_reduction
@@ -634,7 +263,7 @@ class ReinforcedDecoder(_Module):
 
 
 class ReinforcedModel(onmt.Models.NMTModel):
-    def __init__(self, encoder, decoder, multigpu=False, gamma=0.9984):
+    def __init__(self, encoder, decoder, gamma=0.9984):
         """
         Args:
             encoder:
@@ -667,53 +296,30 @@ class ReinforcedModel(onmt.Models.NMTModel):
                                                     context=enc_out)
         state = enc_state if dec_state is None else dec_state
 
-        loss, stats, hidden, _, _, preds = self.decoder(tgt[:-1],
-                                                        src,
-                                                        enc_out,
-                                                        state, batch,
-                                                        loss_compute,
-                                                        tgt=tgt[1:])
+        ml_loss, stats, hidden, _, _, ml_preds = self.decoder(tgt[:-1],
+                                                              src,
+                                                              enc_out,
+                                                              state,
+                                                              batch,
+                                                              loss_compute,
+                                                              tgt=tgt[1:])
 
         if self.gamma > 0:
-            loss2, stats2, hidden2, _, _, preds2 = self.decoder(tgt[:-1],
-                                                                src,
-                                                                enc_out,
-                                                                state,
-                                                                batch,
-                                                                loss_compute,
-                                                                tgt=tgt[1:],
-                                                                sampling=True)
+            rl_loss, stats2, hidden2, _, _, rl_preds = \
+                self.decoder(tgt[:-1],
+                             src,
+                             enc_out,
+                             state,
+                             batch,
+                             loss_compute,
+                             tgt=tgt[1:],
+                             sampling=True)
 
-            sample_preds = torch.stack(preds2, 1)
-            greedy_preds = torch.stack(preds, 1)
+            sample_preds = torch.stack(rl_preds, 1)
+            greedy_preds = torch.stack(ml_preds, 1)
             metric = self.rouge.score(sample_preds, greedy_preds, tgt[1:].t())
             metric = torch.autograd.Variable(metric).cuda()
-            rl_loss = (loss2 * metric).sum()
 
-            loss = (self.gamma * rl_loss) - ((1 - self.gamma * loss))
+            rl_loss = (rl_loss * metric).sum()
+            loss = (self.gamma * rl_loss) - ((1 - self.gamma * ml_loss))
         return loss, stats, state
-
-
-class DummyGenerator:
-    """Hacky way to ensure compatibility
-    """
-
-    def dummy_pass(self, *args, **kwargs):
-        pass
-
-    def __init__(self, *args, **kwargs):
-        self.state_dict = self.dummy_pass
-        self.cpu = self.dummy_pass
-        self.cuda = self.dummy_pass
-        self.__call__ = self.dummy_pass
-        self.load_state_dict = self.dummy_pass
-
-    def __getattr__(self, attr):
-        class DummyCallableObject:
-            def __init__(self, *args, **kwargs):
-                pass
-
-            def __call__(self, *args, **kwargs):
-                pass
-
-        return DummyCallableObject()

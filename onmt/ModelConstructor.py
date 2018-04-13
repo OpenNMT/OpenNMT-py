@@ -9,11 +9,11 @@ import onmt.io
 import onmt.Models
 import onmt.modules
 from onmt.Models import NMTModel, MeanEncoder, RNNEncoder, \
-                        StdRNNDecoder, InputFeedRNNDecoder
+    StdRNNDecoder, InputFeedRNNDecoder
 from onmt.modules import Embeddings, ImageEncoder, CopyGenerator, \
-                         TransformerEncoder, TransformerDecoder, \
-                         CNNEncoder, CNNDecoder, AudioEncoder, \
-                         PartialEmbedding
+    TransformerEncoder, TransformerDecoder, \
+    CNNEncoder, CNNDecoder, AudioEncoder, \
+    PartialEmbedding, PointerGenerator
 from onmt.Utils import use_gpu
 from torch.nn.init import xavier_uniform
 
@@ -204,9 +204,9 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
     # Make Generator.
     if model_opt.reinforced:
         # NOTE: we could maybe use copy_attn?!
-        generator = onmt.Reinforced.PointerGenerator(model_opt,
-                                                     tgt_vocab,
-                                                     tgt_embeddings)
+        generator = PointerGenerator(model_opt.rnn_size * 3,
+                                     tgt_vocab,
+                                     tgt_embeddings)
     elif model_opt.copy_attn:
         generator = CopyGenerator(model_opt.rnn_size,
                                   fields["tgt"].vocab)
@@ -239,10 +239,10 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
 
         if hasattr(model.encoder, 'embeddings'):
             model.encoder.embeddings.load_pretrained_vectors(
-                    model_opt.pre_word_vecs_enc, model_opt.fix_word_vecs_enc)
+                model_opt.pre_word_vecs_enc, model_opt.fix_word_vecs_enc)
         if hasattr(model.decoder, 'embeddings'):
             model.decoder.embeddings.load_pretrained_vectors(
-                    model_opt.pre_word_vecs_dec, model_opt.fix_word_vecs_dec)
+                model_opt.pre_word_vecs_dec, model_opt.fix_word_vecs_dec)
 
     # Add generator to model (this registers it as parameter of model).
     model.generator = generator

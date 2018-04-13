@@ -36,7 +36,8 @@ def make_translator(opt, report_score=True, out_file=None):
               for k in ["beam_size", "n_best", "max_length", "min_length",
                         "stepwise_penalty", "block_ngram_repeat",
                         "ignore_when_blocking", "dump_beam",
-                        "data_type", "replace_unk", "gpu", "verbose"]}
+                        "data_type", "replace_unk", "gpu", "verbose",
+                        "avoid_trigram_repetition"]}
 
     translator = Translator(model, fields, global_scorer=scorer,
                             out_file=out_file, report_score=report_score,
@@ -67,7 +68,6 @@ class Translator(object):
                  fields,
                  beam_size,
                  n_best=1,
->>>>>>> master
                  max_length=100,
                  global_scorer=None,
                  copy_attn=False,
@@ -306,7 +306,7 @@ class Translator(object):
                     inp.gt(len(self.fields["tgt"].vocab) - 1), 0)
 
             # Run one step.
-            if self.model.model_type == "Reinforced":
+            if type(self.model) == onmt.Reinforced.ReinforcedModel:
                 # inp is [n x batch_size * beam_size]
                 # src is [src_len x batch_size x 1]
                 # we use _src [src_len x batch_size * beam_size]
@@ -325,10 +325,12 @@ class Translator(object):
                 scores = scores[0]
                 scores_data = scores.data
                 out = unbottle(scores_data)
+                print(batch.indices[0])
                 out = data.collapse_copy_scores(
                        out, batch, self.fields["tgt"].vocab, data.src_vocabs)
-                attn = {"std": torch.stack(attns, dim=0)
-                                    .squeeze(0).contiguous()}
+                beam_attn = unbottle(torch.stack(attns, dim=0) \
+                                          .squeeze(0) \
+                                          .contiguous())
 
             else:
                 dec_out, dec_states, attn = self.model.decoder(
