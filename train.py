@@ -235,22 +235,27 @@ def train_model(model, fields, optim, data_type, model_opt):
     grad_accum_count = opt.accum_count
 
     use_simple_trainer = opt.earlystop_tolerance is None or (
-                opt.earlystop_tolerance is not None and opt.earlystop_type == "epoch")
+                opt.earlystop_tolerance is not None and
+                opt.earlystop_type == "epoch")
 
     if opt.earlystop_tolerance and opt.earlystop_type == "batch":
-        assert opt.earlystop_after_batches is not None and opt.earlystop_after_batches > 0, \
-            "Number of batches to perform early stopping not specified or 0. "\
-            "See earlystop_after_batches."
-
+        assert opt.earlystop_after_batches is not None and \
+               opt.earlystop_after_batches > 0, """
+            Number of batches to perform early stopping not specified or 0.
+            See earlystop_after_batches."""
+        es_after_batch = opt.earlystop_after_batches
 
     trainer = onmt.Trainer(model, train_loss, valid_loss, optim, trunc_size,
                            shard_size, data_type,
-                           norm_method, grad_accum_count) if use_simple_trainer \
-        else onmt.EarlyStoppingTrainer(model, train_loss, valid_loss, optim,
-                                       opt.earlystop_tolerance, opt.epochs, model_opt, fields,
-                                       trunc_size, shard_size, data_type, norm_method,
-                                       grad_accum_count,
-                                       start_val_after_batches=opt.earlystop_after_batches)
+                           norm_method, grad_accum_count) \
+        if use_simple_trainer\
+        else \
+        onmt.EarlyStoppingTrainer(model, train_loss, valid_loss, optim,
+                                  opt.earlystop_tolerance, opt.epochs,
+                                  model_opt, fields, trunc_size,
+                                  shard_size, data_type, norm_method,
+                                  grad_accum_count,
+                                  start_val_after_batches=es_after_batch)
 
     print('\nStart training...')
     print(' * number of epochs: %d, starting from Epoch %d' %
@@ -258,7 +263,8 @@ def train_model(model, fields, optim, data_type, model_opt):
     print(' * batch size: %d' % opt.batch_size)
 
     if opt.earlystop_tolerance:
-        patience = onmt.EarlyStopping(opt.earlystop_tolerance, opt.epochs, trainer)
+        patience = onmt.EarlyStopping(opt.earlystop_tolerance, opt.epochs,
+                                      trainer)
 
     def build_lazy_valid():
         return make_dataset_iter(lazily_load_dataset("valid"), fields, opt,
@@ -289,9 +295,10 @@ def train_model(model, fields, optim, data_type, model_opt):
             # 1.1 Validate on the validation set if the number of
             # batches is achieved.
 
+            lazy_it_fn = build_lazy_valid
             trainer_stats, valid_stats, patience = trainer.train(train_iter,
                                                                  epoch,
-                                                                 build_lazy_valid,
+                                                                 lazy_it_fn,
                                                                  report_func)
             if patience.has_stopped():
                 break
@@ -302,7 +309,7 @@ def train_model(model, fields, optim, data_type, model_opt):
             if len(valid_stats) == 0:
                 import warnings
                 warnings.warn("WARNING: Your number of batches to perform \
-                              validation is larger than an epoch. \n\
+                              validation is larger than an epoch.\n\
                               Using default end of epoch validation.")
                 # 2. Validate on the validation set.
                 valid_stats_epoch = validate()

@@ -287,7 +287,7 @@ class Trainer(object):
         """
         checkpoint = self._generate_checkpoint(opt, epoch, fields)
         torch.save(checkpoint,
-                   'best_{}.pt'.format(opt.save_model))
+                   '{}_best.pt'.format(opt.save_model))
 
     def _gradient_accumulation(self, true_batchs, total_stats,
                                report_stats, normalization):
@@ -343,7 +343,7 @@ class Trainer(object):
 
 class EarlyStoppingTrainer(Trainer):
     """
-    Class that controls the training process with early stopping after N batches.
+    Trainer Class with additional early stopping mechanism after N batches.
 
     Args:
             model(:py:class:`onmt.Model.NMTModel`): translation model to train
@@ -354,7 +354,7 @@ class EarlyStoppingTrainer(Trainer):
                training loss computation
             optim(:obj:`onmt.Optim.Optim`):
                the optimizer responsible for update
-            tolerance(int): maximum number of validation steps without improving
+            tolerance(int): max number of validation steps without improving
             epochs(int): number of epochs
             model_opt(list): options
             fields(list): vocab fields
@@ -372,11 +372,11 @@ class EarlyStoppingTrainer(Trainer):
                  start_val_after_batches=1000):
 
         # Basic attributes. Trainer holds every generic information.
-        super(EarlyStoppingTrainer, self).__init__(model, train_loss, valid_loss,
-                                                   optim, trunc_size=trunc_size,
-                                                   shard_size=shard_size, data_type=data_type,
-                                                   norm_method=norm_method,
-                                                   grad_accum_count=grad_accum_count)
+        super(EarlyStoppingTrainer,
+              self).__init__(model, train_loss, valid_loss, optim,
+                             trunc_size=trunc_size, shard_size=shard_size,
+                             data_type=data_type, norm_method=norm_method,
+                             grad_accum_count=grad_accum_count)
 
         self.model_opt = model_opt
         self.fields = fields
@@ -384,9 +384,11 @@ class EarlyStoppingTrainer(Trainer):
         self.current_batches_processed = 0
         if epochs is None:
             epochs = 10
-        self.patience = EarlyStopping(tolerance=tolerance, epochs=epochs, trainer=self)
+        self.patience = EarlyStopping(tolerance=tolerance,
+                                      epochs=epochs, trainer=self)
 
-    def train(self, train_iter, epoch, valid_iter=None, report_func=None, **kwargs):
+    def train(self, train_iter, epoch, valid_iter=None,
+              report_func=None, **kwargs):
         """ Train next epoch.
         Args:
             train_iter: training data iterator
@@ -399,7 +401,8 @@ class EarlyStoppingTrainer(Trainer):
         """
         if valid_iter is None:
             import warnings
-            warnings.warn("Validation iterator not provided. Not performing early stopping.")
+            warnings.warn("""Validation iterator not provided.
+                          Not performing early stopping.""")
 
         total_stats = Statistics()
         report_stats = Statistics()
@@ -451,8 +454,10 @@ class EarlyStoppingTrainer(Trainer):
                 accum = 0
                 normalization = 0
                 idx += 1
-            # Perform validation when the number of batches to validate is achieved
-            if self.current_batches_processed == self.start_val_after_batches and valid_iter is not None:
+            # Perform validation when the number of batches processed reaches
+            #  the number of batches to validate
+            if self.current_batches_processed == self.start_val_after_batches \
+                    and valid_iter is not None:
                 self.current_batches_processed = 0
                 valid_iter_lazy = valid_iter()
                 valid_stats = self.validate(valid_iter_lazy)
@@ -469,7 +474,8 @@ class EarlyStoppingTrainer(Trainer):
                     report_stats, normalization)
             true_batchs = []
 
-        return total_stats, valid_stats_epoch if valid_iter is not None else None, self.patience
+        return total_stats, valid_stats_epoch if valid_iter is not None \
+            else None, self.patience
 
 
 class EarlyStopping(object):
@@ -477,10 +483,10 @@ class EarlyStopping(object):
         Callable class to keep track of early stopping.
 
         Args:
-                tolerance(int): maximum number of validation steps without improving
+                tolerance(int): max number of steps without improving
                 epochs(int): number of epochs
                 trainer(:py:class:`onmt.Trainer`): trainer
-                scorer(fn): score of the stats to compare with previous best model
+                scorer(fn): score models to determine the best one
         """
     from enum import Enum
 
@@ -501,8 +507,10 @@ class EarlyStopping(object):
 
     def __call__(self, valid_stats, epoch, model_opt, fields):
         if self.early_stopping_scorer(valid_stats) < self.best_score:
-            print("Model is improving: {:g} --> {:g}.".format(self.best_score,
-                                                              self.early_stopping_scorer(valid_stats)))
+            print("Model is improving: {:g} --> {:g}."
+                  .format(self.best_score,
+                          self.early_stopping_scorer(valid_stats)))
+
             self.trainer.drop_best_earlystopping(model_opt, epoch, fields)
             self.current_tolerance = self.tolerance
             self.best_score = self.early_stopping_scorer(valid_stats)
@@ -510,12 +518,15 @@ class EarlyStopping(object):
         else:
             if self.early_stopping_scorer(valid_stats) > self.best_score:
                 self.current_tolerance -= 1
-                print("Decreasing patience: {}/{}".format(self.current_tolerance,
-                                                          self.tolerance))
+                print("Decreasing patience: {}/{}"
+                      .format(self.current_tolerance,
+                              self.tolerance))
                 if self.current_tolerance == 0:
-                    print("Training finished. Early Stop! Best validation {:g}".format(self.best_score))
+                    print("Training finished. Early Stop! Best validation {:g}"
+                          .format(self.best_score))
 
-            self.status = EarlyStopping.PatienceEnum.DECREASING if self.current_tolerance > 0 \
+            self.status = EarlyStopping.PatienceEnum.DECREASING \
+                if self.current_tolerance > 0 \
                 else EarlyStopping.PatienceEnum.STOPPED
 
     def has_stopped(self):

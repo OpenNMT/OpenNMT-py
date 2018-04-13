@@ -328,12 +328,18 @@ def train_opts(parser):
     # Early stopping
     group = parser.add_argument_group('Early Stopping')
     group.add_argument('-earlystop_tolerance', type=int, default=None,
-                       help="""Early stopping tolerance. Max number of consecutive checkpoints without improvement.""")
-    group.add_argument('-earlystop_type', default="epoch", choices=["epoch", "batch"],
-                       help="""Early stopping type. End of epoch validation (epoch);
-                            validation after batches (batch, see -earlystop_after_batches).""")
+                       help="""Early stopping tolerance.
+                       Max number of consecutive checkpoints without
+                       improving.""")
+    group.add_argument('-earlystop_type', default="epoch",
+                       choices=["epoch", "batch"],
+                       help="""Early stopping type.
+                       End of epoch validation (epoch);
+                       validation after batches (batch,
+                        see -earlystop_after_batches).""")
     group.add_argument('-earlystop_after_batches', type=int,
-                       help="""Early stopping after batches. Perform validation after N batches processed.""")
+                       help="""Early stopping after batches.
+                       Perform validation after N batches processed.""")
 
     # learning rate
     group = parser.add_argument_group('Optimization- Rate')
