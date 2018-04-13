@@ -335,7 +335,7 @@ class IntraAttention(_Module):
         self.temporal = temporal
         self.linear = nn.Linear(dim, dim, bias=False)
 
-        self.softmax = nn.Softmax()
+        self.softmax = nn.Softmax(dim=1)
 
     def forward(self, h_t, h, attn_history=None, mask=None, debug=False):
         """
@@ -355,11 +355,11 @@ class IntraAttention(_Module):
             _t, __bs, _n = attn_history.size()
             assert (__bs, _n) == (_bs, n)
 
-        _h_t = self.linear(h_t).unsqueeze(1)
-        _h = h.view(n, bs, dim)
+        h_t = self.linear(h_t).unsqueeze(1)
+        h = h.view(n, bs, dim)
 
         # e_t = [bs, 1, dim] bmm [bs, dim, n] = [bs, n] (after squeeze)
-        E = _h_t.bmm(_h.transpose(0, 1).transpose(1, 2)).squeeze(1)
+        e_t = h_t.bmm(h.transpose(0, 1).transpose(1, 2)).squeeze(1)
 
         next_attn_history = None
         alpha = None
@@ -367,24 +367,23 @@ class IntraAttention(_Module):
             if attn_history is None:
                 next_attn_history = E.unsqueeze(0)
             else:
-                # we manually computes the softmax because it must not include
-                # E itself. We substract the maximum value in order to ensure
+                # We substract the maximum value in order to ensure
                 # numerical stability
                 next_attn_history = torch.cat([attn_history,
                                                E.unsqueeze(0)], 0)
                 M = next_attn_history.max(0)[0]
-                E = (E - M).exp() / (attn_history - M).exp().sum(0)
-                S = E.sum(1)
-                alpha = E / S.unsqueeze(1)
+                e_t = (e_t - m).exp() / (attn_history - m).exp().sum(0)
+                s_t = e.sum(1)
+                alpha = e_t / s_t.unsqueeze(1)
 
         if alpha is None:
-            alpha = self.softmax(E)
+            alpha = self.softmax(e_t)
 
-        C_t = alpha.unsqueeze(1).bmm(_h.transpose(0, 1)).squeeze(1)
+        c_t = alpha.unsqueeze(1).bmm(h.transpose(0, 1)).squeeze(1)
 
         if self.temporal:
-            return C_t, alpha, next_attn_history
-        return C_t, alpha
+            return c_t, alpha, next_attn_history
+        return c_t, alpha
 
 
 class PointerGenerator(CopyGenerator):
