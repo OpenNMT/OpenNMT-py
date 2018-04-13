@@ -65,6 +65,13 @@ Google NMT length penalty parameter (higher = longer generation)
 * **-beta []** 
 Coverage penalty parameter
 
+* **-block_ngram_repeat []** 
+Block repetition of ngrams during decoding.
+
+* **-ignore_when_blocking []** 
+Ignore these strings when blocking repeats. You want to block sentence
+delimiters.
+
 * **-replace_unk []** 
 Replace the generated UNK tokens with the source token that had highest
 attention weight. If phrase_table is provided, it will lookup the identified
