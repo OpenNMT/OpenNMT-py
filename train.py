@@ -408,10 +408,6 @@ def build_optim(model, checkpoint):
     # essentially it builds a new optimizer with empty optimizer state and
     # parameters from the model.
     optim.set_parameters(model.named_parameters())
-    print(
-        "Stage 1: Keys after executing optim.set_parameters" +
-        "(model.parameters())")
-    show_optimizer_state(optim)
 
     if opt.train_from:
         # Stage 2: In this stage, which is only performed when loading an
@@ -428,11 +424,6 @@ def build_optim(model, checkpoint):
                 for k, v in state.items():
                     if torch.is_tensor(v):
                         state[k] = v.cuda()
-
-        print(
-            "Stage 2: Keys after executing  optim.optimizer.load_state_dict" +
-            "(saved_optimizer_state_dict)")
-        show_optimizer_state(optim)
 
         # We want to make sure that indeed we have a non-empty optimizer state
         # when we loaded an existing model. This should be at least the case
