@@ -277,6 +277,7 @@ class ServerModel:
             whitespace_segments = {}
             subsegment = {}
             sscount = 0
+            translation_input_count = 0
             sslength = []
             for (i, inp) in enumerate(inputs):
                 src = inp['src']
@@ -288,13 +289,14 @@ class ServerModel:
                         whitespace_segments[sscount] = line
                     else:
                         f.write(tok + "\n")
+                        translation_input_count += 1
                     sslength += [len(tok.split())]
                     sscount += 1
 
         timer.tick(name="writing")
 
         scores = []
-        if sscount > 0:
+        if translation_input_count > 0:
             try:
                 scores = self.translator.translate(None, src_path, None,
                                                    self.opt.batch_size)
@@ -308,7 +310,8 @@ class ServerModel:
                                             timer.times['translation']))
         self.reset_unload_timer()
 
-        results = self.out_file.getvalue().split("\n")
+        results = [self.maybe_detokenize(_)
+                   for _ in self.out_file.getvalue().split("\n")]
         print("Translation Results: ", len(results))
         if len(whitespace_segments) > 0:
             print("Whitespace segments: %d" % len(whitespace_segments))
@@ -317,8 +320,7 @@ class ServerModel:
             results.insert(k, whitespace_segments[k])
             scores.insert(k, 0.0)
 
-        results = ['\n'.join([self.maybe_detokenize(_)
-                              for _ in results[subsegment[i]]])
+        results = ['\n'.join(results[subsegment[i]])
                    for i in sorted(subsegment.keys())]
 
         avg_scores = [sum([s * l for s, l in zip(scores[sub], sslength[sub])])
