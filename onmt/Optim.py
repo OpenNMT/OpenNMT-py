@@ -14,6 +14,18 @@ class MultipleOptimizer(object):
         for op in self.optimizers:
             op.step()
 
+    @property
+    def state(self):
+        return {k: v for op in self.optimizers for k, v in op.state.items()}
+
+    def state_dict(self):
+        return [op.state_dict() for op in self.optimizers]
+
+    def load_state_dict(self, state_dicts):
+        assert len(state_dicts) == len(self.optimizers)
+        for i in range(len(state_dicts)):
+            self.optimizers[i].load_state_dict(state_dicts[i])
+
 
 class Optim(object):
     """
@@ -44,6 +56,7 @@ class Optim(object):
     # https://arxiv.org/pdf/1706.03762.pdf, particularly the value beta2=0.98
     # was used there however, beta2=0.999 is still arguably the more
     # established value, so we use that here as well
+
     def __init__(self, method, lr, max_grad_norm,
                  lr_decay=1, start_decay_at=None,
                  beta1=0.9, beta2=0.999,
