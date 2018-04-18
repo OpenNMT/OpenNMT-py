@@ -284,7 +284,7 @@ class ServerModel:
                 subsegment[i] = slice(sscount, sscount + len(lines))
                 for line in lines:
                     tok = self.maybe_tokenize(line)
-                    if len(''.join(tok.split())) == 0:
+                    if len(''.join(line.split())) == 0:
                         whitespace_segments[sscount] = line
                     else:
                         f.write(tok + "\n")
