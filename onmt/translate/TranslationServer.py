@@ -286,17 +286,20 @@ class ServerModel:
                     tok = self.maybe_tokenize(line)
                     if len(''.join(tok.split())) == 0:
                         whitespace_segments[sscount] = line
-                        continue
-
-                    f.write(tok + "\n")
+                    else:
+                        f.write(tok + "\n")
                     sslength += [len(tok.split())]
                     sscount += 1
+
         timer.tick(name="writing")
-        try:
-            scores = self.translator.translate(None, src_path, None,
-                                               self.opt.batch_size)
-        except RuntimeError as e:
-            raise ServerModelError("Runtime Error: %s" % str(e))
+
+        scores = []
+        if sscount > 0:
+            try:
+                scores = self.translator.translate(None, src_path, None,
+                                                   self.opt.batch_size)
+            except RuntimeError as e:
+                raise ServerModelError("Runtime Error: %s" % str(e))
 
         timer.tick(name="translation")
         print("""Using model #%d\t%d inputs (%d subsegment)
@@ -304,17 +307,23 @@ class ServerModel:
                                             sscount,
                                             timer.times['translation']))
         self.reset_unload_timer()
+
         results = self.out_file.getvalue().split("\n")
+        print("Translation Results: ", len(results))
+        if len(whitespace_segments) > 0:
+            print("Whitespace segments: %d" % len(whitespace_segments))
+
         for k in sorted(whitespace_segments.keys()):
             results.insert(k, whitespace_segments[k])
+            scores.insert(k, 0.0)
 
-        print("Results: ", len(results))
         results = ['\n'.join([self.maybe_detokenize(_)
                               for _ in results[subsegment[i]]])
                    for i in sorted(subsegment.keys())]
 
         avg_scores = [sum([s * l for s, l in zip(scores[sub], sslength[sub])])
                       / sum(sslength[sub])
+                      if sum(sslength[sub]) != 0 else 0.0
                       for k, sub
                       in sorted(subsegment.items(), key=lambda x: x[0])]
 
