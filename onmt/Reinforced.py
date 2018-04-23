@@ -12,6 +12,7 @@ import onmt.Models
 import onmt.Trainer
 import onmt.Loss
 from onmt.modules import IntraAttention
+from onmt.Utils import use_gpu
 
 
 class RougeScorer:
@@ -109,7 +110,7 @@ class ReinforcedDecoder(nn.Module):
 
     def mkvar(self, tensor, requires_grad=False):
         v = torch.autograd.Variable(tensor, requires_grad=requires_grad)
-        if len(self.opt.gpuid) > 0:
+        if use_gpu(self.opt):
             v = v.cuda()
         return v
 
