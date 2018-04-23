@@ -82,10 +82,11 @@ class ReinforcedDecoder(nn.Module):
                                 probability as mentionned in sect. 6.1
             bidirectional_encoder
         """
-        super(ReinforcedDecoder, self).__init__(opt)
+        super(ReinforcedDecoder, self).__init__()
+        self.opt = opt
         self.embeddings = embeddings
-        W_emb = embeddings.weight
-        self.tgt_vocab_size, self.input_size = W_emb.size()
+        w_emb = embeddings.weight
+        self.tgt_vocab_size, self.input_size = w_emb.size()
         self.dim = opt.rnn_size
 
         # TODO use parameter instead of hardcoding nlayer
@@ -105,6 +106,12 @@ class ReinforcedDecoder(nn.Module):
         self.hidden_size = self.dim
         self.decoder_type = "reinforced"
         self.bidirectional_encoder = bidirectional_encoder
+
+    def mkvar(self, tensor, requires_grad=False):
+        v = torch.autograd.Variable(tensor, requires_grad=requires_grad)
+        if len(self.opt.gpuid) > 0:
+            v = v.cuda()
+        return v
 
     def _fix_enc_hidden(self, h):
         """
@@ -322,4 +329,6 @@ class ReinforcedModel(onmt.Models.NMTModel):
 
             rl_loss = (rl_loss * metric).sum()
             loss = (self.gamma * rl_loss) - ((1 - self.gamma * ml_loss))
+        else:
+            loss = ml_loss
         return loss, stats, state

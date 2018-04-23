@@ -230,48 +230,48 @@ class PointerGenerator(CopyGenerator):
         super(PointerGenerator, self).__init__(input_size, tgt_vocab)
         self.input_size = input_size
         self.embeddings = embeddings
-        W_emb = embeddings.weight
+        w_emb = embeddings.weight
         self.linear_copy = nn.Linear(self.input_size, 1)
 
-        n_emb, emb_dim = list(W_emb.size())
+        n_emb, emb_dim = list(w_emb.size())
 
         # (2.4) Sharing decoder weights
         self.emb_proj = nn.Linear(emb_dim, self.input_size, bias=False)
         self.b_out = nn.Parameter(torch.Tensor(n_emb, 1))
         self.tanh = nn.Tanh()
-        self._W_out = None
+        self._w_out = None
 
-        # refresh W_out matrix after each backward pass
-        self.register_backward_hook(self.refresh_W_out)
+        # refresh w_out matrix after each backward pass
+        self.register_backward_hook(self.refresh_w_out)
 
-    def refresh_W_out(self, *args, **kwargs):
-        self.W_out(True)
+    def refresh_w_out(self, *args, **kwargs):
+        self.w_out(True)
 
-    def W_out(self, refresh=False):
+    def w_out(self, refresh=False):
         """ Sect. (2.4) Sharing decoder weights
-            The function returns the W_out matrix which is a projection of the
+            The function returns the w_out matrix which is a projection of the
             target embedding weight matrix.
-            The W_out matrix needs to recalculated after each backward pass,
+            The w_out matrix needs to recalculated after each backward pass,
             which is done automatically. This is done to avoid calculating it
             at each decoding step (which usually leads to OOM)
 
             Returns:
-                W_out (FloaTensor): [n_emb, 3*dim]
+                w_out (FloaTensor): [n_emb, 3*dim]
         """
-        if self._W_out is None or refresh:
+        if self._w_out is None or refresh:
             _ = self.emb_proj(self.embeddings.weight)
-            self._W_out = self.tanh(_)
-        return self._W_out
+            self._w_out = self.tanh(_)
+        return self._w_out
 
-    def linear(self, V):
+    def linear(self, v):
         """Calculate the output projection of `v` as in eq. (9)
             Args:
                 V (FloatTensor): [bs, 3*dim]
             Returns:
-                logits (FloatTensor): logits = W_out * V + b_out, [3*dim]
+                logits (FloatTensor): logits = w_out * V + b_out, [3*dim]
         """
-        W = self.W_out()
-        logits = (W.matmul(V.t()) + self.b_out).t()
+        w = self.w_out()
+        logits = (w.matmul(v.t()) + self.b_out).t()
         return logits
 
 
@@ -297,6 +297,11 @@ class EachStepGeneratorLossCompute(CopyGeneratorLossCompute):
             copy_attn:  [bs x src_len]
             output:     [bs x 3*dim]
         """
+        def _maybe_cuda(_):
+            if output.cuda:
+                return _.cuda()
+            return _
+
         align = align.view(-1)
         target = target.view(-1)
         # GENERATOR: generating scores
@@ -309,7 +314,7 @@ class EachStepGeneratorLossCompute(CopyGeneratorLossCompute):
         # FAST COPY SCORES COLLAPSE
         # We collapse scores using only tensor operations for performance
         # This is critical since it will be executed at each decoding steps
-        _src_map = batch.src_map.float().data.cuda()
+        _src_map = _maybe_cuda(batch.src_map.float().data)
         _scores = scores.data.clone()
 
         _src = src.clone().data
@@ -369,8 +374,7 @@ class EachStepGeneratorLossCompute(CopyGeneratorLossCompute):
         else:
             raise ValueError("Incorrect prediction_type %s" % prediction_type)
 
-        if output.is_cuda():
-            pred.cuda()
+        pred = _maybe_cuda(pred)
 
         # FIXING TARGET TO TAKE COPY INTO ACCOUNT
         correct_target = target.data.clone()

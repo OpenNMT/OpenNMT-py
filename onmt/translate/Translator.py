@@ -334,6 +334,11 @@ class Translator(object):
                                           .contiguous())
 
             else:
+
+                # Temporary kludge solution to handle changed dim expectation
+                # in the decoder
+                inp = inp.unsqueeze(2)
+
                 dec_out, dec_states, attn = self.model.decoder(
                     inp, memory_bank, dec_states,
                     memory_lengths=memory_lengths)
