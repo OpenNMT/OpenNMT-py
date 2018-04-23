@@ -15,6 +15,7 @@ class ImageEncoder(nn.Module):
         rnn_size (int): size of hidden states of the rnn.
         dropout (float): dropout probablity.
     """
+
     def __init__(self, num_layers, bidirectional, rnn_size, dropout):
         super(ImageEncoder, self).__init__()
         self.num_layers = num_layers

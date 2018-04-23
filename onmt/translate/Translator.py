@@ -63,6 +63,7 @@ class Translator(object):
        cuda (bool): use cuda
        beam_trace (bool): trace beam search for debugging
     """
+
     def __init__(self,
                  model,
                  fields,
@@ -242,18 +243,18 @@ class Translator(object):
         exclusion_tokens = set([vocab.stoi[t]
                                 for t in self.ignore_when_blocking])
 
-        beam = [onmt.translate.Beam(beam_size, n_best=self.n_best,
-                cuda=self.cuda,
-                global_scorer=self.global_scorer,
-                pad=vocab.stoi[onmt.io.PAD_WORD],
-                eos=vocab.stoi[onmt.io.EOS_WORD],
-                bos=vocab.stoi[onmt.io.BOS_WORD],
-                min_length=self.min_length,
-                avoid_trigram_repetition=self.avoid_trigram_repetition,
-                stepwise_penalty=self.stepwise_penalty,
-                block_ngram_repeat=self.block_ngram_repeat,
-                exclusion_tokens=exclusion_tokens)
-                for __ in range(batch_size)]
+        beam = [onmt.translate.Beam(
+            beam_size, n_best=self.n_best, cuda=self.cuda,
+            global_scorer=self.global_scorer,
+            pad=vocab.stoi[onmt.io.PAD_WORD],
+            eos=vocab.stoi[onmt.io.EOS_WORD],
+            bos=vocab.stoi[onmt.io.BOS_WORD],
+            min_length=self.min_length,
+            avoid_trigram_repetition=self.avoid_trigram_repetition,
+            stepwise_penalty=self.stepwise_penalty,
+            block_ngram_repeat=self.block_ngram_repeat,
+            exclusion_tokens=exclusion_tokens)
+            for __ in range(batch_size)]
 
         # Help functions for working with beams and batches
         def var(a): return Variable(a, volatile=True)
@@ -327,9 +328,9 @@ class Translator(object):
                 out = unbottle(scores_data)
                 print(batch.indices[0])
                 out = data.collapse_copy_scores(
-                       out, batch, self.fields["tgt"].vocab, data.src_vocabs)
-                beam_attn = unbottle(torch.stack(attns, dim=0) \
-                                          .squeeze(0) \
+                    out, batch, self.fields["tgt"].vocab, data.src_vocabs)
+                beam_attn = unbottle(torch.stack(attns, dim=0)
+                                          .squeeze(0)
                                           .contiguous())
 
             else:

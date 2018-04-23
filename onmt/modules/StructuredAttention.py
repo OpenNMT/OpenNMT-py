@@ -12,6 +12,7 @@ class MatrixTree(nn.Module):
 
     :cite:`DBLP:journals/corr/LiuL17d`
     """
+
     def __init__(self, eps=1e-5):
         self.eps = eps
         super(MatrixTree, self).__init__()

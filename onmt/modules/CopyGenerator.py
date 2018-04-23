@@ -58,6 +58,7 @@ class CopyGenerator(nn.Module):
        tgt_dict (Vocab): output target dictionary
 
     """
+
     def __init__(self, input_size, tgt_dict):
         super(CopyGenerator, self).__init__()
         self.linear = nn.Linear(input_size, len(tgt_dict))
@@ -142,6 +143,7 @@ class CopyGeneratorLossCompute(onmt.Loss.LossComputeBase):
     """
     Copy Generator Loss Computation.
     """
+
     def __init__(self, generator, tgt_vocab,
                  force_copy, normalize_by_length,
                  eps=1e-20):
@@ -187,8 +189,8 @@ class CopyGeneratorLossCompute(onmt.Loss.LossComputeBase):
         loss = self.criterion(scores, align, target)
         scores_data = scores.data.clone()
         scores_data = onmt.io.TextDataset.collapse_copy_scores(
-                self._unbottle(scores_data, batch.batch_size),
-                batch, self.tgt_vocab, self.cur_dataset.src_vocabs)
+            self._unbottle(scores_data, batch.batch_size),
+            batch, self.tgt_vocab, self.cur_dataset.src_vocabs)
         scores_data = self._bottle(scores_data)
 
         # Correct target copy token instead of <unk>
@@ -223,6 +225,7 @@ class PointerGenerator(CopyGenerator):
        It is similar to the `CopyGenerator` with the difference that it
        shares weights with the target embedding matrix.
     """
+
     def __init__(self, input_size, tgt_vocab, embeddings):
         super(PointerGenerator, self).__init__(input_size, tgt_vocab)
         self.input_size = input_size
@@ -303,7 +306,6 @@ class EachStepGeneratorLossCompute(CopyGeneratorLossCompute):
             copy_attn,
             batch.src_map)
 
-
         # FAST COPY SCORES COLLAPSE
         # We collapse scores using only tensor operations for performance
         # This is critical since it will be executed at each decoding steps
@@ -345,7 +347,7 @@ class EachStepGeneratorLossCompute(CopyGeneratorLossCompute):
 
         _collapsed_scores = _scores
         collapsed_scores = _collapsed_scores
-        
+
         # CRITERION & PREDICTION: Predicting & Calculating the loss
         if prediction_type == "greedy":
             _, pred = collapsed_scores.max(1)
@@ -366,7 +368,7 @@ class EachStepGeneratorLossCompute(CopyGeneratorLossCompute):
             loss_data = loss.sum().data
         else:
             raise ValueError("Incorrect prediction_type %s" % prediction_type)
-        
+
         if output.is_cuda():
             pred.cuda()
 

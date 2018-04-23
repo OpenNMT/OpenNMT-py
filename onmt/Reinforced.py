@@ -26,9 +26,9 @@ class RougeScorer:
         #       I'm not sure how relevant it is
         metric_weight = {"rouge-1": 0, "rouge-2": 0, "rouge-l": 1}
 
-        scores = [sum([seq[metric]['f'] * metric_weight[metric] 
-                         for metric in seq.keys()])
-                    for seq in scores]
+        scores = [sum([seq[metric]['f'] * metric_weight[metric]
+                       for metric in seq.keys()])
+                  for seq in scores]
         return scores
 
     def score(self, sample_pred, greedy_pred, tgt):

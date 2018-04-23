@@ -85,6 +85,7 @@ class Embeddings(nn.Module):
                     `-feat_merge mlp`
         dropout (float): dropout probability.
     """
+
     def __init__(self, word_vec_size,
                  word_vocab_size,
                  word_padding_idx,
@@ -195,22 +196,20 @@ class Embeddings(nn.Module):
 class PartialEmbedding(nn.Module):
     def __init__(self, partial_num_embeddings, embedding, padding_idx):
         super(PartialEmbedding, self).__init__()
-        
+
         self.num_embeddings = partial_num_embeddings
         self.partial_num_embeddings = partial_num_embeddings
         self.embedding_size = embedding.embedding_size
 
         self.word_padding_idx = padding_idx
-        
+
         self.full_embedding = embedding
 
     @property
     def weight(self):
-        try:
-            return self.full_embedding.word_lut.weight[:self.partial_num_embeddings, :]
-        except Exception as e:
-            print(e)
-            exit()
+        return self.full_embedding \
+                   .word_lut \
+                   .weight[:self.partial_num_embeddings, :]
 
     def reset_parameters(self):
         pass

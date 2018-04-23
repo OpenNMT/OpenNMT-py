@@ -24,6 +24,7 @@ class ONMTDatasetBase(torchtext.data.Dataset):
      `fields`: a dictionary associating str keys with `torchtext.data.Field`
         objects, and not necessarily having the same keys as the input fields.
     """
+
     def __getstate__(self):
         return self.__dict__
 
@@ -44,7 +45,7 @@ class ONMTDatasetBase(torchtext.data.Dataset):
 
         fields = load_fields_from_vocab(vocab_dict.items(), self.data_type)
         self.fields = dict([(k, f) for (k, f) in fields.items()
-                           if k in self.examples[0].__dict__])
+                            if k in self.examples[0].__dict__])
 
     @staticmethod
     def extract_text_features(tokens):
