@@ -89,9 +89,6 @@ def model_opts(parser):
 
     group.add_argument('-brnn', action=DeprecateAction,
                        help="Deprecated, use `encoder_type`.")
-    group.add_argument('-brnn_merge', default='concat',
-                       choices=['concat', 'sum'],
-                       help="Merge action for the bidir hidden states")
 
     group.add_argument('-context_gate', type=str, default=None,
                        choices=['source', 'target', 'both'],
