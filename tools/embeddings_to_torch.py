@@ -120,7 +120,7 @@ def main():
     parser.add_argument('-type', choices=TYPES, default="GloVe")
     opt = parser.parse_args()
     if not opt.emb_file_enc and not opt.emb_file_dec:
-        raise Exception('Either or both required: emb_file_enc, -emb_file_dec')
+        raise Exception('Either or both required: -emb_file_enc, -emb_file_dec')
 
     enc_vocab, dec_vocab = get_vocabs(opt.dict_file)
     if opt.type == "word2vec":
