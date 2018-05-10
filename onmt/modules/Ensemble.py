@@ -26,6 +26,9 @@ class EnsembleDecoderState(DecoderState):
         for model_state in self.model_decoder_states:
             model_state.repeat_beam_size_times(beam_size)
 
+    def __getitem__(self, index):
+        return self.model_decoder_states[index]
+
 
 class EnsembleDistribution(object):
     """ Wrapper around multiple prediction distributions """
@@ -56,13 +59,27 @@ class EnsembleDecoder(nn.Module):
 
     def forward(self, tgt, memory_bank, state, memory_lengths=None):
         """ See :obj:`RNNDecoderBase.forward()` """
-        # return outputs, state, attns
-        pass
+        if memory_lengths is None:
+            memory_lengths = [None] * len(self.model_decoders)
+        outputs, states, attns = zip(*[
+            model_decoder.forward(
+                tgt, memory_bank[i], state[i], memory_lengths[i])
+            for (i, model_decoder)
+            in enumerate(self.model_decoders)])
+        return (EnsembleDistribution(outputs),
+                EnsembleDecoderState(states),
+                torch.stack(attns).mean(0))
 
     def init_decoder_state(self, src, memory_bank, enc_hidden):
         return EnsembleDecoderState(
             [model_decoder.init_decoder_state(src, memory_bank, enc_hidden)
              for model_decoder in self.model_decoders])
+
+    def get_memory_lengths(self, memory_banks):
+        """ Get sequence lengths from each memory_bank """
+        return [model_decoder.get_memory_lengths(memory_bank)
+                for (memory_bank, model_decoder)
+                in zip(memory_banks, self.model_decoders)]
 
 
 class EnsembleGenerator(nn.Module):
