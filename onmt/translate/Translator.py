@@ -272,6 +272,8 @@ class Translator(object):
             src, memory_bank, enc_states)
 
         if src_lengths is None:
+            assert not isinstance(memory_bank, tuple), \
+                'Ensemble decoding only supported for text data'
             src_lengths = torch.Tensor(batch_size).type_as(memory_bank.data)\
                                                   .long()\
                                                   .fill_(memory_bank.size(0))
@@ -279,7 +281,10 @@ class Translator(object):
         # (2) Repeat src objects `beam_size` times.
         src_map = rvar(batch.src_map.data) \
             if data_type == 'text' and self.copy_attn else None
-        memory_bank = rvar(memory_bank.data)
+        if isinstance(memory_bank, tuple):
+            memory_bank = tuple(rvar(x) for x in memory_bank)
+        else:
+            memory_bank = rvar(memory_bank.data)
         memory_lengths = src_lengths.repeat(beam_size)
         dec_states.repeat_beam_size_times(beam_size)
 
