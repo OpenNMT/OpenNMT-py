@@ -11,9 +11,10 @@ import onmt.ModelConstructor
 import onmt.translate.Beam
 import onmt.io
 import onmt.opts
+import onmt.modules.Ensemble
 
 
-def make_translator(opt, report_score=True, out_file=None):
+def make_translator(opt, report_score=True, out_file=None, use_ensemble=False):
     if out_file is None:
         out_file = codecs.open(opt.output, 'w', 'utf-8')
 
@@ -24,8 +25,12 @@ def make_translator(opt, report_score=True, out_file=None):
     onmt.opts.model_opts(dummy_parser)
     dummy_opt = dummy_parser.parse_known_args([])[0]
 
-    fields, model, model_opt = \
-        onmt.ModelConstructor.load_test_model(opt, dummy_opt.__dict__)
+    if use_ensemble:
+        fields, model, model_opt = \
+            onmt.modules.Ensemble.load_test_model(opt, dummy_opt.__dict__)
+    else:
+        fields, model, model_opt = \
+            onmt.ModelConstructor.load_test_model(opt, dummy_opt.__dict__)
 
     scorer = onmt.translate.GNMTGlobalScorer(opt.alpha,
                                              opt.beta,
@@ -282,7 +287,7 @@ class Translator(object):
         src_map = rvar(batch.src_map.data) \
             if data_type == 'text' and self.copy_attn else None
         if isinstance(memory_bank, tuple):
-            memory_bank = tuple(rvar(x) for x in memory_bank)
+            memory_bank = tuple(rvar(x.data) for x in memory_bank)
         else:
             memory_bank = rvar(memory_bank.data)
         memory_lengths = src_lengths.repeat(beam_size)
@@ -394,6 +399,9 @@ class Translator(object):
         return gold_scores
 
     def _report_score(self, name, score_total, words_total):
+        if words_total == 0:
+            print("%s No words predicted" % (name,))
+            return
         print("%s AVG SCORE: %.4f, %s PPL: %.4f" % (
             name, score_total / words_total,
             name, math.exp(-score_total / words_total)))
