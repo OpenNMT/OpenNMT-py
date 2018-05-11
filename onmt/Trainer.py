@@ -152,6 +152,7 @@ class Trainer(object):
         normalization = 0
         try:
             add_on = 0
+
             if len(train_iter) % self.grad_accum_count > 0:
                 add_on += 1
             num_batches = len(train_iter) / self.grad_accum_count + add_on
@@ -161,6 +162,8 @@ class Trainer(object):
 
         for i, batch in enumerate(train_iter):
             cur_dataset = train_iter.get_cur_dataset()
+            print('printing dataset')
+            print(cur_dataset)
             self.train_loss.cur_dataset = cur_dataset
 
             true_batchs.append(batch)
