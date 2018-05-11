@@ -4,20 +4,9 @@ import onmt
 import onmt.io
 import onmt.modules
 from allennlp.commands.elmo import ElmoEmbedder
+from test.Options import Opt
 
 from test.aux_train import lazily_load_dataset, load_fields, DatasetLazyIter, make_dataset_iter,make_loss_compute
-
-
-class Opt:
-    def __init__(self):
-        self.data = '/Users/ugan/AnacondaProjects/OpenNMT-py/data/demo'
-        self.batch_size = '64'
-        self.valid_batch_size = '32'
-        self.batch_type = "sents"
-        self.gpuid = []
-        self.label_smoothing = 0.0
-        self.copy_attn = False
-
 
 
 opt = Opt()
