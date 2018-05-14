@@ -1,11 +1,9 @@
-import onmt.io
-import onmt.Models
-import onmt.Loss
-import onmt.translate
-import onmt.opts
-from onmt.Trainer import Trainer, Statistics
-from onmt.Optim import Optim
-
-# For flake8 compatibility
-__all__ = [onmt.Loss, onmt.Models, onmt.opts,
-           Trainer, Optim, Statistics, onmt.io, onmt.translate]
+""" Main entry point of the ONMT library """
+from onmt import decoders
+from onmt import encoders
+from onmt import inputters
+from onmt import models
+from onmt import modules
+#import onmt.opts
+from onmt.trainer import Trainer, Statistics
+#from onmt.encoders.transformer import TransformerEncoder

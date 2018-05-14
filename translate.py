@@ -2,18 +2,18 @@
 from __future__ import division, unicode_literals
 import argparse
 
-from onmt.translate.Translator import make_translator
+from onmt.translate.translator import build_translator
 
-import onmt.io
+import onmt.inputters
 import onmt.translate
 import onmt
-import onmt.ModelConstructor
+import onmt.model_builder
 import onmt.modules
 import onmt.opts
 
 
 def main(opt):
-    translator = make_translator(opt, report_score=True)
+    translator = build_translator(opt, report_score=True)
     translator.translate(opt.src_dir, opt.src, opt.tgt,
                          opt.batch_size, opt.attn_debug)
 

@@ -3,9 +3,9 @@ import torch
 import argparse
 import onmt
 import onmt.ModelConstructor
-import onmt.io
+import onmt.inputters
 import onmt.opts
-from onmt.Utils import use_gpu
+from onmt.utils.util import use_gpu
 
 parser = argparse.ArgumentParser(description='translate.py')
 

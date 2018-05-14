@@ -1,8 +1,8 @@
-from onmt.translate.Translator import Translator
-from onmt.translate.Translation import Translation, TranslationBuilder
-from onmt.translate.Beam import Beam, GNMTGlobalScorer
-from onmt.translate.Penalties import PenaltyBuilder
-from onmt.translate.TranslationServer import TranslationServer, \
+from onmt.translate.translator import Translator
+from onmt.translate.translation import Translation, TranslationBuilder
+from onmt.translate.beam import Beam, GNMTGlobalScorer
+from onmt.translate.penalties import PenaltyBuilder
+from onmt.translate.translation_server import TranslationServer, \
                                              ServerModelError
 
 __all__ = [Translator, Translation, Beam,
