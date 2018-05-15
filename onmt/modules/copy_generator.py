@@ -6,7 +6,7 @@ import torch.cuda
 import onmt
 import onmt.inputters as inputters
 from onmt.utils.misc import aeq
-
+from onmt.utils import loss
 
 class CopyGenerator(nn.Module):
     """Generator module that additionally considers copying
@@ -138,7 +138,7 @@ class CopyGeneratorCriterion(object):
         return loss
 
 
-class CopyGeneratorLossCompute(onmt.utils.loss.LossComputeBase):
+class CopyGeneratorLossCompute(loss.LossComputeBase):
     """
     Copy Generator Loss Computation.
     """

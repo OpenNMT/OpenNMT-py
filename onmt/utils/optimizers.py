@@ -6,8 +6,71 @@ import torch.optim as optim
 from torch.nn.utils import clip_grad_norm
 
 
+def build_optim(opt, model, checkpoint):
+    saved_optimizer_state_dict = None
+
+    if opt.train_from:
+        print('Loading optimizer from checkpoint.')
+        optim = checkpoint['optim']
+        # We need to save a copy of optim.optimizer.state_dict() for setting
+        # the, optimizer state later on in Stage 2 in this method, since
+        # the method optim.set_parameters(model.parameters()) will overwrite
+        # optim.optimizer, and with ith the values stored in
+        # optim.optimizer.state_dict()
+        saved_optimizer_state_dict = optim.optimizer.state_dict()
+    else:
+        print('Making optimizer for training.')
+        optim = Optimizer(
+            opt.optim, opt.learning_rate, opt.max_grad_norm,
+            lr_decay=opt.learning_rate_decay,
+            start_decay_at=opt.start_decay_at,
+            beta1=opt.adam_beta1,
+            beta2=opt.adam_beta2,
+            adagrad_accum=opt.adagrad_accumulator_init,
+            decay_method=opt.decay_method,
+            warmup_steps=opt.warmup_steps,
+            model_size=opt.rnn_size)
+
+    # Stage 1:
+    # Essentially optim.set_parameters (re-)creates and optimizer using
+    # model.paramters() as parameters that will be stored in the
+    # optim.optimizer.param_groups field of the torch optimizer class.
+    # Importantly, this method does not yet load the optimizer state, as
+    # essentially it builds a new optimizer with empty optimizer state and
+    # parameters from the model.
+    optim.set_parameters(model.named_parameters())
+
+    if opt.train_from:
+        # Stage 2: In this stage, which is only performed when loading an
+        # optimizer from a checkpoint, we load the saved_optimizer_state_dict
+        # into the re-created optimizer, to set the optim.optimizer.state
+        # field, which was previously empty. For this, we use the optimizer
+        # state saved in the "saved_optimizer_state_dict" variable for
+        # this purpose.
+        # See also: https://github.com/pytorch/pytorch/issues/2830
+        optim.optimizer.load_state_dict(saved_optimizer_state_dict)
+        # Convert back the state values to cuda type if applicable
+        if use_gpu(opt):
+            for state in optim.optimizer.state.values():
+                for k, v in state.items():
+                    if torch.is_tensor(v):
+                        state[k] = v.cuda()
+
+        # We want to make sure that indeed we have a non-empty optimizer state
+        # when we loaded an existing model. This should be at least the case
+        # for Adam, which saves "exp_avg" and "exp_avg_sq" state
+        # (Exponential moving average of gradient and squared gradient values)
+        if (optim.method == 'adam') and (len(optim.optimizer.state) < 1):
+            raise RuntimeError(
+                "Error: loaded Adam optimizer from existing model" +
+                " but optimizer state is empty")
+
+    return optim
+
+
 class MultipleOptimizer(object):
     """ Implement multiple optimizers needed for sparse adam """
+
     def __init__(self, op):
         """ ? """
         self.optimizers = op
@@ -68,7 +131,7 @@ class Optimizer(object):
     # was used there however, beta2=0.999 is still arguably the more
     # established value, so we use that here as well
 
-    def __init__(self, method, _lr, max_grad_norm,
+    def __init__(self, method, lr, max_grad_norm,
                  lr_decay=1, start_decay_at=None,
                  beta1=0.9, beta2=0.999,
                  adagrad_accum=0.0,
@@ -76,8 +139,8 @@ class Optimizer(object):
                  warmup_steps=4000,
                  model_size=None):
         self.last_ppl = None
-        self._lr = _lr
-        self.original_lr = _lr
+        self.lr = lr
+        self.original_lr = lr
         self.max_grad_norm = max_grad_norm
         self.method = method
         self.lr_decay = lr_decay
@@ -101,34 +164,34 @@ class Optimizer(object):
                 else:
                     self.sparse_params.append(p)
         if self.method == 'sgd':
-            self.optimizer = optim.SGD(self.params, lr=self._lr)
+            self.optimizer = optim.SGD(self.params, lr=self.lr)
         elif self.method == 'adagrad':
-            self.optimizer = optim.Adagrad(self.params, lr=self._lr)
+            self.optimizer = optim.Adagrad(self.params, lr=self.lr)
             for group in self.optimizer.param_groups:
                 for p in group['params']:
                     self.optimizer.state[p]['sum'] = self.optimizer\
                         .state[p]['sum'].fill_(self.adagrad_accum)
         elif self.method == 'adadelta':
-            self.optimizer = optim.Adadelta(self.params, lr=self._lr)
+            self.optimizer = optim.Adadelta(self.params, lr=self.lr)
         elif self.method == 'adam':
-            self.optimizer = optim.Adam(self.params, lr=self._lr,
+            self.optimizer = optim.Adam(self.params, lr=self.lr,
                                         betas=self.betas, eps=1e-9)
         elif self.method == 'sparseadam':
             self.optimizer = MultipleOptimizer(
-                [optim.Adam(self.params, lr=self._lr,
+                [optim.Adam(self.params, lr=self.lr,
                             betas=self.betas, eps=1e-8),
-                 optim.SparseAdam(self.sparse_params, lr=self._lr,
+                 optim.SparseAdam(self.sparse_params, lr=self.lr,
                                   betas=self.betas, eps=1e-8)])
         else:
             raise RuntimeError("Invalid optim method: " + self.method)
 
-    def _set_rate(self, _lr):
-        self._lr = _lr
+    def _set_rate(self, lr):
+        self.lr = lr
         if self.method != 'sparseadam':
-            self.optimizer.param_groups[0]['lr'] = self._lr
+            self.optimizer.param_groups[0]['lr'] = self.lr
         else:
             for op in self.optimizer.optimizers:
-                op.param_groups[0]['lr'] = self._lr
+                op.param_groups[0]['lr'] = self.lr
 
     def step(self):
         """Update the model parameters based on current gradients.
@@ -162,74 +225,12 @@ class Optimizer(object):
             self.start_decay = True
 
         if self.start_decay:
-            self._lr = self._lr * self.lr_decay
-            print("Decaying learning rate to %g" % self._lr)
+            self.lr = self.lr * self.lr_decay
+            print("Decaying learning rate to %g" % self.lr)
 
         self.last_ppl = ppl
         if self.method != 'sparseadam':
-            self.optimizer.param_groups[0]['lr'] = self._lr
-
-
-def build_optim(model, opt, checkpoint):
-    saved_optimizer_state_dict = None
-
-    if opt.train_from:
-        print('Loading optimizer from checkpoint.')
-        optim = checkpoint['optim']
-        # We need to save a copy of optim.optimizer.state_dict() for setting
-        # the, optimizer state later on in Stage 2 in this method, since
-        # the method optim.set_parameters(model.parameters()) will overwrite
-        # optim.optimizer, and with ith the values stored in
-        # optim.optimizer.state_dict()
-        saved_optimizer_state_dict = optim.optimizer.state_dict()
-    else:
-        print('Making optimizer for training.')
-        optim = Optimizer(
-            opt.optim, opt.learning_rate, opt.max_grad_norm,
-            lr_decay=opt.learning_rate_decay,
-            start_decay_at=opt.start_decay_at,
-            beta1=opt.adam_beta1,
-            beta2=opt.adam_beta2,
-            adagrad_accum=opt.adagrad_accumulator_init,
-            decay_method=opt.decay_method,
-            warmup_steps=opt.warmup_steps,
-            model_size=opt.rnn_size)
-
-    # Stage 1:
-    # Essentially optim.set_parameters (re-)creates and optimizer using
-    # model.paramters() as parameters that will be stored in the
-    # optim.optimizer.param_groups field of the torch optimizer class.
-    # Importantly, this method does not yet load the optimizer state, as
-    # essentially it builds a new optimizer with empty optimizer state and
-    # parameters from the model.
-    optim.set_parameters(model.named_parameters())
-
-    if opt.train_from:
-        # Stage 2: In this stage, which is only performed when loading an
-        # optimizer from a checkpoint, we load the saved_optimizer_state_dict
-        # into the re-created optimizer, to set the optim.optimizer.state
-        # field, which was previously empty. For this, we use the optimizer
-        # state saved in the "saved_optimizer_state_dict" variable for
-        # this purpose.
-        # See also: https://github.com/pytorch/pytorch/issues/2830
-        optim.optimizer.load_state_dict(saved_optimizer_state_dict)
-        # Convert back the state values to cuda type if applicable
-        if use_gpu(opt):
-            for state in optim.optimizer.state.values():
-                for k, v in state.items():
-                    if torch.is_tensor(v):
-                        state[k] = v.cuda()
-
-        # We want to make sure that indeed we have a non-empty optimizer state
-        # when we loaded an existing model. This should be at least the case
-        # for Adam, which saves "exp_avg" and "exp_avg_sq" state
-        # (Exponential moving average of gradient and squared gradient values)
-        if (optim.method == 'adam') and (len(optim.optimizer.state) < 1):
-            raise RuntimeError(
-                "Error: loaded Adam optimizer from existing model" +
-                " but optimizer state is empty")
-
-    return optim
+            self.optimizer.param_groups[0]['lr'] = self.lr
 
 
 # Debugging method for showing the optimizer state

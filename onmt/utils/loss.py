@@ -13,6 +13,28 @@ import onmt
 import onmt.inputters as inputters
 from onmt.utils.misc import use_gpu
 
+
+def build_loss_compute(model, tgt_vocab, opt, train=True):
+    """
+    This returns user-defined LossCompute object, which is used to
+    compute loss in train/validate process. You can implement your
+    own *LossCompute class, by subclassing LossComputeBase.
+    """
+    if opt.copy_attn:
+        compute = onmt.modules.CopyGeneratorLossCompute(
+            model.generator, tgt_vocab, opt.copy_attn_force,
+            opt.copy_loss_by_seqlength)
+    else:
+        compute = NMTLossCompute(
+            model.generator, tgt_vocab,
+            label_smoothing=opt.label_smoothing if train else 0.0)
+
+    if use_gpu(opt):
+        compute.cuda()
+
+    return compute
+
+
 class LossComputeBase(nn.Module):
     """
     Class for managing efficient loss computation. Handles
@@ -77,7 +99,7 @@ class LossComputeBase(nn.Module):
               dictionary of attention distributions
               `[tgt_len x batch x src_len]`
         Returns:
-            :obj:`onmt.Statistics`: loss statistics
+            :obj:`onmt.utils.Statistics`: loss statistics
         """
         range_ = (0, batch.tgt.size(0))
         shard_state = self._make_shard_state(batch, output, range_, attns)
@@ -112,10 +134,10 @@ class LossComputeBase(nn.Module):
           normalization (int) : Loss is divided by this number
 
         Returns:
-            :obj:`onmt.Statistics`: validation loss statistics
+            :obj:`onmt.utils.Statistics`: validation loss statistics
 
         """
-        batch_stats = onmt.Statistics()
+        batch_stats = onmt.utils.Statistics()
         range_ = (cur_trunc, cur_trunc + trunc_size)
         shard_state = self._make_shard_state(batch, output, range_, attns)
 
@@ -141,7 +163,7 @@ class LossComputeBase(nn.Module):
         num_correct = pred.eq(target) \
                           .masked_select(non_padding) \
                           .sum()
-        return onmt.Statistics(loss[0], non_padding.sum(), num_correct)
+        return onmt.utils.Statistics(loss[0], non_padding.sum(), num_correct)
 
 
     def _bottle(self, _v):
@@ -265,24 +287,3 @@ def shards(state, shard_size, eval_only=False):
                      if isinstance(v, Variable) and v.grad is not None)
         inputs, grads = zip(*variables)
         torch.autograd.backward(inputs, grads)
-
-
-def make_loss_compute(model, tgt_vocab, opt, train=True):
-    """
-    This returns user-defined LossCompute object, which is used to
-    compute loss in train/validate process. You can implement your
-    own *LossCompute class, by subclassing LossComputeBase.
-    """
-    if opt.copy_attn:
-        compute = onmt.modules.CopyGeneratorLossCompute(
-            model.generator, tgt_vocab, opt.copy_attn_force,
-            opt.copy_loss_by_seqlength)
-    else:
-        compute = onmt.utils.loss.NMTLossCompute(
-            model.generator, tgt_vocab,
-            label_smoothing=opt.label_smoothing if train else 0.0)
-
-    if use_gpu(opt):
-        compute.cuda()
-
-    return compute

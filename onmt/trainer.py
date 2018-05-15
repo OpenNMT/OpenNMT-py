@@ -17,84 +17,26 @@ import torch.nn as nn
 
 import onmt.inputters as inputters
 from onmt.inputters.inputter import build_dataset_iter, lazily_load_dataset, _load_fields, _collect_report_features
-from onmt.utils.loss import make_loss_compute
-from onmt.utils.misc import use_gpu
+import onmt.utils
 
-class Statistics(object):
-    """
-    Accumulator for loss statistics.
-    Currently calculates:
 
-    * accuracy
-    * perplexity
-    * elapsed time
-    """
-    def __init__(self, loss=0, n_words=0, n_correct=0):
-        self.loss = loss
-        self.n_words = n_words
-        self.n_correct = n_correct
-        self.n_src_words = 0
-        self.start_time = time.time()
+def build_trainer(opt, model, fields, optim, data_type, model_saver=None):
+    train_loss = onmt.utils.loss.build_loss_compute(
+        model, fields["tgt"].vocab, opt)
+    valid_loss = onmt.utils.loss.build_loss_compute(
+        model, fields["tgt"].vocab, opt, train=False)
 
-    def update(self, stat):
-        """ update statistics """
-        self.loss += stat.loss
-        self.n_words += stat.n_words
-        self.n_correct += stat.n_correct
+    trunc_size = opt.truncated_decoder  # Badly named...
+    shard_size = opt.max_generator_batches
+    norm_method = opt.normalization
+    grad_accum_count = opt.accum_count
 
-    def accuracy(self):
-        """ compute accuracy """
-        return 100 * (self.n_correct / self.n_words)
-
-    def xent(self):
-        """ compute cross entropy """
-        return self.loss / self.n_words
-
-    def ppl(self):
-        """ compute perplexity """
-        return math.exp(min(self.loss / self.n_words, 100))
-
-    def elapsed_time(self):
-        """ compute elapsed time """
-        return time.time() - self.start_time
-
-    def output(self, epoch, batch, n_batches, start):
-        """Write out statistics to stdout.
-
-        Args:
-           epoch (int): current epoch
-           batch (int): current batch
-           n_batch (int): total batches
-           start (int): start time of epoch.
-        """
-        t = self.elapsed_time()
-        print(("Epoch %2d, %5d/%5d; acc: %6.2f; ppl: %6.2f; xent: %6.2f; " +
-               "%3.0f src tok/s; %3.0f tgt tok/s; %6.0f s elapsed") %
-              (epoch, batch, n_batches,
-               self.accuracy(),
-               self.ppl(),
-               self.xent(),
-               self.n_src_words / (t + 1e-5),
-               self.n_words / (t + 1e-5),
-               time.time() - start))
-        sys.stdout.flush()
-
-    def log(self, prefix, experiment, learning_rate):
-        """ log statistics """
-        t = self.elapsed_time()
-        experiment.add_scalar_value(prefix + "_ppl", self.ppl())
-        experiment.add_scalar_value(prefix + "_accuracy", self.accuracy())
-        experiment.add_scalar_value(prefix + "_tgtper", self.n_words / t)
-        experiment.add_scalar_value(prefix + "_lr", learning_rate)
-
-    def log_tensorboard(self, prefix, writer, learning_rate, step):
-        """ display statistics to tensorboard """
-        t = self.elapsed_time()
-        writer.add_scalar(prefix + "/xent", self.xent(), step)
-        writer.add_scalar(prefix + "/ppl", self.ppl(), step)
-        writer.add_scalar(prefix + "/accuracy", self.accuracy(), step)
-        writer.add_scalar(prefix + "/tgtper", self.n_words / t, step)
-        writer.add_scalar(prefix + "/lr", learning_rate, step)
+    report_manager = onmt.utils.build_report_manager(opt)
+    trainer = onmt.Trainer(model, train_loss, valid_loss, optim,
+                           trunc_size, shard_size, data_type,
+                           norm_method, grad_accum_count, report_manager,
+                           model_saver=None)
+    return trainer
 
 
 class Trainer(object):
@@ -115,11 +57,14 @@ class Trainer(object):
             data_type(string): type of the source input: [text|img|audio]
             norm_method(string): normalization methods: [sents|tokens]
             grad_accum_count(int): accumulate gradients this many times.
+            report_manager(:obj:`onmt.utils.ReportMgrBase`):
+                the object that creates reports, or None
     """
 
     def __init__(self, model, train_loss, valid_loss, optim,
                  trunc_size=0, shard_size=32, data_type='text',
-                 norm_method="sents", grad_accum_count=1):
+                 norm_method="sents", grad_accum_count=1, report_manager=None,
+                 model_saver=None):
         # Basic attributes.
         self.model = model
         self.train_loss = train_loss
@@ -130,7 +75,8 @@ class Trainer(object):
         self.data_type = data_type
         self.norm_method = norm_method
         self.grad_accum_count = grad_accum_count
-        self.progress_step = 0
+        self.report_manager = report_manager
+        self.model_saver = model_saver
 
         assert grad_accum_count > 0
         if grad_accum_count > 1:
@@ -141,18 +87,46 @@ class Trainer(object):
         # Set model in training mode.
         self.model.train()
 
-    def train(self, train_iter, epoch, report_func=None):
+    def train(self, train_iter_fct, valid_iter_fct, start_epoch, end_epoch):
+
+        print('\nStart training...')
+        print(' * number of epochs: %d, starting from Epoch %d' %
+              (end_epoch + 1 - start_epoch, start_epoch))
+        # print(' * batch size: %d' % batch_size)
+        for epoch in range(start_epoch, end_epoch + 1):
+            print('')
+
+            # 1. Train for one epoch on the training set.
+            train_iter = train_iter_fct()
+            train_stats = self.train_epoch(train_iter, epoch)
+            self.report_manager.report_epoch(
+                self.optim.lr, epoch, train_stats=train_stats)
+
+            # 2. Validate on the validation set.
+            valid_iter = valid_iter_fct()
+            valid_stats = self.validate(valid_iter)
+            self.report_manager.report_epoch(
+                self.optim.lr, epoch, valid_stats=valid_stats)
+
+            # 3. Update the learning rate
+            self.epoch_step(valid_stats.ppl(), epoch)
+
+            # 4. Drop a checkpoint if needed.
+            self.maybe_drop_checkpoint(epoch, valid_stats)
+
+    def train_epoch(self, train_iter, epoch):
         """ Train next epoch.
         Args:
             train_iter: training data iterator
             epoch(int): the epoch number
-            report_func(fn): function for logging
 
         Returns:
-            stats (:obj:`onmt.Statistics`): epoch loss statistics
+            stats (:obj:`onmt.utils.Statistics`): epoch loss statistics
         """
-        total_stats = Statistics()
-        report_stats = Statistics()
+        total_stats = onmt.utils.Statistics()
+        report_stats = onmt.utils.Statistics()
+        self.report_manager.start_time = total_stats.start_time
+
         idx = 0
         true_batchs = []
         accum = 0
@@ -184,13 +158,10 @@ class Trainer(object):
                     true_batchs, total_stats,
                     report_stats, normalization)
 
-                if report_func is not None:
-                    report_stats = report_func(
-                        epoch, idx, num_batches,
-                        self.progress_step,
-                        total_stats.start_time, self.optim._lr,
-                        report_stats)
-                    self.progress_step += 1
+                report_stats = self.report_training(
+                    epoch, idx, num_batches,
+                    self.optim.lr,
+                    report_stats)
 
                 true_batchs = []
                 accum = 0
@@ -214,7 +185,7 @@ class Trainer(object):
         # Set model in validating mode.
         self.model.eval()
 
-        stats = Statistics()
+        stats = onmt.utils.Statistics()
 
         for batch in valid_iter:
             cur_dataset = valid_iter.get_cur_dataset()
@@ -330,3 +301,17 @@ class Trainer(object):
 
         if self.grad_accum_count > 1:
             self.optim.step()
+
+    def report_training(self, epoch, batch, num_batches, learning_rate, report_stats):
+        if self.report_manager is not None:
+            return self.report_manager.report_training(
+                epoch, batch, num_batches, learning_rate, report_stats)
+
+    def report_epoch(self, lr, epoch, train_stats=None, valid_stats=None):
+        if self.report_manager is not None:
+            return self.report_manager.report_epoch(
+                lr, epoch, train_stats=None, valid_stats=None)
+
+    def maybe_drop_checkpoint(self, epoch, valid_stats):
+        if self.model_saver is not None:
+            self.model_saver.maybe_save(epoch, valid_stats)

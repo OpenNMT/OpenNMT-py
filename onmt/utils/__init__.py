@@ -1,4 +1,4 @@
 """Module defining various utilities."""
-from onmt.utils.misc import aeq
-from onmt.utils.loss import NMTLossCompute
-from onmt.utils.optimizers import Optimizer
+from onmt.utils.misc import aeq, use_gpu
+from onmt.utils.report_manager import ReportMgr, build_report_manager
+from onmt.utils.statistics import Statistics
