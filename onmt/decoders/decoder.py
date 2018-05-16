@@ -143,9 +143,16 @@ class RNNDecoderBase(nn.Module):
         state.update_state(decoder_final, final_output.unsqueeze(0), coverage)
 
         # Concatenates sequence of tensors along a new dimension.
-        decoder_outputs = torch.stack(decoder_outputs)
-        for k in attns:
-            attns[k] = torch.stack(attns[k])
+        # NOTE: v0.3 to 0.4: decoder_outputs / attns[*] may not be list
+        #       (in particular in case of SRU) it was not raising error in 0.3
+        #       since stack(Variable) was allowed.
+        #       In 0.4, SRU returns a tensor that shouldn't be stacke
+        if type(decoder_outputs) == list:
+            decoder_outputs = torch.stack(decoder_outputs)
+
+            for k in attns:
+                if type(attns[k]) == list:
+                    attns[k] = torch.stack(attns[k])
 
         return decoder_outputs, state, attns
 
