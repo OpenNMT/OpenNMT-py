@@ -4,7 +4,7 @@ Implementation of "Convolutional Sequence to Sequence Learning"
 import torch
 import torch.nn as nn
 import torch.nn.init as init
-#import torch.nn.functional as F
+import torch.nn.functional as F
 
 from onmt.modules.weight_norm import WeightNormConv2d
 
