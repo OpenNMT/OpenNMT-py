@@ -214,11 +214,12 @@ def build_optim(model, opt, checkpoint):
         # See also: https://github.com/pytorch/pytorch/issues/2830
         optim.optimizer.load_state_dict(saved_optimizer_state_dict)
         # Convert back the state values to cuda type if applicable
+        device = torch.device("cuda" if use_gpu(opt) else "cpu")
         if use_gpu(opt):
             for state in optim.optimizer.state.values():
                 for k, v in state.items():
                     if torch.is_tensor(v):
-                        state[k] = v.cuda()
+                        state[k] = v.to(device)
 
         # We want to make sure that indeed we have a non-empty optimizer state
         # when we loaded an existing model. This should be at least the case

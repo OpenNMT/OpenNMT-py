@@ -375,11 +375,14 @@ class DecoderState(object):
 
     Modules need to implement this to utilize beam search decoding.
     """
+    #def detach(self):
+    #    """ Need to document this VN """
+    #    for h in self._all:
+    #        if h is not None:
+    #            h.detach_()
     def detach(self):
-        """ Need to document this VN """
-        for h in self._all:
-            if h is not None:
-                h.detach_()
+        self.hidden = tuple([_.detach() for _ in self.hidden])
+        self.input_feed = self.input_feed.detach()
 
     def beam_update(self, idx, positions, beam_size):
         """ Need to document this VN """

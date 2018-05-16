@@ -118,10 +118,9 @@ class LossComputeBase(nn.Module):
         batch_stats = onmt.Statistics()
         range_ = (cur_trunc, cur_trunc + trunc_size)
         shard_state = self._make_shard_state(batch, output, range_, attns)
-
         for shard in shards(shard_state, shard_size):
             loss, stats = self._compute_loss(batch, **shard)
-            loss.div(float(normalization)).backward()
+            loss.div(float(normalization)).backward(retain_graph=True)
             batch_stats.update(stats)
 
         return batch_stats
@@ -140,8 +139,9 @@ class LossComputeBase(nn.Module):
         non_padding = target.ne(self.padding_idx)
         num_correct = pred.eq(target) \
                           .masked_select(non_padding) \
-                          .sum()
-        return onmt.Statistics(loss[0], non_padding.sum(), num_correct)
+                          .sum().item()
+        num_non_padding = non_padding.sum().item()
+        return onmt.Statistics(loss.item(), num_non_padding, num_correct)
 
 
     def _bottle(self, _v):
@@ -273,16 +273,14 @@ def make_loss_compute(model, tgt_vocab, opt, train=True):
     compute loss in train/validate process. You can implement your
     own *LossCompute class, by subclassing LossComputeBase.
     """
+    device = torch.device("cuda" if use_gpu(opt) else "cpu")
     if opt.copy_attn:
         compute = onmt.modules.CopyGeneratorLossCompute(
             model.generator, tgt_vocab, opt.copy_attn_force,
-            opt.copy_loss_by_seqlength)
+            opt.copy_loss_by_seqlength).to(device)
     else:
         compute = onmt.utils.loss.NMTLossCompute(
             model.generator, tgt_vocab,
-            label_smoothing=opt.label_smoothing if train else 0.0)
-
-    if use_gpu(opt):
-        compute.cuda()
+            label_smoothing=opt.label_smoothing if train else 0.0).to(device)
 
     return compute

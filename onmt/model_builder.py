@@ -128,7 +128,6 @@ def load_test_model(opt, dummy_opt):
     for arg in dummy_opt:
         if arg not in model_opt:
             model_opt.__dict__[arg] = dummy_opt[arg]
-
     model = build_base_model(model_opt, fields,
                             use_gpu(opt), checkpoint)
     model.eval()
@@ -188,7 +187,8 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
     decoder = build_decoder(model_opt, tgt_embeddings)
 
     # Build NMTModel(= encoder + decoder).
-    model = onmt.models.NMTModel(encoder, decoder)
+    device = torch.device("cuda" if gpu else "cpu")
+    model = onmt.models.NMTModel(encoder, decoder).to(device)
     model.model_type = model_opt.model_type
 
     # Build Generator.
@@ -231,12 +231,6 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
 
     # Add generator to model (this registers it as parameter of model).
     model.generator = generator
-
-    # Build the whole model leverage GPU if indicated to do so.
-    if gpu:
-        model.cuda()
-    else:
-        model.cpu()
 
     return model
 

@@ -351,8 +351,9 @@ if check_sru_requirement():
     from cupy.cuda import function
     from pynvrtc.compiler import Program
 
-    # This cuda() is important, it sets up device to use.
-    tmp_ = torch.rand(1, 1).cuda()
+    # This sets up device to use.
+    device = torch.device("cuda")
+    tmp_ = torch.rand(1, 1).to(device)
 
     sru_prog = Program(SRU_CODE.encode('utf-8'),
                        'sru_prog.cu'.encode('utf-8'))
