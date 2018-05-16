@@ -139,7 +139,8 @@ class LossComputeBase(nn.Module):
         non_padding = target.ne(self.padding_idx)
         num_correct = pred.eq(target) \
                           .masked_select(non_padding) \
-                          .sum().item()
+                          .sum() \
+                          .item()
         num_non_padding = non_padding.sum().item()
         return onmt.Statistics(loss.item(), num_non_padding, num_correct)
 

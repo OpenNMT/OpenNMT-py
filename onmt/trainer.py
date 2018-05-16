@@ -294,7 +294,7 @@ class Trainer(object):
             src = inputters.make_features(batch, 'src', self.data_type)
             if self.data_type == 'text':
                 _, src_lengths = batch.src
-                report_stats.n_src_words += src_lengths.sum()
+                report_stats.n_src_words += src_lengths.sum().item()
             else:
                 src_lengths = None
 
