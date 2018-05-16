@@ -189,12 +189,12 @@ class NMTLossCompute(LossComputeBase):
         gtruth = target.view(-1)
         if self.confidence < 1:
             tdata = gtruth.data
-            mask = torch.nonzero(tdata.eq(self.padding_idx)).squeeze()
+            mask = torch.nonzero(tdata.eq(self.padding_idx)).squeeze(-1)
             log_likelihood = torch.gather(scores.data, 1, tdata.unsqueeze(1))
             tmp_ = self.one_hot.repeat(gtruth.size(0), 1)
             tmp_.scatter_(1, tdata.unsqueeze(1), self.confidence)
-            if mask.dim() > 0:
-                log_likelihood.index_fill_(0, mask, 0)
+
+            if mask.size(0) > 0:
                 tmp_.index_fill_(0, mask, 0)
             gtruth = Variable(tmp_, requires_grad=False)
         loss = self.criterion(scores, gtruth)
