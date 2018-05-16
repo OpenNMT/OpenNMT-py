@@ -68,7 +68,7 @@ class Optimizer(object):
     # was used there however, beta2=0.999 is still arguably the more
     # established value, so we use that here as well
 
-    def __init__(self, method, _lr, max_grad_norm,
+    def __init__(self, method, learning_rate, max_grad_norm,
                  lr_decay=1, start_decay_at=None,
                  beta1=0.9, beta2=0.999,
                  adagrad_accum=0.0,
@@ -76,8 +76,8 @@ class Optimizer(object):
                  warmup_steps=4000,
                  model_size=None):
         self.last_ppl = None
-        self._lr = _lr
-        self.original_lr = _lr
+        self.learning_rate = learning_rate
+        self.original_lr = learning_rate
         self.max_grad_norm = max_grad_norm
         self.method = method
         self.lr_decay = lr_decay
@@ -101,34 +101,34 @@ class Optimizer(object):
                 else:
                     self.sparse_params.append(p)
         if self.method == 'sgd':
-            self.optimizer = optim.SGD(self.params, lr=self._lr)
+            self.optimizer = optim.SGD(self.params, lr=self.learning_rate)
         elif self.method == 'adagrad':
-            self.optimizer = optim.Adagrad(self.params, lr=self._lr)
+            self.optimizer = optim.Adagrad(self.params, lr=self.learning_rate)
             for group in self.optimizer.param_groups:
                 for p in group['params']:
                     self.optimizer.state[p]['sum'] = self.optimizer\
                         .state[p]['sum'].fill_(self.adagrad_accum)
         elif self.method == 'adadelta':
-            self.optimizer = optim.Adadelta(self.params, lr=self._lr)
+            self.optimizer = optim.Adadelta(self.params, lr=self.learning_rate)
         elif self.method == 'adam':
-            self.optimizer = optim.Adam(self.params, lr=self._lr,
+            self.optimizer = optim.Adam(self.params, lr=self.learning_rate,
                                         betas=self.betas, eps=1e-9)
         elif self.method == 'sparseadam':
             self.optimizer = MultipleOptimizer(
-                [optim.Adam(self.params, lr=self._lr,
+                [optim.Adam(self.params, lr=self.learning_rate,
                             betas=self.betas, eps=1e-8),
-                 optim.SparseAdam(self.sparse_params, lr=self._lr,
+                 optim.SparseAdam(self.sparse_params, lr=self.learning_rate,
                                   betas=self.betas, eps=1e-8)])
         else:
             raise RuntimeError("Invalid optim method: " + self.method)
 
-    def _set_rate(self, _lr):
-        self._lr = _lr
+    def _set_rate(self, learning_rate):
+        self.learning_rate = learning_rate
         if self.method != 'sparseadam':
-            self.optimizer.param_groups[0]['lr'] = self._lr
+            self.optimizer.param_groups[0]['lr'] = self.learning_rate
         else:
             for op in self.optimizer.optimizers:
-                op.param_groups[0]['lr'] = self._lr
+                op.param_groups[0]['lr'] = self.learning_rate
 
     def step(self):
         """Update the model parameters based on current gradients.
@@ -162,12 +162,12 @@ class Optimizer(object):
             self.start_decay = True
 
         if self.start_decay:
-            self._lr = self._lr * self.lr_decay
-            print("Decaying learning rate to %g" % self._lr)
+            self.learning_rate = self.learning_rate * self.lr_decay
+            print("Decaying learning rate to %g" % self.learning_rate)
 
         self.last_ppl = ppl
         if self.method != 'sparseadam':
-            self.optimizer.param_groups[0]['lr'] = self._lr
+            self.optimizer.param_groups[0]['lr'] = self.learning_rate
 
 
 def build_optim(model, opt, checkpoint):

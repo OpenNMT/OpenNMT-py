@@ -128,8 +128,7 @@ def load_test_model(opt, dummy_opt):
     for arg in dummy_opt:
         if arg not in model_opt:
             model_opt.__dict__[arg] = dummy_opt[arg]
-    model = build_base_model(model_opt, fields,
-                            use_gpu(opt), checkpoint)
+    model = build_base_model(model_opt, fields, use_gpu(opt), checkpoint)
     model.eval()
     model.generator.eval()
     return fields, model, model_opt
@@ -153,8 +152,7 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
     if model_opt.model_type == "text":
         src_dict = fields["src"].vocab
         feature_dicts = inputters.collect_feature_vocabs(fields, 'src')
-        src_embeddings = build_embeddings(model_opt, src_dict,
-                                         feature_dicts)
+        src_embeddings = build_embeddings(model_opt, src_dict, feature_dicts)
         encoder = build_encoder(model_opt, src_embeddings)
     elif model_opt.model_type == "img":
         encoder = ImageEncoder(model_opt.enc_layers,
@@ -173,7 +171,7 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
     tgt_dict = fields["tgt"].vocab
     feature_dicts = inputters.collect_feature_vocabs(fields, 'tgt')
     tgt_embeddings = build_embeddings(model_opt, tgt_dict,
-                                     feature_dicts, for_encoder=False)
+                                      feature_dicts, for_encoder=False)
 
     # Share the embedding matrix - preprocess with share_vocab required.
     if model_opt.share_embeddings:
@@ -235,15 +233,13 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
     return model
 
 def build_model(model_opt, opt, fields, checkpoint):
+    """ Build the Model """
     print('Building model...')
     model = build_base_model(model_opt, fields,
-                                                   use_gpu(opt), checkpoint)
+                             use_gpu(opt), checkpoint)
     if len(opt.gpuid) > 1:
         print('Multi gpu training: ', opt.gpuid)
         model = nn.DataParallel(model, device_ids=opt.gpuid, dim=1)
     print(model)
 
     return model
-
-
-

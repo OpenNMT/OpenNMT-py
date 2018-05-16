@@ -16,9 +16,6 @@ import torch
 import torch.nn as nn
 
 import onmt.inputters as inputters
-from onmt.inputters.inputter import build_dataset_iter, lazily_load_dataset, _load_fields, _collect_report_features
-from onmt.utils.loss import make_loss_compute
-from onmt.utils.misc import use_gpu
 
 class Statistics(object):
     """
@@ -102,13 +99,13 @@ class Trainer(object):
     Class that controls the training process.
 
     Args:
-            model(:py:class:`onmt.Model.NMTModel`): translation model to train
+            model(:py:class:`onmt.models.model.NMTModel`): translation model to train
 
-            train_loss(:obj:`onmt.Loss.LossComputeBase`):
+            train_loss(:obj:`onmt.utils.loss.LossComputeBase`):
                training loss computation
-            valid_loss(:obj:`onmt.Loss.LossComputeBase`):
+            valid_loss(:obj:`onmt.utils.loss.LossComputeBase`):
                training loss computation
-            optim(:obj:`onmt.Optim.Optim`):
+            optim(:obj:`onmt.utils.optimizers.Optimizer`):
                the optimizer responsible for update
             trunc_size(int): length of truncated back propagation through time
             shard_size(int): compute loss in shards of this size for efficiency
@@ -188,7 +185,7 @@ class Trainer(object):
                     report_stats = report_func(
                         epoch, idx, num_batches,
                         self.progress_step,
-                        total_stats.start_time, self.optim._lr,
+                        total_stats.start_time, self.optim.learning_rate,
                         report_stats)
                     self.progress_step += 1
 
@@ -197,7 +194,7 @@ class Trainer(object):
                 normalization = 0
                 idx += 1
 
-        if len(true_batchs) > 0:
+        if true_batchs:
             self._gradient_accumulation(
                 true_batchs, total_stats,
                 report_stats, normalization)

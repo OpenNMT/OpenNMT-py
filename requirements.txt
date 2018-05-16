@@ -1,5 +1,5 @@
 six
 tqdm
-torch
-torchtext>=0.2.1
+torch>=0.4.0
+torchtext>=0.2.3
 future
