@@ -245,7 +245,9 @@ class TransformerDecoderState(DecoderState):
         return (self.previous_input, self.previous_layer_inputs, self.src)
 
     def detach(self):
-        pass
+        self.previous_input = self.previous_input.detach()
+        self.previous_layer_inputs = self.previous_layer_inputs.detach()
+        self.src = self.src.detach()
 
     def update_state(self, new_input, previous_layer_inputs):
         """ Called for every decoder forward pass. """
