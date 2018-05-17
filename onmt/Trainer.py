@@ -458,15 +458,23 @@ class EarlyStoppingTrainer(Trainer):
             #  the number of batches to validate
             if self.current_batches_processed == self.start_val_after_batches \
                     and valid_iter is not None:
+                # Run validation and report stats
                 self.current_batches_processed = 0
                 valid_iter_lazy = valid_iter()
                 valid_stats = self.validate(valid_iter_lazy)
                 print('Validation perplexity: %g' % valid_stats.ppl())
                 print('Validation accuracy: %g' % valid_stats.accuracy())
                 valid_stats_epoch.append(valid_stats)
+                # Run patience mechanism
                 self.patience(valid_stats, epoch, self.model_opt, self.fields)
+                # If the patience has reached the limit, stop training
                 if self.patience.has_stopped():
                     break
+                # Instead of saving every checkpoint,
+                # save only the improving checkpoints! Save space.
+                if self.patience.is_improving():
+                    self.drop_checkpoint(self.model_opt, epoch,
+                                         self.fields, valid_stats)
 
         if len(true_batchs) > 0:
             self._gradient_accumulation(
@@ -528,6 +536,9 @@ class EarlyStopping(object):
             self.status = EarlyStopping.PatienceEnum.DECREASING \
                 if self.current_tolerance > 0 \
                 else EarlyStopping.PatienceEnum.STOPPED
+
+    def is_improving(self):
+        return self.status == EarlyStopping.PatienceEnum.IMPROVING
 
     def has_stopped(self):
         return self.status == EarlyStopping.PatienceEnum.STOPPED

@@ -224,6 +224,34 @@ def make_loss_compute(model, tgt_vocab, opt, train=True):
     return compute
 
 
+def make_trainer(model, fields, model_opt, train_loss, valid_loss, optim,
+                 trunc_size, shard_size, data_type, norm_method,
+                 grad_accum_count, *args):
+
+    if opt.earlystop_tolerance and opt.earlystop_type == "batch":
+        assert opt.earlystop_after_batches is not None and \
+               opt.earlystop_after_batches > 0, """
+            Number of batches to perform early stopping not specified or 0.
+            See earlystop_after_batches."""
+        es_after_batch = opt.earlystop_after_batches
+
+    use_simple_trainer = opt.earlystop_tolerance is None or (
+                opt.earlystop_tolerance is not None and
+                opt.earlystop_type == "epoch")
+
+    trainer = onmt.Trainer(
+        model, train_loss, valid_loss, optim, trunc_size, shard_size,
+        data_type, norm_method, grad_accum_count) if use_simple_trainer \
+        else \
+        onmt.EarlyStoppingTrainer(
+            model, train_loss, valid_loss, optim, opt.earlystop_tolerance,
+            opt.epochs, model_opt, fields, trunc_size, shard_size, data_type,
+            norm_method, grad_accum_count,
+            start_val_after_batches=es_after_batch)
+
+    return trainer, use_simple_trainer
+
+
 def train_model(model, fields, optim, data_type, model_opt):
     train_loss = make_loss_compute(model, fields["tgt"].vocab, opt)
     valid_loss = make_loss_compute(model, fields["tgt"].vocab, opt,
@@ -234,35 +262,16 @@ def train_model(model, fields, optim, data_type, model_opt):
     norm_method = opt.normalization
     grad_accum_count = opt.accum_count
 
-    use_simple_trainer = opt.earlystop_tolerance is None or (
-                opt.earlystop_tolerance is not None and
-                opt.earlystop_type == "epoch")
-
-    if opt.earlystop_tolerance and opt.earlystop_type == "batch":
-        assert opt.earlystop_after_batches is not None and \
-               opt.earlystop_after_batches > 0, """
-            Number of batches to perform early stopping not specified or 0.
-            See earlystop_after_batches."""
-        es_after_batch = opt.earlystop_after_batches
-
-    trainer = onmt.Trainer(model, train_loss, valid_loss, optim, trunc_size,
-                           shard_size, data_type,
-                           norm_method, grad_accum_count) \
-        if use_simple_trainer\
-        else \
-        onmt.EarlyStoppingTrainer(model, train_loss, valid_loss, optim,
-                                  opt.earlystop_tolerance, opt.epochs,
-                                  model_opt, fields, trunc_size,
-                                  shard_size, data_type, norm_method,
-                                  grad_accum_count,
-                                  start_val_after_batches=es_after_batch)
+    trainer, use_simple_trainer = make_trainer(
+        model, fields, model_opt, train_loss, valid_loss, optim, trunc_size,
+        shard_size, data_type, norm_method, grad_accum_count)
 
     print('\nStart training...')
     print(' * number of epochs: %d, starting from Epoch %d' %
           (opt.epochs + 1 - opt.start_epoch, opt.start_epoch))
     print(' * batch size: %d' % opt.batch_size)
 
-    if opt.earlystop_tolerance:
+    if opt.earlystop_tolerance and use_simple_trainer:
         patience = onmt.EarlyStopping(opt.earlystop_tolerance, opt.epochs,
                                       trainer)
 
@@ -296,11 +305,12 @@ def train_model(model, fields, optim, data_type, model_opt):
             # batches is achieved.
 
             lazy_it_fn = build_lazy_valid
-            trainer_stats, valid_stats, patience = trainer.train(train_iter,
+            train_stats, valid_stats, patience = trainer.train(train_iter,
                                                                  epoch,
                                                                  lazy_it_fn,
                                                                  report_func)
             if patience.has_stopped():
+                # TODO plot points nonetheless
                 break
 
             # If for some reason the number of batches to
@@ -319,22 +329,29 @@ def train_model(model, fields, optim, data_type, model_opt):
         # 3. Log to remote server.
         if opt.exp_host:
             train_stats.log("train", experiment, optim.lr)
+
+            def fn(stat, handle, lr, epoch):
+                stat.log("valid", handle, writer, lr, epoch)
+
             if use_simple_trainer:
-                valid_stats.log("valid", experiment, optim.lr)
+                fn(valid_stats, writer, optim.lr, epoch)
             else:
-                for valid_stat in valid_stats:
-                    valid_stat.log("valid", experiment, optim.lr)
+                for val in valid_stats:
+                    fn(val, writer, optim.lr, epoch)
 
         if opt.tensorboard:
             train_stats.log_tensorboard("train", writer, optim.lr,
                                         epoch)
+
+            def fn(stat, handle, lr, epoch):
+                stat.log_tensorboard("valid", handle, writer, lr, epoch)
+
             if use_simple_trainer:
-                valid_stats.log_tensorboard("valid", writer, optim.lr,
-                                            epoch)
+                fn(valid_stats, writer, optim.lr, epoch)
             else:
-                for valid_stat in valid_stats:
-                    valid_stat.log_tensorboard("valid", writer, optim.lr,
-                                               epoch)
+                for val in valid_stats:
+                    fn(val, writer, optim.lr, epoch)
+
 
         # 4. Update the learning rate
         if use_simple_trainer:
@@ -344,21 +361,16 @@ def train_model(model, fields, optim, data_type, model_opt):
         trainer.epoch_step(epoch_ppl, epoch)
 
         # 5.1. Check patience
-        if opt.earlystop_tolerance:
+        if opt.earlystop_tolerance and use_simple_trainer:
             if use_simple_trainer:
                 patience(valid_stats, epoch, model_opt, fields)
             if patience.has_stopped():
                 break
 
         # 5.2 Drop a checkpoint if needed.
-        if epoch >= opt.start_checkpoint_at:
-            if use_simple_trainer:
+        if epoch >= opt.start_checkpoint_at and use_simple_trainer:
                 trainer.drop_checkpoint(model_opt, epoch, fields,
                                         valid_stats)
-            else:
-                for valid_stat in valid_stats:
-                    trainer.drop_checkpoint(model_opt, epoch, fields,
-                                            valid_stat)
 
 
 def check_save_model_path():
