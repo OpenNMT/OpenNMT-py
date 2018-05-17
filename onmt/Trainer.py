@@ -20,6 +20,7 @@ import onmt.io
 import onmt.modules
 
 
+
 class Statistics(object):
     """
     Accumulator for loss statistics.

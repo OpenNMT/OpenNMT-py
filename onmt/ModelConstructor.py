@@ -14,8 +14,10 @@ from onmt.Models import NMTModel, MeanEncoder, RNNEncoder, \
 from onmt.modules import Embeddings, ImageEncoder, CopyGenerator, \
                          TransformerEncoder, TransformerDecoder, \
                          CNNEncoder, CNNDecoder, AudioEncoder
+from onmt.modules.ElmoEmbedder import ElmoEmbedder
 from onmt.Utils import use_gpu
 from torch.nn.init import xavier_uniform
+
 
 
 def make_embeddings(opt, word_dict, feature_dicts, for_encoder=True):
@@ -28,6 +30,9 @@ def make_embeddings(opt, word_dict, feature_dicts, for_encoder=True):
         for_encoder(bool): make Embeddings for encoder or decoder?
     """
     if for_encoder:
+        if opt.embedding_type == 'elmo':
+            return ElmoEmbedder()
+
         embedding_dim = opt.src_word_vec_size
     else:
         embedding_dim = opt.tgt_word_vec_size

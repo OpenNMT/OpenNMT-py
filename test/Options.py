@@ -61,3 +61,4 @@ class Opt:
         self.pre_word_vecs_dec = None
         self.fix_word_vecs_dec = False
         self.param_init_glorot = False
+        self.embedding_type = 'elmo'

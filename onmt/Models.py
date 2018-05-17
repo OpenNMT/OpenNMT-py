@@ -9,7 +9,9 @@ from torch.nn.utils.rnn import pad_packed_sequence as unpack
 
 import onmt
 from onmt.Utils import aeq
+from test.Options import Opt
 
+opt = Opt()
 
 def rnn_factory(rnn_type, **kwargs):
     # Use pytorch version when available.
@@ -48,6 +50,10 @@ class EncoderBase(nn.Module):
           E-->G
     """
     def _check_args(self, input, lengths=None, hidden=None):
+        if opt.embedding_type == 'elmo':
+            #lengths = [len(s) for s in input]
+            return
+
         s_len, n_batch, n_feats = input.size()
         if lengths is not None:
             n_batch_, = lengths.size()
@@ -137,13 +143,16 @@ class RNNEncoder(EncoderBase):
         self._check_args(src, lengths, encoder_state)
 
         emb = self.embeddings(src)
-        s_len, batch, emb_dim = emb.size()
+        #s_len, batch, emb_dim = emb.size()
 
         packed_emb = emb
         if lengths is not None and not self.no_pack_padded_seq:
             # Lengths data is wrapped inside a Variable.
             lengths = lengths.view(-1).tolist()
-            packed_emb = pack(emb, lengths)
+            try:
+                packed_emb = pack(emb, lengths, batch_first = True if opt.embedding_type=='elmo' else False)
+            except:
+                print('something happened')
 
         memory_bank, encoder_final = self.rnn(packed_emb, encoder_state)
 
