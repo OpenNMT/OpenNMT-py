@@ -13,6 +13,9 @@ from onmt.io.TextDataset import TextDataset
 from onmt.io.ImageDataset import ImageDataset
 from onmt.io.AudioDataset import AudioDataset
 
+from test.Options import Opt
+
+opt = Opt()
 
 def _getstate(self):
     return dict(self.__dict__, stoi=dict(self.stoi))
@@ -125,11 +128,19 @@ def make_features(batch, side, data_type='text'):
         A sequence of src/tgt tensors with optional feature tensors
         of size (len x batch).
     """
+
+    if opt.embedding_type == 'elmo' and side == 'src':
+        data = [list(batch.dataset.examples[x].src) for x in batch.indices.data]
+        return data
+        #get the correct indices from the batch
+        #return the elmo iteratable list of strings and dont worry
+
     assert side in ['src', 'tgt']
     if isinstance(batch.__dict__[side], tuple):
         data = batch.__dict__[side][0]
     else:
         data = batch.__dict__[side]
+
 
     feat_start = side + "_feat_"
     keys = sorted([k for k in batch.__dict__ if feat_start in k])

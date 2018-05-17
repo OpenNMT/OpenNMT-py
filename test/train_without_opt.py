@@ -7,11 +7,11 @@ import glob
 import os
 import sys
 import random
-from datetime import datetime
 
 import torch
 import torch.nn as nn
 from torch import cuda
+from datetime import datetime
 
 import onmt
 import onmt.io
@@ -19,19 +19,24 @@ import onmt.Models
 import onmt.ModelConstructor
 import onmt.modules
 from onmt.Utils import use_gpu
-import onmt.opts
+from test.Options import Opt
 
 
-parser = argparse.ArgumentParser(
-    description='train.py',
-    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+# parser = argparse.ArgumentParser(
+#     description='train.py',
+#     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+#
+# # opts.py
+# opts.add_md_help_argument(parser)
+# opts.model_opts(parser)
+# opts.train_opts(parser)
+#
+# opt = parser.parse_args()
 
-# onmt.opts.py
-onmt.opts.add_md_help_argument(parser)
-onmt.opts.model_opts(parser)
-onmt.opts.train_opts(parser)
 
-opt = parser.parse_args()
+opt = Opt()
+
+
 if opt.word_vec_size != -1:
     opt.src_word_vec_size = opt.word_vec_size
     opt.tgt_word_vec_size = opt.word_vec_size
@@ -184,6 +189,10 @@ def make_dataset_iter(datasets, fields, opt, is_train=True):
     ordered iterator strategy here, but more sophisticated strategy
     like curriculum learning is ok too.
     """
+
+    if opt.embedding_type == 'elmo':
+        pass
+
     batch_size = opt.batch_size if is_train else opt.valid_batch_size
     batch_size_fn = None
     print('batch_type==> ', opt.batch_type)
