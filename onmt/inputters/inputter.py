@@ -540,6 +540,3 @@ def _collect_report_features(fields):
         print(' * src feature %d size = %d' % (j, len(fields[feat].vocab)))
     for j, feat in enumerate(tgt_features):
         print(' * tgt feature %d size = %d' % (j, len(fields[feat].vocab)))
-
-
-

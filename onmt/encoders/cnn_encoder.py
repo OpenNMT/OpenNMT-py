@@ -23,9 +23,9 @@ class CNNEncoder(EncoderBase):
         self.cnn = StackedCNN(num_layers, hidden_size,
                               cnn_kernel_width, dropout)
 
-    def forward(self, src, lengths=None, hidden=None):
+    def forward(self, input, lengths=None, hidden=None):
         """ See :obj:`onmt.modules.EncoderBase.forward()`"""
-        self._check_args(src, lengths, hidden)
+        self._check_args(input, lengths, hidden)
 
         emb = self.embeddings(input)
         #s_len, batch, emb_dim = emb.size()
@@ -37,5 +37,5 @@ class CNNEncoder(EncoderBase):
         emb_remap = shape_transform(emb_remap)
         out = self.cnn(emb_remap)
 
-        return emb_remap.squeeze(3).transpose(0, 1).contiguous(),\
+        return emb_remap.squeeze(3).transpose(0, 1).contiguous(), \
             out.squeeze(3).transpose(0, 1).contiguous()

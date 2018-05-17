@@ -15,9 +15,8 @@ import math
 import torch
 import torch.nn as nn
 
+import onmt
 import onmt.inputters as inputters
-from onmt.inputters.inputter import build_dataset_iter, lazily_load_dataset, _load_fields, _collect_report_features
-import onmt.utils
 
 
 def build_trainer(opt, model, fields, optim, data_type, model_saver=None):
@@ -35,7 +34,7 @@ def build_trainer(opt, model, fields, optim, data_type, model_saver=None):
     trainer = onmt.Trainer(model, train_loss, valid_loss, optim,
                            trunc_size, shard_size, data_type,
                            norm_method, grad_accum_count, report_manager,
-                           model_saver=None)
+                           model_saver=model_saver)
     return trainer
 
 
@@ -44,13 +43,13 @@ class Trainer(object):
     Class that controls the training process.
 
     Args:
-            model(:py:class:`onmt.Model.NMTModel`): translation model to train
+            model(:py:class:`onmt.models.model.NMTModel`): translation model to train
 
-            train_loss(:obj:`onmt.Loss.LossComputeBase`):
+            train_loss(:obj:`onmt.utils.loss.LossComputeBase`):
                training loss computation
-            valid_loss(:obj:`onmt.Loss.LossComputeBase`):
+            valid_loss(:obj:`onmt.utils.loss.LossComputeBase`):
                training loss computation
-            optim(:obj:`onmt.Optim.Optim`):
+            optim(:obj:`onmt.utils.optimizers.Optimizer`):
                the optimizer responsible for update
             trunc_size(int): length of truncated back propagation through time
             shard_size(int): compute loss in shards of this size for efficiency
@@ -100,13 +99,13 @@ class Trainer(object):
             train_iter = train_iter_fct()
             train_stats = self.train_epoch(train_iter, epoch)
             self.report_manager.report_epoch(
-                self.optim.lr, epoch, train_stats=train_stats)
+                self.optim.learning_rate, epoch, train_stats=train_stats)
 
             # 2. Validate on the validation set.
             valid_iter = valid_iter_fct()
             valid_stats = self.validate(valid_iter)
             self.report_manager.report_epoch(
-                self.optim.lr, epoch, valid_stats=valid_stats)
+                self.optim.learning_rate, epoch, valid_stats=valid_stats)
 
             # 3. Update the learning rate
             self.epoch_step(valid_stats.ppl(), epoch)
@@ -160,7 +159,7 @@ class Trainer(object):
 
                 report_stats = self.report_training(
                     epoch, idx, num_batches,
-                    self.optim.lr,
+                    self.optim.learning_rate,
                     report_stats)
 
                 true_batchs = []
@@ -168,7 +167,7 @@ class Trainer(object):
                 normalization = 0
                 idx += 1
 
-        if len(true_batchs) > 0:
+        if true_batchs:
             self._gradient_accumulation(
                 true_batchs, total_stats,
                 report_stats, normalization)
@@ -268,7 +267,7 @@ class Trainer(object):
             src = inputters.make_features(batch, 'src', self.data_type)
             if self.data_type == 'text':
                 _, src_lengths = batch.src
-                report_stats.n_src_words += src_lengths.sum()
+                report_stats.n_src_words += src_lengths.sum().item()
             else:
                 src_lengths = None
 

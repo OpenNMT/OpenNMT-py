@@ -1,3 +1,6 @@
+""" Translator Class and builder """
+#!/usr/bin/env python
+from __future__ import print_function
 import argparse
 import torch
 import codecs
@@ -130,15 +133,15 @@ class Translator(object):
     def translate(self, src_dir, src_path, tgt_path,
                   batch_size, attn_debug=False):
         data = inputters.build_dataset(self.fields,
-                                     self.data_type,
-                                     src_path,
-                                     tgt_path,
-                                     src_dir=src_dir,
-                                     sample_rate=self.sample_rate,
-                                     window_size=self.window_size,
-                                     window_stride=self.window_stride,
-                                     window=self.window,
-                                     use_filter_pred=self.use_filter_pred)
+                                       self.data_type,
+                                       src_path,
+                                       tgt_path,
+                                       src_dir=src_dir,
+                                       sample_rate=self.sample_rate,
+                                       window_size=self.window_size,
+                                       window_stride=self.window_stride,
+                                       window=self.window,
+                                       use_filter_pred=self.use_filter_pred)
 
         data_iter = inputters.OrderedIterator(
             dataset=data, device=self.gpu,
@@ -251,7 +254,7 @@ class Translator(object):
                 for __ in range(batch_size)]
 
         # Help functions for working with beams and batches
-        def var(a): return Variable(a, volatile=True)
+        def var(a): return torch.tensor(a, requires_grad=False)
 
         def rvar(a): return var(a.repeat(1, beam_size, 1))
 

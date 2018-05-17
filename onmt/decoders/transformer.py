@@ -10,34 +10,9 @@ import numpy as np
 import onmt
 from onmt.decoders.decoder import DecoderState
 from onmt.utils.misc import aeq
+from onmt.utils.transformer_util import PositionwiseFeedForward
 
 MAX_SIZE = 5000
-
-
-class PositionwiseFeedForward(nn.Module):
-    """ A two-layer Feed-Forward-Network with residual layer norm.
-
-        Args:
-            size (int): the size of input for the first-layer of the FFN.
-            hidden_size (int): the hidden layer size of the second-layer
-                              of the FNN.
-            dropout (float): dropout probability(0-1.0).
-    """
-    def __init__(self, size, hidden_size, dropout=0.1):
-        super(PositionwiseFeedForward, self).__init__()
-        self.w_1 = nn.Linear(size, hidden_size)
-        self.w_2 = nn.Linear(hidden_size, size)
-        self.layer_norm = onmt.modules.LayerNorm(size)
-        # Save a little memory, by doing inplace.
-        self.dropout_1 = nn.Dropout(dropout, inplace=True)
-        self.relu = nn.ReLU(inplace=True)
-        self.dropout_2 = nn.Dropout(dropout)
-
-    def forward(self, x):
-        inter = self.dropout_1(self.relu(self.w_1(self.layer_norm(x))))
-        output = self.dropout_2(self.w_2(inter))
-        return output + x
-
 
 class TransformerDecoderLayer(nn.Module):
     """
@@ -268,6 +243,11 @@ class TransformerDecoderState(DecoderState):
         Contains attributes that need to be updated in self.beam_update().
         """
         return (self.previous_input, self.previous_layer_inputs, self.src)
+
+    def detach(self):
+        self.previous_input = self.previous_input.detach()
+        self.previous_layer_inputs = self.previous_layer_inputs.detach()
+        self.src = self.src.detach()
 
     def update_state(self, new_input, previous_layer_inputs):
         """ Called for every decoder forward pass. """

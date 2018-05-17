@@ -53,8 +53,10 @@ class CNNDecoder(nn.Module):
                 hidden_size, attn_type=attn_type)
             self._copy = True
 
-    def forward(self, tgt, memory_bank, state, _):
+    def forward(self, tgt, memory_bank, state, memory_lengths=None):
         """ See :obj:`onmt.modules.RNNDecoderBase.forward()`"""
+        # NOTE: memory_lengths is only here for compatibility reasons
+        #       with onmt.modules.RNNDecoderBase.forward()
         # CHECKS
         assert isinstance(state, CNNDecoderState)
         _, tgt_batch, _ = tgt.size()
@@ -137,6 +139,9 @@ class CNNDecoderState(DecoderState):
         Contains attributes that need to be updated in self.beam_update().
         """
         return (self.previous_input,)
+
+    def detach(self):
+        self.previous_input = self.previous_input.detach()
 
     def update_state(self, new_input):
         """ Called for every decoder forward pass. """

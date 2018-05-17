@@ -1,3 +1,5 @@
+""" REST Translation server """
+#!/usr/bin/env python
 from __future__ import print_function
 import sys
 import os
@@ -68,7 +70,7 @@ class TranslationServer():
                       'tokenizer_opt': conf.get('tokenizer', None),
                       'on_timeout': conf.get('on_timeout', None),
                       'model_root': conf.get('model_root', self.models_root)
-                      }
+                     }
             kwargs = {k: v for (k, v) in kwargs.items() if v is not None}
             model_id = conf.get("id", None)
             opt = conf["opt"]
@@ -141,7 +143,7 @@ class TranslationServer():
         """Return the list of available models
         """
         models = []
-        for i, model in self.models.items():
+        for _, model in self.models.items():
             models += [model.to_dict()]
         return models
 
@@ -365,7 +367,7 @@ class ServerModel:
              "model": self.user_opt["model"],
              "loaded": self.loaded,
              "timeout": self.timeout,
-             }
+            }
         if self.tokenizer_opt is not None:
             d["tokenizer"] = self.tokenizer_opt
         return d

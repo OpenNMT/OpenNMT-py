@@ -109,7 +109,7 @@ def main(opt):
     _check_save_model_path()
 
     # Build optimizer.
-    optim = build_optim(opt, model, checkpoint)
+    optim = build_optim(model, opt, checkpoint)
 
     # Build model saver
     model_saver = build_model_saver(model_opt, opt, model, fields, optim)

@@ -20,6 +20,8 @@ def build_loss_compute(model, tgt_vocab, opt, train=True):
     compute loss in train/validate process. You can implement your
     own *LossCompute class, by subclassing LossComputeBase.
     """
+    device = torch.device("cuda" if use_gpu(opt) else "cpu")
+
     if opt.copy_attn:
         compute = onmt.modules.CopyGeneratorLossCompute(
             model.generator, tgt_vocab, opt.copy_attn_force,
@@ -28,9 +30,7 @@ def build_loss_compute(model, tgt_vocab, opt, train=True):
         compute = NMTLossCompute(
             model.generator, tgt_vocab,
             label_smoothing=opt.label_smoothing if train else 0.0)
-
-    if use_gpu(opt):
-        compute.cuda()
+    compute.to(device)
 
     return compute
 
@@ -140,10 +140,9 @@ class LossComputeBase(nn.Module):
         batch_stats = onmt.utils.Statistics()
         range_ = (cur_trunc, cur_trunc + trunc_size)
         shard_state = self._make_shard_state(batch, output, range_, attns)
-
         for shard in shards(shard_state, shard_size):
             loss, stats = self._compute_loss(batch, **shard)
-            loss.div(float(normalization)).backward()
+            loss.div(float(normalization)).backward(retain_graph=True)
             batch_stats.update(stats)
 
         return batch_stats
@@ -156,14 +155,16 @@ class LossComputeBase(nn.Module):
             target (:obj:`FloatTensor`): true targets
 
         Returns:
-            :obj:`Statistics` : statistics for this batch.
+            :obj:`onmt.utils.Statistics` : statistics for this batch.
         """
         pred = scores.max(1)[1]
         non_padding = target.ne(self.padding_idx)
         num_correct = pred.eq(target) \
                           .masked_select(non_padding) \
-                          .sum()
-        return onmt.utils.Statistics(loss[0], non_padding.sum(), num_correct)
+                          .sum() \
+                          .item()
+        num_non_padding = non_padding.sum().item()
+        return onmt.utils.Statistics(loss.item(), num_non_padding, num_correct)
 
 
     def _bottle(self, _v):
@@ -211,12 +212,12 @@ class NMTLossCompute(LossComputeBase):
         gtruth = target.view(-1)
         if self.confidence < 1:
             tdata = gtruth.data
-            mask = torch.nonzero(tdata.eq(self.padding_idx)).squeeze()
+            mask = torch.nonzero(tdata.eq(self.padding_idx)).squeeze(-1)
             log_likelihood = torch.gather(scores.data, 1, tdata.unsqueeze(1))
             tmp_ = self.one_hot.repeat(gtruth.size(0), 1)
             tmp_.scatter_(1, tdata.unsqueeze(1), self.confidence)
-            if mask.dim() > 0:
-                log_likelihood.index_fill_(0, mask, 0)
+
+            if mask.size(0) > 0:
                 tmp_.index_fill_(0, mask, 0)
             gtruth = Variable(tmp_, requires_grad=False)
         loss = self.criterion(scores, gtruth)
@@ -287,3 +288,5 @@ def shards(state, shard_size, eval_only=False):
                      if isinstance(v, Variable) and v.grad is not None)
         inputs, grads = zip(*variables)
         torch.autograd.backward(inputs, grads)
+
+

@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 
 import onmt.inputters
@@ -23,7 +24,7 @@ class ModelSaverBase(object):
         self.start_checkpoint_at = start_checkpoint_at
 
     def maybe_save(self, epoch, valid_stats):
-        if epoch >= start_checkpoint_at:
+        if epoch >= self.start_checkpoint_at:
             self._save(epoch, valid_stats)
 
     def force_save(self, epoch, valid_stats):
@@ -42,7 +43,8 @@ class ModelSaverBase(object):
 class ModelSaver(ModelSaverBase):
     def __init__(self, base_path, model, model_opt, fields, optim, start_checkpoint_at=0):
         super(ModelSaver, self).__init__(
-            base_path, model, model_opt, fields, optim, start_checkpoint_at=0)
+            base_path, model, model_opt, fields, optim,
+            start_checkpoint_at=start_checkpoint_at)
 
     def _save(self, epoch, valid_stats):
         real_model = (self.model.module
@@ -59,8 +61,8 @@ class ModelSaver(ModelSaverBase):
         checkpoint = {
             'model': model_state_dict,
             'generator': generator_state_dict,
-            'vocab': onmt.inputters.save_fields_to_vocab(fields),
-            'opt': opt,
+            'vocab': onmt.inputters.save_fields_to_vocab(self.fields),
+            'opt': self.model_opt,
             'epoch': epoch,
             'optim': self.optim,
         }
