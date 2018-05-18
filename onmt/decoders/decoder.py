@@ -6,7 +6,6 @@ import torch.nn as nn
 
 from torch.autograd import Variable
 
-import onmt
 import onmt.models.stacked_rnn
 from onmt.utils.misc import aeq
 from onmt.utils.rnn_factory import rnn_factory

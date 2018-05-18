@@ -4,18 +4,15 @@ from __future__ import print_function
 import sys
 import os
 import argparse
-import torch
 import io
 import time
-import codecs
 import json
 import threading
 
+import torch
 from onmt.translate.translator import build_translator
 
-import onmt
 import onmt.opts
-import onmt.translate
 
 
 class Timer:

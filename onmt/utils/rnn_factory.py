@@ -1,12 +1,10 @@
 """
  RNN tools
 """
-
 from __future__ import division
 
 import torch.nn as nn
-
-import onmt
+import onmt.models
 
 def rnn_factory(rnn_type, **kwargs):
     """ rnn factory, Use pytorch version when available. """

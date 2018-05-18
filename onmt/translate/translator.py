@@ -2,11 +2,11 @@
 #!/usr/bin/env python
 from __future__ import print_function
 import argparse
-import torch
 import codecs
 import os
 import math
 
+import torch
 from torch.autograd import Variable
 from itertools import count
 
@@ -415,7 +415,7 @@ class Translator(object):
         path = os.path.split(os.path.realpath(__file__))[0]
         print()
 
-        res = subprocess.check_output("perl %s/tools/multi-bleu.perl %s"
+        res = subprocess.check_output("perl %s/tools/multi-bleu.perl %s %s"
                                       % (path, tgt_path, self.output),
                                       stdin=self.out_file,
                                       shell=True).decode("utf-8")

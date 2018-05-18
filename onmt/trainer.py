@@ -9,17 +9,16 @@ things to users(i.e. how to do it). Also see train.py(one of the
 users of this library) for the strategy things we do.
 """
 from __future__ import division
-import time
-import sys
-import math
+from __future__ import print_function
+
 import torch
 import torch.nn as nn
 
-import onmt
 import onmt.inputters as inputters
-
+import onmt.utils
 
 def build_trainer(opt, model, fields, optim, data_type, model_saver=None):
+
     train_loss = onmt.utils.loss.build_loss_compute(
         model, fields["tgt"].vocab, opt)
     valid_loss = onmt.utils.loss.build_loss_compute(
@@ -302,15 +301,18 @@ class Trainer(object):
             self.optim.step()
 
     def report_training(self, epoch, batch, num_batches, learning_rate, report_stats):
+        """ Report training """
         if self.report_manager is not None:
             return self.report_manager.report_training(
                 epoch, batch, num_batches, learning_rate, report_stats)
 
-    def report_epoch(self, lr, epoch, train_stats=None, valid_stats=None):
+    def report_epoch(self, learning_rate, epoch, train_stats=None, valid_stats=None):
+        """ Report Epoch """
         if self.report_manager is not None:
             return self.report_manager.report_epoch(
-                lr, epoch, train_stats=None, valid_stats=None)
+                learning_rate, epoch, train_stats=None, valid_stats=None)
 
     def maybe_drop_checkpoint(self, epoch, valid_stats):
+        """ Save checkpoint """
         if self.model_saver is not None:
             self.model_saver.maybe_save(epoch, valid_stats)

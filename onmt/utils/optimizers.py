@@ -7,6 +7,7 @@ from torch.nn.utils import clip_grad_norm
 
 
 def build_optim(opt, model, checkpoint):
+    """ Build optimizer """
     saved_optimizer_state_dict = None
 
     if opt.train_from:
@@ -232,72 +233,9 @@ class Optimizer(object):
         if self.method != 'sparseadam':
             self.optimizer.param_groups[0]['lr'] = self.learning_rate
 
-
-def build_optim(model, opt, checkpoint):
-    saved_optimizer_state_dict = None
-
-    if opt.train_from:
-        print('Loading optimizer from checkpoint.')
-        optim = checkpoint['optim']
-        # We need to save a copy of optim.optimizer.state_dict() for setting
-        # the, optimizer state later on in Stage 2 in this method, since
-        # the method optim.set_parameters(model.parameters()) will overwrite
-        # optim.optimizer, and with ith the values stored in
-        # optim.optimizer.state_dict()
-        saved_optimizer_state_dict = optim.optimizer.state_dict()
-    else:
-        print('Making optimizer for training.')
-        optim = Optimizer(
-            opt.optim, opt.learning_rate, opt.max_grad_norm,
-            lr_decay=opt.learning_rate_decay,
-            start_decay_at=opt.start_decay_at,
-            beta1=opt.adam_beta1,
-            beta2=opt.adam_beta2,
-            adagrad_accum=opt.adagrad_accumulator_init,
-            decay_method=opt.decay_method,
-            warmup_steps=opt.warmup_steps,
-            model_size=opt.rnn_size)
-
-    # Stage 1:
-    # Essentially optim.set_parameters (re-)creates and optimizer using
-    # model.paramters() as parameters that will be stored in the
-    # optim.optimizer.param_groups field of the torch optimizer class.
-    # Importantly, this method does not yet load the optimizer state, as
-    # essentially it builds a new optimizer with empty optimizer state and
-    # parameters from the model.
-    optim.set_parameters(model.named_parameters())
-
-    if opt.train_from:
-        # Stage 2: In this stage, which is only performed when loading an
-        # optimizer from a checkpoint, we load the saved_optimizer_state_dict
-        # into the re-created optimizer, to set the optim.optimizer.state
-        # field, which was previously empty. For this, we use the optimizer
-        # state saved in the "saved_optimizer_state_dict" variable for
-        # this purpose.
-        # See also: https://github.com/pytorch/pytorch/issues/2830
-        optim.optimizer.load_state_dict(saved_optimizer_state_dict)
-        # Convert back the state values to cuda type if applicable
-        device = torch.device("cuda" if use_gpu(opt) else "cpu")
-        if use_gpu(opt):
-            for state in optim.optimizer.state.values():
-                for k, v in state.items():
-                    if torch.is_tensor(v):
-                        state[k] = v.to(device)
-
-        # We want to make sure that indeed we have a non-empty optimizer state
-        # when we loaded an existing model. This should be at least the case
-        # for Adam, which saves "exp_avg" and "exp_avg_sq" state
-        # (Exponential moving average of gradient and squared gradient values)
-        if (optim.method == 'adam') and (len(optim.optimizer.state) < 1):
-            raise RuntimeError(
-                "Error: loaded Adam optimizer from existing model" +
-                " but optimizer state is empty")
-
-    return optim
-
-
 # Debugging method for showing the optimizer state
 def _show_optimizer_state(optim):
+    """ debug optimizer """
     print("optim.optimizer.state_dict()['state'] keys: ")
     for key in optim.optimizer.state_dict()['state'].keys():
         print("optim.optimizer.state_dict()['state'] key: " + str(key))

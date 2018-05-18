@@ -9,9 +9,8 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 
-import onmt
+#import onmt
 import onmt.inputters as inputters
-from onmt.utils.misc import use_gpu
 
 
 def build_loss_compute(model, tgt_vocab, opt, train=True):
@@ -20,7 +19,7 @@ def build_loss_compute(model, tgt_vocab, opt, train=True):
     compute loss in train/validate process. You can implement your
     own *LossCompute class, by subclassing LossComputeBase.
     """
-    device = torch.device("cuda" if use_gpu(opt) else "cpu")
+    device = torch.device("cuda" if onmt.utils.misc.use_gpu(opt) else "cpu")
 
     if opt.copy_attn:
         compute = onmt.modules.CopyGeneratorLossCompute(
