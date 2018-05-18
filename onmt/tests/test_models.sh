@@ -22,10 +22,10 @@
 ###             ./test_models.sh translate_each all
 ###             (note that translate_each comes first!!!)
 ###     
-###     - Train and translate a specific model (e.g. rnnlm):
-###             ./test_models.sh rnnlm translate
+###     - Train and translate a specific model (e.g. lstm):
+###             ./test_models.sh lstm translate
 ###             note that translate only consider the last model therefore:
-###             ./test_models.sh rnnlm cnn translate
+###             ./test_models.sh lstm cnn translate
 ###             would actually use CNN model for translation
 ###  
 ###     - Run in debug mode (stops on first error) 
@@ -87,7 +87,7 @@ rm_tmp_checkpoints(){
 
 ### RNNLM
 ###############################################
-rnnlm(){
+lstm(){
     rm -f "$DATA_DIR"/*.pt
     $PYTHON_BIN preprocess.py -train_src "$DATA_DIR"/src-train.txt \
                          -train_tgt "$DATA_DIR"/tgt-train.txt \
@@ -266,27 +266,18 @@ translate(){
 }
 
 maybe_translate(){
-    if [ $TRANSLATE_EACH -eq 1]
+    if [ $TRANSLATE_EACH -eq 1 ]
     then
         translate
     fi
 }
 
 all(){
-    rnnlm
-
+    lstm
     sru
-    maybe_translate
-    
     cnn
-    maybe_translate
-
     morph
-    maybe_translate
-    
     transformer
-    maybe_translate
-
     translate
 
 }
