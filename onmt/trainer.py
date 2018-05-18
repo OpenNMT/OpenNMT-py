@@ -132,13 +132,13 @@ class Trainer(object):
             # 1. Train for one epoch on the training set.
             train_iter = train_iter_fct()
             train_stats = self.train_epoch(train_iter, epoch)
-            self.report_manager.report_epoch(
+            self.report_epoch(
                 self.optim.learning_rate, epoch, train_stats=train_stats)
 
             # 2. Validate on the validation set.
             valid_iter = valid_iter_fct()
             valid_stats = self.validate(valid_iter)
-            self.report_manager.report_epoch(
+            self.report_epoch(
                 self.optim.learning_rate, epoch, valid_stats=valid_stats)
 
             # 3. Update the learning rate
@@ -158,7 +158,7 @@ class Trainer(object):
         """
         total_stats = onmt.utils.Statistics()
         report_stats = onmt.utils.Statistics()
-        self.report_manager.start_time = total_stats.start_time
+        self.start_report_manager(start_time=total_stats.start_time)
 
         idx = 0
         true_batchs = []
@@ -335,16 +335,36 @@ class Trainer(object):
         if self.grad_accum_count > 1:
             self.optim.step()
 
-    def report_training(self, epoch, batch, num_batches, learning_rate, report_stats):
+    def start_report_manager(self, start_time=None):
+        """
+        Simple function to start report manager (if any)
+        """
         if self.report_manager is not None:
-            return self.report_manager.report_training(
-                epoch, batch, num_batches, learning_rate, report_stats)
+            if start_time is None:
+                self.report_manager.start()
+            else:
+                self.report_manager.start_time = start_time
 
-    def report_epoch(self, lr, epoch, train_stats=None, valid_stats=None):
+    def report_training(self, *args, **kwargs):
+        """
+        Simple function to report training stats (if report_manager is set)
+        see `onmt.utils.ReportManagerBase.report_training` for doc
+        """
         if self.report_manager is not None:
-            return self.report_manager.report_epoch(
-                lr, epoch, train_stats=None, valid_stats=None)
+            return self.report_manager.report_training(*args, **kwargs)
 
-    def maybe_drop_checkpoint(self, epoch, valid_stats):
+    def report_epoch(self, *args, **kwargs):
+        """
+        Simple function to report epoch stats (if report_manager is set)
+        see `onmt.utils.ReportManagerBase.report_epoch` for doc
+        """
+        if self.report_manager is not None:
+            return self.report_manager.report_epoch(*args, **kwargs)
+
+    def maybe_drop_checkpoint(self, *args, **kwargs):
+        """
+        Drop a checkpoint (i.e. save the model) if a model saver is set
+        see `onmt.models.ModelSaverBase.maybe_save` for doc
+        """
         if self.model_saver is not None:
-            self.model_saver.maybe_save(epoch, valid_stats)
+            self.model_saver.maybe_save(*args, **kwargs)
