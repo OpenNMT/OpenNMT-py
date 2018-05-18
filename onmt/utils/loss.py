@@ -9,7 +9,7 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 
-#import onmt
+import onmt
 import onmt.inputters as inputters
 
 

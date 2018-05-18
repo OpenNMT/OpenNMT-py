@@ -3,6 +3,7 @@ from __future__ import print_function
 import time
 from datetime import datetime
 
+import onmt
 
 
 def build_report_manager(opt):

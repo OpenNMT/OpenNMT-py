@@ -3,7 +3,7 @@
 my_python=python3.6
 
 ############### TEST regular RNN choose either -rnn_type LSTM / GRU / SRU and set input_feed 0 for SRU
-if false; then
+if true; then
 rm data/*.pt
 $my_python preprocess.py -train_src data/src-train.txt -train_tgt data/tgt-train.txt -valid_src data/src-val.txt -valid_tgt data/tgt-val.txt -save_data data/data -src_vocab_size 1000 -tgt_vocab_size 1000 
 
@@ -67,7 +67,7 @@ fi
 # -epochs 10 -gpuid 0 -max_generator_batches 4 -dropout 0.1 -normalization tokens \
 # -max_grad_norm 0 -optim sparseadam -decay_method noam -learning_rate 2 \
 # -position_encoding -param_init 0 -warmup_steps 8000 -param_init_glorot -adam_beta2 0.998
-if true; then
+if false; then
 $my_python translate.py -gpu 0 -model onmt/tests/test_model.pt \
   -src data/src-val.txt -output onmt/tests/output_hyp.txt -beam 5 -batch_size 16
 
