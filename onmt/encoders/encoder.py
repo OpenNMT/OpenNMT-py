@@ -6,6 +6,7 @@ import torch.nn as nn
 
 from onmt.utils.misc import aeq
 
+
 class EncoderBase(nn.Module):
     """
     Base encoder class. Specifies the interface used by different encoder types
@@ -30,6 +31,7 @@ class EncoderBase(nn.Module):
           E-->F
           E-->G
     """
+
     def _check_args(self, src, lengths=None, hidden=None):
         _, n_batch, _ = src.size()
         if lengths is not None:

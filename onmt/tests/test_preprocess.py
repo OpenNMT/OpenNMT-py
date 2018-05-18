@@ -126,7 +126,7 @@ test_databuild = [[],
                    ('max_shard_size', 500000)],
                   [('src_vocab', '/tmp/src_vocab.txt'),
                    ('tgt_vocab', '/tmp/tgt_vocab.txt')],
-                 ]
+                  ]
 
 for p in test_databuild:
     _add_test(p, 'dataset_build')

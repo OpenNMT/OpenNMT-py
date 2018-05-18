@@ -182,8 +182,10 @@ def main():
     opt = parse_args()
 
     print("Extracting features...")
-    src_nfeats = inputters.get_num_features(opt.data_type, opt.train_src, 'src')
-    tgt_nfeats = inputters.get_num_features(opt.data_type, opt.train_tgt, 'tgt')
+    src_nfeats = inputters.get_num_features(
+        opt.data_type, opt.train_src, 'src')
+    tgt_nfeats = inputters.get_num_features(
+        opt.data_type, opt.train_tgt, 'tgt')
     print(" * number of source features: %d." % src_nfeats)
     print(" * number of target features: %d." % tgt_nfeats)
 

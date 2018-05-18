@@ -31,7 +31,7 @@ class TestModel(unittest.TestCase):
     # Helper to generate a vocabulary
 
     def get_vocab(self):
-        src =onmt.inputters.get_fields("text", 0, 0)["src"]
+        src = onmt.inputters.get_fields("text", 0, 0)["src"]
         src.build_vocab([])
         return src.vocab
 
@@ -309,9 +309,9 @@ tests_nmtmodel = [[('rnn_type', 'GRU')],
                   [],
                   ]
 
-#if onmt.models.SRU.check_sru_requirement():
+# if onmt.models.SRU.check_sru_requirement():
 #    """ Only do SRU test if requirment is safisfied. """
-    # SRU doesn't support input_feed.
+# SRU doesn't support input_feed.
 tests_nmtmodel.append([('rnn_type', 'SRU'), ('input_feed', 0)])
 
 for p in tests_nmtmodel:

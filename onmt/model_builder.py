@@ -233,6 +233,7 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
 
     return model
 
+
 def build_model(model_opt, opt, fields, checkpoint):
     """ Build the Model """
     print('Building model...')

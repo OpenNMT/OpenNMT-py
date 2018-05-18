@@ -408,9 +408,9 @@ class SRU_Compute(Function):
             h.data_ptr(),
             c.data_ptr(),
             self.activation_type],
-             block=(thread_per_block, 1, 1), grid=(num_block, 1, 1),
-             stream=SRU_STREAM
-            )
+            block=(thread_per_block, 1, 1), grid=(num_block, 1, 1),
+            stream=SRU_STREAM
+        )
 
         self.save_for_backward(u, x, bias, init, mask_h)
         self.intermediate = c
@@ -470,9 +470,9 @@ class SRU_Compute(Function):
             grad_bias.data_ptr(),
             grad_init.data_ptr(),
             self.activation_type],
-             block=(thread_per_block, 1, 1), grid=(num_block, 1, 1),
-             stream=SRU_STREAM
-            )
+            block=(thread_per_block, 1, 1), grid=(num_block, 1, 1),
+            stream=SRU_STREAM
+        )
         return grad_u, grad_x, grad_bias.sum(1).view(-1), grad_init, None
 
 
@@ -535,12 +535,12 @@ class SRUCell(nn.Module):
             h, c = SRU_Compute(self.activation_type, n_out,
                                self.bidirectional)(
                                    u, input, self.bias, c0, mask_h
-                              )
+            )
         else:
             h, c = SRU_Compute(self.activation_type, n_out,
                                self.bidirectional)(
                                    u, input, self.bias, c0
-                              )
+            )
 
         return h, c
 
@@ -570,6 +570,7 @@ class SRU(nn.Module):
       use_relu (bool): activation
 
     """
+
     def __init__(self, input_size, hidden_size,
                  num_layers=2, dropout=0, rnn_dropout=0,
                  bidirectional=False, use_tanh=1, use_relu=0):

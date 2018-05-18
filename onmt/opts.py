@@ -532,6 +532,7 @@ class MarkdownHelpFormatter(argparse.HelpFormatter):
 
 class MarkdownHelpAction(argparse.Action):
     """ MD help action """
+
     def __init__(self, option_strings,
                  dest=argparse.SUPPRESS, default=argparse.SUPPRESS,
                  **kwargs):
@@ -550,6 +551,7 @@ class MarkdownHelpAction(argparse.Action):
 
 class DeprecateAction(argparse.Action):
     """ Deprecate action """
+
     def __init__(self, option_strings, dest, help=None, **kwargs):
         super(DeprecateAction, self).__init__(option_strings, dest, nargs=0,
                                               help=help, **kwargs)

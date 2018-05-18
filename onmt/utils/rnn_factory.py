@@ -8,6 +8,7 @@ import torch.nn as nn
 
 import onmt
 
+
 def rnn_factory(rnn_type, **kwargs):
     """ rnn factory, Use pytorch version when available. """
     no_pack_padded_seq = False

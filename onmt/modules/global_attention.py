@@ -59,6 +59,7 @@ class GlobalAttention(nn.Module):
        attn_type (str): type of attention to use, options [dot,general,mlp]
 
     """
+
     def __init__(self, dim, coverage=False, attn_type="dot"):
         super(GlobalAttention, self).__init__()
 

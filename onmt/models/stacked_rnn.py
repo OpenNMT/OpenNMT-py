@@ -8,6 +8,7 @@ class StackedLSTM(nn.Module):
     Our own implementation of stacked LSTM.
     Needed for the decoder, because we do input feeding.
     """
+
     def __init__(self, num_layers, input_size, rnn_size, dropout):
         super(StackedLSTM, self).__init__()
         self.dropout = nn.Dropout(dropout)
@@ -40,6 +41,7 @@ class StackedGRU(nn.Module):
     Our own implementation of stacked GRU.
     Needed for the decoder, because we do input feeding.
     """
+
     def __init__(self, num_layers, input_size, rnn_size, dropout):
         super(StackedGRU, self).__init__()
         self.dropout = nn.Dropout(dropout)

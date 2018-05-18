@@ -37,6 +37,7 @@ class GatedConv(nn.Module):
 
 class StackedCNN(nn.Module):
     """ Stacked CNN class """
+
     def __init__(self, num_layers, input_size, cnn_kernel_width=3,
                  dropout=0.2):
         super(StackedCNN, self).__init__()

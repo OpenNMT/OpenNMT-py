@@ -11,6 +11,7 @@ import onmt.models.stacked_rnn
 from onmt.utils.misc import aeq
 from onmt.utils.rnn_factory import rnn_factory
 
+
 class RNNDecoderBase(nn.Module):
     """
     Base recurrent attention-based decoder class.
@@ -57,6 +58,7 @@ class RNNDecoderBase(nn.Module):
        dropout (float) : dropout value for :obj:`nn.Dropout`
        embeddings (:obj:`onmt.modules.Embeddings`): embedding module to use
     """
+
     def __init__(self, rnn_type, bidirectional_encoder, num_layers,
                  hidden_size, attn_type="general",
                  coverage_attn=False, context_gate=None,
@@ -162,7 +164,8 @@ class RNNDecoderBase(nn.Module):
             # The encoder hidden is  (layers*directions) x batch x dim.
             # We need to convert it to layers x batch x (directions*dim).
             if self.bidirectional_encoder:
-                hidden = torch.cat([hidden[0:hidden.size(0):2], hidden[1:hidden.size(0):2]], 2)
+                hidden = torch.cat(
+                    [hidden[0:hidden.size(0):2], hidden[1:hidden.size(0):2]], 2)
             return hidden
 
         if isinstance(encoder_final, tuple):  # LSTM
@@ -189,6 +192,7 @@ class StdRNNDecoder(RNNDecoderBase):
     Implemented without input_feeding and currently with no `coverage_attn`
     or `copy_attn` support.
     """
+
     def _run_forward_pass(self, tgt, memory_bank, state, memory_lengths=None):
         """
         Private helper for running the specific RNN forward pass.
@@ -358,7 +362,7 @@ class InputFeedRNNDecoder(RNNDecoderBase):
     def _build_rnn(self, rnn_type, input_size,
                    hidden_size, num_layers, dropout):
         assert not rnn_type == "SRU", "SRU doesn't support input feed! " \
-                "Please set -input_feed 0!"
+            "Please set -input_feed 0!"
         if rnn_type == "LSTM":
             stacked_cell = onmt.models.stacked_rnn.StackedLSTM
         else:
@@ -382,11 +386,12 @@ class DecoderState(object):
 
     Modules need to implement this to utilize beam search decoding.
     """
-    #def detach(self):
+    # def detach(self):
     #    """ Need to document this VN """
     #    for h in self._all:
     #        if h is not None:
     #            h.detach_()
+
     def detach(self):
         """ Need to document this """
         self.hidden = tuple([_.detach() for _ in self.hidden])
@@ -412,6 +417,7 @@ class DecoderState(object):
 
 class RNNDecoderState(DecoderState):
     """ Base class for RNN decoder state """
+
     def __init__(self, hidden_size, rnnstate):
         """
         Args:

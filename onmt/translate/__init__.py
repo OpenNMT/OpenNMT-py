@@ -4,7 +4,7 @@ from onmt.translate.translation import Translation, TranslationBuilder
 from onmt.translate.beam import Beam, GNMTGlobalScorer
 from onmt.translate.penalties import PenaltyBuilder
 from onmt.translate.translation_server import TranslationServer, \
-                                             ServerModelError
+    ServerModelError
 
 __all__ = ['Translator', 'Translation', 'Beam',
            'GNMTGlobalScorer', 'TranslationBuilder',

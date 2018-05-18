@@ -11,7 +11,8 @@ def context_gate_factory(gate_type, embeddings_size, decoder_size,
                   'target': TargetContextGate,
                   'both': BothContextGate}
 
-    assert gate_type in gate_types, "Not valid ContextGate type: {0}".format(gate_type)
+    assert gate_type in gate_types, "Not valid ContextGate type: {0}".format(
+        gate_type)
     return gate_types[gate_type](embeddings_size, decoder_size, attention_size,
                                  output_size)
 
@@ -24,6 +25,7 @@ class ContextGate(nn.Module):
     The gate can be used to select the input from the target side context
     (decoder state), from the source context (attention state) or both.
     """
+
     def __init__(self, embeddings_size, decoder_size,
                  attention_size, output_size):
         super(ContextGate, self).__init__()

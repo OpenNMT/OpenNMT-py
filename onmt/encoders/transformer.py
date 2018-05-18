@@ -11,6 +11,7 @@ from onmt.utils.misc import aeq
 from onmt.utils.transformer_util import PositionwiseFeedForward
 MAX_SIZE = 5000
 
+
 class TransformerEncoderLayer(nn.Module):
     """
     A single layer of the transformer encoder.
@@ -69,6 +70,7 @@ class TransformerEncoder(EncoderBase):
        embeddings (:obj:`onmt.modules.Embeddings`):
           embeddings to use, should have positional encodings
     """
+
     def __init__(self, num_layers, hidden_size,
                  dropout, embeddings):
         super(TransformerEncoder, self).__init__()

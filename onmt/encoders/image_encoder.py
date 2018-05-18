@@ -16,6 +16,7 @@ class ImageEncoder(nn.Module):
         rnn_size (int): size of hidden states of the rnn.
         dropout (float): dropout probablity.
     """
+
     def __init__(self, num_layers, bidirectional, rnn_size, dropout):
         super(ImageEncoder, self).__init__()
         self.num_layers = num_layers
@@ -95,7 +96,7 @@ class ImageEncoder(nn.Module):
         all_outputs = []
         for row in range(src.size(2)):
             inp = src[:, :, row, :].transpose(0, 2)\
-                                     .transpose(1, 2)
+                .transpose(1, 2)
             row_vec = torch.Tensor(batch_size).type_as(inp.data)\
                                               .long().fill_(row)
             pos_emb = self.pos_lut(Variable(row_vec))
