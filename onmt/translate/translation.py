@@ -98,8 +98,8 @@ class TranslationBuilder(object):
 
             translation = Translation(src[:, b] if src is not None else None,
                                       src_raw, pred_sents,
-                                      attn[b], pred_score[b], gold_sent,
-                                      gold_score[b])
+                                      attn[b], pred_score[b].numpy(), gold_sent,
+                                      gold_score[b].numpy())
             translations.append(translation)
 
         return translations
