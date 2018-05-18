@@ -1,3 +1,4 @@
+""" Global attention modules (Luong / Bahdanau) """
 import torch
 import torch.nn as nn
 
@@ -36,7 +37,7 @@ class GlobalAttention(nn.Module):
           F --> G
 
     All models compute the output as
-    :math:`c = \sum_{j=1}^{SeqLength} a_j H_j` where
+    :math:`c = sum_{j=1}^{SeqLength} a_j H_j` where
     :math:`a_j` is the softmax of a score function.
     Then then apply a projection layer to [q, c].
 
@@ -64,7 +65,7 @@ class GlobalAttention(nn.Module):
         self.dim = dim
         self.attn_type = attn_type
         assert (self.attn_type in ["dot", "general", "mlp"]), (
-                "Please select a valid attention type.")
+            "Please select a valid attention type.")
 
         if self.attn_type == "general":
             self.linear_in = nn.Linear(dim, dim, bias=False)
@@ -76,7 +77,7 @@ class GlobalAttention(nn.Module):
         out_bias = self.attn_type == "mlp"
         self.linear_out = nn.Linear(dim*2, dim, bias=out_bias)
 
-        self.sm = nn.Softmax(dim=-1)
+        self.softmax = nn.Softmax(dim=-1)
         self.tanh = nn.Tanh()
 
         if coverage:
@@ -125,7 +126,7 @@ class GlobalAttention(nn.Module):
 
             return self.v(wquh.view(-1, dim)).view(tgt_batch, tgt_len, src_len)
 
-    def forward(self, input, memory_bank, memory_lengths=None, coverage=None):
+    def forward(self, source, memory_bank, memory_lengths=None, coverage=None):
         """
 
         Args:
@@ -143,21 +144,21 @@ class GlobalAttention(nn.Module):
         """
 
         # one step input
-        if input.dim() == 2:
+        if source.dim() == 2:
             one_step = True
-            input = input.unsqueeze(1)
+            source = source.unsqueeze(1)
         else:
             one_step = False
 
-        batch, sourceL, dim = memory_bank.size()
-        batch_, targetL, dim_ = input.size()
+        batch, source_l, dim = memory_bank.size()
+        batch_, target_l, dim_ = source.size()
         aeq(batch, batch_)
         aeq(dim, dim_)
         aeq(self.dim, dim)
         if coverage is not None:
-            batch_, sourceL_ = coverage.size()
+            batch_, source_l_ = coverage.size()
             aeq(batch, batch_)
-            aeq(sourceL, sourceL_)
+            aeq(source_l, source_l_)
 
         if coverage is not None:
             cover = coverage.view(-1).unsqueeze(1)
@@ -165,7 +166,7 @@ class GlobalAttention(nn.Module):
             memory_bank = self.tanh(memory_bank)
 
         # compute attention scores, as in Luong et al.
-        align = self.score(input, memory_bank)
+        align = self.score(source, memory_bank)
 
         if memory_lengths is not None:
             mask = sequence_mask(memory_lengths)
@@ -173,16 +174,16 @@ class GlobalAttention(nn.Module):
             align.data.masked_fill_(1 - mask, -float('inf'))
 
         # Softmax to normalize attention weights
-        align_vectors = self.sm(align.view(batch*targetL, sourceL))
-        align_vectors = align_vectors.view(batch, targetL, sourceL)
+        align_vectors = self.softmax(align.view(batch*target_l, source_l))
+        align_vectors = align_vectors.view(batch, target_l, source_l)
 
         # each context vector c_t is the weighted average
         # over all the source hidden states
         c = torch.bmm(align_vectors, memory_bank)
 
         # concatenate
-        concat_c = torch.cat([c, input], 2).view(batch*targetL, dim*2)
-        attn_h = self.linear_out(concat_c).view(batch, targetL, dim)
+        concat_c = torch.cat([c, source], 2).view(batch*target_l, dim*2)
+        attn_h = self.linear_out(concat_c).view(batch, target_l, dim)
         if self.attn_type in ["general", "dot"]:
             attn_h = self.tanh(attn_h)
 
@@ -194,21 +195,21 @@ class GlobalAttention(nn.Module):
             batch_, dim_ = attn_h.size()
             aeq(batch, batch_)
             aeq(dim, dim_)
-            batch_, sourceL_ = align_vectors.size()
+            batch_, source_l_ = align_vectors.size()
             aeq(batch, batch_)
-            aeq(sourceL, sourceL_)
+            aeq(source_l, source_l_)
         else:
             attn_h = attn_h.transpose(0, 1).contiguous()
             align_vectors = align_vectors.transpose(0, 1).contiguous()
 
             # Check output sizes
-            targetL_, batch_, dim_ = attn_h.size()
-            aeq(targetL, targetL_)
+            target_l_, batch_, dim_ = attn_h.size()
+            aeq(target_l, target_l_)
             aeq(batch, batch_)
             aeq(dim, dim_)
-            targetL_, batch_, sourceL_ = align_vectors.size()
-            aeq(targetL, targetL_)
+            target_l_, batch_, source_l_ = align_vectors.size()
+            aeq(target_l, target_l_)
             aeq(batch, batch_)
-            aeq(sourceL, sourceL_)
+            aeq(source_l, source_l_)
 
         return attn_h, align_vectors

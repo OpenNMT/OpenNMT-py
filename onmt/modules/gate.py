@@ -1,8 +1,9 @@
+""" ContextGate module """
 import torch
 import torch.nn as nn
 
 
-def context_gate_factory(type, embeddings_size, decoder_size,
+def context_gate_factory(gate_type, embeddings_size, decoder_size,
                          attention_size, output_size):
     """Returns the correct ContextGate class"""
 
@@ -10,9 +11,9 @@ def context_gate_factory(type, embeddings_size, decoder_size,
                   'target': TargetContextGate,
                   'both': BothContextGate}
 
-    assert type in gate_types, "Not valid ContextGate type: {0}".format(type)
-    return gate_types[type](embeddings_size, decoder_size, attention_size,
-                            output_size)
+    assert gate_type in gate_types, "Not valid ContextGate type: {0}".format(gate_type)
+    return gate_types[gate_type](embeddings_size, decoder_size, attention_size,
+                                 output_size)
 
 
 class ContextGate(nn.Module):

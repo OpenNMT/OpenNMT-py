@@ -1,3 +1,4 @@
+"""  Weights normalization modules  """
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -6,8 +7,9 @@ from torch.autograd import Variable
 
 
 def get_var_maybe_avg(namespace, var_name, training, polyak_decay):
-    # utility for retrieving polyak averaged params
-    # Update average
+    """ utility for retrieving polyak averaged params
+        Update average
+    """
     v = getattr(namespace, var_name)
     v_avg = getattr(namespace, var_name + '_avg')
     v_avg -= (1 - polyak_decay) * (v_avg - v.data)
@@ -19,7 +21,7 @@ def get_var_maybe_avg(namespace, var_name, training, polyak_decay):
 
 
 def get_vars_maybe_avg(namespace, var_names, training, polyak_decay):
-    # utility for retrieving polyak averaged params
+    """ utility for retrieving polyak averaged params """
     vars = []
     for vn in var_names:
         vars.append(get_var_maybe_avg(
@@ -120,7 +122,7 @@ class WeightNormConv2d(nn.Conv2d):
         if init is True:
             # out_channels, in_channels // groups, * kernel_size
             self.V.data.copy_(torch.randn(self.V.data.size()
-                                          ).type_as(self.V.data) * 0.05)
+                                         ).type_as(self.V.data) * 0.05)
             v_norm = self.V.data / self.V.data.view(self.out_channels, -1)\
                 .norm(2, 1).view(self.out_channels, *(
                     [1] * (len(self.kernel_size) + 1))).expand_as(self.V.data)
@@ -196,8 +198,8 @@ class WeightNormConvTranspose2d(nn.ConvTranspose2d):
                 self.V.data) * 0.05)
             v_norm = self.V.data / self.V.data.transpose(0, 1).contiguous() \
                 .view(self.out_channels, -1).norm(2, 1).view(
-                self.in_channels, self.out_channels,
-                *([1] * len(self.kernel_size))).expand_as(self.V.data)
+                    self.in_channels, self.out_channels,
+                    *([1] * len(self.kernel_size))).expand_as(self.V.data)
             x_init = F.conv_transpose2d(
                 x, Variable(v_norm), None, self.stride,
                 self.padding, self.output_padding, self.groups).data

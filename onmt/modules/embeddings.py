@@ -1,9 +1,11 @@
+""" Embeddings module """
+import math
+
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
-import math
 
-from onmt.modules import Elementwise
+from onmt.modules.util_class import Elementwise
 from onmt.utils.misc import aeq
 
 
@@ -19,7 +21,6 @@ class PositionalEncoding(nn.Module):
        dropout (float): dropout parameter
        dim (int): embedding size
     """
-
     def __init__(self, dropout, dim, max_len=5000):
         pe = torch.zeros(max_len, dim)
         position = torch.arange(0, max_len).unsqueeze(1)
@@ -153,10 +154,12 @@ class Embeddings(nn.Module):
 
     @property
     def word_lut(self):
+        """ word look-up table """
         return self.make_embedding[0][0]
 
     @property
     def emb_luts(self):
+        """ embedding look-up table """
         return self.make_embedding[0]
 
     def load_pretrained_vectors(self, emb_file, fixed):
@@ -172,19 +175,19 @@ class Embeddings(nn.Module):
             if fixed:
                 self.word_lut.weight.requires_grad = False
 
-    def forward(self, input):
+    def forward(self, source):
         """
         Computes the embeddings for words and features.
 
         Args:
-            input (`LongTensor`): index tensor `[len x batch x nfeat]`
+            source (`LongTensor`): index tensor `[len x batch x nfeat]`
         Return:
             `FloatTensor`: word embeddings `[len x batch x embedding_size]`
         """
-        in_length, in_batch, nfeat = input.size()
+        in_length, in_batch, nfeat = source.size()
         aeq(nfeat, len(self.emb_luts))
 
-        emb = self.make_embedding(input)
+        emb = self.make_embedding(source)
 
         out_length, out_batch, emb_size = emb.size()
         aeq(in_length, out_length)

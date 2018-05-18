@@ -388,11 +388,12 @@ class DecoderState(object):
     #        if h is not None:
     #            h.detach_()
     def detach(self):
+        """ Need to document this """
         self.hidden = tuple([_.detach() for _ in self.hidden])
         self.input_feed = self.input_feed.detach()
 
     def beam_update(self, idx, positions, beam_size):
-        """ Need to document this VN """
+        """ Need to document this """
         for e in self._all:
             sizes = e.size()
             br = sizes[1]

@@ -1,8 +1,10 @@
+""" Misc classes """
 import torch
 import torch.nn as nn
 
 
 class LayerNorm(nn.Module):
+    """  Layer Normalization class  """
     def __init__(self, features, eps=1e-6):
         super(LayerNorm, self).__init__()
         self.a_2 = nn.Parameter(torch.ones(features))
@@ -31,10 +33,10 @@ class Elementwise(nn.ModuleList):
         self.merge = merge
         super(Elementwise, self).__init__(*args)
 
-    def forward(self, input):
-        inputs = [feat.squeeze(2) for feat in input.split(1, dim=2)]
-        assert len(self) == len(inputs)
-        outputs = [f(x) for f, x in zip(self, inputs)]
+    def forward(self, inputs):
+        inputs_ = [feat.squeeze(2) for feat in inputs.split(1, dim=2)]
+        assert len(self) == len(inputs_)
+        outputs = [f(x) for f, x in zip(self, inputs_)]
         if self.merge == 'first':
             return outputs[0]
         elif self.merge == 'concat' or self.merge == 'mlp':

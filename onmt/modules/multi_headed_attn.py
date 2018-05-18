@@ -1,3 +1,4 @@
+""" Multi-Head Attention module """
 import math
 import torch
 import torch.nn as nn
@@ -61,7 +62,7 @@ class MultiHeadedAttention(nn.Module):
                                        head_count * self.dim_per_head)
         self.linear_query = nn.Linear(model_dim,
                                       head_count * self.dim_per_head)
-        self.sm = nn.Softmax(dim=-1)
+        self.softmax = nn.Softmax(dim=-1)
         self.dropout = nn.Dropout(dropout)
         self.final_linear = nn.Linear(model_dim, model_dim)
 
@@ -109,10 +110,12 @@ class MultiHeadedAttention(nn.Module):
         query_len = query.size(1)
 
         def shape(x):
+            """  projection """
             return x.view(batch_size, -1, head_count, dim_per_head) \
                 .transpose(1, 2)
 
         def unshape(x):
+            """  compute context """
             return x.transpose(1, 2).contiguous() \
                     .view(batch_size, -1, head_count * dim_per_head)
 
@@ -130,7 +133,7 @@ class MultiHeadedAttention(nn.Module):
             scores = scores.masked_fill(Variable(mask), -1e18)
 
         # 3) Apply attention dropout and compute context vectors.
-        attn = self.sm(scores)
+        attn = self.softmax(scores)
         drop_attn = self.dropout(attn)
         context = unshape(torch.matmul(drop_attn, value_up))
 

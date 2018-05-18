@@ -1,7 +1,8 @@
+""" Report manager utility """
+from __future__ import print_function
 import time
-import onmt
 from datetime import datetime
-
+import onmt
 
 def build_report_manager(opt):
     if opt.tensorboard:
@@ -63,6 +64,7 @@ class ReportMgrBase(object):
         return onmt.utils.Statistics()
 
     def _report_training(self, *args, **kwargs):
+        """ To be overridden """
         raise NotImplementedError()
 
     def report_epoch(self, lr, epoch, train_stats=None, valid_stats=None):

@@ -1,9 +1,9 @@
+""" Generator module """
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
 import torch.cuda
 
-import onmt
 import onmt.inputters as inputters
 from onmt.utils.misc import aeq
 from onmt.utils import loss
@@ -93,7 +93,7 @@ class CopyGenerator(nn.Module):
         # Probability of copying p(z=1) batch.
         p_copy = F.sigmoid(self.linear_copy(hidden))
         # Probibility of not copying: p_{word}(w) * (1 - p(z))
-        out_prob = torch.mul(prob,  1 - p_copy.expand_as(prob))
+        out_prob = torch.mul(prob, 1 - p_copy.expand_as(prob))
         mul_attn = torch.mul(attn, p_copy.expand_as(attn))
         copy_prob = torch.bmm(mul_attn.view(-1, batch, slen)
                               .transpose(0, 1),
@@ -103,6 +103,7 @@ class CopyGenerator(nn.Module):
 
 
 class CopyGeneratorCriterion(object):
+    """ Copy generator criterion """
     def __init__(self, vocab_size, force_copy, pad, eps=1e-20):
         self.force_copy = force_copy
         self.eps = eps
@@ -187,8 +188,8 @@ class CopyGeneratorLossCompute(loss.LossComputeBase):
         loss = self.criterion(scores, align, target)
         scores_data = scores.data.clone()
         scores_data = inputters.TextDataset.collapse_copy_scores(
-                self._unbottle(scores_data, batch.batch_size),
-                batch, self.tgt_vocab, self.cur_dataset.src_vocabs)
+            self._unbottle(scores_data, batch.batch_size),
+            batch, self.tgt_vocab, self.cur_dataset.src_vocabs)
         scores_data = self._bottle(scores_data)
 
         # Correct target copy token instead of <unk>

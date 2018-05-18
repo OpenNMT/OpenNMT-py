@@ -213,7 +213,7 @@ class NMTLossCompute(LossComputeBase):
         if self.confidence < 1:
             tdata = gtruth.data
             mask = torch.nonzero(tdata.eq(self.padding_idx)).squeeze(-1)
-            log_likelihood = torch.gather(scores.data, 1, tdata.unsqueeze(1))
+            #log_likelihood = torch.gather(scores.data, 1, tdata.unsqueeze(1))
             tmp_ = self.one_hot.repeat(gtruth.size(0), 1)
             tmp_.scatter_(1, tdata.unsqueeze(1), self.confidence)
 
@@ -288,5 +288,3 @@ def shards(state, shard_size, eval_only=False):
                      if isinstance(v, Variable) and v.grad is not None)
         inputs, grads = zip(*variables)
         torch.autograd.backward(inputs, grads)
-
-

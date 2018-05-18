@@ -32,7 +32,7 @@
 ###             ./test_models set_debug all 
 ###  
 
-PYTHON_BIN=python
+PYTHON_BIN=python3.6
 
 
 MODEL_DIR="/tmp"
