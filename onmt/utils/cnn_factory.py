@@ -15,7 +15,7 @@ def shape_transform(x):
     """ Tranform the size of the tensors to fit for conv input. """
     return torch.unsqueeze(torch.transpose(x, 1, 2), 3)
 
-
+# this is used by cnn_decoder.py 
 class GatedConv(nn.Module):
     """ Gated convolution for CNN class """
 
@@ -34,7 +34,7 @@ class GatedConv(nn.Module):
         out = out * F.sigmoid(gate)
         return out
 
-
+# this is used by cnn_encoder.py
 class StackedCNN(nn.Module):
     """ Stacked CNN class """
 

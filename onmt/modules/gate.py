@@ -2,7 +2,7 @@
 import torch
 import torch.nn as nn
 
-
+# This function is called by decoder.py
 def context_gate_factory(gate_type, embeddings_size, decoder_size,
                          attention_size, output_size):
     """Returns the correct ContextGate class"""

@@ -2,7 +2,7 @@
 import torch
 import torch.nn as nn
 
-
+# This class is only used by the transformer encoder/decoder
 class LayerNorm(nn.Module):
     """  Layer Normalization class  """
 
@@ -18,6 +18,7 @@ class LayerNorm(nn.Module):
         return self.a_2 * (x - mean) / (std + self.eps) + self.b_2
 
 
+# At the moment this class is only used by embeddings.Embeddings look-up tables
 class Elementwise(nn.ModuleList):
     """
     A simple network container.
