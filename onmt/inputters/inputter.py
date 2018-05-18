@@ -175,7 +175,8 @@ def collect_feature_vocabs(fields, side):
     return feature_vocabs
 
 
-def build_dataset(fields, data_type, src_path, tgt_path, src_dir=None,
+def build_dataset(fields, data_type, src_data_iter=None, src_path=None, src_dir=None,
+                  tgt_data_iter=None, tgt_path=None,
                   src_seq_length=0, tgt_seq_length=0,
                   src_seq_length_trunc=0, tgt_seq_length_trunc=0,
                   dynamic_dict=True, sample_rate=0,
@@ -185,8 +186,42 @@ def build_dataset(fields, data_type, src_path, tgt_path, src_dir=None,
     Build src/tgt examples iterator from corpus files, also extract
     number of features.
     """
+    def _make_examples_nfeats_tpl(data_type, src_data_iter, src_path, src_dir,
+                                  src_seq_length_trunc, sample_rate,
+                                  window_size, window_stride,
+                                  window, normalize_audio):
+        """
+        Process the corpus into (example_dict iterator, num_feats) tuple
+        on source side for different 'data_type'.
+        """
+
+        if data_type == 'text':
+            src_examples_iter, num_src_feats = \
+                TextDataset.make_text_examples_nfeats_tpl(
+                    src_data_iter, src_path, src_seq_length_trunc, "src")
+
+        elif data_type == 'img':
+            src_examples_iter, num_src_feats = \
+                ImageDataset.make_image_examples_nfeats_tpl(
+                    src_data_iter, src_path, src_dir)
+
+        elif data_type == 'audio':
+            if src_data_iter is None:
+                raise ValueError("""Data iterator for AudioDataset isn't
+                                    implemented""")
+
+            if src_path is None:
+                raise ValueError("AudioDataset requires a non None path")
+            src_examples_iter, num_src_feats = \
+                AudioDataset.make_audio_examples_nfeats_tpl(
+                    src_path, src_dir, sample_rate,
+                    window_size, window_stride, window,
+                    normalize_audio)
+
+        return src_examples_iter, num_src_feats
+
     src_examples_iter, num_src_feats = \
-        _make_examples_nfeats_tpl(data_type, src_path, src_dir,
+        _make_examples_nfeats_tpl(data_type, src_data_iter, src_path, src_dir,
                                   src_seq_length_trunc, sample_rate,
                                   window_size, window_stride,
                                   window, normalize_audio)
@@ -194,7 +229,7 @@ def build_dataset(fields, data_type, src_path, tgt_path, src_dir=None,
     # For all data types, the tgt side corpus is in form of text.
     tgt_examples_iter, num_tgt_feats = \
         TextDataset.make_text_examples_nfeats_tpl(
-            tgt_path, tgt_seq_length_trunc, "tgt")
+            tgt_data_iter, tgt_path, tgt_seq_length_trunc, "tgt")
 
     if data_type == 'text':
         dataset = TextDataset(fields, src_examples_iter, tgt_examples_iter,
@@ -333,34 +368,6 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
 
     return fields
 
-
-def _make_examples_nfeats_tpl(data_type, src_path, src_dir,
-                              src_seq_length_trunc, sample_rate,
-                              window_size, window_stride,
-                              window, normalize_audio):
-    """
-    Process the corpus into (example_dict iterator, num_feats) tuple
-    on source side for different 'data_type'.
-    """
-
-    if data_type == 'text':
-        src_examples_iter, num_src_feats = \
-            TextDataset.make_text_examples_nfeats_tpl(
-                src_path, src_seq_length_trunc, "src")
-
-    elif data_type == 'img':
-        src_examples_iter, num_src_feats = \
-            ImageDataset.make_image_examples_nfeats_tpl(
-                src_path, src_dir)
-
-    elif data_type == 'audio':
-        src_examples_iter, num_src_feats = \
-            AudioDataset.make_audio_examples_nfeats_tpl(
-                src_path, src_dir, sample_rate,
-                window_size, window_stride, window,
-                normalize_audio)
-
-    return src_examples_iter, num_src_feats
 
 
 class OrderedIterator(torchtext.data.Iterator):

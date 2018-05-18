@@ -130,12 +130,26 @@ class Translator(object):
                 "scores": [],
                 "log_probs": []}
 
-    def translate(self, src_dir, src_path, tgt_path,
-                  batch_size, attn_debug=False):
+    def translate(self,
+                  src_path=None,
+                  src_data_iter=None,
+                  tgt_path=None,
+                  tgt_data_iter=None,
+                  src_dir=None,
+                  batch_size=None,
+                  attn_debug=False):
+        """
+        Note: batch_size must not be None
+        Note: one of ('src_path', 'src_data_iter') must not be None
+        """
+        if batch_size is None:
+            raise ValueError("batch_size must be set")
         data = inputters.build_dataset(self.fields,
                                        self.data_type,
-                                       src_path,
-                                       tgt_path,
+                                       src_path=src_path,
+                                       src_data_iter=src_data_iter,
+                                       tgt_path=tgt_path,
+                                       tgt_data_iter=tgt_data_iter,
                                        src_dir=src_dir,
                                        sample_rate=self.sample_rate,
                                        window_size=self.window_size,

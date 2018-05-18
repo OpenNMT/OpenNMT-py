@@ -75,22 +75,32 @@ class ImageDataset(DatasetBase):
         return (ex.src.size(2), ex.src.size(1))
 
     @staticmethod
-    def make_image_examples_nfeats_tpl(path, img_dir):
+    def make_image_examples_nfeats_tpl(img_iter, img_path, img_dir):
         """
+        Note: one of img_iter and img_path must be not None
         Args:
-            path (str): location of a src file containing image paths
+            img_iter(iterator): an iterator that yields pairs (img, filename)
+                (or None)
+            img_path(str): location of a src file containing image paths
+                (or None)
             src_dir (str): location of source images
 
         Returns:
             (example_dict iterator, num_feats) tuple
         """
-        examples_iter = ImageDataset.read_img_file(path, img_dir, 'src')
+        if img_iter is None:
+            if img_path is not None:
+                img_iter = ImageDataset.make_img_iterator_from_file(img_path)
+            else:
+                raise ValueError("""One of 'img_iter' and 'img_path'
+                                    must be not None""")
+        examples_iter = ImageDataset.make_examples(data_iter, img_dir, 'src')
         num_feats = 0  # Source side(img) has no features.
 
         return (examples_iter, num_feats)
 
     @staticmethod
-    def read_img_file(path, src_dir, side, truncate=None):
+    def make_examples(data_iter, src_dir, side, truncate=None):
         """
         Args:
             path (str): location of a src file containing image paths
@@ -108,10 +118,34 @@ class ImageDataset(DatasetBase):
         from PIL import Image
         from torchvision import transforms
 
+        for img, filename in img_iter:
+            if truncate and truncate != (0, 0):
+                if not (img.size(1) <= truncate[0]
+                        and img.size(2) <= truncate[1]):
+                    continue
+
+            example_dict = {side: img,
+                            side+'_path': filename,
+                            'indices': index}
+            index += 1
+
+            yield example_dict
+
+    @staticmethod
+    def make_img_iterator_from_file(path, src_dir):
+        """
+        Args:
+            path(str):
+            src_dir(str):
+
+        Yields:
+            img: and image tensor
+            filename(str): the image filename
+        """
         with codecs.open(path, "r", "utf-8") as corpus_file:
-            index = 0
             for line in corpus_file:
-                img_path = os.path.join(src_dir, line.strip())
+                filename = line.strip()
+                img_path = os.path.join(src_dir, filename)
                 if not os.path.exists(img_path):
                     img_path = line
 
@@ -119,17 +153,7 @@ class ImageDataset(DatasetBase):
                     'img path %s not found' % (line.strip())
 
                 img = transforms.ToTensor()(Image.open(img_path))
-                if truncate and truncate != (0, 0):
-                    if not (img.size(1) <= truncate[0]
-                            and img.size(2) <= truncate[1]):
-                        continue
-
-                example_dict = {side: img,
-                                side+'_path': line.strip(),
-                                'indices': index}
-                index += 1
-
-                yield example_dict
+                yield img, filename
 
     @staticmethod
     def get_fields(n_src_features, n_tgt_features):

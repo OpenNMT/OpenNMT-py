@@ -138,7 +138,9 @@ def build_save_dataset(corpus_type, fields, opt):
     # But since the interfaces are uniform, it would be not hard
     # to do this should users need this feature.
     dataset = inputters.build_dataset(
-        fields, opt.data_type, src_corpus, tgt_corpus,
+        fields, opt.data_type,
+        src_path=src_corpus,
+        tgt_path=tgt_corpus,
         src_dir=opt.src_dir,
         src_seq_length=opt.src_seq_length,
         tgt_seq_length=opt.tgt_seq_length,

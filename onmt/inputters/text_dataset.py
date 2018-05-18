@@ -130,9 +130,13 @@ class TextDataset(DatasetBase):
         return scores
 
     @staticmethod
-    def make_text_examples_nfeats_tpl(path, truncate, side):
+    def make_text_examples_nfeats_tpl(text_iter, text_path, truncate, side):
         """
         Args:
+            text_iter(iterator): an iterator (or None) that we can loop over
+                to read examples.
+                It may be an openned file, a string list etc...
+            text_path(str): path to file or None
             path (str): location of a src or tgt file.
             truncate (int): maximum sequence length (0 for unlimited).
             side (str): "src" or "tgt".
@@ -142,13 +146,16 @@ class TextDataset(DatasetBase):
         """
         assert side in ['src', 'tgt']
 
-        if path is None:
-            return (None, 0)
+        if text_iter is None:
+            if text_path is not None:
+                text_iter = TextDataset.make_text_iterator_from_file(text_path)
+            else:
+                return (None, 0)
 
         # All examples have same number of features, so we peek first one
         # to get the num_feats.
         examples_nfeats_iter = \
-            TextDataset.read_text_file(path, truncate, side)
+            TextDataset.make_examples(text_iter, truncate, side)
 
         first_ex = next(examples_nfeats_iter)
         num_feats = first_ex[1]
@@ -160,31 +167,36 @@ class TextDataset(DatasetBase):
         return (examples_iter, num_feats)
 
     @staticmethod
-    def read_text_file(path, truncate, side):
+    def make_examples(text_iter, truncate, side):
         """
         Args:
-            path (str): location of a src or tgt file.
+            text_iter (iterator): iterator of text sequences
             truncate (int): maximum sequence length (0 for unlimited).
             side (str): "src" or "tgt".
 
         Yields:
             (word, features, nfeat) triples for each line.
         """
+        for i, line in enumerate(text_iter):
+            line = line.strip().split()
+            if truncate:
+                line = line[:truncate]
+
+            words, feats, n_feats = \
+                TextDataset.extract_text_features(line)
+
+            example_dict = {side: words, "indices": i}
+            if feats:
+                prefix = side + "_feat_"
+                example_dict.update((prefix + str(j), f)
+                                    for j, f in enumerate(feats))
+            yield example_dict, n_feats
+
+    @staticmethod
+    def make_text_iterator_from_file(path):
         with codecs.open(path, "r", "utf-8") as corpus_file:
-            for i, line in enumerate(corpus_file):
-                line = line.strip().split()
-                if truncate:
-                    line = line[:truncate]
-
-                words, feats, n_feats = \
-                    TextDataset.extract_text_features(line)
-
-                example_dict = {side: words, "indices": i}
-                if feats:
-                    prefix = side + "_feat_"
-                    example_dict.update((prefix + str(j), f)
-                                        for j, f in enumerate(feats))
-                yield example_dict, n_feats
+            for line in corpus_file:
+                yield line
 
     @staticmethod
     def get_fields(n_src_features, n_tgt_features):

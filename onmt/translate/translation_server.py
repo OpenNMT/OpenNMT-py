@@ -265,41 +265,31 @@ class ServerModel:
             self.to_gpu()
             timer.tick(name="to_gpu")
 
-        # NOTE: the translator exept a filepath as parameter
-        #       therefore we write the data as a temp file.
-        tmp_root = "/tmp/onmt_server"
-        if not os.path.exists(tmp_root):
-            os.makedirs(tmp_root)
-        src_path = os.path.join(tmp_root, "tmp_src")
-        with codecs.open(src_path, 'w', 'utf-8') as f:
-            # NOTE: If an input contains an line separator \n we split it
-            #       into subsegments that we translate independantly
-            #       we then merge the translations together with the same
-            #       line breaks
-            whitespace_segments = {}
-            subsegment = {}
-            sscount = 0
-            sslength = []
-            for (i, inp) in enumerate(inputs):
-                src = inp['src']
-                lines = src.split("\n")
-                subsegment[i] = slice(sscount, sscount + len(lines))
-                for line in lines:
-                    tok = self.maybe_tokenize(line)
-                    if len(''.join(line.split())) == 0:
-                        whitespace_segments[sscount] = line
-                    else:
-                        f.write(tok + "\n")
-                        sslength += [len(tok.split())]
-                        sscount += 1
+        texts = []
+        whitespace_segments = {}
+        subsegment = {}
+        sscount = 0
+        sslength = []
+        for (i, inp) in enumerate(inputs):
+            src = inp['src']
+            lines = src.split("\n")
+            subsegment[i] = slice(sscount, sscount + len(lines))
+            for line in lines:
+                tok = self.maybe_tokenize(line)
+                if len(''.join(line.split())) == 0:
+                    whitespace_segments[sscount] = line
+                else:
+                    texts += [tok]
+                    sslength += [len(tok.split())]
+                    sscount += 1
 
         timer.tick(name="writing")
 
         scores = []
         if sscount > 0:
             try:
-                scores = self.translator.translate(None, src_path, None,
-                                                   self.opt.batch_size)
+                scores = self.translator.translate(src_data_iter=texts,
+                                                   batch_size=self.opt.batch_size)
             except RuntimeError as e:
                 raise ServerModelError("Runtime Error: %s" % str(e))
 
