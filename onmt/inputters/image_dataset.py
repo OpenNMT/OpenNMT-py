@@ -118,7 +118,7 @@ class ImageDataset(DatasetBase):
         from PIL import Image
         from torchvision import transforms
 
-        for img, filename in img_iter:
+        for index, (img, filename) in enumerate(img_iter):
             if truncate and truncate != (0, 0):
                 if not (img.size(1) <= truncate[0]
                         and img.size(2) <= truncate[1]):
@@ -127,8 +127,6 @@ class ImageDataset(DatasetBase):
             example_dict = {side: img,
                             side+'_path': filename,
                             'indices': index}
-            index += 1
-
             yield example_dict
 
     @staticmethod
