@@ -3,6 +3,7 @@ from __future__ import division
 
 import torch.nn as nn
 
+
 class NMTModel(nn.Module):
     """
     Core trainable object in OpenNMT. Implements a trainable interface
@@ -13,6 +14,7 @@ class NMTModel(nn.Module):
       decoder (:obj:`RNNDecoderBase`): a decoder object
       multi<gpu (bool): setup for multigpu support
     """
+
     def __init__(self, encoder, decoder, multigpu=False):
         self.multigpu = multigpu
         super(NMTModel, self).__init__()

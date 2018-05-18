@@ -3,6 +3,7 @@ from __future__ import division
 
 from onmt.encoders.encoder import EncoderBase
 
+
 class MeanEncoder(EncoderBase):
     """A trivial non-recurrent encoder. Simply applies mean pooling.
 
@@ -10,6 +11,7 @@ class MeanEncoder(EncoderBase):
        num_layers (int): number of replicated layers
        embeddings (:obj:`onmt.modules.Embeddings`): embedding module to use
     """
+
     def __init__(self, num_layers, embeddings):
         super(MeanEncoder, self).__init__()
         self.num_layers = num_layers

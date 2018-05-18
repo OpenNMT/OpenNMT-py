@@ -16,6 +16,7 @@ class Beam(object):
        cuda (bool): use gpu
        global_scorer (:obj:`GlobalScorer`)
     """
+
     def __init__(self, size, pad, bos, eos,
                  n_best=1, cuda=False,
                  global_scorer=None,
@@ -186,6 +187,7 @@ class GNMTGlobalScorer(object):
        alpha (float): length parameter
        beta (float):  coverage parameter
     """
+
     def __init__(self, alpha, beta, cov_penalty, length_penalty):
         self.alpha = alpha
         self.beta = beta

@@ -10,6 +10,7 @@ class PenaltyBuilder(object):
         length_pen (str): option name of length pen
         cov_pen (str): option name of cov pen
     """
+
     def __init__(self, cov_pen, length_pen):
         self.length_pen = length_pen
         self.cov_pen = cov_pen

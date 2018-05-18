@@ -12,6 +12,7 @@ from onmt.utils.cnn_factory import shape_transform, GatedConv
 
 SCALE_WEIGHT = 0.5 ** 0.5
 
+
 class CNNDecoder(nn.Module):
     """
     Decoder built on CNN, based on :cite:`DBLP:journals/corr/GehringAGYD17`.
@@ -19,6 +20,7 @@ class CNNDecoder(nn.Module):
 
     Consists of residual convolutional layers, with ConvMultiStepAttention.
     """
+
     def __init__(self, num_layers, hidden_size, attn_type,
                  copy_attn, cnn_kernel_width, dropout, embeddings):
         super(CNNDecoder, self).__init__()
@@ -129,6 +131,7 @@ class CNNDecoderState(DecoderState):
     """
     Init CNN decoder state.
     """
+
     def __init__(self, memory_bank, enc_hidden):
         self.init_src = (memory_bank + enc_hidden) * SCALE_WEIGHT
         self.previous_input = None

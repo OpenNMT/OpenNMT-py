@@ -8,11 +8,13 @@ from onmt.utils.cnn_factory import shape_transform, StackedCNN
 
 SCALE_WEIGHT = 0.5 ** 0.5
 
+
 class CNNEncoder(EncoderBase):
     """
     Encoder built on CNN based on
     :cite:`DBLP:journals/corr/GehringAGYD17`.
     """
+
     def __init__(self, num_layers, hidden_size,
                  cnn_kernel_width, dropout, embeddings):
         super(CNNEncoder, self).__init__()

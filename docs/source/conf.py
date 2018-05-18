@@ -37,8 +37,8 @@ import sphinx_rtd_theme
 from recommonmark.transform import AutoStructify
 
 source_parsers = {
-        '.md': CommonMarkParser,
-    }
+    '.md': CommonMarkParser,
+}
 
 source_suffix = ['.rst', '.md']
 extensions = ['sphinx.ext.autodoc',

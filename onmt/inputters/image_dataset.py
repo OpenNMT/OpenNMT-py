@@ -28,6 +28,7 @@ class ImageDataset(DatasetBase):
             use_filter_pred (bool): use a custom filter predicate to filter
                 out examples?
     """
+
     def __init__(self, fields, src_examples_iter, tgt_examples_iter,
                  num_src_feats=0, num_tgt_feats=0,
                  tgt_seq_length=0, use_filter_pred=True):
@@ -51,7 +52,7 @@ class ImageDataset(DatasetBase):
         example_values = ([ex[k] for k in keys] for ex in examples_iter)
         out_examples = (self._construct_example_fromlist(
             ex_values, out_fields)
-                        for ex_values in example_values)
+            for ex_values in example_values)
         # If out_examples is a generator, we need to save the filter_pred
         # function in serialization too, which would cause a problem when
         # `torch.save()`. Thus we materialize it as a list.

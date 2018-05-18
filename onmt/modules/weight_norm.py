@@ -38,6 +38,7 @@ class WeightNormLinear(nn.Linear):
     As a reparameterization method, weight normalization is same
     as BatchNormalization, but it doesn't depend on minibatch.
     """
+
     def __init__(self, in_features, out_features,
                  init_scale=1., polyak_decay=0.9995):
         super(WeightNormLinear, self).__init__(
@@ -122,7 +123,7 @@ class WeightNormConv2d(nn.Conv2d):
         if init is True:
             # out_channels, in_channels // groups, * kernel_size
             self.V.data.copy_(torch.randn(self.V.data.size()
-                                         ).type_as(self.V.data) * 0.05)
+                                          ).type_as(self.V.data) * 0.05)
             v_norm = self.V.data / self.V.data.view(self.out_channels, -1)\
                 .norm(2, 1).view(self.out_channels, *(
                     [1] * (len(self.kernel_size) + 1))).expand_as(self.V.data)

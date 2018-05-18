@@ -52,6 +52,7 @@ def get_fields(data_type, n_src_features, n_tgt_features):
     else:
         raise ValueError("Data type not implemented")
 
+
 def load_fields_from_vocab(vocab, data_type="text"):
     """
     Load Field objects from `vocab.pt` file.
@@ -118,6 +119,7 @@ def get_num_features(data_type, corpus_file, side):
         return AudioDataset.get_num_features(corpus_file, side)
     else:
         raise ValueError("Data type not implemented")
+
 
 def make_features(batch, side, data_type='text'):
     """
@@ -294,7 +296,7 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
 
     # Load vocabulary
     src_vocab = None
-    #if len(src_vocab_path) > 0:
+    # if len(src_vocab_path) > 0:
     if src_vocab_path:
         src_vocab = set([])
         print('Loading source vocab from %s' % src_vocab_path)
@@ -306,7 +308,7 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
                 src_vocab.add(word)
 
     tgt_vocab = None
-    #if len(tgt_vocab_path) > 0:
+    # if len(tgt_vocab_path) > 0:
     if tgt_vocab_path:
         tgt_vocab = set([])
         print('Loading target vocab from %s' % tgt_vocab_path)
@@ -369,9 +371,9 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
     return fields
 
 
-
 class OrderedIterator(torchtext.data.Iterator):
     """ Ordered Iterator Class """
+
     def create_batches(self):
         """ Create batches """
         if self.train:

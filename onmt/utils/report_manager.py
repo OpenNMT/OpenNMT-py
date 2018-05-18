@@ -4,6 +4,7 @@ import time
 from datetime import datetime
 
 
+
 def build_report_manager(opt):
     if opt.tensorboard:
         from tensorboard import SummaryWriter

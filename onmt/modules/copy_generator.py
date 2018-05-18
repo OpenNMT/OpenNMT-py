@@ -8,6 +8,7 @@ import onmt.inputters as inputters
 from onmt.utils.misc import aeq
 from onmt.utils import loss
 
+
 class CopyGenerator(nn.Module):
     """Generator module that additionally considers copying
     words directly from the source.
@@ -58,6 +59,7 @@ class CopyGenerator(nn.Module):
        tgt_dict (Vocab): output target dictionary
 
     """
+
     def __init__(self, input_size, tgt_dict):
         super(CopyGenerator, self).__init__()
         self.linear = nn.Linear(input_size, len(tgt_dict))
@@ -104,6 +106,7 @@ class CopyGenerator(nn.Module):
 
 class CopyGeneratorCriterion(object):
     """ Copy generator criterion """
+
     def __init__(self, vocab_size, force_copy, pad, eps=1e-20):
         self.force_copy = force_copy
         self.eps = eps
@@ -143,6 +146,7 @@ class CopyGeneratorLossCompute(loss.LossComputeBase):
     """
     Copy Generator Loss Computation.
     """
+
     def __init__(self, generator, tgt_vocab,
                  force_copy, normalize_by_length,
                  eps=1e-20):

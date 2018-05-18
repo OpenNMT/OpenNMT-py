@@ -26,6 +26,7 @@ class DatasetBase(torchtext.data.Dataset):
      `fields`: a dictionary associating str keys with `torchtext.data.Field`
         objects, and not necessarily having the same keys as the input fields.
     """
+
     def __getstate__(self):
         return self.__dict__
 
@@ -42,7 +43,8 @@ class DatasetBase(torchtext.data.Dataset):
         Args:
             vocab_dict (dict): a dict of loaded vocab from vocab.pt file.
         """
-        fields = onmt.inputters.inputter.load_fields_from_vocab(vocab_dict.items(), self.data_type)
+        fields = onmt.inputters.inputter.load_fields_from_vocab(
+            vocab_dict.items(), self.data_type)
         self.fields = dict([(k, f) for (k, f) in fields.items()
                             if k in self.examples[0].__dict__])
 

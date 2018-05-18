@@ -6,6 +6,7 @@ from __future__ import division
 import torch.nn as nn
 import onmt.models
 
+
 def rnn_factory(rnn_type, **kwargs):
     """ rnn factory, Use pytorch version when available. """
     no_pack_padded_seq = False

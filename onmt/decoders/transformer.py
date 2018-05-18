@@ -14,6 +14,7 @@ from onmt.utils.transformer_util import PositionwiseFeedForward
 
 MAX_SIZE = 5000
 
+
 class TransformerDecoderLayer(nn.Module):
     """
     Args:
@@ -24,6 +25,7 @@ class TransformerDecoderLayer(nn.Module):
       head_count(int): the number of heads for MultiHeadedAttention.
       hidden_size(int): the second-layer of the PositionwiseFeedForward.
     """
+
     def __init__(self, size, dropout,
                  head_count=8, hidden_size=2048):
         super(TransformerDecoderLayer, self).__init__()
@@ -128,6 +130,7 @@ class TransformerDecoder(nn.Module):
 
        attn_type (str): if using a seperate copy attention
     """
+
     def __init__(self, num_layers, hidden_size, attn_type,
                  copy_attn, dropout, embeddings):
         super(TransformerDecoder, self).__init__()
@@ -227,6 +230,7 @@ class TransformerDecoder(nn.Module):
 
 class TransformerDecoderState(DecoderState):
     """ Transformer Decoder state base class """
+
     def __init__(self, src):
         """
         Args:

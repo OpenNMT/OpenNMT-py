@@ -9,8 +9,6 @@ from torch.autograd import Variable
 import onmt
 
 
-
-
 class TestAttention(unittest.TestCase):
 
     def test_masked_global_attention(self):

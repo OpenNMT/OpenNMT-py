@@ -67,7 +67,7 @@ class TranslationServer():
                       'tokenizer_opt': conf.get('tokenizer', None),
                       'on_timeout': conf.get('on_timeout', None),
                       'model_root': conf.get('model_root', self.models_root)
-                     }
+                      }
             kwargs = {k: v for (k, v) in kwargs.items() if v is not None}
             model_id = conf.get("id", None)
             opt = conf["opt"]
@@ -354,7 +354,7 @@ class ServerModel:
              "model": self.user_opt["model"],
              "loaded": self.loaded,
              "timeout": self.timeout,
-            }
+             }
         if self.tokenizer_opt is not None:
             d["tokenizer"] = self.tokenizer_opt
         return d

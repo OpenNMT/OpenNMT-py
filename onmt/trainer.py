@@ -18,7 +18,19 @@ import onmt.inputters as inputters
 import onmt.utils
 
 def build_trainer(opt, model, fields, optim, data_type, model_saver=None):
+    """
+    Simplify `Trainer` creation based on user `opt`s*
 
+    Args:
+        opt (:obj:`Namespace`): user options (usually from argument parsing)
+        model (:obj:`onmt.models.NMTModel`): the model to train
+        fields (dict): dict of fields
+        optim (:obj:`onmt.utils.Optimizer`): optimizer used during training
+        data_type (str): string describing the type of data
+            e.g. "text", "img", "audio"
+        model_saver(:obj:`onmt.models.ModelSaverBase`): the utility object
+            used to save the model (after each epoch)
+    """
     train_loss = onmt.utils.loss.build_loss_compute(
         model, fields["tgt"].vocab, opt)
     valid_loss = onmt.utils.loss.build_loss_compute(
@@ -57,6 +69,9 @@ class Trainer(object):
             grad_accum_count(int): accumulate gradients this many times.
             report_manager(:obj:`onmt.utils.ReportMgrBase`):
                 the object that creates reports, or None
+            model_saver(:obj:`onmt.models.ModelSaverBase`): the saver is
+                used after each epoch to save a checkpoint.
+                Thus nothing will be saved if this parameter is None
     """
 
     def __init__(self, model, train_loss, valid_loss, optim,
@@ -86,7 +101,25 @@ class Trainer(object):
         self.model.train()
 
     def train(self, train_iter_fct, valid_iter_fct, start_epoch, end_epoch):
+        """
+        The main training loops.
+        It trains from epoch=`start_epoch` to `end_epoch`
+        by iterating over training data (i.e. `train_iter_fct`)
+        and running validation (i.e. iterating over `valid_iter_fct`
+        In other words it trains for:
+            n_epochs = (end_epoch + 1 - start_epoch, start_epoch)
 
+        Args:
+            train_iter_fct(function): a function that returns the train
+                iterator. e.g. something like
+                train_iter_fct = lambda: generator(*args, **kwargs)
+            valid_iter_fct(function): same as train_iter_fct, for valid data
+            start_epoch(int): epoch number to start from (begining = 0)
+            end_epoch(int): last epoch number
+
+        Return:
+            None
+        """
         print('\nStart training...')
         print(' * number of epochs: %d, starting from Epoch %d' %
               (end_epoch + 1 - start_epoch, start_epoch))
@@ -97,13 +130,13 @@ class Trainer(object):
             # 1. Train for one epoch on the training set.
             train_iter = train_iter_fct()
             train_stats = self.train_epoch(train_iter, epoch)
-            self.report_manager.report_epoch(
+            self.report_epoch(
                 self.optim.learning_rate, epoch, train_stats=train_stats)
 
             # 2. Validate on the validation set.
             valid_iter = valid_iter_fct()
             valid_stats = self.validate(valid_iter)
-            self.report_manager.report_epoch(
+            self.report_epoch(
                 self.optim.learning_rate, epoch, valid_stats=valid_stats)
 
             # 3. Update the learning rate
@@ -123,7 +156,7 @@ class Trainer(object):
         """
         total_stats = onmt.utils.Statistics()
         report_stats = onmt.utils.Statistics()
-        self.report_manager.start_time = total_stats.start_time
+        self.start_report_manager(start_time=total_stats.start_time)
 
         idx = 0
         true_batchs = []
@@ -300,19 +333,36 @@ class Trainer(object):
         if self.grad_accum_count > 1:
             self.optim.step()
 
-    def report_training(self, epoch, batch, num_batches, learning_rate, report_stats):
-        """ Report training """
+    def start_report_manager(self, start_time=None):
+        """
+        Simple function to start report manager (if any)
+        """
         if self.report_manager is not None:
-            return self.report_manager.report_training(
-                epoch, batch, num_batches, learning_rate, report_stats)
+            if start_time is None:
+                self.report_manager.start()
+            else:
+                self.report_manager.start_time = start_time
 
-    def report_epoch(self, learning_rate, epoch, train_stats=None, valid_stats=None):
-        """ Report Epoch """
+    def report_training(self, *args, **kwargs):
+        """
+        Simple function to report training stats (if report_manager is set)
+        see `onmt.utils.ReportManagerBase.report_training` for doc
+        """
         if self.report_manager is not None:
-            return self.report_manager.report_epoch(
-                learning_rate, epoch, train_stats=None, valid_stats=None)
+            return self.report_manager.report_training(*args, **kwargs)
 
-    def maybe_drop_checkpoint(self, epoch, valid_stats):
-        """ Save checkpoint """
+    def report_epoch(self, *args, **kwargs):
+        """
+        Simple function to report epoch stats (if report_manager is set)
+        see `onmt.utils.ReportManagerBase.report_epoch` for doc
+        """
+        if self.report_manager is not None:
+            return self.report_manager.report_epoch(*args, **kwargs)
+
+    def maybe_drop_checkpoint(self, *args, **kwargs):
+        """
+        Drop a checkpoint (i.e. save the model) if a model saver is set
+        see `onmt.models.ModelSaverBase.maybe_save` for doc
+        """
         if self.model_saver is not None:
-            self.model_saver.maybe_save(epoch, valid_stats)
+            self.model_saver.maybe_save(*args, **kwargs)

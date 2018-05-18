@@ -14,6 +14,7 @@ class Statistics(object):
     * perplexity
     * elapsed time
     """
+
     def __init__(self, loss=0, n_words=0, n_correct=0):
         self.loss = loss
         self.n_words = n_words

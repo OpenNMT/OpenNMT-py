@@ -21,6 +21,7 @@ class PositionalEncoding(nn.Module):
        dropout (float): dropout parameter
        dim (int): embedding size
     """
+
     def __init__(self, dropout, dim, max_len=5000):
         pe = torch.zeros(max_len, dim)
         position = torch.arange(0, max_len).unsqueeze(1)
@@ -86,6 +87,7 @@ class Embeddings(nn.Module):
                     `-feat_merge mlp`
         dropout (float): dropout probability.
     """
+
     def __init__(self, word_vec_size,
                  word_vocab_size,
                  word_padding_idx,

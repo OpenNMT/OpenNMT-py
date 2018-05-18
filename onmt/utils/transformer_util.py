@@ -6,6 +6,7 @@ import torch.nn as nn
 
 import onmt
 
+
 class PositionwiseFeedForward(nn.Module):
     """ A two-layer Feed-Forward-Network with residual layer norm.
 
@@ -15,6 +16,7 @@ class PositionwiseFeedForward(nn.Module):
                               of the FNN.
             dropout (float): dropout probability(0-1.0).
     """
+
     def __init__(self, size, hidden_size, dropout=0.1):
         super(PositionwiseFeedForward, self).__init__()
         self.w_1 = nn.Linear(size, hidden_size)
