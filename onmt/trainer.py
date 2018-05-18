@@ -20,6 +20,19 @@ import onmt.inputters as inputters
 
 
 def build_trainer(opt, model, fields, optim, data_type, model_saver=None):
+    """
+    Simplify `Trainer` creation based on user `opt`s*
+
+    Args:
+        opt (:obj:`Namespace`): user options (usually from argument parsing)
+        model (:obj:`onmt.models.NMTModel`): the model to train
+        fields (dict): dict of fields
+        optim (:obj:`onmt.utils.Optimizer`): optimizer used during training
+        data_type (str): string describing the type of data
+            e.g. "text", "img", "audio"
+        model_saver(:obj:`onmt.models.ModelSaverBase`): the utility object
+            used to save the model (after each epoch)
+    """
     train_loss = onmt.utils.loss.build_loss_compute(
         model, fields["tgt"].vocab, opt)
     valid_loss = onmt.utils.loss.build_loss_compute(
@@ -58,6 +71,9 @@ class Trainer(object):
             grad_accum_count(int): accumulate gradients this many times.
             report_manager(:obj:`onmt.utils.ReportMgrBase`):
                 the object that creates reports, or None
+            model_saver(:obj:`onmt.models.ModelSaverBase`): the saver is
+                used after each epoch to save a checkpoint.
+                Thus nothing will be saved if this parameter is None
     """
 
     def __init__(self, model, train_loss, valid_loss, optim,
@@ -87,7 +103,25 @@ class Trainer(object):
         self.model.train()
 
     def train(self, train_iter_fct, valid_iter_fct, start_epoch, end_epoch):
+        """
+        The main training loops.
+        It trains from epoch=`start_epoch` to `end_epoch`
+        by iterating over training data (i.e. `train_iter_fct`)
+        and running validation (i.e. iterating over `valid_iter_fct`
+        In other words it trains for:
+            n_epochs = (end_epoch + 1 - start_epoch, start_epoch)
 
+        Args:
+            train_iter_fct(function): a function that returns the train
+                iterator. e.g. something like
+                train_iter_fct = lambda: generator(*args, **kwargs)
+            valid_iter_fct(function): same as train_iter_fct, for valid data
+            start_epoch(int): epoch number to start from (begining = 0)
+            end_epoch(int): last epoch number
+
+        Return:
+            None
+        """
         print('\nStart training...')
         print(' * number of epochs: %d, starting from Epoch %d' %
               (end_epoch + 1 - start_epoch, start_epoch))
