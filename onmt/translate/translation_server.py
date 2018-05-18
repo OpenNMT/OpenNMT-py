@@ -214,7 +214,7 @@ class ServerModel:
         timer.start()
         self.out_file = io.StringIO()
         try:
-            self.translator = make_translator(self.opt,
+            self.translator = build_translator(self.opt,
                                               report_score=False,
                                               out_file=self.out_file)
         except RuntimeError as e:
