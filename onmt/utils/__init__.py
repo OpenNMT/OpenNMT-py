@@ -5,3 +5,4 @@ from onmt.utils.statistics import Statistics
 from onmt.utils.rnn_factory import rnn_factory
 from onmt.utils.cnn_factory import StackedCNN
 from onmt.utils.loss import build_loss_compute
+from onmt.utils.multi_utils import is_master, multi_init, all_reduce_and_rescale_tensors

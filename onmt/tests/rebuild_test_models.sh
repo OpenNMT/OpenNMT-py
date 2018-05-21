@@ -1,9 +1,9 @@
 # # Retrain the models used for CI.
 # # Should be done rarely, indicates a major breaking change. 
 my_python=python3.6
-
+export CUDA_VISIBLE_DEVICES=0,1
 ############### TEST regular RNN choose either -rnn_type LSTM / GRU / SRU and set input_feed 0 for SRU
-if true; then
+if false; then
 rm data/*.pt
 $my_python preprocess.py -train_src data/src-train.txt -train_tgt data/tgt-train.txt -valid_src data/src-val.txt -valid_tgt data/tgt-val.txt -save_data data/data -src_vocab_size 1000 -tgt_vocab_size 1000 
 
@@ -45,16 +45,15 @@ mv /tmp/tmp*e8.pt onmt/tests/test_model2.pt
 rm /tmp/tmp*.pt
 fi
 ############### TEST TRANSFORMER
-if false; then
+if true; then
 rm data/*.pt
 $my_python preprocess.py -train_src data/src-train.txt -train_tgt data/tgt-train.txt -valid_src data/src-val.txt -valid_tgt data/tgt-val.txt -save_data data/data -src_vocab_size 1000 -tgt_vocab_size 1000 -share_vocab
 
-
-$my_python train.py -data data/data -save_model /tmp/tmp -batch_type tokens -batch_size 1024 -accum_count 4 \
- -layers 4 -rnn_size 256 -word_vec_size 256 -encoder_type transformer -decoder_type transformer -share_embedding \
- -epochs 10 -gpuid 0 -max_generator_batches 4 -dropout 0.1 -normalization tokens \
- -max_grad_norm 0 -optim sparseadam -decay_method noam -learning_rate 2 -label_smoothing 0.1 \
- -position_encoding -param_init 0 -warmup_steps 100 -param_init_glorot -adam_beta2 0.998
+$my_python train.py -data data/data -save_model /tmp/tmp -batch_type tokens -batch_size 1024 -accum_count 1 \
+ -layers 2 -rnn_size 256 -word_vec_size 256 -encoder_type transformer -decoder_type transformer -share_embedding \
+ -epochs 10 -gpuid 0 1 -max_generator_batches 4 -dropout 0.1 -normalization tokens \
+ -max_grad_norm 0 -optim adam -decay_method noam -learning_rate 2 -label_smoothing 0.1 \
+ -position_encoding -param_init 0 -warmup_steps 100 -param_init_glorot -adam_beta2 0.998 -seed 1111
 #
 mv /tmp/tmp*e10.pt onmt/tests/test_model.pt
 rm /tmp/tmp*.pt

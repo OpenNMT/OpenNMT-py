@@ -1,6 +1,6 @@
 import math
 import pickle
-
+import random
 import torch.distributed
 
 
@@ -12,12 +12,11 @@ def is_master(opt):
 def multi_init(opt):
     if len(opt.gpuid) == 1:
         raise ValueError('Cannot initialize multiprocess with one gpu only')
-
+    dist_init_method = 'tcp://localhost:10000'
+    dist_world_size = len(opt.gpuid)
     torch.distributed.init_process_group(
-            backend=opt.gpu_backend, init_method='tcp://localhost:{port}'.format(
-            port=random.randint(10000, 20000)),
-            world_size=len(opt.gpuid), rank=opt.gpu_rank)
-
+            backend=opt.gpu_backend, init_method=dist_init_method,
+            world_size=dist_world_size, rank=opt.gpu_rank)
     opt.gpu_rank = torch.distributed.get_rank()
     if not is_master(opt):
         suppress_output()

@@ -34,7 +34,7 @@ def check_sru_requirement(abort=False):
     Return True if check pass; if check fails and abort is True,
     raise an Exception, othereise return False.
     """
-    return True
+
     # Check 1.
     try:
         if platform.system() == 'Windows':

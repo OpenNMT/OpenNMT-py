@@ -3,9 +3,9 @@
 from __future__ import print_function
 from __future__ import division
 
-import argparse
 import os
-
+import random
+import signal
 import torch
 
 import onmt.opts as opts
@@ -15,7 +15,6 @@ from train_single import main as single_main
 def main(opt):
     """ Spawns 1 process per GPU """
     nb_gpu = len(opt.gpuid)
-
     mp = torch.multiprocessing.get_context('spawn')
 
     # Create a thread to listen for errors in the child processes.
@@ -27,8 +26,10 @@ def main(opt):
     for i in range(nb_gpu):
         opt.gpu_rank = i
         opt.device_id = i
-        procs.append(mp.Process(target=run, opt=(opt, error_queue, ), daemon=True))
+        
+        procs.append(mp.Process(target=run, args=(opt, error_queue, ), daemon=True))
         procs[i].start()
+        print(" Starting process pid: %d  " % procs[i].pid)
         error_handler.add_child(procs[i].pid)
     for p in procs:
         p.join()
@@ -44,7 +45,7 @@ def run(opt, error_queue):
     except Exception:
         # propagate exception to parent process, keeping original traceback
         import traceback
-        error_queue.put((opt.gpu, traceback.format_exc()))
+        error_queue.put((opt.gpu_rank, traceback.format_exc()))
 
 
 class ErrorHandler(object):

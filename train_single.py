@@ -56,9 +56,6 @@ def training_opt_postprocessing(opt):
         opt.dec_layers = opt.layers
 
     opt.brnn = (opt.encoder_type == "brnn")
-    if opt.seed > 0:
-        random.seed(opt.seed)
-        torch.manual_seed(opt.seed)
 
     if opt.rnn_type == "SRU" and not opt.gpuid:
         raise AssertionError("Using SRU requires -gpuid set.")
@@ -67,17 +64,15 @@ def training_opt_postprocessing(opt):
         print("WARNING: You have a CUDA device, should run with -gpuid 0")
 
     if opt.gpuid:
-        cuda.set_device(opt.gpuid[0])
+        torch.cuda.set_device(opt.device_id)
         if opt.seed > 0:
             torch.cuda.manual_seed(opt.seed)
 
-    if len(opt.gpuid) > 1:
-        sys.stderr.write("Sorry, multigpu isn't supported yet, coming soon!\n")
-        sys.exit(1)
     return opt
 
 
 def main(opt):
+    print(" main de train_single ")
     opt = training_opt_postprocessing(opt)
 
     # Load checkpoint if we resume from a previous training.

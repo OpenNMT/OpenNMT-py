@@ -11,6 +11,8 @@ users of this library) for the strategy things we do.
 from __future__ import division
 from __future__ import print_function
 
+import math
+
 import torch
 import torch.nn as nn
 
@@ -40,11 +42,13 @@ def build_trainer(opt, model, fields, optim, data_type, model_saver=None):
     shard_size = opt.max_generator_batches
     norm_method = opt.normalization
     grad_accum_count = opt.accum_count
+    nb_gpu = len(opt.gpuid)
+    gpu_rank = opt.gpu_rank
 
     report_manager = onmt.utils.build_report_manager(opt)
     trainer = onmt.Trainer(model, train_loss, valid_loss, optim,
                            trunc_size, shard_size, data_type,
-                           norm_method, grad_accum_count, report_manager,
+                           norm_method, grad_accum_count, nb_gpu, gpu_rank, report_manager,
                            model_saver=model_saver)
     return trainer
 
@@ -76,7 +80,7 @@ class Trainer(object):
 
     def __init__(self, model, train_loss, valid_loss, optim,
                  trunc_size=0, shard_size=32, data_type='text',
-                 norm_method="sents", grad_accum_count=1, report_manager=None,
+                 norm_method="sents", grad_accum_count=1, nb_gpu=1, gpu_rank=1, report_manager=None,
                  model_saver=None):
         # Basic attributes.
         self.model = model
@@ -88,6 +92,8 @@ class Trainer(object):
         self.data_type = data_type
         self.norm_method = norm_method
         self.grad_accum_count = grad_accum_count
+        self.nb_gpu = nb_gpu
+        self.gpu_rank = gpu_rank
         self.report_manager = report_manager
         self.model_saver = model_saver
 
@@ -99,6 +105,7 @@ class Trainer(object):
 
         # Set model in training mode.
         self.model.train()
+
 
     def train(self, train_iter_fct, valid_iter_fct, start_epoch, end_epoch):
         """
@@ -143,7 +150,9 @@ class Trainer(object):
             self.epoch_step(valid_stats.ppl(), epoch)
 
             # 4. Drop a checkpoint if needed.
-            self.maybe_drop_checkpoint(epoch, valid_stats)
+            if self.gpu_rank == 0:
+                self.maybe_drop_checkpoint(epoch, valid_stats)
+
 
     def train_epoch(self, train_iter, epoch):
         """ Train next epoch.
@@ -171,39 +180,43 @@ class Trainer(object):
             # Dynamic batching
             num_batches = -1
 
-        for _, batch in enumerate(train_iter):
-            cur_dataset = train_iter.get_cur_dataset()
-            self.train_loss.cur_dataset = cur_dataset
+        for i, batch in enumerate(train_iter):
+            if ( i % self.nb_gpu == self.gpu_rank ) and \
+                (i < (len(train_iter) - len(train_iter) % self.nb_gpu)):
+                    cur_dataset = train_iter.get_cur_dataset()
+                    self.train_loss.cur_dataset = cur_dataset
 
-            true_batchs.append(batch)
-            accum += 1
-            if self.norm_method == "tokens":
-                num_tokens = batch.tgt[1:].data.view(-1) \
-                    .ne(self.train_loss.padding_idx).sum()
-                normalization += num_tokens
-            else:
-                normalization += batch.batch_size
+                    true_batchs.append(batch)
+                    accum += 1
+                    if self.norm_method == "tokens":
+                        num_tokens = batch.tgt[1:].data.view(-1) \
+                            .ne(self.train_loss.padding_idx).sum()
+                        normalization += num_tokens
+                    else:
+                        normalization += batch.batch_size
 
-            if accum == self.grad_accum_count:
-                self._gradient_accumulation(
-                    true_batchs, total_stats,
-                    report_stats, normalization)
+                    if accum == self.grad_accum_count:
+                        self._gradient_accumulation(
+                            true_batchs, total_stats,
+                            report_stats, normalization)
+    
+                        report_stats = self.report_training(
+                            epoch, idx, num_batches,
+                            self.optim.learning_rate,
+                            report_stats)
 
-                report_stats = self.report_training(
-                    epoch, idx, num_batches,
-                    self.optim.learning_rate,
-                    report_stats)
-
-                true_batchs = []
-                accum = 0
-                normalization = 0
-                idx += 1
+                        true_batchs = []
+                        accum = 0
+                        normalization = 0
+                        idx += 1
 
         if true_batchs:
             self._gradient_accumulation(
                 true_batchs, total_stats,
                 report_stats, normalization)
             true_batchs = []
+
+        print("there was %d batches" % i)
 
         return total_stats
 
@@ -319,6 +332,16 @@ class Trainer(object):
                 batch_stats = self.train_loss.sharded_compute_loss(
                     batch, outputs, attns, j,
                     trunc_size, self.shard_size, normalization)
+
+                # 3.bis Multi GPU gradient gather
+                if self.nb_gpu > 1:
+                    grads = [p.grad.data for p in self.model.parameters() if p.requires_grad]
+                    onmt.utils.multi_utils.all_reduce_and_rescale_tensors(grads, float(self.nb_gpu))
+                else:
+                    for p in self.model.parameters():
+                        if p.requires_grad:
+                            p.grad.data.div_(float(1))
+
 
                 # 4. Update the parameters and statistics.
                 if self.grad_accum_count == 1:

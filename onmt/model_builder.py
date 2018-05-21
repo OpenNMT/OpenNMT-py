@@ -239,9 +239,6 @@ def build_model(model_opt, opt, fields, checkpoint):
     print('Building model...')
     model = build_base_model(model_opt, fields,
                              use_gpu(opt), checkpoint)
-    if len(opt.gpuid) > 1:
-        print('Multi gpu training: ', opt.gpuid)
-        model = nn.DataParallel(model, device_ids=opt.gpuid, dim=1)
     print(model)
 
     return model
