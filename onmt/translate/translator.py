@@ -92,6 +92,7 @@ class Translator(object):
                  report_rouge=False,
                  verbose=False,
                  out_file=None):
+
         self.gpu = gpu
         self.cuda = gpu > -1
 
@@ -139,9 +140,29 @@ class Translator(object):
                   batch_size=None,
                   attn_debug=False):
         """
+        Translate content of `src_data_iter` (if not None) or `src_path`
+        and get gold scores if one of `tgt_data_iter` or `tgt_path` is set.
+
         Note: batch_size must not be None
         Note: one of ('src_path', 'src_data_iter') must not be None
+        
+        Args:
+            src_path (str): filepath of source data
+            src_data_iter (iterator): an interator generating source data
+                e.g. it may be a list or an openned file
+            tgt_path (str): filepath of target data
+            tgt_data_iter (iterator): an interator generating target data
+            src_dir (str): source directory path
+                (used for Audio and Image datasets)
+            batch_size (int): size of examples per mini-batch
+            attn_debug (bool): enables the attention logging
+
+        Returns:
+            all_scores: list of `batch_size` lists of `n_best` scores
+            all_predictions: list of `batch_size` lists of `n_best` predictions
         """
+        assert src_data_iter is not None or src_path is not None
+
         if batch_size is None:
             raise ValueError("batch_size must be set")
         data = inputters.build_dataset(self.fields,
@@ -172,12 +193,13 @@ class Translator(object):
         gold_score_total, gold_words_total = 0, 0
 
         all_scores = []
+        all_predictions = []
         for batch in data_iter:
             batch_data = self.translate_batch(batch, data)
             translations = builder.from_batch(batch_data)
 
             for trans in translations:
-                all_scores += [trans.pred_scores[0]]
+                all_scores += [trans.pred_scores[:self.n_best]]
                 pred_score_total += trans.pred_scores[0]
                 pred_words_total += len(trans.pred_sents[0])
                 if tgt_path is not None:
@@ -186,6 +208,7 @@ class Translator(object):
 
                 n_best_preds = [" ".join(pred)
                                 for pred in trans.pred_sents[:self.n_best]]
+                all_predictions += [n_best_preds]
                 self.out_file.write('\n'.join(n_best_preds) + '\n')
                 self.out_file.flush()
 
@@ -226,7 +249,7 @@ class Translator(object):
             import json
             json.dump(self.translator.beam_accum,
                       codecs.open(self.dump_beam, 'w', 'utf-8'))
-        return all_scores
+        return all_scores, all_predictions
 
     def translate_batch(self, batch, data):
         """

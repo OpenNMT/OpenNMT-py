@@ -345,38 +345,52 @@ extern "C" {
     }
 }
 """
+SRU_FWD_FUNC, SRU_BWD_FUNC = None, None
+SRU_BiFWD_FUNC, SRU_BiBWD_FUNC = None, None
+SRU_STREAM = None
 
 
-if check_sru_requirement():
-    from cupy.cuda import function
-    from pynvrtc.compiler import Program
+def load_sru_mod():
+    global SRU_FWD_FUNC, SRU_BWD_FUNC, SRU_BiFWD_FUNC, SRU_BiBWD_FUNC
+    global SRU_STREAM
+    if check_sru_requirement():
+        from cupy.cuda import function
+        from pynvrtc.compiler import Program
 
-    # This sets up device to use.
-    device = torch.device("cuda")
-    tmp_ = torch.rand(1, 1).to(device)
+        # This sets up device to use.
+        device = torch.device("cuda")
+        tmp_ = torch.rand(1, 1).to(device)
 
-    sru_prog = Program(SRU_CODE.encode('utf-8'),
-                       'sru_prog.cu'.encode('utf-8'))
-    sru_ptx = sru_prog.compile()
-    sru_mod = function.Module()
-    sru_mod.load(bytes(sru_ptx.encode()))
+        sru_prog = Program(SRU_CODE.encode('utf-8'),
+                           'sru_prog.cu'.encode('utf-8'))
+        sru_ptx = sru_prog.compile()
+        sru_mod = function.Module()
+        sru_mod.load(bytes(sru_ptx.encode()))
 
-    SRU_FWD_FUNC = sru_mod.get_function('sru_fwd')
-    SRU_BWD_FUNC = sru_mod.get_function('sru_bwd')
-    SRU_BiFWD_FUNC = sru_mod.get_function('sru_bi_fwd')
-    SRU_BiBWD_FUNC = sru_mod.get_function('sru_bi_bwd')
+        SRU_FWD_FUNC = sru_mod.get_function('sru_fwd')
+        SRU_BWD_FUNC = sru_mod.get_function('sru_bwd')
+        SRU_BiFWD_FUNC = sru_mod.get_function('sru_bi_fwd')
+        SRU_BiBWD_FUNC = sru_mod.get_function('sru_bi_bwd')
 
-    stream = namedtuple('Stream', ['ptr'])
-    SRU_STREAM = stream(ptr=torch.cuda.current_stream().cuda_stream)
+        stream = namedtuple('Stream', ['ptr'])
+        SRU_STREAM = stream(ptr=torch.cuda.current_stream().cuda_stream)
 
 
 class SRU_Compute(Function):
 
     def __init__(self, activation_type, d_out, bidirectional=False):
+        SRU_Compute.maybe_load_sru_mod()
         super(SRU_Compute, self).__init__()
         self.activation_type = activation_type
         self.d_out = d_out
         self.bidirectional = bidirectional
+
+    @staticmethod
+    def maybe_load_sru_mod():
+        global SRU_FWD_FUNC
+
+        if SRU_FWD_FUNC is None:
+            load_sru_mod()
 
     def forward(self, u, x, bias, init=None, mask_h=None):
         bidir = 2 if self.bidirectional else 1

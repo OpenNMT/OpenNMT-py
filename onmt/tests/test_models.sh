@@ -32,7 +32,7 @@
 ###             ./test_models set_debug all 
 ###  
 
-PYTHON_BIN=python3.6
+PYTHON_BIN=python
 
 
 MODEL_DIR="/tmp"
@@ -125,9 +125,7 @@ sru(){
                          -valid_tgt "$DATA_DIR"/tgt-val.txt \
                          -save_data "$DATA_PATH" \
                          -src_vocab_size 1000 \
-                         -tgt_vocab_size 1000 \
-                         -rnn_type "SRU" \
-                         -input_feed 0
+                         -tgt_vocab_size 1000
 
     $PYTHON_BIN train.py -data "$DATA_PATH" \
                     -save_model "$MODEL_PATH" \
@@ -138,7 +136,8 @@ sru(){
                     -epochs 10 \
                     -optim adam  \
                     -learning_rate 0.001 \
-                    -rnn_type LSTM
+                    -rnn_type SRU \
+                    -input_feed 0
     mv_best_checkpoint
     maybe_translate
     rm_tmp_checkpoints
