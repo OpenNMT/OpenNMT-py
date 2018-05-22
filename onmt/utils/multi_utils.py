@@ -1,3 +1,10 @@
+""" Pytorch Distributed utils """
+#!/usr/bin/env python
+
+# This piece of code was heavily inspired by the equivalent of Fairseq-py
+
+from __future__ import print_function
+
 import math
 import pickle
 import random
