@@ -313,14 +313,6 @@ class Trainer(object):
                 if self.nb_gpu > 1:
                     grads = [p.grad.data for p in self.model.parameters() if p.requires_grad]
                     onmt.utils.multi_utils.all_reduce_and_rescale_tensors(grads, float(self.nb_gpu))
-
-                    # gather all stats
-                    all_batch_stats = onmt.utils.multi_utils.all_gather_list((batch_stats))
-
-                    # merge all stats into a single object
-                    batch_stats = all_batch_stats[0]
-                    for other_batch_stats in all_batch_stats[1:]:
-                        batch_stats.update(other_batch_stats)
                 else:
                     for p in self.model.parameters():
                         if p.requires_grad:
@@ -336,6 +328,16 @@ class Trainer(object):
                 # If truncated, don't backprop fully.
                 if dec_state is not None:
                     dec_state.detach()
+
+        if self.nb_gpu > 1:
+            # Gather all stats
+            # it returns a list of world_size tuple (total_stats, report_stats)
+            all_stats = onmt.utils.multi_utils.all_gather_list(
+                (total_stats, report_stats))
+
+            for (ts, rs) in all_stats[1:]:
+                total_stats.update(ts)
+                report_stats.update(rs, update_n_src_words=True)
 
         if self.grad_accum_count > 1:
             self.optim.step()

@@ -22,11 +22,22 @@ class Statistics(object):
         self.n_src_words = 0
         self.start_time = time.time()
 
-    def update(self, stat):
-        """ update statistics """
+    def update(self, stat, update_n_src_words=False):
+        """
+        Update statistics by suming values with another `Statistics` object
+
+        Args:
+            stat: another statistic object
+            update_n_src_words(bool): whether to update (sum) `n_src_words`
+                or not
+
+        """
         self.loss += stat.loss
         self.n_words += stat.n_words
         self.n_correct += stat.n_correct
+
+        if update_n_src_words:
+            self.n_src_words += stat.n_src_words
 
     def accuracy(self):
         """ compute accuracy """
