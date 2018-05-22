@@ -60,7 +60,7 @@ set_gpu(){
 
 
 set_all_gpu(){
-    GPUID="$(echo $CUDA_VISIBLE_DEVICES)"
+    GPUID="$(echo "$CUDA_VISIBLE_DEVICES" | tr "," " ")"
 }
 print_gpuid(){
     echo "$GPUID"
@@ -100,7 +100,7 @@ lstm(){
     # Expected: 2.28M Param - Epoch10: PPL 15.37 ACC 45.87
     $PYTHON_BIN train.py -data "$DATA_PATH" \
                     -save_model "$MODEL_PATH" \
-                    -gpuid "$GPUID" \
+                    -gpuid $GPUID \
                     -rnn_size 512 \
                     -word_vec_size 512 \
                     -layers 1 \
@@ -129,7 +129,7 @@ sru(){
 
     $PYTHON_BIN train.py -data "$DATA_PATH" \
                     -save_model "$MODEL_PATH" \
-                    -gpuid "$GPUID" \
+                    -gpuid $GPUID \
                     -rnn_size 512 \
                     -word_vec_size 512 \
                     -layers 1 \
@@ -158,7 +158,7 @@ cnn(){
     # 2x256 - 2.61M Param   - Epoch10: PPL 22.91 ACC 39.14
     $PYTHON_BIN train.py -data "$DATA_PATH" \
                     -save_model "$MODEL_PATH" \
-                    -gpuid "$GPUID" \
+                    -gpuid $GPUID \
                     -rnn_size 256 \
                     -word_vec_size 256 \
                     -layers 2 \
@@ -186,7 +186,7 @@ morph(){
 
     $PYTHON_BIN train.py -data "$DATA_DIR"/morph/data \
                     -save_model "$MODEL_PATH" \
-                    -gpuid "$GPUID" \
+                    -gpuid $GPUID \
                     -rnn_size 400 \
                     -word_vec_size 100 \
                     -layers 1 \
@@ -227,7 +227,7 @@ transformer(){
                     -encoder_type transformer \
                     -decoder_type transformer \
                     -epochs 10 \
-                    -gpuid "$GPUID" \
+                    -gpuid $GPUID \
                     -max_generator_batches 4 \
                     -dropout 0.1 \
                     -normalization tokens \
@@ -247,7 +247,7 @@ transformer(){
 
     #$PYTHON_BIN train.py -data "$DATA_PATH" -save_model "$MODEL_PATH" -batch_type tokens -batch_size 128 -accum_count 4 \
     # -layers 4 -rnn_size 128 -word_vec_size 128  -encoder_type transformer -decoder_type transformer \
-    # -epochs 10 -gpuid "$GPUID" -max_generator_batches 4 -dropout 0.1 -normalization tokens \
+    # -epochs 10 -gpuid $GPUID -max_generator_batches 4 -dropout 0.1 -normalization tokens \
     # -max_grad_norm 0 -optim sparseadam -decay_method noam -learning_rate 2 \
     # -position_encoding -param_init 0 -warmup_steps 8000 -param_init_glorot -adam_beta2 0.998
 }
@@ -256,7 +256,7 @@ transformer(){
 ### TRANSLATION
 ###############################################
 translate(){
-    $PYTHON_BIN translate.py -gpu "$GPUID" \
+    $PYTHON_BIN translate.py -gpu $GPUID \
                         -model "$TEST_MODEL_PATH" \
                         -output "$TEST_DIR"/output_hyp.txt \
                         -beam 5 \
