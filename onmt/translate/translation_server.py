@@ -301,9 +301,10 @@ class ServerModel:
         # NOTE: translator returns lists of `n_best` list
         #       we can ignore that (i.e. flatten lists) only because
         #       we restrict `n_best=1`
-        flatten_list = lambda _list: sum([], _list)
+        flatten_list = lambda _list: sum(_list, [])
         results = flatten_list(predictions)
-        scores = flatten_list(scores)
+        scores = [score_tensor.item()
+                  for score_tensor in flatten_list(scores)]
 
         print("Translation Results: ", len(results))
         if len(whitespace_segments) > 0:
