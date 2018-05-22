@@ -172,6 +172,9 @@ class Trainer(object):
         accum = 0
         normalization = 0
         try:
+            # this is to add extra batches to get a multiple of grad_accum_count BUT
+            # this does not work in tokens mode since the function len(train_iter)
+            # is only valid in sents mode
             add_on = 0
             if len(train_iter) % self.grad_accum_count > 0:
                 add_on += 1
@@ -181,40 +184,46 @@ class Trainer(object):
             num_batches = -1
 
         for i, batch in enumerate(train_iter):
-            if ( i % self.nb_gpu == self.gpu_rank ) and \
-                (i < (len(train_iter) - len(train_iter) % self.nb_gpu)):
-                    cur_dataset = train_iter.get_cur_dataset()
-                    self.train_loss.cur_dataset = cur_dataset
+            if ( i % self.nb_gpu == self.gpu_rank ):
+                cur_dataset = train_iter.get_cur_dataset()
+                self.train_loss.cur_dataset = cur_dataset
 
-                    true_batchs.append(batch)
-                    accum += 1
-                    if self.norm_method == "tokens":
-                        num_tokens = batch.tgt[1:].data.view(-1) \
-                            .ne(self.train_loss.padding_idx).sum()
-                        normalization += num_tokens
-                    else:
-                        normalization += batch.batch_size
+                true_batchs.append(batch)
+                accum += 1
+                if self.norm_method == "tokens":
+                    num_tokens = batch.tgt[1:].data.view(-1) \
+                        .ne(self.train_loss.padding_idx).sum()
+                    normalization += num_tokens
+                else:
+                    normalization += batch.batch_size
+                if accum == self.grad_accum_count:
+                    self._gradient_accumulation(
+                        true_batchs, total_stats,
+                        report_stats, normalization)
 
-                    if accum == self.grad_accum_count:
-                        self._gradient_accumulation(
-                            true_batchs, total_stats,
-                            report_stats, normalization)
-    
-                        report_stats = self.report_training(
-                            epoch, idx, num_batches,
-                            self.optim.learning_rate,
-                            report_stats)
+                    report_stats = self.report_training(
+                        epoch, idx, num_batches,
+                        self.optim.learning_rate,
+                        report_stats)
 
-                        true_batchs = []
-                        accum = 0
-                        normalization = 0
-                        idx += 1
+                    true_batchs = []
+                    accum = 0
+                    normalization = 0
+                    idx += 1
 
         if true_batchs:
             self._gradient_accumulation(
                 true_batchs, total_stats,
                 report_stats, normalization)
             true_batchs = []
+
+        # this hack enables to run an empty batch so that the number of processes
+        # is a multiple of self.nb_gpu
+        if not batch and self.gpu_rank > 0:
+            self._gradient_accumulation(
+                true_batchs, total_stats,
+                report_stats, normalization)
+           
 
         print("there was %d batches" % i)
 
