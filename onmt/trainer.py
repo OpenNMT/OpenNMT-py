@@ -271,39 +271,6 @@ class Trainer(object):
         """ Epoch step."""
         return self.optim.update_learning_rate(ppl, epoch)
 
-    def drop_checkpoint(self, opt, epoch, fields, valid_stats):
-        """ Save a resumable checkpoint.
-
-        Args:
-            opt (dict): option object
-            epoch (int): epoch number
-            fields (dict): fields and vocabulary
-            valid_stats : statistics of last validation run
-        """
-        real_model = (self.model.module
-                      if isinstance(self.model, nn.DataParallel)
-                      else self.model)
-        real_generator = (real_model.generator.module
-                          if isinstance(real_model.generator, nn.DataParallel)
-                          else real_model.generator)
-
-        model_state_dict = real_model.state_dict()
-        model_state_dict = {k: v for k, v in model_state_dict.items()
-                            if 'generator' not in k}
-        generator_state_dict = real_generator.state_dict()
-        checkpoint = {
-            'model': model_state_dict,
-            'generator': generator_state_dict,
-            'vocab': inputters.save_fields_to_vocab(fields),
-            'opt': opt,
-            'epoch': epoch,
-            'optim': self.optim,
-        }
-        torch.save(checkpoint,
-                   '%s_acc_%.2f_ppl_%.2f_e%d.pt'
-                   % (opt.save_model, valid_stats.accuracy(),
-                      valid_stats.ppl(), epoch))
-
     def _gradient_accumulation(self, true_batchs, total_stats,
                                report_stats, normalization):
         if self.grad_accum_count > 1:
