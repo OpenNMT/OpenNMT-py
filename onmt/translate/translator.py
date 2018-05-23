@@ -265,7 +265,10 @@ class Translator(object):
         Todo:
            Shouldn't need the original dataset.
         """
+        with torch.no_grad():
+            return self._translate_batch(batch, data)
 
+    def _translate_batch(self, batch, data):
         # (0) Prep each of the components of the search.
         # And helper method for reducing verbosity.
         beam_size = self.beam_size
