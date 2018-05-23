@@ -335,7 +335,9 @@ class Trainer(object):
             all_stats = onmt.utils.multi_utils.all_gather_list(
                 (total_stats, report_stats))
 
-            for (ts, rs) in all_stats[1:]:
+            for rank, (ts, rs) in enumerate(all_stats):
+                if rank == torch.distributed.get_rank():
+                    continue
                 total_stats.update(ts)
                 report_stats.update(rs, update_n_src_words=True)
 
