@@ -42,13 +42,13 @@ def build_trainer(opt, model, fields, optim, data_type, model_saver=None):
     shard_size = opt.max_generator_batches
     norm_method = opt.normalization
     grad_accum_count = opt.accum_count
-    nb_gpu = len(opt.gpuid)
+    n_gpu = len(opt.gpuid)
     gpu_rank = opt.gpu_rank
 
     report_manager = onmt.utils.build_report_manager(opt)
     trainer = onmt.Trainer(model, train_loss, valid_loss, optim,
                            trunc_size, shard_size, data_type,
-                           norm_method, grad_accum_count, nb_gpu, gpu_rank, report_manager,
+                           norm_method, grad_accum_count, n_gpu, gpu_rank, report_manager,
                            model_saver=model_saver)
     return trainer
 
@@ -80,7 +80,7 @@ class Trainer(object):
 
     def __init__(self, model, train_loss, valid_loss, optim,
                  trunc_size=0, shard_size=32, data_type='text',
-                 norm_method="sents", grad_accum_count=1, nb_gpu=1, gpu_rank=1, report_manager=None,
+                 norm_method="sents", grad_accum_count=1, n_gpu=1, gpu_rank=1, report_manager=None,
                  model_saver=None):
         # Basic attributes.
         self.model = model
@@ -92,7 +92,7 @@ class Trainer(object):
         self.data_type = data_type
         self.norm_method = norm_method
         self.grad_accum_count = grad_accum_count
-        self.nb_gpu = nb_gpu
+        self.n_gpu = n_gpu
         self.gpu_rank = gpu_rank
         self.report_manager = report_manager
         self.model_saver = model_saver
@@ -184,7 +184,7 @@ class Trainer(object):
             num_batches = -1
 
         for i, batch in enumerate(train_iter):
-            if ( i % self.nb_gpu == self.gpu_rank ):
+            if (i % self.n_gpu == self.gpu_rank)
                 cur_dataset = train_iter.get_cur_dataset()
                 self.train_loss.cur_dataset = cur_dataset
 
@@ -218,7 +218,7 @@ class Trainer(object):
             true_batchs = []
 
         # this hack enables to run an empty batch so that the number of processes
-        # is a multiple of self.nb_gpu
+        # is a multiple of self.n_gpu
         if not batch and self.gpu_rank > 0:
             self._gradient_accumulation(
                 true_batchs, total_stats,
@@ -310,7 +310,7 @@ class Trainer(object):
                     trunc_size, self.shard_size, normalization)
 
                 # 3.bis Multi GPU gradient gather
-                if self.nb_gpu > 1:
+                if self.n_gpu > 1:
                     grads = [p.grad.data for p in self.model.parameters() if p.requires_grad]
                     onmt.utils.multi_utils.all_reduce_and_rescale_tensors(grads, float(1))
                 else:
