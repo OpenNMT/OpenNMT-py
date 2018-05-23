@@ -109,7 +109,7 @@ class ReportMgr(ReportMgrBase):
         """
         See base class method `ReportMgrBase.report_training`.
         """
-        report_stats.output(epoch, batch + 1, num_batches, self.start_time)
+        report_stats.output(epoch, batch + 1, num_batches, learning_rate, self.start_time)
 
         # Log the progress using the number of batches on the x-axis.
         self.maybe_log_tensorboard(report_stats,
