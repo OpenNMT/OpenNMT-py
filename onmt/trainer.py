@@ -137,12 +137,16 @@ class Trainer(object):
             # 1. Train for one epoch on the training set.
             train_iter = train_iter_fct()
             train_stats = self.train_epoch(train_iter, epoch)
+
+            train_stats = self.maybe_gather_stats(train_stats)
             self.report_epoch(
                 self.optim.learning_rate, epoch, train_stats=train_stats)
 
             # 2. Validate on the validation set.
             valid_iter = valid_iter_fct()
             valid_stats = self.validate(valid_iter)
+
+            valid_stats = self.maybe_gather_stats(valid_stats)
             self.report_epoch(
                 self.optim.learning_rate, epoch, valid_stats=valid_stats)
 
@@ -184,7 +188,7 @@ class Trainer(object):
             num_batches = -1
 
         for i, batch in enumerate(train_iter):
-            if (i % self.n_gpu == self.gpu_rank)
+            if (i % self.n_gpu == self.gpu_rank):
                 cur_dataset = train_iter.get_cur_dataset()
                 self.train_loss.cur_dataset = cur_dataset
 
@@ -201,6 +205,7 @@ class Trainer(object):
                         true_batchs, total_stats,
                         report_stats, normalization)
 
+                    report_stats = self.maybe_gather_stats(report_stats)
                     report_stats = self.report_training(
                         epoch, idx, num_batches,
                         self.optim.learning_rate,
@@ -329,18 +334,6 @@ class Trainer(object):
                 if dec_state is not None:
                     dec_state.detach()
 
-        if self.nb_gpu > 1:
-            # Gather all stats
-            # it returns a list of world_size tuple (total_stats, report_stats)
-            all_stats = onmt.utils.multi_utils.all_gather_list(
-                (total_stats, report_stats))
-
-            for rank, (ts, rs) in enumerate(all_stats):
-                if rank == torch.distributed.get_rank():
-                    continue
-                total_stats.update(ts)
-                report_stats.update(rs, update_n_src_words=True)
-
         if self.grad_accum_count > 1:
             self.optim.step()
 
@@ -354,21 +347,41 @@ class Trainer(object):
             else:
                 self.report_manager.start_time = start_time
 
-    def report_training(self, *args, **kwargs):
+    def maybe_gather_stats(self, stat):
+        """
+        Gather statistics in multi-processes cases
+
+        Args:
+            stat(:obj:onmt.utils.Statistics): a Statistics object to gather
+                or None (it returns None in this case)
+
+        Returns:
+            stat: the updated (or unchanged) stat object
+        """
+        if stat is not None and self.n_gpu > 1:
+            return onmt.utils.Statistics.all_gather_stats(stat)
+        return stat
+
+    def report_training(self, epoch, batch, num_batches, learning_rate,
+                        report_stats):
         """
         Simple function to report training stats (if report_manager is set)
         see `onmt.utils.ReportManagerBase.report_training` for doc
         """
         if self.report_manager is not None:
-            return self.report_manager.report_training(*args, **kwargs)
+            return self.report_manager.report_training(
+                epoch, batch, num_batches, learning_rate, report_stats)
 
-    def report_epoch(self, *args, **kwargs):
+    def report_epoch(self, learning_rate, epoch, train_stats=None,
+                     valid_stats=None):
         """
         Simple function to report epoch stats (if report_manager is set)
         see `onmt.utils.ReportManagerBase.report_epoch` for doc
         """
         if self.report_manager is not None:
-            return self.report_manager.report_epoch(*args, **kwargs)
+            return self.report_manager.report_epoch(
+                learning_rate, epoch, train_stats=train_stats,
+                valid_stats=valid_stats)
 
     def maybe_drop_checkpoint(self, *args, **kwargs):
         """

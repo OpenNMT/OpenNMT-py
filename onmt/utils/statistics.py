@@ -3,6 +3,9 @@ from __future__ import division
 import time
 import math
 import sys
+import torch
+
+import onmt
 
 
 class Statistics(object):
@@ -21,6 +24,46 @@ class Statistics(object):
         self.n_correct = n_correct
         self.n_src_words = 0
         self.start_time = time.time()
+
+    @staticmethod
+    def all_gather_stats(stat, max_size=4096):
+        """
+        Gather a `Statistics` object accross multiple process/nodes
+
+        Args:
+            stat(:obj:Statistics): the statistics object to gather
+                accross all processes/nodes
+            max_size(int): max buffer size to use
+
+        Returns:
+            `Statistics`, the update stats object
+        """
+        stats = Statistics.all_gather_stats_list([stat], max_size=max_size)
+        return stats[0]
+
+    @staticmethod
+    def all_gather_stats_list(stat_list, max_size=4096):
+        """
+        Gather a `Statistics` list accross all processes/nodes
+
+        Args:
+            stat_list(list([`Statistics`])): list of statistics objects to
+                gather accross all processes/nodes
+            max_size(int): max buffer size to use
+
+        Returns:
+            our_stats(list([`Statistics`])): list of updated stats
+        """
+        all_stats = onmt.utils.multi_utils.all_gather_list(stat_list,
+                                                           max_size=max_size)
+        our_rank = torch.distributed.get_rank()
+        our_stats = all_stats[our_rank]
+        for other_rank, stats in enumerate(all_stats):
+            if other_rank == our_rank:
+                continue
+            for i, stat in enumerate(stats):
+                our_stats[i].update(stat, update_n_src_words=True)
+        return our_stats
 
     def update(self, stat, update_n_src_words=False):
         """
