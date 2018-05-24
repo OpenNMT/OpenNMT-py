@@ -54,8 +54,10 @@ class Statistics(object):
         Returns:
             our_stats(list([`Statistics`])): list of updated stats
         """
+        # Get a list of world_size lists with len(stat_list) Statistics objects
         all_stats = onmt.utils.multi_utils.all_gather_list(stat_list,
                                                            max_size=max_size)
+
         our_rank = torch.distributed.get_rank()
         our_stats = all_stats[our_rank]
         for other_rank, stats in enumerate(all_stats):

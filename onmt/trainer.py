@@ -19,6 +19,7 @@ import torch.nn as nn
 import onmt.inputters as inputters
 import onmt.utils
 
+
 def build_trainer(opt, model, fields, optim, data_type, model_saver=None):
     """
     Simplify `Trainer` creation based on user `opt`s*
@@ -106,7 +107,6 @@ class Trainer(object):
         # Set model in training mode.
         self.model.train()
 
-
     def train(self, train_iter_fct, valid_iter_fct, start_epoch, end_epoch):
         """
         The main training loops.
@@ -157,7 +157,6 @@ class Trainer(object):
             if self.gpu_rank == 0:
                 self.maybe_drop_checkpoint(epoch, valid_stats)
 
-
     def train_epoch(self, train_iter, epoch):
         """ Train next epoch.
         Args:
@@ -175,6 +174,7 @@ class Trainer(object):
         true_batchs = []
         accum = 0
         normalization = 0
+
         try:
             # this is to add extra batches to get a multiple of grad_accum_count BUT
             # this does not work in tokens mode since the function len(train_iter)
@@ -205,8 +205,7 @@ class Trainer(object):
                         true_batchs, total_stats,
                         report_stats, normalization)
 
-                    report_stats = self.maybe_gather_stats(report_stats)
-                    report_stats = self.report_training(
+                    report_stats = self.maybe_report_training(
                         epoch, idx, num_batches,
                         self.optim.learning_rate,
                         report_stats)
@@ -216,21 +215,32 @@ class Trainer(object):
                     normalization = 0
                     idx += 1
 
-        if true_batchs:
+        # Make sure to process remaining batches
+        if len(true_batchs) > 0:
             self._gradient_accumulation(
                 true_batchs, total_stats,
                 report_stats, normalization)
-            true_batchs = []
 
-        # this hack enables to run an empty batch so that the number of processes
-        # is a multiple of self.n_gpu
-        if not batch and self.gpu_rank > 0:
-            self._gradient_accumulation(
-                true_batchs, total_stats,
-                report_stats, normalization)
-           
+        # NOTE: In multi-gpu cases every processes needs to call reduce/gather
+        #       There is a total of (i+1) iterations.
+        #       If this number isn't divisible by `n_gpu`
+        #       then, there will be a point (last iterations) where only
+        #       `(i+1) % self.n_gpu` GPUs will effectively work
+        #       i.e. run _gradient_accumulation which will be blocking.
+        #       therefore, we run those operations that are awaited.
+        if self.gpu_rank >= self.n_gpu - ((i+1) % self.n_gpu):
+            if len(true_batchs) == 0:
+                # add dummy gradients, just to unlock
+                grads = [p.grad.data.mul(0)
+                         for p in self.model.parameters() if p.requires_grad]
+                onmt.utils.multi_utils.all_reduce_and_rescale_tensors(
+                    grads, float(1))
 
-        print("there was %d batches" % i)
+            # same idea, run the report that
+            # only useful if the last iteration is match `report_every`
+            report_stats = self.maybe_report_training(
+                epoch, idx, num_batches, self.optim.learning_rate,
+                report_stats)
 
         return total_stats
 
@@ -316,13 +326,14 @@ class Trainer(object):
 
                 # 3.bis Multi GPU gradient gather
                 if self.n_gpu > 1:
-                    grads = [p.grad.data for p in self.model.parameters() if p.requires_grad]
-                    onmt.utils.multi_utils.all_reduce_and_rescale_tensors(grads, float(1))
+                    grads = [p.grad.data for p in self.model.parameters()
+                             if p.requires_grad]
+                    onmt.utils.multi_utils.all_reduce_and_rescale_tensors(
+                        grads, float(1))
                 else:
                     for p in self.model.parameters():
                         if p.requires_grad:
                             p.grad.data.div_(float(1))
-
 
                 # 4. Update the parameters and statistics.
                 if self.grad_accum_count == 1:
@@ -362,15 +373,16 @@ class Trainer(object):
             return onmt.utils.Statistics.all_gather_stats(stat)
         return stat
 
-    def report_training(self, epoch, batch, num_batches, learning_rate,
-                        report_stats):
+    def maybe_report_training(self, epoch, batch, num_batches, learning_rate,
+                              report_stats):
         """
         Simple function to report training stats (if report_manager is set)
         see `onmt.utils.ReportManagerBase.report_training` for doc
         """
         if self.report_manager is not None:
             return self.report_manager.report_training(
-                epoch, batch, num_batches, learning_rate, report_stats)
+                epoch, batch, num_batches, learning_rate, report_stats,
+                multigpu=self.n_gpu > 1)
 
     def report_epoch(self, learning_rate, epoch, train_stats=None,
                      valid_stats=None):

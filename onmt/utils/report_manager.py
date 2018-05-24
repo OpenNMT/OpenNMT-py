@@ -42,7 +42,8 @@ class ReportMgrBase(object):
     def start(self):
         self.start_time = time.time()
 
-    def report_training(self, epoch, batch, num_batches, learning_rate, report_stats):
+    def report_training(self, epoch, batch, num_batches, learning_rate,
+                        report_stats, multigpu=False):
         """ 
         This is the user-defined batch-level traing progress
         report function.
@@ -59,6 +60,9 @@ class ReportMgrBase(object):
         if self.start_time < 0:
             raise ValueError("""ReportMgr needs to be started
                                 (set 'start_time' or use 'start()'""")
+
+        if multigpu:
+            report_stats = onmt.utils.Statistics.all_gather_stats(report_stats)
 
         if batch % self.report_every == -1 % self.report_every:
             self._report_training(
@@ -109,7 +113,8 @@ class ReportMgr(ReportMgrBase):
         """
         See base class method `ReportMgrBase.report_training`.
         """
-        report_stats.output(epoch, batch + 1, num_batches, learning_rate, self.start_time)
+        report_stats.output(epoch, batch + 1, num_batches,
+                            learning_rate, self.start_time)
 
         # Log the progress using the number of batches on the x-axis.
         self.maybe_log_tensorboard(report_stats,
