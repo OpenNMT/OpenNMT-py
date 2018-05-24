@@ -69,11 +69,13 @@ class EnsembleDecoder(nn.Module):
 
     def forward(self, tgt, memory_bank, state, memory_lengths=None):
         """ See :obj:`RNNDecoderBase.forward()` """
-        if memory_lengths is None:
-            memory_lengths = [None] * len(self.model_decoders)
+        # Memory_lengths is a single tensor shared between all models.
+        # This assumption will not hold if Translator is modified
+        # to calculate memory_lengths as something other than the length
+        # of the input.
         outputs, states, attns = zip(*[
             model_decoder.forward(
-                tgt, memory_bank[i], state[i], memory_lengths[i])
+                tgt, memory_bank[i], state[i], memory_lengths)
             for (i, model_decoder)
             in enumerate(self.model_decoders)])
         mean_attns = self.combine_attns(attns)
@@ -90,8 +92,10 @@ class EnsembleDecoder(nn.Module):
     def init_decoder_state(self, src, memory_bank, enc_hidden):
         """ See :obj:`RNNDecoderBase.init_decoder_state()` """
         return EnsembleDecoderState(
-            [model_decoder.init_decoder_state(src, memory_bank, enc_hidden)
-             for model_decoder in self.model_decoders])
+            [model_decoder.init_decoder_state(src,
+                                              memory_bank[i],
+                                              enc_hidden[i])
+             for (i, model_decoder) in enumerate(self.model_decoders)])
 
 
 class EnsembleGenerator(nn.Module):
