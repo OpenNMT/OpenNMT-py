@@ -225,6 +225,8 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
             model.decoder.embeddings.load_pretrained_vectors(
                     model_opt.pre_word_vecs_dec, model_opt.fix_word_vecs_dec)
 
+    if model_opt.share_embeddings:
+        assert model.encoder.embeddings.word_lut.weight is model.decoder.embeddings.word_lut.weight
     # Add generator to model (this registers it as parameter of model).
     model.generator = generator
 
