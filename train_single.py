@@ -8,7 +8,7 @@ import glob
 import os
 import sys
 from datetime import datetime
-
+import random
 import torch
 import torch.nn as nn
 from torch import cuda
@@ -65,6 +65,10 @@ def training_opt_postprocessing(opt):
     if opt.gpuid:
         torch.cuda.set_device(opt.device_id)
         if opt.seed > 0:
+            # this one is needed for torchtext random call (shuffled iterator)
+            # in multi gpu it ensures datasets are read in the same order
+            random.seed(opt.seed)
+            # These ensure same initialization in multi gpu mode
             torch.manual_seed(opt.seed)
             torch.cuda.manual_seed(opt.seed)
 

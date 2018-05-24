@@ -215,22 +215,25 @@ class Trainer(object):
                     normalization = 0
                     idx += 1
 
-        # Make sure to process remaining batches
+        # Make sure to process remaining batches in the case of 
+        # grad_accum_count > 1 but not enough batches to fill true_batchs
         if len(true_batchs) > 0:
             self._gradient_accumulation(
                 true_batchs, total_stats,
                 report_stats, normalization)
 
         # NOTE: In multi-gpu cases every processes needs to call reduce/gather
-        #       There is a total of (i+1) iterations.
+        #       There is a total of i+1 iterations.
         #       If this number isn't divisible by `n_gpu`
         #       then, there will be a point (last iterations) where only
         #       `(i+1) % self.n_gpu` GPUs will effectively work
         #       i.e. run _gradient_accumulation which will be blocking.
         #       therefore, we run those operations that are awaited.
-        if self.gpu_rank >= self.n_gpu - ((i+1) % self.n_gpu):
+        # print("GPU: %d there was %d batches last_batch: %d" % (self.gpu_rank, i, len(true_batchs)))
+        if self.gpu_rank >= ((i+1) % self.n_gpu):
             if len(true_batchs) == 0:
                 # add dummy gradients, just to unlock
+                # print("GPU: %d orphan empty batch padding i: %d" % (self.gpu_rank, i))
                 grads = [p.grad.data.mul(0)
                          for p in self.model.parameters() if p.requires_grad]
                 onmt.utils.multi_utils.all_reduce_and_rescale_tensors(
@@ -241,6 +244,8 @@ class Trainer(object):
             report_stats = self.maybe_report_training(
                 epoch, idx, num_batches, self.optim.learning_rate,
                 report_stats)
+        #else:
+        #    print("GPU: %d orphan non-empty batch i: %d" % (self.gpu_rank, i))
 
         return total_stats
 
