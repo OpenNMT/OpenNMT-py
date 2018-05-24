@@ -7,7 +7,6 @@ import argparse
 import glob
 import os
 import sys
-import random
 from datetime import datetime
 
 import torch
@@ -66,13 +65,13 @@ def training_opt_postprocessing(opt):
     if opt.gpuid:
         torch.cuda.set_device(opt.device_id)
         if opt.seed > 0:
+            torch.manual_seed(opt.seed)
             torch.cuda.manual_seed(opt.seed)
 
     return opt
 
 
 def main(opt):
-    print(" main de train_single ")
     opt = training_opt_postprocessing(opt)
 
     # Load checkpoint if we resume from a previous training.
