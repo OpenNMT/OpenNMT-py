@@ -8,6 +8,7 @@ mechanism things here(i.e. what to do), and leave the strategy
 things to users(i.e. how to do it). Also see train.py(one of the
 users of this library) for the strategy things we do.
 """
+#!/usr/bin/env python
 from __future__ import division
 from __future__ import print_function
 
@@ -215,7 +216,7 @@ class Trainer(object):
                     normalization = 0
                     idx += 1
 
-        # Make sure to process remaining batches in the case of 
+        # Make sure to process remaining batches in the case of
         # grad_accum_count > 1 but not enough batches to fill true_batchs
         if len(true_batchs) > 0:
             self._gradient_accumulation(
