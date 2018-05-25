@@ -2,13 +2,23 @@
 
 [![Build Status](https://travis-ci.org/OpenNMT/OpenNMT-py.svg?branch=master)](https://travis-ci.org/OpenNMT/OpenNMT-py)
 
-This is a [Pytorch](https://github.com/pytorch/pytorch)
-port of [OpenNMT](https://github.com/OpenNMT/OpenNMT),
-an open-source (MIT) neural machine translation system. It is designed to be research friendly to try out new ideas in translation, summary, image-to-text, morphology, and many other domains.
+
+[OpenNMT](https://opennmt.net) is an open-source (MIT) neural machine translation system which has 3 different implementations.
+
+The genuine one was a Lua version based on the Harvard Seq2Seq framework. [OpenNMT-Lua](https://github.com/OpenNMT/OpenNMT)
+
+The [Pytorch](https://github.com/pytorch/pytorch) version is this repo.
+
+The tensorflow version: [OpenNMT-tf](https://github.com/OpenNMT/OpenNMT-tf)
+
+
+OpenNMT-py is designed to be research friendly to try out new ideas in translation, summary, image-to-text, morphology, and many other domains but also ready for production with a full REST API.
 
 Codebase is relatively stable, but PyTorch is still evolving. We currently recommend forking if you need to have stable code.
 
-OpenNMT-py is run as a collaborative open-source project. It is maintained by [Sasha Rush](http://github.com/srush) (Cambridge, MA), [Ben Peters](http://github.com/bpopeters) (Saarbrücken), and [Jianyu Zhan](http://github.com/jianyuzhan) (Shenzhen). The original code was written by [Adam Lerer](http://github.com/adamlerer) (NYC). 
+OpenNMT-py is run as a collaborative open-source project. The original code was written by [Adam Lerer](http://github.com/adamlerer) (NYC) and [Bryan McCann](https://github.com/bmccann).
+Major contributions have come from [Sasha Rush](http://github.com/srush) and his group (Cambridge, MA), [Ben Peters](http://github.com/bpopeters) (Saarbrücken), [Jianyu Zhan](http://github.com/jianyuzhan) (Shenzhen), [Paul Tardy](https://github.com/pltrdy) , [Vincent Nguyen](https://github.com/vince62s) and many others.  
+
 We love contributions. Please consult the Issues page for any [Contributions Welcome](https://github.com/OpenNMT/OpenNMT-py/issues?q=is%3Aissue+is%3Aopen+label%3A%22contributions+welcome%22) tagged post. 
 
 <center style="padding: 40px"><img width="70%" src="http://opennmt.github.io/simple-attn.png" /></center>
@@ -23,6 +33,7 @@ Table of Contents
   * [Citation](#citation)
  
 ## Requirements
+  python 3, torch >=0.4.0, torchtext >=0.2.3, six, tqdm, future, cupy pynvrtc for SRU
 
 ```bash
 pip install -r requirements.txt
@@ -36,7 +47,7 @@ The following OpenNMT features are implemented:
 - [data preprocessing](http://opennmt.net/OpenNMT-py/options/preprocess.html)
 - [Inference (translation) with batching and beam search](http://opennmt.net/OpenNMT-py/options/translate.html)
 - [Multiple source and target RNN (lstm/gru) types and attention (dotprod/mlp) types](http://opennmt.net/OpenNMT-py/options/train.html#model-encoder-decoder)
-- [TensorBoard/Crayon logging](http://opennmt.net/OpenNMT-py/options/train.html#logging)
+- [TensorBoard logging](http://opennmt.net/OpenNMT-py/options/train.html#logging)
 - [Source word features](http://opennmt.net/OpenNMT-py/options/train.html#model-embeddings)
 - [Pretrained Embeddings](http://opennmt.net/OpenNMT-py/FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove)
 - [Copy and Coverage Attention](http://opennmt.net/OpenNMT-py/options/train.html#model-attention)
@@ -46,7 +57,7 @@ The following OpenNMT features are implemented:
 - Inference time loss functions.
 
 Beta Features (committed):
-- multi-GPU
+- multi-GPU (based on torch distributed, single node at the moment)
 - Structured attention
 - [Conv2Conv convolution model]
 - SRU "RNNs faster than CNN" paper

@@ -8,3 +8,5 @@ import onmt.models
 import onmt.utils
 import onmt.modules
 from onmt.trainer import Trainer
+
+__version__ = "0.4.0"

@@ -8,6 +8,7 @@
           things to users(i.e. how to do it). Also see train.py(one of the
           users of this library) for the strategy things we do.
 """
+#!/usr/bin/env python
 from __future__ import division
 from __future__ import print_function
 

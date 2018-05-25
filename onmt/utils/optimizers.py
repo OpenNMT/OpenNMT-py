@@ -1,6 +1,4 @@
 """ Optimizers class """
-from __future__ import print_function
-
 import torch
 import torch.optim as optim
 from torch.nn.utils import clip_grad_norm_
@@ -122,17 +120,18 @@ class Optimizer(object):
       decay_method (str, option): custom decay options
       warmup_steps (int, option): parameter for `noam` decay
       model_size (int, option): parameter for `noam` decay
+    
+    We use the default parameters for Adam that are suggested by
+    the original paper https://arxiv.org/pdf/1412.6980.pdf
+    These values are also used by other established implementations,
+    e.g. https://www.tensorflow.org/api_docs/python/tf/train/AdamOptimizer
+    https://keras.io/optimizers/
+    Recently there are slightly different values used in the paper
+    "Attention is all you need"
+    https://arxiv.org/pdf/1706.03762.pdf, particularly the value beta2=0.98
+    was used there however, beta2=0.999 is still arguably the more
+    established value, so we use that here as well
     """
-    # We use the default parameters for Adam that are suggested by
-    # the original paper https://arxiv.org/pdf/1412.6980.pdf
-    # These values are also used by other established implementations,
-    # e.g. https://www.tensorflow.org/api_docs/python/tf/train/AdamOptimizer
-    # https://keras.io/optimizers/
-    # Recently there are slightly different values used in the paper
-    # "Attention is all you need"
-    # https://arxiv.org/pdf/1706.03762.pdf, particularly the value beta2=0.98
-    # was used there however, beta2=0.999 is still arguably the more
-    # established value, so we use that here as well
 
     def __init__(self, method, learning_rate, max_grad_norm,
                  lr_decay=1, start_decay_at=None,
