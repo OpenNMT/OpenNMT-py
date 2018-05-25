@@ -1,9 +1,9 @@
 """
-Implementation of the CNN Decoder part of "Convolutional Sequence to Sequence Learning"
+Implementation of the CNN Decoder part of
+    "Convolutional Sequence to Sequence Learning"
 """
 import torch
 import torch.nn as nn
-from torch.autograd import Variable
 
 import onmt.modules
 from onmt.decoders.decoder import DecoderState
@@ -92,8 +92,8 @@ class CNNDecoder(nn.Module):
         x = linear_out.view(tgt_emb.size(0), tgt_emb.size(1), -1)
         x = shape_transform(x)
 
-        pad = Variable(torch.zeros(x.size(0), x.size(1),
-                                   self.cnn_kernel_width - 1, 1))
+        pad = torch.zeros(x.size(0), x.size(1),
+                          self.cnn_kernel_width - 1, 1)
         pad = pad.type_as(x)
         base_target_emb = x
 
@@ -152,5 +152,5 @@ class CNNDecoderState(DecoderState):
 
     def repeat_beam_size_times(self, beam_size):
         """ Repeat beam_size times along batch dimension. """
-        self.init_src = Variable(
-            self.init_src.data.repeat(1, beam_size, 1), volatile=True)
+        self.init_src = torch.tensor(
+            self.init_src.data.repeat(1, beam_size, 1), requires_grad=False)

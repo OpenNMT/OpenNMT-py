@@ -28,7 +28,7 @@ def get_vars_maybe_avg(namespace, var_names, training, polyak_decay):
             namespace, vn, training, polyak_decay))
     return vars
 
-# This is used nowhere in the code at this stage (Vincent Nguyen 05/18/2018)
+
 class WeightNormLinear(nn.Linear):
     """
     Implementation of "Weight Normalization: A Simple Reparameterization
@@ -37,6 +37,9 @@ class WeightNormLinear(nn.Linear):
 
     As a reparameterization method, weight normalization is same
     as BatchNormalization, but it doesn't depend on minibatch.
+
+    NOTE: This is used nowhere in the code at this stage
+          Vincent Nguyen 05/18/2018
     """
 
     def __init__(self, in_features, out_features,
@@ -95,7 +98,7 @@ class WeightNormLinear(nn.Linear):
                 b.view(1, -1).expand_as(x)
             return x
 
-# This is used by cnn_factory.py
+
 class WeightNormConv2d(nn.Conv2d):
     def __init__(self, in_channels, out_channels, kernel_size, stride=1,
                  padding=0, dilation=1, groups=1, init_scale=1.,
@@ -167,6 +170,8 @@ class WeightNormConv2d(nn.Conv2d):
             return x
 
 # This is used nowhere in the code at the moment (Vincent Nguyen 05/18/2018)
+
+
 class WeightNormConvTranspose2d(nn.ConvTranspose2d):
     def __init__(self, in_channels, out_channels, kernel_size, stride=1,
                  padding=0, output_padding=0, groups=1, init_scale=1.,

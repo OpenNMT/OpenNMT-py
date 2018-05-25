@@ -45,6 +45,8 @@ class PositionalEncoding(nn.Module):
         return emb
 
 # used by model_builder.py and subsequently by all encoders / decoders
+
+
 class Embeddings(nn.Module):
     """
     Words embeddings for encoder/decoder.

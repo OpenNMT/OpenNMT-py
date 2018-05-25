@@ -44,7 +44,7 @@ class ReportMgrBase(object):
 
     def report_training(self, epoch, batch, num_batches, learning_rate,
                         report_stats, multigpu=False):
-        """ 
+        """
         This is the user-defined batch-level traing progress
         report function.
 
@@ -109,7 +109,8 @@ class ReportMgr(ReportMgrBase):
             stats.log_tensorboard(
                 prefix, self.tensorboard_writer, learning_rate, step)
 
-    def _report_training(self, epoch, batch, num_batches, learning_rate, report_stats):
+    def _report_training(self, epoch, batch, num_batches, learning_rate,
+                         report_stats):
         """
         See base class method `ReportMgrBase.report_training`.
         """

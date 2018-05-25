@@ -1,5 +1,4 @@
 """ Translator Class and builder """
-#!/usr/bin/env python
 from __future__ import print_function
 import argparse
 import codecs
@@ -7,7 +6,6 @@ import os
 import math
 
 import torch
-from torch.autograd import Variable
 from itertools import count
 
 import onmt.model_builder
@@ -145,7 +143,7 @@ class Translator(object):
 
         Note: batch_size must not be None
         Note: one of ('src_path', 'src_data_iter') must not be None
-        
+
         Args:
             src_path (str): filepath of source data
             src_data_iter (iterator): an interator generating source data

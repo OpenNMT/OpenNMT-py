@@ -1,6 +1,7 @@
-""" Pre-process Data / features files and build vocabulary """
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
+"""
+    Pre-process Data / features files and build vocabulary
+"""
 
 from __future__ import print_function
 

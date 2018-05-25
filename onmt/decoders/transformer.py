@@ -4,7 +4,6 @@ Implementation of "Attention is All You Need"
 
 import torch
 import torch.nn as nn
-from torch.autograd import Variable
 import numpy as np
 
 import onmt
@@ -57,8 +56,8 @@ class TransformerDecoderLayer(nn.Module):
 
         src_batch, _, s_len = src_pad_mask.size()
         tgt_batch, _, _ = tgt_pad_mask.size()
-        #src_batch, t_len, s_len = src_pad_mask.size()
-        #tgt_batch, t_len_, t_len__ = tgt_pad_mask.size()
+        # src_batch, t_len, s_len = src_pad_mask.size()
+        # tgt_batch, t_len_, t_len__ = tgt_pad_mask.size()
         aeq(input_batch, contxt_batch, src_batch, tgt_batch)
         # aeq(t_len, t_len_, t_len__, input_len)
         aeq(s_len, contxt_len)

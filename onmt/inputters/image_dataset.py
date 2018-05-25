@@ -1,13 +1,14 @@
-# -*- coding: utf-8 -*-
-""" Dataset for data_type=='img'"""
-
+"""
+    ImageDataset
+"""
 import codecs
 import os
 
 import torch
 import torchtext
 
-from onmt.inputters.dataset_base import DatasetBase, PAD_WORD, BOS_WORD, EOS_WORD
+from onmt.inputters.dataset_base import DatasetBase, PAD_WORD, BOS_WORD, \
+    EOS_WORD
 
 
 class ImageDataset(DatasetBase):
@@ -95,13 +96,13 @@ class ImageDataset(DatasetBase):
             else:
                 raise ValueError("""One of 'img_iter' and 'img_path'
                                     must be not None""")
-        examples_iter = ImageDataset.make_examples(data_iter, img_dir, 'src')
+        examples_iter = ImageDataset.make_examples(img_iter, img_dir, 'src')
         num_feats = 0  # Source side(img) has no features.
 
         return (examples_iter, num_feats)
 
     @staticmethod
-    def make_examples(data_iter, src_dir, side, truncate=None):
+    def make_examples(img_iter, src_dir, side, truncate=None):
         """
         Args:
             path (str): location of a src file containing image paths
@@ -114,10 +115,6 @@ class ImageDataset(DatasetBase):
         """
         assert (src_dir is not None) and os.path.exists(src_dir),\
             'src_dir must be a valid directory if data_type is img'
-
-        #global Image, transforms
-        from PIL import Image
-        from torchvision import transforms
 
         for index, (img, filename) in enumerate(img_iter):
             if truncate and truncate != (0, 0):
@@ -141,6 +138,9 @@ class ImageDataset(DatasetBase):
             img: and image tensor
             filename(str): the image filename
         """
+        from PIL import Image
+        from torchvision import transforms
+
         with codecs.open(path, "r", "utf-8") as corpus_file:
             for line in corpus_file:
                 filename = line.strip()

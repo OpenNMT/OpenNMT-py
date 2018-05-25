@@ -256,6 +256,8 @@ transformer(){
 ### TRANSLATION
 ###############################################
 translate(){
+    echo "***"
+    echo "Translation"
     $PYTHON_BIN translate.py -gpu $GPUID \
                         -model "$TEST_MODEL_PATH" \
                         -output "$TEST_DIR"/output_hyp.txt \

@@ -1,20 +1,15 @@
 """
-This is the loadable seq2seq trainer library that is
-in charge of training details, loss compute, and statistics.
-See train.py for a use case of this library.
+    This is the loadable seq2seq trainer library that is
+    in charge of training details, loss compute, and statistics.
+    See train.py for a use case of this library.
 
-Note!!! To make this a general library, we implement *only*
-mechanism things here(i.e. what to do), and leave the strategy
-things to users(i.e. how to do it). Also see train.py(one of the
-users of this library) for the strategy things we do.
+    Note: To make this a general library, we implement *only*
+          mechanism things here(i.e. what to do), and leave the strategy
+          things to users(i.e. how to do it). Also see train.py(one of the
+          users of this library) for the strategy things we do.
 """
 from __future__ import division
 from __future__ import print_function
-
-import math
-
-import torch
-import torch.nn as nn
 
 import onmt.inputters as inputters
 import onmt.utils
@@ -49,8 +44,8 @@ def build_trainer(opt, model, fields, optim, data_type, model_saver=None):
     report_manager = onmt.utils.build_report_manager(opt)
     trainer = onmt.Trainer(model, train_loss, valid_loss, optim,
                            trunc_size, shard_size, data_type,
-                           norm_method, grad_accum_count, n_gpu, gpu_rank, report_manager,
-                           model_saver=model_saver)
+                           norm_method, grad_accum_count, n_gpu, gpu_rank,
+                           report_manager, model_saver=model_saver)
     return trainer
 
 
@@ -59,8 +54,8 @@ class Trainer(object):
     Class that controls the training process.
 
     Args:
-            model(:py:class:`onmt.models.model.NMTModel`): translation model to train
-
+            model(:py:class:`onmt.models.model.NMTModel`): translation model
+                to train
             train_loss(:obj:`onmt.utils.loss.LossComputeBase`):
                training loss computation
             valid_loss(:obj:`onmt.utils.loss.LossComputeBase`):
@@ -81,8 +76,8 @@ class Trainer(object):
 
     def __init__(self, model, train_loss, valid_loss, optim,
                  trunc_size=0, shard_size=32, data_type='text',
-                 norm_method="sents", grad_accum_count=1, n_gpu=1, gpu_rank=1, report_manager=None,
-                 model_saver=None):
+                 norm_method="sents", grad_accum_count=1, n_gpu=1, gpu_rank=1,
+                 report_manager=None, model_saver=None):
         # Basic attributes.
         self.model = model
         self.train_loss = train_loss
@@ -176,9 +171,9 @@ class Trainer(object):
         normalization = 0
 
         try:
-            # this is to add extra batches to get a multiple of grad_accum_count BUT
-            # this does not work in tokens mode since the function len(train_iter)
-            # is only valid in sents mode
+            # this is to add extra batches to get a multiple of
+            # grad_accum_count BUT this does not work in tokens mode since the
+            # function len(train_iter) is only valid in sents mode
             add_on = 0
             if len(train_iter) % self.grad_accum_count > 0:
                 add_on += 1
@@ -215,7 +210,7 @@ class Trainer(object):
                     normalization = 0
                     idx += 1
 
-        # Make sure to process remaining batches in the case of 
+        # Make sure to process remaining batches in the case of
         # grad_accum_count > 1 but not enough batches to fill true_batchs
         if len(true_batchs) > 0:
             self._gradient_accumulation(
@@ -229,11 +224,9 @@ class Trainer(object):
         #       `(i+1) % self.n_gpu` GPUs will effectively work
         #       i.e. run _gradient_accumulation which will be blocking.
         #       therefore, we run those operations that are awaited.
-        # print("GPU: %d there was %d batches last_batch: %d" % (self.gpu_rank, i, len(true_batchs)))
         if self.gpu_rank >= ((i+1) % self.n_gpu):
             if len(true_batchs) == 0:
                 # add dummy gradients, just to unlock
-                # print("GPU: %d orphan empty batch padding i: %d" % (self.gpu_rank, i))
                 grads = [p.grad.data.mul(0)
                          for p in self.model.parameters() if p.requires_grad]
                 onmt.utils.multi_utils.all_reduce_and_rescale_tensors(
@@ -244,8 +237,6 @@ class Trainer(object):
             report_stats = self.maybe_report_training(
                 epoch, idx, num_batches, self.optim.learning_rate,
                 report_stats)
-        #else:
-        #    print("GPU: %d orphan non-empty batch i: %d" % (self.gpu_rank, i))
 
         return total_stats
 

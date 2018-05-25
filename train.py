@@ -1,13 +1,13 @@
-""" Main training workflow """
 #!/usr/bin/env python
+"""
+    Main training workflow
+"""
 from __future__ import print_function
 from __future__ import division
 
 import argparse
 
 import torch
-from torch import cuda
-
 
 import onmt.opts as opts
 from train_multi import main as multi_main
@@ -28,15 +28,14 @@ def main(opt):
         single_main(opt)
 
 
-
 if __name__ == "__main__":
-    PARSER = argparse.ArgumentParser(
+    parser = argparse.ArgumentParser(
         description='train.py',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    opts.add_md_help_argument(PARSER)
-    opts.model_opts(PARSER)
-    opts.train_opts(PARSER)
+    opts.add_md_help_argument(parser)
+    opts.model_opts(parser)
+    opts.train_opts(parser)
 
-    OPT = PARSER.parse_args()
-    main(OPT)
+    opt = parser.parse_args()
+    main(opt)

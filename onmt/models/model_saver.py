@@ -15,7 +15,8 @@ def build_model_saver(model_opt, opt, model, fields, optim):
 
 
 class ModelSaverBase(object):
-    def __init__(self, base_path, model, model_opt, fields, optim, start_checkpoint_at=0):
+    def __init__(self, base_path, model, model_opt, fields, optim,
+                 start_checkpoint_at=0):
         self.base_path = base_path
         self.model = model
         self.model_opt = model_opt
@@ -41,7 +42,8 @@ class ModelSaverBase(object):
 
 
 class ModelSaver(ModelSaverBase):
-    def __init__(self, base_path, model, model_opt, fields, optim, start_checkpoint_at=0):
+    def __init__(self, base_path, model, model_opt, fields, optim,
+                 start_checkpoint_at=0):
         super(ModelSaver, self).__init__(
             base_path, model, model_opt, fields, optim,
             start_checkpoint_at=start_checkpoint_at)

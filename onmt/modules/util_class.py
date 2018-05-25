@@ -2,9 +2,11 @@
 import torch
 import torch.nn as nn
 
-# This class is only used by the transformer encoder/decoder
+
 class LayerNorm(nn.Module):
-    """  Layer Normalization class  """
+    """
+        Layer Normalization class
+    """
 
     def __init__(self, features, eps=1e-6):
         super(LayerNorm, self).__init__()

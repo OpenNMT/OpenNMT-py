@@ -1,10 +1,8 @@
 """ REST Translation server """
-#!/usr/bin/env python
 from __future__ import print_function
 import sys
 import os
 import argparse
-import io
 import time
 import json
 import threading
@@ -216,7 +214,7 @@ class ServerModel:
         try:
             self.translator = build_translator(self.opt,
                                                report_score=False,
-                                               out_file=open(os.devnull,"w"))
+                                               out_file=open(os.devnull, "w"))
         except RuntimeError as e:
             raise ServerModelError("Runtime Error: %s" % str(e))
 
@@ -297,11 +295,10 @@ class ServerModel:
                                             timer.times['translation']))
         self.reset_unload_timer()
 
-        
         # NOTE: translator returns lists of `n_best` list
         #       we can ignore that (i.e. flatten lists) only because
         #       we restrict `n_best=1`
-        flatten_list = lambda _list: sum(_list, [])
+        def flatten_list(_list): return sum(_list, [])
         results = flatten_list(predictions)
         scores = [score_tensor.item()
                   for score_tensor in flatten_list(scores)]

@@ -163,8 +163,8 @@ class RNNDecoderBase(nn.Module):
             # The encoder hidden is  (layers*directions) x batch x dim.
             # We need to convert it to layers x batch x (directions*dim).
             if self.bidirectional_encoder:
-                hidden = torch.cat(
-                    [hidden[0:hidden.size(0):2], hidden[1:hidden.size(0):2]], 2)
+                hidden = torch.cat([hidden[0:hidden.size(0):2],
+                                    hidden[1:hidden.size(0):2]], 2)
             return hidden
 
         if isinstance(encoder_final, tuple):  # LSTM

@@ -1,25 +1,21 @@
-""" Main training workflow """
 #!/usr/bin/env python
+"""
+    Training on a single process
+"""
 from __future__ import print_function
 from __future__ import division
 
 import argparse
-import glob
 import os
-import sys
-from datetime import datetime
 import random
 import torch
-import torch.nn as nn
-from torch import cuda
 
-import onmt.inputters as inputters
 import onmt.opts as opts
-import onmt.modules
-from onmt.inputters.inputter import build_dataset_iter, lazily_load_dataset, _load_fields, _collect_report_features
+
+from onmt.inputters.inputter import build_dataset_iter, lazily_load_dataset, \
+    _load_fields, _collect_report_features
 from onmt.model_builder import build_model
 from onmt.utils.optimizers import build_optim
-from onmt.utils.misc import use_gpu
 from onmt.trainer import build_trainer
 from onmt.models import build_model_saver
 

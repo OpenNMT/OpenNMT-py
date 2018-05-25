@@ -1,10 +1,10 @@
-# -*- coding: utf-8 -*-
-"""Define inputters DatasetBase Class."""
-
-
+"""
+    Base dataset class and constants
+"""
 from itertools import chain
-import torch
 import torchtext
+
+import onmt
 
 PAD_WORD = '<blank>'
 UNK_WORD = '<unk>'

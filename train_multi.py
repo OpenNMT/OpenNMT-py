@@ -1,8 +1,8 @@
-""" Main training workflow """
 #!/usr/bin/env python
-from __future__ import print_function
-from __future__ import division
-
+"""
+    Multi-GPU training
+"""
+import argparse
 import os
 import signal
 import torch
@@ -10,6 +10,7 @@ import torch
 import onmt.opts as opts
 import onmt.utils.multi_utils
 from train_single import main as single_main
+
 
 def main(opt):
     """ Spawns 1 process per GPU """
@@ -25,8 +26,9 @@ def main(opt):
     for i in range(nb_gpu):
         opt.gpu_rank = i
         opt.device_id = i
-        
-        procs.append(mp.Process(target=run, args=(opt, error_queue, ), daemon=True))
+
+        procs.append(mp.Process(target=run, args=(
+            opt, error_queue, ), daemon=True))
         procs[i].start()
         print(" Starting process pid: %d  " % procs[i].pid)
         error_handler.add_child(procs[i].pid)
@@ -57,7 +59,8 @@ class ErrorHandler(object):
         import threading
         self.error_queue = error_queue
         self.children_pids = []
-        self.error_thread = threading.Thread(target=self.error_listener, daemon=True)
+        self.error_thread = threading.Thread(
+            target=self.error_listener, daemon=True)
         self.error_thread.start()
         signal.signal(signal.SIGUSR1, self.signal_handler)
 
@@ -76,18 +79,20 @@ class ErrorHandler(object):
         for pid in self.children_pids:
             os.kill(pid, signal.SIGINT)  # kill children processes
         (rank, original_trace) = self.error_queue.get()
-        msg = "\n\n-- Tracebacks above this line can probably be ignored --\n\n"
+        msg = """\n\n-- Tracebacks above this line can probably
+                 be ignored --\n\n"""
         msg += original_trace
         raise Exception(msg)
 
+
 if __name__ == "__main__":
-    PARSER = argparse.ArgumentParser(
+    parser = argparse.ArgumentParser(
         description='train.py',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    opts.add_md_help_argument(PARSER)
-    opts.model_opts(PARSER)
-    opts.train_opts(PARSER)
+    opts.add_md_help_argument(parser)
+    opts.model_opts(parser)
+    opts.train_opts(parser)
 
-    OPT = parser.parse_args()
-    main(OPT)
+    opt = parser.parse_args()
+    main(opt)

@@ -55,7 +55,7 @@ class RNNEncoder(EncoderBase):
         self._check_args(src, lengths)
 
         emb = self.embeddings(src)
-        #s_len, batch, emb_dim = emb.size()
+        # s_len, batch, emb_dim = emb.size()
 
         packed_emb = emb
         if lengths is not None and not self.no_pack_padded_seq:

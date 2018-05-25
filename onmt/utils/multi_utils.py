@@ -1,14 +1,14 @@
-""" Pytorch Distributed utils """
-#!/usr/bin/env python
+""" Pytorch Distributed utils
+    This piece of code was heavily inspired by the equivalent of Fairseq-py
+    https://github.com/pytorch/fairseq
+"""
 
-# This piece of code was heavily inspired by the equivalent of Fairseq-py
 
 from __future__ import print_function
 
 import math
 import pickle
 import torch.distributed
-
 
 
 def is_master(opt):
@@ -21,8 +21,8 @@ def multi_init(opt):
     dist_init_method = 'tcp://localhost:10000'
     dist_world_size = len(opt.gpuid)
     torch.distributed.init_process_group(
-            backend=opt.gpu_backend, init_method=dist_init_method,
-            world_size=dist_world_size, rank=opt.gpu_rank)
+        backend=opt.gpu_backend, init_method=dist_init_method,
+        world_size=dist_world_size, rank=opt.gpu_rank)
     opt.gpu_rank = torch.distributed.get_rank()
     if not is_master(opt):
         suppress_output()
@@ -31,7 +31,9 @@ def multi_init(opt):
 
 
 def suppress_output():
-    """Suppress printing on the current device. Force printing with `force=True`."""
+    """Suppress printing on the current device.
+    Force printing with `force=True`.
+    """
     import builtins as __builtin__
     builtin_print = __builtin__.print
 
@@ -44,7 +46,8 @@ def suppress_output():
     __builtin__.print = print
 
 
-def all_reduce_and_rescale_tensors(tensors, rescale_denom, buffer_size=10485760):
+def all_reduce_and_rescale_tensors(tensors, rescale_denom,
+                                   buffer_size=10485760):
     """All-reduce and rescale tensors in chunks of the specified size.
 
     Args:
@@ -52,8 +55,9 @@ def all_reduce_and_rescale_tensors(tensors, rescale_denom, buffer_size=10485760)
         rescale_denom: denominator for rescaling summed Tensors
         buffer_size: all-reduce chunk size in bytes
     """
-    # buffer size is in bytes, determine equiv. # of elements based on data type
-    buffer_t = tensors[0].new(math.ceil(buffer_size / tensors[0].element_size())).zero_()
+    # buffer size in bytes, determine equiv. # of elements based on data type
+    buffer_t = tensors[0].new(
+        math.ceil(buffer_size / tensors[0].element_size())).zero_()
     buffer = []
 
     def all_reduce_buffer():
@@ -112,7 +116,8 @@ def all_gather_list(data, max_size=4096):
     enc = pickle.dumps(data)
     enc_size = len(enc)
     if enc_size + 2 > max_size:
-        raise ValueError('encoded data exceeds max_size: {}'.format(enc_size + 2))
+        raise ValueError(
+            'encoded data exceeds max_size: {}'.format(enc_size + 2))
     assert max_size < 255*256
     in_buffer[0] = enc_size // 255  # this encoding works for max_size < 65k
     in_buffer[1] = enc_size % 255

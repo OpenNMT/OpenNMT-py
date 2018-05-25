@@ -1,7 +1,6 @@
-# -*- coding: utf-8 -*-
-"""Define generic inputters."""
-
-from __future__ import print_function
+"""
+    Defining general functions for inputters
+"""
 import glob
 import os
 from collections import Counter, defaultdict, OrderedDict
@@ -177,8 +176,8 @@ def collect_feature_vocabs(fields, side):
     return feature_vocabs
 
 
-def build_dataset(fields, data_type, src_data_iter=None, src_path=None, src_dir=None,
-                  tgt_data_iter=None, tgt_path=None,
+def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
+                  src_dir=None, tgt_data_iter=None, tgt_path=None,
                   src_seq_length=0, tgt_seq_length=0,
                   src_seq_length_trunc=0, tgt_seq_length_trunc=0,
                   dynamic_dict=True, sample_rate=0,
@@ -522,7 +521,7 @@ def lazily_load_dataset(corpus_type, opt):
 
 def _load_fields(dataset, data_type, opt, checkpoint):
     if checkpoint is not None:
-        print('Loading vocab from checkpoint at %s.' % OPT.train_from)
+        print('Loading vocab from checkpoint at %s.' % opt.train_from)
         fields = load_fields_from_vocab(
             checkpoint['vocab'], data_type)
     else:

@@ -4,7 +4,6 @@ import argparse
 
 from onmt.translate.translator import build_translator
 
-import torch
 import onmt.inputters
 import onmt.translate
 import onmt

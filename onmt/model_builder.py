@@ -14,9 +14,13 @@ from onmt.encoders.rnn_encoder import RNNEncoder
 from onmt.encoders.transformer import TransformerEncoder
 from onmt.encoders.cnn_encoder import CNNEncoder
 from onmt.encoders.mean_encoder import MeanEncoder
+from onmt.encoders.audio_encoder import AudioEncoder
+from onmt.encoders.image_encoder import ImageEncoder
+
 from onmt.decoders.decoder import InputFeedRNNDecoder, StdRNNDecoder
 from onmt.decoders.transformer import TransformerDecoder
 from onmt.decoders.cnn_decoder import CNNDecoder
+
 from onmt.modules import Embeddings, CopyGenerator
 from onmt.utils.misc import use_gpu
 

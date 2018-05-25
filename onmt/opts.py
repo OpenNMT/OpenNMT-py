@@ -1,9 +1,8 @@
 """ Implementation of all available options """
-#!/usr/bin/env python
 from __future__ import print_function
 
 import argparse
-from onmt.models.SRU import CheckSRU
+from onmt.models.sru import CheckSRU
 
 
 def model_opts(parser):

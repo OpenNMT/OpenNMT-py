@@ -8,6 +8,8 @@ from onmt.utils.misc import aeq, sequence_mask
 # by the CNN / transformer decoder when copy attention is used
 # CNN has its own attention mechanism ConvMultiStepAttention
 # Transformer has its own MultiHeadedAttention
+
+
 class GlobalAttention(nn.Module):
     """
     Global attention takes a matrix and a query vector. It

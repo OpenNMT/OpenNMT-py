@@ -49,16 +49,16 @@ class ConvMultiStepAttention(nn.Module):
 
         """
         # checks
-        #batch, channel, height, width = base_target_emb.size()
+        # batch, channel, height, width = base_target_emb.size()
         batch, _, height, _ = base_target_emb.size()
-        #batch_, channel_, height_, width_ = input_from_dec.size()
+        # batch_, channel_, height_, width_ = input_from_dec.size()
         batch_, _, height_, _ = input_from_dec.size()
         aeq(batch, batch_)
         aeq(height, height_)
 
-        #enc_batch, enc_channel, enc_height = encoder_out_top.size()
+        # enc_batch, enc_channel, enc_height = encoder_out_top.size()
         enc_batch, _, enc_height = encoder_out_top.size()
-        #enc_batch_, enc_channel_, enc_height_ = encoder_out_combine.size()
+        # enc_batch_, enc_channel_, enc_height_ = encoder_out_combine.size()
         enc_batch_, _, enc_height_ = encoder_out_combine.size()
 
         aeq(enc_batch, enc_batch_)
