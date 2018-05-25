@@ -1,4 +1,7 @@
 """ Main entry point of the ONMT library """
+
+__version__ = "0.4.0"
+
 import onmt.inputters
 import onmt.encoders
 import onmt.decoders
