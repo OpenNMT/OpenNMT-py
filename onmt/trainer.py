@@ -41,12 +41,13 @@ def build_trainer(opt, model, fields, optim, data_type, model_saver=None):
     grad_accum_count = opt.accum_count
     n_gpu = len(opt.gpuid)
     gpu_rank = opt.gpu_rank
+    gpu_verbose = opt.gpu_verbose
 
     report_manager = onmt.utils.build_report_manager(opt)
     trainer = onmt.Trainer(model, train_loss, valid_loss, optim,
                            trunc_size, shard_size, data_type,
                            norm_method, grad_accum_count, n_gpu, gpu_rank,
-                           report_manager, model_saver=model_saver)
+                           gpu_verbose, report_manager, model_saver=model_saver)
     return trainer
 
 
@@ -78,7 +79,7 @@ class Trainer(object):
     def __init__(self, model, train_loss, valid_loss, optim,
                  trunc_size=0, shard_size=32, data_type='text',
                  norm_method="sents", grad_accum_count=1, n_gpu=1, gpu_rank=1,
-                 report_manager=None, model_saver=None):
+                 gpu_verbose=0, report_manager=None, model_saver=None):
         # Basic attributes.
         self.model = model
         self.train_loss = train_loss
@@ -91,6 +92,7 @@ class Trainer(object):
         self.grad_accum_count = grad_accum_count
         self.n_gpu = n_gpu
         self.gpu_rank = gpu_rank
+        self.gpu_verbose = gpu_verbose
         self.report_manager = report_manager
         self.model_saver = model_saver
 
@@ -133,23 +135,23 @@ class Trainer(object):
             # 1. Train for one epoch on the training set.
             train_iter = train_iter_fct()
             train_stats = self.train_epoch(train_iter, epoch)
-            if opt.gpu_verbose > 0:
+            if self.gpu_verbose > 0:
                 print('GPU %d: gather stat end of epoch %d' % (self.gpu_rank, epoch))
             train_stats = self.maybe_gather_stats(train_stats)
-            if opt.gpu_verbose > 0:
+            if self.gpu_verbose > 0:
                 print('GPU %d: report stat end of epoch %d' % (self.gpu_rank, epoch))
             self.report_epoch(
                 self.optim.learning_rate, epoch, train_stats=train_stats)
 
             # 2. Validate on the validation set.
-            if opt.gpu_verbose > 0:
+            if self.gpu_verbose > 0:
                 print('GPU %d: validate end of epoch %d' % (self.gpu_rank, epoch))
             valid_iter = valid_iter_fct()
             valid_stats = self.validate(valid_iter)
-            if opt.gpu_verbose > 0:
+            if self.gpu_verbose > 0:
                 print('GPU %d: gather valid stat end of epoch %d' % (self.gpu_rank, epoch))
             valid_stats = self.maybe_gather_stats(valid_stats)
-            if opt.gpu_verbose > 0:
+            if self.gpu_verbose > 0:
                 print('GPU %d: report stat end of epoch %d' % (self.gpu_rank, epoch))
             self.report_epoch(
                 self.optim.learning_rate, epoch, valid_stats=valid_stats)
@@ -194,7 +196,7 @@ class Trainer(object):
         reduce_counter = 0
         for i, batch in enumerate(train_iter):
             if (i % self.n_gpu == self.gpu_rank):
-                if opt.gpu_verbose > 1:
+                if self.gpu_verbose > 1:
                     print("GPU %d: index: %d accum: %d" % (self.gpu_rank, i, accum))        
                 cur_dataset = train_iter.get_cur_dataset()
                 self.train_loss.cur_dataset = cur_dataset
@@ -209,7 +211,7 @@ class Trainer(object):
                     normalization += batch.batch_size
                 if accum == self.grad_accum_count:
                     reduce_counter += 1
-                    if opt.gpu_verbose > 0:
+                    if self.gpu_verbose > 0:
                         print("GPU %d: reduce_counter: %d n_minibatch %d" % (self.gpu_rank, reduce_counter, len(true_batchs)))
                     self._gradient_accumulation(
                         true_batchs, total_stats,
@@ -234,7 +236,7 @@ class Trainer(object):
         # grad_accum_count > 1 but not enough batches to fill true_batchs
         if len(true_batchs) > 0:
             reduce_counter += 1
-            if opt.gpu_verbose > 0:
+            if self.gpu_verbose > 0:
                 print("GPU %d: reduce_counter: %d n_minibatch: %d" % (self.gpu_rank, reduce_counter, len(true_batchs)))
             self._gradient_accumulation(
                 true_batchs, total_stats,
@@ -249,7 +251,7 @@ class Trainer(object):
         if (self.n_gpu > 1) and (self.gpu_rank >= ((i % self.n_gpu) + 1)):
             if len(true_batchs) == 0:
                 reduce_counter += 1
-                if opt.gpu_verbose > 0:
+                if self.gpu_verbose > 0:
                     print("GPU %d: reduce_counter: %d - padding empty batch" % (self.gpu_rank, reduce_counter))
                 grads = [p.grad.data.mul(0)
                          for p in self.model.parameters() if p.requires_grad]
@@ -262,7 +264,7 @@ class Trainer(object):
         if need_to_report:
             # same idea, run the report that
             # only useful if the last iteration is match `report_every`
-            if opt.gpu_verbose > 0:
+            if self.gpu_verbose > 0:
                 print('GPU %d: report stat special case' % self.gpu_rank)
             report_stats = self.maybe_report_training(
                 epoch, idx, num_batches, self.optim.learning_rate,
