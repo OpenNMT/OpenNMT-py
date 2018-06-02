@@ -179,6 +179,12 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
                                model_opt.window_size)
 
     # Build decoder.
+    if model_opt.model_type == 'audio':
+        model_opt.rnn_type = model_opt.audio_rnn_type
+        model_opt.brnn = model_opt.audio_brnn
+        model_opt.dec_layers = model_opt.audio_dec_layers
+        model_opt.rnn_size = model_opt.audio_dec_rnn_size
+        model_opt.dropout = model_opt.audio_dropout
     tgt_dict = fields["tgt"].vocab
     feature_dicts = inputters.collect_feature_vocabs(fields, 'tgt')
     tgt_embeddings = build_embeddings(model_opt, tgt_dict,
