@@ -39,8 +39,9 @@ if opt.word_vec_size != -1:
 if opt.layers != -1:
     opt.enc_layers = opt.layers
     opt.dec_layers = opt.layers
-
 opt.brnn = (opt.encoder_type == "brnn")
+if opt.model_type == 'audio':
+    opt.audio_brnn = (opt.audio_enc_type == "brnn")
 if opt.seed > 0:
     random.seed(opt.seed)
     torch.manual_seed(opt.seed)
@@ -378,7 +379,7 @@ def build_model(model_opt, opt, fields, checkpoint):
 def build_optim(model, checkpoint):
     saved_optimizer_state_dict = None
 
-    if opt.train_from:
+    if False:#opt.train_from:
         print('Loading optimizer from checkpoint.')
         optim = checkpoint['optim']
         # We need to save a copy of optim.optimizer.state_dict() for setting
@@ -413,7 +414,7 @@ def build_optim(model, checkpoint):
         "(model.parameters())")
     show_optimizer_state(optim)
 
-    if opt.train_from:
+    if False:#opt.train_from:
         # Stage 2: In this stage, which is only performed when loading an
         # optimizer from a checkpoint, we load the saved_optimizer_state_dict
         # into the re-created optimizer, to set the optim.optimizer.state
@@ -421,7 +422,8 @@ def build_optim(model, checkpoint):
         # state saved in the "saved_optimizer_state_dict" variable for
         # this purpose.
         # See also: https://github.com/pytorch/pytorch/issues/2830
-        optim.optimizer.load_state_dict(saved_optimizer_state_dict)
+        print ('************************************************************')
+        # TODO: optim.optimizer.load_state_dict(saved_optimizer_state_dict)
         # Convert back the state values to cuda type if applicable
         if use_gpu(opt):
             for state in optim.optimizer.state.values():

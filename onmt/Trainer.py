@@ -42,7 +42,7 @@ class Statistics(object):
         self.n_correct += stat.n_correct
 
     def accuracy(self):
-        return 100 * (self.n_correct / self.n_words)
+        return 100 * (float(self.n_correct) / self.n_words)
 
     def xent(self):
         return self.loss / self.n_words
@@ -216,6 +216,8 @@ class Trainer(object):
             src = onmt.io.make_features(batch, 'src', self.data_type)
             if self.data_type == 'text':
                 _, src_lengths = batch.src
+            elif self.data_type == 'audio':
+                src_lengths = batch.src_lengths
             else:
                 src_lengths = None
 
@@ -290,6 +292,8 @@ class Trainer(object):
             if self.data_type == 'text':
                 _, src_lengths = batch.src
                 report_stats.n_src_words += src_lengths.sum()
+            elif self.data_type == 'audio':
+                src_lengths = batch.src_lengths
             else:
                 src_lengths = None
 
@@ -310,6 +314,25 @@ class Trainer(object):
                         batch, outputs, attns, j,
                         trunc_size, self.shard_size, normalization)
 
+                nans = [
+                    (name, param)
+                    for name, param in self.model.named_parameters()
+                    if param.grad is not None and (param.grad != param.grad).any()
+                ]
+                if nans:
+                    print ('NAN\'s detected')
+                    #import pdb; pdb.set_trace()
+
+                for name, param in self.model.named_parameters():
+                    if param is not None:
+                        param.data.masked_fill_(param == float("Inf"), 0)
+                        param.data.masked_fill_(param == -float("Inf"), 0)
+                        param.data.masked_fill_(param.ne(param), 0)
+                    if param.grad is not None:
+                        param.grad[param.grad == float("Inf")] = 0
+                        param.grad[param.grad == float("-Inf")] = 0
+                        if (param.grad!=param.grad).any():
+                            param.grad[param.grad!=param.grad] = 0
                 # 4. Update the parameters and statistics.
                 if self.grad_accum_count == 1:
                     self.optim.step()
@@ -317,8 +340,8 @@ class Trainer(object):
                 report_stats.update(batch_stats)
 
                 # If truncated, don't backprop fully.
-                if dec_state is not None:
-                    dec_state.detach()
+                #if dec_state is not None:
+                #    dec_state.detach()
 
         if self.grad_accum_count > 1:
             self.optim.step()

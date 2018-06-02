@@ -206,13 +206,7 @@ def build_dataset(fields, data_type, src_path, tgt_path, src_dir=None,
 
     elif data_type == 'audio':
         dataset = AudioDataset(fields, src_examples_iter, tgt_examples_iter,
-                               num_src_feats, num_tgt_feats,
                                tgt_seq_length=tgt_seq_length,
-                               sample_rate=sample_rate,
-                               window_size=window_size,
-                               window_stride=window_stride,
-                               window=window,
-                               normalize_audio=normalize_audio,
                                use_filter_pred=use_filter_pred)
 
     return dataset

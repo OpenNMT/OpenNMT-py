@@ -11,7 +11,7 @@ from torch.autograd import Variable
 
 import onmt
 import onmt.io
-
+import sys
 
 class LossComputeBase(nn.Module):
     """
@@ -121,9 +121,10 @@ class LossComputeBase(nn.Module):
 
         for shard in shards(shard_state, shard_size):
             loss, stats = self._compute_loss(batch, **shard)
-            loss.div(normalization).backward()
+            loss.div(normalization).backward(retain_graph=True)
             batch_stats.update(stats)
-
+        print (batch_stats.ppl())
+        sys.stdout.flush()
         return batch_stats
 
     def _stats(self, loss, scores, target):
@@ -140,8 +141,8 @@ class LossComputeBase(nn.Module):
         non_padding = target.ne(self.padding_idx)
         num_correct = pred.eq(target) \
                           .masked_select(non_padding) \
-                          .sum()
-        return onmt.Statistics(loss[0], non_padding.sum(), num_correct)
+                          .long().sum()
+        return onmt.Statistics(loss.data.cpu().numpy(), non_padding.long().sum().data.cpu().numpy(), num_correct.data.cpu().numpy())
 
     def _bottle(self, v):
         return v.view(-1, v.size(2))

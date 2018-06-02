@@ -98,6 +98,27 @@ def model_opts(parser):
                        help="""Type of context gate to use.
                        Do not select for no context gate.""")
 
+    group.add_argument('-audio_dropout', type=float, default=0.,
+                       help="Dropout probability; applied in LSTM stacks.")
+    group.add_argument('-audio_enc_type', type=str, default='brnn',
+                       choices=['rnn', 'brnn'],
+                       help="""Type of encoder layer to use.
+                       """)
+    group.add_argument('-audio_rnn_type', type=str, default='GRU',
+                       choices=['LSTM', 'GRU', 'SRU'],
+                       action=CheckSRU,
+                       help="""The gate type to use in the RNNs""")
+    group.add_argument('-audio_enc_layers', type=int, default=4,
+                       help="Number of audio encoder layers.")
+    group.add_argument('-audio_dec_layers', type=int, default=1,
+                       help="Number of audio encoder layers.")
+    group.add_argument('-audio_enc_rnn_size', type=int, default=1024,
+                       help="Size of rnn hidden states of audio encoder.")
+    group.add_argument('-audio_dec_rnn_size', type=int, default=512,
+                       help="Size of rnn hidden states of audio decoder.")
+    group.add_argument('-audio_enc_pooling', type=str, default='1, 1, 2, 2',
+                       help="The amount of pooling.")
+
     # Attention options
     group = parser.add_argument_group('Model- Attention')
     group.add_argument('-global_attention', type=str, default='general',

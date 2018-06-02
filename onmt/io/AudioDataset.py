@@ -2,10 +2,11 @@
 
 import codecs
 import os
+import io
 
 import torch
 import torchtext
-
+import sys
 from onmt.io.DatasetBase import ONMTDatasetBase, PAD_WORD, BOS_WORD, EOS_WORD
 
 
@@ -34,20 +35,10 @@ class AudioDataset(ONMTDatasetBase):
                 out examples?
     """
     def __init__(self, fields, src_examples_iter, tgt_examples_iter,
-                 num_src_feats=0, num_tgt_feats=0,
-                 tgt_seq_length=0, sample_rate=0,
-                 window_size=0.0, window_stride=0.0, window=None,
-                 normalize_audio=True, use_filter_pred=True):
+                 tgt_seq_length=0, use_filter_pred=True):
         self.data_type = 'audio'
-
-        self.sample_rate = sample_rate
-        self.window_size = window_size
-        self.window_stride = window_stride
-        self.window = window
-        self.normalize_audio = normalize_audio
-
-        self.n_src_feats = num_src_feats
-        self.n_tgt_feats = num_tgt_feats
+        self.n_src_feats = 0
+        self.n_tgt_feats = 0
 
         if tgt_examples_iter is not None:
             examples_iter = (self._join_dicts(src, tgt) for src, tgt in
@@ -115,6 +106,47 @@ class AudioDataset(ONMTDatasetBase):
         return (examples_iter, num_feats)
 
     @staticmethod
+    def extract_audio_features(audio_path, sample_rate, truncate, window_size,
+                               window_stride, window, normalize_audio):
+        global torchaudio, librosa, np
+        import torchaudio
+        import librosa
+        import numpy as np
+
+        sound, sample_rate_ = torchaudio.load(audio_path)
+        if truncate and truncate > 0:
+            if sound.size(0) > truncate:
+                assert False
+
+        assert sample_rate_ == sample_rate, \
+            'Sample rate of %s != -sample_rate (%d vs %d)' \
+            % (audio_path, sample_rate_, sample_rate)
+
+        sound = sound.numpy()
+        if len(sound.shape) > 1:
+            if sound.shape[1] == 1:
+                sound = sound.squeeze()
+            else:
+                sound = sound.mean(axis=1)  # average multiple channels
+
+        n_fft = int(sample_rate * window_size)
+        win_length = n_fft
+        hop_length = int(sample_rate * window_stride)
+        # STFT
+        d = librosa.stft(sound, n_fft=n_fft, hop_length=hop_length,
+                         win_length=win_length, window=window)
+        spect, _ = librosa.magphase(d)
+        spect = np.log1p(spect)
+        spect = torch.FloatTensor(spect)
+        #import pdb; pdb.set_trace()
+        if normalize_audio:
+            mean = spect.mean()
+            std = spect.std()
+            spect.add_(-mean)
+            spect.div_(std)
+        return spect
+
+    @staticmethod
     def read_audio_file(path, src_dir, side, sample_rate, window_size,
                         window_stride, window, normalize_audio,
                         truncate=None):
@@ -137,14 +169,12 @@ class AudioDataset(ONMTDatasetBase):
         assert (src_dir is not None) and os.path.exists(src_dir),\
             "src_dir must be a valid directory if data_type is audio"
 
-        global torchaudio, librosa, np
-        import torchaudio
-        import librosa
-        import numpy as np
-
         with codecs.open(path, "r", "utf-8") as corpus_file:
             index = 0
-            for line in corpus_file:
+            for idx,line in enumerate(corpus_file):
+                if idx % 1000 == 0:
+                    print (idx)
+                    sys.stdout.flush()
                 audio_path = os.path.join(src_dir, line.strip())
                 if not os.path.exists(audio_path):
                     audio_path = line
@@ -152,39 +182,14 @@ class AudioDataset(ONMTDatasetBase):
                 assert os.path.exists(audio_path), \
                     'audio path %s not found' % (line.strip())
 
-                sound, sample_rate = torchaudio.load(audio_path)
-                if truncate and truncate > 0:
-                    if sound.size(0) > truncate:
-                        continue
-
-                assert sample_rate == sample_rate, \
-                    'Sample rate of %s != -sample_rate (%d vs %d)' \
-                    % (audio_path, sample_rate, sample_rate)
-
-                sound = sound.numpy()
-                if len(sound.shape) > 1:
-                    if sound.shape[1] == 1:
-                        sound = sound.squeeze()
-                    else:
-                        sound = sound.mean(axis=1)  # average multiple channels
-
-                n_fft = int(sample_rate * window_size)
-                win_length = n_fft
-                hop_length = int(sample_rate * window_stride)
-                # STFT
-                d = librosa.stft(sound, n_fft=n_fft, hop_length=hop_length,
-                                 win_length=win_length, window=window)
-                spect, _ = librosa.magphase(d)
-                spect = np.log1p(spect)
-                spect = torch.FloatTensor(spect)
-                if normalize_audio:
-                    mean = spect.mean()
-                    std = spect.std()
-                    spect.add_(-mean)
-                    spect.div_(std)
+                spect = AudioDataset.extract_audio_features(audio_path, sample_rate,
+                                                    truncate, window_size,
+                                                    window_stride, window,
+                                                    normalize_audio)
 
                 example_dict = {side: spect,
                                 side + '_path': line.strip(),
+                                side + '_lengths': spect.size(1),
                                 'indices': index}
                 index += 1
 
@@ -216,6 +221,10 @@ class AudioDataset(ONMTDatasetBase):
         fields["src"] = torchtext.data.Field(
             use_vocab=False, tensor_type=torch.FloatTensor,
             postprocessing=make_audio, sequential=False)
+
+        fields["src_lengths"] = torchtext.data.Field(
+            use_vocab=False, tensor_type=torch.LongTensor,
+            sequential=False)
 
         for j in range(n_src_features):
             fields["src_feat_"+str(j)] = \
@@ -282,3 +291,117 @@ class AudioDataset(ONMTDatasetBase):
                 _, _, num_feats = AudioDataset.extract_text_features(f_line)
 
         return num_feats
+
+class ShardedAudioCorpusIterator(object):
+    """
+    This is the iterator for audio corpus, used for sharding large audio
+    corpus into small shards, to avoid hogging memory.
+
+    Inside this iterator, it automatically divides the audio files into
+    shards of size `shard_size`. Then, for each shard, it processes
+    into (example_dict, n_features) tuples when iterates.
+    """
+    def __init__(self, corpus_path, truncate, side, shard_size,
+                 sample_rate, window_size, window_stride,
+                 window, normalize_audio=True, assoc_iter=None):
+        """
+        Args:
+            corpus_path: the corpus file path.
+            truncate: .
+            side: "src" or "tgt".
+            shard_size: the shard size, 0 means not sharding the file.
+            assoc_iter: if not None, it is the associate iterator that
+                        this iterator should align its step with.
+        """
+        try:
+            # The codecs module seems to have bugs with seek()/tell(),
+            # so we use io.open().
+            self.corpus = io.open(corpus_path, "r", encoding="utf-8")
+        except IOError:
+            sys.stderr.write("Failed to open corpus file: %s" % corpus_path)
+            sys.exit(1)
+
+        self.side = side
+        self.shard_size = shard_size
+        self.sample_rate = sample_rate
+        self.truncate = truncate
+        self.window_size = window_size
+        self.window_stride = window_stride
+        self.window = window
+        self.normalize_audio = normalize_audio
+        self.assoc_iter = assoc_iter
+        self.last_pos = 0
+        self.last_line_index = -1
+        self.line_index = -1
+        self.eof = False
+
+    def __iter__(self):
+        """
+        Iterator of (example_dict, nfeats).
+        On each call, it iterates over as many (example_dict, nfeats) tuples
+        until this shard's size equals to or approximates `self.shard_size`.
+        """
+        iteration_index = -1
+        if self.assoc_iter is not None:
+            # We have associate iterator, just yields tuples
+            # util we run parallel with it.
+            while self.line_index < self.assoc_iter.line_index:
+                line = self.corpus.readline()
+                if line == '':
+                    raise AssertionError(
+                        "Two corpuses must have same number of lines!")
+
+                self.line_index += 1
+                iteration_index += 1
+                yield self._example_dict_iter(line, iteration_index)
+
+            if self.assoc_iter.eof:
+                self.eof = True
+                self.corpus.close()
+        else:
+            # Yield tuples util this shard's size reaches the threshold.
+            self.corpus.seek(self.last_pos)
+            while True:
+                if self.line_index % 1000 == 0:
+                    print (self.line_index)
+                    sys.stdout.flush()
+                if self.shard_size != 0 and self.line_index % 64 == 0:
+                    # This part of check is time consuming on Py2 (but
+                    # it is quite fast on Py3, weird!). So we don't bother
+                    # to check for very line. Instead we chekc every 64
+                    # lines. Thus we are not dividing exactly per
+                    # `shard_size`, but it is not too much difference.
+                    cur_pos = self.corpus.tell()
+                    #if cur_pos >= self.last_pos + self.shard_size:
+                    if self.line_index >= self.last_line_index + self.shard_size:
+                        self.last_pos = cur_pos
+                        self.last_line_index = self.line_index
+                        raise StopIteration
+
+                line = self.corpus.readline()
+                if line == '':
+                    self.eof = True
+                    self.corpus.close()
+                    raise StopIteration
+
+                self.line_index += 1
+                iteration_index += 1
+                yield self._example_dict_iter(line, iteration_index)
+
+    def hit_end(self):
+        return self.eof
+
+    def _example_dict_iter(self, line, index):
+        audio_path = line.strip()
+        spect = AudioDataset.extract_audio_features(audio_path,
+                                                    self.sample_rate,
+                                                    self.truncate,
+                                                    self.window_size,
+                                                    self.window_stride,
+                                                    self.window,
+                                                    self.normalize_audio)
+        example_dict = {self.side: spect,
+                        self.side + '_path': line.strip(),
+                        self.side + '_lengths': spect.size(1),
+                        'indices': index}
+        return example_dict

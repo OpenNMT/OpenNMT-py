@@ -159,14 +159,24 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
                                model_opt.rnn_size,
                                model_opt.dropout)
     elif model_opt.model_type == "audio":
-        encoder = AudioEncoder(model_opt.enc_layers,
-                               model_opt.brnn,
-                               model_opt.rnn_size,
-                               model_opt.dropout,
+        encoder = AudioEncoder(model_opt.audio_rnn_type,
+                               model_opt.audio_enc_layers,
+                               model_opt.audio_dec_layers,
+                               model_opt.audio_brnn,
+                               model_opt.audio_enc_rnn_size,
+                               model_opt.audio_dec_rnn_size,
+                               model_opt.audio_enc_pooling,
+                               model_opt.audio_dropout,
                                model_opt.sample_rate,
                                model_opt.window_size)
 
     # Make decoder.
+    if model_opt.model_type == 'audio':
+        model_opt.rnn_type = model_opt.audio_rnn_type
+        model_opt.brnn = model_opt.audio_brnn
+        model_opt.dec_layers = model_opt.audio_dec_layers
+        model_opt.rnn_size = model_opt.audio_dec_rnn_size
+        model_opt.dropout = model_opt.audio_dropout
     tgt_dict = fields["tgt"].vocab
     feature_dicts = onmt.io.collect_feature_vocabs(fields, 'tgt')
     tgt_embeddings = make_embeddings(model_opt, tgt_dict,

@@ -36,7 +36,9 @@ def make_translator(opt, report_score=True, out_file=None):
               for k in ["beam_size", "n_best", "max_length", "min_length",
                         "stepwise_penalty", "block_ngram_repeat",
                         "ignore_when_blocking", "dump_beam",
-                        "data_type", "replace_unk", "gpu", "verbose"]}
+                        "data_type", "replace_unk", "gpu", "verbose",
+                        "sample_rate", "window_size", "window_stride",
+                        "window"]}
 
     translator = Translator(model, fields, global_scorer=scorer,
                             out_file=out_file, report_score=report_score,
@@ -77,7 +79,7 @@ class Translator(object):
                  stepwise_penalty=False,
                  block_ngram_repeat=0,
                  ignore_when_blocking=[],
-                 sample_rate='16000',
+                 sample_rate=16000,
                  window_size=.02,
                  window_stride=.01,
                  window='hamming',
@@ -183,9 +185,10 @@ class Translator(object):
                     preds = trans.pred_sents[0]
                     preds.append('</s>')
                     attns = trans.attns[0].tolist()
+                    srcs = [str(item) for item in range(len(attns[0]))]
                     header_format = "{:>10.10} " + "{:>10.7} " * len(srcs)
                     row_format = "{:>10.10} " + "{:>10.7f} " * len(srcs)
-                    output = header_format.format("", *trans.src_raw) + '\n'
+                    output = header_format.format("", *srcs) + '\n'
                     for word, row in zip(preds, attns):
                         max_index = row.index(max(row))
                         row_format = row_format.replace(
@@ -266,8 +269,12 @@ class Translator(object):
         src_lengths = None
         if data_type == 'text':
             _, src_lengths = batch.src
-
-        enc_states, memory_bank = self.model.encoder(src, src_lengths)
+        elif data_type == 'audio':
+            src_lengths = batch.src_lengths
+        if data_type == 'audio':
+            enc_states, memory_bank, src_lengths = self.model.encoder(src, src_lengths)
+        else:
+            enc_states, memory_bank = self.model.encoder(src, src_lengths)
         dec_states = self.model.decoder.init_decoder_state(
             src, memory_bank, enc_states)
 
@@ -361,13 +368,18 @@ class Translator(object):
         data_type = data.data_type
         if data_type == 'text':
             _, src_lengths = batch.src
+        elif data_type == 'audio':
+            src_lengths = batch.src_lengths
         else:
             src_lengths = None
         src = onmt.io.make_features(batch, 'src', data_type)
         tgt_in = onmt.io.make_features(batch, 'tgt')[:-1]
 
         #  (1) run the encoder on the src
-        enc_states, memory_bank = self.model.encoder(src, src_lengths)
+        if data_type == 'audio':
+            enc_states, memory_bank, src_lengths = self.model.encoder(src, src_lengths)
+        else:
+            enc_states, memory_bank = self.model.encoder(src, src_lengths)
         dec_states = \
             self.model.decoder.init_decoder_state(src, memory_bank, enc_states)
 
@@ -385,7 +397,7 @@ class Translator(object):
             tgt = tgt.unsqueeze(1)
             scores = out.data.gather(1, tgt)
             scores.masked_fill_(tgt.eq(tgt_pad), 0)
-            gold_scores += scores
+            gold_scores += scores.view(-1)
         return gold_scores
 
     def _report_score(self, name, score_total, words_total):
