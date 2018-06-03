@@ -1,3 +1,4 @@
+# coding: utf-8
 """
     Base dataset class and constants
 """
