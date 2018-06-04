@@ -358,10 +358,6 @@ class Trainer(object):
                              if p.requires_grad]
                     onmt.utils.multi_utils.all_reduce_and_rescale_tensors(
                         grads, float(1))
-                else:
-                    for p in self.model.parameters():
-                        if p.requires_grad:
-                            p.grad.data.div_(float(1))
 
                 # 4. Update the parameters and statistics.
                 if self.grad_accum_count == 1:
