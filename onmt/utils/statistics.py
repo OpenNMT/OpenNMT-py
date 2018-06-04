@@ -100,19 +100,18 @@ class Statistics(object):
         """ compute elapsed time """
         return time.time() - self.start_time
 
-    def output(self, epoch, batch, n_batches, learning_rate, start):
+    def output(self, step, num_steps, learning_rate, start):
         """Write out statistics to stdout.
 
         Args:
-           epoch (int): current epoch
-           batch (int): current batch
+           step (int): current step
            n_batch (int): total batches
-           start (int): start time of epoch.
+           start (int): start time of step.
         """
         t = self.elapsed_time()
-        print(("Epoch %2d, %5d/%5d; acc: %6.2f; ppl: %6.2f; xent: %6.2f; " +
+        print(("Step %2d, %5d; acc: %6.2f; ppl: %6.2f; xent: %6.2f; " +
                "lr: %7.5f; %3.0f / %3.0f tok/s; %6.0f sec") %
-              (epoch, batch, n_batches,
+              (step, num_steps,
                self.accuracy(),
                self.ppl(),
                self.xent(),

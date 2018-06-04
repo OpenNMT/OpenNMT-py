@@ -10,28 +10,21 @@ def build_model_saver(model_opt, opt, model, fields, optim):
                              model_opt,
                              fields,
                              optim,
-                             opt.start_checkpoint_at)
+                             opt.keep_checkpoint)
     return model_saver
 
 
 class ModelSaverBase(object):
     def __init__(self, base_path, model, model_opt, fields, optim,
-                 start_checkpoint_at=0):
+                 keep_checkpoint=0):
         self.base_path = base_path
         self.model = model
         self.model_opt = model_opt
         self.fields = fields
         self.optim = optim
-        self.start_checkpoint_at = start_checkpoint_at
+        self.keep_checkpoint = keep_checkpoint
 
-    def maybe_save(self, epoch, valid_stats):
-        if epoch >= self.start_checkpoint_at:
-            self._save(epoch, valid_stats)
-
-    def force_save(self, epoch, valid_stats):
-        self._save(epoch, valid_stats)
-
-    def _save(self, epoch, valid_stats):
+    def _save(self, step):
         """ Save a resumable checkpoint.
 
         Args:
@@ -43,12 +36,12 @@ class ModelSaverBase(object):
 
 class ModelSaver(ModelSaverBase):
     def __init__(self, base_path, model, model_opt, fields, optim,
-                 start_checkpoint_at=0):
+                 keep_checkpoint=0):
         super(ModelSaver, self).__init__(
             base_path, model, model_opt, fields, optim,
-            start_checkpoint_at=start_checkpoint_at)
+            keep_checkpoint=keep_checkpoint)
 
-    def _save(self, epoch, valid_stats):
+    def _save(self, step):
         real_model = (self.model.module
                       if isinstance(self.model, nn.DataParallel)
                       else self.model)
@@ -65,10 +58,10 @@ class ModelSaver(ModelSaverBase):
             'generator': generator_state_dict,
             'vocab': onmt.inputters.save_fields_to_vocab(self.fields),
             'opt': self.model_opt,
-            'epoch': epoch,
+            'step': step,
             'optim': self.optim,
         }
+        print("Saving checkpoint %s_step_%d.pt" % (self.base_path, step))
         torch.save(checkpoint,
-                   '%s_acc_%.2f_ppl_%.2f_e%d.pt'
-                   % (self.base_path, valid_stats.accuracy(),
-                      valid_stats.ppl(), epoch))
+                   '%s_step_%d.pt'
+                   % (self.base_path, step))

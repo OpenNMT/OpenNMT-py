@@ -49,14 +49,15 @@ if true; then
 rm data/*.pt
 $my_python preprocess.py -train_src data/src-train.txt -train_tgt data/tgt-train.txt -valid_src data/src-val.txt -valid_tgt data/tgt-val.txt -save_data data/data -src_vocab_size 1000 -tgt_vocab_size 1000 -share_vocab
 
-$my_python train.py -data data/data -save_model /tmp/tmp -batch_type tokens -batch_size 1024 -accum_count 4 \
+$my_python train.py -data data/data -save_model onmt/tests/test_model -batch_type tokens -batch_size 1024 -accum_count 1 \
  -layers 1 -rnn_size 8 -word_vec_size 8 -encoder_type transformer -decoder_type transformer -share_embedding \
- -epochs 1 -gpuid 0 -max_generator_batches 4 -dropout 0.1 -normalization tokens \
+ -train_steps 10000 -gpuid 0 1 2 3 -max_generator_batches 4 -dropout 0.1 -normalization tokens \
  -max_grad_norm 0 -optim adam -decay_method noam -learning_rate 2 -label_smoothing 0.1 \
- -position_encoding -param_init 0 -warmup_steps 100 -param_init_glorot -adam_beta2 0.998 -seed 1111
+ -position_encoding -param_init 0 -warmup_steps 100 -param_init_glorot -adam_beta2 0.998 -seed 1111 \
+ -train_steps 6000 -valid_steps 1000 -save_checkpoint_steps 2000
 #
-mv /tmp/tmp*e10.pt onmt/tests/test_model.pt
-rm /tmp/tmp*.pt
+#
+#
 fi
 #
 # 3.41M Param - Epoch10: PPL 15.50 ACC 45.67

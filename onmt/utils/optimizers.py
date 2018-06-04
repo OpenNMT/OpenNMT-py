@@ -24,7 +24,7 @@ def build_optim(model, opt, checkpoint):
         optim = Optimizer(
             opt.optim, opt.learning_rate, opt.max_grad_norm,
             lr_decay=opt.learning_rate_decay,
-            start_decay_at=opt.start_decay_at,
+            start_decay_steps=opt.start_decay_steps,
             beta1=opt.adam_beta1,
             beta2=opt.adam_beta2,
             adagrad_accum=opt.adagrad_accumulator_init,
@@ -114,7 +114,7 @@ class Optimizer(object):
       method (:obj:`str`): one of [sgd, adagrad, adadelta, adam]
       lr (float): learning rate
       lr_decay (float, optional): learning rate decay multiplier
-      start_decay_at (int, optional): epoch to start learning rate decay
+      start_decay_steps (int, optional): step to start learning rate decay
       beta1, beta2 (float, optional): parameters for adam
       adagrad_accum (float, optional): initialization parameter for adagrad
       decay_method (str, option): custom decay options
@@ -134,7 +134,7 @@ class Optimizer(object):
     """
 
     def __init__(self, method, learning_rate, max_grad_norm,
-                 lr_decay=1, start_decay_at=None,
+                 lr_decay=1, start_decay_steps=None,
                  beta1=0.9, beta2=0.999,
                  adagrad_accum=0.0,
                  decay_method=None,
@@ -146,7 +146,7 @@ class Optimizer(object):
         self.max_grad_norm = max_grad_norm
         self.method = method
         self.lr_decay = lr_decay
-        self.start_decay_at = start_decay_at
+        self.start_decay_steps = start_decay_steps
         self.start_decay = False
         self._step = 0
         self.betas = [beta1, beta2]
@@ -215,22 +215,19 @@ class Optimizer(object):
             clip_grad_norm_(self.params, self.max_grad_norm)
         self.optimizer.step()
 
-    def update_learning_rate(self, ppl, epoch):
+    def update_learning_rate(self, step):
         """
         Decay learning rate if val perf does not improve
-        or we hit the start_decay_at limit.
+        or we hit the start_decay_steps limit.
         """
 
-        if self.start_decay_at is not None and epoch >= self.start_decay_at:
-            self.start_decay = True
-        if self.last_ppl is not None and ppl > self.last_ppl:
+        if self.start_decay_steps is not None and step >= self.start_decay_steps:
             self.start_decay = True
 
         if self.start_decay:
             self.learning_rate = self.learning_rate * self.lr_decay
             print("Decaying learning rate to %g" % self.learning_rate)
 
-        self.last_ppl = ppl
         if self.method != 'sparseadam':
             self.optimizer.param_groups[0]['lr'] = self.learning_rate
 
