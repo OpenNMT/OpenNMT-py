@@ -28,7 +28,7 @@ def build_trainer(opt, model, fields, optim, data_type, model_saver=None):
         data_type (str): string describing the type of data
             e.g. "text", "img", "audio"
         model_saver(:obj:`onmt.models.ModelSaverBase`): the utility object
-            used to save the model (after each epoch)
+            used to save the model
     """
     train_loss = onmt.utils.loss.build_loss_compute(
         model, fields["tgt"].vocab, opt)
@@ -72,7 +72,7 @@ class Trainer(object):
             report_manager(:obj:`onmt.utils.ReportMgrBase`):
                 the object that creates reports, or None
             model_saver(:obj:`onmt.models.ModelSaverBase`): the saver is
-                used after each epoch to save a checkpoint.
+                used to save a checkpoint.
                 Thus nothing will be saved if this parameter is None
     """
 
@@ -332,8 +332,8 @@ class Trainer(object):
     def report_step(self, learning_rate, step, train_stats=None,
                      valid_stats=None):
         """
-        Simple function to report epoch stats (if report_manager is set)
-        see `onmt.utils.ReportManagerBase.report_epoch` for doc
+        Simple function to report stats (if report_manager is set)
+        see `onmt.utils.ReportManagerBase.report_step` for doc
         """
         if self.report_manager is not None:
             return self.report_manager.report_step(

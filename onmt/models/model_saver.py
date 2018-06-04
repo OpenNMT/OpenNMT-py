@@ -28,8 +28,7 @@ class ModelSaverBase(object):
         """ Save a resumable checkpoint.
 
         Args:
-            epoch (int): epoch number
-            valid_stats : statistics of last validation run
+            step (int): step number
         """
         raise NotImplementedError()
 

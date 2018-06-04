@@ -80,8 +80,6 @@ def main(opt):
         checkpoint = torch.load(opt.train_from,
                                 map_location=lambda storage, loc: storage)
         model_opt = checkpoint['opt']
-        # I don't like reassigning attributes of opt: it's not clear.
-        opt.start_epoch = checkpoint['epoch'] + 1
     else:
         checkpoint = None
         model_opt = opt
