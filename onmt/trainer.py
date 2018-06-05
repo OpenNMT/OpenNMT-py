@@ -182,8 +182,6 @@ class Trainer(object):
                             self.report_step(
                                 self.optim.learning_rate, step, valid_stats=valid_stats)
 
-                        self.optim.update_learning_rate(step)
-
                         if (step % save_checkpoint_steps == 0):
                             if self.gpu_rank == 0:
                                 self.maybe_drop_checkpoint(step)
