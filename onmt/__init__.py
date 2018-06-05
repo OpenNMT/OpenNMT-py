@@ -1,6 +1,6 @@
 import onmt.io
-import onmt.Models
 import onmt.Loss
+import onmt.Models
 import onmt.translate
 import onmt.opts
 from onmt.Trainer import Trainer, Statistics

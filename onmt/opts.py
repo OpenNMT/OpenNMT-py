@@ -51,12 +51,12 @@ def model_opts(parser):
                        Options are [text|img|audio].""")
 
     group.add_argument('-encoder_type', type=str, default='rnn',
-                       choices=['rnn', 'brnn', 'mean', 'transformer', 'cnn'],
+                       choices=['rnn', 'brnn', 'mean', 'transformer', 'cnn', 'sr'],
                        help="""Type of encoder layer to use. Non-RNN layers
                        are experimental. Options are
                        [rnn|brnn|mean|transformer|cnn].""")
     group.add_argument('-decoder_type', type=str, default='rnn',
-                       choices=['rnn', 'transformer', 'cnn'],
+                       choices=['rnn', 'transformer', 'cnn', 'sr'],
                        help="""Type of decoder layer to use. Non-RNN layers
                        are experimental. Options are
                        [rnn|transformer|cnn].""")

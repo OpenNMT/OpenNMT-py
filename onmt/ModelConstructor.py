@@ -10,7 +10,7 @@ import onmt.io
 import onmt.Models
 import onmt.modules
 from onmt.Models import NMTModel, MeanEncoder, RNNEncoder, \
-                        StdRNNDecoder, InputFeedRNNDecoder
+                        StdRNNDecoder, InputFeedRNNDecoder, SREncoder, SRDecoder
 from onmt.modules import Embeddings, ImageEncoder, CopyGenerator, \
                          TransformerEncoder, TransformerDecoder, \
                          CNNEncoder, CNNDecoder, AudioEncoder
@@ -67,6 +67,8 @@ def make_encoder(opt, embeddings):
         return CNNEncoder(opt.enc_layers, opt.rnn_size,
                           opt.cnn_kernel_width,
                           opt.dropout, embeddings)
+    elif opt.encoder_type == 'sr':
+        return SREncoder(opt, embeddings)
     elif opt.encoder_type == "mean":
         return MeanEncoder(opt.enc_layers, embeddings)
     else:
@@ -92,6 +94,8 @@ def make_decoder(opt, embeddings):
                           opt.global_attention, opt.copy_attn,
                           opt.cnn_kernel_width, opt.dropout,
                           embeddings)
+    elif opt.decoder_type == 'sr':
+        return SRDecoder(opt, embeddings)
     elif opt.input_feed:
         return InputFeedRNNDecoder(opt.rnn_type, opt.brnn,
                                    opt.dec_layers, opt.rnn_size,
@@ -224,6 +228,12 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
         if hasattr(model.decoder, 'embeddings'):
             model.decoder.embeddings.load_pretrained_vectors(
                     model_opt.pre_word_vecs_dec, model_opt.fix_word_vecs_dec)
+        if hasattr(model.encoder, 'init_params'):
+            #Initialize layer normalization in the encoder
+            model.encoder.init_params()
+        if hasattr(model.decoder, 'init_params'):
+            #Initialize layer normalization in the encoder
+            model.decoder.init_params()
 
     # Add generator to model (this registers it as parameter of model).
     model.generator = generator
