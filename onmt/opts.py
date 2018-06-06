@@ -107,6 +107,9 @@ def model_opts(parser):
                        choices=['dot', 'general', 'mlp'],
                        help="""The attention type to use:
                        dotprod or general (Luong) or MLP (Bahdanau)""")
+    group.add_argument('-average_attn', action='store_true',
+                       help="""Replace multi-head attention with average
+                       average attention network in transformer decoder""")
 
     # Genenerator and loss options.
     group.add_argument('-copy_attn', action="store_true",
@@ -357,7 +360,7 @@ def train_opts(parser):
                        validation set or (ii) steps have gone past
                        start_decay_steps""")
     group.add_argument('-start_decay_steps', type=int, default=50000,
-                       help="""Start decaying every decay_steps after 
+                       help="""Start decaying every decay_steps after
                        start_decay_steps""")
     group.add_argument('-decay_steps', type=int, default=10000,
                        help="""Decay every decay_steps""")

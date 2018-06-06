@@ -93,6 +93,7 @@ def build_decoder(opt, embeddings):
     if opt.decoder_type == "transformer":
         return TransformerDecoder(opt.dec_layers, opt.rnn_size,
                                   opt.global_attention, opt.copy_attn,
+                                  opt.average_attn,
                                   opt.dropout, embeddings)
     elif opt.decoder_type == "cnn":
         return CNNDecoder(opt.dec_layers, opt.rnn_size,

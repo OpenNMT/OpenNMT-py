@@ -41,7 +41,8 @@ def build_translator(opt, report_score=True, out_file=None):
 
     translator = Translator(model, fields, global_scorer=scorer,
                             out_file=out_file, report_score=report_score,
-                            copy_attn=model_opt.copy_attn, **kwargs)
+                            copy_attn=model_opt.copy_attn,
+                            average_attn=model_opt.average_attn, **kwargs)
     return translator
 
 
@@ -72,6 +73,7 @@ class Translator(object):
                  max_length=100,
                  global_scorer=None,
                  copy_attn=False,
+                 average_attn=False,
                  gpu=False,
                  dump_beam="",
                  min_length=0,
@@ -100,6 +102,7 @@ class Translator(object):
         self.max_length = max_length
         self.global_scorer = global_scorer
         self.copy_attn = copy_attn
+        self.average_attn = average_attn
         self.beam_size = beam_size
         self.min_length = min_length
         self.stepwise_penalty = stepwise_penalty
@@ -324,6 +327,12 @@ class Translator(object):
         memory_lengths = src_lengths.repeat(beam_size)
         dec_states.repeat_beam_size_times(beam_size)
 
+        # initialize cache
+        if self.average_attn:
+          cache = self.model.decoder._init_cache(memory_bank, memory_lengths=memory_lengths)
+        else:
+          cache = None
+
         # (3) run the decoder to generate sentences, using beam search.
         for i in range(self.max_length):
             if all((b.done() for b in beam)):
@@ -345,8 +354,13 @@ class Translator(object):
             inp = inp.unsqueeze(2)
 
             # Run one step.
-            dec_out, dec_states, attn = self.model.decoder(
-                inp, memory_bank, dec_states, memory_lengths=memory_lengths)
+            if self.average_attn:
+              dec_out, dec_states, attn = self.model.decoder(
+                  inp, memory_bank, dec_states, memory_lengths=memory_lengths, step=i, cache=cache)
+            else:
+              dec_out, dec_states, attn = self.model.decoder(
+                  inp, memory_bank, dec_states, memory_lengths=memory_lengths)
+
             dec_out = dec_out.squeeze(0)
             # dec_out: beam x rnn_size
 
