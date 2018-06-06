@@ -7,145 +7,146 @@ from torch.autograd import Variable
 import numpy as np
 from onmt.Utils import aeq, sequence_mask
 
+
 class AttSRU(nn.Module):
-  def __init__(self, input_size, attention_size, output_size, dropout, attn_type='dot'):
-    super(AttSRU, self).__init__()
-    self.linear_in = nn.Linear(input_size, 3 * output_size, bias=False)
-    self.linear_hidden = nn.Linear(output_size, output_size, bias=False)
-    self.linear_ctx = nn.Linear(output_size, output_size, bias=False)
-    self.linear_enc = nn.Linear(output_size, output_size, bias=False)
-    self.linear_attn_in = nn.Linear(output_size, output_size, bias=False)
-    self.output_size = output_size
-    self.attn = DotAttention(attention_size)
-    self.dropout = nn.Dropout(dropout)
-    self.preact_ln = LayerNorm(3 * output_size)
-    self.enc_ln = LayerNorm(output_size)
-    self.trans_h_ln = LayerNorm(output_size)
-    self.trans_c_ln = LayerNorm(output_size)
-    self.attn_in_ln = LayerNorm(output_size)
-      
-  def init_params(self):
-    self.preact_ln.init_params()
-    self.enc_ln.init_params()
-    self.trans_h_ln.init_params()
-    self.trans_c_ln.init_params()
+    def __init__(self, input_size, attention_size, output_size,
+                 dropout):
+        super(AttSRU, self).__init__()
+        self.linear_in = nn.Linear(input_size, 3 * output_size, bias=False)
+        self.linear_hidden = nn.Linear(output_size, output_size, bias=False)
+        self.linear_ctx = nn.Linear(output_size, output_size, bias=False)
+        self.linear_enc = nn.Linear(output_size, output_size, bias=False)
+        self.linear_attn_in = nn.Linear(output_size, output_size, bias=False)
+        self.output_size = output_size
+        self.attn = DotAttention(attention_size)
+        self.dropout = nn.Dropout(dropout)
+        self.preact_ln = LayerNorm(3 * output_size)
+        self.enc_ln = LayerNorm(output_size)
+        self.trans_h_ln = LayerNorm(output_size)
+        self.trans_c_ln = LayerNorm(output_size)
+        self.attn_in_ln = LayerNorm(output_size)
 
-  
-  def forward(self, prev_layer, hidden, enc_output, memory_length):
-    """
-    :param prev_layer: targetL x batch x output_size
-    :param hidden: batch x output_size
-    :param enc_output: (targetL x batch) x sourceL x output_size
-    :return:
-    """
-    # targetL x batch x output_size
-    preact = self.linear_in(self.dropout(prev_layer))
-    pctx = self.linear_enc(self.dropout(enc_output))
-    preact = self.preact_ln(preact)
-    pctx = self.enc_ln(pctx)
+    def init_params(self):
+        self.preact_ln.init_params()
+        self.enc_ln.init_params()
+        self.trans_h_ln.init_params()
+        self.trans_c_ln.init_params()
 
-    z, h_gate, prev_layer_t = preact.split(self.output_size, dim=-1)
-    z, h_gate = F.sigmoid(z), F.sigmoid(h_gate)
-    
-    ss = []
-    for i in range(prev_layer.size(0)):
-      s = (1. - z[i]) * hidden + z[i] * prev_layer_t[i]
-      # targetL x batch x output_size
-      ss += [s.squeeze(0)]
-      # batch x output_size
-      hidden = s
-        
-    
-    # (targetL x batch) x output_size
-    ss = torch.stack(ss)
-    attn_in = self.attn_in_ln(self.linear_attn_in(self.dropout(ss))).transpose(0, 1).contiguous()
-    attn_out, p_attn = self.attn(attn_in, pctx, memory_length)
-    attn_out = attn_out / np.sqrt(self.output_size)
-    
-    attn = {"std": p_attn}
-        
-    trans_h = self.linear_hidden(self.dropout(ss))
-    trans_c = self.linear_ctx(self.dropout(attn_out))
-    trans_h = self.trans_h_ln(trans_h)
-    trans_c = self.trans_c_ln(trans_c)
-    # trans_h, trans_c = F.tanh(trans_h), F.tanh(trans_c)
-    out = trans_h + trans_c
-    out = F.tanh(out)
-    out = out.view(prev_layer.size())
-    out = (1. - h_gate) * out + h_gate * prev_layer
-    
-    return out, hidden, attn
+    def forward(self, prev_layer, hidden, enc_output, memory_length):
+        """
+        :param prev_layer: targetL x batch x output_size
+        :param hidden: batch x output_size
+        :param enc_output: (targetL x batch) x sourceL x output_size
+        :return:
+        """
+        # targetL x batch x output_size
+        preact = self.linear_in(self.dropout(prev_layer))
+        pctx = self.linear_enc(self.dropout(enc_output))
+        preact = self.preact_ln(preact)
+        pctx = self.enc_ln(pctx)
+
+        z, h_gate, prev_layer_t = preact.split(self.output_size, dim=-1)
+        z, h_gate = F.sigmoid(z), F.sigmoid(h_gate)
+
+        ss = []
+        for i in range(prev_layer.size(0)):
+            s = (1. - z[i]) * hidden + z[i] * prev_layer_t[i]
+            # targetL x batch x output_size
+            ss += [s.squeeze(0)]
+            # batch x output_size
+            hidden = s
+
+        # (targetL x batch) x output_size
+        ss = torch.stack(ss)
+        attn_in = self.attn_in_ln(
+            self.linear_attn_in(self.dropout(ss)))\
+            .transpose(0, 1).contiguous()
+        attn_out, p_attn = self.attn(attn_in, pctx, memory_length)
+        attn_out = attn_out / np.sqrt(self.output_size)
+
+        attn = {"std": p_attn}
+
+        trans_h = self.linear_hidden(self.dropout(ss))
+        trans_c = self.linear_ctx(self.dropout(attn_out))
+        trans_h = self.trans_h_ln(trans_h)
+        trans_c = self.trans_c_ln(trans_c)
+        # trans_h, trans_c = F.tanh(trans_h), F.tanh(trans_c)
+        out = trans_h + trans_c
+        out = F.tanh(out)
+        out = out.view(prev_layer.size())
+        out = (1. - h_gate) * out + h_gate * prev_layer
+
+        return out, hidden, attn
 
 
 class BiSRU(nn.Module):
-  def __init__(self, input_size, output_size, dropout):
-    super(BiSRU, self).__init__()
-    self.input_linear = nn.Linear(input_size, 3 * output_size, bias=False)
-    self.output_size = output_size
-    self.dropout = nn.Dropout(dropout)
-    self.preact_ln = LayerNorm(3 * output_size)
-      
-  def init_params(self):
-    self.preact_ln.init_params()
-  
-  def forward(self, input):
-    pre_act = self.input_linear(self.dropout(input))
+    def __init__(self, input_size, output_size, dropout):
+        super(BiSRU, self).__init__()
+        self.input_linear = nn.Linear(input_size, 3 * output_size,
+                                      bias=False)
+        self.output_size = output_size
+        self.dropout = nn.Dropout(dropout)
+        self.preact_ln = LayerNorm(3 * output_size)
 
-    pre_act = self.preact_ln(pre_act)
+    def init_params(self):
+        self.preact_ln.init_params()
 
-    h_gate = pre_act[:, :, 2 * self.output_size:]
-    g, x = pre_act[:, :, :2 * self.output_size].split(self.output_size, dim=-1)
-    gf, gb = F.sigmoid(g).split(self.output_size // 2, dim=-1)
-    x_f, x_b = x.split(self.output_size // 2, dim=-1)
-    h_gate = F.sigmoid(h_gate)
-    h_f_pre = gf * x_f
-    h_b_pre = gb * x_b
-    
-    h_i_f = Variable(h_f_pre.data.new(gf[0].size()).zero_(), requires_grad=False)
-    h_i_b = Variable(h_f_pre.data.new(gf[0].size()).zero_(), requires_grad=False)
-    
-    h_f, h_b = [], []
-    for i in range(input.size(0)):
-      h_i_f = (1. - gf[i]) * h_i_f + h_f_pre[i]
-      h_i_b = (1. - gb[-(i + 1)]) * h_i_b + h_b_pre[-(i + 1)]
-      h_f += [h_i_f]
-      h_b += [h_i_b]
-    
-    h = torch.cat([torch.stack(h_f), torch.stack(h_b[::-1])], dim=-1)
-    
-    output = (1. - h_gate) * h + input * h_gate
-    
-    return output
+    def forward(self, input):
+        pre_act = self.input_linear(self.dropout(input))
+
+        pre_act = self.preact_ln(pre_act)
+
+        h_gate = pre_act[:, :, 2 * self.output_size:]
+        g, x = pre_act[:, :, :2 * self.output_size]\
+            .split(self.output_size, dim=-1)
+        gf, gb = F.sigmoid(g).split(self.output_size // 2, dim=-1)
+        x_f, x_b = x.split(self.output_size // 2, dim=-1)
+        h_gate = F.sigmoid(h_gate)
+        h_f_pre = gf * x_f
+        h_b_pre = gb * x_b
+
+        h_i_f = Variable(h_f_pre.data.new(gf[0].size()).zero_(),
+                         requires_grad=False)
+        h_i_b = Variable(h_f_pre.data.new(gf[0].size()).zero_(),
+                         requires_grad=False)
+
+        h_f, h_b = [], []
+        for i in range(input.size(0)):
+            h_i_f = (1. - gf[i]) * h_i_f + h_f_pre[i]
+            h_i_b = (1. - gb[-(i + 1)]) * h_i_b + h_b_pre[-(i + 1)]
+            h_f += [h_i_f]
+            h_b += [h_i_b]
+
+        h = torch.cat([torch.stack(h_f), torch.stack(h_b[::-1])], dim=-1)
+
+        output = (1. - h_gate) * h + input * h_gate
+
+        return output
 
 
 class SRDecoderState(DecoderState):
-  def __init__(self, hidden_size, rnnstate):
-    """
-    Args:
-        hidden_size (int): the size of hidden layer of the decoder.
-        rnnstate: final hidden state from the encoder.
-            transformed to shape: layers x batch x (directions*dim).
-    """
-    self.hidden = rnnstate
-    self.coverage = None
-    
-    # Init the input feed.
-    batch_size = self.hidden[0].size(1)
-    h_size = (batch_size, hidden_size)
+    def __init__(self, hidden_size, rnnstate):
+        """
+        Args:
+            hidden_size (int): the size of hidden layer of the decoder.
+            rnnstate: final hidden state from the encoder.
+                transformed to shape: layers x batch x (directions*dim).
+        """
+        self.hidden = rnnstate
+        self.coverage = None
 
-  
-  @property
-  def _all(self):
-    return self.hidden
-  
-  def update_state(self, rnnstate):
-    self.hidden = rnnstate
+    @property
+    def _all(self):
+        return self.hidden
 
-  def repeat_beam_size_times(self, beam_size):
-    """ Repeat beam_size times along batch dimension. """
-    vars = [Variable(e.data.repeat(1, beam_size, 1), volatile=True)
-            for e in self._all]
-    self.hidden = tuple(vars)
+    def update_state(self, rnnstate):
+        self.hidden = rnnstate
+
+    def repeat_beam_size_times(self, beam_size):
+        """ Repeat beam_size times along batch dimension. """
+        vars = [Variable(e.data.repeat(1, beam_size, 1), volatile=True)
+                for e in self._all]
+        self.hidden = tuple(vars)
 
 
 class DotAttention(nn.Module):
@@ -157,7 +158,6 @@ class DotAttention(nn.Module):
     Constructs a unit mapping a query `q` of size `dim`
     and a source matrix `H` of size `n x dim`, to an output
     of size `dim`.
-
 
     .. mermaid::
 
@@ -195,7 +195,6 @@ class DotAttention(nn.Module):
     * Bahdanau Attention (mlp):
        * :math:`score(H_j, q) = v_a^T tanh(W_a q + U_a h_j)`
 
-
     Args:
        dim (int): dimensionality of query and key
        coverage (bool): use coverage term
@@ -204,7 +203,6 @@ class DotAttention(nn.Module):
     """
     def __init__(self, dim):
         super(DotAttention, self).__init__()
-
         self.dim = dim
         self.sm = nn.Softmax(dim=-1)
         self.tanh = nn.Tanh()
@@ -232,11 +230,9 @@ class DotAttention(nn.Module):
         h_s_ = h_s.transpose(1, 2)
         # (batch, t_len, d) x (batch, d, s_len) --> (batch, t_len, s_len)
         return torch.bmm(h_t, h_s_)
-        
 
     def forward(self, input, memory_bank, memory_lengths=None, coverage=None):
         """
-
         Args:
           input (`FloatTensor`): query vectors `[batch x tgt_len x dim]`
           memory_bank (`FloatTensor`): source vectors `[batch x src_len x dim]`
@@ -273,7 +269,8 @@ class DotAttention(nn.Module):
             align.data.masked_fill_(1 - mask, -float('inf'))
 
         # Softmax to normalize attention weights
-        align_vectors = self.sm(align.view(batch*targetL, sourceL))
+        align_vectors = self.sm(align.view(batch*targetL, sourceL)
+                                / np.sqrt(dim_))
         align_vectors = align_vectors.view(batch, targetL, sourceL)
 
         # each context vector c_t is the weighted average

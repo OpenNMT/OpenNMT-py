@@ -8,7 +8,7 @@ class LayerNorm(nn.Module):
         self.a_2 = nn.Parameter(torch.ones(features))
         self.b_2 = nn.Parameter(torch.zeros(features))
         self.eps = eps
-        
+
     def init_params(self):
         self.a_2.data.fill_(1.)
         self.b_2.data.fill_(0.)

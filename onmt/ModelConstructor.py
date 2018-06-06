@@ -10,7 +10,8 @@ import onmt.io
 import onmt.Models
 import onmt.modules
 from onmt.Models import NMTModel, MeanEncoder, RNNEncoder, \
-                        StdRNNDecoder, InputFeedRNNDecoder, SREncoder, SRDecoder
+                        StdRNNDecoder, InputFeedRNNDecoder, \
+                        SREncoder, SRDecoder
 from onmt.modules import Embeddings, ImageEncoder, CopyGenerator, \
                          TransformerEncoder, TransformerDecoder, \
                          CNNEncoder, CNNDecoder, AudioEncoder
@@ -229,10 +230,10 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
             model.decoder.embeddings.load_pretrained_vectors(
                     model_opt.pre_word_vecs_dec, model_opt.fix_word_vecs_dec)
         if hasattr(model.encoder, 'init_params'):
-            #Initialize layer normalization in the encoder
+            # Initialize layer normalization in the encoder
             model.encoder.init_params()
         if hasattr(model.decoder, 'init_params'):
-            #Initialize layer normalization in the encoder
+            # Initialize layer normalization in the encoder
             model.decoder.init_params()
 
     # Add generator to model (this registers it as parameter of model).

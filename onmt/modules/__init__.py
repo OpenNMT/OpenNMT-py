@@ -16,7 +16,8 @@ from onmt.modules.WeightNorm import WeightNormConv2d
 from onmt.modules.SRUnits import AttSRU, BiSRU, SRDecoderState
 
 from onmt.Models import EncoderBase, MeanEncoder, StdRNNDecoder, \
-    RNNDecoderBase, InputFeedRNNDecoder, RNNEncoder, NMTModel, SRDecoder, SREncoder
+    RNNDecoderBase, InputFeedRNNDecoder, RNNEncoder, NMTModel, \
+    SRDecoder, SREncoder
 
 from onmt.modules.SRU import check_sru_requirement
 can_use_sru = check_sru_requirement()
@@ -35,7 +36,7 @@ __all__ = [EncoderBase, MeanEncoder, RNNDecoderBase, InputFeedRNNDecoder,
            MatrixTree, WeightNormConv2d, ConvMultiStepAttention,
            CNNEncoder, CNNDecoder, StackedLSTM, StackedGRU,
            context_gate_factory, CopyGeneratorLossCompute, AudioEncoder,
-           AttSRU, BiSRU, SREncoder, SRDecoder]
+           AttSRU, BiSRU, SREncoder, SRDecoder, SRDecoderState]
 
 if can_use_sru:
     __all__.extend([SRU, check_sru_requirement])

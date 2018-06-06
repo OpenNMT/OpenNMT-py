@@ -50,6 +50,7 @@ Beta Features (committed):
 - Structured attention
 - [Conv2Conv convolution model]
 - SRU "RNNs faster than CNN" paper
+- SR-NMT "Deep Neural Machine Translation with Weakly-Recurrent Units"
 
 ## Quickstart
 
