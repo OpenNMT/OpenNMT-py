@@ -105,7 +105,7 @@ class Trainer(object):
         # Set model in training mode.
         self.model.train()
 
-    def train(self, train_iter_fct, valid_iter_fct, train_steps, valid_steps, save_checkpoint_steps):
+    def train(self, train_iter_fct, valid_iter_fct, train_steps, valid_steps):
         """
         The main training loops.
         by iterating over training data (i.e. `train_iter_fct`)
@@ -182,9 +182,8 @@ class Trainer(object):
                             self.report_step(
                                 self.optim.learning_rate, step, valid_stats=valid_stats)
 
-                        if (step % save_checkpoint_steps == 0):
-                            if self.gpu_rank == 0:
-                                self.maybe_drop_checkpoint(step)
+                        if self.gpu_rank == 0:
+                            self.maybe_save(step)
                         step += 1
                         if step > train_steps:
                             break
@@ -338,10 +337,9 @@ class Trainer(object):
                 learning_rate, step, train_stats=train_stats,
                 valid_stats=valid_stats)
 
-    def maybe_drop_checkpoint(self, *args, **kwargs):
+    def maybe_save(self, step):
         """
-        Drop a checkpoint (i.e. save the model) if a model saver is set
-        see `onmt.models.ModelSaverBase.maybe_save` for doc
+        Save the model if a model saver is set
         """
         if self.model_saver is not None:
-            self.model_saver._save(*args, **kwargs)
+            self.model_saver.maybe_save(step)

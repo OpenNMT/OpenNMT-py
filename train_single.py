@@ -116,7 +116,8 @@ def main(opt):
         lazily_load_dataset("valid", opt), fields, opt)
 
     # Do training.
-    trainer.train(train_iter_fct, valid_iter_fct, opt.train_steps, opt.valid_steps, opt.save_checkpoint_steps)
+    trainer.train(train_iter_fct, valid_iter_fct, opt.train_steps,
+        opt.valid_steps)
 
     if opt.tensorboard:
         trainer.report_manager.tensorboard_writer.close()

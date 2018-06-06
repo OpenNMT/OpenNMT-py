@@ -214,10 +214,10 @@ class Optimizer(object):
                      self._step * self.warmup_steps**(-1.5))))
         # Decay based on start_decay_steps every decay_steps
         else:
-            if self.start_decay_steps is not None and step >= self.start_decay_steps:
+            if self.start_decay_steps is not None and self._step >= self.start_decay_steps:
                 self.start_decay = True
             if self.start_decay:
-                if (step - self.start_decay_steps) % self.decay_steps == 0:
+                if (self._step - self.start_decay_steps) % self.decay_steps == 0:
                     self.learning_rate = self.learning_rate * self.lr_decay
                     print("Decaying learning rate to %g" % self.learning_rate)
 
