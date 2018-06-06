@@ -110,7 +110,6 @@ class ModelSaver(ModelSaverBase):
             'generator': generator_state_dict,
             'vocab': onmt.inputters.save_fields_to_vocab(self.fields),
             'opt': self.model_opt,
-            'step': step,
             'optim': self.optim,
         }
 

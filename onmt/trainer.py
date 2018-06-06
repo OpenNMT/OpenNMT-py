@@ -125,7 +125,7 @@ class Trainer(object):
         """
         print('\nStart training...')
 
-        step = 1
+        step = self.optim._step
         true_batchs = []
         accum = 0
         normalization = 0
