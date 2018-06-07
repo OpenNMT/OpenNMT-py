@@ -107,9 +107,9 @@ def model_opts(parser):
                        choices=['dot', 'general', 'mlp'],
                        help="""The attention type to use:
                        dotprod or general (Luong) or MLP (Bahdanau)""")
-    group.add_argument('-average_attn', action='store_true',
-                       help="""Replace multi-head attention with average
-                       average attention network in transformer decoder""")
+    group.add_argument('-self_attn_type', type=str, default="scaled-dot",
+                       help="""Self attention type in Transformer decoder
+                       layer -- currently "scaled-dot" or "average" """)
 
     # Genenerator and loss options.
     group.add_argument('-copy_attn', action="store_true",

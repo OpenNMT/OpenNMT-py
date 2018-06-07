@@ -144,7 +144,7 @@ class TransformerDecoder(nn.Module):
     """
 
     def __init__(self, num_layers, hidden_size, attn_type,
-                 copy_attn, average_attn, dropout, embeddings):
+                 copy_attn, self_attn_type, dropout, embeddings):
         super(TransformerDecoder, self).__init__()
 
         # Basic attributes.
@@ -153,14 +153,9 @@ class TransformerDecoder(nn.Module):
         self.embeddings = embeddings
 
         # Build TransformerDecoder.
-        if average_attn:
-            self.transformer_layers = nn.ModuleList(
-                [TransformerDecoderLayer(hidden_size, dropout, self_attn_type="average")
-                 for _ in range(num_layers)])
-        else:
-            self.transformer_layers = nn.ModuleList(
-                [TransformerDecoderLayer(hidden_size, dropout, self_attn_type="scaled-dot")
-                 for _ in range(num_layers)])
+        self.transformer_layers = nn.ModuleList(
+            [TransformerDecoderLayer(hidden_size, dropout, self_attn_type=self_attn_type)
+             for _ in range(num_layers)])
 
         # TransformerDecoder has its own attention mechanism.
         # Set up a separated copy attention layer, if needed.

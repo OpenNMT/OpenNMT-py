@@ -4,7 +4,7 @@ import argparse
 import codecs
 import os
 import math
-
+import time
 import torch
 from itertools import count
 
@@ -42,7 +42,7 @@ def build_translator(opt, report_score=True, out_file=None):
     translator = Translator(model, fields, global_scorer=scorer,
                             out_file=out_file, report_score=report_score,
                             copy_attn=model_opt.copy_attn,
-                            average_attn=model_opt.average_attn, **kwargs)
+                            self_attn_type=model_opt.self_attn_type, **kwargs)
     return translator
 
 
@@ -73,7 +73,7 @@ class Translator(object):
                  max_length=100,
                  global_scorer=None,
                  copy_attn=False,
-                 average_attn=False,
+                 self_attn_type="scaled-dot",
                  gpu=False,
                  dump_beam="",
                  min_length=0,
@@ -102,7 +102,7 @@ class Translator(object):
         self.max_length = max_length
         self.global_scorer = global_scorer
         self.copy_attn = copy_attn
-        self.average_attn = average_attn
+        self.self_attn_type = self_attn_type
         self.beam_size = beam_size
         self.min_length = min_length
         self.stepwise_penalty = stepwise_penalty
@@ -328,7 +328,7 @@ class Translator(object):
         dec_states.repeat_beam_size_times(beam_size)
 
         # initialize cache
-        if self.average_attn:
+        if self.self_attn_type == "average":
           cache = self.model.decoder._init_cache(memory_bank, memory_lengths=memory_lengths)
         else:
           cache = None
@@ -354,7 +354,7 @@ class Translator(object):
             inp = inp.unsqueeze(2)
 
             # Run one step.
-            if self.average_attn:
+            if self.self_attn_type == "average":
               dec_out, dec_states, attn = self.model.decoder(
                   inp, memory_bank, dec_states, memory_lengths=memory_lengths, step=i, cache=cache)
             else:
@@ -381,11 +381,13 @@ class Translator(object):
                 # beam x tgt_vocab
                 out = out.log()
                 beam_attn = unbottle(attn["copy"])
+
             # (c) Advance each beam.
             for j, b in enumerate(beam):
                 b.advance(out[:, j],
                           beam_attn.data[:, j, :memory_lengths[j]])
                 dec_states.beam_update(j, b.get_current_origin(), beam_size)
+
 
         # (4) Extract sentences from beam.
         ret = self._from_beam(beam)
