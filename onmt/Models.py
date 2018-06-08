@@ -320,9 +320,11 @@ class RNNDecoderBase(nn.Module):
         state.update_state(decoder_final, final_output.unsqueeze(0), coverage)
 
         # Concatenates sequence of tensors along a new dimension.
-        decoder_outputs = torch.stack(decoder_outputs)
+        if not isinstance(decoder_outputs, torch.Tensor):
+            decoder_outputs = torch.stack(decoder_outputs)
         for k in attns:
-            attns[k] = torch.stack(attns[k])
+            if not isinstance(attns[k], torch.Tensor):
+                attns[k] = torch.stack(attns[k])
 
         return decoder_outputs, state, attns
 
