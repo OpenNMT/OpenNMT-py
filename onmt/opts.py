@@ -239,7 +239,7 @@ def train_opts(parser):
                        help="Rank the current gpu device.")
     group.add_argument('-gpu_backend', default='nccl', nargs='+', type=str,
                        help="Type of torch distributed backend")
-    group.add_argument('-gpu_verbose', default=0, nargs='+', type=int,
+    group.add_argument('-gpu_verbose', default=0, type=int,
                        help="Gives more info on each process per GPU.")
 
     group.add_argument('-seed', type=int, default=-1,
