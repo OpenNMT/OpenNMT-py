@@ -16,7 +16,7 @@ import onmt.opts as opts
 
 def build_translator(opt, report_score=True, out_file=None):
     if out_file is None:
-        out_file = codecs.open(opt.output, 'w', 'utf-8')
+        out_file = codecs.open(opt.output, 'w+', 'utf-8')
 
     if opt.gpu > -1:
         torch.cuda.set_device(opt.gpu)
@@ -36,7 +36,7 @@ def build_translator(opt, report_score=True, out_file=None):
     kwargs = {k: getattr(opt, k)
               for k in ["beam_size", "n_best", "max_length", "min_length",
                         "stepwise_penalty", "block_ngram_repeat",
-                        "ignore_when_blocking", "dump_beam",
+                        "ignore_when_blocking", "dump_beam", "report_bleu",
                         "data_type", "replace_unk", "gpu", "verbose"]}
 
     translator = Translator(model, fields, global_scorer=scorer,
@@ -436,11 +436,14 @@ class Translator(object):
 
     def _report_bleu(self, tgt_path):
         import subprocess
-        path = os.path.split(os.path.realpath(__file__))[0]
+        base_dir = os.path.abspath(__file__ + "/../../..")
+        tgt_path = os.path.join(os.getcwd(), tgt_path)
+        # Rollback pointer to the beginning.
+        self.out_file.seek(0)
         print()
 
-        res = subprocess.check_output("perl %s/tools/multi-bleu.perl %s %s"
-                                      % (path, tgt_path, self.output),
+        res = subprocess.check_output("perl %s/tools/multi-bleu.perl %s"
+                                      % (base_dir, tgt_path),
                                       stdin=self.out_file,
                                       shell=True).decode("utf-8")
 
