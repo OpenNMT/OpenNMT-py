@@ -8,7 +8,7 @@
           things to users(i.e. how to do it). Also see train.py(one of the
           users of this library) for the strategy things we do.
 """
-#!/usr/bin/env python
+
 from __future__ import division
 from __future__ import print_function
 
@@ -44,10 +44,10 @@ def build_trainer(opt, model, fields, optim, data_type, model_saver=None):
     gpu_verbose = opt.gpu_verbose
 
     report_manager = onmt.utils.build_report_manager(opt)
-    trainer = onmt.Trainer(model, train_loss, valid_loss, optim,
-                           trunc_size, shard_size, data_type,
-                           norm_method, grad_accum_count, n_gpu, gpu_rank,
-                           gpu_verbose, report_manager, model_saver=model_saver)
+    trainer = onmt.Trainer(model, train_loss, valid_loss, optim, trunc_size,
+                           shard_size, data_type, norm_method,
+                           grad_accum_count, n_gpu, gpu_rank, gpu_verbose,
+                           report_manager, model_saver=model_saver)
     return trainer
 
 
@@ -116,7 +116,7 @@ class Trainer(object):
                 iterator. e.g. something like
                 train_iter_fct = lambda: generator(*args, **kwargs)
             valid_iter_fct(function): same as train_iter_fct, for valid data
-            train_steps(int): 
+            train_steps(int):
             valid_steps(int):
             save_checkpoint_steps(int):
 
@@ -141,7 +141,8 @@ class Trainer(object):
             for i, batch in enumerate(train_iter):
                 if self.n_gpu == 0 or (i % self.n_gpu == self.gpu_rank):
                     if self.gpu_verbose > 1:
-                        print("GPU %d: index: %d accum: %d" % (self.gpu_rank, i, accum))        
+                        print("GPU %d: index: %d accum: %d"
+                              % (self.gpu_rank, i, accum))
                     cur_dataset = train_iter.get_cur_dataset()
                     self.train_loss.cur_dataset = cur_dataset
 
@@ -156,7 +157,9 @@ class Trainer(object):
                     if accum == self.grad_accum_count:
                         reduce_counter += 1
                         if self.gpu_verbose > 0:
-                            print("GPU %d: reduce_counter: %d n_minibatch %d" % (self.gpu_rank, reduce_counter, len(true_batchs)))
+                            print("GPU %d: reduce_counter: %d n_minibatch %d"
+                                  % (self.gpu_rank, reduce_counter,
+                                     len(true_batchs)))
                         self._gradient_accumulation(
                             true_batchs, total_stats,
                             report_stats, normalization)
@@ -171,16 +174,19 @@ class Trainer(object):
                         normalization = 0
                         if (step % valid_steps == 0):
                             if self.gpu_verbose > 0:
-                                print('GPU %d: validate step %d' % (self.gpu_rank, step))
+                                print('GPU %d: validate step %d'
+                                      % (self.gpu_rank, step))
                             valid_iter = valid_iter_fct()
                             valid_stats = self.validate(valid_iter)
                             if self.gpu_verbose > 0:
-                                print('GPU %d: gather valid stat step %d' % (self.gpu_rank, step))
+                                print('GPU %d: gather valid stat step %d'
+                                      % (self.gpu_rank, step))
                             valid_stats = self.maybe_gather_stats(valid_stats)
                             if self.gpu_verbose > 0:
-                                print('GPU %d: report stat step %d' % (self.gpu_rank, step))
-                            self.report_step(
-                                self.optim.learning_rate, step, valid_stats=valid_stats)
+                                print('GPU %d: report stat step %d'
+                                      % (self.gpu_rank, step))
+                            self.report_step(self.optim.learning_rate,
+                                             step, valid_stats=valid_stats)
 
                         if self.gpu_rank == 0:
                             self.maybe_save(step)
@@ -188,9 +194,9 @@ class Trainer(object):
                         if step > train_steps:
                             break
 
-            print('GPU %d: for information we completed an epoch at step %d' % (self.gpu_rank, step))
+            print('GPU %d: for information we completed an epoch at step %d'
+                  % (self.gpu_rank, step))
             train_iter = train_iter_fct()
-
 
         return total_stats
 
@@ -327,7 +333,7 @@ class Trainer(object):
                 multigpu=self.n_gpu > 1)
 
     def report_step(self, learning_rate, step, train_stats=None,
-                     valid_stats=None):
+                    valid_stats=None):
         """
         Simple function to report stats (if report_manager is set)
         see `onmt.utils.ReportManagerBase.report_step` for doc

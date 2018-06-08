@@ -5,7 +5,10 @@ from onmt.utils.statistics import Statistics
 from onmt.utils.multi_utils import is_master, multi_init, \
     all_reduce_and_rescale_tensors
 
-import onmt.utils.optimizers
+from onmt.utils.optimizers import build_optim, MultipleOptimizer, \
+    Optimizer
 
-__all__ = ["aeq", "use_gpu", "ReportMgr", "build_report_manager", "Statistics",
-           "is_master", "multi_init", "all_reduce_and_rescale_tensors"]
+__all__ = ["aeq", "use_gpu", "ReportMgr",
+           "build_report_manager", "Statistics", "is_master",
+           "multi_init", "all_reduce_and_rescale_tensors",
+           "build_optim", "MultipleOptimizer", "Optimizer"]

@@ -81,10 +81,10 @@ class TransformerDecoderLayer(nn.Module):
 
         if self.self_attn_type == "scaled-dot":
             query, attn = self.self_attn(all_input, all_input, input_norm,
-                                             mask=dec_mask)
+                                         mask=dec_mask)
         elif self.self_attn_type == "average":
-            query, attn = self.self_attn(input_norm,
-                                             mask=dec_mask, layer_cache=layer_cache, step=step)
+            query, attn = self.self_attn(input_norm, mask=dec_mask,
+                                         layer_cache=layer_cache, step=step)
 
         query = self.drop(query) + inputs
 
@@ -154,7 +154,8 @@ class TransformerDecoder(nn.Module):
 
         # Build TransformerDecoder.
         self.transformer_layers = nn.ModuleList(
-            [TransformerDecoderLayer(hidden_size, dropout, self_attn_type=self_attn_type)
+            [TransformerDecoderLayer(hidden_size, dropout,
+             self_attn_type=self_attn_type)
              for _ in range(num_layers)])
 
         # TransformerDecoder has its own attention mechanism.
@@ -166,7 +167,6 @@ class TransformerDecoder(nn.Module):
             self._copy = True
         self.layer_norm = onmt.modules.LayerNorm(hidden_size)
 
-
     def _init_cache(self, memory_bank, memory_lengths=None):
         cache = {}
         batch_size = memory_bank.size(1)
@@ -176,7 +176,8 @@ class TransformerDecoder(nn.Module):
             cache["layer_{}".format(l)] = layer_cache
         return cache
 
-    def forward(self, tgt, memory_bank, state, memory_lengths=None, step=None, cache=None):
+    def forward(self, tgt, memory_bank, state, memory_lengths=None,
+                step=None, cache=None):
         """
         See :obj:`onmt.modules.RNNDecoderBase.forward()`
         """
@@ -229,7 +230,9 @@ class TransformerDecoder(nn.Module):
                 = self.transformer_layers[i](output, src_memory_bank,
                                              src_pad_mask, tgt_pad_mask,
                                              previous_input=prev_layer_input,
-                                             layer_cache=cache["layer_{}".format(i)] if cache is not None else None,
+                                             layer_cache=cache["layer_{}".
+                                                               format(i)]
+                                             if cache is not None else None,
                                              step=step)
             saved_inputs.append(all_input)
 

@@ -76,7 +76,7 @@ class ModelSaverBase(object):
         Remove a checkpoint
 
         Args:
-            name(str): name that indentifies the checkpoint 
+            name(str): name that indentifies the checkpoint
                 (it may be a filepath)
         """
         raise NotImplementedError()

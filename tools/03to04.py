@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
     Tools to convert models created using OpenNMT-py < 04
-    It requires to have sources of both versions of OpenNMT-py 
+    It requires to have sources of both versions of OpenNMT-py
 
     Example:
         ```
@@ -12,7 +12,7 @@
         cd onmt_legacy
         git reset hard 0ecec8b4c16fdec7d8ce2646a0ea47ab6535d308
 
-        # get >= 0.4 
+        # get >= 0.4
         cd ../onmt
         git remote add ubiqus https://github.com/Ubiqus/OpenNMT-py
         git pull ubiqus master

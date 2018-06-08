@@ -4,7 +4,6 @@ import argparse
 import codecs
 import os
 import math
-import time
 import torch
 from itertools import count
 
@@ -329,9 +328,10 @@ class Translator(object):
 
         # initialize cache
         if self.self_attn_type == "average":
-          cache = self.model.decoder._init_cache(memory_bank, memory_lengths=memory_lengths)
+            cache = self.model.decoder._init_cache(
+              memory_bank, memory_lengths=memory_lengths)
         else:
-          cache = None
+            cache = None
 
         # (3) run the decoder to generate sentences, using beam search.
         for i in range(self.max_length):
@@ -355,10 +355,11 @@ class Translator(object):
 
             # Run one step.
             if self.self_attn_type == "average":
-              dec_out, dec_states, attn = self.model.decoder(
-                  inp, memory_bank, dec_states, memory_lengths=memory_lengths, step=i, cache=cache)
+                dec_out, dec_states, attn = self.model.decoder(
+                  inp, memory_bank, dec_states, memory_lengths=memory_lengths,
+                  step=i, cache=cache)
             else:
-              dec_out, dec_states, attn = self.model.decoder(
+                dec_out, dec_states, attn = self.model.decoder(
                   inp, memory_bank, dec_states, memory_lengths=memory_lengths)
 
             dec_out = dec_out.squeeze(0)
@@ -387,7 +388,6 @@ class Translator(object):
                 b.advance(out[:, j],
                           beam_attn.data[:, j, :memory_lengths[j]])
                 dec_states.beam_update(j, b.get_current_origin(), beam_size)
-
 
         # (4) Extract sentences from beam.
         ret = self._from_beam(beam)

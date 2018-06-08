@@ -457,7 +457,7 @@ class DatasetLazyIter(object):
 def build_dataset_iter(datasets, fields, opt, is_train=True):
     """
     This returns user-defined train/validate data iterator for the trainer
-    to iterate over. We implement simple ordered iterator strategy here, 
+    to iterate over. We implement simple ordered iterator strategy here,
     but more sophisticated strategy like curriculum learning is ok too.
     """
     batch_size = opt.batch_size if is_train else opt.valid_batch_size

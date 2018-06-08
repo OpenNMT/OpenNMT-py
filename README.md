@@ -1,37 +1,15 @@
 # OpenNMT-py: Open-Source Neural Machine Translation
 
-[![Build Status](https://travis-ci.org/OpenNMT/OpenNMT-py.svg?branch=master)](https://travis-ci.org/OpenNMT/OpenNMT-py)
+[![Build Status](https://travis-ci.org/Ubiqus/OpenNMT-py.svg?branch=master)](https://travis-ci.org/Ubiqus/OpenNMT-py)
 
 
-[OpenNMT](https://opennmt.net) is an open-source (MIT) neural machine translation system which has 3 different implementations.
+This is a fork of OpenNMT-py
+Multi-GPU supported with Torch Distributed (pytorch 0.4)
 
-The genuine one was a Lua version based on the Harvard Seq2Seq framework. [OpenNMT-Lua](https://github.com/OpenNMT/OpenNMT)
+See major changes here: https://github.com/Ubiqus/OpenNMT-py/releases
 
-The [Pytorch](https://github.com/pytorch/pytorch) version is this repo.
+Script for upgrading existing pytorch 0.3 models: tools/03to04.py
 
-The tensorflow version: [OpenNMT-tf](https://github.com/OpenNMT/OpenNMT-tf)
-
-
-OpenNMT-py is designed to be research friendly to try out new ideas in translation, summary, image-to-text, morphology, and many other domains but also ready for production with a full REST API.
-
-Codebase is relatively stable, but PyTorch is still evolving. We currently recommend forking if you need to have stable code.
-
-OpenNMT-py is run as a collaborative open-source project. The original code was written by [Adam Lerer](http://github.com/adamlerer) (NYC) and [Bryan McCann](https://github.com/bmccann).
-Major contributions have come from [Sasha Rush](http://github.com/srush) and his group (Cambridge, MA), [Ben Peters](http://github.com/bpopeters) (Saarbrücken), [Jianyu Zhan](http://github.com/jianyuzhan) (Shenzhen), [Paul Tardy](https://github.com/pltrdy) , [Vincent Nguyen](https://github.com/vince62s) and many others.  
-
-We love contributions. Please consult the Issues page for any [Contributions Welcome](https://github.com/OpenNMT/OpenNMT-py/issues?q=is%3Aissue+is%3Aopen+label%3A%22contributions+welcome%22) tagged post. 
-
-<center style="padding: 40px"><img width="70%" src="http://opennmt.github.io/simple-attn.png" /></center>
-
-
-Table of Contents
-=================
-  * [Full Documentation](http://opennmt.net/OpenNMT-py/)
-  * [Requirements](#requirements)
-  * [Features](#features)
-  * [Quickstart](#quickstart)
-  * [Citation](#citation)
- 
 ## Requirements
   python 3, torch >=0.4.0, torchtext >=0.2.3, six, tqdm, future, cupy pynvrtc for SRU
 
@@ -120,29 +98,4 @@ Now you have a model which you can use to predict on new data. We do this by run
 
 Go to tutorial: [How to use GloVe pre-trained embeddings in OpenNMT-py](http://forum.opennmt.net/t/how-to-use-glove-pre-trained-embeddings-in-opennmt-py/1011)
 
-## Pretrained Models
 
-The following pretrained models can be downloaded and used with translate.py.
-
-http://opennmt.net/Models-py/
-
-
-
-## Citation
-
-[OpenNMT technical report](https://doi.org/10.18653/v1/P17-4012)
-
-```
-@inproceedings{opennmt,
-  author    = {Guillaume Klein and
-               Yoon Kim and
-               Yuntian Deng and
-               Jean Senellart and
-               Alexander M. Rush},
-  title     = {OpenNMT: Open-Source Toolkit for Neural Machine Translation},
-  booktitle = {Proc. ACL},
-  year      = {2017},
-  url       = {https://doi.org/10.18653/v1/P17-4012},
-  doi       = {10.18653/v1/P17-4012}
-}
-```

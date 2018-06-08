@@ -117,7 +117,7 @@ def main(opt):
 
     # Do training.
     trainer.train(train_iter_fct, valid_iter_fct, opt.train_steps,
-        opt.valid_steps)
+                  opt.valid_steps)
 
     if opt.tensorboard:
         trainer.report_manager.tensorboard_writer.close()

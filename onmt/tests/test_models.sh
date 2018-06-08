@@ -32,10 +32,10 @@
 ###             ./test_models set_debug all 
 ###  
 
-PYTHON_BIN=python
+PYTHON_BIN=python3
 
 
-MODEL_DIR="/tmp"
+MODEL_DIR="./onmt/tests"
 MODEL_NAME="onmt_tmp_model"
 MODEL_PATH="$MODEL_DIR/$MODEL_NAME"
 MODEL_FILES_PREFIX="${MODEL_NAME}_acc_"
@@ -104,7 +104,7 @@ lstm(){
                     -rnn_size 512 \
                     -word_vec_size 512 \
                     -layers 1 \
-                    -train_steps 10000 \
+                    -train_steps 500 \
                     -optim adam  \
                     -learning_rate 0.001 \
                     -rnn_type LSTM
@@ -133,7 +133,7 @@ sru(){
                     -rnn_size 512 \
                     -word_vec_size 512 \
                     -layers 1 \
-                    -train_steps 10000 \
+                    -train_steps 500 \
                     -optim adam  \
                     -learning_rate 0.001 \
                     -rnn_type SRU \
@@ -162,7 +162,7 @@ cnn(){
                     -rnn_size 256 \
                     -word_vec_size 256 \
                     -layers 2 \
-                    -train_steps 10000 \
+                    -train_steps 500 \
                     -optim adam  \
                     -learning_rate 0.001 \
                     -encoder_type cnn \
@@ -190,7 +190,7 @@ morph(){
                     -rnn_size 400 \
                     -word_vec_size 100 \
                     -layers 1 \
-                    -train_steps 10000 \
+                    -train_steps 500 \
                     -optim adam  \
                     -learning_rate 0.001
 
@@ -226,7 +226,7 @@ transformer(){
                     -word_vec_size 256 \
                     -encoder_type transformer \
                     -decoder_type transformer \
-                    -train_steps 10000 \
+                    -train_steps 500 \
                     -gpuid $GPUID \
                     -max_generator_batches 4 \
                     -dropout 0.1 \

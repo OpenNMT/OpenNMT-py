@@ -121,7 +121,7 @@ class Optimizer(object):
       decay_method (str, option): custom decay options
       warmup_steps (int, option): parameter for `noam` decay
       model_size (int, option): parameter for `noam` decay
-    
+
     We use the default parameters for Adam that are suggested by
     the original paper https://arxiv.org/pdf/1412.6980.pdf
     These values are also used by other established implementations,
@@ -214,10 +214,12 @@ class Optimizer(object):
                      self._step * self.warmup_steps**(-1.5))))
         # Decay based on start_decay_steps every decay_steps
         else:
-            if self.start_decay_steps is not None and self._step >= self.start_decay_steps:
+            if ((self.start_decay_steps is not None) and (
+                     self._step >= self.start_decay_steps)):
                 self.start_decay = True
             if self.start_decay:
-                if (self._step - self.start_decay_steps) % self.decay_steps == 0:
+                if ((self._step - self.start_decay_steps)
+                   % self.decay_steps == 0):
                     self.learning_rate = self.learning_rate * self.lr_decay
                     print("Decaying learning rate to %g" % self.learning_rate)
 

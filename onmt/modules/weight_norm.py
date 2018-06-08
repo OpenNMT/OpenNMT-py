@@ -88,12 +88,12 @@ class WeightNormLinear(nn.Linear):
             self.b_avg.copy_(self.b.data)
             return Variable(x_init)
         else:
-            V, g, b = get_vars_maybe_avg(self, ['V', 'g', 'b'],
+            v, g, b = get_vars_maybe_avg(self, ['V', 'g', 'b'],
                                          self.training,
                                          polyak_decay=self.polyak_decay)
             # batch_size * out_features
-            x = F.linear(x, V)
-            scalar = g / torch.norm(V, 2, 1).squeeze(1)
+            x = F.linear(x, v)
+            scalar = g / torch.norm(v, 2, 1).squeeze(1)
             x = scalar.view(1, -1).expand_as(x) * x + \
                 b.view(1, -1).expand_as(x)
             return x
@@ -232,14 +232,14 @@ class WeightNormConvTranspose2d(nn.ConvTranspose2d):
             self.b_avg.copy_(self.b.data)
             return Variable(x_init)
         else:
-            V, g, b = get_vars_maybe_avg(
+            v, g, b = get_vars_maybe_avg(
                 self, ['V', 'g', 'b'], self.training,
                 polyak_decay=self.polyak_decay)
             scalar = g / \
-                torch.norm(V.transpose(0, 1).contiguous().view(
+                torch.norm(v.transpose(0, 1).contiguous().view(
                     self.out_channels, -1), 2, 1).squeeze(1)
             w = scalar.view(self.in_channels, self.out_channels,
-                            *([1] * (len(V.size()) - 2))).expand_as(V) * V
+                            *([1] * (len(v.size()) - 2))).expand_as(v) * v
 
             x = F.conv_transpose2d(x, w, b, self.stride,
                                    self.padding, self.output_padding,
