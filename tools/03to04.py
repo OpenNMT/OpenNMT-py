@@ -58,6 +58,7 @@ def convert(onmt_legacy, onmt_new, file_path, output_path):
     importlib.reload(onmt)
     print("With ONMT:\n\t%s" % str(onmt))
     m['optim'].__class__ = onmt.utils.optimizers.Optimizer
+    m['optim'].optimizer.__class__ = onmt.utils.optimizers.MultipleOptimizer
 
     with open(output_path, 'wb') as output:
         print("Saving new model to:\n\t%s" % output_path)
