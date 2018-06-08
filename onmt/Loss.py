@@ -118,10 +118,8 @@ class LossComputeBase(nn.Module):
         range_ = (cur_trunc, cur_trunc + trunc_size)
         shard_state = self._make_shard_state(batch, output, range_, attns)
 
-        for i,shard in enumerate(shards(shard_state, shard_size)):
-            #print (i)
+        for shard in shards(shard_state, shard_size):
             loss, stats = self._compute_loss(batch, **shard)
-            #loss.div(float(normalization)).backward(retain_graph=True)
             loss.div(float(normalization)).backward()
             batch_stats.update(stats)
 
@@ -223,7 +221,6 @@ def filter_shard_state(state, shard_size=None, requires_grad=True):
                 for v_chunk in torch.split(v, shard_size):
                     v_chunk = v_chunk.data.clone()
                     v_chunk.requires_grad = v.requires_grad
-                    #print (v_chunk.requires_grad)
                     v_split.append(v_chunk)
             yield k, (v, v_split)
 
@@ -268,18 +265,11 @@ def shards(state, shard_size, eval=False):
         for shard_tensors in zip(*values):
             yield dict(zip(keys, shard_tensors))
 
-        ## Assumed backprop'd
-        #for k, (v, v_split) in non_none.items():
-        #    print (k)
-        #    if len(v_split) > 0:
-        #        print (v_split[0].grad is not None)
-        #    else:
-        #        print ('False')
+        # Assumed backprop'd
         variables = []
         for k, (v, v_split) in non_none.items():
             if isinstance(v, torch.Tensor) and state[k].requires_grad:
-                variables.extend(zip(torch.split(state[k], shard_size), [v_chunk.grad for v_chunk in v_split]))
-        #variables = ((state[k], v.grad.data) for k, v in non_none.items()
-        #             if isinstance(v, torch.Tensor) and v.grad is not None)
+                variables.extend(zip(torch.split(state[k], shard_size),
+                                     [v_chunk.grad for v_chunk in v_split]))
         inputs, grads = zip(*variables)
         torch.autograd.backward(inputs, grads)
