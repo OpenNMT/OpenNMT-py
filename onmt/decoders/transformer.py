@@ -26,10 +26,17 @@ class TransformerDecoderLayer(nn.Module):
     """
 
     def __init__(self, size, dropout,
-                 head_count=8, hidden_size=2048):
+                 head_count=8, hidden_size=2048, self_attn_type="scaled-dot"):
         super(TransformerDecoderLayer, self).__init__()
-        self.self_attn = onmt.modules.MultiHeadedAttention(
-            head_count, size, dropout=dropout)
+
+        self.self_attn_type = self_attn_type
+
+        if self_attn_type == "scaled-dot":
+            self.self_attn = onmt.modules.MultiHeadedAttention(
+                head_count, size, dropout=dropout)
+        elif self_attn_type == "average":
+            self.self_attn = onmt.modules.AverageAttention(
+                size, dropout=dropout)
         self.context_attn = onmt.modules.MultiHeadedAttention(
             head_count, size, dropout=dropout)
         self.feed_forward = PositionwiseFeedForward(size,
@@ -45,7 +52,7 @@ class TransformerDecoderLayer(nn.Module):
         self.register_buffer('mask', mask)
 
     def forward(self, inputs, memory_bank, src_pad_mask, tgt_pad_mask,
-                previous_input=None):
+                previous_input=None, layer_cache=None, step=None):
         # Args Checks
         input_batch, input_len, _ = inputs.size()
         if previous_input is not None:
@@ -71,8 +78,14 @@ class TransformerDecoderLayer(nn.Module):
         if previous_input is not None:
             all_input = torch.cat((previous_input, input_norm), dim=1)
             dec_mask = None
-        query, attn = self.self_attn(all_input, all_input, input_norm,
-                                     mask=dec_mask)
+
+        if self.self_attn_type == "scaled-dot":
+            query, attn = self.self_attn(all_input, all_input, input_norm,
+                                             mask=dec_mask)
+        elif self.self_attn_type == "average":
+            query, attn = self.self_attn(input_norm,
+                                             mask=dec_mask, layer_cache=layer_cache, step=step)
+
         query = self.drop(query) + inputs
 
         query_norm = self.layer_norm_2(query)
@@ -131,7 +144,7 @@ class TransformerDecoder(nn.Module):
     """
 
     def __init__(self, num_layers, hidden_size, attn_type,
-                 copy_attn, dropout, embeddings):
+                 copy_attn, self_attn_type, dropout, embeddings):
         super(TransformerDecoder, self).__init__()
 
         # Basic attributes.
@@ -141,7 +154,7 @@ class TransformerDecoder(nn.Module):
 
         # Build TransformerDecoder.
         self.transformer_layers = nn.ModuleList(
-            [TransformerDecoderLayer(hidden_size, dropout)
+            [TransformerDecoderLayer(hidden_size, dropout, self_attn_type=self_attn_type)
              for _ in range(num_layers)])
 
         # TransformerDecoder has its own attention mechanism.
@@ -153,7 +166,17 @@ class TransformerDecoder(nn.Module):
             self._copy = True
         self.layer_norm = onmt.modules.LayerNorm(hidden_size)
 
-    def forward(self, tgt, memory_bank, state, memory_lengths=None):
+
+    def _init_cache(self, memory_bank, memory_lengths=None):
+        cache = {}
+        batch_size = memory_bank.size(1)
+        depth = memory_bank.size(-1)
+        for l in range(self.num_layers):
+            layer_cache = {"prev_g": torch.zeros((batch_size, 1, depth))}
+            cache["layer_{}".format(l)] = layer_cache
+        return cache
+
+    def forward(self, tgt, memory_bank, state, memory_lengths=None, step=None, cache=None):
         """
         See :obj:`onmt.modules.RNNDecoderBase.forward()`
         """
@@ -197,6 +220,7 @@ class TransformerDecoder(nn.Module):
             .expand(tgt_batch, tgt_len, tgt_len)
 
         saved_inputs = []
+
         for i in range(self.num_layers):
             prev_layer_input = None
             if state.previous_input is not None:
@@ -204,7 +228,9 @@ class TransformerDecoder(nn.Module):
             output, attn, all_input \
                 = self.transformer_layers[i](output, src_memory_bank,
                                              src_pad_mask, tgt_pad_mask,
-                                             previous_input=prev_layer_input)
+                                             previous_input=prev_layer_input,
+                                             layer_cache=cache["layer_{}".format(i)] if cache is not None else None,
+                                             step=step)
             saved_inputs.append(all_input)
 
         saved_inputs = torch.stack(saved_inputs)

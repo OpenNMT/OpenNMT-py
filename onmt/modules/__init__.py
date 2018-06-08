@@ -7,8 +7,9 @@ from onmt.modules.copy_generator import CopyGenerator, CopyGeneratorLossCompute
 from onmt.modules.multi_headed_attn import MultiHeadedAttention
 from onmt.modules.embeddings import Embeddings, PositionalEncoding
 from onmt.modules.weight_norm import WeightNormConv2d
+from onmt.modules.average_attn import AverageAttention
 
 __all__ = ["LayerNorm", "Elementwise", "context_gate_factory", "ContextGate",
            "GlobalAttention", "ConvMultiStepAttention", "CopyGenerator",
            "CopyGeneratorLossCompute", "MultiHeadedAttention", "Embeddings",
-           "PositionalEncoding", "WeightNormConv2d"]
+           "PositionalEncoding", "WeightNormConv2d", "AverageAttention"]
