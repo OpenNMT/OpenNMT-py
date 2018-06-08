@@ -437,7 +437,6 @@ class Translator(object):
     def _report_bleu(self, tgt_path):
         import subprocess
         base_dir = os.path.abspath(__file__ + "/../../..")
-        tgt_path = os.path.join(os.getcwd(), tgt_path)
         # Rollback pointer to the beginning.
         self.out_file.seek(0)
         print()
