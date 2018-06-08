@@ -214,7 +214,6 @@ def filter_shard_state(state, shard_size=None):
     for k, v in state.items():
         if shard_size is None:
             yield k, v
-        #print (k)
         if v is not None:
             v_split = []
             if isinstance(v, torch.Tensor):
