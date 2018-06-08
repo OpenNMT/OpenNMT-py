@@ -1,6 +1,5 @@
 """ Generator module """
 import torch.nn as nn
-import torch.nn.functional as F
 import torch
 import torch.cuda
 
@@ -65,6 +64,8 @@ class CopyGenerator(nn.Module):
         self.linear = nn.Linear(input_size, len(tgt_dict))
         self.linear_copy = nn.Linear(input_size, 1)
         self.tgt_dict = tgt_dict
+        self.softmax = nn.Softmax()
+        self.sigmoid = nn.Sigmoid()
 
     def forward(self, hidden, attn, src_map):
         """
@@ -90,10 +91,10 @@ class CopyGenerator(nn.Module):
         # Original probabilities.
         logits = self.linear(hidden)
         logits[:, self.tgt_dict.stoi[inputters.PAD_WORD]] = -float('inf')
-        prob = F.softmax(logits)
+        prob = self.softmax(logits)
 
         # Probability of copying p(z=1) batch.
-        p_copy = F.sigmoid(self.linear_copy(hidden))
+        p_copy = self.sigmoid(self.linear_copy(hidden))
         # Probibility of not copying: p_{word}(w) * (1 - p(z))
         out_prob = torch.mul(prob, 1 - p_copy.expand_as(prob))
         mul_attn = torch.mul(attn, p_copy.expand_as(attn))
