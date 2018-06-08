@@ -7,7 +7,6 @@ This includes: LossComputeBase and the standard NMTLossCompute, and
 from __future__ import division
 import torch
 import torch.nn as nn
-
 import onmt
 import onmt.io
 
@@ -214,6 +213,7 @@ def filter_shard_state(state, shard_size=None):
     for k, v in state.items():
         if shard_size is None:
             yield k, v
+
         if v is not None:
             v_split = []
             if isinstance(v, torch.Tensor):
