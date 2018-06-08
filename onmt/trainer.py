@@ -139,7 +139,7 @@ class Trainer(object):
 
             reduce_counter = 0
             for i, batch in enumerate(train_iter):
-                if (i % self.n_gpu == self.gpu_rank):
+                if self.n_gpu == 0 or (i % self.n_gpu == self.gpu_rank):
                     if self.gpu_verbose > 1:
                         print("GPU %d: index: %d accum: %d" % (self.gpu_rank, i, accum))        
                     cur_dataset = train_iter.get_cur_dataset()
