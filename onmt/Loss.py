@@ -210,7 +210,7 @@ class NMTLossCompute(LossComputeBase):
         return loss, stats
 
 
-def filter_shard_state(state, shard_size=None, requires_grad=True):
+def filter_shard_state(state, shard_size=None):
     for k, v in state.items():
         if shard_size is None:
             yield k, v
