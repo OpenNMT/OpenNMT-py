@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-from torch.autograd import Variable
 import math
 
 from onmt.modules import Elementwise
@@ -34,11 +33,8 @@ class PositionalEncoding(nn.Module):
         self.dim = dim
 
     def forward(self, emb):
-        # We must wrap the self.pe in Variable to compute, not the other
-        # way - unwrap emb(i.e. emb.data). Otherwise the computation
-        # wouldn't be watched to build the compute graph.
         emb = emb * math.sqrt(self.dim)
-        emb = emb + Variable(self.pe[:emb.size(0)], requires_grad=False)
+        emb = emb + self.pe[:emb.size(0)]
         emb = self.dropout(emb)
         return emb
 

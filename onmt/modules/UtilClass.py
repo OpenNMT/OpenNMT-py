@@ -19,11 +19,11 @@ class Elementwise(nn.ModuleList):
     """
     A simple network container.
     Parameters are a list of modules.
-    Inputs are a 3d Variable whose last dimension is the same length
+    Inputs are a 3d Tensor whose last dimension is the same length
     as the list.
     Outputs are the result of applying modules to inputs elementwise.
     An optional merge parameter allows the outputs to be reduced to a
-    single Variable.
+    single Tensor.
     """
 
     def __init__(self, merge=None, *args):
