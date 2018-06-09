@@ -117,7 +117,7 @@ def get_num_features(data_type, corpus_file, side):
 def make_features(batch, side, data_type='text'):
     """
     Args:
-        batch (Variable): a batch of source or target data.
+        batch (Tensor): a batch of source or target data.
         side (str): for source or for target.
         data_type (str): type of the source input.
             Options are [text|img|audio].
