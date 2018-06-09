@@ -24,8 +24,7 @@
 
   
 
-  
-    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -565,8 +564,8 @@ of size <cite>dim</cite>.</p>
    E -.-&gt; G
    F --&gt; G
         </div><p>All models compute the output as
-<span class="math notranslate">\(c = \sum_{j=1}^{SeqLength} a_j H_j\)</span> where
-<span class="math notranslate">\(a_j\)</span> is the softmax of a score function.
+<span class="math notranslate nohighlight">\(c = \sum_{j=1}^{SeqLength} a_j H_j\)</span> where
+<span class="math notranslate nohighlight">\(a_j\)</span> is the softmax of a score function.
 Then then apply a projection layer to [q, c].</p>
 <p>However they
 differ on how they compute the attention score.</p>
@@ -574,8 +573,8 @@ differ on how they compute the attention score.</p>
 <li><dl class="first docutils">
 <dt>Luong Attention (dot, general):</dt>
 <dd><ul class="first last">
-<li>dot: <span class="math notranslate">\(score(H_j,q) = H_j^T q\)</span></li>
-<li>general: <span class="math notranslate">\(score(H_j, q) = H_j^T W_a q\)</span></li>
+<li>dot: <span class="math notranslate nohighlight">\(score(H_j,q) = H_j^T q\)</span></li>
+<li>general: <span class="math notranslate nohighlight">\(score(H_j, q) = H_j^T W_a q\)</span></li>
 </ul>
 </dd>
 </dl>
@@ -583,7 +582,7 @@ differ on how they compute the attention score.</p>
 <li><dl class="first docutils">
 <dt>Bahdanau Attention (mlp):</dt>
 <dd><ul class="first last">
-<li><span class="math notranslate">\(score(H_j, q) = v_a^T tanh(W_a q + U_a h_j)\)</span></li>
+<li><span class="math notranslate nohighlight">\(score(H_j, q) = v_a^T tanh(W_a q + U_a h_j)\)</span></li>
 </ul>
 </dd>
 </dl>
@@ -687,7 +686,7 @@ non-recurrent neural networks.</p>
 <dt id="onmt.modules.PositionalEncoding.forward">
 <code class="descname">forward</code><span class="sig-paren">(</span><em>emb</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/modules/Embeddings.html#PositionalEncoding.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.modules.PositionalEncoding.forward" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines the computation performed at every call.</p>
-<p>Should be overriden by all subclasses.</p>
+<p>Should be overridden by all subclasses.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">Although the recipe for forward pass needs to be defined within
@@ -721,7 +720,7 @@ of the FNN.</li>
 <dt id="onmt.modules.PositionwiseFeedForward.forward">
 <code class="descname">forward</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/modules/Transformer.html#PositionwiseFeedForward.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.modules.PositionwiseFeedForward.forward" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines the computation performed at every call.</p>
-<p>Should be overriden by all subclasses.</p>
+<p>Should be overridden by all subclasses.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">Although the recipe for forward pass needs to be defined within
@@ -1062,15 +1061,15 @@ else to an extra word.</p>
 <p>The copy generator is an extended version of the standard
 generator that computse three values.</p>
 <ul class="simple">
-<li><span class="math notranslate">\(p_{softmax}\)</span> the standard softmax over <cite>tgt_dict</cite></li>
-<li><span class="math notranslate">\(p(z)\)</span> the probability of instead copying a
+<li><span class="math notranslate nohighlight">\(p_{softmax}\)</span> the standard softmax over <cite>tgt_dict</cite></li>
+<li><span class="math notranslate nohighlight">\(p(z)\)</span> the probability of instead copying a
 word from the source, computed using a bernoulli</li>
-<li><span class="math notranslate">\(p_{copy}\)</span> the probility of copying a word instead.
+<li><span class="math notranslate nohighlight">\(p_{copy}\)</span> the probility of copying a word instead.
 taken from the attention distribution directly.</li>
 </ul>
 <p>The model returns a distribution over the extend dictionary,
 computed as</p>
-<p><span class="math notranslate">\(p(w) = p(z=1)  p_{copy}(w)  +  p(z=0)  p_{softmax}(w)\)</span></p>
+<p><span class="math notranslate nohighlight">\(p(w) = p(z=1)  p_{copy}(w)  +  p(z=0)  p_{softmax}(w)\)</span></p>
 
             <style>
             /* mermaid issue 527 workaround */
@@ -1145,7 +1144,7 @@ in the paper “Learning Structured Text Representations.”</p>
 <dt id="onmt.modules.MatrixTree.forward">
 <code class="descname">forward</code><span class="sig-paren">(</span><em>input</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/modules/StructuredAttention.html#MatrixTree.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.modules.MatrixTree.forward" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines the computation performed at every call.</p>
-<p>Should be overriden by all subclasses.</p>
+<p>Should be overridden by all subclasses.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">Although the recipe for forward pass needs to be defined within
@@ -1218,16 +1217,11 @@ registered hooks while the latter silently ignores them.</p>
 
   
 
-  
-  
-    <script type="text/javascript" src="_static/js/theme.js"></script>
-  
+  <script type="text/javascript" src="_static/js/theme.js"></script>
 
   <script type="text/javascript">
       jQuery(function () {
-          
-          SphinxRtdTheme.Navigation.enableSticky();
-          
+          SphinxRtdTheme.Navigation.enable(true);
       });
   </script> 
 

@@ -24,8 +24,7 @@
 
   
 
-  
-    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
@@ -163,7 +162,6 @@
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
 <span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
 
-<span class="kn">from</span> <span class="nn">torch.autograd</span> <span class="k">import</span> <span class="n">Variable</span>
 <span class="kn">from</span> <span class="nn">torch.nn.utils.rnn</span> <span class="k">import</span> <span class="n">pack_padded_sequence</span> <span class="k">as</span> <span class="n">pack</span>
 <span class="kn">from</span> <span class="nn">torch.nn.utils.rnn</span> <span class="k">import</span> <span class="n">pad_packed_sequence</span> <span class="k">as</span> <span class="n">unpack</span>
 
@@ -301,7 +299,7 @@
 
         <span class="n">packed_emb</span> <span class="o">=</span> <span class="n">emb</span>
         <span class="k">if</span> <span class="n">lengths</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">no_pack_padded_seq</span><span class="p">:</span>
-            <span class="c1"># Lengths data is wrapped inside a Variable.</span>
+            <span class="c1"># Lengths data is wrapped inside a Tensor.</span>
             <span class="n">lengths</span> <span class="o">=</span> <span class="n">lengths</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
             <span class="n">packed_emb</span> <span class="o">=</span> <span class="n">pack</span><span class="p">(</span><span class="n">emb</span><span class="p">,</span> <span class="n">lengths</span><span class="p">)</span>
 
@@ -480,9 +478,11 @@
         <span class="n">state</span><span class="o">.</span><span class="n">update_state</span><span class="p">(</span><span class="n">decoder_final</span><span class="p">,</span> <span class="n">final_output</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">coverage</span><span class="p">)</span>
 
         <span class="c1"># Concatenates sequence of tensors along a new dimension.</span>
-        <span class="n">decoder_outputs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">decoder_outputs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">decoder_outputs</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+            <span class="n">decoder_outputs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">decoder_outputs</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">attns</span><span class="p">:</span>
-            <span class="n">attns</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">attns</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">attns</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+                <span class="n">attns</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">attns</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
 
         <span class="k">return</span> <span class="n">decoder_outputs</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">attns</span></div>
 
@@ -531,7 +531,7 @@
 <span class="sd">                                 initializing the decoder.</span>
 <span class="sd">            memory_lengths (LongTensor): the source memory_bank lengths.</span>
 <span class="sd">        Returns:</span>
-<span class="sd">            decoder_final (Variable): final hidden state from the decoder.</span>
+<span class="sd">            decoder_final (Tensor): final hidden state from the decoder.</span>
 <span class="sd">            decoder_outputs ([FloatTensor]): an array of output of every time</span>
 <span class="sd">                                     step from the decoder.</span>
 <span class="sd">            attns (dict of (str, [FloatTensor]): a dictionary of different</span>
@@ -804,8 +804,8 @@
         <span class="c1"># Init the input feed.</span>
         <span class="n">batch_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">h_size</span> <span class="o">=</span> <span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">input_feed</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hidden</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="o">*</span><span class="n">h_size</span><span class="p">)</span><span class="o">.</span><span class="n">zero_</span><span class="p">(),</span>
-                                   <span class="n">requires_grad</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_feed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="o">*</span><span class="n">h_size</span><span class="p">)</span><span class="o">.</span><span class="n">zero_</span><span class="p">()</span> \
+                              <span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">_all</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -821,7 +821,7 @@
 
     <span class="k">def</span> <span class="nf">repeat_beam_size_times</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Repeat beam_size times along batch dimension. &quot;&quot;&quot;</span>
-        <span class="nb">vars</span> <span class="o">=</span> <span class="p">[</span><span class="n">Variable</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">volatile</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="nb">vars</span> <span class="o">=</span> <span class="p">[</span><span class="n">e</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
                 <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_all</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">hidden</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">vars</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">input_feed</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
@@ -875,16 +875,11 @@
 
   
 
-  
-  
-    <script type="text/javascript" src="../../_static/js/theme.js"></script>
-  
+  <script type="text/javascript" src="../../_static/js/theme.js"></script>
 
   <script type="text/javascript">
       jQuery(function () {
-          
-          SphinxRtdTheme.Navigation.enableSticky();
-          
+          SphinxRtdTheme.Navigation.enable(true);
       });
   </script> 
 

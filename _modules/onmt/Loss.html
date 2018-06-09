@@ -24,8 +24,7 @@
 
   
 
-  
-    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
@@ -167,8 +166,6 @@
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">division</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
-<span class="kn">from</span> <span class="nn">torch.autograd</span> <span class="k">import</span> <span class="n">Variable</span>
-
 <span class="kn">import</span> <span class="nn">onmt</span>
 <span class="kn">import</span> <span class="nn">onmt.io</span>
 
@@ -281,7 +278,7 @@
 
         <span class="k">for</span> <span class="n">shard</span> <span class="ow">in</span> <span class="n">shards</span><span class="p">(</span><span class="n">shard_state</span><span class="p">,</span> <span class="n">shard_size</span><span class="p">):</span>
             <span class="n">loss</span><span class="p">,</span> <span class="n">stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_loss</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="o">**</span><span class="n">shard</span><span class="p">)</span>
-            <span class="n">loss</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="n">normalization</span><span class="p">)</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+            <span class="n">loss</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">normalization</span><span class="p">))</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
             <span class="n">batch_stats</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">stats</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">batch_stats</span></div>
@@ -300,8 +297,10 @@
         <span class="n">non_padding</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">ne</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">padding_idx</span><span class="p">)</span>
         <span class="n">num_correct</span> <span class="o">=</span> <span class="n">pred</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">target</span><span class="p">)</span> \
                           <span class="o">.</span><span class="n">masked_select</span><span class="p">(</span><span class="n">non_padding</span><span class="p">)</span> \
-                          <span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-        <span class="k">return</span> <span class="n">onmt</span><span class="o">.</span><span class="n">Statistics</span><span class="p">(</span><span class="n">loss</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">non_padding</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <span class="n">num_correct</span><span class="p">)</span>
+                          <span class="o">.</span><span class="n">long</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">onmt</span><span class="o">.</span><span class="n">Statistics</span><span class="p">(</span><span class="n">loss</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span>
+                               <span class="n">non_padding</span><span class="o">.</span><span class="n">long</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span>
+                               <span class="n">num_correct</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
 
     <span class="k">def</span> <span class="nf">_bottle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">v</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">v</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
@@ -355,7 +354,7 @@
             <span class="k">if</span> <span class="n">mask</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">log_likelihood</span><span class="o">.</span><span class="n">index_fill_</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
                 <span class="n">tmp_</span><span class="o">.</span><span class="n">index_fill_</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-            <span class="n">gtruth</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">tmp_</span><span class="p">,</span> <span class="n">requires_grad</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">gtruth</span> <span class="o">=</span> <span class="n">tmp_</span>
         <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">criterion</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">gtruth</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">confidence</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="c1"># Default: report smoothed ppl.</span>
@@ -369,13 +368,19 @@
         <span class="k">return</span> <span class="n">loss</span><span class="p">,</span> <span class="n">stats</span>
 
 
-<span class="k">def</span> <span class="nf">filter_shard_state</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">requires_grad</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">volatile</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">filter_shard_state</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">shard_size</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">Variable</span><span class="p">)</span> <span class="ow">and</span> <span class="n">v</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
-                <span class="n">v</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">requires_grad</span><span class="o">=</span><span class="n">requires_grad</span><span class="p">,</span>
-                             <span class="n">volatile</span><span class="o">=</span><span class="n">volatile</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">shard_size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">yield</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span>
+
+        <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">v_split</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">v_chunk</span> <span class="ow">in</span> <span class="n">torch</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">shard_size</span><span class="p">):</span>
+                    <span class="n">v_chunk</span> <span class="o">=</span> <span class="n">v_chunk</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+                    <span class="n">v_chunk</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">requires_grad</span>
+                    <span class="n">v_split</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v_chunk</span><span class="p">)</span>
+            <span class="k">yield</span> <span class="n">k</span><span class="p">,</span> <span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">v_split</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">shards</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">shard_size</span><span class="p">,</span> <span class="nb">eval</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
@@ -395,19 +400,19 @@
 <span class="sd">        After the last shard, this function does back-propagation.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">eval</span><span class="p">:</span>
-        <span class="k">yield</span> <span class="n">filter_shard_state</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="k">yield</span> <span class="n">filter_shard_state</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="c1"># non_none: the subdict of the state dictionary where the values</span>
         <span class="c1"># are not None.</span>
-        <span class="n">non_none</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">filter_shard_state</span><span class="p">(</span><span class="n">state</span><span class="p">))</span>
+        <span class="n">non_none</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">filter_shard_state</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">shard_size</span><span class="p">))</span>
 
         <span class="c1"># Now, the iteration:</span>
         <span class="c1"># state is a dictionary of sequences of tensor-like but we</span>
         <span class="c1"># want a sequence of dictionaries of tensors.</span>
         <span class="c1"># First, unzip the dictionary into a sequence of keys and a</span>
         <span class="c1"># sequence of tensor-like sequences.</span>
-        <span class="n">keys</span><span class="p">,</span> <span class="n">values</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="p">((</span><span class="n">k</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">shard_size</span><span class="p">))</span>
-                             <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">non_none</span><span class="o">.</span><span class="n">items</span><span class="p">()))</span>
+        <span class="n">keys</span><span class="p">,</span> <span class="n">values</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="p">((</span><span class="n">k</span><span class="p">,</span> <span class="p">[</span><span class="n">v_chunk</span> <span class="k">for</span> <span class="n">v_chunk</span> <span class="ow">in</span> <span class="n">v_split</span><span class="p">])</span>
+                             <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="n">v_split</span><span class="p">)</span> <span class="ow">in</span> <span class="n">non_none</span><span class="o">.</span><span class="n">items</span><span class="p">()))</span>
 
         <span class="c1"># Now, yield a dictionary for each shard. The keys are always</span>
         <span class="c1"># the same. values is a sequence of length #keys where each</span>
@@ -419,8 +424,11 @@
             <span class="k">yield</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">keys</span><span class="p">,</span> <span class="n">shard_tensors</span><span class="p">))</span>
 
         <span class="c1"># Assumed backprop&#39;d</span>
-        <span class="n">variables</span> <span class="o">=</span> <span class="p">((</span><span class="n">state</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">v</span><span class="o">.</span><span class="n">grad</span><span class="o">.</span><span class="n">data</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">non_none</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
-                     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">Variable</span><span class="p">)</span> <span class="ow">and</span> <span class="n">v</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">variables</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">v_split</span><span class="p">)</span> <span class="ow">in</span> <span class="n">non_none</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="ow">and</span> <span class="n">state</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+                <span class="n">variables</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">shard_size</span><span class="p">),</span>
+                                     <span class="p">[</span><span class="n">v_chunk</span><span class="o">.</span><span class="n">grad</span> <span class="k">for</span> <span class="n">v_chunk</span> <span class="ow">in</span> <span class="n">v_split</span><span class="p">]))</span>
         <span class="n">inputs</span><span class="p">,</span> <span class="n">grads</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">variables</span><span class="p">)</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">grads</span><span class="p">)</span>
 </pre></div>
@@ -473,16 +481,11 @@
 
   
 
-  
-  
-    <script type="text/javascript" src="../../_static/js/theme.js"></script>
-  
+  <script type="text/javascript" src="../../_static/js/theme.js"></script>
 
   <script type="text/javascript">
       jQuery(function () {
-          
-          SphinxRtdTheme.Navigation.enableSticky();
-          
+          SphinxRtdTheme.Navigation.enable(true);
       });
   </script> 
 
