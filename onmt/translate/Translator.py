@@ -4,7 +4,6 @@ import codecs
 import os
 import math
 
-from torch.autograd import Variable
 from itertools import count
 
 import onmt.ModelConstructor
@@ -251,7 +250,7 @@ class Translator(object):
                 for __ in range(batch_size)]
 
         # Help functions for working with beams and batches
-        def var(a): return Variable(a, volatile=True)
+        def var(a): return a
 
         def rvar(a): return var(a.repeat(1, beam_size, 1))
 
@@ -385,7 +384,7 @@ class Translator(object):
             tgt = tgt.unsqueeze(1)
             scores = out.data.gather(1, tgt)
             scores.masked_fill_(tgt.eq(tgt_pad), 0)
-            gold_scores += scores
+            gold_scores += scores.view(-1)
         return gold_scores
 
     def _report_score(self, name, score_total, words_total):
