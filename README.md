@@ -131,7 +131,7 @@ http://opennmt.net/Models-py/
                Yuntian Deng and
                Jean Senellart and
                Alexander M. Rush},
-  title     = {OpenNMT: Open-Source Toolkit for Neural Machine Translation},
+  title     = {Open{NMT}: Open-Source Toolkit for Neural Machine Translation},
   booktitle = {Proc. ACL},
   year      = {2017},
   url       = {https://doi.org/10.18653/v1/P17-4012},
