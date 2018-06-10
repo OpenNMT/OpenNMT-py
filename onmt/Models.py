@@ -3,7 +3,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from torch.autograd import Variable
 from torch.nn.utils.rnn import pack_padded_sequence as pack
 from torch.nn.utils.rnn import pad_packed_sequence as unpack
 
@@ -141,7 +140,7 @@ class RNNEncoder(EncoderBase):
 
         packed_emb = emb
         if lengths is not None and not self.no_pack_padded_seq:
-            # Lengths data is wrapped inside a Variable.
+            # Lengths data is wrapped inside a Tensor.
             lengths = lengths.view(-1).tolist()
             packed_emb = pack(emb, lengths)
 
@@ -320,9 +319,11 @@ class RNNDecoderBase(nn.Module):
         state.update_state(decoder_final, final_output.unsqueeze(0), coverage)
 
         # Concatenates sequence of tensors along a new dimension.
-        decoder_outputs = torch.stack(decoder_outputs)
+        if not isinstance(decoder_outputs, torch.Tensor):
+            decoder_outputs = torch.stack(decoder_outputs)
         for k in attns:
-            attns[k] = torch.stack(attns[k])
+            if not isinstance(attns[k], torch.Tensor):
+                attns[k] = torch.stack(attns[k])
 
         return decoder_outputs, state, attns
 
@@ -371,7 +372,7 @@ class StdRNNDecoder(RNNDecoderBase):
                                  initializing the decoder.
             memory_lengths (LongTensor): the source memory_bank lengths.
         Returns:
-            decoder_final (Variable): final hidden state from the decoder.
+            decoder_final (Tensor): final hidden state from the decoder.
             decoder_outputs ([FloatTensor]): an array of output of every time
                                      step from the decoder.
             attns (dict of (str, [FloatTensor]): a dictionary of different
@@ -644,8 +645,8 @@ class RNNDecoderState(DecoderState):
         # Init the input feed.
         batch_size = self.hidden[0].size(1)
         h_size = (batch_size, hidden_size)
-        self.input_feed = Variable(self.hidden[0].data.new(*h_size).zero_(),
-                                   requires_grad=False).unsqueeze(0)
+        self.input_feed = self.hidden[0].data.new(*h_size).zero_() \
+                              .unsqueeze(0)
 
     @property
     def _all(self):
@@ -661,7 +662,7 @@ class RNNDecoderState(DecoderState):
 
     def repeat_beam_size_times(self, beam_size):
         """ Repeat beam_size times along batch dimension. """
-        vars = [Variable(e.data.repeat(1, beam_size, 1), volatile=True)
+        vars = [e.data.repeat(1, beam_size, 1)
                 for e in self._all]
         self.hidden = tuple(vars[:-1])
         self.input_feed = vars[-1]
