@@ -128,7 +128,6 @@ class Trainer(object):
         step = self.optim._step + 1
         true_batchs = []
         accum = 0
-        normalization = 0
         train_iter = train_iter_fct()
 
         total_stats = onmt.utils.Statistics()
@@ -148,12 +147,6 @@ class Trainer(object):
 
                     true_batchs.append(batch)
                     accum += 1
-                    if self.norm_method == "tokens":
-                        num_tokens = batch.tgt[1:].data.view(-1) \
-                           .ne(self.train_loss.padding_idx).sum()
-                        normalization += num_tokens
-                    else:
-                        normalization += batch.batch_size
                     if accum == self.grad_accum_count:
                         reduce_counter += 1
                         if self.gpu_verbose > 0:
@@ -162,7 +155,7 @@ class Trainer(object):
                                      len(true_batchs)))
                         self._gradient_accumulation(
                             true_batchs, total_stats,
-                            report_stats, normalization)
+                            report_stats)
 
                         report_stats = self.maybe_report_training(
                             step, train_steps,
@@ -171,7 +164,6 @@ class Trainer(object):
 
                         true_batchs = []
                         accum = 0
-                        normalization = 0
                         if (step % valid_steps == 0):
                             if self.gpu_verbose > 0:
                                 print('GPU %d: validate step %d'
@@ -239,7 +231,7 @@ class Trainer(object):
         return stats
 
     def _gradient_accumulation(self, true_batchs, total_stats,
-                               report_stats, normalization):
+                               report_stats):
         if self.grad_accum_count > 1:
             self.model.zero_grad()
 
@@ -261,6 +253,13 @@ class Trainer(object):
 
             tgt_outer = inputters.make_features(batch, 'tgt')
 
+            if self.norm_method == "tokens":
+                num_tokens = batch.tgt[1:].data.view(-1) \
+                   .ne(self.train_loss.padding_idx).sum()
+                normalization = num_tokens
+            else:
+                normalization = batch.batch_size
+
             for j in range(0, target_size-1, trunc_size):
                 # 1. Create truncated target.
                 tgt = tgt_outer[j: j + trunc_size]
@@ -275,17 +274,6 @@ class Trainer(object):
                 batch_stats = self.train_loss.sharded_compute_loss(
                     batch, outputs, attns, j,
                     trunc_size, self.shard_size, normalization)
-
-                # 3.bis Multi GPU gradient gather
-                if self.n_gpu > 1:
-                    grads = [p.grad.data for p in self.model.parameters()
-                             if p.requires_grad]
-                    onmt.utils.multi_utils.all_reduce_and_rescale_tensors(
-                        grads, float(1))
-
-                # 4. Update the parameters and statistics.
-                if self.grad_accum_count == 1:
-                    self.optim.step()
                 total_stats.update(batch_stats)
                 report_stats.update(batch_stats)
 
@@ -293,8 +281,15 @@ class Trainer(object):
                 if dec_state is not None:
                     dec_state.detach()
 
-        if self.grad_accum_count > 1:
-            self.optim.step()
+        # 3.bis Multi GPU gradient gather
+        if self.n_gpu > 1:
+            grads = [p.grad.data for p in self.model.parameters()
+                     if p.requires_grad]
+            onmt.utils.multi_utils.all_reduce_and_rescale_tensors(
+                grads, float(1))
+
+        # 4. Update the parameters and statistics.
+        self.optim.step()
 
     def start_report_manager(self, start_time=None):
         """
