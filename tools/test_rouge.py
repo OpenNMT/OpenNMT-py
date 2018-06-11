@@ -6,6 +6,7 @@ import time
 import pyrouge
 import shutil
 import sys
+from onmt.Utils import get_logger
 
 
 def test_rouge(cand, ref):
@@ -56,7 +57,7 @@ def rouge_results_to_str(results_dict):
 
 
 if __name__ == "__main__":
-    logging = onmt.io.IO.set_logger('test_rouge.py')
+    logger = get_logger('test_rouge.log')
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', type=str, default="candidate.txt",
                         help='candidate file')
@@ -66,4 +67,4 @@ if __name__ == "__main__":
     if args.c.upper() == "STDIN":
         args.c = sys.stdin
     results_dict = test_rouge(args.c, args.r)
-    logging.info(rouge_results_to_str(results_dict))
+    logger.info(rouge_results_to_str(results_dict))
