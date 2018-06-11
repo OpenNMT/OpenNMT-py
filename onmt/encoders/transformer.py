@@ -8,7 +8,7 @@ from torch.autograd import Variable
 import onmt
 from onmt.encoders.encoder import EncoderBase
 from onmt.utils.misc import aeq
-from onmt.utils.transformer_util import PositionwiseFeedForward
+from onmt.modules.position_ffn import PositionwiseFeedForward
 MAX_SIZE = 5000
 
 
