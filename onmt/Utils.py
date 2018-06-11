@@ -35,7 +35,7 @@ def use_gpu(opt):
 def get_logger(log_file=None):
     log_format = logging.Formatter("[%(asctime)s %(levelname)s] %(message)s")
     logger = logging.getLogger()
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
 
     if log_file and log_file != '':
         file_handler = logging.FileHandler(log_file)
