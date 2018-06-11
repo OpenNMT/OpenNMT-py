@@ -1,7 +1,6 @@
 import math
 import torch
 import torch.nn as nn
-from torch.autograd import Variable
 
 from onmt.Utils import aeq
 
@@ -47,6 +46,7 @@ class MultiHeadedAttention(nn.Module):
            must be divisible by head_count
        dropout (float): dropout parameter
     """
+
     def __init__(self, head_count, model_dim, dropout=0.1):
         assert model_dim % head_count == 0
         self.dim_per_head = model_dim // head_count
@@ -127,7 +127,7 @@ class MultiHeadedAttention(nn.Module):
 
         if mask is not None:
             mask = mask.unsqueeze(1).expand_as(scores)
-            scores = scores.masked_fill(Variable(mask), -1e18)
+            scores = scores.masked_fill(mask, -1e18)
 
         # 3) Apply attention dropout and compute context vectors.
         attn = self.sm(scores)

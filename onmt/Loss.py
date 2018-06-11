@@ -7,8 +7,6 @@ This includes: LossComputeBase and the standard NMTLossCompute, and
 from __future__ import division
 import torch
 import torch.nn as nn
-from torch.autograd import Variable
-
 import onmt
 import onmt.io
 
@@ -32,6 +30,7 @@ class LossComputeBase(nn.Module):
              torchtext vocab object representing the target output
         normalzation (str): normalize by "sents" or "tokens"
     """
+
     def __init__(self, generator, tgt_vocab):
         super(LossComputeBase, self).__init__()
         self.generator = generator
@@ -121,7 +120,7 @@ class LossComputeBase(nn.Module):
 
         for shard in shards(shard_state, shard_size):
             loss, stats = self._compute_loss(batch, **shard)
-            loss.div(normalization).backward()
+            loss.div(float(normalization)).backward()
             batch_stats.update(stats)
 
         return batch_stats
@@ -140,8 +139,10 @@ class LossComputeBase(nn.Module):
         non_padding = target.ne(self.padding_idx)
         num_correct = pred.eq(target) \
                           .masked_select(non_padding) \
-                          .sum()
-        return onmt.Statistics(loss[0], non_padding.sum(), num_correct)
+                          .long().sum()
+        return onmt.Statistics(loss.data.cpu().numpy(),
+                               non_padding.long().sum().data.cpu().numpy(),
+                               num_correct.data.cpu().numpy())
 
     def _bottle(self, v):
         return v.view(-1, v.size(2))
@@ -154,6 +155,7 @@ class NMTLossCompute(LossComputeBase):
     """
     Standard NMT Loss Computation.
     """
+
     def __init__(self, generator, tgt_vocab, normalization="sents",
                  label_smoothing=0.0):
         super(NMTLossCompute, self).__init__(generator, tgt_vocab)
@@ -192,10 +194,10 @@ class NMTLossCompute(LossComputeBase):
             log_likelihood = torch.gather(scores.data, 1, tdata.unsqueeze(1))
             tmp_ = self.one_hot.repeat(gtruth.size(0), 1)
             tmp_.scatter_(1, tdata.unsqueeze(1), self.confidence)
-            if mask.dim() > 0:
+            if mask.numel() > 0:
                 log_likelihood.index_fill_(0, mask, 0)
                 tmp_.index_fill_(0, mask, 0)
-            gtruth = Variable(tmp_, requires_grad=False)
+            gtruth = tmp_
         loss = self.criterion(scores, gtruth)
         if self.confidence < 1:
             # Default: report smoothed ppl.
@@ -209,13 +211,19 @@ class NMTLossCompute(LossComputeBase):
         return loss, stats
 
 
-def filter_shard_state(state, requires_grad=True, volatile=False):
+def filter_shard_state(state, shard_size=None):
     for k, v in state.items():
-        if v is not None:
-            if isinstance(v, Variable) and v.requires_grad:
-                v = Variable(v.data, requires_grad=requires_grad,
-                             volatile=volatile)
+        if shard_size is None:
             yield k, v
+
+        if v is not None:
+            v_split = []
+            if isinstance(v, torch.Tensor):
+                for v_chunk in torch.split(v, shard_size):
+                    v_chunk = v_chunk.data.clone()
+                    v_chunk.requires_grad = v.requires_grad
+                    v_split.append(v_chunk)
+            yield k, (v, v_split)
 
 
 def shards(state, shard_size, eval=False):
@@ -235,19 +243,19 @@ def shards(state, shard_size, eval=False):
         After the last shard, this function does back-propagation.
     """
     if eval:
-        yield filter_shard_state(state, False, True)
+        yield filter_shard_state(state)
     else:
         # non_none: the subdict of the state dictionary where the values
         # are not None.
-        non_none = dict(filter_shard_state(state))
+        non_none = dict(filter_shard_state(state, shard_size))
 
         # Now, the iteration:
         # state is a dictionary of sequences of tensor-like but we
         # want a sequence of dictionaries of tensors.
         # First, unzip the dictionary into a sequence of keys and a
         # sequence of tensor-like sequences.
-        keys, values = zip(*((k, torch.split(v, shard_size))
-                             for k, v in non_none.items()))
+        keys, values = zip(*((k, [v_chunk for v_chunk in v_split])
+                             for k, (_, v_split) in non_none.items()))
 
         # Now, yield a dictionary for each shard. The keys are always
         # the same. values is a sequence of length #keys where each
@@ -259,7 +267,10 @@ def shards(state, shard_size, eval=False):
             yield dict(zip(keys, shard_tensors))
 
         # Assumed backprop'd
-        variables = ((state[k], v.grad.data) for k, v in non_none.items()
-                     if isinstance(v, Variable) and v.grad is not None)
+        variables = []
+        for k, (v, v_split) in non_none.items():
+            if isinstance(v, torch.Tensor) and state[k].requires_grad:
+                variables.extend(zip(torch.split(state[k], shard_size),
+                                     [v_chunk.grad for v_chunk in v_split]))
         inputs, grads = zip(*variables)
         torch.autograd.backward(inputs, grads)

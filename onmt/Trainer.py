@@ -10,7 +10,6 @@ things to users(i.e. how to do it). Also see train.py(one of the
 users of this library) for the strategy things we do.
 """
 import time
-import sys
 import math
 import torch
 import torch.nn as nn
@@ -29,6 +28,7 @@ class Statistics(object):
     * perplexity
     * elapsed time
     """
+
     def __init__(self, loss=0, n_words=0, n_correct=0):
         self.loss = loss
         self.n_words = n_words
@@ -61,18 +61,22 @@ class Statistics(object):
            batch (int): current batch
            n_batch (int): total batches
            start (int): start time of epoch.
+
+        Returns:
+           msg (str): log message.
         """
         t = self.elapsed_time()
-        print(("Epoch %2d, %5d/%5d; acc: %6.2f; ppl: %6.2f; xent: %6.2f; " +
-               "%3.0f src tok/s; %3.0f tgt tok/s; %6.0f s elapsed") %
-              (epoch, batch,  n_batches,
-               self.accuracy(),
-               self.ppl(),
-               self.xent(),
-               self.n_src_words / (t + 1e-5),
-               self.n_words / (t + 1e-5),
-               time.time() - start))
-        sys.stdout.flush()
+        msg = (("Epoch %2d, %5d/%5d; acc: %6.2f; ppl: %6.2f; xent: " +
+                "%6.2f;  %3.0f src tok/s; %3.0f tgt tok/s; %6.0f s " +
+                "elapsed") %
+               (epoch, batch,  n_batches,
+                self.accuracy(),
+                self.ppl(),
+                self.xent(),
+                self.n_src_words / (t + 1e-5),
+                self.n_words / (t + 1e-5),
+                time.time() - start))
+        return msg
 
     def log(self, prefix, experiment, lr):
         t = self.elapsed_time()
@@ -174,15 +178,15 @@ class Trainer(object):
 
             if accum == self.grad_accum_count:
                 self._gradient_accumulation(
-                        true_batchs, total_stats,
-                        report_stats, normalization)
+                    true_batchs, total_stats,
+                    report_stats, normalization)
 
                 if report_func is not None:
                     report_stats = report_func(
-                            epoch, idx, num_batches,
-                            self.progress_step,
-                            total_stats.start_time, self.optim.lr,
-                            report_stats)
+                        epoch, idx, num_batches,
+                        self.progress_step,
+                        total_stats.start_time, self.optim.lr,
+                        report_stats)
                     self.progress_step += 1
 
                 true_batchs = []
@@ -192,8 +196,8 @@ class Trainer(object):
 
         if len(true_batchs) > 0:
             self._gradient_accumulation(
-                    true_batchs, total_stats,
-                    report_stats, normalization)
+                true_batchs, total_stats,
+                report_stats, normalization)
             true_batchs = []
 
         return total_stats
@@ -226,7 +230,7 @@ class Trainer(object):
 
             # Compute loss.
             batch_stats = self.valid_loss.monolithic_compute_loss(
-                    batch, outputs, attns)
+                batch, outputs, attns)
 
             # Update statistics.
             stats.update(batch_stats)
@@ -295,7 +299,7 @@ class Trainer(object):
 
             tgt_outer = onmt.io.make_features(batch, 'tgt')
 
-            for j in range(0, target_size-1, trunc_size):
+            for j in range(0, target_size - 1, trunc_size):
                 # 1. Create truncated target.
                 tgt = tgt_outer[j: j + trunc_size]
 
@@ -307,8 +311,8 @@ class Trainer(object):
 
                 # 3. Compute loss in shards for memory efficiency.
                 batch_stats = self.train_loss.sharded_compute_loss(
-                        batch, outputs, attns, j,
-                        trunc_size, self.shard_size, normalization)
+                    batch, outputs, attns, j,
+                    trunc_size, self.shard_size, normalization)
 
                 # 4. Update the parameters and statistics.
                 if self.grad_accum_count == 1:
@@ -317,7 +321,7 @@ class Trainer(object):
                 report_stats.update(batch_stats)
 
                 # If truncated, don't backprop fully.
-                if dec_state is not None:
+                if dec_state is not None and j+trunc_size < target_size-1:
                     dec_state.detach()
 
         if self.grad_accum_count > 1:
