@@ -27,6 +27,7 @@ class ImageDataset(ONMTDatasetBase):
             use_filter_pred (bool): use a custom filter predicate to filter
                 out examples?
     """
+
     def __init__(self, fields, src_examples_iter, tgt_examples_iter,
                  num_src_feats=0, num_tgt_feats=0,
                  tgt_seq_length=0, use_filter_pred=True):
@@ -49,8 +50,8 @@ class ImageDataset(ONMTDatasetBase):
                       for k in keys]
         example_values = ([ex[k] for k in keys] for ex in examples_iter)
         out_examples = (self._construct_example_fromlist(
-                            ex_values, out_fields)
-                        for ex_values in example_values)
+            ex_values, out_fields)
+            for ex_values in example_values)
         # If out_examples is a generator, we need to save the filter_pred
         # function in serialization too, which would cause a problem when
         # `torch.save()`. Thus we materialize it as a list.
@@ -123,7 +124,7 @@ class ImageDataset(ONMTDatasetBase):
                         continue
 
                 example_dict = {side: img,
-                                side+'_path': line.strip(),
+                                side + '_path': line.strip(),
                                 'indices': index}
                 index += 1
 
@@ -148,7 +149,7 @@ class ImageDataset(ONMTDatasetBase):
             c = data[0].size(0)
             h = max([t.size(1) for t in data])
             w = max([t.size(2) for t in data])
-            imgs = torch.zeros(len(data), c, h, w)
+            imgs = torch.zeros(len(data), c, h, w).fill_(1)
             for i, img in enumerate(data):
                 imgs[i, :, 0:img.size(1), 0:img.size(2)] = img
             return imgs
@@ -158,7 +159,7 @@ class ImageDataset(ONMTDatasetBase):
             postprocessing=make_img, sequential=False)
 
         for j in range(n_src_features):
-            fields["src_feat_"+str(j)] = \
+            fields["src_feat_" + str(j)] = \
                 torchtext.data.Field(pad_token=PAD_WORD)
 
         fields["tgt"] = torchtext.data.Field(
@@ -166,7 +167,7 @@ class ImageDataset(ONMTDatasetBase):
             pad_token=PAD_WORD)
 
         for j in range(n_tgt_features):
-            fields["tgt_feat_"+str(j)] = \
+            fields["tgt_feat_" + str(j)] = \
                 torchtext.data.Field(init_token=BOS_WORD, eos_token=EOS_WORD,
                                      pad_token=PAD_WORD)
 

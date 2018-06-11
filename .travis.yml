@@ -4,7 +4,10 @@ python:
   - "3.5"
 cache: pip
 before_install:
+  - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
   - sudo apt-get update
+  - sudo apt-get install -y gcc-5 g++-5
+  - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-5 60 --slave /usr/bin/g++ g++ /usr/bin/g++-5
   - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
@@ -14,7 +17,7 @@ before_install:
   # Useful for debugging any issues with conda
   - conda info -a
   # freeze the supported pytorch version for consistency
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION pytorch=0.2.0 -c soumith
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION pytorch=0.4.0 -c soumith
   - source activate test-environment
   # use requirements.txt for dependencies
   - pip install -r requirements.txt

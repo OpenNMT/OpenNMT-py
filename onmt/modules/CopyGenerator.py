@@ -58,6 +58,7 @@ class CopyGenerator(nn.Module):
        tgt_dict (Vocab): output target dictionary
 
     """
+
     def __init__(self, input_size, tgt_dict):
         super(CopyGenerator, self).__init__()
         self.linear = nn.Linear(input_size, len(tgt_dict))
@@ -91,11 +92,10 @@ class CopyGenerator(nn.Module):
         prob = F.softmax(logits)
 
         # Probability of copying p(z=1) batch.
-        copy = F.sigmoid(self.linear_copy(hidden))
-
+        p_copy = F.sigmoid(self.linear_copy(hidden))
         # Probibility of not copying: p_{word}(w) * (1 - p(z))
-        out_prob = torch.mul(prob,  1 - copy.expand_as(prob))
-        mul_attn = torch.mul(attn, copy.expand_as(attn))
+        out_prob = torch.mul(prob,  1 - p_copy.expand_as(prob))
+        mul_attn = torch.mul(attn, p_copy.expand_as(attn))
         copy_prob = torch.bmm(mul_attn.view(-1, batch, slen)
                               .transpose(0, 1),
                               src_map.transpose(0, 1)).transpose(0, 1)
@@ -143,6 +143,7 @@ class CopyGeneratorLossCompute(onmt.Loss.LossComputeBase):
     """
     Copy Generator Loss Computation.
     """
+
     def __init__(self, generator, tgt_vocab,
                  force_copy, normalize_by_length,
                  eps=1e-20):
@@ -188,8 +189,8 @@ class CopyGeneratorLossCompute(onmt.Loss.LossComputeBase):
         loss = self.criterion(scores, align, target)
         scores_data = scores.data.clone()
         scores_data = onmt.io.TextDataset.collapse_copy_scores(
-                self._unbottle(scores_data, batch.batch_size),
-                batch, self.tgt_vocab, self.cur_dataset.src_vocabs)
+            self._unbottle(scores_data, batch.batch_size),
+            batch, self.tgt_vocab, self.cur_dataset.src_vocabs)
         scores_data = self._bottle(scores_data)
 
         # Correct target copy token instead of <unk>
@@ -208,7 +209,7 @@ class CopyGeneratorLossCompute(onmt.Loss.LossComputeBase):
             # Compute Loss as NLL divided by seq length
             # Compute Sequence Lengths
             pad_ix = batch.dataset.fields['tgt'].vocab.stoi[onmt.io.PAD_WORD]
-            tgt_lens = batch.tgt.ne(pad_ix).sum(0).float()
+            tgt_lens = batch.tgt.ne(pad_ix).float().sum(0)
             # Compute Total Loss per sequence in batch
             loss = loss.view(-1, batch.batch_size).sum(0)
             # Divide by length of each sequence and sum

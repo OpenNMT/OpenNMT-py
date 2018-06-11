@@ -10,11 +10,12 @@ import onmt.io
 import onmt.Models
 import onmt.modules
 from onmt.Models import NMTModel, MeanEncoder, RNNEncoder, \
-                        StdRNNDecoder, InputFeedRNNDecoder
+    StdRNNDecoder, InputFeedRNNDecoder
 from onmt.modules import Embeddings, ImageEncoder, CopyGenerator, \
-                         TransformerEncoder, TransformerDecoder, \
-                         CNNEncoder, CNNDecoder, AudioEncoder
+    TransformerEncoder, TransformerDecoder, \
+    CNNEncoder, CNNDecoder, AudioEncoder
 from onmt.Utils import use_gpu
+from torch.nn.init import xavier_uniform
 
 
 def make_embeddings(opt, word_dict, feature_dicts, for_encoder=True):
@@ -48,7 +49,8 @@ def make_embeddings(opt, word_dict, feature_dicts, for_encoder=True):
                       word_padding_idx=word_padding_idx,
                       feat_padding_idx=feats_padding_idx,
                       word_vocab_size=num_word_embeddings,
-                      feat_vocab_sizes=num_feat_embeddings)
+                      feat_vocab_sizes=num_feat_embeddings,
+                      sparse=opt.optim == "sparseadam")
 
 
 def make_encoder(opt, embeddings):
@@ -189,7 +191,7 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
     if not model_opt.copy_attn:
         generator = nn.Sequential(
             nn.Linear(model_opt.rnn_size, len(fields["tgt"].vocab)),
-            nn.LogSoftmax())
+            nn.LogSoftmax(dim=-1))
         if model_opt.share_decoder_embeddings:
             generator[0].weight = decoder.embeddings.word_lut.weight
     else:
@@ -198,22 +200,28 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
 
     # Load the model states from checkpoint or initialize them.
     if checkpoint is not None:
-        print('Loading model parameters.')
         model.load_state_dict(checkpoint['model'])
         generator.load_state_dict(checkpoint['generator'])
     else:
         if model_opt.param_init != 0.0:
-            print('Intializing model parameters.')
             for p in model.parameters():
                 p.data.uniform_(-model_opt.param_init, model_opt.param_init)
             for p in generator.parameters():
                 p.data.uniform_(-model_opt.param_init, model_opt.param_init)
+        if model_opt.param_init_glorot:
+            for p in model.parameters():
+                if p.dim() > 1:
+                    xavier_uniform(p)
+            for p in generator.parameters():
+                if p.dim() > 1:
+                    xavier_uniform(p)
+
         if hasattr(model.encoder, 'embeddings'):
             model.encoder.embeddings.load_pretrained_vectors(
-                    model_opt.pre_word_vecs_enc, model_opt.fix_word_vecs_enc)
+                model_opt.pre_word_vecs_enc, model_opt.fix_word_vecs_enc)
         if hasattr(model.decoder, 'embeddings'):
             model.decoder.embeddings.load_pretrained_vectors(
-                    model_opt.pre_word_vecs_dec, model_opt.fix_word_vecs_dec)
+                model_opt.pre_word_vecs_dec, model_opt.fix_word_vecs_dec)
 
     # Add generator to model (this registers it as parameter of model).
     model.generator = generator

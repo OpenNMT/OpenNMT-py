@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import os
 from collections import Counter, defaultdict, OrderedDict
 from itertools import count
 
@@ -116,7 +117,7 @@ def get_num_features(data_type, corpus_file, side):
 def make_features(batch, side, data_type='text'):
     """
     Args:
-        batch (Variable): a batch of source or target data.
+        batch (Tensor): a batch of source or target data.
         side (str): for source or for target.
         data_type (str): type of the source input.
             Options are [text|img|audio].
@@ -226,20 +227,24 @@ def _build_field_vocab(field, counter, **kwargs):
 
 
 def build_vocab(train_dataset_files, fields, data_type, share_vocab,
-                src_vocab_size, src_words_min_frequency,
-                tgt_vocab_size, tgt_words_min_frequency):
+                src_vocab_path, src_vocab_size, src_words_min_frequency,
+                tgt_vocab_path, tgt_vocab_size, tgt_words_min_frequency,
+                logger=None):
     """
     Args:
         train_dataset_files: a list of train dataset pt file.
         fields (dict): fields to build vocab for.
         data_type: "text", "img" or "audio"?
         share_vocab(bool): share source and target vocabulary?
+        src_vocab_path(string): Path to src vocabulary file.
         src_vocab_size(int): size of the source vocabulary.
         src_words_min_frequency(int): the minimum frequency needed to
                 include a source word in the vocabulary.
+        tgt_vocab_path(string): Path to tgt vocabulary file.
         tgt_vocab_size(int): size of the target vocabulary.
         tgt_words_min_frequency(int): the minimum frequency needed to
                 include a target word in the vocabulary.
+        logger(logging.Logger): logger.
 
     Returns:
         Dict of Fields
@@ -248,45 +253,80 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
     for k in fields:
         counter[k] = Counter()
 
+    # Load vocabulary
+    src_vocab = None
+    if len(src_vocab_path) > 0:
+        src_vocab = set([])
+        print('Loading source vocab from %s' % src_vocab_path)
+        assert os.path.exists(src_vocab_path), \
+            'src vocab %s not found!' % src_vocab_path
+        with open(src_vocab_path) as f:
+            for line in f:
+                word = line.strip().split()[0]
+                src_vocab.add(word)
+
+    tgt_vocab = None
+    if len(tgt_vocab_path) > 0:
+        tgt_vocab = set([])
+        print('Loading target vocab from %s' % tgt_vocab_path)
+        assert os.path.exists(tgt_vocab_path), \
+            'tgt vocab %s not found!' % tgt_vocab_path
+        with open(tgt_vocab_path) as f:
+            for line in f:
+                word = line.strip().split()[0]
+                tgt_vocab.add(word)
+
     for path in train_dataset_files:
         dataset = torch.load(path)
-        print(" * reloading %s." % path)
+        if logger:
+            logger.info(" * reloading %s." % path)
         for ex in dataset.examples:
             for k in fields:
                 val = getattr(ex, k, None)
                 if val is not None and not fields[k].sequential:
                     val = [val]
+                elif k == 'src' and src_vocab:
+                    val = [item for item in val if item in src_vocab]
+                elif k == 'tgt' and tgt_vocab:
+                    val = [item for item in val if item in tgt_vocab]
                 counter[k].update(val)
 
     _build_field_vocab(fields["tgt"], counter["tgt"],
                        max_size=tgt_vocab_size,
                        min_freq=tgt_words_min_frequency)
-    print(" * tgt vocab size: %d." % len(fields["tgt"].vocab))
+    if logger:
+        logger.info(" * tgt vocab size: %d." % len(fields["tgt"].vocab))
 
     # All datasets have same num of n_tgt_features,
     # getting the last one is OK.
     for j in range(dataset.n_tgt_feats):
         key = "tgt_feat_" + str(j)
         _build_field_vocab(fields[key], counter[key])
-        print(" * %s vocab size: %d." % (key, len(fields[key].vocab)))
+        if logger:
+            logger.info(" * %s vocab size: %d." % (key,
+                                                   len(fields[key].vocab)))
 
     if data_type == 'text':
         _build_field_vocab(fields["src"], counter["src"],
                            max_size=src_vocab_size,
                            min_freq=src_words_min_frequency)
-        print(" * src vocab size: %d." % len(fields["src"].vocab))
+        if logger:
+            logger.info(" * src vocab size: %d." % len(fields["src"].vocab))
 
         # All datasets have same num of n_src_features,
         # getting the last one is OK.
         for j in range(dataset.n_src_feats):
             key = "src_feat_" + str(j)
             _build_field_vocab(fields[key], counter[key])
-            print(" * %s vocab size: %d." % (key, len(fields[key].vocab)))
+            if logger:
+                logger.info(" * %s vocab size: %d." %
+                            (key, len(fields[key].vocab)))
 
         # Merge the input and output vocabularies.
         if share_vocab:
             # `tgt_vocab_size` is ignored when sharing vocabularies
-            print(" * merging src and tgt vocab...")
+            if logger:
+                logger.info(" * merging src and tgt vocab...")
             merged_vocab = merge_vocabs(
                 [fields["src"].vocab, fields["tgt"].vocab],
                 vocab_size=src_vocab_size)
@@ -328,10 +368,14 @@ def _make_examples_nfeats_tpl(data_type, src_path, src_dir,
 class OrderedIterator(torchtext.data.Iterator):
     def create_batches(self):
         if self.train:
-            self.batches = torchtext.data.pool(
-                self.data(), self.batch_size,
-                self.sort_key, self.batch_size_fn,
-                random_shuffler=self.random_shuffler)
+            def pool(data, random_shuffler):
+                for p in torchtext.data.batch(data, self.batch_size * 100):
+                    p_batch = torchtext.data.batch(
+                        sorted(p, key=self.sort_key),
+                        self.batch_size, self.batch_size_fn)
+                    for b in random_shuffler(list(p_batch)):
+                        yield b
+            self.batches = pool(self.data(), self.random_shuffler)
         else:
             self.batches = []
             for b in torchtext.data.batch(self.data(), self.batch_size,

@@ -1,11 +1,11 @@
 from __future__ import division
 import torch
 import argparse
-import opts
 import onmt
 import onmt.ModelConstructor
 import onmt.io
-from onmt.Utils import use_gpu
+import onmt.opts
+from onmt.Utils import use_gpu, get_logger
 
 parser = argparse.ArgumentParser(description='translate.py')
 
@@ -28,7 +28,7 @@ def write_embeddings(filename, dict, embeddings):
 
 def main():
     dummy_parser = argparse.ArgumentParser(description='train.py')
-    opts.model_opts(dummy_parser)
+    onmt.opts.model_opts(dummy_parser)
     dummy_opt = dummy_parser.parse_known_args([])[0]
     opt = parser.parse_args()
     opt.cuda = opt.gpu > -1
@@ -50,24 +50,25 @@ def main():
             model_opt.__dict__[arg] = dummy_opt.__dict__[arg]
 
     model = onmt.ModelConstructor.make_base_model(
-                            model_opt, fields, use_gpu(opt), checkpoint)
+        model_opt, fields, use_gpu(opt), checkpoint)
     encoder = model.encoder
     decoder = model.decoder
 
     encoder_embeddings = encoder.embeddings.word_lut.weight.data.tolist()
     decoder_embeddings = decoder.embeddings.word_lut.weight.data.tolist()
 
-    print("Writing source embeddings")
+    logger.info("Writing source embeddings")
     write_embeddings(opt.output_dir + "/src_embeddings.txt", src_dict,
                      encoder_embeddings)
 
-    print("Writing target embeddings")
+    logger.info("Writing target embeddings")
     write_embeddings(opt.output_dir + "/tgt_embeddings.txt", tgt_dict,
                      decoder_embeddings)
 
-    print('... done.')
-    print('Converting model...')
+    logger.info('... done.')
+    logger.info('Converting model...')
 
 
 if __name__ == "__main__":
+    logger = get_logger('extract_embeddings.log')
     main()

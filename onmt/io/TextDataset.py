@@ -35,6 +35,7 @@ class TextDataset(ONMTDatasetBase):
             use_filter_pred (bool): use a custom filter predicate to filter
                 out examples?
     """
+
     def __init__(self, fields, src_examples_iter, tgt_examples_iter,
                  num_src_feats=0, num_tgt_feats=0,
                  src_seq_length=0, tgt_seq_length=0,
@@ -67,17 +68,22 @@ class TextDataset(ONMTDatasetBase):
         out_fields = [(k, fields[k]) if k in fields else (k, None)
                       for k in keys]
         example_values = ([ex[k] for k in keys] for ex in examples_iter)
-        out_examples = (self._construct_example_fromlist(
-                            ex_values, out_fields)
-                        for ex_values in example_values)
+
         # If out_examples is a generator, we need to save the filter_pred
         # function in serialization too, which would cause a problem when
         # `torch.save()`. Thus we materialize it as a list.
-        out_examples = list(out_examples)
+        src_size = 0
+
+        out_examples = []
+        for ex_values in example_values:
+            example = self._construct_example_fromlist(
+                ex_values, out_fields)
+            src_size += len(example.src)
+            out_examples.append(example)
 
         def filter_pred(example):
             return 0 < len(example.src) <= src_seq_length \
-               and 0 < len(example.tgt) <= tgt_seq_length
+                and 0 < len(example.tgt) <= tgt_seq_length
 
         filter_pred = filter_pred if use_filter_pred else lambda x: True
 
@@ -87,6 +93,10 @@ class TextDataset(ONMTDatasetBase):
 
     def sort_key(self, ex):
         """ Sort using length of source sentences. """
+        # Default to a balanced sort, prioritizing tgt len match.
+        # TODO: make this configurable.
+        if hasattr(ex, "tgt"):
+            return len(ex.src), len(ex.tgt)
         return len(ex.src)
 
     @staticmethod
@@ -193,7 +203,7 @@ class TextDataset(ONMTDatasetBase):
             include_lengths=True)
 
         for j in range(n_src_features):
-            fields["src_feat_"+str(j)] = \
+            fields["src_feat_" + str(j)] = \
                 torchtext.data.Field(pad_token=PAD_WORD)
 
         fields["tgt"] = torchtext.data.Field(
@@ -201,7 +211,7 @@ class TextDataset(ONMTDatasetBase):
             pad_token=PAD_WORD)
 
         for j in range(n_tgt_features):
-            fields["tgt_feat_"+str(j)] = \
+            fields["tgt_feat_" + str(j)] = \
                 torchtext.data.Field(init_token=BOS_WORD, eos_token=EOS_WORD,
                                      pad_token=PAD_WORD)
 
@@ -284,6 +294,7 @@ class ShardedTextCorpusIterator(object):
     shards of size `shard_size`. Then, for each shard, it processes
     into (example_dict, n_features) tuples when iterates.
     """
+
     def __init__(self, corpus_path, line_truncate, side, shard_size,
                  assoc_iter=None):
         """

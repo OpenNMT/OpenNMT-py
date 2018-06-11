@@ -1,5 +1,4 @@
-from onmt.modules.UtilClass import LayerNorm, Bottle, BottleLinear, \
-    BottleLayerNorm, BottleSoftmax, Elementwise
+from onmt.modules.UtilClass import LayerNorm, Elementwise
 from onmt.modules.Gate import context_gate_factory, ContextGate
 from onmt.modules.GlobalAttention import GlobalAttention
 from onmt.modules.ConvMultiStepAttention import ConvMultiStepAttention
@@ -8,7 +7,7 @@ from onmt.modules.AudioEncoder import AudioEncoder
 from onmt.modules.CopyGenerator import CopyGenerator, CopyGeneratorLossCompute
 from onmt.modules.StructuredAttention import MatrixTree
 from onmt.modules.Transformer import \
-   TransformerEncoder, TransformerDecoder, PositionwiseFeedForward
+    TransformerEncoder, TransformerDecoder, PositionwiseFeedForward
 from onmt.modules.Conv2Conv import CNNEncoder, CNNDecoder
 from onmt.modules.MultiHeadedAttn import MultiHeadedAttention
 from onmt.modules.StackedRNN import StackedLSTM, StackedGRU
@@ -30,7 +29,7 @@ __all__ = [EncoderBase, MeanEncoder, RNNDecoderBase, InputFeedRNNDecoder,
            StdRNNDecoder, ContextGate, GlobalAttention, ImageEncoder,
            PositionwiseFeedForward, PositionalEncoding,
            CopyGenerator, MultiHeadedAttention,
-           LayerNorm, Bottle, BottleLinear, BottleLayerNorm, BottleSoftmax,
+           LayerNorm,
            TransformerEncoder, TransformerDecoder, Embeddings, Elementwise,
            MatrixTree, WeightNormConv2d, ConvMultiStepAttention,
            CNNEncoder, CNNDecoder, StackedLSTM, StackedGRU,

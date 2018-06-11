@@ -1,7 +1,6 @@
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
-from torch.autograd import Variable
 
 
 class ImageEncoder(nn.Module):
@@ -15,6 +14,7 @@ class ImageEncoder(nn.Module):
         rnn_size (int): size of hidden states of the rnn.
         dropout (float): dropout probablity.
     """
+
     def __init__(self, num_layers, bidirectional, rnn_size, dropout):
         super(ImageEncoder, self).__init__()
         self.num_layers = num_layers
@@ -55,7 +55,7 @@ class ImageEncoder(nn.Module):
         batch_size = input.size(0)
         # (batch_size, 64, imgH, imgW)
         # layer 1
-        input = F.relu(self.layer1(input[:, :, :, :]-0.5), True)
+        input = F.relu(self.layer1(input[:, :, :, :] - 0.5), True)
 
         # (batch_size, 64, imgH/2, imgW/2)
         input = F.max_pool2d(input, kernel_size=(2, 2), stride=(2, 2))
@@ -97,7 +97,7 @@ class ImageEncoder(nn.Module):
                                      .transpose(1, 2)
             row_vec = torch.Tensor(batch_size).type_as(inp.data)\
                                               .long().fill_(row)
-            pos_emb = self.pos_lut(Variable(row_vec))
+            pos_emb = self.pos_lut(row_vec)
             with_pos = torch.cat(
                 (pos_emb.view(1, pos_emb.size(0), pos_emb.size(1)), inp), 0)
             outputs, hidden_t = self.rnn(with_pos)
