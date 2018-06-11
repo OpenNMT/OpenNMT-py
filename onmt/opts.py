@@ -112,7 +112,7 @@ def model_opts(parser):
                        help="Number of audio encoder layers.")
     group.add_argument('-audio_dec_layers', type=int, default=1,
                        help="Number of audio encoder layers.")
-    group.add_argument('-audio_enc_rnn_size', type=int, default=1024,
+    group.add_argument('-audio_enc_rnn_size', type=int, default=2560,
                        help="Size of rnn hidden states of audio encoder.")
     group.add_argument('-audio_dec_rnn_size', type=int, default=512,
                        help="Size of rnn hidden states of audio decoder.")

@@ -174,6 +174,7 @@ class AudioDataset(ONMTDatasetBase):
             for idx,line in enumerate(corpus_file):
                 if idx % 1000 == 0:
                     print (idx)
+                    sys.stderr.flush()
                     sys.stdout.flush()
                 audio_path = os.path.join(src_dir, line.strip())
                 if not os.path.exists(audio_path):
@@ -210,7 +211,7 @@ class AudioDataset(ONMTDatasetBase):
         """
         fields = {}
 
-        def make_audio(data, vocab, is_train):
+        def make_audio(data, vocab):
             nfft = data[0].size(0)
             t = max([t.size(1) for t in data])
             sounds = torch.zeros(len(data), 1, nfft, t)
@@ -219,11 +220,11 @@ class AudioDataset(ONMTDatasetBase):
             return sounds
 
         fields["src"] = torchtext.data.Field(
-            use_vocab=False, tensor_type=torch.FloatTensor,
+            use_vocab=False, dtype=torch.float,
             postprocessing=make_audio, sequential=False)
 
         fields["src_lengths"] = torchtext.data.Field(
-            use_vocab=False, tensor_type=torch.LongTensor,
+            use_vocab=False, dtype=torch.long,
             sequential=False)
 
         for j in range(n_src_features):
@@ -239,7 +240,7 @@ class AudioDataset(ONMTDatasetBase):
                 torchtext.data.Field(init_token=BOS_WORD, eos_token=EOS_WORD,
                                      pad_token=PAD_WORD)
 
-        def make_src(data, vocab, is_train):
+        def make_src(data, vocab):
             src_size = max([t.size(0) for t in data])
             src_vocab_size = max([t.max() for t in data]) + 1
             alignment = torch.zeros(src_size, len(data), src_vocab_size)
@@ -249,10 +250,10 @@ class AudioDataset(ONMTDatasetBase):
             return alignment
 
         fields["src_map"] = torchtext.data.Field(
-            use_vocab=False, tensor_type=torch.FloatTensor,
+            use_vocab=False, dtype=torch.float,
             postprocessing=make_src, sequential=False)
 
-        def make_tgt(data, vocab, is_train):
+        def make_tgt(data, vocab):
             tgt_size = max([t.size(0) for t in data])
             alignment = torch.zeros(tgt_size, len(data)).long()
             for i, sent in enumerate(data):
@@ -260,11 +261,11 @@ class AudioDataset(ONMTDatasetBase):
             return alignment
 
         fields["alignment"] = torchtext.data.Field(
-            use_vocab=False, tensor_type=torch.LongTensor,
+            use_vocab=False, dtype=torch.long,
             postprocessing=make_tgt, sequential=False)
 
         fields["indices"] = torchtext.data.Field(
-            use_vocab=False, tensor_type=torch.LongTensor,
+            use_vocab=False, dtype=torch.long,
             sequential=False)
 
         return fields
@@ -364,6 +365,7 @@ class ShardedAudioCorpusIterator(object):
             while True:
                 if self.line_index % 1000 == 0:
                     print (self.line_index)
+                    sys.stderr.flush()
                     sys.stdout.flush()
                 if self.shard_size != 0 and self.line_index % 64 == 0:
                     # This part of check is time consuming on Py2 (but

@@ -54,8 +54,11 @@ if torch.cuda.is_available() and not opt.gpuid:
 
 if opt.gpuid:
     cuda.set_device(opt.gpuid[0])
+    device = torch.device('cuda')
     if opt.seed > 0:
         torch.cuda.manual_seed(opt.seed)
+else:
+    device = torch.device('cpu')
 
 if len(opt.gpuid) > 1:
     sys.stderr.write("Sorry, multigpu isn't supported yet, coming soon!\n")
@@ -203,8 +206,6 @@ def make_dataset_iter(datasets, fields, opt, is_train=True):
             tgt_elements = count * max_tgt_in_batch
             return max(src_elements, tgt_elements)
 
-    device = opt.gpuid[0] if opt.gpuid else -1
-
     return DatasetLazyIter(datasets, fields, batch_size, batch_size_fn,
                            device, is_train)
 
@@ -263,7 +264,8 @@ def train_model(model, fields, optim, data_type, model_opt):
         valid_iter = make_dataset_iter(lazily_load_dataset("valid"),
                                        fields, opt,
                                        is_train=False)
-        valid_stats = trainer.validate(valid_iter)
+        with torch.no_grad():
+            valid_stats = trainer.validate(valid_iter)
         print('Validation perplexity: %g' % valid_stats.ppl())
         print('Validation accuracy: %g' % valid_stats.accuracy())
 

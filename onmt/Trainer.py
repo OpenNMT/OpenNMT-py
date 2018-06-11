@@ -72,7 +72,8 @@ class Statistics(object):
                self.n_src_words / (t + 1e-5),
                self.n_words / (t + 1e-5),
                time.time() - start))
-        sys.stdout.flush()
+        #sys.stderr.flush()
+        #sys.stdout.flush()
 
     def log(self, prefix, experiment, lr):
         t = self.elapsed_time()
@@ -209,7 +210,7 @@ class Trainer(object):
 
         stats = Statistics()
 
-        for batch in valid_iter:
+        for i,batch in enumerate(valid_iter):
             cur_dataset = valid_iter.get_cur_dataset()
             self.valid_loss.cur_dataset = cur_dataset
 

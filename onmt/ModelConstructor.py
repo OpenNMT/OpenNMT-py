@@ -15,7 +15,7 @@ from onmt.modules import Embeddings, ImageEncoder, CopyGenerator, \
                          TransformerEncoder, TransformerDecoder, \
                          CNNEncoder, CNNDecoder, AudioEncoder
 from onmt.Utils import use_gpu
-from torch.nn.init import xavier_uniform
+from torch.nn.init import xavier_uniform_
 
 
 def make_embeddings(opt, word_dict, feature_dicts, for_encoder=True):
@@ -223,10 +223,10 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
         if model_opt.param_init_glorot:
             for p in model.parameters():
                 if p.dim() > 1:
-                    xavier_uniform(p)
+                    xavier_uniform_(p)
             for p in generator.parameters():
                 if p.dim() > 1:
-                    xavier_uniform(p)
+                    xavier_uniform_(p)
 
         if hasattr(model.encoder, 'embeddings'):
             model.encoder.embeddings.load_pretrained_vectors(

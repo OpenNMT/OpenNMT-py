@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import os
+import os, sys
 from collections import Counter, defaultdict, OrderedDict
 from itertools import count
 
@@ -271,11 +271,12 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
     for path in train_dataset_files:
         dataset = torch.load(path)
         print(" * reloading %s." % path)
+        sys.stdout.flush()
         for ex in dataset.examples:
             for k in fields:
                 val = getattr(ex, k, None)
-                if val is not None and not fields[k].sequential:
-                    val = [val]
+                if not fields[k].sequential:
+                    continue
                 elif k == 'src' and src_vocab:
                     val = [item for item in val if item in src_vocab]
                 elif k == 'tgt' and tgt_vocab:
