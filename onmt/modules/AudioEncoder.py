@@ -74,12 +74,9 @@ class AudioEncoder(nn.Module):
 
     def forward(self, input, lengths=None):
         "See :obj:`onmt.modules.EncoderBase.forward()`"
-        # (batch_size, 1, nfft, t)
-        # layer 1
+
         batch_size, _, nfft, t = input.size()
         input = input.transpose(0, 1).transpose(0, 3).contiguous().view(t, batch_size, nfft)
-        #print (input.size())
-        #print (lengths)
         orig_lengths = lengths
         lengths = lengths.view(-1).tolist()
 
@@ -94,43 +91,17 @@ class AudioEncoder(nn.Module):
             memory_bank, tmp = rnn(packed_emb)
             memory_bank = unpack(memory_bank)[0] # t, batch_size, nfft
             t, _, _ = memory_bank.size()
-            #print (memory_bank.size())
             memory_bank = memory_bank.transpose(0,2) # nfft, batch_size, t
             memory_bank = pool(memory_bank) # nfft, batch_size, (t - pool)/2 + 1
             lengths = [int(math.floor((length - stride)/stride + 1)) for length in lengths]
-            #print (t)
             assert memory_bank.size(2) == int(math.floor((t - stride) / stride + 1))
             memory_bank = memory_bank.transpose(0, 2) # t, batch_size, rnn_size
-            #print (memory_bank.size())
             input = memory_bank
 
         memory_bank = memory_bank.contiguous().view(-1, memory_bank.size(2))
         memory_bank = self.batchnorm_W(memory_bank)
         memory_bank = self.W(memory_bank).view(-1, batch_size, self.dec_rnn_size)
-        #memory_bank = memory_bank.view(-1, batch_size, self.dec_rnn_size)
-        #print (memory_bank.size())
-        #input = self.batch_norm1(self.layer1(input[:, :, :, :]))
 
-        ## (batch_size, 32, nfft/2, t/2)
-        #input = F.hardtanh(input, 0, 20, inplace=True)
-
-        ## (batch_size, 32, nfft/2/2, t/2)
-        ## layer 2
-        #input = self.batch_norm2(self.layer2(input))
-
-        ## (batch_size, 32, nfft/2/2, t/2)
-        #input = F.hardtanh(input, 0, 20, inplace=True)
-
-        #batch_size = input.size(0)
-        #length = input.size(3)
-        #input = input.view(batch_size, -1, length)
-        #input = input.transpose(0, 2).transpose(1, 2)
-
-        #sys.exit(1)
-
-        #output, hidden = self.rnn(input)
-
-        #return hidden, output
         state = memory_bank.new_full((self.dec_layers*self.num_directions, batch_size, 
                                       self.dec_rnn_size_real), 0)
         if self.rnn_type == 'LSTM':

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 from __future__ import division
 
@@ -18,7 +19,7 @@ import onmt.io
 import onmt.Models
 import onmt.ModelConstructor
 import onmt.modules
-from onmt.Utils import use_gpu
+from onmt.Utils import use_gpu, get_logger
 import onmt.opts
 
 
@@ -32,6 +33,9 @@ onmt.opts.model_opts(parser)
 onmt.opts.train_opts(parser)
 
 opt = parser.parse_args()
+
+logger = get_logger(opt.log_file)
+
 if opt.word_vec_size != -1:
     opt.src_word_vec_size = opt.word_vec_size
     opt.tgt_word_vec_size = opt.word_vec_size
@@ -50,7 +54,7 @@ if opt.rnn_type == "SRU" and not opt.gpuid:
     raise AssertionError("Using SRU requires -gpuid set.")
 
 if torch.cuda.is_available() and not opt.gpuid:
-    print("WARNING: You have a CUDA device, should run with -gpuid 0")
+    logger.info("WARNING: You have a CUDA device, should run with -gpuid 0")
 
 if opt.gpuid:
     cuda.set_device(opt.gpuid[0])
@@ -71,7 +75,7 @@ if opt.exp_host != "":
     cc = CrayonClient(hostname=opt.exp_host)
 
     experiments = cc.get_experiment_names()
-    print(experiments)
+    logger.info(experiments)
     if opt.exp in experiments:
         cc.remove_experiment(opt.exp)
     experiment = cc.create_experiment(opt.exp)
@@ -104,7 +108,8 @@ def report_func(epoch, batch, num_batches,
         report_stats(Statistics): updated Statistics instance.
     """
     if batch % opt.report_every == -1 % opt.report_every:
-        report_stats.output(epoch, batch + 1, num_batches, start_time)
+        msg = report_stats.output(epoch, batch + 1, num_batches, start_time)
+        logger.info(msg)
         if opt.exp_host:
             report_stats.log("progress", experiment, lr)
         if opt.tensorboard:
@@ -245,20 +250,21 @@ def train_model(model, fields, optim, data_type, model_opt):
                            trunc_size, shard_size, data_type,
                            norm_method, grad_accum_count)
 
-    print('\nStart training...')
-    print(' * number of epochs: %d, starting from Epoch %d' %
-          (opt.epochs + 1 - opt.start_epoch, opt.start_epoch))
-    print(' * batch size: %d' % opt.batch_size)
+    logger.info('')
+    logger.info('Start training...')
+    logger.info(' * number of epochs: %d, starting from Epoch %d' %
+                (opt.epochs + 1 - opt.start_epoch, opt.start_epoch))
+    logger.info(' * batch size: %d' % opt.batch_size)
 
     for epoch in range(opt.start_epoch, opt.epochs + 1):
-        print('')
+        logger.info('')
 
         # 1. Train for one epoch on the training set.
         train_iter = make_dataset_iter(lazily_load_dataset("train"),
                                        fields, opt)
         train_stats = trainer.train(train_iter, epoch, report_func)
-        print('Train perplexity: %g' % train_stats.ppl())
-        print('Train accuracy: %g' % train_stats.accuracy())
+        logger.info('Train perplexity: %g' % train_stats.ppl())
+        logger.info('Train accuracy: %g' % train_stats.accuracy())
 
         # 2. Validate on the validation set.
         valid_iter = make_dataset_iter(lazily_load_dataset("valid"),
@@ -266,8 +272,8 @@ def train_model(model, fields, optim, data_type, model_opt):
                                        is_train=False)
         with torch.no_grad():
             valid_stats = trainer.validate(valid_iter)
-        print('Validation perplexity: %g' % valid_stats.ppl())
-        print('Validation accuracy: %g' % valid_stats.accuracy())
+        logger.info('Validation perplexity: %g' % valid_stats.ppl())
+        logger.info('Validation accuracy: %g' % valid_stats.accuracy())
 
         # 3. Log to remote server.
         if opt.exp_host:
@@ -278,7 +284,9 @@ def train_model(model, fields, optim, data_type, model_opt):
             train_stats.log_tensorboard("valid", writer, optim.lr, epoch)
 
         # 4. Update the learning rate
-        trainer.epoch_step(valid_stats.ppl(), epoch)
+        decay = trainer.epoch_step(valid_stats.ppl(), epoch)
+        if decay:
+            logger.info("Decaying learning rate to %g" % trainer.optim.lr)
 
         # 5. Drop a checkpoint if needed.
         if epoch >= opt.start_checkpoint_at:
@@ -294,7 +302,7 @@ def check_save_model_path():
 
 def tally_parameters(model):
     n_params = sum([p.nelement() for p in model.parameters()])
-    print('* number of parameters: %d' % n_params)
+    logger.info('* number of parameters: %d' % n_params)
     enc = 0
     dec = 0
     for name, param in model.named_parameters():
@@ -302,8 +310,8 @@ def tally_parameters(model):
             enc += param.nelement()
         elif 'decoder' or 'generator' in name:
             dec += param.nelement()
-    print('encoder: ', enc)
-    print('decoder: ', dec)
+    logger.info('encoder: ' + str(enc))
+    logger.info('decoder: ' + str(dec))
 
 
 def lazily_load_dataset(corpus_type):
@@ -320,8 +328,8 @@ def lazily_load_dataset(corpus_type):
 
     def lazy_dataset_loader(pt_file, corpus_type):
         dataset = torch.load(pt_file)
-        print('Loading %s dataset from %s, number of examples: %d' %
-              (corpus_type, pt_file, len(dataset)))
+        logger.info('Loading %s dataset from %s, number of examples: %d' %
+                    (corpus_type, pt_file, len(dataset)))
         return dataset
 
     # Sort the glob output by file name (by increasing indexes).
@@ -337,7 +345,7 @@ def lazily_load_dataset(corpus_type):
 
 def load_fields(dataset, data_type, checkpoint):
     if checkpoint is not None:
-        print('Loading vocab from checkpoint at %s.' % opt.train_from)
+        logger.info('Loading vocab from checkpoint at %s.' % opt.train_from)
         fields = onmt.io.load_fields_from_vocab(
             checkpoint['vocab'], data_type)
     else:
@@ -347,11 +355,11 @@ def load_fields(dataset, data_type, checkpoint):
                    if k in dataset.examples[0].__dict__])
 
     if data_type == 'text':
-        print(' * vocabulary size. source = %d; target = %d' %
-              (len(fields['src'].vocab), len(fields['tgt'].vocab)))
+        logger.info(' * vocabulary size. source = %d; target = %d' %
+                    (len(fields['src'].vocab), len(fields['tgt'].vocab)))
     else:
-        print(' * vocabulary size. target = %d' %
-              (len(fields['tgt'].vocab)))
+        logger.info(' * vocabulary size. target = %d' %
+                    (len(fields['tgt'].vocab)))
 
     return fields
 
@@ -361,19 +369,21 @@ def collect_report_features(fields):
     tgt_features = onmt.io.collect_features(fields, side='tgt')
 
     for j, feat in enumerate(src_features):
-        print(' * src feature %d size = %d' % (j, len(fields[feat].vocab)))
+        logger.info(' * src feature %d size = %d' %
+                    (j, len(fields[feat].vocab)))
     for j, feat in enumerate(tgt_features):
-        print(' * tgt feature %d size = %d' % (j, len(fields[feat].vocab)))
+        logger.info(' * tgt feature %d size = %d' %
+                    (j, len(fields[feat].vocab)))
 
 
 def build_model(model_opt, opt, fields, checkpoint):
-    print('Building model...')
+    logger.info('Building model...')
     model = onmt.ModelConstructor.make_base_model(model_opt, fields,
                                                   use_gpu(opt), checkpoint)
     if len(opt.gpuid) > 1:
-        print('Multi gpu training: ', opt.gpuid)
+        logger.info('Multi gpu training: ', opt.gpuid)
         model = nn.DataParallel(model, device_ids=opt.gpuid, dim=1)
-    print(model)
+    logger.info(model)
 
     return model
 
@@ -381,8 +391,8 @@ def build_model(model_opt, opt, fields, checkpoint):
 def build_optim(model, checkpoint):
     saved_optimizer_state_dict = None
 
-    if False:#opt.train_from:
-        print('Loading optimizer from checkpoint.')
+    if opt.train_from:
+        logger.info('Loading optimizer from checkpoint.')
         optim = checkpoint['optim']
         # We need to save a copy of optim.optimizer.state_dict() for setting
         # the, optimizer state later on in Stage 2 in this method, since
@@ -391,7 +401,7 @@ def build_optim(model, checkpoint):
         # optim.optimizer.state_dict()
         saved_optimizer_state_dict = optim.optimizer.state_dict()
     else:
-        print('Making optimizer for training.')
+        logger.info('Making optimizer for training.')
         optim = onmt.Optim(
             opt.optim, opt.learning_rate, opt.max_grad_norm,
             lr_decay=opt.learning_rate_decay,
@@ -411,12 +421,12 @@ def build_optim(model, checkpoint):
     # essentially it builds a new optimizer with empty optimizer state and
     # parameters from the model.
     optim.set_parameters(model.named_parameters())
-    print(
+    logger.info(
         "Stage 1: Keys after executing optim.set_parameters" +
         "(model.parameters())")
     show_optimizer_state(optim)
 
-    if False:#opt.train_from:
+    if opt.train_from:
         # Stage 2: In this stage, which is only performed when loading an
         # optimizer from a checkpoint, we load the saved_optimizer_state_dict
         # into the re-created optimizer, to set the optim.optimizer.state
@@ -424,8 +434,7 @@ def build_optim(model, checkpoint):
         # state saved in the "saved_optimizer_state_dict" variable for
         # this purpose.
         # See also: https://github.com/pytorch/pytorch/issues/2830
-        print ('************************************************************')
-        # TODO: optim.optimizer.load_state_dict(saved_optimizer_state_dict)
+        optim.optimizer.load_state_dict(saved_optimizer_state_dict)
         # Convert back the state values to cuda type if applicable
         if use_gpu(opt):
             for state in optim.optimizer.state.values():
@@ -433,7 +442,7 @@ def build_optim(model, checkpoint):
                     if torch.is_tensor(v):
                         state[k] = v.cuda()
 
-        print(
+        logger.info(
             "Stage 2: Keys after executing  optim.optimizer.load_state_dict" +
             "(saved_optimizer_state_dict)")
         show_optimizer_state(optim)
@@ -465,12 +474,13 @@ def show_optimizer_state(optim):
 def main():
     # Load checkpoint if we resume from a previous training.
     if opt.train_from:
-        print('Loading checkpoint from %s' % opt.train_from)
+        logger.info('Loading checkpoint from %s' % opt.train_from)
         checkpoint = torch.load(opt.train_from,
                                 map_location=lambda storage, loc: storage)
         model_opt = checkpoint['opt']
         # I don't like reassigning attributes of opt: it's not clear.
         opt.start_epoch = checkpoint['epoch'] + 1
+        model_opt.save_model = opt.save_model
     else:
         checkpoint = None
         model_opt = opt

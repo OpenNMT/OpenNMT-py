@@ -44,6 +44,7 @@ class Optim(object):
     # https://arxiv.org/pdf/1706.03762.pdf, particularly the value beta2=0.98
     # was used there however, beta2=0.999 is still arguably the more
     # established value, so we use that here as well
+
     def __init__(self, method, lr, max_grad_norm,
                  lr_decay=1, start_decay_at=None,
                  beta1=0.9, beta2=0.999,
@@ -146,10 +147,11 @@ class Optim(object):
         if self.last_ppl is not None and ppl > self.last_ppl:
             self.start_decay = True
 
+        self.last_ppl = ppl
+
         if self.start_decay:
             self.lr = self.lr * self.lr_decay
-            print("Decaying learning rate to %g" % self.lr)
-
-        self.last_ppl = ppl
-        if self.method != 'sparseadam':
-            self.optimizer.param_groups[0]['lr'] = self.lr
+            if self.method != 'sparseadam':
+                self.optimizer.param_groups[0]['lr'] = self.lr
+                return True
+        return False

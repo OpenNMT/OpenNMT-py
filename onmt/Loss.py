@@ -30,6 +30,7 @@ class LossComputeBase(nn.Module):
              torchtext vocab object representing the target output
         normalzation (str): normalize by "sents" or "tokens"
     """
+
     def __init__(self, generator, tgt_vocab):
         super(LossComputeBase, self).__init__()
         self.generator = generator
@@ -154,6 +155,7 @@ class NMTLossCompute(LossComputeBase):
     """
     Standard NMT Loss Computation.
     """
+
     def __init__(self, generator, tgt_vocab, normalization="sents",
                  label_smoothing=0.0):
         super(NMTLossCompute, self).__init__(generator, tgt_vocab)
@@ -192,7 +194,7 @@ class NMTLossCompute(LossComputeBase):
             log_likelihood = torch.gather(scores.data, 1, tdata.unsqueeze(1))
             tmp_ = self.one_hot.repeat(gtruth.size(0), 1)
             tmp_.scatter_(1, tdata.unsqueeze(1), self.confidence)
-            if mask.dim() > 0:
+            if mask.numel() > 0:
                 log_likelihood.index_fill_(0, mask, 0)
                 tmp_.index_fill_(0, mask, 0)
             gtruth = tmp_
