@@ -296,7 +296,8 @@ class Translator(object):
         elif data_type == 'audio':
             src_lengths = batch.src_lengths
         if data_type == 'audio':
-            enc_states, memory_bank, src_lengths = self.model.encoder(src, src_lengths)
+            enc_states, memory_bank, src_lengths \
+                    = self.model.encoder(src, src_lengths)
         else:
             enc_states, memory_bank = self.model.encoder(src, src_lengths)
         dec_states = self.model.decoder.init_decoder_state(
@@ -401,7 +402,8 @@ class Translator(object):
 
         #  (1) run the encoder on the src
         if data_type == 'audio':
-            enc_states, memory_bank, src_lengths = self.model.encoder(src, src_lengths)
+            enc_states, memory_bank, src_lengths \
+                    = self.model.encoder(src, src_lengths)
         else:
             enc_states, memory_bank = self.model.encoder(src, src_lengths)
         dec_states = \

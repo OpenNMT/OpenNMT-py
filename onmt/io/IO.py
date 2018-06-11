@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import os, sys
+import os
 from collections import Counter, defaultdict, OrderedDict
 from itertools import count
 

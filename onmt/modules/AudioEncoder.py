@@ -1,10 +1,9 @@
 import math
-import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from torch.nn.utils.rnn import pack_padded_sequence as pack
 from torch.nn.utils.rnn import pad_packed_sequence as unpack
 from onmt.Models import rnn_factory
+
 
 class AudioEncoder(nn.Module):
     """
@@ -63,10 +62,10 @@ class AudioEncoder(nn.Module):
                             num_layers=1,
                             dropout=dropout,
                             bidirectional=brnn)
-            setattr(self, 'rnn_%d'%(l+1), rnn)
-            setattr(self, 'pool_%d'%(l+1), nn.MaxPool1d(enc_pooling[l+1]))
-            setattr(self, 'batchnorm_%d'%(l+1), batchnorm)
-
+            setattr(self, 'rnn_%d' % (l + 1), rnn)
+            setattr(self, 'pool_%d' % (l + 1),
+                    nn.MaxPool1d(enc_pooling[l + 1]))
+            setattr(self, 'batchnorm_%d' % (l + 1), batchnorm)
 
     def load_pretrained_vectors(self, opt):
         # Pass in needed options only when modify function definition.
@@ -76,34 +75,37 @@ class AudioEncoder(nn.Module):
         "See :obj:`onmt.modules.EncoderBase.forward()`"
 
         batch_size, _, nfft, t = input.size()
-        input = input.transpose(0, 1).transpose(0, 3).contiguous().view(t, batch_size, nfft)
+        input = input.transpose(0, 1).transpose(0, 3).contiguous() \
+                     .view(t, batch_size, nfft)
         orig_lengths = lengths
         lengths = lengths.view(-1).tolist()
 
         for l in range(self.enc_layers):
-            rnn = getattr(self, 'rnn_%d'%l)
-            pool = getattr(self, 'pool_%d'%l)
-            batchnorm = getattr(self, 'batchnorm_%d'%l)
+            rnn = getattr(self, 'rnn_%d' % l)
+            pool = getattr(self, 'pool_%d' % l)
+            batchnorm = getattr(self, 'batchnorm_%d' % l)
             stride = self.enc_pooling[l]
-            t1, t2, t3 = input.size()
-            input = batchnorm(input.contiguous().view(-1, t3)).contiguous().view(t1, t2, t3)
+            t, _, num_feat = input.size()
+            input = batchnorm(input.contiguous().view(-1, num_feat))
+            input = input.view(t, -1, num_feat)
             packed_emb = pack(input, lengths)
             memory_bank, tmp = rnn(packed_emb)
-            memory_bank = unpack(memory_bank)[0] # t, batch_size, nfft
+            memory_bank = unpack(memory_bank)[0]
             t, _, _ = memory_bank.size()
-            memory_bank = memory_bank.transpose(0,2) # nfft, batch_size, t
-            memory_bank = pool(memory_bank) # nfft, batch_size, (t - pool)/2 + 1
-            lengths = [int(math.floor((length - stride)/stride + 1)) for length in lengths]
-            assert memory_bank.size(2) == int(math.floor((t - stride) / stride + 1))
-            memory_bank = memory_bank.transpose(0, 2) # t, batch_size, rnn_size
+            memory_bank = memory_bank.transpose(0, 2)
+            memory_bank = pool(memory_bank)
+            lengths = [int(math.floor((length - stride)/stride + 1))
+                       for length in lengths]
+            memory_bank = memory_bank.transpose(0, 2)
             input = memory_bank
 
         memory_bank = memory_bank.contiguous().view(-1, memory_bank.size(2))
         memory_bank = self.batchnorm_W(memory_bank)
-        memory_bank = self.W(memory_bank).view(-1, batch_size, self.dec_rnn_size)
+        memory_bank = self.W(memory_bank).view(-1, batch_size,
+                                               self.dec_rnn_size)
 
-        state = memory_bank.new_full((self.dec_layers*self.num_directions, batch_size, 
-                                      self.dec_rnn_size_real), 0)
+        state = memory_bank.new_full((self.dec_layers * self.num_directions,
+                                      batch_size, self.dec_rnn_size_real), 0)
         if self.rnn_type == 'LSTM':
             # The encoder hidden is  (layers*directions) x batch x dim.
             encoder_final = (state, state)

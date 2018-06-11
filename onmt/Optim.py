@@ -123,16 +123,6 @@ class Optim(object):
                      self._step * self.warmup_steps**(-1.5))))
 
         if self.max_grad_norm:
-            total_norm = 0
-            total_p_norm = 0
-            for p in self.params:
-                param_norm = p.data.norm(2)
-                total_p_norm += param_norm ** 2
-                param_norm = p.grad.data.norm(2)
-                total_norm += param_norm ** 2
-            total_norm = total_norm ** (1. / 2)
-            print (total_p_norm)
-            print (total_norm)
             clip_grad_norm_(self.params, self.max_grad_norm)
         self.optimizer.step()
 

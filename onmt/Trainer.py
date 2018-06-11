@@ -213,7 +213,7 @@ class Trainer(object):
 
         stats = Statistics()
 
-        for i,batch in enumerate(valid_iter):
+        for batch in valid_iter:
             cur_dataset = valid_iter.get_cur_dataset()
             self.valid_loss.cur_dataset = cur_dataset
 
@@ -318,25 +318,6 @@ class Trainer(object):
                     batch, outputs, attns, j,
                     trunc_size, self.shard_size, normalization)
 
-                nans = [
-                    (name, param)
-                    for name, param in self.model.named_parameters()
-                    if param.grad is not None and (param.grad != param.grad).any()
-                ]
-                if nans:
-                    print ('NAN\'s detected')
-                    #import pdb; pdb.set_trace()
-
-                for name, param in self.model.named_parameters():
-                    if param is not None:
-                        param.data.masked_fill_(param == float("Inf"), 0)
-                        param.data.masked_fill_(param == -float("Inf"), 0)
-                        param.data.masked_fill_(param.ne(param), 0)
-                    if param.grad is not None:
-                        param.grad[param.grad == float("Inf")] = 0
-                        param.grad[param.grad == float("-Inf")] = 0
-                        if (param.grad!=param.grad).any():
-                            param.grad[param.grad!=param.grad] = 0
                 # 4. Update the parameters and statistics.
                 if self.grad_accum_count == 1:
                     self.optim.step()

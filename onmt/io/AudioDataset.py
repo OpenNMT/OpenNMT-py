@@ -3,6 +3,7 @@
 import codecs
 import os
 import io
+import tqdm
 
 import torch
 import torchtext
@@ -107,8 +108,8 @@ class AudioDataset(ONMTDatasetBase):
         return (examples_iter, num_feats)
 
     @staticmethod
-    def extract_audio_features(audio_path, sample_rate, truncate, window_size,
-                               window_stride, window, normalize_audio):
+    def extract_features(audio_path, sample_rate, truncate, window_size,
+                         window_stride, window, normalize_audio):
         global torchaudio, librosa, np
         import torchaudio
         import librosa
@@ -139,7 +140,6 @@ class AudioDataset(ONMTDatasetBase):
         spect, _ = librosa.magphase(d)
         spect = np.log1p(spect)
         spect = torch.FloatTensor(spect)
-        #import pdb; pdb.set_trace()
         if normalize_audio:
             mean = spect.mean()
             std = spect.std()
@@ -172,11 +172,7 @@ class AudioDataset(ONMTDatasetBase):
 
         with codecs.open(path, "r", "utf-8") as corpus_file:
             index = 0
-            for idx,line in enumerate(corpus_file):
-                if idx % 1000 == 0:
-                    print (idx)
-                    sys.stderr.flush()
-                    sys.stdout.flush()
+            for line in tqdm(corpus_file):
                 audio_path = os.path.join(src_dir, line.strip())
                 if not os.path.exists(audio_path):
                     audio_path = line
@@ -184,10 +180,11 @@ class AudioDataset(ONMTDatasetBase):
                 assert os.path.exists(audio_path), \
                     'audio path %s not found' % (line.strip())
 
-                spect = AudioDataset.extract_audio_features(audio_path, sample_rate,
-                                                    truncate, window_size,
-                                                    window_stride, window,
-                                                    normalize_audio)
+                spect = AudioDataset.extract_features(audio_path,
+                                                      sample_rate,
+                                                      truncate, window_size,
+                                                      window_stride, window,
+                                                      normalize_audio)
 
                 example_dict = {side: spect,
                                 side + '_path': line.strip(),
@@ -294,6 +291,7 @@ class AudioDataset(ONMTDatasetBase):
 
         return num_feats
 
+
 class ShardedAudioCorpusIterator(object):
     """
     This is the iterator for audio corpus, used for sharding large audio
@@ -364,10 +362,6 @@ class ShardedAudioCorpusIterator(object):
             # Yield tuples util this shard's size reaches the threshold.
             self.corpus.seek(self.last_pos)
             while True:
-                if self.line_index % 1000 == 0:
-                    print (self.line_index)
-                    sys.stderr.flush()
-                    sys.stdout.flush()
                 if self.shard_size != 0 and self.line_index % 64 == 0:
                     # This part of check is time consuming on Py2 (but
                     # it is quite fast on Py3, weird!). So we don't bother
@@ -375,8 +369,8 @@ class ShardedAudioCorpusIterator(object):
                     # lines. Thus we are not dividing exactly per
                     # `shard_size`, but it is not too much difference.
                     cur_pos = self.corpus.tell()
-                    #if cur_pos >= self.last_pos + self.shard_size:
-                    if self.line_index >= self.last_line_index + self.shard_size:
+                    if self.line_index \
+                            >= self.last_line_index + self.shard_size:
                         self.last_pos = cur_pos
                         self.last_line_index = self.line_index
                         raise StopIteration
@@ -396,13 +390,13 @@ class ShardedAudioCorpusIterator(object):
 
     def _example_dict_iter(self, line, index):
         audio_path = line.strip()
-        spect = AudioDataset.extract_audio_features(audio_path,
-                                                    self.sample_rate,
-                                                    self.truncate,
-                                                    self.window_size,
-                                                    self.window_stride,
-                                                    self.window,
-                                                    self.normalize_audio)
+        spect = AudioDataset.extract_features(audio_path,
+                                              self.sample_rate,
+                                              self.truncate,
+                                              self.window_size,
+                                              self.window_stride,
+                                              self.window,
+                                              self.normalize_audio)
         example_dict = {self.side: spect,
                         self.side + '_path': line.strip(),
                         self.side + '_lengths': spect.size(1),
