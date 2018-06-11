@@ -207,7 +207,7 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
                     src_data_iter, src_path, src_dir)
 
         elif data_type == 'audio':
-            if src_data_iter is None:
+            if src_data_iter:
                 raise ValueError("""Data iterator for AudioDataset isn't
                                     implemented""")
 
