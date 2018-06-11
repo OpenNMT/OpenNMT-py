@@ -32,7 +32,8 @@ class AverageAttention(nn.Module):
         https://arxiv.org/abs/1805.00631 -- Figure 3
 
         Args:
-          inputs_len: length of the inputs.
+          batch_size: batch size (int)
+          inputs_len: length of the inputs (int)
 
         Returns:
           A Tensor of shape [batch_size, input_len, input_len]
@@ -72,7 +73,14 @@ class AverageAttention(nn.Module):
             return torch.matmul(mask, inputs)
 
     def forward(self, inputs, mask=None, layer_cache=None, step=None):
+        """
+        Args:
+          inputs: [ batch_size, input_len, model_dim ]
 
+        Returns:
+          gating_outputs: [ batch_size, 1, model_dim ]
+          average_outputs: average attention - [ batch_size, 1, model_dim ]
+        """
         batch_size = inputs.size(0)
         inputs_len = inputs.size(1)
 
@@ -88,4 +96,4 @@ class AverageAttention(nn.Module):
         gating_outputs = torch.sigmoid(input_gate) * inputs + \
             torch.sigmoid(forget_gate) * average_outputs
 
-        return gating_outputs, None
+        return gating_outputs, average_outputs

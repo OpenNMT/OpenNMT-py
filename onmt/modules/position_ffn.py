@@ -1,5 +1,5 @@
 """
-Implementation of "Attention is All You Need"
+Position feed-forward network from "Attention is All You Need"
 """
 
 import torch.nn as nn
@@ -24,12 +24,22 @@ class PositionwiseFeedForward(nn.Module):
         self.layer_norm = onmt.modules.LayerNorm(size)
         # Save a little memory, by doing inplace.
         self.dropout_1 = nn.Dropout(dropout)
-#        self.dropout_1 = nn.Dropout(dropout, inplace=True)
+        # self.dropout_1 = nn.Dropout(dropout, inplace=True)
         self.relu = nn.ReLU()
-#        self.relu = nn.ReLU(inplace=True)
+        # self.relu = nn.ReLU(inplace=True)
         self.dropout_2 = nn.Dropout(dropout)
 
     def forward(self, x):
+        """
+        Layer definition.
+
+        Args:
+            input: [ batch_size, input_len, model_dim ]
+
+
+        Returns:
+            output: [ batch_size, input_len, model_dim ]
+        """
         inter = self.dropout_1(self.relu(self.w_1(self.layer_norm(x))))
         output = self.dropout_2(self.w_2(inter))
         return output + x

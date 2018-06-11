@@ -17,12 +17,12 @@ class TransformerEncoderLayer(nn.Module):
     A single layer of the transformer encoder.
 
     Args:
-            size(int): the dimension of keys/values/queries in
-                       MultiHeadedAttention, also the input size of
-                       the first-layer of the PositionwiseFeedForward.
-            droput(float): dropout probability(0-1.0).
-            head_count(int): the number of head for MultiHeadedAttention.
-            hidden_size(int): the second-layer of the PositionwiseFeedForward.
+        size(int): the dimension of keys/values/queries in
+                   MultiHeadedAttention, also the input size of
+                   the first-layer of the PositionwiseFeedForward.
+        droput(float): dropout probability(0-1.0).
+        head_count(int): the number of head for MultiHeadedAttention.
+        hidden_size(int): the second-layer of the PositionwiseFeedForward.
     """
 
     def __init__(self, size, dropout,
@@ -38,6 +38,16 @@ class TransformerEncoderLayer(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, inputs, mask):
+        """
+        Transformer Encoder Layer definition.
+
+        Args:
+            inputs: [ batch_size, src_len, model_dim ]
+            mask: [ batch_size, src_len, src_len ]
+
+        Returns:
+            outputs: [ batch_size, src_len, model_dim ]
+        """
         input_norm = self.layer_norm(inputs)
         context, _ = self.self_attn(input_norm, input_norm, input_norm,
                                     mask=mask)
@@ -61,14 +71,15 @@ class TransformerEncoder(EncoderBase):
           B --> C
           C --> O
 
-
-
     Args:
-       num_layers (int): number of encoder layers
-       hidden_size (int): number of hidden units
-       dropout (float): dropout parameters
-       embeddings (:obj:`onmt.modules.Embeddings`):
+        num_layers (int): number of encoder layers
+        hidden_size (int): number of hidden units
+        dropout (float): dropout parameters
+        embeddings (:obj:`onmt.modules.Embeddings`):
           embeddings to use, should have positional encodings
+    Returns:
+        embeddings: [ src_len, batch_size, model_dim ]
+        memory_bank: [ src_len, batch_size, model_dim ]
     """
 
     def __init__(self, num_layers, hidden_size,

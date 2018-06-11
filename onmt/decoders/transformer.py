@@ -53,6 +53,20 @@ class TransformerDecoderLayer(nn.Module):
 
     def forward(self, inputs, memory_bank, src_pad_mask, tgt_pad_mask,
                 previous_input=None, layer_cache=None, step=None):
+        """
+        Args:
+            inputs: [ batch_size, 1, model_dim ]
+            memory_bank: [ batch_size, src_len, model_dim ]
+            src_pad_mask: [ batch_size, 1, src_len ]
+            tgt_pad_mask: [ batch_size, 1, 1 ]
+
+        Returns:
+            output: [ batch_size, 1, model_dim ]
+            attn: [ batch_size, 1, src_len ]
+            all_input: [ batch_size, current_step, model_dim ]
+
+
+        """
         # Args Checks
         input_batch, input_len, _ = inputs.size()
         if previous_input is not None:
@@ -107,7 +121,15 @@ class TransformerDecoderLayer(nn.Module):
         return output, attn, all_input
 
     def _get_attn_subsequent_mask(self, size):
-        ''' Get an attention mask to avoid using the subsequent info.'''
+        """
+        Get an attention mask to avoid using the subsequent info.
+
+        Args:
+            size: int
+
+        Returns:
+            subsequent_mask: [ 1, size, size ]
+        """
         attn_shape = (1, size, size)
         subsequent_mask = np.triu(np.ones(attn_shape), k=1).astype('uint8')
         subsequent_mask = torch.from_numpy(subsequent_mask)
@@ -139,7 +161,6 @@ class TransformerDecoder(nn.Module):
        dropout (float): dropout parameters
        embeddings (:obj:`onmt.modules.Embeddings`):
           embeddings to use, should have positional encodings
-
        attn_type (str): if using a seperate copy attention
     """
 
