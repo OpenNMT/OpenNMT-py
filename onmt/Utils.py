@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+
+import logging
+
 import torch
 
 
@@ -26,3 +30,20 @@ def sequence_mask(lengths, max_len=None):
 def use_gpu(opt):
     return (hasattr(opt, 'gpuid') and len(opt.gpuid) > 0) or \
         (hasattr(opt, 'gpu') and opt.gpu > -1)
+
+
+def get_logger(log_file=None):
+    log_format = logging.Formatter("[%(asctime)s %(levelname)s] %(message)s")
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+
+    if log_file and log_file != '':
+        file_handler = logging.FileHandler(log_file)
+        file_handler.setFormatter(log_format)
+        logger.addHandler(file_handler)
+
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(log_format)
+    logger.addHandler(console_handler)
+
+    return logger

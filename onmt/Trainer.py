@@ -10,7 +10,6 @@ things to users(i.e. how to do it). Also see train.py(one of the
 users of this library) for the strategy things we do.
 """
 import time
-import sys
 import math
 import torch
 import torch.nn as nn
@@ -62,19 +61,22 @@ class Statistics(object):
            batch (int): current batch
            n_batch (int): total batches
            start (int): start time of epoch.
+
+        Returns:
+           msg (str): log message.
         """
         t = self.elapsed_time()
-        logging.info(("Epoch %2d, %5d/%5d; acc: %6.2f; ppl: %6.2f; xent: " +
-                      "%6.2f;  %3.0f src tok/s; %3.0f tgt tok/s; %6.0f s " +
-                      "elapsed") %
-                     (epoch, batch,  n_batches,
-                      self.accuracy(),
-                      self.ppl(),
-                      self.xent(),
-                      self.n_src_words / (t + 1e-5),
-                      self.n_words / (t + 1e-5),
-                      time.time() - start))
-        sys.stdout.flush()
+        msg = (("Epoch %2d, %5d/%5d; acc: %6.2f; ppl: %6.2f; xent: " +
+                "%6.2f;  %3.0f src tok/s; %3.0f tgt tok/s; %6.0f s " +
+                "elapsed") %
+               (epoch, batch,  n_batches,
+                self.accuracy(),
+                self.ppl(),
+                self.xent(),
+                self.n_src_words / (t + 1e-5),
+                self.n_words / (t + 1e-5),
+                time.time() - start))
+        return msg
 
     def log(self, prefix, experiment, lr):
         t = self.elapsed_time()
@@ -319,7 +321,7 @@ class Trainer(object):
                 report_stats.update(batch_stats)
 
                 # If truncated, don't backprop fully.
-                if dec_state is not None:
+                if dec_state is not None and j+trunc_size < target_size-1:
                     dec_state.detach()
 
         if self.grad_accum_count > 1:

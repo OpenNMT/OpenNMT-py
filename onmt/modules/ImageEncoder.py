@@ -1,7 +1,6 @@
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
-from torch.autograd import Variable
 
 
 class ImageEncoder(nn.Module):
@@ -98,7 +97,7 @@ class ImageEncoder(nn.Module):
                                      .transpose(1, 2)
             row_vec = torch.Tensor(batch_size).type_as(inp.data)\
                                               .long().fill_(row)
-            pos_emb = self.pos_lut(Variable(row_vec))
+            pos_emb = self.pos_lut(row_vec)
             with_pos = torch.cat(
                 (pos_emb.view(1, pos_emb.size(0), pos_emb.size(1)), inp), 0)
             outputs, hidden_t = self.rnn(with_pos)

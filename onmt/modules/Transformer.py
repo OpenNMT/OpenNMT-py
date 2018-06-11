@@ -4,7 +4,6 @@ Implementation of "Attention is All You Need"
 
 import torch
 import torch.nn as nn
-from torch.autograd import Variable
 import numpy as np
 
 import onmt
@@ -136,7 +135,7 @@ class TransformerEncoder(EncoderBase):
             out = self.transformer[i](out, mask)
         out = self.layer_norm(out)
 
-        return Variable(emb.data), out.transpose(0, 1).contiguous()
+        return emb, out.transpose(0, 1).contiguous()
 
 
 class TransformerDecoderLayer(nn.Module):
@@ -376,5 +375,4 @@ class TransformerDecoderState(DecoderState):
 
     def repeat_beam_size_times(self, beam_size):
         """ Repeat beam_size times along batch dimension. """
-        self.src = Variable(self.src.data.repeat(1, beam_size, 1),
-                            volatile=True)
+        self.src = self.src.data.repeat(1, beam_size, 1)

@@ -42,8 +42,8 @@ class TranslationBuilder(object):
         if self.replace_unk and (attn is not None) and (src is not None):
             for i in range(len(tokens)):
                 if tokens[i] == vocab.itos[onmt.io.UNK]:
-                    _, maxIndex = attn[i].max(0)
-                    tokens[i] = src_raw[maxIndex[0]]
+                    _, max_index = attn[i].max(0)
+                    tokens[i] = src_raw[max_index[0]]
         return tokens
 
     def from_batch(self, translation_batch):
@@ -131,10 +131,8 @@ class Translation(object):
 
     def log(self, sent_number):
         """
-        Log translation to stdout.
+        Log translation.
         """
-
-        logging = onmt.io.IO.set_logger('translate.py')
 
         output = '\nSENT {}: {}\n'.format(sent_number, self.src_raw)
 
@@ -142,15 +140,14 @@ class Translation(object):
         best_score = self.pred_scores[0]
         pred_sent = ' '.join(best_pred)
         output += 'PRED {}: {}\n'.format(sent_number, pred_sent)
-        logging.info("PRED SCORE: {:.4f}".format(best_score))
+        output += "PRED SCORE: {:.4f}\n".format(best_score)
 
         if self.gold_sent is not None:
             tgt_sent = ' '.join(self.gold_sent)
             output += 'GOLD {}: {}\n'.format(sent_number, tgt_sent)
-            # output += ("GOLD SCORE: {:.4f}".format(self.gold_score))
-            logging.info("GOLD SCORE: {:.4f}".format(self.gold_score))
+            output += ("GOLD SCORE: {:.4f}\n".format(self.gold_score))
         if len(self.pred_sents) > 1:
-            logging.info('\nBEST HYP:')
+            output += '\nBEST HYP:\n'
             for score, sent in zip(self.pred_scores, self.pred_sents):
                 output += "[{:.4f}] {}\n".format(score, sent)
 

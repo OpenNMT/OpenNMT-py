@@ -4,7 +4,6 @@ import codecs
 import os
 import math
 
-from torch.autograd import Variable
 from itertools import count
 
 import onmt.ModelConstructor
@@ -13,7 +12,7 @@ import onmt.io
 import onmt.opts
 
 
-def make_translator(opt, report_score=True, out_file=None):
+def make_translator(opt, report_score=True, logger=None, out_file=None):
     if out_file is None:
         out_file = codecs.open(opt.output, 'w', 'utf-8')
 
@@ -40,7 +39,8 @@ def make_translator(opt, report_score=True, out_file=None):
 
     translator = Translator(model, fields, global_scorer=scorer,
                             out_file=out_file, report_score=report_score,
-                            copy_attn=model_opt.copy_attn, **kwargs)
+                            copy_attn=model_opt.copy_attn, logger=logger,
+                            **kwargs)
     return translator
 
 
@@ -61,6 +61,7 @@ class Translator(object):
        copy_attn (bool): use copy attention during translation
        cuda (bool): use cuda
        beam_trace (bool): trace beam search for debugging
+       logger(logging.Logger): logger.
     """
 
     def __init__(self,
@@ -71,6 +72,7 @@ class Translator(object):
                  max_length=100,
                  global_scorer=None,
                  copy_attn=False,
+                 logger=None,
                  gpu=False,
                  dump_beam="",
                  min_length=0,
@@ -89,6 +91,7 @@ class Translator(object):
                  report_rouge=False,
                  verbose=False,
                  out_file=None):
+        self.logger = logger
         self.gpu = gpu
         self.cuda = gpu > -1
 
@@ -175,7 +178,10 @@ class Translator(object):
                 if self.verbose:
                     sent_number = next(counter)
                     output = trans.log(sent_number)
-                    os.write(1, output.encode('utf-8'))
+                    if self.logger:
+                        self.logger.info(output)
+                    else:
+                        os.write(1, output.encode('utf-8'))
 
                 # Debug attention.
                 if attn_debug:
@@ -197,13 +203,31 @@ class Translator(object):
                     os.write(1, output.encode('utf-8'))
 
         if self.report_score:
-            self._report_score('PRED', pred_score_total, pred_words_total)
+            msg = self._report_score('PRED', pred_score_total,
+                                     pred_words_total)
+            if self.logger:
+                self.logger.info(msg)
+            else:
+                print(msg)
             if tgt_path is not None:
-                self._report_score('GOLD', gold_score_total, gold_words_total)
+                msg = self._report_score('GOLD', gold_score_total,
+                                         gold_words_total)
+                if self.logger:
+                    self.logger.info(msg)
+                else:
+                    print(msg)
                 if self.report_bleu:
-                    self._report_bleu(tgt_path)
+                    msg = self._report_bleu(tgt_path)
+                    if self.logger:
+                        self.logger.info(msg)
+                    else:
+                        print(msg)
                 if self.report_rouge:
-                    self._report_rouge(tgt_path)
+                    msg = self._report_rouge(tgt_path)
+                    if self.logger:
+                        self.logger.info(msg)
+                    else:
+                        print(msg)
 
         if self.dump_beam:
             import json
@@ -251,7 +275,7 @@ class Translator(object):
                 for __ in range(batch_size)]
 
         # Help functions for working with beams and batches
-        def var(a): return Variable(a, volatile=True)
+        def var(a): return a
 
         def rvar(a): return var(a.repeat(1, beam_size, 1))
 
@@ -385,25 +409,26 @@ class Translator(object):
             tgt = tgt.unsqueeze(1)
             scores = out.data.gather(1, tgt)
             scores.masked_fill_(tgt.eq(tgt_pad), 0)
-            gold_scores += scores
+            gold_scores += scores.view(-1)
         return gold_scores
 
     def _report_score(self, name, score_total, words_total):
-        logging.info("%s AVG SCORE: %.4f, %s PPL: %.4f" % (
+        msg = ("%s AVG SCORE: %.4f, %s PPL: %.4f" % (
             name, score_total / words_total,
             name, math.exp(-score_total / words_total)))
+        return msg
 
     def _report_bleu(self, tgt_path):
         import subprocess
         path = os.path.split(os.path.realpath(__file__))[0]
-        logging.info()
 
         res = subprocess.check_output("perl %s/tools/multi-bleu.perl %s"
                                       % (path, tgt_path, self.output),
                                       stdin=self.out_file,
                                       shell=True).decode("utf-8")
 
-        logging.info(">> " + res.strip())
+        msg = ">> " + res.strip()
+        return msg
 
     def _report_rouge(self, tgt_path):
         import subprocess
@@ -413,4 +438,5 @@ class Translator(object):
             % (path, tgt_path),
             shell=True,
             stdin=self.out_file).decode("utf-8")
-        logging.info(res.strip())
+        msg = res.strip()
+        return msg

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import logging
 import os
 from collections import Counter, defaultdict, OrderedDict
 from itertools import count
@@ -13,22 +12,6 @@ from onmt.io.DatasetBase import UNK_WORD, PAD_WORD, BOS_WORD, EOS_WORD
 from onmt.io.TextDataset import TextDataset
 from onmt.io.ImageDataset import ImageDataset
 from onmt.io.AudioDataset import AudioDataset
-
-
-def set_logger(script):
-    log_format = logging.Formatter("%(message)s")
-    root_logger = logging.getLogger()
-    root_logger.setLevel(logging.DEBUG)
-
-    file_handler = logging.FileHandler(script + ".logs")
-    file_handler.setFormatter(log_format)
-    root_logger.addHandler(file_handler)
-
-    console_handler = logging.StreamHandler()
-    console_handler.setFormatter(log_format)
-    root_logger.addHandler(console_handler)
-
-    return root_logger
 
 
 def _getstate(self):
@@ -134,7 +117,7 @@ def get_num_features(data_type, corpus_file, side):
 def make_features(batch, side, data_type='text'):
     """
     Args:
-        batch (Variable): a batch of source or target data.
+        batch (Tensor): a batch of source or target data.
         side (str): for source or for target.
         data_type (str): type of the source input.
             Options are [text|img|audio].
@@ -245,7 +228,8 @@ def _build_field_vocab(field, counter, **kwargs):
 
 def build_vocab(train_dataset_files, fields, data_type, share_vocab,
                 src_vocab_path, src_vocab_size, src_words_min_frequency,
-                tgt_vocab_path, tgt_vocab_size, tgt_words_min_frequency):
+                tgt_vocab_path, tgt_vocab_size, tgt_words_min_frequency,
+                logger=None):
     """
     Args:
         train_dataset_files: a list of train dataset pt file.
@@ -260,6 +244,7 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
         tgt_vocab_size(int): size of the target vocabulary.
         tgt_words_min_frequency(int): the minimum frequency needed to
                 include a target word in the vocabulary.
+        logger(logging.Logger): logger.
 
     Returns:
         Dict of Fields
@@ -293,7 +278,8 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
 
     for path in train_dataset_files:
         dataset = torch.load(path)
-        logging.info(" * reloading %s." % path)
+        if logger:
+            logger.info(" * reloading %s." % path)
         for ex in dataset.examples:
             for k in fields:
                 val = getattr(ex, k, None)
@@ -308,33 +294,39 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
     _build_field_vocab(fields["tgt"], counter["tgt"],
                        max_size=tgt_vocab_size,
                        min_freq=tgt_words_min_frequency)
-    logging.info(" * tgt vocab size: %d." % len(fields["tgt"].vocab))
+    if logger:
+        logger.info(" * tgt vocab size: %d." % len(fields["tgt"].vocab))
 
     # All datasets have same num of n_tgt_features,
     # getting the last one is OK.
     for j in range(dataset.n_tgt_feats):
         key = "tgt_feat_" + str(j)
         _build_field_vocab(fields[key], counter[key])
-        logging.info(" * %s vocab size: %d." % (key, len(fields[key].vocab)))
+        if logger:
+            logger.info(" * %s vocab size: %d." % (key,
+                                                   len(fields[key].vocab)))
 
     if data_type == 'text':
         _build_field_vocab(fields["src"], counter["src"],
                            max_size=src_vocab_size,
                            min_freq=src_words_min_frequency)
-        logging.info(" * src vocab size: %d." % len(fields["src"].vocab))
+        if logger:
+            logger.info(" * src vocab size: %d." % len(fields["src"].vocab))
 
         # All datasets have same num of n_src_features,
         # getting the last one is OK.
         for j in range(dataset.n_src_feats):
             key = "src_feat_" + str(j)
             _build_field_vocab(fields[key], counter[key])
-            logging.info(" * %s vocab size: %d." %
-                         (key, len(fields[key].vocab)))
+            if logger:
+                logger.info(" * %s vocab size: %d." %
+                            (key, len(fields[key].vocab)))
 
         # Merge the input and output vocabularies.
         if share_vocab:
             # `tgt_vocab_size` is ignored when sharing vocabularies
-            logging.info(" * merging src and tgt vocab...")
+            if logger:
+                logger.info(" * merging src and tgt vocab...")
             merged_vocab = merge_vocabs(
                 [fields["src"].vocab, fields["tgt"].vocab],
                 vocab_size=src_vocab_size)
