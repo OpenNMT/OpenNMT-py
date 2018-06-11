@@ -262,6 +262,8 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
             'src vocab %s not found!' % src_vocab_path
         with open(src_vocab_path) as f:
             for line in f:
+                if len(line.strip()) == 0:
+                    continue
                 word = line.strip().split()[0]
                 src_vocab.add(word)
 
@@ -273,6 +275,8 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
             'tgt vocab %s not found!' % tgt_vocab_path
         with open(tgt_vocab_path) as f:
             for line in f:
+                if len(line.strip()) == 0:
+                    continue
                 word = line.strip().split()[0]
                 tgt_vocab.add(word)
 
