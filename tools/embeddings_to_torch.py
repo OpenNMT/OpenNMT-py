@@ -7,7 +7,6 @@ import sys
 import numpy as np
 import argparse
 import torch
-import onmt
 from onmt.Utils import get_logger
 
 
@@ -48,7 +47,7 @@ def get_embeddings(file_enc, opt, flag):
                 continue
             embs[l_split[0]] = [float(em) for em in l_split[1:]]
         logger.info("Got {} encryption embeddings from {}".format(len(embs),
-                                                                   file_enc))
+                                                                  file_enc))
     else:
 
         for (i, l) in enumerate(open(file_enc, 'rb')):
@@ -62,7 +61,7 @@ def get_embeddings(file_enc, opt, flag):
                 continue
             embs[l_split[0]] = [float(em) for em in l_split[1:]]
         logger.info("Got {} decryption embeddings from {}".format(len(embs),
-                                                                   file_enc))
+                                                                  file_enc))
     return embs
 
 
@@ -119,13 +118,13 @@ def main():
     match_percent = [_['match'] / (_['match'] + _['miss']) * 100
                      for _ in [enc_count, dec_count]]
     logger.info("\t* enc: %d match, %d missing, (%.2f%%)"
-                 % (enc_count['match'],
-                    enc_count['miss'],
-                    match_percent[0]))
+                % (enc_count['match'],
+                   enc_count['miss'],
+                   match_percent[0]))
     logger.info("\t* dec: %d match, %d missing, (%.2f%%)"
-                 % (dec_count['match'],
-                    dec_count['miss'],
-                    match_percent[1]))
+                % (dec_count['match'],
+                   dec_count['miss'],
+                   match_percent[1]))
 
     logger.info("\nFiltered embeddings:")
     logger.info("\t* enc: ", filtered_enc_embeddings.size())
@@ -134,7 +133,7 @@ def main():
     enc_output_file = opt.output_file + ".enc.pt"
     dec_output_file = opt.output_file + ".dec.pt"
     logger.info("\nSaving embedding as:\n\t* enc: %s\n\t* dec: %s"
-                 % (enc_output_file, dec_output_file))
+                % (enc_output_file, dec_output_file))
     torch.save(filtered_enc_embeddings, enc_output_file)
     torch.save(filtered_dec_embeddings, dec_output_file)
     logger.info("\nDone.")
