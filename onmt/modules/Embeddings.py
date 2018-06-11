@@ -81,6 +81,7 @@ class Embeddings(nn.Module):
                     `-feat_merge mlp`
         dropout (float): dropout probability.
     """
+
     def __init__(self, word_vec_size,
                  word_vocab_size,
                  word_padding_idx,

@@ -384,10 +384,10 @@ class SRU_Compute(Function):
         k_ = k // 2 if self.bidirectional else k
         ncols = batch * d * bidir
         thread_per_block = min(512, ncols)
-        num_block = (ncols-1) // thread_per_block+1
+        num_block = (ncols - 1) // thread_per_block + 1
 
         init_ = x.new(ncols).zero_() if init is None else init
-        size = (length, batch, d*bidir) if x.dim() == 3 else (batch, d*bidir)
+        size = (length, batch, d * bidir) if x.dim() == 3 else (batch, d * bidir)
         c = x.new(*size)
         h = x.new(*size)
 
@@ -430,15 +430,15 @@ class SRU_Compute(Function):
         batch = x.size(-2)
         d = self.d_out
         k = u.size(-1) // d
-        k_ = k//2 if self.bidirectional else k
-        ncols = batch*d*bidir
+        k_ = k // 2 if self.bidirectional else k
+        ncols = batch * d * bidir
         thread_per_block = min(512, ncols)
-        num_block = (ncols-1) // thread_per_block+1
+        num_block = (ncols - 1) // thread_per_block + 1
 
         init_ = x.new(ncols).zero_() if init is None else init
         grad_u = u.new(*u.size())
-        grad_bias = x.new(2, batch, d*bidir)
-        grad_init = x.new(batch, d*bidir)
+        grad_bias = x.new(2, batch, d * bidir)
+        grad_init = x.new(batch, d * bidir)
 
         # For DEBUG
         # size = (length, batch, x.size(-1)) \
@@ -484,27 +484,27 @@ class SRUCell(nn.Module):
         self.bidirectional = bidirectional
         self.activation_type = 2 if use_relu else (1 if use_tanh else 0)
 
-        out_size = n_out*2 if bidirectional else n_out
+        out_size = n_out * 2 if bidirectional else n_out
         k = 4 if n_in != out_size else 3
-        self.size_per_dir = n_out*k
+        self.size_per_dir = n_out * k
         self.weight = nn.Parameter(torch.Tensor(
             n_in,
-            self.size_per_dir*2 if bidirectional else self.size_per_dir
+            self.size_per_dir * 2 if bidirectional else self.size_per_dir
         ))
         self.bias = nn.Parameter(torch.Tensor(
-            n_out*4 if bidirectional else n_out*2
+            n_out * 4 if bidirectional else n_out * 2
         ))
         self.init_weight()
 
     def init_weight(self):
-        val_range = (3.0/self.n_in)**0.5
+        val_range = (3.0 / self.n_in)**0.5
         self.weight.data.uniform_(-val_range, val_range)
         self.bias.data.zero_()
 
     def set_bias(self, bias_val=0):
         n_out = self.n_out
         if self.bidirectional:
-            self.bias.data[n_out*2:].zero_().add_(bias_val)
+            self.bias.data[n_out * 2:].zero_().add_(bias_val)
         else:
             self.bias.data[n_out:].zero_().add_(bias_val)
 
@@ -514,7 +514,7 @@ class SRUCell(nn.Module):
         batch = input.size(-2)
         if c0 is None:
             c0 = input.data.new(
-                batch, n_out if not self.bidirectional else n_out*2
+                batch, n_out if not self.bidirectional else n_out * 2
             ).zero_()
 
         if self.training and (self.rnn_dropout > 0):
@@ -528,22 +528,23 @@ class SRUCell(nn.Module):
 
         if self.training and (self.dropout > 0):
             bidir = 2 if self.bidirectional else 1
-            mask_h = self.get_dropout_mask_((batch, n_out*bidir), self.dropout)
+            mask_h = self.get_dropout_mask_(
+                (batch, n_out * bidir), self.dropout)
             h, c = SRU_Compute(self.activation_type, n_out,
                                self.bidirectional)(
-                       u, input, self.bias, c0, mask_h
-                   )
+                u, input, self.bias, c0, mask_h
+            )
         else:
             h, c = SRU_Compute(self.activation_type, n_out,
                                self.bidirectional)(
-                       u, input, self.bias, c0
-                   )
+                u, input, self.bias, c0
+            )
 
         return h, c
 
     def get_dropout_mask_(self, size, p):
         w = self.weight.data
-        return w.new(*size).bernoulli_(1-p).div_(1-p)
+        return w.new(*size).bernoulli_(1 - p).div_(1 - p)
 
 
 class SRU(nn.Module):
@@ -567,6 +568,7 @@ class SRU(nn.Module):
       use_relu (bool): activation
 
     """
+
     def __init__(self, input_size, hidden_size,
                  num_layers=2, dropout=0, rnn_dropout=0,
                  bidirectional=False, use_tanh=1, use_relu=0):
@@ -581,13 +583,13 @@ class SRU(nn.Module):
         self.rnn_dropout = rnn_dropout
         self.rnn_lst = nn.ModuleList()
         self.bidirectional = bidirectional
-        self.out_size = hidden_size*2 if bidirectional else hidden_size
+        self.out_size = hidden_size * 2 if bidirectional else hidden_size
 
         for i in range(num_layers):
             sru_cell = SRUCell(
                 n_in=self.n_in if i == 0 else self.out_size,
                 n_out=self.n_out,
-                dropout=dropout if i+1 != num_layers else 0,
+                dropout=dropout if i + 1 != num_layers else 0,
                 rnn_dropout=rnn_dropout,
                 bidirectional=bidirectional,
                 use_tanh=use_tanh,
@@ -604,7 +606,7 @@ class SRU(nn.Module):
         dir_ = 2 if self.bidirectional else 1
         if c0 is None:
             zeros = input.data.new(
-                input.size(1), self.n_out*dir_
+                input.size(1), self.n_out * dir_
             ).zero_()
             c0 = [zeros for i in range(self.depth)]
         else:

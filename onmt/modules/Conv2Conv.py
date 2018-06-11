@@ -61,6 +61,7 @@ class CNNEncoder(EncoderBase):
     Encoder built on CNN based on
     :cite:`DBLP:journals/corr/GehringAGYD17`.
     """
+
     def __init__(self, num_layers, hidden_size,
                  cnn_kernel_width, dropout, embeddings):
         super(CNNEncoder, self).__init__()
@@ -96,6 +97,7 @@ class CNNDecoder(nn.Module):
 
     Consists of residual convolutional layers, with ConvMultiStepAttention.
     """
+
     def __init__(self, num_layers, hidden_size, attn_type,
                  copy_attn, cnn_kernel_width, dropout, embeddings):
         super(CNNDecoder, self).__init__()

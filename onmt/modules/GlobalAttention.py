@@ -58,13 +58,14 @@ class GlobalAttention(nn.Module):
        attn_type (str): type of attention to use, options [dot,general,mlp]
 
     """
+
     def __init__(self, dim, coverage=False, attn_type="dot"):
         super(GlobalAttention, self).__init__()
 
         self.dim = dim
         self.attn_type = attn_type
         assert (self.attn_type in ["dot", "general", "mlp"]), (
-                "Please select a valid attention type.")
+            "Please select a valid attention type.")
 
         if self.attn_type == "general":
             self.linear_in = nn.Linear(dim, dim, bias=False)
@@ -74,7 +75,7 @@ class GlobalAttention(nn.Module):
             self.v = nn.Linear(dim, 1, bias=False)
         # mlp wants it with bias
         out_bias = self.attn_type == "mlp"
-        self.linear_out = nn.Linear(dim*2, dim, bias=out_bias)
+        self.linear_out = nn.Linear(dim * 2, dim, bias=out_bias)
 
         self.sm = nn.Softmax(dim=-1)
         self.tanh = nn.Tanh()
@@ -104,7 +105,7 @@ class GlobalAttention(nn.Module):
 
         if self.attn_type in ["general", "dot"]:
             if self.attn_type == "general":
-                h_t_ = h_t.view(tgt_batch*tgt_len, tgt_dim)
+                h_t_ = h_t.view(tgt_batch * tgt_len, tgt_dim)
                 h_t_ = self.linear_in(h_t_)
                 h_t = h_t_.view(tgt_batch, tgt_len, tgt_dim)
             h_s_ = h_s.transpose(1, 2)
@@ -173,7 +174,7 @@ class GlobalAttention(nn.Module):
             align.data.masked_fill_(1 - mask, -float('inf'))
 
         # Softmax to normalize attention weights
-        align_vectors = self.sm(align.view(batch*targetl, sourcel))
+        align_vectors = self.sm(align.view(batch * targetl, sourcel))
         align_vectors = align_vectors.view(batch, targetl, sourcel)
 
         # each context vector c_t is the weighted average
@@ -181,7 +182,7 @@ class GlobalAttention(nn.Module):
         c = torch.bmm(align_vectors, memory_bank)
 
         # concatenate
-        concat_c = torch.cat([c, input], 2).view(batch*targetl, dim*2)
+        concat_c = torch.cat([c, input], 2).view(batch * targetl, dim * 2)
         attn_h = self.linear_out(concat_c).view(batch, targetl, dim)
         if self.attn_type in ["general", "dot"]:
             attn_h = self.tanh(attn_h)

@@ -19,6 +19,7 @@ class TranslationBuilder(object):
        replace_unk (bool): replace unknown words using attention
        has_tgt (bool): will the batch have gold targets
     """
+
     def __init__(self, data, fields, n_best=1, replace_unk=False,
                  has_tgt=False):
         self.data = data
@@ -76,7 +77,7 @@ class TranslationBuilder(object):
         for b in range(batch_size):
             if data_type == 'text':
                 src_vocab = self.data.src_vocabs[inds[b]] \
-                  if self.data.src_vocabs else None
+                    if self.data.src_vocabs else None
                 src_raw = self.data.examples[inds[b]].src
             else:
                 src_vocab = None
@@ -85,7 +86,7 @@ class TranslationBuilder(object):
                 src[:, b] if src is not None else None,
                 src_vocab, src_raw,
                 preds[b][n], attn[b][n])
-                          for n in range(self.n_best)]
+                for n in range(self.n_best)]
             gold_sent = None
             if tgt is not None:
                 gold_sent = self._build_target_tokens(
@@ -117,6 +118,7 @@ class Translation(object):
         gold_score ([float]): log-prob of gold translation
 
     """
+
     def __init__(self, src, src_raw, pred_sents,
                  attn, pred_scores, tgt_sent, gold_score):
         self.src = src
@@ -129,23 +131,23 @@ class Translation(object):
 
     def log(self, sent_number):
         """
-        Log translation to stdout.
+        Log translation.
         """
+
         output = '\nSENT {}: {}\n'.format(sent_number, self.src_raw)
 
         best_pred = self.pred_sents[0]
         best_score = self.pred_scores[0]
         pred_sent = ' '.join(best_pred)
         output += 'PRED {}: {}\n'.format(sent_number, pred_sent)
-        print("PRED SCORE: {:.4f}".format(best_score))
+        output += "PRED SCORE: {:.4f}\n".format(best_score)
 
         if self.gold_sent is not None:
             tgt_sent = ' '.join(self.gold_sent)
             output += 'GOLD {}: {}\n'.format(sent_number, tgt_sent)
-            # output += ("GOLD SCORE: {:.4f}".format(self.gold_score))
-            print("GOLD SCORE: {:.4f}".format(self.gold_score))
+            output += ("GOLD SCORE: {:.4f}\n".format(self.gold_score))
         if len(self.pred_sents) > 1:
-            print('\nBEST HYP:')
+            output += '\nBEST HYP:\n'
             for score, sent in zip(self.pred_scores, self.pred_sents):
                 output += "[{:.4f}] {}\n".format(score, sent)
 

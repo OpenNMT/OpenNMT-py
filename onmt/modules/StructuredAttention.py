@@ -1,6 +1,7 @@
 import torch.nn as nn
 import torch
 import torch.cuda
+from onmt.Utils import get_logger
 
 
 class MatrixTree(nn.Module):
@@ -11,6 +12,7 @@ class MatrixTree(nn.Module):
 
     :cite:`DBLP:journals/corr/LiuL17d`
     """
+
     def __init__(self, eps=1e-5):
         self.eps = eps
         super(MatrixTree, self).__init__()
@@ -40,7 +42,8 @@ class MatrixTree(nn.Module):
 
 
 if __name__ == "__main__":
+    logger = get_logger('StructuredAttention.log')
     dtree = MatrixTree()
     q = torch.rand(1, 5, 5).cuda()
     marg = dtree.forward(q)
-    print(marg.sum(1))
+    logger.info(marg.sum(1))
