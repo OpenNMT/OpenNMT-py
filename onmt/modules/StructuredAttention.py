@@ -1,7 +1,6 @@
 import torch.nn as nn
 import torch
 import torch.cuda
-import onmt
 from onmt.Utils import get_logger
 
 
