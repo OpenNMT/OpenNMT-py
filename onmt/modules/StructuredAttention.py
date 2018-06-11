@@ -2,6 +2,7 @@ import torch.nn as nn
 import torch
 import torch.cuda
 import onmt
+from onmt.Utils import get_logger
 
 
 class MatrixTree(nn.Module):
@@ -42,8 +43,8 @@ class MatrixTree(nn.Module):
 
 
 if __name__ == "__main__":
-    logging = onmt.io.IO.set_logger('StructuredAttention.py')
+    logger = get_logger('StructuredAttention.log')
     dtree = MatrixTree()
     q = torch.rand(1, 5, 5).cuda()
     marg = dtree.forward(q)
-    logging.info(marg.sum(1))
+    logger.info(marg.sum(1))
