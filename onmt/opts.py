@@ -195,6 +195,8 @@ def preprocess_opts(parser):
     group = parser.add_argument_group('Logging')
     group.add_argument('-report_every', type=int, default=100000,
                        help="Report status every this many sentences")
+    group.add_argument('-log_file', type=str, default="",
+                       help="Output logs to a file under this path.")
 
     # Options most relevant to speech
     group = parser.add_argument_group('Speech')
@@ -352,6 +354,8 @@ def train_opts(parser):
     group = parser.add_argument_group('Logging')
     group.add_argument('-report_every', type=int, default=50,
                        help="Print stats at this interval.")
+    group.add_argument('-log_file', type=str, default="",
+                       help="Output logs to a file under this path.")
     group.add_argument('-exp_host', type=str, default="",
                        help="Send logs to this crayon server.")
     group.add_argument('-exp', type=str, default="",
@@ -455,6 +459,8 @@ def translate_opts(parser, use_ensemble=False):
     group = parser.add_argument_group('Logging')
     group.add_argument('-verbose', action="store_true",
                        help='Print scores and predictions for each sentence')
+    group.add_argument('-log_file', type=str, default="",
+                       help="Output logs to a file under this path.")
     group.add_argument('-attn_debug', action="store_true",
                        help='Print best attn for each word')
     group.add_argument('-dump_beam', type=str, default="",

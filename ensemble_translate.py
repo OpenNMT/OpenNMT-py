@@ -3,6 +3,7 @@ from __future__ import division, unicode_literals
 import argparse
 
 from onmt.translate.Translator import make_translator
+from onmt.Utils import get_logger
 
 import onmt.io
 import onmt.translate
@@ -13,7 +14,8 @@ import onmt.opts
 
 
 def main(opt):
-    translator = make_translator(opt, report_score=True, use_ensemble=True)
+    translator = make_translator(opt, report_score=True, logger=logger,
+                                 use_ensemble=True)
     translator.translate(opt.src_dir, opt.src, opt.tgt,
                          opt.batch_size, opt.attn_debug)
 
@@ -26,4 +28,5 @@ if __name__ == "__main__":
     onmt.opts.translate_opts(parser, use_ensemble=True)
 
     opt = parser.parse_args()
+    logger = get_logger(opt.log_file)
     main(opt)

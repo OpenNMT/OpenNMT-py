@@ -3,7 +3,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from torch.autograd import Variable
 from torch.nn.utils.rnn import pack_padded_sequence as pack
 from torch.nn.utils.rnn import pad_packed_sequence as unpack
 
@@ -47,6 +46,7 @@ class EncoderBase(nn.Module):
           E-->F
           E-->G
     """
+
     def _check_args(self, input, lengths=None, hidden=None):
         s_len, n_batch, n_feats = input.size()
         if lengths is not None:
@@ -77,6 +77,7 @@ class MeanEncoder(EncoderBase):
        num_layers (int): number of replicated layers
        embeddings (:obj:`onmt.modules.Embeddings`): embedding module to use
     """
+
     def __init__(self, num_layers, embeddings):
         super(MeanEncoder, self).__init__()
         self.num_layers = num_layers
@@ -106,6 +107,7 @@ class RNNEncoder(EncoderBase):
        dropout (float) : dropout value for :obj:`nn.Dropout`
        embeddings (:obj:`onmt.modules.Embeddings`): embedding module to use
     """
+
     def __init__(self, rnn_type, bidirectional, num_layers,
                  hidden_size, dropout=0.0, embeddings=None,
                  use_bridge=False):
@@ -141,7 +143,7 @@ class RNNEncoder(EncoderBase):
 
         packed_emb = emb
         if lengths is not None and not self.no_pack_padded_seq:
-            # Lengths data is wrapped inside a Variable.
+            # Lengths data is wrapped inside a Tensor.
             lengths = lengths.view(-1).tolist()
             packed_emb = pack(emb, lengths)
 
@@ -235,6 +237,7 @@ class RNNDecoderBase(nn.Module):
        dropout (float) : dropout value for :obj:`nn.Dropout`
        embeddings (:obj:`onmt.modules.Embeddings`): embedding module to use
     """
+
     def __init__(self, rnn_type, bidirectional_encoder, num_layers,
                  hidden_size, attn_type="general",
                  coverage_attn=False, context_gate=None,
@@ -320,9 +323,11 @@ class RNNDecoderBase(nn.Module):
         state.update_state(decoder_final, final_output.unsqueeze(0), coverage)
 
         # Concatenates sequence of tensors along a new dimension.
-        decoder_outputs = torch.stack(decoder_outputs)
+        if not isinstance(decoder_outputs, torch.Tensor):
+            decoder_outputs = torch.stack(decoder_outputs)
         for k in attns:
-            attns[k] = torch.stack(attns[k])
+            if not isinstance(attns[k], torch.Tensor):
+                attns[k] = torch.stack(attns[k])
 
         return decoder_outputs, state, attns
 
@@ -337,7 +342,7 @@ class RNNDecoderBase(nn.Module):
         if isinstance(encoder_final, tuple):  # LSTM
             return RNNDecoderState(self.hidden_size,
                                    tuple([_fix_enc_hidden(enc_hid)
-                                         for enc_hid in encoder_final]))
+                                          for enc_hid in encoder_final]))
         else:  # GRU
             return RNNDecoderState(self.hidden_size,
                                    _fix_enc_hidden(encoder_final))
@@ -358,6 +363,7 @@ class StdRNNDecoder(RNNDecoderBase):
     Implemented without input_feeding and currently with no `coverage_attn`
     or `copy_attn` support.
     """
+
     def _run_forward_pass(self, tgt, memory_bank, state, memory_lengths=None):
         """
         Private helper for running the specific RNN forward pass.
@@ -371,7 +377,7 @@ class StdRNNDecoder(RNNDecoderBase):
                                  initializing the decoder.
             memory_lengths (LongTensor): the source memory_bank lengths.
         Returns:
-            decoder_final (Variable): final hidden state from the decoder.
+            decoder_final (Tensor): final hidden state from the decoder.
             decoder_outputs ([FloatTensor]): an array of output of every time
                                      step from the decoder.
             attns (dict of (str, [FloatTensor]): a dictionary of different
@@ -527,7 +533,7 @@ class InputFeedRNNDecoder(RNNDecoderBase):
     def _build_rnn(self, rnn_type, input_size,
                    hidden_size, num_layers, dropout):
         assert not rnn_type == "SRU", "SRU doesn't support input feed! " \
-                "Please set -input_feed 0!"
+            "Please set -input_feed 0!"
         if rnn_type == "LSTM":
             stacked_cell = onmt.modules.StackedLSTM
         else:
@@ -553,6 +559,7 @@ class NMTModel(nn.Module):
       decoder (:obj:`RNNDecoderBase`): a decoder object
       multi<gpu (bool): setup for multigpu support
     """
+
     def __init__(self, encoder, decoder, multigpu=False):
         self.multigpu = multigpu
         super(NMTModel, self).__init__()
@@ -605,6 +612,7 @@ class DecoderState(object):
 
     Modules need to implement this to utilize beam search decoding.
     """
+
     def detach(self):
         for h in self._all:
             if h is not None:
@@ -644,8 +652,8 @@ class RNNDecoderState(DecoderState):
         # Init the input feed.
         batch_size = self.hidden[0].size(1)
         h_size = (batch_size, hidden_size)
-        self.input_feed = Variable(self.hidden[0].data.new(*h_size).zero_(),
-                                   requires_grad=False).unsqueeze(0)
+        self.input_feed = self.hidden[0].data.new(*h_size).zero_() \
+                              .unsqueeze(0)
 
     @property
     def _all(self):
@@ -661,7 +669,7 @@ class RNNDecoderState(DecoderState):
 
     def repeat_beam_size_times(self, beam_size):
         """ Repeat beam_size times along batch dimension. """
-        vars = [Variable(e.data.repeat(1, beam_size, 1), volatile=True)
+        vars = [e.data.repeat(1, beam_size, 1)
                 for e in self._all]
         self.hidden = tuple(vars[:-1])
         self.input_feed = vars[-1]
