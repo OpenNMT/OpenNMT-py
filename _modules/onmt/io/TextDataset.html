@@ -194,6 +194,7 @@
 <span class="sd">            use_filter_pred (bool): use a custom filter predicate to filter</span>
 <span class="sd">                out examples?</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">src_examples_iter</span><span class="p">,</span> <span class="n">tgt_examples_iter</span><span class="p">,</span>
                  <span class="n">num_src_feats</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_tgt_feats</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                  <span class="n">src_seq_length</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">tgt_seq_length</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
@@ -239,12 +240,9 @@
             <span class="n">src_size</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">example</span><span class="o">.</span><span class="n">src</span><span class="p">)</span>
             <span class="n">out_examples</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">example</span><span class="p">)</span>
 
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;average src size&quot;</span><span class="p">,</span> <span class="n">src_size</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">out_examples</span><span class="p">),</span>
-              <span class="nb">len</span><span class="p">(</span><span class="n">out_examples</span><span class="p">))</span>
-
         <span class="k">def</span> <span class="nf">filter_pred</span><span class="p">(</span><span class="n">example</span><span class="p">):</span>
             <span class="k">return</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">example</span><span class="o">.</span><span class="n">src</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">src_seq_length</span> \
-               <span class="ow">and</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">example</span><span class="o">.</span><span class="n">tgt</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">tgt_seq_length</span>
+                <span class="ow">and</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">example</span><span class="o">.</span><span class="n">tgt</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">tgt_seq_length</span>
 
         <span class="n">filter_pred</span> <span class="o">=</span> <span class="n">filter_pred</span> <span class="k">if</span> <span class="n">use_filter_pred</span> <span class="k">else</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="kc">True</span>
 
@@ -364,7 +362,7 @@
             <span class="n">include_lengths</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_src_features</span><span class="p">):</span>
-            <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;src_feat_&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">j</span><span class="p">)]</span> <span class="o">=</span> \
+            <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;src_feat_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">j</span><span class="p">)]</span> <span class="o">=</span> \
                 <span class="n">torchtext</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Field</span><span class="p">(</span><span class="n">pad_token</span><span class="o">=</span><span class="n">PAD_WORD</span><span class="p">)</span>
 
         <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torchtext</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Field</span><span class="p">(</span>
@@ -372,7 +370,7 @@
             <span class="n">pad_token</span><span class="o">=</span><span class="n">PAD_WORD</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_tgt_features</span><span class="p">):</span>
-            <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt_feat_&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">j</span><span class="p">)]</span> <span class="o">=</span> \
+            <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt_feat_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">j</span><span class="p">)]</span> <span class="o">=</span> \
                 <span class="n">torchtext</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Field</span><span class="p">(</span><span class="n">init_token</span><span class="o">=</span><span class="n">BOS_WORD</span><span class="p">,</span> <span class="n">eos_token</span><span class="o">=</span><span class="n">EOS_WORD</span><span class="p">,</span>
                                      <span class="n">pad_token</span><span class="o">=</span><span class="n">PAD_WORD</span><span class="p">)</span>
 
@@ -455,6 +453,7 @@
 <span class="sd">    shards of size `shard_size`. Then, for each shard, it processes</span>
 <span class="sd">    into (example_dict, n_features) tuples when iterates.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">corpus_path</span><span class="p">,</span> <span class="n">line_truncate</span><span class="p">,</span> <span class="n">side</span><span class="p">,</span> <span class="n">shard_size</span><span class="p">,</span>
                  <span class="n">assoc_iter</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>

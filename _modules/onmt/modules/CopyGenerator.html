@@ -217,6 +217,7 @@
 <span class="sd">       tgt_dict (Vocab): output target dictionary</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_size</span><span class="p">,</span> <span class="n">tgt_dict</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">CopyGenerator</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">linear</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">input_size</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">tgt_dict</span><span class="p">))</span>
@@ -301,6 +302,7 @@
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Copy Generator Loss Computation.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">generator</span><span class="p">,</span> <span class="n">tgt_vocab</span><span class="p">,</span>
                  <span class="n">force_copy</span><span class="p">,</span> <span class="n">normalize_by_length</span><span class="p">,</span>
                  <span class="n">eps</span><span class="o">=</span><span class="mf">1e-20</span><span class="p">):</span>
@@ -346,8 +348,8 @@
         <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">criterion</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">align</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
         <span class="n">scores_data</span> <span class="o">=</span> <span class="n">scores</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
         <span class="n">scores_data</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">TextDataset</span><span class="o">.</span><span class="n">collapse_copy_scores</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_unbottle</span><span class="p">(</span><span class="n">scores_data</span><span class="p">,</span> <span class="n">batch</span><span class="o">.</span><span class="n">batch_size</span><span class="p">),</span>
-                <span class="n">batch</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tgt_vocab</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cur_dataset</span><span class="o">.</span><span class="n">src_vocabs</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_unbottle</span><span class="p">(</span><span class="n">scores_data</span><span class="p">,</span> <span class="n">batch</span><span class="o">.</span><span class="n">batch_size</span><span class="p">),</span>
+            <span class="n">batch</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tgt_vocab</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cur_dataset</span><span class="o">.</span><span class="n">src_vocabs</span><span class="p">)</span>
         <span class="n">scores_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bottle</span><span class="p">(</span><span class="n">scores_data</span><span class="p">)</span>
 
         <span class="c1"># Correct target copy token instead of &lt;unk&gt;</span>

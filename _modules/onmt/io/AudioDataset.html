@@ -192,6 +192,7 @@
 <span class="sd">            use_filter_pred (bool): use a custom filter predicate to filter</span>
 <span class="sd">                out examples?</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">src_examples_iter</span><span class="p">,</span> <span class="n">tgt_examples_iter</span><span class="p">,</span>
                  <span class="n">num_src_feats</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_tgt_feats</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                  <span class="n">tgt_seq_length</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sample_rate</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
@@ -222,8 +223,8 @@
                       <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">]</span>
         <span class="n">example_values</span> <span class="o">=</span> <span class="p">([</span><span class="n">ex</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">]</span> <span class="k">for</span> <span class="n">ex</span> <span class="ow">in</span> <span class="n">examples_iter</span><span class="p">)</span>
         <span class="n">out_examples</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_construct_example_fromlist</span><span class="p">(</span>
-                            <span class="n">ex_values</span><span class="p">,</span> <span class="n">out_fields</span><span class="p">)</span>
-                        <span class="k">for</span> <span class="n">ex_values</span> <span class="ow">in</span> <span class="n">example_values</span><span class="p">)</span>
+            <span class="n">ex_values</span><span class="p">,</span> <span class="n">out_fields</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">ex_values</span> <span class="ow">in</span> <span class="n">example_values</span><span class="p">)</span>
         <span class="c1"># If out_examples is a generator, we need to save the filter_pred</span>
         <span class="c1"># function in serialization too, which would cause a problem when</span>
         <span class="c1"># `torch.save()`. Thus we materialize it as a list.</span>
@@ -266,9 +267,9 @@
 <span class="sd">            (example_dict iterator, num_feats) tuple</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">examples_iter</span> <span class="o">=</span> <span class="n">AudioDataset</span><span class="o">.</span><span class="n">read_audio_file</span><span class="p">(</span>
-                <span class="n">path</span><span class="p">,</span> <span class="n">audio_dir</span><span class="p">,</span> <span class="s2">&quot;src&quot;</span><span class="p">,</span> <span class="n">sample_rate</span><span class="p">,</span>
-                <span class="n">window_size</span><span class="p">,</span> <span class="n">window_stride</span><span class="p">,</span> <span class="n">window</span><span class="p">,</span>
-                <span class="n">normalize_audio</span><span class="p">,</span> <span class="n">truncate</span><span class="p">)</span>
+            <span class="n">path</span><span class="p">,</span> <span class="n">audio_dir</span><span class="p">,</span> <span class="s2">&quot;src&quot;</span><span class="p">,</span> <span class="n">sample_rate</span><span class="p">,</span>
+            <span class="n">window_size</span><span class="p">,</span> <span class="n">window_stride</span><span class="p">,</span> <span class="n">window</span><span class="p">,</span>
+            <span class="n">normalize_audio</span><span class="p">,</span> <span class="n">truncate</span><span class="p">)</span>
         <span class="n">num_feats</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># Source side(audio) has no features.</span>
 
         <span class="k">return</span> <span class="p">(</span><span class="n">examples_iter</span><span class="p">,</span> <span class="n">num_feats</span><span class="p">)</span></div>
@@ -377,7 +378,7 @@
             <span class="n">postprocessing</span><span class="o">=</span><span class="n">make_audio</span><span class="p">,</span> <span class="n">sequential</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_src_features</span><span class="p">):</span>
-            <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;src_feat_&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">j</span><span class="p">)]</span> <span class="o">=</span> \
+            <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;src_feat_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">j</span><span class="p">)]</span> <span class="o">=</span> \
                 <span class="n">torchtext</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Field</span><span class="p">(</span><span class="n">pad_token</span><span class="o">=</span><span class="n">PAD_WORD</span><span class="p">)</span>
 
         <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torchtext</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Field</span><span class="p">(</span>
@@ -385,7 +386,7 @@
             <span class="n">pad_token</span><span class="o">=</span><span class="n">PAD_WORD</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_tgt_features</span><span class="p">):</span>
-            <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt_feat_&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">j</span><span class="p">)]</span> <span class="o">=</span> \
+            <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt_feat_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">j</span><span class="p">)]</span> <span class="o">=</span> \
                 <span class="n">torchtext</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Field</span><span class="p">(</span><span class="n">init_token</span><span class="o">=</span><span class="n">BOS_WORD</span><span class="p">,</span> <span class="n">eos_token</span><span class="o">=</span><span class="n">EOS_WORD</span><span class="p">,</span>
                                      <span class="n">pad_token</span><span class="o">=</span><span class="n">PAD_WORD</span><span class="p">)</span>
 

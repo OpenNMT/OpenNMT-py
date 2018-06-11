@@ -175,6 +175,7 @@
 <span class="sd">       cuda (bool): use gpu</span>
 <span class="sd">       global_scorer (:obj:`GlobalScorer`)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">pad</span><span class="p">,</span> <span class="n">bos</span><span class="p">,</span> <span class="n">eos</span><span class="p">,</span>
                  <span class="n">n_best</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">cuda</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                  <span class="n">global_scorer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -263,11 +264,11 @@
                 <span class="n">ngrams</span> <span class="o">=</span> <span class="p">[]</span>
                 <span class="n">le</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">next_ys</span><span class="p">)</span>
                 <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">next_ys</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)):</span>
-                    <span class="n">hyp</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_hyp</span><span class="p">(</span><span class="n">le</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span>
+                    <span class="n">hyp</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_hyp</span><span class="p">(</span><span class="n">le</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span>
                     <span class="n">ngrams</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
                     <span class="n">fail</span> <span class="o">=</span> <span class="kc">False</span>
                     <span class="n">gram</span> <span class="o">=</span> <span class="p">[]</span>
-                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">le</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">le</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
                         <span class="c1"># Last n tokens, n = block_ngram_repeat</span>
                         <span class="n">gram</span> <span class="o">=</span> <span class="p">(</span><span class="n">gram</span> <span class="o">+</span> <span class="p">[</span><span class="n">hyp</span><span class="p">[</span><span class="n">i</span><span class="p">]])[</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">block_ngram_repeat</span><span class="p">:]</span>
                         <span class="c1"># Skip the blocking if it is in the exclusion list</span>
@@ -330,7 +331,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">hyp</span><span class="p">,</span> <span class="n">attn</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prev_ks</span><span class="p">[:</span><span class="n">timestep</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
-            <span class="n">hyp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">next_ys</span><span class="p">[</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="n">k</span><span class="p">])</span>
+            <span class="n">hyp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">next_ys</span><span class="p">[</span><span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">][</span><span class="n">k</span><span class="p">])</span>
             <span class="n">attn</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">attn</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="n">k</span><span class="p">])</span>
             <span class="n">k</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prev_ks</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="n">k</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">hyp</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">attn</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span></div></div>
@@ -345,6 +346,7 @@
 <span class="sd">       alpha (float): length parameter</span>
 <span class="sd">       beta (float):  coverage parameter</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">cov_penalty</span><span class="p">,</span> <span class="n">length_penalty</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">alpha</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">=</span> <span class="n">beta</span>

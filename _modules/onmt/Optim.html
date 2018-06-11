@@ -158,7 +158,7 @@
             
   <h1>Source code for onmt.Optim</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">torch.optim</span> <span class="k">as</span> <span class="nn">optim</span>
-<span class="kn">from</span> <span class="nn">torch.nn.utils</span> <span class="k">import</span> <span class="n">clip_grad_norm</span>
+<span class="kn">from</span> <span class="nn">torch.nn.utils</span> <span class="k">import</span> <span class="n">clip_grad_norm_</span>
 
 
 <span class="k">class</span> <span class="nc">MultipleOptimizer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -203,6 +203,7 @@
     <span class="c1"># https://arxiv.org/pdf/1706.03762.pdf, particularly the value beta2=0.98</span>
     <span class="c1"># was used there however, beta2=0.999 is still arguably the more</span>
     <span class="c1"># established value, so we use that here as well</span>
+
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">lr</span><span class="p">,</span> <span class="n">max_grad_norm</span><span class="p">,</span>
                  <span class="n">lr_decay</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">start_decay_at</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">beta1</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">beta2</span><span class="o">=</span><span class="mf">0.999</span><span class="p">,</span>
@@ -281,7 +282,7 @@
                      <span class="bp">self</span><span class="o">.</span><span class="n">_step</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">warmup_steps</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">1.5</span><span class="p">))))</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_grad_norm</span><span class="p">:</span>
-            <span class="n">clip_grad_norm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_grad_norm</span><span class="p">)</span>
+            <span class="n">clip_grad_norm_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_grad_norm</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="Optim.update_learning_rate"><a class="viewcode-back" href="../../onmt.html#onmt.Optim.Optim.update_learning_rate">[docs]</a>    <span class="k">def</span> <span class="nf">update_learning_rate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ppl</span><span class="p">,</span> <span class="n">epoch</span><span class="p">):</span>
@@ -295,13 +296,14 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_ppl</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">ppl</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_ppl</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">start_decay</span> <span class="o">=</span> <span class="kc">True</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_ppl</span> <span class="o">=</span> <span class="n">ppl</span>
+
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_decay</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">lr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lr</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">lr_decay</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Decaying learning rate to </span><span class="si">%g</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">lr</span><span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">last_ppl</span> <span class="o">=</span> <span class="n">ppl</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">!=</span> <span class="s1">&#39;sparseadam&#39;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span><span class="o">.</span><span class="n">param_groups</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;lr&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lr</span></div></div>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">!=</span> <span class="s1">&#39;sparseadam&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span><span class="o">.</span><span class="n">param_groups</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;lr&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lr</span>
+                <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span></div></div>
 </pre></div>
 
            </div>

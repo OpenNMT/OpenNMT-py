@@ -182,6 +182,7 @@
 <span class="sd">                              of the FNN.</span>
 <span class="sd">            dropout (float): dropout probability(0-1.0).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">PositionwiseFeedForward</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">w_1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">)</span>
@@ -256,6 +257,7 @@
 <span class="sd">       embeddings (:obj:`onmt.modules.Embeddings`):</span>
 <span class="sd">          embeddings to use, should have positional encodings</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span>
                  <span class="n">dropout</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">TransformerEncoder</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -305,13 +307,14 @@
 <span class="sd">      head_count(int): the number of heads for MultiHeadedAttention.</span>
 <span class="sd">      hidden_size(int): the second-layer of the PositionwiseFeedForward.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span>
                  <span class="n">head_count</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">hidden_size</span><span class="o">=</span><span class="mi">2048</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">TransformerDecoderLayer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">self_attn</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">MultiHeadedAttention</span><span class="p">(</span>
-                <span class="n">head_count</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="n">dropout</span><span class="p">)</span>
+            <span class="n">head_count</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="n">dropout</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">context_attn</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">MultiHeadedAttention</span><span class="p">(</span>
-                <span class="n">head_count</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="n">dropout</span><span class="p">)</span>
+            <span class="n">head_count</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="n">dropout</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">feed_forward</span> <span class="o">=</span> <span class="n">PositionwiseFeedForward</span><span class="p">(</span><span class="n">size</span><span class="p">,</span>
                                                     <span class="n">hidden_size</span><span class="p">,</span>
                                                     <span class="n">dropout</span><span class="p">)</span>
@@ -407,6 +410,7 @@
 
 <span class="sd">       attn_type (str): if using a seperate copy attention</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span> <span class="n">attn_type</span><span class="p">,</span>
                  <span class="n">copy_attn</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">TransformerDecoder</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>

@@ -205,6 +205,7 @@
 <span class="sd">          E--&gt;F</span>
 <span class="sd">          E--&gt;G</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="nf">_check_args</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">,</span> <span class="n">lengths</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hidden</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="n">s_len</span><span class="p">,</span> <span class="n">n_batch</span><span class="p">,</span> <span class="n">n_feats</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">lengths</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -235,6 +236,7 @@
 <span class="sd">       num_layers (int): number of replicated layers</span>
 <span class="sd">       embeddings (:obj:`onmt.modules.Embeddings`): embedding module to use</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">MeanEncoder</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_layers</span> <span class="o">=</span> <span class="n">num_layers</span>
@@ -264,6 +266,7 @@
 <span class="sd">       dropout (float) : dropout value for :obj:`nn.Dropout`</span>
 <span class="sd">       embeddings (:obj:`onmt.modules.Embeddings`): embedding module to use</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rnn_type</span><span class="p">,</span> <span class="n">bidirectional</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">,</span>
                  <span class="n">hidden_size</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">embeddings</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">use_bridge</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
@@ -393,6 +396,7 @@
 <span class="sd">       dropout (float) : dropout value for :obj:`nn.Dropout`</span>
 <span class="sd">       embeddings (:obj:`onmt.modules.Embeddings`): embedding module to use</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rnn_type</span><span class="p">,</span> <span class="n">bidirectional_encoder</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">,</span>
                  <span class="n">hidden_size</span><span class="p">,</span> <span class="n">attn_type</span><span class="o">=</span><span class="s2">&quot;general&quot;</span><span class="p">,</span>
                  <span class="n">coverage_attn</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">context_gate</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -497,7 +501,7 @@
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">encoder_final</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>  <span class="c1"># LSTM</span>
             <span class="k">return</span> <span class="n">RNNDecoderState</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hidden_size</span><span class="p">,</span>
                                    <span class="nb">tuple</span><span class="p">([</span><span class="n">_fix_enc_hidden</span><span class="p">(</span><span class="n">enc_hid</span><span class="p">)</span>
-                                         <span class="k">for</span> <span class="n">enc_hid</span> <span class="ow">in</span> <span class="n">encoder_final</span><span class="p">]))</span>
+                                          <span class="k">for</span> <span class="n">enc_hid</span> <span class="ow">in</span> <span class="n">encoder_final</span><span class="p">]))</span>
         <span class="k">else</span><span class="p">:</span>  <span class="c1"># GRU</span>
             <span class="k">return</span> <span class="n">RNNDecoderState</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hidden_size</span><span class="p">,</span>
                                    <span class="n">_fix_enc_hidden</span><span class="p">(</span><span class="n">encoder_final</span><span class="p">))</span></div>
@@ -518,6 +522,7 @@
 <span class="sd">    Implemented without input_feeding and currently with no `coverage_attn`</span>
 <span class="sd">    or `copy_attn` support.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="nf">_run_forward_pass</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">memory_lengths</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Private helper for running the specific RNN forward pass.</span>
@@ -687,7 +692,7 @@
     <span class="k">def</span> <span class="nf">_build_rnn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rnn_type</span><span class="p">,</span> <span class="n">input_size</span><span class="p">,</span>
                    <span class="n">hidden_size</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">,</span> <span class="n">dropout</span><span class="p">):</span>
         <span class="k">assert</span> <span class="ow">not</span> <span class="n">rnn_type</span> <span class="o">==</span> <span class="s2">&quot;SRU&quot;</span><span class="p">,</span> <span class="s2">&quot;SRU doesn&#39;t support input feed! &quot;</span> \
-                <span class="s2">&quot;Please set -input_feed 0!&quot;</span>
+            <span class="s2">&quot;Please set -input_feed 0!&quot;</span>
         <span class="k">if</span> <span class="n">rnn_type</span> <span class="o">==</span> <span class="s2">&quot;LSTM&quot;</span><span class="p">:</span>
             <span class="n">stacked_cell</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">StackedLSTM</span>
         <span class="k">else</span><span class="p">:</span>
@@ -713,6 +718,7 @@
 <span class="sd">      decoder (:obj:`RNNDecoderBase`): a decoder object</span>
 <span class="sd">      multi&lt;gpu (bool): setup for multigpu support</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">encoder</span><span class="p">,</span> <span class="n">decoder</span><span class="p">,</span> <span class="n">multigpu</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">multigpu</span> <span class="o">=</span> <span class="n">multigpu</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">NMTModel</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -765,6 +771,7 @@
 
 <span class="sd">    Modules need to implement this to utilize beam search decoding.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="nf">detach</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_all</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">h</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
