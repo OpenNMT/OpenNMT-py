@@ -7,6 +7,8 @@ This includes: LossComputeBase and the standard NMTLossCompute, and
 from __future__ import division
 import torch
 import torch.nn as nn
+from torch.autograd import Variable
+
 import onmt
 import onmt.inputters as inputters
 
@@ -234,17 +236,11 @@ class NMTLossCompute(LossComputeBase):
 def filter_shard_state(state, requires_grad=True, volatile=False):
     """ ? """
     for k, v in state.items():
-        if shard_size is None:
-            yield k, v
-
         if v is not None:
-            v_split = []
-            if isinstance(v, torch.Tensor):
-                for v_chunk in torch.split(v, shard_size):
-                    v_chunk = v_chunk.data.clone()
-                    v_chunk.requires_grad = v.requires_grad
-                    v_split.append(v_chunk)
-            yield k, (v, v_split)
+            if isinstance(v, Variable) and v.requires_grad:
+                v = Variable(v.data, requires_grad=requires_grad,
+                             volatile=volatile)
+            yield k, v
 
 
 def shards(state, shard_size, eval_only=False):

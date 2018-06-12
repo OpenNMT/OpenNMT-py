@@ -3,7 +3,6 @@ import math
 
 import torch
 import torch.nn as nn
-from torch.autograd import Variable
 
 from onmt.modules.util_class import Elementwise
 from onmt.utils.misc import aeq

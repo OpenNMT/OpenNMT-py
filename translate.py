@@ -23,6 +23,7 @@ def main(opt):
                          batch_size=opt.batch_size,
                          attn_debug=opt.attn_debug)
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='translate.py',

@@ -4,8 +4,6 @@ from __future__ import division
 import torch
 import torch.nn as nn
 
-from torch.autograd import Variable
-
 import onmt.models.stacked_rnn
 from onmt.utils.misc import aeq
 from onmt.utils.rnn_factory import rnn_factory
@@ -375,7 +373,6 @@ class InputFeedRNNDecoder(RNNDecoderBase):
         Using input feed by concatenating input with attention vectors.
         """
         return self.embeddings.embedding_size + self.hidden_size
-
 
 
 class DecoderState(object):

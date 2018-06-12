@@ -155,7 +155,6 @@ class ImageDataset(DatasetBase):
 
                 yield img, filename
 
-
     @staticmethod
     def get_fields(n_src_features, n_tgt_features):
         """

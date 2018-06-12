@@ -172,7 +172,6 @@ def build_save_dataset(corpus_type, fields, opt, logger=None):
     return [pt_file]
 
 
-
 def build_save_vocab(train_dataset, fields, opt, logger=None):
     """ Building and saving the vocab """
     fields = inputters.build_vocab(train_dataset, fields, opt.data_type,
@@ -184,7 +183,6 @@ def build_save_vocab(train_dataset, fields, opt, logger=None):
                                    opt.tgt_vocab_size,
                                    opt.tgt_words_min_frequency,
                                    logger)
-
 
     # Can't save fields, so remove/reconstruct at training time.
     vocab_file = opt.save_data + '.vocab.pt'
