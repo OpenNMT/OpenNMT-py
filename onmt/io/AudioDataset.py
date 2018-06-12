@@ -3,7 +3,7 @@
 import codecs
 import os
 import io
-import tqdm
+from tqdm import tqdm
 
 import torch
 import torchtext
