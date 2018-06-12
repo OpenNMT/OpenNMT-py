@@ -43,9 +43,13 @@ if opt.word_vec_size != -1:
 if opt.layers != -1:
     opt.enc_layers = opt.layers
     opt.dec_layers = opt.layers
+if opt.rnn_size != -1:
+    opt.enc_rnn_size = opt.rnn_size
+    opt.dec_rnn_size = opt.rnn_size
+    if opt.model_type == 'text' and opt.enc_rnn_size != opt.dec_rnn_size:
+        raise AssertionError("""We do not support different encoder and
+                             decoderrnn sizes for machine translation now.""")
 opt.brnn = (opt.encoder_type == "brnn")
-if opt.model_type == 'audio':
-    opt.audio_brnn = (opt.audio_enc_type == "brnn")
 if opt.seed > 0:
     random.seed(opt.seed)
     torch.manual_seed(opt.seed)
@@ -411,7 +415,7 @@ def build_optim(model, checkpoint):
             adagrad_accum=opt.adagrad_accumulator_init,
             decay_method=opt.decay_method,
             warmup_steps=opt.warmup_steps,
-            model_size=opt.rnn_size)
+            model_size=opt.enc_rnn_size)
 
     # Stage 1:
     # Essentially optim.set_parameters (re-)creates and optimizer using

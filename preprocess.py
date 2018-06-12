@@ -158,8 +158,9 @@ def build_save_audio_dataset_in_shards(src_corpus, tgt_corpus, fields,
 
     ret_list = []
     src_iter = onmt.io.ShardedAudioCorpusIterator(
-        src_corpus, opt.src_seq_length_trunc, "src", opt.max_shard_size,
-        opt.sample_rate, opt.window_size, opt.window_stride, opt.window)
+        opt.src_dir, src_corpus, opt.src_seq_length_trunc, "src",
+        opt.max_shard_size, opt.sample_rate, opt.window_size,
+        opt.window_stride, opt.window)
     tgt_iter = onmt.io.ShardedTextCorpusIterator(
         tgt_corpus, opt.tgt_seq_length_trunc,
         "tgt", opt.max_shard_size,

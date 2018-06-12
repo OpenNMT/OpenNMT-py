@@ -118,7 +118,7 @@ class AudioDataset(ONMTDatasetBase):
         sound, sample_rate_ = torchaudio.load(audio_path)
         if truncate and truncate > 0:
             if sound.size(0) > truncate:
-                assert False
+                sound = sound[:truncate]
 
         assert sample_rate_ == sample_rate, \
             'Sample rate of %s != -sample_rate (%d vs %d)' \
@@ -175,7 +175,7 @@ class AudioDataset(ONMTDatasetBase):
             for line in tqdm(corpus_file):
                 audio_path = os.path.join(src_dir, line.strip())
                 if not os.path.exists(audio_path):
-                    audio_path = line
+                    audio_path = line.strip()
 
                 assert os.path.exists(audio_path), \
                     'audio path %s not found' % (line.strip())
@@ -301,7 +301,7 @@ class ShardedAudioCorpusIterator(object):
     shards of size `shard_size`. Then, for each shard, it processes
     into (example_dict, n_features) tuples when iterates.
     """
-    def __init__(self, corpus_path, truncate, side, shard_size,
+    def __init__(self, src_dir, corpus_path, truncate, side, shard_size,
                  sample_rate, window_size, window_stride,
                  window, normalize_audio=True, assoc_iter=None):
         """
@@ -322,6 +322,7 @@ class ShardedAudioCorpusIterator(object):
             sys.exit(1)
 
         self.side = side
+        self.src_dir = src_dir
         self.shard_size = shard_size
         self.sample_rate = sample_rate
         self.truncate = truncate
@@ -389,7 +390,13 @@ class ShardedAudioCorpusIterator(object):
         return self.eof
 
     def _example_dict_iter(self, line, index):
-        audio_path = line.strip()
+        audio_path = os.path.join(self.src_dir, line.strip())
+        if not os.path.exists(audio_path):
+            audio_path = line.strip()
+
+        assert os.path.exists(audio_path), \
+            'audio path %s not found' % (line.strip())
+
         spect = AudioDataset.extract_features(audio_path,
                                               self.sample_rate,
                                               self.truncate,

@@ -42,6 +42,11 @@ class AudioEncoder(nn.Module):
             enc_pooling = enc_pooling * enc_layers
         enc_pooling = [int(p) for p in enc_pooling]
         self.enc_pooling = enc_pooling
+
+        if dropout > 0:
+            self.dropout = nn.Dropout(dropout)
+        else:
+            self.dropout = None
         self.W = nn.Linear(enc_rnn_size, dec_rnn_size, bias=False)
         self.batchnorm_W = nn.BatchNorm1d(enc_rnn_size, affine=True)
         self.batchnorm_0 = nn.BatchNorm1d(input_size, affine=True)
@@ -98,6 +103,8 @@ class AudioEncoder(nn.Module):
                        for length in lengths]
             memory_bank = memory_bank.transpose(0, 2)
             input = memory_bank
+            if self.dropout and l + 1 != self.enc_layers:
+                input = self.dropout(input)
 
         memory_bank = memory_bank.contiguous().view(-1, memory_bank.size(2))
         memory_bank = self.batchnorm_W(memory_bank)

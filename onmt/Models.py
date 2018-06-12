@@ -560,8 +560,9 @@ class NMTModel(nn.Module):
       multi<gpu (bool): setup for multigpu support
     """
 
-    def __init__(self, encoder, decoder, multigpu=False):
+    def __init__(self, encoder, decoder, model_type='text', multigpu=False):
         self.multigpu = multigpu
+        self.model_type = model_type
         super(NMTModel, self).__init__()
         self.encoder = encoder
         self.decoder = decoder
