@@ -272,8 +272,8 @@ def shards(state, shard_size, eval_only=False):
         # want a sequence of dictionaries of tensors.
         # First, unzip the dictionary into a sequence of keys and a
         # sequence of tensor-like sequences.
-        keys, values = zip(*((k, [v_chunk for v_chunk in v_split])
-                             for k, (_, v_split) in non_none.items()))
+        keys, values = zip(*((k, torch.split(v, shard_size))
+                             for k, v in non_none.items()))
 
         # Now, yield a dictionary for each shard. The keys are always
         # the same. values is a sequence of length #keys where each
@@ -285,10 +285,7 @@ def shards(state, shard_size, eval_only=False):
             yield dict(zip(keys, shard_tensors))
 
         # Assumed backprop'd
-        variables = []
-        for k, (v, v_split) in non_none.items():
-            if isinstance(v, torch.Tensor) and state[k].requires_grad:
-                variables.extend(zip(torch.split(state[k], shard_size),
-                                     [v_chunk.grad for v_chunk in v_split]))
+        variables = ((state[k], v.grad.data) for k, v in non_none.items()
+                     if isinstance(v, Variable) and v.grad is not None)
         inputs, grads = zip(*variables)
         torch.autograd.backward(inputs, grads)
