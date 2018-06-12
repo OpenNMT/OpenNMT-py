@@ -203,8 +203,8 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
 
     # Load the model states from checkpoint or initialize them.
     if checkpoint is not None:
-        model.load_state_dict(checkpoint['model'])
-        generator.load_state_dict(checkpoint['generator'])
+        model.load_state_dict(checkpoint['model'], strict=False)
+        generator.load_state_dict(checkpoint['generator'], strict=False)
     else:
         if model_opt.param_init != 0.0:
             for p in model.parameters():
