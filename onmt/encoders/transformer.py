@@ -3,13 +3,11 @@ Implementation of "Attention is All You Need"
 """
 
 import torch.nn as nn
-from torch.autograd import Variable
 
 import onmt
 from onmt.encoders.encoder import EncoderBase
 from onmt.utils.misc import aeq
 from onmt.modules.position_ffn import PositionwiseFeedForward
-MAX_SIZE = 5000
 
 
 class TransformerEncoderLayer(nn.Module):
@@ -101,14 +99,15 @@ class TransformerEncoder(EncoderBase):
 
         out = emb.transpose(0, 1).contiguous()
         words = src[:, :, 0].transpose(0, 1)
-        # CHECKS
-        out_batch, out_len, _ = out.size()
-        w_batch, w_len = words.size()
-        aeq(out_batch, w_batch)
-        aeq(out_len, w_len)
+        # CHECKS - commented for performance issue
+        # out_batch, out_len, _ = out.size()
+        # w_batch, w_len = words.size()
+        # aeq(out_batch, w_batch)
+        # aeq(out_len, w_len)
         # END CHECKS
 
         # Make mask.
+        w_batch, w_len = words.size()
         padding_idx = self.embeddings.word_padding_idx
         mask = words.data.eq(padding_idx).unsqueeze(1) \
             .expand(w_batch, w_len, w_len)
@@ -117,4 +116,4 @@ class TransformerEncoder(EncoderBase):
             out = self.transformer[i](out, mask)
         out = self.layer_norm(out)
 
-        return Variable(emb.data), out.transpose(0, 1).contiguous()
+        return emb, out.transpose(0, 1).contiguous()

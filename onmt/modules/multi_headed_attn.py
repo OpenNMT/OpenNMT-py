@@ -87,20 +87,20 @@ class MultiHeadedAttention(nn.Module):
         """
 
         # CHECKS
-        batch, k_len, d = key.size()
-        batch_, k_len_, d_ = value.size()
-        aeq(batch, batch_)
-        aeq(k_len, k_len_)
-        aeq(d, d_)
-        batch_, q_len, d_ = query.size()
-        aeq(batch, batch_)
-        aeq(d, d_)
-        aeq(self.model_dim % 8, 0)
-        if mask is not None:
-            batch_, q_len_, k_len_ = mask.size()
-            aeq(batch_, batch)
-            aeq(k_len_, k_len)
-            aeq(q_len_ == q_len)
+        # batch, k_len, d = key.size()
+        # batch_, k_len_, d_ = value.size()
+        # aeq(batch, batch_)
+        # aeq(k_len, k_len_)
+        # aeq(d, d_)
+        # batch_, q_len, d_ = query.size()
+        # aeq(batch, batch_)
+        # aeq(d, d_)
+        # aeq(self.model_dim % 8, 0)
+        # if mask is not None:
+        #    batch_, q_len_, k_len_ = mask.size()
+        #    aeq(batch_, batch)
+        #    aeq(k_len_, k_len)
+        #    aeq(q_len_ == q_len)
         # END CHECKS
 
         batch_size = key.size(0)
@@ -139,15 +139,15 @@ class MultiHeadedAttention(nn.Module):
 
         output = self.final_linear(context)
         # CHECK
-        batch_, q_len_, d_ = output.size()
-        aeq(q_len, q_len_)
-        aeq(batch, batch_)
-        aeq(d, d_)
+        # batch_, q_len_, d_ = output.size()
+        # aeq(q_len, q_len_)
+        # aeq(batch, batch_)
+        # aeq(d, d_)
 
         # Return one attn
         top_attn = attn \
             .view(batch_size, head_count,
                   query_len, key_len)[:, 0, :, :] \
             .contiguous()
-        # END CHECK
+
         return output, top_attn

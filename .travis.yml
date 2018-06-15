@@ -30,42 +30,41 @@ install:
 
 # Please also add tests to `test/pull_request_chk.sh`.
 script:
-   - onmt/tests/test_models.sh lstm cnn transformer
-  #- wget -O /tmp/im2text.tgz http://lstm.seas.harvard.edu/latex/im2text_small.tgz; tar zxf /tmp/im2text.tgz -C /tmp/; head /tmp/im2text/src-train.txt > /tmp/im2text/src-train-head.txt; head /tmp/im2text/tgt-train.txt > /tmp/im2text/tgt-train-head.txt; head /tmp/im2text/src-val.txt > /tmp/im2text/src-val-head.txt; head /tmp/im2text/tgt-val.txt > /tmp/im2text/tgt-val-head.txt
-  #- wget -O /tmp/speech.tgz http://lstm.seas.harvard.edu/latex/speech.tgz; tar zxf /tmp/speech.tgz -C /tmp/; head /tmp/speech/src-train.txt > /tmp/speech/src-train-head.txt; head /tmp/speech/tgt-train.txt > /tmp/speech/tgt-train-head.txt; head /tmp/speech/src-val.txt > /tmp/speech/src-val-head.txt; head /tmp/speech/tgt-val.txt > /tmp/speech/tgt-val-head.txt
-  #- wget -O /tmp/test_model_speech.pt http://lstm.seas.harvard.edu/latex/test_model_speech.pt
-  #- wget -O /tmp/test_model_im2text.pt http://lstm.seas.harvard.edu/latex/test_model_im2text.pt
-  #- python -m unittest discover
+  - wget -O /tmp/im2text.tgz http://lstm.seas.harvard.edu/latex/im2text_small.tgz; tar zxf /tmp/im2text.tgz -C /tmp/; head /tmp/im2text/src-train.txt > /tmp/im2text/src-train-head.txt; head /tmp/im2text/tgt-train.txt > /tmp/im2text/tgt-train-head.txt; head /tmp/im2text/src-val.txt > /tmp/im2text/src-val-head.txt; head /tmp/im2text/tgt-val.txt > /tmp/im2text/tgt-val-head.txt
+  - wget -O /tmp/speech.tgz http://lstm.seas.harvard.edu/latex/speech.tgz; tar zxf /tmp/speech.tgz -C /tmp/; head /tmp/speech/src-train.txt > /tmp/speech/src-train-head.txt; head /tmp/speech/tgt-train.txt > /tmp/speech/tgt-train-head.txt; head /tmp/speech/src-val.txt > /tmp/speech/src-val-head.txt; head /tmp/speech/tgt-val.txt > /tmp/speech/tgt-val-head.txt
+  - wget -O /tmp/test_model_speech.pt http://lstm.seas.harvard.edu/latex/test_model_speech.pt
+  - wget -O /tmp/test_model_im2text.pt http://lstm.seas.harvard.edu/latex/test_model_im2text.pt
+  - python -m unittest discover
   # test nmt preprocessing
-  #- python preprocess.py -train_src data/src-train.txt -train_tgt data/tgt-train.txt -valid_src data/src-val.txt -valid_tgt data/tgt-val.txt -save_data /tmp/data -src_vocab_size 1000 -tgt_vocab_size 1000 && rm -rf /tmp/data*.pt
+  - python preprocess.py -train_src data/src-train.txt -train_tgt data/tgt-train.txt -valid_src data/src-val.txt -valid_tgt data/tgt-val.txt -save_data /tmp/data -src_vocab_size 1000 -tgt_vocab_size 1000 && rm -rf /tmp/data*.pt
   # test im2text preprocessing
-  #- python preprocess.py -data_type img -src_dir /tmp/im2text/images -train_src /tmp/im2text/src-train.txt -train_tgt /tmp/im2text/tgt-train.txt -valid_src /tmp/im2text/src-val.txt -valid_tgt /tmp/im2text/tgt-val.txt -save_data /tmp/im2text/data && rm -rf /tmp/im2text/data*.pt
+  - python preprocess.py -data_type img -src_dir /tmp/im2text/images -train_src /tmp/im2text/src-train.txt -train_tgt /tmp/im2text/tgt-train.txt -valid_src /tmp/im2text/src-val.txt -valid_tgt /tmp/im2text/tgt-val.txt -save_data /tmp/im2text/data && rm -rf /tmp/im2text/data*.pt
   # test speech2text preprocessing
-  #- python preprocess.py -data_type audio -src_dir /tmp/speech/an4_dataset -train_src /tmp/speech/src-train.txt -train_tgt /tmp/speech/tgt-train.txt -valid_src /tmp/speech/src-val.txt -valid_tgt /tmp/speech/tgt-val.txt -save_data /tmp/speech/data && rm -rf /tmp/speech/data*.pt
+  - python preprocess.py -data_type audio -src_dir /tmp/speech/an4_dataset -train_src /tmp/speech/src-train.txt -train_tgt /tmp/speech/tgt-train.txt -valid_src /tmp/speech/src-val.txt -valid_tgt /tmp/speech/tgt-val.txt -save_data /tmp/speech/data && rm -rf /tmp/speech/data*.pt
   # test nmt translation
-  #- head data/src-test.txt > /tmp/src-test.txt; python translate.py -model onmt/tests/test_model.pt -src /tmp/src-test.txt -verbose
+  - head data/src-test.txt > /tmp/src-test.txt; python translate.py -model test/test_model.pt -src /tmp/src-test.txt -verbose
   # test im2text translation
-  #- head /tmp/im2text/src-val.txt > /tmp/im2text/src-val-head.txt; head /tmp/im2text/tgt-val.txt > /tmp/im2text/tgt-val-head.txt; python translate.py -data_type img -src_dir /tmp/im2text/images -model /tmp/test_model_im2text.pt -src /tmp/im2text/src-val-head.txt -tgt /tmp/im2text/tgt-val-head.txt -verbose -out /tmp/im2text/trans
+  - head /tmp/im2text/src-val.txt > /tmp/im2text/src-val-head.txt; head /tmp/im2text/tgt-val.txt > /tmp/im2text/tgt-val-head.txt; python translate.py -data_type img -src_dir /tmp/im2text/images -model /tmp/test_model_im2text.pt -src /tmp/im2text/src-val-head.txt -tgt /tmp/im2text/tgt-val-head.txt -verbose -out /tmp/im2text/trans
   # test speech2text translation
-  #- head /tmp/speech/src-val.txt > /tmp/speech/src-val-head.txt; head /tmp/speech/tgt-val.txt > /tmp/speech/tgt-val-head.txt; python translate.py -data_type audio -src_dir /tmp/speech/an4_dataset -model /tmp/test_model_speech.pt -src /tmp/speech/src-val-head.txt -tgt /tmp/speech/tgt-val-head.txt -verbose -out /tmp/speech/trans; diff /tmp/speech/tgt-val-head.txt /tmp/speech/trans
+  - head /tmp/speech/src-val.txt > /tmp/speech/src-val-head.txt; head /tmp/speech/tgt-val.txt > /tmp/speech/tgt-val-head.txt; python translate.py -data_type audio -src_dir /tmp/speech/an4_dataset -model /tmp/test_model_speech.pt -src /tmp/speech/src-val-head.txt -tgt /tmp/speech/tgt-val-head.txt -verbose -out /tmp/speech/trans; diff /tmp/speech/tgt-val-head.txt /tmp/speech/trans
   # test nmt preprocessing and training
-  #- head data/src-val.txt > /tmp/src-val.txt; head data/tgt-val.txt > /tmp/tgt-val.txt; python preprocess.py -train_src /tmp/src-val.txt -train_tgt /tmp/tgt-val.txt -valid_src /tmp/src-val.txt -valid_tgt /tmp/tgt-val.txt -save_data /tmp/q -src_vocab_size 1000 -tgt_vocab_size 1000; python train.py -data /tmp/q -rnn_size 2 -batch_size 10 -word_vec_size 5 -report_every 50 -rnn_size 10 -train_steps 500 && rm -rf /tmp/q*.pt
+  - head data/src-val.txt > /tmp/src-val.txt; head data/tgt-val.txt > /tmp/tgt-val.txt; python preprocess.py -train_src /tmp/src-val.txt -train_tgt /tmp/tgt-val.txt -valid_src /tmp/src-val.txt -valid_tgt /tmp/tgt-val.txt -save_data /tmp/q -src_vocab_size 1000 -tgt_vocab_size 1000; python train.py -data /tmp/q -rnn_size 2 -batch_size 10 -word_vec_size 5 -report_every 5 -rnn_size 10 -epochs 1 && rm -rf /tmp/q*.pt
   # test nmt preprocessing w/ sharding and training w/copy
-  #- head data/src-val.txt > /tmp/src-val.txt; head data/tgt-val.txt > /tmp/tgt-val.txt; python preprocess.py -train_src /tmp/src-val.txt -train_tgt /tmp/tgt-val.txt -valid_src /tmp/src-val.txt -valid_tgt /tmp/tgt-val.txt -max_shard_size 1 -dynamic_dict -save_data /tmp/q -src_vocab_size 1000 -tgt_vocab_size 1000; python train.py -data /tmp/q -rnn_size 2 -batch_size 10 -word_vec_size 5 -report_every 50 -rnn_size 10 -copy_attn -train_steps 500 && rm -rf /tmp/q*.pt
+  - head data/src-val.txt > /tmp/src-val.txt; head data/tgt-val.txt > /tmp/tgt-val.txt; python preprocess.py -train_src /tmp/src-val.txt -train_tgt /tmp/tgt-val.txt -valid_src /tmp/src-val.txt -valid_tgt /tmp/tgt-val.txt -max_shard_size 1 -dynamic_dict -save_data /tmp/q -src_vocab_size 1000 -tgt_vocab_size 1000; python train.py -data /tmp/q -rnn_size 2 -batch_size 10 -word_vec_size 5 -report_every 5 -rnn_size 10 -copy_attn -epochs 1 && rm -rf /tmp/q*.pt
 
   # test im2text preprocessing and training
-  #- head /tmp/im2text/src-val.txt > /tmp/im2text/src-val-head.txt; head /tmp/im2text/tgt-val.txt > /tmp/im2text/tgt-val-head.txt; python preprocess.py -data_type img -src_dir /tmp/im2text/images -train_src /tmp/im2text/src-val-head.txt -train_tgt /tmp/im2text/tgt-val-head.txt -valid_src /tmp/im2text/src-val-head.txt -valid_tgt /tmp/im2text/tgt-val-head.txt -save_data /tmp/im2text/q; python train.py -model_type img -data /tmp/im2text/q -rnn_size 2 -batch_size 10 -word_vec_size 5 -report_every 5 -rnn_size 10 -train_steps 1000 && rm -rf /tmp/im2text/q*.pt
+  - head /tmp/im2text/src-val.txt > /tmp/im2text/src-val-head.txt; head /tmp/im2text/tgt-val.txt > /tmp/im2text/tgt-val-head.txt; python preprocess.py -data_type img -src_dir /tmp/im2text/images -train_src /tmp/im2text/src-val-head.txt -train_tgt /tmp/im2text/tgt-val-head.txt -valid_src /tmp/im2text/src-val-head.txt -valid_tgt /tmp/im2text/tgt-val-head.txt -save_data /tmp/im2text/q; python train.py -model_type img -data /tmp/im2text/q -rnn_size 2 -batch_size 10 -word_vec_size 5 -report_every 5 -rnn_size 10 -epochs 1 && rm -rf /tmp/im2text/q*.pt
   # test speech2text preprocessing and training
-  #- head /tmp/speech/src-val.txt > /tmp/speech/src-val-head.txt; head /tmp/speech/tgt-val.txt > /tmp/speech/tgt-val-head.txt; python preprocess.py -data_type audio -src_dir /tmp/speech/an4_dataset -train_src /tmp/speech/src-val-head.txt -train_tgt /tmp/speech/tgt-val-head.txt -valid_src /tmp/speech/src-val-head.txt -valid_tgt /tmp/speech/tgt-val-head.txt -save_data /tmp/speech/q; python train.py -model_type audio -data /tmp/speech/q -rnn_size 2 -batch_size 10 -word_vec_size 5 -report_every 5 -rnn_size 10 -train_steps 1000 && rm -rf /tmp/speech/q*.pt
+  - head /tmp/speech/src-val.txt > /tmp/speech/src-val-head.txt; head /tmp/speech/tgt-val.txt > /tmp/speech/tgt-val-head.txt; python preprocess.py -data_type audio -src_dir /tmp/speech/an4_dataset -train_src /tmp/speech/src-val-head.txt -train_tgt /tmp/speech/tgt-val-head.txt -valid_src /tmp/speech/src-val-head.txt -valid_tgt /tmp/speech/tgt-val-head.txt -save_data /tmp/speech/q; python train.py -model_type audio -data /tmp/speech/q -rnn_size 2 -batch_size 10 -word_vec_size 5 -report_every 5 -rnn_size 10 -epochs 1 && rm -rf /tmp/speech/q*.pt
   # test nmt translation
-  #- python translate.py -model test/test_model2.pt  -src  data/morph/src.valid  -verbose -batch_size 10 -beam_size 10 -tgt data/morph/tgt.valid -out /tmp/trans; diff  data/morph/tgt.valid /tmp/trans
+  - python translate.py -model test/test_model2.pt  -src  data/morph/src.valid  -verbose -batch_size 10 -beam_size 10 -tgt data/morph/tgt.valid -out /tmp/trans; diff  data/morph/tgt.valid /tmp/trans
   # test tool
-  #- PYTHONPATH=$PYTHONPATH:. python tools/extract_embeddings.py -model test/test_model.pt
+  - PYTHONPATH=$PYTHONPATH:. python tools/extract_embeddings.py -model test/test_model.pt
 
 env:
   global:
     # Doctr deploy key for OpenNMT/OpenNMT-py
-    #- secure: "gL0Soefo1cQgAqwiHUrlNyZd/+SI1eJAAjLD3BEDQWXW160eXyjQAAujGgJoCirjOM7cPHVwLzwmK3S7Y3PVM3JOZguOX5Yl4uxMh/mhiEM+RG77SZyv4OGoLFsEQ8RTvIdYdtP6AwyjlkRDXvZql88TqFNYjpXDu8NG+JwEfiIoGIDYxxZ5SlbrZN0IqmQSZ4/CsV6VQiuq99Jn5kqi4MnUZBTcmhqjaztCP1omvsMRdbrG2IVhDKQOCDIO0kaPJrMy2SGzP4GV7ar52bdBtpeP3Xbm6ZOuhDNfds7M/OMHp1wGdl7XwKtolw9MeXhnGBC4gcrqhhMfcQ6XtfVLMLnsB09Ezl3FXX5zWgTB5Pm0X6TgnGrMA25MAdVqKGJpfqZxOKTh4EMb04b6OXrVbxZ88mp+V0NopuxwlTPD8PMfYLWlTe9chh1BnT0iQlLqeA4Hv3+NdpiFb4aq3V3cWTTgMqOoWSGq4t318pqIZ3qbBXBq12DLFgO5n6+M6ZrdxbDUGQvgh8nAiZcIEdodKJ4ABHi1SNCeWOzCoedUdegcbjShHfkMVmNKrncB18aRWwQ3GQJ5qdkjgJmC++uZmkS6+GPM8UmmAy1ZIkRW0aWiitjG6teqtvUHOofNd/TCxX4bhnxAj+mtVIrARCE/ci8topJ6uG4wVJ1TrIkUlAY="
+    - secure: "gL0Soefo1cQgAqwiHUrlNyZd/+SI1eJAAjLD3BEDQWXW160eXyjQAAujGgJoCirjOM7cPHVwLzwmK3S7Y3PVM3JOZguOX5Yl4uxMh/mhiEM+RG77SZyv4OGoLFsEQ8RTvIdYdtP6AwyjlkRDXvZql88TqFNYjpXDu8NG+JwEfiIoGIDYxxZ5SlbrZN0IqmQSZ4/CsV6VQiuq99Jn5kqi4MnUZBTcmhqjaztCP1omvsMRdbrG2IVhDKQOCDIO0kaPJrMy2SGzP4GV7ar52bdBtpeP3Xbm6ZOuhDNfds7M/OMHp1wGdl7XwKtolw9MeXhnGBC4gcrqhhMfcQ6XtfVLMLnsB09Ezl3FXX5zWgTB5Pm0X6TgnGrMA25MAdVqKGJpfqZxOKTh4EMb04b6OXrVbxZ88mp+V0NopuxwlTPD8PMfYLWlTe9chh1BnT0iQlLqeA4Hv3+NdpiFb4aq3V3cWTTgMqOoWSGq4t318pqIZ3qbBXBq12DLFgO5n6+M6ZrdxbDUGQvgh8nAiZcIEdodKJ4ABHi1SNCeWOzCoedUdegcbjShHfkMVmNKrncB18aRWwQ3GQJ5qdkjgJmC++uZmkS6+GPM8UmmAy1ZIkRW0aWiitjG6teqtvUHOofNd/TCxX4bhnxAj+mtVIrARCE/ci8topJ6uG4wVJ1TrIkUlAY="
 
 matrix:
   include:
@@ -81,4 +80,5 @@ matrix:
         - pip install -r docs/requirements.txt
         - cd docs/; make html; cd ..
         - set -e
-        #- doctr deploy --built-docs docs/build/html/ .
+        - doctr deploy --built-docs docs/build/html/ .
+

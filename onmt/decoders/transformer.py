@@ -68,21 +68,21 @@ class TransformerDecoderLayer(nn.Module):
 
 
         """
-        # Args Checks
-        input_batch, input_len, _ = inputs.size()
-        if previous_input is not None:
-            pi_batch, _, _ = previous_input.size()
-            aeq(pi_batch, input_batch)
-        contxt_batch, contxt_len, _ = memory_bank.size()
-        aeq(input_batch, contxt_batch)
+        # Args Checks - commented out for performance issue
+        # input_batch, input_len, _ = inputs.size()
+        # if previous_input is not None:
+        #    pi_batch, _, _ = previous_input.size()
+        #    aeq(pi_batch, input_batch)
+        # contxt_batch, contxt_len, _ = memory_bank.size()
+        # aeq(input_batch, contxt_batch)
 
-        src_batch, _, s_len = src_pad_mask.size()
-        tgt_batch, _, _ = tgt_pad_mask.size()
+        # src_batch, _, s_len = src_pad_mask.size()
+        # tgt_batch, _, _ = tgt_pad_mask.size()
         # src_batch, t_len, s_len = src_pad_mask.size()
         # tgt_batch, t_len_, t_len__ = tgt_pad_mask.size()
-        aeq(input_batch, contxt_batch, src_batch, tgt_batch)
+        # aeq(input_batch, contxt_batch, src_batch, tgt_batch)
         # aeq(t_len, t_len_, t_len__, input_len)
-        aeq(s_len, contxt_len)
+        # aeq(s_len, contxt_len)
         # END Args Checks
 
         dec_mask = torch.gt(tgt_pad_mask +
@@ -109,14 +109,14 @@ class TransformerDecoderLayer(nn.Module):
         output = self.feed_forward(self.drop(mid) + query)
 
         # CHECKS
-        output_batch, output_len, _ = output.size()
-        aeq(input_len, output_len)
-        aeq(contxt_batch, output_batch)
+        # output_batch, output_len, _ = output.size()
+        # aeq(input_len, output_len)
+        # aeq(contxt_batch, output_batch)
 
-        n_batch_, t_len_, s_len_ = attn.size()
-        aeq(input_batch, n_batch_)
-        aeq(contxt_len, s_len_)
-        aeq(input_len, t_len_)
+        # n_batch_, t_len_, s_len_ = attn.size()
+        # aeq(input_batch, n_batch_)
+        # aeq(contxt_len, s_len_)
+        # aeq(input_len, t_len_)
         # END CHECKS
 
         return output, attn, all_input
@@ -204,22 +204,21 @@ class TransformerDecoder(nn.Module):
         See :obj:`onmt.modules.RNNDecoderBase.forward()`
         """
         # CHECKS
-        assert isinstance(state, TransformerDecoderState)
-        tgt_len, tgt_batch, _ = tgt.size()
-        memory_len, memory_batch, _ = memory_bank.size()
-        aeq(tgt_batch, memory_batch)
+        # assert isinstance(state, TransformerDecoderState)
+        # tgt_len, tgt_batch, _ = tgt.size()
+        # memory_len, memory_batch, _ = memory_bank.size()
+        # aeq(tgt_batch, memory_batch)
 
         src = state.src
         src_words = src[:, :, 0].transpose(0, 1)
         tgt_words = tgt[:, :, 0].transpose(0, 1)
         src_batch, src_len = src_words.size()
         tgt_batch, tgt_len = tgt_words.size()
-        aeq(tgt_batch, memory_batch, src_batch, tgt_batch)
-        aeq(memory_len, src_len)
+        # aeq(tgt_batch, memory_batch, src_batch, tgt_batch)
+        # aeq(memory_len, src_len)
 
         if state.previous_input is not None:
             tgt = torch.cat([state.previous_input, tgt], 0)
-        # END CHECKS
 
         # Initialize return variables.
         outputs = []

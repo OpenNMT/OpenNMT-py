@@ -59,7 +59,7 @@ class RNNEncoder(EncoderBase):
 
         packed_emb = emb
         if lengths is not None and not self.no_pack_padded_seq:
-            # Lengths data is wrapped inside a Variable.
+            # Lengths data is wrapped inside a Tensor.
             lengths = lengths.view(-1).tolist()
             packed_emb = pack(emb, lengths)
 
