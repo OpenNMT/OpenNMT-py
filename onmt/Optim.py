@@ -14,6 +14,18 @@ class MultipleOptimizer(object):
         for op in self.optimizers:
             op.step()
 
+    @property
+    def state(self):
+        return {k: v for op in self.optimizers for k, v in op.state.items()}
+
+    def state_dict(self):
+        return [op.state_dict() for op in self.optimizers]
+
+    def load_state_dict(self, state_dicts):
+        assert len(state_dicts) == len(self.optimizers)
+        for i in range(len(state_dicts)):
+            self.optimizers[i].load_state_dict(state_dicts[i])
+
 
 class Optim(object):
     """
