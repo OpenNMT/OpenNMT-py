@@ -1,4 +1,6 @@
+# -*- coding: utf-8 -*-
 """ Average Attention module """
+
 import torch
 import torch.nn as nn
 

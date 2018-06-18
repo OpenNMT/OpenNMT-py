@@ -5,7 +5,7 @@ import codecs
 import os
 import math
 import torch
-
+import time
 from itertools import count
 
 import onmt.model_builder
@@ -133,6 +133,11 @@ class Translator(object):
                 "beam_parent_ids": [],
                 "scores": [],
                 "log_probs": []}
+        self.encoder_time = 0
+        self.decoder_time = 0
+        self.generator_time = 0
+        self.beam_time = 0
+        self.other_time = 0
 
     def translate(self,
                   src_path=None,
@@ -165,6 +170,8 @@ class Translator(object):
             all_predictions: list of `batch_size` lists of `n_best` predictions
         """
         assert src_data_iter is not None or src_path is not None
+        torch.cuda.synchronize()
+        time1 = time.time()
 
         if batch_size is None:
             raise ValueError("batch_size must be set")
@@ -181,8 +188,13 @@ class Translator(object):
                                        window=self.window,
                                        use_filter_pred=self.use_filter_pred)
 
+        if self.cuda:
+            cur_device = "cuda"
+        else:
+            cur_device = "cpu"
+
         data_iter = inputters.OrderedIterator(
-            dataset=data, device=self.gpu,
+            dataset=data, device=cur_device,
             batch_size=batch_size, train=False, sort=False,
             sort_within_batch=True, shuffle=False)
 
@@ -197,8 +209,16 @@ class Translator(object):
 
         all_scores = []
         all_predictions = []
+        torch.cuda.synchronize()
+        self.other_time = self.other_time + time.time() - time1
+
         for batch in data_iter:
+            torch.cuda.synchronize()
+            time0 = time.time()
             batch_data = self.translate_batch(batch, data)
+            torch.cuda.synchronize()
+            time1 = time.time()
+
             translations = builder.from_batch(batch_data)
 
             for trans in translations:
@@ -241,6 +261,11 @@ class Translator(object):
                         output += row_format.format(word, *row) + '\n'
                         row_format = "{:>10.10} " + "{:>10.7f} " * len(srcs)
                     os.write(1, output.encode('utf-8'))
+            torch.cuda.synchronize()
+            self.other_time = self.other_time + time.time() - time1
+
+        print("encoder: %d s - decoder: %d s - generator: %d s - beam: %d s - other: %d s" 
+              % (self.encoder_time, self.decoder_time, self.generator_time, self.beam_time, self.other_time))
 
         if self.report_score:
             msg = self._report_score('PRED', pred_score_total,
@@ -299,6 +324,8 @@ class Translator(object):
         batch_size = batch.batch_size
         data_type = data.data_type
         vocab = self.fields["tgt"].vocab
+        torch.cuda.synchronize()
+        time0 = time.time()
 
         # Define a list of tokens to exclude from ngram-blocking
         # exclusion_list = ["<t>", "</t>", "."]
@@ -356,11 +383,15 @@ class Translator(object):
               memory_bank, memory_lengths=memory_lengths)
         else:
             cache = None
+        torch.cuda.synchronize()
+        self.encoder_time = self.encoder_time + time.time() - time0
 
         # (3) run the decoder to generate sentences, using beam search.
         for i in range(self.max_length):
             if all((b.done() for b in beam)):
                 break
+            torch.cuda.synchronize()
+            time1 = time.time()
 
             # Construct batch x beam_size nxt words.
             # Get all the pending current beam words and arrange for forward.
@@ -387,9 +418,14 @@ class Translator(object):
                   inp, memory_bank, dec_states, memory_lengths=memory_lengths)
 
             dec_out = dec_out.squeeze(0)
+            torch.cuda.synchronize()
+            self.decoder_time = self.decoder_time + time.time() - time1
+            
             # dec_out: beam x rnn_size
 
             # (b) Compute a vector of batch x beam word scores.
+            torch.cuda.synchronize()
+            time1 = time.time()
             if not self.copy_attn:
                 out = self.model.generator.forward(dec_out).data
                 out = unbottle(out)
@@ -406,12 +442,18 @@ class Translator(object):
                 # beam x tgt_vocab
                 out = out.log()
                 beam_attn = unbottle(attn["copy"])
+            torch.cuda.synchronize()
+            self.generator_time = self.generator_time + time.time() - time1
 
             # (c) Advance each beam.
+            torch.cuda.synchronize()
+            time1 = time.time()
             for j, b in enumerate(beam):
                 b.advance(out[:, j],
                           beam_attn.data[:, j, :memory_lengths[j]])
                 dec_states.beam_update(j, b.get_current_origin(), beam_size)
+            torch.cuda.synchronize()
+            self.beam_time = self.beam_time + time.time() - time1
 
         # (4) Extract sentences from beam.
         ret = self._from_beam(beam)
@@ -419,6 +461,9 @@ class Translator(object):
         if "tgt" in batch.__dict__:
             ret["gold_score"] = self._run_target(batch, data)
         ret["batch"] = batch
+        torch.cuda.synchronize()
+        self.batch2_time = self.batch2_time + time.time() - time0
+
         return ret
 
     def _from_beam(self, beam):
