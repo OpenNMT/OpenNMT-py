@@ -462,7 +462,6 @@ class Translator(object):
             ret["gold_score"] = self._run_target(batch, data)
         ret["batch"] = batch
         torch.cuda.synchronize()
-        self.batch2_time = self.batch2_time + time.time() - time0
 
         return ret
 
