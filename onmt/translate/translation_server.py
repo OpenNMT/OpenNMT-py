@@ -281,6 +281,7 @@ class ServerModel:
         timer.tick(name="writing")
 
         scores = []
+        predictions = []
         if sscount > 0:
             try:
                 scores, predictions = self.translator.translate(
