@@ -35,7 +35,8 @@ def make_translator(opt, report_score=True, logger=None, out_file=None):
               for k in ["beam_size", "n_best", "max_length", "min_length",
                         "stepwise_penalty", "block_ngram_repeat",
                         "ignore_when_blocking", "dump_beam",
-                        "data_type", "replace_unk", "gpu", "verbose"]}
+                        "data_type", "replace_unk", "gpu", "verbose",
+                        "report_bleu", "report_rouge", "output"]}
 
     translator = Translator(model, fields, global_scorer=scorer,
                             out_file=out_file, report_score=report_score,
@@ -90,7 +91,8 @@ class Translator(object):
                  report_bleu=False,
                  report_rouge=False,
                  verbose=False,
-                 out_file=None):
+                 out_file=None,
+                 output=None):
         self.logger = logger
         self.gpu = gpu
         self.cuda = gpu > -1
@@ -119,7 +121,7 @@ class Translator(object):
         self.report_score = report_score
         self.report_bleu = report_bleu
         self.report_rouge = report_rouge
-
+        self.output = output
         # for debugging
         self.beam_trace = self.dump_beam != ""
         self.beam_accum = None
@@ -129,6 +131,7 @@ class Translator(object):
                 "beam_parent_ids": [],
                 "scores": [],
                 "log_probs": []}
+
 
     def translate(self, src_dir, src_path, tgt_path,
                   batch_size, attn_debug=False):
@@ -205,11 +208,14 @@ class Translator(object):
         if self.report_score:
             msg = self._report_score('PRED', pred_score_total,
                                      pred_words_total)
+
             if self.logger:
                 self.logger.info(msg)
             else:
                 print(msg)
+
             if tgt_path is not None:
+
                 msg = self._report_score('GOLD', gold_score_total,
                                          gold_words_total)
                 if self.logger:
@@ -420,23 +426,44 @@ class Translator(object):
 
     def _report_bleu(self, tgt_path):
         import subprocess
-        path = os.path.split(os.path.realpath(__file__))[0]
-
-        res = subprocess.check_output("perl %s/tools/multi-bleu.perl %s"
+        path = os.path.dirname(
+                        os.path.dirname(
+                            os.path.split(os.path.realpath(__file__))[0]
+                        )
+                )
+        try:
+            assert os.path.exists(path)
+            assert os.path.exists(tgt_path)
+            assert os.path.exists(self.output)
+        except AssertionError as e:
+            print(e)
+            raise
+        res = subprocess.check_output("perl %s/tools/multi-bleu.perl %s < %s"
                                       % (path, tgt_path, self.output),
-                                      stdin=self.out_file,
                                       shell=True).decode("utf-8")
-
         msg = ">> " + res.strip()
         return msg
 
     def _report_rouge(self, tgt_path):
+        """
+        TODO: _report_rough is not working.
+        """
         import subprocess
-        path = os.path.split(os.path.realpath(__file__))[0]
+        path = os.path.dirname(
+            os.path.dirname(
+                os.path.split(os.path.realpath(__file__))[0]
+            )
+        )
+        try:
+            assert os.path.exists(path)
+            assert os.path.exists(tgt_path)
+            assert os.path.exists(self.output)
+        except AssertionError as e:
+            print(e)
+            raise
         res = subprocess.check_output(
-            "python %s/tools/test_rouge.py -r %s -c STDIN"
-            % (path, tgt_path),
-            shell=True,
-            stdin=self.out_file).decode("utf-8")
+            "python %s/tools/test_rouge.py -r %s -c %s"
+            % (path, tgt_path, self.output),
+            shell=True).decode("utf-8")
         msg = res.strip()
         return msg
