@@ -110,3 +110,13 @@ ENV/
 
 # Tensorboard
 runs/
+
+# model, log and pred folder
+# these folders are used to 
+# save checkpoint, necessary log,
+# or prediction file so that the base
+# OpenNMT-py folder doesn't get dirty.
+model/
+pred/
+log/
+
