@@ -132,7 +132,6 @@ class Translator(object):
                 "scores": [],
                 "log_probs": []}
 
-
     def translate(self, src_dir, src_path, tgt_path,
                   batch_size, attn_debug=False):
         data = onmt.io.build_dataset(self.fields,
