@@ -406,6 +406,9 @@ class DecoderState(object):
             sent_states.data.copy_(
                 sent_states.data.index_select(1, positions))
 
+    def map_batch_fn(self, fn):
+        raise NotImplementedError()
+
 
 class RNNDecoderState(DecoderState):
     """ Base class for RNN decoder state """
@@ -448,3 +451,7 @@ class RNNDecoderState(DecoderState):
                 for e in self._all]
         self.hidden = tuple(vars[:-1])
         self.input_feed = vars[-1]
+
+    def map_batch_fn(self, fn):
+        self.hidden = tuple(map(lambda x: fn(x, 1), self.hidden))
+        self.input_feed = fn(self.input_feed, 1)
