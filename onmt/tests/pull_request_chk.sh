@@ -4,9 +4,9 @@
 LOG_FILE=/tmp/$$_pull_request_chk.log
 echo > ${LOG_FILE} # Empty the log file.
 
-PROJECT_ROOT=`dirname "$0"`"/.."
+PROJECT_ROOT=`dirname "$0"`"/../../"
 DATA_DIR="$PROJECT_ROOT/data"
-TEST_DIR="$PROJECT_ROOT/test"
+TEST_DIR="$PROJECT_ROOT/onmt/tests"
 PYTHON="python"
 
 clean_up()
