@@ -128,6 +128,7 @@ class Trainer(object):
         step = self.optim._step + 1
         true_batchs = []
         accum = 0
+        normalization = 0
         train_iter = train_iter_fct()
 
         total_stats = onmt.utils.Statistics()
@@ -146,6 +147,14 @@ class Trainer(object):
                     self.train_loss.cur_dataset = cur_dataset
 
                     true_batchs.append(batch)
+
+                    if self.norm_method == "tokens":
+                        num_tokens = batch.tgt[1:].data.view(-1) \
+                        .ne(self.train_loss.padding_idx).sum()
+                        normalization += num_tokens
+                    else:
+                        normalization += batch.batch_size
+
                     accum += 1
                     if accum == self.grad_accum_count:
                         reduce_counter += 1
@@ -153,8 +162,11 @@ class Trainer(object):
                             print("GPU %d: reduce_counter: %d n_minibatch %d"
                                   % (self.gpu_rank, reduce_counter,
                                      len(true_batchs)))
+                        if self.n_gpu > 1:
+                            normalization = sum(onmt.utils.multi_utils.all_gather_list(normalization))
+
                         self._gradient_accumulation(
-                            true_batchs, total_stats,
+                            true_batchs, normalization, total_stats,
                             report_stats)
 
                         report_stats = self.maybe_report_training(
@@ -164,6 +176,7 @@ class Trainer(object):
 
                         true_batchs = []
                         accum = 0
+                        normalization = 0
                         if (step % valid_steps == 0):
                             if self.gpu_verbose > 0:
                                 print('GPU %d: validate step %d'
@@ -230,7 +243,7 @@ class Trainer(object):
 
         return stats
 
-    def _gradient_accumulation(self, true_batchs, total_stats,
+    def _gradient_accumulation(self, true_batchs, normalization, total_stats,
                                report_stats):
         if self.grad_accum_count > 1:
             self.model.zero_grad()
@@ -252,13 +265,6 @@ class Trainer(object):
                 src_lengths = None
 
             tgt_outer = inputters.make_features(batch, 'tgt')
-
-            if self.norm_method == "tokens":
-                num_tokens = batch.tgt[1:].data.view(-1) \
-                   .ne(self.train_loss.padding_idx).sum()
-                normalization = num_tokens
-            else:
-                normalization = batch.batch_size
 
             for j in range(0, target_size-1, trunc_size):
                 # 1. Create truncated target.
