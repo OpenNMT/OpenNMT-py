@@ -311,5 +311,4 @@ class TransformerDecoderState(DecoderState):
 
     def repeat_beam_size_times(self, beam_size):
         """ Repeat beam_size times along batch dimension. """
-        self.src = torch.tensor(self.src.data.repeat(1, beam_size, 1),
-                                requires_grad=False)
+        self.src = self.src.data.repeat(1, beam_size, 1)

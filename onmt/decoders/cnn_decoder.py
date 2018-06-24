@@ -153,5 +153,4 @@ class CNNDecoderState(DecoderState):
 
     def repeat_beam_size_times(self, beam_size):
         """ Repeat beam_size times along batch dimension. """
-        self.init_src = torch.tensor(
-            self.init_src.data.repeat(1, beam_size, 1), requires_grad=False)
+        self.init_src = self.init_src.data.repeat(1, beam_size, 1)
