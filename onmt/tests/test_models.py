@@ -312,10 +312,10 @@ if onmt.models.SRU.check_sru_requirement():
 for p in tests_nmtmodel:
     _add_test(p, 'nmtmodel_forward')
 
-for p in tests_nmtmodel:
-    _add_test(p, 'imagemodel_forward')
+# for p in tests_nmtmodel:
+#    _add_test(p, 'imagemodel_forward')
 
-for p in tests_nmtmodel:
-    p.append(('sample_rate', 5500))
-    p.append(('window_size', 0.03))
-    _add_test(p, 'audiomodel_forward')
+# for p in tests_nmtmodel:
+#    p.append(('sample_rate', 5500))
+#    p.append(('window_size', 0.03))
+#    _add_test(p, 'audiomodel_forward')

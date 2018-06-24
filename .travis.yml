@@ -81,3 +81,4 @@ matrix:
         - cd docs/; make html; cd ..
         - set -e
         - doctr deploy --built-docs docs/build/html/ .
+

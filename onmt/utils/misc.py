@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
 
-import logging
-
-""" Misc functions  """
-
 import torch
+import logging
 
 
 def aeq(*args):

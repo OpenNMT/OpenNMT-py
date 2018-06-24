@@ -1,11 +1,13 @@
 #!/usr/bin/env python
-""" Main training workflow """
 # -*- coding: utf-8 -*-
-
+"""
+    Main training workflow
+"""
 from __future__ import print_function
 from __future__ import division
 
 import argparse
+
 import os
 import sys
 import random
@@ -126,6 +128,10 @@ def main(opt):
 
     if opt.tensorboard:
         trainer.report_manager.tensorboard_writer.close()
+
+    opts.add_md_help_argument(parser)
+    opts.model_opts(parser)
+    opts.train_opts(parser)
 
 
 if __name__ == "__main__":

@@ -8,8 +8,8 @@ import numpy as np
 
 import onmt
 from onmt.decoders.decoder import DecoderState
-from onmt.utils.misc import aeq
-from onmt.utils.transformer_util import PositionwiseFeedForward
+# from onmt.utils.misc import aeq
+from onmt.modules.position_ffn import PositionwiseFeedForward
 
 MAX_SIZE = 5000
 
@@ -26,10 +26,18 @@ class TransformerDecoderLayer(nn.Module):
     """
 
     def __init__(self, size, dropout,
-                 head_count=8, hidden_size=2048):
+                 head_count=8, hidden_size=2048, self_attn_type="scaled-dot"):
         super(TransformerDecoderLayer, self).__init__()
-        self.self_attn = onmt.modules.MultiHeadedAttention(
-            head_count, size, dropout=dropout)
+
+        self.self_attn_type = self_attn_type
+
+        if self_attn_type == "scaled-dot":
+            self.self_attn = onmt.modules.MultiHeadedAttention(
+                head_count, size, dropout=dropout)
+        elif self_attn_type == "average":
+            self.self_attn = onmt.modules.AverageAttention(
+                size, dropout=dropout)
+
         self.context_attn = onmt.modules.MultiHeadedAttention(
             head_count, size, dropout=dropout)
         self.feed_forward = PositionwiseFeedForward(size,
@@ -45,22 +53,36 @@ class TransformerDecoderLayer(nn.Module):
         self.register_buffer('mask', mask)
 
     def forward(self, inputs, memory_bank, src_pad_mask, tgt_pad_mask,
-                previous_input=None):
-        # Args Checks
-        input_batch, input_len, _ = inputs.size()
-        if previous_input is not None:
-            pi_batch, _, _ = previous_input.size()
-            aeq(pi_batch, input_batch)
-        contxt_batch, contxt_len, _ = memory_bank.size()
-        aeq(input_batch, contxt_batch)
+                previous_input=None, layer_cache=None, step=None):
+        """
+        Args:
+            inputs: [ batch_size, 1, model_dim ]
+            memory_bank: [ batch_size, src_len, model_dim ]
+            src_pad_mask: [ batch_size, 1, src_len ]
+            tgt_pad_mask: [ batch_size, 1, 1 ]
 
-        src_batch, _, s_len = src_pad_mask.size()
-        tgt_batch, _, _ = tgt_pad_mask.size()
+        Returns:
+            output: [ batch_size, 1, model_dim ]
+            attn: [ batch_size, 1, src_len ]
+            all_input: [ batch_size, current_step, model_dim ]
+
+
+        """
+        # Args Checks - commented out for performance issue
+        # input_batch, input_len, _ = inputs.size()
+        # if previous_input is not None:
+        #    pi_batch, _, _ = previous_input.size()
+        #    aeq(pi_batch, input_batch)
+        # contxt_batch, contxt_len, _ = memory_bank.size()
+        # aeq(input_batch, contxt_batch)
+
+        # src_batch, _, s_len = src_pad_mask.size()
+        # tgt_batch, _, _ = tgt_pad_mask.size()
         # src_batch, t_len, s_len = src_pad_mask.size()
         # tgt_batch, t_len_, t_len__ = tgt_pad_mask.size()
-        aeq(input_batch, contxt_batch, src_batch, tgt_batch)
+        # aeq(input_batch, contxt_batch, src_batch, tgt_batch)
         # aeq(t_len, t_len_, t_len__, input_len)
-        aeq(s_len, contxt_len)
+        # aeq(s_len, contxt_len)
         # END Args Checks
 
         dec_mask = torch.gt(tgt_pad_mask +
@@ -71,8 +93,14 @@ class TransformerDecoderLayer(nn.Module):
         if previous_input is not None:
             all_input = torch.cat((previous_input, input_norm), dim=1)
             dec_mask = None
-        query, attn = self.self_attn(all_input, all_input, input_norm,
-                                     mask=dec_mask)
+
+        if self.self_attn_type == "scaled-dot":
+            query, attn = self.self_attn(all_input, all_input, input_norm,
+                                         mask=dec_mask)
+        elif self.self_attn_type == "average":
+            query, attn = self.self_attn(input_norm, mask=dec_mask,
+                                         layer_cache=layer_cache, step=step)
+
         query = self.drop(query) + inputs
 
         query_norm = self.layer_norm_2(query)
@@ -81,20 +109,28 @@ class TransformerDecoderLayer(nn.Module):
         output = self.feed_forward(self.drop(mid) + query)
 
         # CHECKS
-        output_batch, output_len, _ = output.size()
-        aeq(input_len, output_len)
-        aeq(contxt_batch, output_batch)
+        # output_batch, output_len, _ = output.size()
+        # aeq(input_len, output_len)
+        # aeq(contxt_batch, output_batch)
 
-        n_batch_, t_len_, s_len_ = attn.size()
-        aeq(input_batch, n_batch_)
-        aeq(contxt_len, s_len_)
-        aeq(input_len, t_len_)
+        # n_batch_, t_len_, s_len_ = attn.size()
+        # aeq(input_batch, n_batch_)
+        # aeq(contxt_len, s_len_)
+        # aeq(input_len, t_len_)
         # END CHECKS
 
         return output, attn, all_input
 
     def _get_attn_subsequent_mask(self, size):
-        ''' Get an attention mask to avoid using the subsequent info.'''
+        """
+        Get an attention mask to avoid using the subsequent info.
+
+        Args:
+            size: int
+
+        Returns:
+            subsequent_mask: [ 1, size, size ]
+        """
         attn_shape = (1, size, size)
         subsequent_mask = np.triu(np.ones(attn_shape), k=1).astype('uint8')
         subsequent_mask = torch.from_numpy(subsequent_mask)
@@ -126,12 +162,11 @@ class TransformerDecoder(nn.Module):
        dropout (float): dropout parameters
        embeddings (:obj:`onmt.modules.Embeddings`):
           embeddings to use, should have positional encodings
-
        attn_type (str): if using a seperate copy attention
     """
 
     def __init__(self, num_layers, hidden_size, attn_type,
-                 copy_attn, dropout, embeddings):
+                 copy_attn, self_attn_type, dropout, embeddings):
         super(TransformerDecoder, self).__init__()
 
         # Basic attributes.
@@ -141,7 +176,8 @@ class TransformerDecoder(nn.Module):
 
         # Build TransformerDecoder.
         self.transformer_layers = nn.ModuleList(
-            [TransformerDecoderLayer(hidden_size, dropout)
+            [TransformerDecoderLayer(hidden_size, dropout,
+             self_attn_type=self_attn_type)
              for _ in range(num_layers)])
 
         # TransformerDecoder has its own attention mechanism.
@@ -153,27 +189,36 @@ class TransformerDecoder(nn.Module):
             self._copy = True
         self.layer_norm = onmt.modules.LayerNorm(hidden_size)
 
-    def forward(self, tgt, memory_bank, state, memory_lengths=None):
+    def _init_cache(self, memory_bank, memory_lengths=None):
+        cache = {}
+        batch_size = memory_bank.size(1)
+        depth = memory_bank.size(-1)
+        for l in range(self.num_layers):
+            layer_cache = {"prev_g": torch.zeros((batch_size, 1, depth))}
+            cache["layer_{}".format(l)] = layer_cache
+        return cache
+
+    def forward(self, tgt, memory_bank, state, memory_lengths=None,
+                step=None, cache=None):
         """
         See :obj:`onmt.modules.RNNDecoderBase.forward()`
         """
         # CHECKS
-        assert isinstance(state, TransformerDecoderState)
-        tgt_len, tgt_batch, _ = tgt.size()
-        memory_len, memory_batch, _ = memory_bank.size()
-        aeq(tgt_batch, memory_batch)
+        # assert isinstance(state, TransformerDecoderState)
+        # tgt_len, tgt_batch, _ = tgt.size()
+        # memory_len, memory_batch, _ = memory_bank.size()
+        # aeq(tgt_batch, memory_batch)
 
         src = state.src
         src_words = src[:, :, 0].transpose(0, 1)
         tgt_words = tgt[:, :, 0].transpose(0, 1)
         src_batch, src_len = src_words.size()
         tgt_batch, tgt_len = tgt_words.size()
-        aeq(tgt_batch, memory_batch, src_batch, tgt_batch)
-        aeq(memory_len, src_len)
+        # aeq(tgt_batch, memory_batch, src_batch, tgt_batch)
+        # aeq(memory_len, src_len)
 
         if state.previous_input is not None:
             tgt = torch.cat([state.previous_input, tgt], 0)
-        # END CHECKS
 
         # Initialize return variables.
         outputs = []
@@ -197,6 +242,7 @@ class TransformerDecoder(nn.Module):
             .expand(tgt_batch, tgt_len, tgt_len)
 
         saved_inputs = []
+
         for i in range(self.num_layers):
             prev_layer_input = None
             if state.previous_input is not None:
@@ -204,7 +250,11 @@ class TransformerDecoder(nn.Module):
             output, attn, all_input \
                 = self.transformer_layers[i](output, src_memory_bank,
                                              src_pad_mask, tgt_pad_mask,
-                                             previous_input=prev_layer_input)
+                                             previous_input=prev_layer_input,
+                                             layer_cache=cache["layer_{}".
+                                                               format(i)]
+                                             if cache is not None else None,
+                                             step=step)
             saved_inputs.append(all_input)
 
         saved_inputs = torch.stack(saved_inputs)
@@ -261,4 +311,5 @@ class TransformerDecoderState(DecoderState):
 
     def repeat_beam_size_times(self, beam_size):
         """ Repeat beam_size times along batch dimension. """
-        self.src = self.src.data.repeat(1, beam_size, 1)
+        self.src = torch.tensor(self.src.data.repeat(1, beam_size, 1),
+                                requires_grad=False)

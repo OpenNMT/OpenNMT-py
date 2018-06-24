@@ -36,6 +36,9 @@ class WeightNormLinear(nn.Linear):
 
     As a reparameterization method, weight normalization is same
     as BatchNormalization, but it doesn't depend on minibatch.
+
+    NOTE: This is used nowhere in the code at this stage
+          Vincent Nguyen 05/18/2018
     """
 
     def __init__(self, in_features, out_features,
@@ -164,6 +167,8 @@ class WeightNormConv2d(nn.Conv2d):
             x = F.conv2d(x, w, b, self.stride,
                          self.padding, self.dilation, self.groups)
             return x
+
+# This is used nowhere in the code at the moment (Vincent Nguyen 05/18/2018)
 
 
 class WeightNormConvTranspose2d(nn.ConvTranspose2d):

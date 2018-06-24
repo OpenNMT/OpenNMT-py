@@ -4,7 +4,6 @@ from __future__ import print_function
 import sys
 import os
 import argparse
-import io
 import time
 import json
 import threading
@@ -212,11 +211,11 @@ class ServerModel:
         timer = Timer()
         print("Loading model %d" % self.model_id)
         timer.start()
-        self.out_file = io.StringIO()
+
         try:
             self.translator = build_translator(self.opt,
                                                report_score=False,
-                                               out_file=self.out_file)
+                                               out_file=open(os.devnull, "w"))
         except RuntimeError as e:
             raise ServerModelError("Runtime Error: %s" % str(e))
 
@@ -283,11 +282,11 @@ class ServerModel:
         timer.tick(name="writing")
 
         scores = []
+        predictions = []
         if sscount > 0:
             try:
-                scores = self.translator\
-                    .translate(src_data_iter=texts,
-                               batch_size=self.opt.batch_size)
+                scores, predictions = self.translator.translate(
+                    src_data_iter=texts, batch_size=self.opt.batch_size)
             except RuntimeError as e:
                 raise ServerModelError("Runtime Error: %s" % str(e))
 
@@ -298,7 +297,14 @@ class ServerModel:
                                             timer.times['translation']))
         self.reset_unload_timer()
 
-        results = self.out_file.getvalue().split("\n")
+        # NOTE: translator returns lists of `n_best` list
+        #       we can ignore that (i.e. flatten lists) only because
+        #       we restrict `n_best=1`
+        def flatten_list(_list): return sum(_list, [])
+        results = flatten_list(predictions)
+        scores = [score_tensor.item()
+                  for score_tensor in flatten_list(scores)]
+
         print("Translation Results: ", len(results))
         if len(whitespace_segments) > 0:
             print("Whitespace segments: %d" % len(whitespace_segments))
@@ -317,7 +323,6 @@ class ServerModel:
                       for k, sub
                       in sorted(subsegment.items(), key=lambda x: x[0])]
 
-        self.clear_out_file()
         return results, avg_scores, self.opt.n_best, timer.times
 
     def do_timeout(self):
@@ -372,11 +377,6 @@ class ServerModel:
         """
         torch.cuda.set_device(self.opt.gpu)
         self.translator.model.cuda()
-
-    def clear_out_file(self):
-        # Creating a new object is faster
-        self.out_file = io.StringIO()
-        self.translator.out_file = self.out_file
 
     def maybe_tokenize(self, sequence):
         """Tokenize the sequence (or not)

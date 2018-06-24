@@ -161,9 +161,8 @@ class RNNDecoderBase(nn.Module):
             # The encoder hidden is  (layers*directions) x batch x dim.
             # We need to convert it to layers x batch x (directions*dim).
             if self.bidirectional_encoder:
-                hidden = torch.cat(
-                    [hidden[0:hidden.size(0):2],
-                     hidden[1:hidden.size(0):2]], 2)
+                hidden = torch.cat([hidden[0:hidden.size(0):2],
+                                    hidden[1:hidden.size(0):2]], 2)
             return hidden
 
         if isinstance(encoder_final, tuple):  # LSTM
@@ -384,12 +383,6 @@ class DecoderState(object):
 
     Modules need to implement this to utilize beam search decoding.
     """
-    # def detach(self):
-    #    """ Need to document this VN """
-    #    for h in self._all:
-    #        if h is not None:
-    #            h.detach_()
-
     def detach(self):
         """ Need to document this """
         self.hidden = tuple([_.detach() for _ in self.hidden])
@@ -450,7 +443,8 @@ class RNNDecoderState(DecoderState):
 
     def repeat_beam_size_times(self, beam_size):
         """ Repeat beam_size times along batch dimension. """
-        vars = [e.data.repeat(1, beam_size, 1)
-                for e in self._all]
-        self.hidden = tuple(vars[:-1])
-        self.input_feed = vars[-1]
+        copy_vars = [torch.tensor(e.data.repeat(1, beam_size, 1),
+                                  requires_grad=False)
+                     for e in self._all]
+        self.hidden = tuple(copy_vars[:-1])
+        self.input_feed = copy_vars[-1]

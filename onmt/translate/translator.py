@@ -7,6 +7,7 @@ import os
 import math
 
 import torch
+
 from itertools import count
 
 import onmt.model_builder
@@ -17,7 +18,7 @@ import onmt.opts as opts
 
 def build_translator(opt, report_score=True, logger=None, out_file=None):
     if out_file is None:
-        out_file = codecs.open(opt.output, 'w', 'utf-8')
+        out_file = codecs.open(opt.output, 'w+', 'utf-8')
 
     if opt.gpu > -1:
         torch.cuda.set_device(opt.gpu)
@@ -37,13 +38,13 @@ def build_translator(opt, report_score=True, logger=None, out_file=None):
     kwargs = {k: getattr(opt, k)
               for k in ["beam_size", "n_best", "max_length", "min_length",
                         "stepwise_penalty", "block_ngram_repeat",
-                        "ignore_when_blocking", "dump_beam",
+                        "ignore_when_blocking", "dump_beam", "report_bleu",
                         "data_type", "replace_unk", "gpu", "verbose"]}
 
     translator = Translator(model, fields, global_scorer=scorer,
                             out_file=out_file, report_score=report_score,
                             copy_attn=model_opt.copy_attn, logger=logger,
-                            **kwargs)
+                            self_attn_type=model_opt.self_attn_type, **kwargs)
     return translator
 
 
@@ -76,6 +77,7 @@ class Translator(object):
                  global_scorer=None,
                  copy_attn=False,
                  logger=None,
+                 self_attn_type="scaled-dot",
                  gpu=False,
                  dump_beam="",
                  min_length=0,
@@ -104,6 +106,7 @@ class Translator(object):
         self.max_length = max_length
         self.global_scorer = global_scorer
         self.copy_attn = copy_attn
+        self.self_attn_type = self_attn_type
         self.beam_size = beam_size
         self.min_length = min_length
         self.stepwise_penalty = stepwise_penalty
@@ -132,6 +135,11 @@ class Translator(object):
                 "beam_parent_ids": [],
                 "scores": [],
                 "log_probs": []}
+        self.encoder_time = 0
+        self.decoder_time = 0
+        self.generator_time = 0
+        self.beam_time = 0
+        self.other_time = 0
 
     def translate(self,
                   src_path=None,
@@ -142,9 +150,29 @@ class Translator(object):
                   batch_size=None,
                   attn_debug=False):
         """
+        Translate content of `src_data_iter` (if not None) or `src_path`
+        and get gold scores if one of `tgt_data_iter` or `tgt_path` is set.
+
         Note: batch_size must not be None
         Note: one of ('src_path', 'src_data_iter') must not be None
+
+        Args:
+            src_path (str): filepath of source data
+            src_data_iter (iterator): an interator generating source data
+                e.g. it may be a list or an openned file
+            tgt_path (str): filepath of target data
+            tgt_data_iter (iterator): an interator generating target data
+            src_dir (str): source directory path
+                (used for Audio and Image datasets)
+            batch_size (int): size of examples per mini-batch
+            attn_debug (bool): enables the attention logging
+
+        Returns:
+            all_scores: list of `batch_size` lists of `n_best` scores
+            all_predictions: list of `batch_size` lists of `n_best` predictions
         """
+        assert src_data_iter is not None or src_path is not None
+
         if batch_size is None:
             raise ValueError("batch_size must be set")
         data = inputters.build_dataset(self.fields,
@@ -160,8 +188,13 @@ class Translator(object):
                                        window=self.window,
                                        use_filter_pred=self.use_filter_pred)
 
+        if self.cuda:
+            cur_device = "cuda"
+        else:
+            cur_device = "cpu"
+
         data_iter = inputters.OrderedIterator(
-            dataset=data, device=self.gpu,
+            dataset=data, device=cur_device,
             batch_size=batch_size, train=False, sort=False,
             sort_within_batch=True, shuffle=False)
 
@@ -175,12 +208,14 @@ class Translator(object):
         gold_score_total, gold_words_total = 0, 0
 
         all_scores = []
+        all_predictions = []
+
         for batch in data_iter:
             batch_data = self.translate_batch(batch, data)
             translations = builder.from_batch(batch_data)
 
             for trans in translations:
-                all_scores += [trans.pred_scores[0]]
+                all_scores += [trans.pred_scores[:self.n_best]]
                 pred_score_total += trans.pred_scores[0]
                 pred_words_total += len(trans.pred_sents[0])
                 if tgt_path is not None:
@@ -189,6 +224,7 @@ class Translator(object):
 
                 n_best_preds = [" ".join(pred)
                                 for pred in trans.pred_sents[:self.n_best]]
+                all_predictions += [n_best_preds]
                 self.out_file.write('\n'.join(n_best_preds) + '\n')
                 self.out_file.flush()
 
@@ -250,7 +286,7 @@ class Translator(object):
             import json
             json.dump(self.translator.beam_accum,
                       codecs.open(self.dump_beam, 'w', 'utf-8'))
-        return all_scores
+        return all_scores, all_predictions
 
     def translate_batch(self, batch, data):
         """
@@ -266,7 +302,10 @@ class Translator(object):
         Todo:
            Shouldn't need the original dataset.
         """
+        with torch.no_grad():
+            return self._translate_batch(batch, data)
 
+    def _translate_batch(self, batch, data):
         # (0) Prep each of the components of the search.
         # And helper method for reducing verbosity.
         beam_size = self.beam_size
@@ -324,6 +363,13 @@ class Translator(object):
         memory_lengths = src_lengths.repeat(beam_size)
         dec_states.repeat_beam_size_times(beam_size)
 
+        # initialize cache
+        if self.self_attn_type == "average":
+            cache = self.model.decoder._init_cache(
+              memory_bank, memory_lengths=memory_lengths)
+        else:
+            cache = None
+
         # (3) run the decoder to generate sentences, using beam search.
         for i in range(self.max_length):
             if all((b.done() for b in beam)):
@@ -345,9 +391,16 @@ class Translator(object):
             inp = inp.unsqueeze(2)
 
             # Run one step.
-            dec_out, dec_states, attn = self.model.decoder(
-                inp, memory_bank, dec_states, memory_lengths=memory_lengths)
+            if self.self_attn_type == "average":
+                dec_out, dec_states, attn = self.model.decoder(
+                  inp, memory_bank, dec_states, memory_lengths=memory_lengths,
+                  step=i, cache=cache)
+            else:
+                dec_out, dec_states, attn = self.model.decoder(
+                  inp, memory_bank, dec_states, memory_lengths=memory_lengths)
+
             dec_out = dec_out.squeeze(0)
+
             # dec_out: beam x rnn_size
 
             # (b) Compute a vector of batch x beam word scores.
@@ -367,6 +420,7 @@ class Translator(object):
                 # beam x tgt_vocab
                 out = out.log()
                 beam_attn = unbottle(attn["copy"])
+
             # (c) Advance each beam.
             for j, b in enumerate(beam):
                 b.advance(out[:, j],
@@ -379,6 +433,7 @@ class Translator(object):
         if "tgt" in batch.__dict__:
             ret["gold_score"] = self._run_target(batch, data)
         ret["batch"] = batch
+
         return ret
 
     def _from_beam(self, beam):
@@ -437,10 +492,13 @@ class Translator(object):
 
     def _report_bleu(self, tgt_path):
         import subprocess
-        path = os.path.split(os.path.realpath(__file__))[0]
+        base_dir = os.path.abspath(__file__ + "/../../..")
+        # Rollback pointer to the beginning.
+        self.out_file.seek(0)
+        print()
 
-        res = subprocess.check_output("perl %s/tools/multi-bleu.perl %s %s"
-                                      % (path, tgt_path, self.output),
+        res = subprocess.check_output("perl %s/tools/multi-bleu.perl %s"
+                                      % (base_dir, tgt_path),
                                       stdin=self.out_file,
                                       shell=True).decode("utf-8")
 

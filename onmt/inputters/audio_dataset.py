@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
-""" Dataset for data_type=='audio'"""
-
+"""
+    AudioDataset
+"""
 import codecs
 import os
 
 import torch
 import torchtext
 
-from onmt.inputters.dataset_base import DatasetBase,\
-     PAD_WORD, BOS_WORD, EOS_WORD
+from onmt.inputters.dataset_base import DatasetBase, PAD_WORD, BOS_WORD, \
+    EOS_WORD
 
 
 class AudioDataset(DatasetBase):
@@ -141,7 +142,6 @@ class AudioDataset(DatasetBase):
         assert (src_dir is not None) and os.path.exists(src_dir),\
             "src_dir must be a valid directory if data_type is audio"
 
-        # global torchaudio, librosa, np
         import torchaudio
         import librosa
         import numpy as np

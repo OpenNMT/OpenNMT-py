@@ -126,6 +126,7 @@ class ReportMgr(ReportMgrBase):
     def _report_epoch(self, lr, epoch, train_stats=None, valid_stats=None):
         """
         See base class method `ReportMgrBase.report_epoch`.
+
         """
         if train_stats is not None:
             print('Train perplexity: %g' % train_stats.ppl())

@@ -6,8 +6,7 @@ from __future__ import print_function
 
 import torch
 import torch.nn as nn
-
-from torch.nn.init import xavier_uniform
+from torch.nn.init import xavier_uniform_
 
 import onmt.inputters as inputters
 import onmt.modules
@@ -21,6 +20,7 @@ from onmt.encoders.image_encoder import ImageEncoder
 from onmt.decoders.decoder import InputFeedRNNDecoder, StdRNNDecoder
 from onmt.decoders.transformer import TransformerDecoder
 from onmt.decoders.cnn_decoder import CNNDecoder
+
 from onmt.modules import Embeddings, CopyGenerator
 from onmt.utils.misc import use_gpu
 
@@ -93,6 +93,7 @@ def build_decoder(opt, embeddings):
     if opt.decoder_type == "transformer":
         return TransformerDecoder(opt.dec_layers, opt.rnn_size,
                                   opt.global_attention, opt.copy_attn,
+                                  opt.self_attn_type,
                                   opt.dropout, embeddings)
     elif opt.decoder_type == "cnn":
         return CNNDecoder(opt.dec_layers, opt.rnn_size,
@@ -217,10 +218,10 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
         if model_opt.param_init_glorot:
             for p in model.parameters():
                 if p.dim() > 1:
-                    xavier_uniform(p)
+                    xavier_uniform_(p)
             for p in generator.parameters():
                 if p.dim() > 1:
-                    xavier_uniform(p)
+                    xavier_uniform_(p)
 
         if hasattr(model.encoder, 'embeddings'):
             model.encoder.embeddings.load_pretrained_vectors(

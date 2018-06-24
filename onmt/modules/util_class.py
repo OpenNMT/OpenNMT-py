@@ -4,7 +4,9 @@ import torch.nn as nn
 
 
 class LayerNorm(nn.Module):
-    """  Layer Normalization class  """
+    """
+        Layer Normalization class
+    """
 
     def __init__(self, features, eps=1e-6):
         super(LayerNorm, self).__init__()
@@ -18,6 +20,7 @@ class LayerNorm(nn.Module):
         return self.a_2 * (x - mean) / (std + self.eps) + self.b_2
 
 
+# At the moment this class is only used by embeddings.Embeddings look-up tables
 class Elementwise(nn.ModuleList):
     """
     A simple network container.

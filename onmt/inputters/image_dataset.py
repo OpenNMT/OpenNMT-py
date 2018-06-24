@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-""" Dataset for data_type=='img'"""
+"""
+    ImageDataset
+"""
 
 import codecs
 import os
@@ -7,8 +9,8 @@ import os
 import torch
 import torchtext
 
-from onmt.inputters.dataset_base import DatasetBase,\
-     PAD_WORD, BOS_WORD, EOS_WORD
+from onmt.inputters.dataset_base import DatasetBase, PAD_WORD, BOS_WORD, \
+    EOS_WORD
 
 
 class ImageDataset(DatasetBase):
