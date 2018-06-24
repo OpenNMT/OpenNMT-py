@@ -171,7 +171,7 @@
 <h2>Translations<a class="headerlink" href="#translations" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.translate.Translation">
-<em class="property">class </em><code class="descclassname">onmt.translate.</code><code class="descname">Translation</code><span class="sig-paren">(</span><em>src</em>, <em>src_raw</em>, <em>pred_sents</em>, <em>attn</em>, <em>pred_scores</em>, <em>tgt_sent</em>, <em>gold_score</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/Translation.html#Translation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translation" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.translate.</code><code class="descname">Translation</code><span class="sig-paren">(</span><em>src</em>, <em>src_raw</em>, <em>pred_sents</em>, <em>attn</em>, <em>pred_scores</em>, <em>tgt_sent</em>, <em>gold_score</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation.html#Translation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translation" title="Permalink to this definition">¶</a></dt>
 <dd><p>Container for a translated sentence.</p>
 <dl class="attribute">
 <dt id="onmt.translate.Translation.src">
@@ -217,7 +217,7 @@
 
 <dl class="method">
 <dt id="onmt.translate.Translation.log">
-<code class="descname">log</code><span class="sig-paren">(</span><em>sent_number</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/Translation.html#Translation.log"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translation.log" title="Permalink to this definition">¶</a></dt>
+<code class="descname">log</code><span class="sig-paren">(</span><em>sent_number</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation.html#Translation.log"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translation.log" title="Permalink to this definition">¶</a></dt>
 <dd><p>Log translation.</p>
 </dd></dl>
 
@@ -228,7 +228,7 @@
 <h2>Translator Class<a class="headerlink" href="#translator-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.translate.Translator">
-<em class="property">class </em><code class="descclassname">onmt.translate.</code><code class="descname">Translator</code><span class="sig-paren">(</span><em>model</em>, <em>fields</em>, <em>beam_size</em>, <em>n_best=1</em>, <em>max_length=100</em>, <em>global_scorer=None</em>, <em>copy_attn=False</em>, <em>logger=None</em>, <em>gpu=False</em>, <em>dump_beam=''</em>, <em>min_length=0</em>, <em>stepwise_penalty=False</em>, <em>block_ngram_repeat=0</em>, <em>ignore_when_blocking=[]</em>, <em>sample_rate='16000'</em>, <em>window_size=0.02</em>, <em>window_stride=0.01</em>, <em>window='hamming'</em>, <em>use_filter_pred=False</em>, <em>data_type='text'</em>, <em>replace_unk=False</em>, <em>report_score=True</em>, <em>report_bleu=False</em>, <em>report_rouge=False</em>, <em>verbose=False</em>, <em>out_file=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/Translator.html#Translator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translator" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.translate.</code><code class="descname">Translator</code><span class="sig-paren">(</span><em>model</em>, <em>fields</em>, <em>beam_size</em>, <em>n_best=1</em>, <em>max_length=100</em>, <em>global_scorer=None</em>, <em>copy_attn=False</em>, <em>logger=None</em>, <em>gpu=False</em>, <em>dump_beam=''</em>, <em>min_length=0</em>, <em>stepwise_penalty=False</em>, <em>block_ngram_repeat=0</em>, <em>ignore_when_blocking=[]</em>, <em>sample_rate='16000'</em>, <em>window_size=0.02</em>, <em>window_stride=0.01</em>, <em>window='hamming'</em>, <em>use_filter_pred=False</em>, <em>data_type='text'</em>, <em>replace_unk=False</em>, <em>report_score=True</em>, <em>report_bleu=False</em>, <em>report_rouge=False</em>, <em>verbose=False</em>, <em>out_file=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translator.html#Translator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Uses a model to translate a batch of sentences.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -251,8 +251,15 @@
 </tbody>
 </table>
 <dl class="method">
+<dt id="onmt.translate.Translator.translate">
+<code class="descname">translate</code><span class="sig-paren">(</span><em>src_path=None</em>, <em>src_data_iter=None</em>, <em>tgt_path=None</em>, <em>tgt_data_iter=None</em>, <em>src_dir=None</em>, <em>batch_size=None</em>, <em>attn_debug=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translator.html#Translator.translate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translator.translate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Note: batch_size must not be None
+Note: one of (‘src_path’, ‘src_data_iter’) must not be None</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="onmt.translate.Translator.translate_batch">
-<code class="descname">translate_batch</code><span class="sig-paren">(</span><em>batch</em>, <em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/Translator.html#Translator.translate_batch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translator.translate_batch" title="Permalink to this definition">¶</a></dt>
+<code class="descname">translate_batch</code><span class="sig-paren">(</span><em>batch</em>, <em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translator.html#Translator.translate_batch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translator.translate_batch" title="Permalink to this definition">¶</a></dt>
 <dd><p>Translate a batch of sentences.</p>
 <p>Mostly a wrapper around <a class="reference internal" href="#onmt.translate.Beam" title="onmt.translate.Beam"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Beam</span></code></a>.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -273,7 +280,7 @@
 
 <dl class="class">
 <dt id="onmt.translate.TranslationBuilder">
-<em class="property">class </em><code class="descclassname">onmt.translate.</code><code class="descname">TranslationBuilder</code><span class="sig-paren">(</span><em>data</em>, <em>fields</em>, <em>n_best=1</em>, <em>replace_unk=False</em>, <em>has_tgt=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/Translation.html#TranslationBuilder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.TranslationBuilder" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.translate.</code><code class="descname">TranslationBuilder</code><span class="sig-paren">(</span><em>data</em>, <em>fields</em>, <em>n_best=1</em>, <em>replace_unk=False</em>, <em>has_tgt=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation.html#TranslationBuilder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.TranslationBuilder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Build a word-based translation from the batch output
 of translator and the underlying dictionaries.</p>
 <p>Replacement based on “Addressing the Rare Word
@@ -300,7 +307,7 @@ Problem in Neural Machine Translation” <a class="reference internal" href="ref
 <h2>Beam Search<a class="headerlink" href="#beam-search" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.translate.Beam">
-<em class="property">class </em><code class="descclassname">onmt.translate.</code><code class="descname">Beam</code><span class="sig-paren">(</span><em>size</em>, <em>pad</em>, <em>bos</em>, <em>eos</em>, <em>n_best=1</em>, <em>cuda=False</em>, <em>global_scorer=None</em>, <em>min_length=0</em>, <em>stepwise_penalty=False</em>, <em>block_ngram_repeat=0</em>, <em>exclusion_tokens=set()</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/Beam.html#Beam"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Beam" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.translate.</code><code class="descname">Beam</code><span class="sig-paren">(</span><em>size</em>, <em>pad</em>, <em>bos</em>, <em>eos</em>, <em>n_best=1</em>, <em>cuda=False</em>, <em>global_scorer=None</em>, <em>min_length=0</em>, <em>stepwise_penalty=False</em>, <em>block_ngram_repeat=0</em>, <em>exclusion_tokens=set()</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam.html#Beam"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Beam" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class for managing the internals of the beam search process.</p>
 <p>Takes care of beams, back pointers, and scores.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -320,7 +327,7 @@ Problem in Neural Machine Translation” <a class="reference internal" href="ref
 </table>
 <dl class="method">
 <dt id="onmt.translate.Beam.advance">
-<code class="descname">advance</code><span class="sig-paren">(</span><em>word_probs</em>, <em>attn_out</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/Beam.html#Beam.advance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Beam.advance" title="Permalink to this definition">¶</a></dt>
+<code class="descname">advance</code><span class="sig-paren">(</span><em>word_probs</em>, <em>attn_out</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam.html#Beam.advance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Beam.advance" title="Permalink to this definition">¶</a></dt>
 <dd><p>Given prob over words for every last beam <cite>wordLk</cite> and attention
 <cite>attn_out</cite>: Compute and update the beam search.</p>
 <p>Parameters:</p>
@@ -333,19 +340,19 @@ Problem in Neural Machine Translation” <a class="reference internal" href="ref
 
 <dl class="method">
 <dt id="onmt.translate.Beam.get_current_origin">
-<code class="descname">get_current_origin</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/Beam.html#Beam.get_current_origin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Beam.get_current_origin" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_current_origin</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam.html#Beam.get_current_origin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Beam.get_current_origin" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the backpointers for the current timestep.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="onmt.translate.Beam.get_current_state">
-<code class="descname">get_current_state</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/Beam.html#Beam.get_current_state"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Beam.get_current_state" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_current_state</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam.html#Beam.get_current_state"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Beam.get_current_state" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the outputs for the current timestep.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="onmt.translate.Beam.get_hyp">
-<code class="descname">get_hyp</code><span class="sig-paren">(</span><em>timestep</em>, <em>k</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/Beam.html#Beam.get_hyp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Beam.get_hyp" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_hyp</code><span class="sig-paren">(</span><em>timestep</em>, <em>k</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam.html#Beam.get_hyp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Beam.get_hyp" title="Permalink to this definition">¶</a></dt>
 <dd><p>Walk back to construct the full hypothesis.</p>
 </dd></dl>
 
@@ -353,7 +360,7 @@ Problem in Neural Machine Translation” <a class="reference internal" href="ref
 
 <dl class="class">
 <dt id="onmt.translate.GNMTGlobalScorer">
-<em class="property">class </em><code class="descclassname">onmt.translate.</code><code class="descname">GNMTGlobalScorer</code><span class="sig-paren">(</span><em>alpha</em>, <em>beta</em>, <em>cov_penalty</em>, <em>length_penalty</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/Beam.html#GNMTGlobalScorer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.GNMTGlobalScorer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.translate.</code><code class="descname">GNMTGlobalScorer</code><span class="sig-paren">(</span><em>alpha</em>, <em>beta</em>, <em>cov_penalty</em>, <em>length_penalty</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam.html#GNMTGlobalScorer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.GNMTGlobalScorer" title="Permalink to this definition">¶</a></dt>
 <dd><p>NMT re-ranking score from
 “Google’s Neural Machine Translation System” <a class="reference internal" href="ref.html#wu2016google" id="id2">[WSC+16]</a></p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -370,19 +377,19 @@ Problem in Neural Machine Translation” <a class="reference internal" href="ref
 </table>
 <dl class="method">
 <dt id="onmt.translate.GNMTGlobalScorer.score">
-<code class="descname">score</code><span class="sig-paren">(</span><em>beam</em>, <em>logprobs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/Beam.html#GNMTGlobalScorer.score"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.GNMTGlobalScorer.score" title="Permalink to this definition">¶</a></dt>
+<code class="descname">score</code><span class="sig-paren">(</span><em>beam</em>, <em>logprobs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam.html#GNMTGlobalScorer.score"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.GNMTGlobalScorer.score" title="Permalink to this definition">¶</a></dt>
 <dd><p>Rescores a prediction based on penalty functions</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="onmt.translate.GNMTGlobalScorer.update_global_state">
-<code class="descname">update_global_state</code><span class="sig-paren">(</span><em>beam</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/Beam.html#GNMTGlobalScorer.update_global_state"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.GNMTGlobalScorer.update_global_state" title="Permalink to this definition">¶</a></dt>
+<code class="descname">update_global_state</code><span class="sig-paren">(</span><em>beam</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam.html#GNMTGlobalScorer.update_global_state"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.GNMTGlobalScorer.update_global_state" title="Permalink to this definition">¶</a></dt>
 <dd><p>Keeps the coverage vector as sum of attentions</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="onmt.translate.GNMTGlobalScorer.update_score">
-<code class="descname">update_score</code><span class="sig-paren">(</span><em>beam</em>, <em>attn</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/Beam.html#GNMTGlobalScorer.update_score"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.GNMTGlobalScorer.update_score" title="Permalink to this definition">¶</a></dt>
+<code class="descname">update_score</code><span class="sig-paren">(</span><em>beam</em>, <em>attn</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam.html#GNMTGlobalScorer.update_score"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.GNMTGlobalScorer.update_score" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to update scores of a Beam that is not finished</p>
 </dd></dl>
 

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>onmt.translate.Beam &mdash; OpenNMT-py  documentation</title>
+  <title>onmt.translate.beam &mdash; OpenNMT-py  documentation</title>
   
 
   
@@ -141,7 +141,7 @@
         
           <li><a href="../../index.html">Module code</a> &raquo;</li>
         
-      <li>onmt.translate.Beam</li>
+      <li>onmt.translate.beam</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -156,10 +156,10 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <h1>Source code for onmt.translate.Beam</h1><div class="highlight"><pre>
+  <h1>Source code for onmt.translate.beam</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">division</span>
 <span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">onmt.translate</span> <span class="k">import</span> <span class="n">Penalties</span>
+<span class="kn">from</span> <span class="nn">onmt.translate</span> <span class="k">import</span> <span class="n">penalties</span>
 
 
 <div class="viewcode-block" id="Beam"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.Beam">[docs]</a><span class="k">class</span> <span class="nc">Beam</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -350,7 +350,7 @@
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">cov_penalty</span><span class="p">,</span> <span class="n">length_penalty</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">alpha</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">=</span> <span class="n">beta</span>
-        <span class="n">penalty_builder</span> <span class="o">=</span> <span class="n">Penalties</span><span class="o">.</span><span class="n">PenaltyBuilder</span><span class="p">(</span><span class="n">cov_penalty</span><span class="p">,</span>
+        <span class="n">penalty_builder</span> <span class="o">=</span> <span class="n">penalties</span><span class="o">.</span><span class="n">PenaltyBuilder</span><span class="p">(</span><span class="n">cov_penalty</span><span class="p">,</span>
                                                    <span class="n">length_penalty</span><span class="p">)</span>
         <span class="c1"># Term will be subtracted from probability</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cov_penalty</span> <span class="o">=</span> <span class="n">penalty_builder</span><span class="o">.</span><span class="n">coverage_penalty</span><span class="p">()</span>

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>onmt.modules.GlobalAttention &mdash; OpenNMT-py  documentation</title>
+  <title>onmt.modules.global_attention &mdash; OpenNMT-py  documentation</title>
   
 
   
@@ -141,7 +141,7 @@
         
           <li><a href="../../index.html">Module code</a> &raquo;</li>
         
-      <li>onmt.modules.GlobalAttention</li>
+      <li>onmt.modules.global_attention</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -156,11 +156,12 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <h1>Source code for onmt.modules.GlobalAttention</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">torch</span>
+  <h1>Source code for onmt.modules.global_attention</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot; Global attention modules (Luong / Bahdanau) &quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
 
-<span class="kn">from</span> <span class="nn">onmt.Utils</span> <span class="k">import</span> <span class="n">aeq</span><span class="p">,</span> <span class="n">sequence_mask</span>
+<span class="kn">from</span> <span class="nn">onmt.utils.misc</span> <span class="k">import</span> <span class="n">aeq</span><span class="p">,</span> <span class="n">sequence_mask</span>
 
 
 <div class="viewcode-block" id="GlobalAttention"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.GlobalAttention">[docs]</a><span class="k">class</span> <span class="nc">GlobalAttention</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -195,7 +196,7 @@
 <span class="sd">          F --&gt; G</span>
 
 <span class="sd">    All models compute the output as</span>
-<span class="sd">    :math:`c = \sum_{j=1}^{SeqLength} a_j H_j` where</span>
+<span class="sd">    :math:`c = sum_{j=1}^{SeqLength} a_j H_j` where</span>
 <span class="sd">    :math:`a_j` is the softmax of a score function.</span>
 <span class="sd">    Then then apply a projection layer to [q, c].</span>
 
@@ -236,7 +237,7 @@
         <span class="n">out_bias</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">attn_type</span> <span class="o">==</span> <span class="s2">&quot;mlp&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">linear_out</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">dim</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="n">out_bias</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">sm</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Softmax</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">softmax</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Softmax</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tanh</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Tanh</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="n">coverage</span><span class="p">:</span>
@@ -285,7 +286,7 @@
 
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">v</span><span class="p">(</span><span class="n">wquh</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">dim</span><span class="p">))</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">tgt_batch</span><span class="p">,</span> <span class="n">tgt_len</span><span class="p">,</span> <span class="n">src_len</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="GlobalAttention.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.GlobalAttention.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">memory_lengths</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">coverage</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="GlobalAttention.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.GlobalAttention.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">memory_lengths</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">coverage</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="sd">        Args:</span>
@@ -303,21 +304,21 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># one step input</span>
-        <span class="k">if</span> <span class="nb">input</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">source</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
             <span class="n">one_step</span> <span class="o">=</span> <span class="kc">True</span>
-            <span class="nb">input</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">source</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">one_step</span> <span class="o">=</span> <span class="kc">False</span>
 
-        <span class="n">batch</span><span class="p">,</span> <span class="n">sourcel</span><span class="p">,</span> <span class="n">dim</span> <span class="o">=</span> <span class="n">memory_bank</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
-        <span class="n">batch_</span><span class="p">,</span> <span class="n">targetl</span><span class="p">,</span> <span class="n">dim_</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+        <span class="n">batch</span><span class="p">,</span> <span class="n">source_l</span><span class="p">,</span> <span class="n">dim</span> <span class="o">=</span> <span class="n">memory_bank</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+        <span class="n">batch_</span><span class="p">,</span> <span class="n">target_l</span><span class="p">,</span> <span class="n">dim_</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
         <span class="n">aeq</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">batch_</span><span class="p">)</span>
         <span class="n">aeq</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">dim_</span><span class="p">)</span>
         <span class="n">aeq</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">coverage</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">batch_</span><span class="p">,</span> <span class="n">sourcel_</span> <span class="o">=</span> <span class="n">coverage</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+            <span class="n">batch_</span><span class="p">,</span> <span class="n">source_l_</span> <span class="o">=</span> <span class="n">coverage</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
             <span class="n">aeq</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">batch_</span><span class="p">)</span>
-            <span class="n">aeq</span><span class="p">(</span><span class="n">sourcel</span><span class="p">,</span> <span class="n">sourcel_</span><span class="p">)</span>
+            <span class="n">aeq</span><span class="p">(</span><span class="n">source_l</span><span class="p">,</span> <span class="n">source_l_</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">coverage</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">cover</span> <span class="o">=</span> <span class="n">coverage</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
@@ -325,7 +326,7 @@
             <span class="n">memory_bank</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="n">memory_bank</span><span class="p">)</span>
 
         <span class="c1"># compute attention scores, as in Luong et al.</span>
-        <span class="n">align</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">)</span>
+        <span class="n">align</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">memory_lengths</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">mask</span> <span class="o">=</span> <span class="n">sequence_mask</span><span class="p">(</span><span class="n">memory_lengths</span><span class="p">)</span>
@@ -333,16 +334,16 @@
             <span class="n">align</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">masked_fill_</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">mask</span><span class="p">,</span> <span class="o">-</span><span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">))</span>
 
         <span class="c1"># Softmax to normalize attention weights</span>
-        <span class="n">align_vectors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sm</span><span class="p">(</span><span class="n">align</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch</span> <span class="o">*</span> <span class="n">targetl</span><span class="p">,</span> <span class="n">sourcel</span><span class="p">))</span>
-        <span class="n">align_vectors</span> <span class="o">=</span> <span class="n">align_vectors</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">targetl</span><span class="p">,</span> <span class="n">sourcel</span><span class="p">)</span>
+        <span class="n">align_vectors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">align</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch</span><span class="o">*</span><span class="n">target_l</span><span class="p">,</span> <span class="n">source_l</span><span class="p">))</span>
+        <span class="n">align_vectors</span> <span class="o">=</span> <span class="n">align_vectors</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">target_l</span><span class="p">,</span> <span class="n">source_l</span><span class="p">)</span>
 
         <span class="c1"># each context vector c_t is the weighted average</span>
         <span class="c1"># over all the source hidden states</span>
         <span class="n">c</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">bmm</span><span class="p">(</span><span class="n">align_vectors</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">)</span>
 
         <span class="c1"># concatenate</span>
-        <span class="n">concat_c</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">c</span><span class="p">,</span> <span class="nb">input</span><span class="p">],</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch</span> <span class="o">*</span> <span class="n">targetl</span><span class="p">,</span> <span class="n">dim</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span>
-        <span class="n">attn_h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear_out</span><span class="p">(</span><span class="n">concat_c</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">targetl</span><span class="p">,</span> <span class="n">dim</span><span class="p">)</span>
+        <span class="n">concat_c</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">c</span><span class="p">,</span> <span class="n">source</span><span class="p">],</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch</span><span class="o">*</span><span class="n">target_l</span><span class="p">,</span> <span class="n">dim</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">attn_h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear_out</span><span class="p">(</span><span class="n">concat_c</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">target_l</span><span class="p">,</span> <span class="n">dim</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">attn_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;general&quot;</span><span class="p">,</span> <span class="s2">&quot;dot&quot;</span><span class="p">]:</span>
             <span class="n">attn_h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="n">attn_h</span><span class="p">)</span>
 
@@ -354,22 +355,21 @@
             <span class="n">batch_</span><span class="p">,</span> <span class="n">dim_</span> <span class="o">=</span> <span class="n">attn_h</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
             <span class="n">aeq</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">batch_</span><span class="p">)</span>
             <span class="n">aeq</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">dim_</span><span class="p">)</span>
-            <span class="n">batch_</span><span class="p">,</span> <span class="n">sourcel_</span> <span class="o">=</span> <span class="n">align_vectors</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+            <span class="n">batch_</span><span class="p">,</span> <span class="n">source_l_</span> <span class="o">=</span> <span class="n">align_vectors</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
             <span class="n">aeq</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">batch_</span><span class="p">)</span>
-            <span class="n">aeq</span><span class="p">(</span><span class="n">sourcel</span><span class="p">,</span> <span class="n">sourcel_</span><span class="p">)</span>
+            <span class="n">aeq</span><span class="p">(</span><span class="n">source_l</span><span class="p">,</span> <span class="n">source_l_</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">attn_h</span> <span class="o">=</span> <span class="n">attn_h</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
             <span class="n">align_vectors</span> <span class="o">=</span> <span class="n">align_vectors</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
-
             <span class="c1"># Check output sizes</span>
-            <span class="n">targetl_</span><span class="p">,</span> <span class="n">batch_</span><span class="p">,</span> <span class="n">dim_</span> <span class="o">=</span> <span class="n">attn_h</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
-            <span class="n">aeq</span><span class="p">(</span><span class="n">targetl</span><span class="p">,</span> <span class="n">targetl_</span><span class="p">)</span>
+            <span class="n">target_l_</span><span class="p">,</span> <span class="n">batch_</span><span class="p">,</span> <span class="n">dim_</span> <span class="o">=</span> <span class="n">attn_h</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+            <span class="n">aeq</span><span class="p">(</span><span class="n">target_l</span><span class="p">,</span> <span class="n">target_l_</span><span class="p">)</span>
             <span class="n">aeq</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">batch_</span><span class="p">)</span>
             <span class="n">aeq</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">dim_</span><span class="p">)</span>
-            <span class="n">targetl_</span><span class="p">,</span> <span class="n">batch_</span><span class="p">,</span> <span class="n">sourcel_</span> <span class="o">=</span> <span class="n">align_vectors</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
-            <span class="n">aeq</span><span class="p">(</span><span class="n">targetl</span><span class="p">,</span> <span class="n">targetl_</span><span class="p">)</span>
+            <span class="n">target_l_</span><span class="p">,</span> <span class="n">batch_</span><span class="p">,</span> <span class="n">source_l_</span> <span class="o">=</span> <span class="n">align_vectors</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+            <span class="n">aeq</span><span class="p">(</span><span class="n">target_l</span><span class="p">,</span> <span class="n">target_l_</span><span class="p">)</span>
             <span class="n">aeq</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">batch_</span><span class="p">)</span>
-            <span class="n">aeq</span><span class="p">(</span><span class="n">sourcel</span><span class="p">,</span> <span class="n">sourcel_</span><span class="p">)</span>
+            <span class="n">aeq</span><span class="p">(</span><span class="n">source_l</span><span class="p">,</span> <span class="n">source_l_</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">attn_h</span><span class="p">,</span> <span class="n">align_vectors</span></div></div>
 </pre></div>

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>onmt.modules.ConvMultiStepAttention &mdash; OpenNMT-py  documentation</title>
+  <title>onmt.modules.conv_multi_step_attention &mdash; OpenNMT-py  documentation</title>
   
 
   
@@ -141,7 +141,7 @@
         
           <li><a href="../../index.html">Module code</a> &raquo;</li>
         
-      <li>onmt.modules.ConvMultiStepAttention</li>
+      <li>onmt.modules.conv_multi_step_attention</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -156,18 +156,19 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <h1>Source code for onmt.modules.ConvMultiStepAttention</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">torch</span>
+  <h1>Source code for onmt.modules.conv_multi_step_attention</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot; Multi Step Attention for CNN &quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
 <span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
-<span class="kn">from</span> <span class="nn">onmt.Utils</span> <span class="k">import</span> <span class="n">aeq</span>
+<span class="kn">from</span> <span class="nn">onmt.utils.misc</span> <span class="k">import</span> <span class="n">aeq</span>
 
 
 <span class="n">SCALE_WEIGHT</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">**</span> <span class="mf">0.5</span>
 
 
 <span class="k">def</span> <span class="nf">seq_linear</span><span class="p">(</span><span class="n">linear</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-    <span class="c1"># linear transform for 3-d tensor</span>
+    <span class="sd">&quot;&quot;&quot; linear transform for 3-d tensor &quot;&quot;&quot;</span>
     <span class="n">batch</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
     <span class="n">h</span> <span class="o">=</span> <span class="n">linear</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span><span class="o">.</span><span class="n">view</span><span class="p">(</span>
         <span class="n">batch</span> <span class="o">*</span> <span class="n">length</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">))</span>
@@ -189,10 +190,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">linear_in</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">input_size</span><span class="p">,</span> <span class="n">input_size</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mask</span> <span class="o">=</span> <span class="kc">None</span>
 
-    <span class="k">def</span> <span class="nf">apply_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mask</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span>
+<div class="viewcode-block" id="ConvMultiStepAttention.apply_mask"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.ConvMultiStepAttention.apply_mask">[docs]</a>    <span class="k">def</span> <span class="nf">apply_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mask</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Apply mask &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span></div>
 
-<div class="viewcode-block" id="ConvMultiStepAttention.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.ConvMultiStepAttention.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_target_emb</span><span class="p">,</span> <span class="nb">input</span><span class="p">,</span> <span class="n">encoder_out_top</span><span class="p">,</span>
+<div class="viewcode-block" id="ConvMultiStepAttention.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.ConvMultiStepAttention.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_target_emb</span><span class="p">,</span> <span class="n">input_from_dec</span><span class="p">,</span> <span class="n">encoder_out_top</span><span class="p">,</span>
                 <span class="n">encoder_out_combine</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
@@ -206,18 +208,22 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># checks</span>
-        <span class="n">batch</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="n">base_target_emb</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
-        <span class="n">batch_</span><span class="p">,</span> <span class="n">channel_</span><span class="p">,</span> <span class="n">height_</span><span class="p">,</span> <span class="n">width_</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+        <span class="c1"># batch, channel, height, width = base_target_emb.size()</span>
+        <span class="n">batch</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">base_target_emb</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+        <span class="c1"># batch_, channel_, height_, width_ = input_from_dec.size()</span>
+        <span class="n">batch_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">height_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">input_from_dec</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
         <span class="n">aeq</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">batch_</span><span class="p">)</span>
         <span class="n">aeq</span><span class="p">(</span><span class="n">height</span><span class="p">,</span> <span class="n">height_</span><span class="p">)</span>
 
-        <span class="n">enc_batch</span><span class="p">,</span> <span class="n">enc_channel</span><span class="p">,</span> <span class="n">enc_height</span> <span class="o">=</span> <span class="n">encoder_out_top</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
-        <span class="n">enc_batch_</span><span class="p">,</span> <span class="n">enc_channel_</span><span class="p">,</span> <span class="n">enc_height_</span> <span class="o">=</span> <span class="n">encoder_out_combine</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+        <span class="c1"># enc_batch, enc_channel, enc_height = encoder_out_top.size()</span>
+        <span class="n">enc_batch</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">enc_height</span> <span class="o">=</span> <span class="n">encoder_out_top</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+        <span class="c1"># enc_batch_, enc_channel_, enc_height_ = encoder_out_combine.size()</span>
+        <span class="n">enc_batch_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">enc_height_</span> <span class="o">=</span> <span class="n">encoder_out_combine</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
 
         <span class="n">aeq</span><span class="p">(</span><span class="n">enc_batch</span><span class="p">,</span> <span class="n">enc_batch_</span><span class="p">)</span>
         <span class="n">aeq</span><span class="p">(</span><span class="n">enc_height</span><span class="p">,</span> <span class="n">enc_height_</span><span class="p">)</span>
 
-        <span class="n">preatt</span> <span class="o">=</span> <span class="n">seq_linear</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">linear_in</span><span class="p">,</span> <span class="nb">input</span><span class="p">)</span>
+        <span class="n">preatt</span> <span class="o">=</span> <span class="n">seq_linear</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">linear_in</span><span class="p">,</span> <span class="n">input_from_dec</span><span class="p">)</span>
         <span class="n">target</span> <span class="o">=</span> <span class="p">(</span><span class="n">base_target_emb</span> <span class="o">+</span> <span class="n">preatt</span><span class="p">)</span> <span class="o">*</span> <span class="n">SCALE_WEIGHT</span>
         <span class="n">target</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
         <span class="n">target</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>

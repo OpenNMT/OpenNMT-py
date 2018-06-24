@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>onmt.Trainer &mdash; OpenNMT-py  documentation</title>
+  <title>onmt.trainer &mdash; OpenNMT-py  documentation</title>
   
 
   
@@ -141,7 +141,7 @@
         
           <li><a href="../index.html">Module code</a> &raquo;</li>
         
-      <li>onmt.Trainer</li>
+      <li>onmt.trainer</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -156,9 +156,8 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <h1>Source code for onmt.Trainer</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">division</span>
-<span class="sd">&quot;&quot;&quot;</span>
+  <h1>Source code for onmt.trainer</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">This is the loadable seq2seq trainer library that is</span>
 <span class="sd">in charge of training details, loss compute, and statistics.</span>
 <span class="sd">See train.py for a use case of this library.</span>
@@ -168,89 +167,45 @@
 <span class="sd">things to users(i.e. how to do it). Also see train.py(one of the</span>
 <span class="sd">users of this library) for the strategy things we do.</span>
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="kn">import</span> <span class="nn">time</span>
-<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">division</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
 
-<span class="kn">import</span> <span class="nn">onmt</span>
-<span class="kn">import</span> <span class="nn">onmt.io</span>
-<span class="kn">import</span> <span class="nn">onmt.modules</span>
+<span class="kn">import</span> <span class="nn">onmt.inputters</span> <span class="k">as</span> <span class="nn">inputters</span>
+<span class="kn">import</span> <span class="nn">onmt.utils</span>
 
 
-<div class="viewcode-block" id="Statistics"><a class="viewcode-back" href="../../onmt.html#onmt.Statistics">[docs]</a><span class="k">class</span> <span class="nc">Statistics</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">build_trainer</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">optim</span><span class="p">,</span> <span class="n">data_type</span><span class="p">,</span> <span class="n">model_saver</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Accumulator for loss statistics.</span>
-<span class="sd">    Currently calculates:</span>
-
-<span class="sd">    * accuracy</span>
-<span class="sd">    * perplexity</span>
-<span class="sd">    * elapsed time</span>
+<span class="sd">    Simplify `Trainer` creation based on user `opt`s*</span>
+<span class="sd">    Args:</span>
+<span class="sd">        opt (:obj:`Namespace`): user options (usually from argument parsing)</span>
+<span class="sd">        model (:obj:`onmt.models.NMTModel`): the model to train</span>
+<span class="sd">        fields (dict): dict of fields</span>
+<span class="sd">        optim (:obj:`onmt.utils.Optimizer`): optimizer used during training</span>
+<span class="sd">        data_type (str): string describing the type of data</span>
+<span class="sd">            e.g. &quot;text&quot;, &quot;img&quot;, &quot;audio&quot;</span>
+<span class="sd">        model_saver(:obj:`onmt.models.ModelSaverBase`): the utility object</span>
+<span class="sd">            used to save the model (after each epoch)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">train_loss</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">loss</span><span class="o">.</span><span class="n">build_loss_compute</span><span class="p">(</span>
+        <span class="n">model</span><span class="p">,</span> <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">vocab</span><span class="p">,</span> <span class="n">opt</span><span class="p">)</span>
+    <span class="n">valid_loss</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">loss</span><span class="o">.</span><span class="n">build_loss_compute</span><span class="p">(</span>
+        <span class="n">model</span><span class="p">,</span> <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">vocab</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">train</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_words</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_correct</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">loss</span> <span class="o">=</span> <span class="n">loss</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">n_words</span> <span class="o">=</span> <span class="n">n_words</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">n_correct</span> <span class="o">=</span> <span class="n">n_correct</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">n_src_words</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">trunc_size</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">truncated_decoder</span>  <span class="c1"># Badly named...</span>
+    <span class="n">shard_size</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">max_generator_batches</span>
+    <span class="n">norm_method</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">normalization</span>
+    <span class="n">grad_accum_count</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">accum_count</span>
 
-    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stat</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">loss</span> <span class="o">+=</span> <span class="n">stat</span><span class="o">.</span><span class="n">loss</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">n_words</span> <span class="o">+=</span> <span class="n">stat</span><span class="o">.</span><span class="n">n_words</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">n_correct</span> <span class="o">+=</span> <span class="n">stat</span><span class="o">.</span><span class="n">n_correct</span>
-
-    <span class="k">def</span> <span class="nf">accuracy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="mi">100</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_correct</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_words</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">xent</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_words</span>
-
-    <span class="k">def</span> <span class="nf">ppl</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loss</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_words</span><span class="p">,</span> <span class="mi">100</span><span class="p">))</span>
-
-    <span class="k">def</span> <span class="nf">elapsed_time</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span>
-
-<div class="viewcode-block" id="Statistics.output"><a class="viewcode-back" href="../../onmt.html#onmt.Statistics.output">[docs]</a>    <span class="k">def</span> <span class="nf">output</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">epoch</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">n_batches</span><span class="p">,</span> <span class="n">start</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Write out statistics to stdout.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">           epoch (int): current epoch</span>
-<span class="sd">           batch (int): current batch</span>
-<span class="sd">           n_batch (int): total batches</span>
-<span class="sd">           start (int): start time of epoch.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">           msg (str): log message.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">elapsed_time</span><span class="p">()</span>
-        <span class="n">msg</span> <span class="o">=</span> <span class="p">((</span><span class="s2">&quot;Epoch </span><span class="si">%2d</span><span class="s2">, </span><span class="si">%5d</span><span class="s2">/</span><span class="si">%5d</span><span class="s2">; acc: </span><span class="si">%6.2f</span><span class="s2">; ppl: </span><span class="si">%6.2f</span><span class="s2">; xent: &quot;</span> <span class="o">+</span>
-                <span class="s2">&quot;</span><span class="si">%6.2f</span><span class="s2">;  </span><span class="si">%3.0f</span><span class="s2"> src tok/s; </span><span class="si">%3.0f</span><span class="s2"> tgt tok/s; </span><span class="si">%6.0f</span><span class="s2"> s &quot;</span> <span class="o">+</span>
-                <span class="s2">&quot;elapsed&quot;</span><span class="p">)</span> <span class="o">%</span>
-               <span class="p">(</span><span class="n">epoch</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span>  <span class="n">n_batches</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">accuracy</span><span class="p">(),</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">ppl</span><span class="p">(),</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">xent</span><span class="p">(),</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">n_src_words</span> <span class="o">/</span> <span class="p">(</span><span class="n">t</span> <span class="o">+</span> <span class="mf">1e-5</span><span class="p">),</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">n_words</span> <span class="o">/</span> <span class="p">(</span><span class="n">t</span> <span class="o">+</span> <span class="mf">1e-5</span><span class="p">),</span>
-                <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">msg</span></div>
-
-    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">experiment</span><span class="p">,</span> <span class="n">lr</span><span class="p">):</span>
-        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">elapsed_time</span><span class="p">()</span>
-        <span class="n">experiment</span><span class="o">.</span><span class="n">add_scalar_value</span><span class="p">(</span><span class="n">prefix</span> <span class="o">+</span> <span class="s2">&quot;_ppl&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ppl</span><span class="p">())</span>
-        <span class="n">experiment</span><span class="o">.</span><span class="n">add_scalar_value</span><span class="p">(</span><span class="n">prefix</span> <span class="o">+</span> <span class="s2">&quot;_accuracy&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">accuracy</span><span class="p">())</span>
-        <span class="n">experiment</span><span class="o">.</span><span class="n">add_scalar_value</span><span class="p">(</span><span class="n">prefix</span> <span class="o">+</span> <span class="s2">&quot;_tgtper&quot;</span><span class="p">,</span>  <span class="bp">self</span><span class="o">.</span><span class="n">n_words</span> <span class="o">/</span> <span class="n">t</span><span class="p">)</span>
-        <span class="n">experiment</span><span class="o">.</span><span class="n">add_scalar_value</span><span class="p">(</span><span class="n">prefix</span> <span class="o">+</span> <span class="s2">&quot;_lr&quot;</span><span class="p">,</span> <span class="n">lr</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">log_tensorboard</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">writer</span><span class="p">,</span> <span class="n">lr</span><span class="p">,</span> <span class="n">step</span><span class="p">):</span>
-        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">elapsed_time</span><span class="p">()</span>
-        <span class="n">writer</span><span class="o">.</span><span class="n">add_scalar</span><span class="p">(</span><span class="n">prefix</span> <span class="o">+</span> <span class="s2">&quot;/xent&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">xent</span><span class="p">(),</span> <span class="n">step</span><span class="p">)</span>
-        <span class="n">writer</span><span class="o">.</span><span class="n">add_scalar</span><span class="p">(</span><span class="n">prefix</span> <span class="o">+</span> <span class="s2">&quot;/ppl&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ppl</span><span class="p">(),</span> <span class="n">step</span><span class="p">)</span>
-        <span class="n">writer</span><span class="o">.</span><span class="n">add_scalar</span><span class="p">(</span><span class="n">prefix</span> <span class="o">+</span> <span class="s2">&quot;/accuracy&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">accuracy</span><span class="p">(),</span> <span class="n">step</span><span class="p">)</span>
-        <span class="n">writer</span><span class="o">.</span><span class="n">add_scalar</span><span class="p">(</span><span class="n">prefix</span> <span class="o">+</span> <span class="s2">&quot;/tgtper&quot;</span><span class="p">,</span>  <span class="bp">self</span><span class="o">.</span><span class="n">n_words</span> <span class="o">/</span> <span class="n">t</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
-        <span class="n">writer</span><span class="o">.</span><span class="n">add_scalar</span><span class="p">(</span><span class="n">prefix</span> <span class="o">+</span> <span class="s2">&quot;/lr&quot;</span><span class="p">,</span> <span class="n">lr</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span></div>
+    <span class="n">report_manager</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">build_report_manager</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
+    <span class="n">trainer</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">Trainer</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">train_loss</span><span class="p">,</span> <span class="n">valid_loss</span><span class="p">,</span> <span class="n">optim</span><span class="p">,</span>
+                           <span class="n">trunc_size</span><span class="p">,</span> <span class="n">shard_size</span><span class="p">,</span> <span class="n">data_type</span><span class="p">,</span>
+                           <span class="n">norm_method</span><span class="p">,</span> <span class="n">grad_accum_count</span><span class="p">,</span> <span class="n">report_manager</span><span class="p">,</span>
+                           <span class="n">model_saver</span><span class="o">=</span><span class="n">model_saver</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">trainer</span>
 
 
 <div class="viewcode-block" id="Trainer"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer">[docs]</a><span class="k">class</span> <span class="nc">Trainer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -258,24 +213,30 @@
 <span class="sd">    Class that controls the training process.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">            model(:py:class:`onmt.Model.NMTModel`): translation model to train</span>
-
-<span class="sd">            train_loss(:obj:`onmt.Loss.LossComputeBase`):</span>
+<span class="sd">            model(:py:class:`onmt.models.model.NMTModel`):</span>
+<span class="sd">               translation model to train</span>
+<span class="sd">            train_loss(:obj:`onmt.utils.loss.LossComputeBase`):</span>
 <span class="sd">               training loss computation</span>
-<span class="sd">            valid_loss(:obj:`onmt.Loss.LossComputeBase`):</span>
+<span class="sd">            valid_loss(:obj:`onmt.utils.loss.LossComputeBase`):</span>
 <span class="sd">               training loss computation</span>
-<span class="sd">            optim(:obj:`onmt.Optim.Optim`):</span>
+<span class="sd">            optim(:obj:`onmt.utils.optimizers.Optimizer`):</span>
 <span class="sd">               the optimizer responsible for update</span>
 <span class="sd">            trunc_size(int): length of truncated back propagation through time</span>
 <span class="sd">            shard_size(int): compute loss in shards of this size for efficiency</span>
 <span class="sd">            data_type(string): type of the source input: [text|img|audio]</span>
 <span class="sd">            norm_method(string): normalization methods: [sents|tokens]</span>
 <span class="sd">            grad_accum_count(int): accumulate gradients this many times.</span>
+<span class="sd">            report_manager(:obj:`onmt.utils.ReportMgrBase`):</span>
+<span class="sd">                the object that creates reports, or None</span>
+<span class="sd">            model_saver(:obj:`onmt.models.ModelSaverBase`): the saver is</span>
+<span class="sd">                used after each epoch to save a checkpoint.</span>
+<span class="sd">                Thus nothing will be saved if this parameter is None</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">train_loss</span><span class="p">,</span> <span class="n">valid_loss</span><span class="p">,</span> <span class="n">optim</span><span class="p">,</span>
                  <span class="n">trunc_size</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">shard_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">data_type</span><span class="o">=</span><span class="s1">&#39;text&#39;</span><span class="p">,</span>
-                 <span class="n">norm_method</span><span class="o">=</span><span class="s2">&quot;sents&quot;</span><span class="p">,</span> <span class="n">grad_accum_count</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+                 <span class="n">norm_method</span><span class="o">=</span><span class="s2">&quot;sents&quot;</span><span class="p">,</span> <span class="n">grad_accum_count</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">report_manager</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">model_saver</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="c1"># Basic attributes.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">train_loss</span> <span class="o">=</span> <span class="n">train_loss</span>
@@ -286,9 +247,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span> <span class="o">=</span> <span class="n">data_type</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">norm_method</span> <span class="o">=</span> <span class="n">norm_method</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">grad_accum_count</span> <span class="o">=</span> <span class="n">grad_accum_count</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">progress_step</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">report_manager</span> <span class="o">=</span> <span class="n">report_manager</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_saver</span> <span class="o">=</span> <span class="n">model_saver</span>
 
-        <span class="k">assert</span><span class="p">(</span><span class="n">grad_accum_count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">grad_accum_count</span> <span class="o">&gt;</span> <span class="mi">0</span>
         <span class="k">if</span> <span class="n">grad_accum_count</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">assert</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">trunc_size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">),</span> \
                 <span class="sd">&quot;&quot;&quot;To enable accumulated gradients,</span>
@@ -297,18 +259,64 @@
         <span class="c1"># Set model in training mode.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
 
-<div class="viewcode-block" id="Trainer.train"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.train">[docs]</a>    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_iter</span><span class="p">,</span> <span class="n">epoch</span><span class="p">,</span> <span class="n">report_func</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="Trainer.train"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.train">[docs]</a>    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_iter_fct</span><span class="p">,</span> <span class="n">valid_iter_fct</span><span class="p">,</span> <span class="n">start_epoch</span><span class="p">,</span> <span class="n">end_epoch</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The main training loops.</span>
+<span class="sd">        It trains from epoch=`start_epoch` to `end_epoch`</span>
+<span class="sd">        by iterating over training data (i.e. `train_iter_fct`)</span>
+<span class="sd">        and running validation (i.e. iterating over `valid_iter_fct`</span>
+<span class="sd">        In other words it trains for:</span>
+<span class="sd">            n_epochs = (end_epoch + 1 - start_epoch, start_epoch)</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            train_iter_fct(function): a function that returns the train</span>
+<span class="sd">                iterator. e.g. something like</span>
+<span class="sd">                train_iter_fct = lambda: generator(*args, **kwargs)</span>
+<span class="sd">            valid_iter_fct(function): same as train_iter_fct, for valid data</span>
+<span class="sd">            start_epoch(int): epoch number to start from (begining = 0)</span>
+<span class="sd">            end_epoch(int): last epoch number</span>
+
+<span class="sd">        Return:</span>
+<span class="sd">            None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Start training...&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39; * number of epochs: </span><span class="si">%d</span><span class="s1">, starting from Epoch </span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span>
+              <span class="p">(</span><span class="n">end_epoch</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">start_epoch</span><span class="p">,</span> <span class="n">start_epoch</span><span class="p">))</span>
+        <span class="c1"># print(&#39; * batch size: %d&#39; % batch_size)</span>
+        <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start_epoch</span><span class="p">,</span> <span class="n">end_epoch</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+            <span class="c1"># 1. Train for one epoch on the training set.</span>
+            <span class="n">train_iter</span> <span class="o">=</span> <span class="n">train_iter_fct</span><span class="p">()</span>
+            <span class="n">train_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_epoch</span><span class="p">(</span><span class="n">train_iter</span><span class="p">,</span> <span class="n">epoch</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">report_epoch</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span> <span class="n">epoch</span><span class="p">,</span> <span class="n">train_stats</span><span class="o">=</span><span class="n">train_stats</span><span class="p">)</span>
+
+            <span class="c1"># 2. Validate on the validation set.</span>
+            <span class="n">valid_iter</span> <span class="o">=</span> <span class="n">valid_iter_fct</span><span class="p">()</span>
+            <span class="n">valid_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">valid_iter</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">report_epoch</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span> <span class="n">epoch</span><span class="p">,</span> <span class="n">valid_stats</span><span class="o">=</span><span class="n">valid_stats</span><span class="p">)</span>
+
+            <span class="c1"># 3. Update the learning rate</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">epoch_step</span><span class="p">(</span><span class="n">valid_stats</span><span class="o">.</span><span class="n">ppl</span><span class="p">(),</span> <span class="n">epoch</span><span class="p">)</span>
+
+            <span class="c1"># 4. Drop a checkpoint if needed.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">maybe_drop_checkpoint</span><span class="p">(</span><span class="n">epoch</span><span class="p">,</span> <span class="n">valid_stats</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Trainer.train_epoch"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.train_epoch">[docs]</a>    <span class="k">def</span> <span class="nf">train_epoch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_iter</span><span class="p">,</span> <span class="n">epoch</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Train next epoch.</span>
 <span class="sd">        Args:</span>
 <span class="sd">            train_iter: training data iterator</span>
 <span class="sd">            epoch(int): the epoch number</span>
-<span class="sd">            report_func(fn): function for logging</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            stats (:obj:`onmt.Statistics`): epoch loss statistics</span>
+<span class="sd">            stats (:obj:`onmt.utils.Statistics`): epoch loss statistics</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">total_stats</span> <span class="o">=</span> <span class="n">Statistics</span><span class="p">()</span>
-        <span class="n">report_stats</span> <span class="o">=</span> <span class="n">Statistics</span><span class="p">()</span>
+        <span class="n">total_stats</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">Statistics</span><span class="p">()</span>
+        <span class="n">report_stats</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">Statistics</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_report_manager</span><span class="p">(</span><span class="n">start_time</span><span class="o">=</span><span class="n">total_stats</span><span class="o">.</span><span class="n">start_time</span><span class="p">)</span>
+
         <span class="n">idx</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">true_batchs</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">accum</span> <span class="o">=</span> <span class="mi">0</span>
@@ -322,7 +330,7 @@
             <span class="c1"># Dynamic batching</span>
             <span class="n">num_batches</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
 
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">batch</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">train_iter</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">batch</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">train_iter</span><span class="p">):</span>
             <span class="n">cur_dataset</span> <span class="o">=</span> <span class="n">train_iter</span><span class="o">.</span><span class="n">get_cur_dataset</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">train_loss</span><span class="o">.</span><span class="n">cur_dataset</span> <span class="o">=</span> <span class="n">cur_dataset</span>
 
@@ -340,20 +348,17 @@
                     <span class="n">true_batchs</span><span class="p">,</span> <span class="n">total_stats</span><span class="p">,</span>
                     <span class="n">report_stats</span><span class="p">,</span> <span class="n">normalization</span><span class="p">)</span>
 
-                <span class="k">if</span> <span class="n">report_func</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">report_stats</span> <span class="o">=</span> <span class="n">report_func</span><span class="p">(</span>
-                        <span class="n">epoch</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">num_batches</span><span class="p">,</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">progress_step</span><span class="p">,</span>
-                        <span class="n">total_stats</span><span class="o">.</span><span class="n">start_time</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">lr</span><span class="p">,</span>
-                        <span class="n">report_stats</span><span class="p">)</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">progress_step</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">report_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_training</span><span class="p">(</span>
+                    <span class="n">epoch</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">num_batches</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span>
+                    <span class="n">report_stats</span><span class="p">)</span>
 
                 <span class="n">true_batchs</span> <span class="o">=</span> <span class="p">[]</span>
                 <span class="n">accum</span> <span class="o">=</span> <span class="mi">0</span>
                 <span class="n">normalization</span> <span class="o">=</span> <span class="mi">0</span>
                 <span class="n">idx</span> <span class="o">+=</span> <span class="mi">1</span>
 
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">true_batchs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">true_batchs</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_gradient_accumulation</span><span class="p">(</span>
                 <span class="n">true_batchs</span><span class="p">,</span> <span class="n">total_stats</span><span class="p">,</span>
                 <span class="n">report_stats</span><span class="p">,</span> <span class="n">normalization</span><span class="p">)</span>
@@ -365,24 +370,24 @@
         <span class="sd">&quot;&quot;&quot; Validate model.</span>
 <span class="sd">            valid_iter: validate data iterator</span>
 <span class="sd">        Returns:</span>
-<span class="sd">            :obj:`onmt.Statistics`: validation loss statistics</span>
+<span class="sd">            :obj:`nmt.Statistics`: validation loss statistics</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Set model in validating mode.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
 
-        <span class="n">stats</span> <span class="o">=</span> <span class="n">Statistics</span><span class="p">()</span>
+        <span class="n">stats</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">Statistics</span><span class="p">()</span>
 
         <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">valid_iter</span><span class="p">:</span>
             <span class="n">cur_dataset</span> <span class="o">=</span> <span class="n">valid_iter</span><span class="o">.</span><span class="n">get_cur_dataset</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">valid_loss</span><span class="o">.</span><span class="n">cur_dataset</span> <span class="o">=</span> <span class="n">cur_dataset</span>
 
-            <span class="n">src</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">make_features</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="s1">&#39;src&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span><span class="p">)</span>
+            <span class="n">src</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">make_features</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="s1">&#39;src&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span><span class="p">)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span> <span class="o">==</span> <span class="s1">&#39;text&#39;</span><span class="p">:</span>
                 <span class="n">_</span><span class="p">,</span> <span class="n">src_lengths</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">src</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">src_lengths</span> <span class="o">=</span> <span class="kc">None</span>
 
-            <span class="n">tgt</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">make_features</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="s1">&#39;tgt&#39;</span><span class="p">)</span>
+            <span class="n">tgt</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">make_features</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="s1">&#39;tgt&#39;</span><span class="p">)</span>
 
             <span class="c1"># F-prop through the model.</span>
             <span class="n">outputs</span><span class="p">,</span> <span class="n">attns</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">)</span>
@@ -399,8 +404,9 @@
 
         <span class="k">return</span> <span class="n">stats</span></div>
 
-    <span class="k">def</span> <span class="nf">epoch_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ppl</span><span class="p">,</span> <span class="n">epoch</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">update_learning_rate</span><span class="p">(</span><span class="n">ppl</span><span class="p">,</span> <span class="n">epoch</span><span class="p">)</span>
+<div class="viewcode-block" id="Trainer.epoch_step"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.epoch_step">[docs]</a>    <span class="k">def</span> <span class="nf">epoch_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ppl</span><span class="p">,</span> <span class="n">epoch</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Epoch step.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">update_learning_rate</span><span class="p">(</span><span class="n">ppl</span><span class="p">,</span> <span class="n">epoch</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Trainer.drop_checkpoint"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.drop_checkpoint">[docs]</a>    <span class="k">def</span> <span class="nf">drop_checkpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">epoch</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">valid_stats</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Save a resumable checkpoint.</span>
@@ -425,7 +431,7 @@
         <span class="n">checkpoint</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s1">&#39;model&#39;</span><span class="p">:</span> <span class="n">model_state_dict</span><span class="p">,</span>
             <span class="s1">&#39;generator&#39;</span><span class="p">:</span> <span class="n">generator_state_dict</span><span class="p">,</span>
-            <span class="s1">&#39;vocab&#39;</span><span class="p">:</span> <span class="n">onmt</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">save_fields_to_vocab</span><span class="p">(</span><span class="n">fields</span><span class="p">),</span>
+            <span class="s1">&#39;vocab&#39;</span><span class="p">:</span> <span class="n">inputters</span><span class="o">.</span><span class="n">save_fields_to_vocab</span><span class="p">(</span><span class="n">fields</span><span class="p">),</span>
             <span class="s1">&#39;opt&#39;</span><span class="p">:</span> <span class="n">opt</span><span class="p">,</span>
             <span class="s1">&#39;epoch&#39;</span><span class="p">:</span> <span class="n">epoch</span><span class="p">,</span>
             <span class="s1">&#39;optim&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="p">,</span>
@@ -449,14 +455,14 @@
                 <span class="n">trunc_size</span> <span class="o">=</span> <span class="n">target_size</span>
 
             <span class="n">dec_state</span> <span class="o">=</span> <span class="kc">None</span>
-            <span class="n">src</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">make_features</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="s1">&#39;src&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span><span class="p">)</span>
+            <span class="n">src</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">make_features</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="s1">&#39;src&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span><span class="p">)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span> <span class="o">==</span> <span class="s1">&#39;text&#39;</span><span class="p">:</span>
                 <span class="n">_</span><span class="p">,</span> <span class="n">src_lengths</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">src</span>
-                <span class="n">report_stats</span><span class="o">.</span><span class="n">n_src_words</span> <span class="o">+=</span> <span class="n">src_lengths</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+                <span class="n">report_stats</span><span class="o">.</span><span class="n">n_src_words</span> <span class="o">+=</span> <span class="n">src_lengths</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">src_lengths</span> <span class="o">=</span> <span class="kc">None</span>
 
-            <span class="n">tgt_outer</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">make_features</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="s1">&#39;tgt&#39;</span><span class="p">)</span>
+            <span class="n">tgt_outer</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">make_features</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="s1">&#39;tgt&#39;</span><span class="p">)</span>
 
             <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">target_size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">trunc_size</span><span class="p">):</span>
                 <span class="c1"># 1. Create truncated target.</span>
@@ -484,7 +490,41 @@
                     <span class="n">dec_state</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_accum_count</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">step</span><span class="p">()</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Trainer.start_report_manager"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.start_report_manager">[docs]</a>    <span class="k">def</span> <span class="nf">start_report_manager</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_time</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Simple function to start report manager (if any)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_manager</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">start_time</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">report_manager</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">report_manager</span><span class="o">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="n">start_time</span></div>
+
+<div class="viewcode-block" id="Trainer.report_training"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.report_training">[docs]</a>    <span class="k">def</span> <span class="nf">report_training</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Simple function to report training stats (if report_manager is set)</span>
+<span class="sd">        see `onmt.utils.ReportManagerBase.report_training` for doc</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_manager</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_manager</span><span class="o">.</span><span class="n">report_training</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Trainer.report_epoch"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.report_epoch">[docs]</a>    <span class="k">def</span> <span class="nf">report_epoch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Simple function to report epoch stats (if report_manager is set)</span>
+<span class="sd">        see `onmt.utils.ReportManagerBase.report_epoch` for doc</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_manager</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_manager</span><span class="o">.</span><span class="n">report_epoch</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Trainer.maybe_drop_checkpoint"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.maybe_drop_checkpoint">[docs]</a>    <span class="k">def</span> <span class="nf">maybe_drop_checkpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Drop a checkpoint (i.e. save the model) if a model saver is set</span>
+<span class="sd">        see `onmt.models.ModelSaverBase.maybe_save` for doc</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_saver</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model_saver</span><span class="o">.</span><span class="n">maybe_save</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div></div>
 </pre></div>
 
            </div>
