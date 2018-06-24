@@ -129,10 +129,6 @@ def main(opt):
     if opt.tensorboard:
         trainer.report_manager.tensorboard_writer.close()
 
-    opts.add_md_help_argument(parser)
-    opts.model_opts(parser)
-    opts.train_opts(parser)
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
