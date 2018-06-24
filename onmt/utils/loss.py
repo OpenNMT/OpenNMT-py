@@ -141,7 +141,7 @@ class LossComputeBase(nn.Module):
         shard_state = self._make_shard_state(batch, output, range_, attns)
         for shard in shards(shard_state, shard_size):
             loss, stats = self._compute_loss(batch, **shard)
-            loss.div(float(normalization)).backward(retain_graph=True)
+            loss.div(float(normalization)).backward()
             batch_stats.update(stats)
 
         return batch_stats

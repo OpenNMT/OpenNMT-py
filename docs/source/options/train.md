@@ -113,8 +113,8 @@ Lambda value for coverage.
 Path prefix to the ".train.pt" and ".valid.pt" file path from preprocess.py
 
 * **-save_model [model]** 
-Model filename (the model will be saved as <save_model>_step_N.pt where N
-is the current step
+Model filename (the model will be saved as <save_model>_epochN_PPL.pt where PPL
+is the validation perplexity
 
 * **-gpuid []** 
 Use CUDA on the listed devices.
@@ -123,6 +123,9 @@ Use CUDA on the listed devices.
 Random seed used for the experiments reproducibility.
 
 ### **Initialization**:
+* **-start_epoch [1]** 
+The epoch from which to start
+
 * **-param_init [0.1]** 
 Parameters are initialized over uniform distribution with support (-param_init,
 param_init). Use 0 to not use initialization
@@ -170,8 +173,8 @@ Maximum batch size for validation
 Maximum batches of words in a sequence to run the generator on in parallel.
 Higher is faster, but uses more memory.
 
-* **-train_steps [1]** 
-The number of steps to train
+* **-epochs [13]** 
+Number of training epochs
 
 * **-optim [sgd]** 
 Optimization method.
@@ -211,22 +214,19 @@ smoothed by epsilon / (vocab_size - 1). Set to zero to turn off label smoothing.
 For more detailed information, see: https://arxiv.org/abs/1512.00567
 
 ### **Optimization- Rate**:
-* **-valid_steps [8]** 
-Run a validation each X steps
-
 * **-learning_rate [1.0]** 
 Starting learning rate. Recommended settings: sgd = 1, adagrad = 0.1, adadelta =
 1, adam = 0.001
 
 * **-learning_rate_decay [0.5]** 
-If update_learning_rate, decay learning rate by this much if step
-has gone past start_decay_steps
+If update_learning_rate, decay learning rate by this much if (i) perplexity does
+not decrease on the validation set or (ii) epoch has gone past start_decay_at
 
-* **-start_decay_steps [8]** 
-Start decaying after these steps
+* **-start_decay_at [8]** 
+Start decaying every epoch after and including this epoch
 
-* **-decay_steps []** 
-Decay each this number of steps
+* **-start_checkpoint_at []** 
+Start checkpointing every epoch after and including this epoch
 
 * **-decay_method []** 
 Use a custom decay rate.

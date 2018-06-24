@@ -6,6 +6,7 @@ import torch
 def average_models(model_files):
     vocab = None
     opt = None
+    epoch = None
     avg_model = None
     avg_generator = None
 
@@ -15,7 +16,7 @@ def average_models(model_files):
         generator_weights = m['generator']
 
         if i == 0:
-            vocab, opt = m['vocab'], m['opt']
+            vocab, opt, epoch = m['vocab'], m['opt'], m['epoch']
             avg_model = model_weights
             avg_generator = generator_weights
         else:
@@ -25,7 +26,7 @@ def average_models(model_files):
             for (k, v) in avg_generator.items():
                 avg_generator[k].mul_(i).add_(generator_weights[k]).div_(i + 1)
 
-    final = {"vocab": vocab, "opt": opt, "optim": None,
+    final = {"vocab": vocab, "opt": opt, "epoch": epoch, "optim": None,
              "generator": avg_generator, "model": avg_model}
     return final
 

@@ -135,11 +135,6 @@ class Translator(object):
                 "beam_parent_ids": [],
                 "scores": [],
                 "log_probs": []}
-        self.encoder_time = 0
-        self.decoder_time = 0
-        self.generator_time = 0
-        self.beam_time = 0
-        self.other_time = 0
 
     def translate(self,
                   src_path=None,

@@ -2,9 +2,9 @@
 
 ## How do I use Pretrained embeddings (e.g. GloVe)?
 
-Using vocabularies from OpenNMT-py preprocessing outputs, `embeddings_to_torch.py` to generate encoder and decoder embeddings initialized with GloVe’s values.
+Using vocabularies from OpenNMT-py preprocessing outputs, `embeddings_to_torch.py` to generate encoder and decoder embeddings initialized with GloVes values.
 
-the script is a slightly modified version of ylhsieh’s one2.
+the script is a slightly modified version of ylhsiehs one2.
 
 Usage:
 
@@ -72,8 +72,7 @@ setup. We have confirmed the following command can replicate their WMT results.
 python  train.py -data /tmp/de2/data -save_model /tmp/extra -gpuid 1 \
         -layers 6 -rnn_size 512 -word_vec_size 512   \
         -encoder_type transformer -decoder_type transformer -position_encoding \
-        -train_steps 100000 -valid_steps 10000 -save_checkpoint_steps 5000 \
-        -max_generator_batches 32 -dropout 0.1 \
+        -epochs 50  -max_generator_batches 32 -dropout 0.1 \
         -batch_size 4096 -batch_type tokens -normalization tokens  -accum_count 4 \
         -optim adam -adam_beta2 0.998 -decay_method noam -warmup_steps 8000 -learning_rate 2 \
         -max_grad_norm 0 -param_init 0  -param_init_glorot \

@@ -47,9 +47,9 @@ The following OpenNMT features are implemented:
 - [Speech-to-text processing](http://opennmt.net/OpenNMT-py/speech2text.html)
 - ["Attention is all you need"](http://opennmt.net/OpenNMT-py/FAQ.html#how-do-i-use-the-transformer-model)
 - Inference time loss functions.
-- multi-GPU (Torch Distributed)
 
 Beta Features (committed):
+- multi-GPU
 - Structured attention
 - [Conv2Conv convolution model]
 - SRU "RNNs faster than CNN" paper
@@ -138,4 +138,3 @@ http://opennmt.net/Models-py/
   doi       = {10.18653/v1/P17-4012}
 }
 ```
-

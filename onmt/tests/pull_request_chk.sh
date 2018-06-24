@@ -162,7 +162,7 @@ ${PYTHON} preprocess.py -train_src /tmp/src-val.txt \
 		     -tgt_vocab_size 1000        >> ${LOG_FILE} 2>&1
 ${PYTHON} train.py -data /tmp/q -rnn_size 2 -batch_size 10 \
 		-word_vec_size 5 -report_every 5        \
-		-rnn_size 10 -train_steps 1000        >> ${LOG_FILE} 2>&1
+		-rnn_size 10 -epochs 1        >> ${LOG_FILE} 2>&1
 ${PYTHON} translate.py -model ${TEST_DIR}/test_model2.pt  \
 		    -src ${DATA_DIR}/morph/src.valid   \
 		    -verbose -batch_size 10     \
@@ -190,7 +190,7 @@ ${PYTHON} preprocess.py -train_src /tmp/src-val.txt \
              -dynamic_dict               >> ${LOG_FILE} 2>&1
 ${PYTHON} train.py -data /tmp/q -rnn_size 2 -batch_size 10 \
 		-word_vec_size 5 -report_every 5        \
-		-rnn_size 10 -train_steps 1000 -copy_attn       >> ${LOG_FILE} 2>&1
+		-rnn_size 10 -epochs 1 -copy_attn       >> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 
@@ -208,7 +208,7 @@ ${PYTHON} preprocess.py -data_type img \
 		     -save_data /tmp/im2text/q  >> ${LOG_FILE} 2>&1
 ${PYTHON} train.py -model_type img \
 	        -data /tmp/im2text/q -rnn_size 2 -batch_size 10 \
-		-word_vec_size 5 -report_every 5 -rnn_size 10 -train_steps 1000  >> ${LOG_FILE} 2>&1
+		-word_vec_size 5 -report_every 5 -rnn_size 10 -epochs 1  >> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 
@@ -226,7 +226,7 @@ ${PYTHON} preprocess.py -data_type audio \
 		     -save_data /tmp/speech/q  >> ${LOG_FILE} 2>&1
 ${PYTHON} train.py -model_type audio \
 	        -data /tmp/speech/q -rnn_size 2 -batch_size 10 \
-		-word_vec_size 5 -report_every 5 -rnn_size 10 -train_steps 1000  >> ${LOG_FILE} 2>&1
+		-word_vec_size 5 -report_every 5 -rnn_size 10 -epochs 1  >> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 
