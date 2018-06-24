@@ -1,11 +1,8 @@
-import onmt.io
-import onmt.Models
-import onmt.Loss
-import onmt.translate
-import onmt.opts
-from onmt.Trainer import Trainer, Statistics
-from onmt.Optim import Optim
+""" Main entry point of the ONMT library """
+from onmt.trainer import Trainer
+import sys
+import onmt.utils.optimizers
+onmt.utils.optimizers.Optim = onmt.utils.optimizers.Optimizer
+sys.modules["onmt.Optim"] = onmt.utils.optimizers
 
-# For flake8 compatibility
-__all__ = [onmt.Loss, onmt.Models, onmt.opts,
-           Trainer, Optim, Statistics, onmt.io, onmt.translate]
+__all__ = ["Trainer"]

@@ -1,5 +1,9 @@
+#!/usr/bin/env python
+""" Implementation of all available options """
+from __future__ import print_function
+
 import argparse
-from onmt.modules.SRU import CheckSRU
+from onmt.models.SRU import CheckSRU
 
 
 def model_opts(parser):
@@ -118,6 +122,7 @@ def model_opts(parser):
 
 
 def preprocess_opts(parser):
+    """ Pre-procesing options """
     # Data options
     group = parser.add_argument_group('Data')
     group.add_argument('-data_type', default="text",
@@ -208,7 +213,7 @@ def preprocess_opts(parser):
 
 
 def train_opts(parser):
-    # Model loading/saving options
+    """ Training and saving options """
 
     group = parser.add_argument_group('General')
     group.add_argument('-data', required=True,
@@ -376,6 +381,7 @@ def train_opts(parser):
 
 
 def translate_opts(parser):
+    """ Translation / inference options """
     group = parser.add_argument_group('Model')
     group.add_argument('-model', required=True,
                        help='Path to model .pt file')
@@ -384,10 +390,10 @@ def translate_opts(parser):
     group.add_argument('-data_type', default="text",
                        help="Type of the source input. Options: [text|img].")
 
-    group.add_argument('-src',   required=True,
+    group.add_argument('-src', required=True,
                        help="""Source sequence to decode (one line per
                        sequence)""")
-    group.add_argument('-src_dir',   default="",
+    group.add_argument('-src_dir', default="",
                        help='Source directory for image or audio files')
     group.add_argument('-tgt',
                        help='True target sequence (optional)')
@@ -408,7 +414,7 @@ def translate_opts(parser):
                        help="Share source and target vocabulary")
 
     group = parser.add_argument_group('Beam')
-    group.add_argument('-beam_size',  type=int, default=5,
+    group.add_argument('-beam_size', type=int, default=5,
                        help='Beam size')
     group.add_argument('-min_length', type=int, default=0,
                        help='Minimum prediction length')
@@ -480,6 +486,7 @@ def translate_opts(parser):
 
 
 def add_md_help_argument(parser):
+    """ md help parser """
     parser.add_argument('-md', action=MarkdownHelpAction,
                         help='print Markdown-formatted help text and exit.')
 
@@ -527,6 +534,8 @@ class MarkdownHelpFormatter(argparse.HelpFormatter):
 
 
 class MarkdownHelpAction(argparse.Action):
+    """ MD help action """
+
     def __init__(self, option_strings,
                  dest=argparse.SUPPRESS, default=argparse.SUPPRESS,
                  **kwargs):
@@ -544,11 +553,13 @@ class MarkdownHelpAction(argparse.Action):
 
 
 class DeprecateAction(argparse.Action):
+    """ Deprecate action """
+
     def __init__(self, option_strings, dest, help=None, **kwargs):
         super(DeprecateAction, self).__init__(option_strings, dest, nargs=0,
                                               help=help, **kwargs)
 
     def __call__(self, parser, namespace, values, flag_name):
-        help = self.help if self.help is not None else ""
+        help = self.help if self.mdhelp is not None else ""
         msg = "Flag '%s' is deprecated. %s" % (flag_name, help)
         raise argparse.ArgumentTypeError(msg)
