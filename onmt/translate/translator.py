@@ -161,8 +161,11 @@ class Translator(object):
             attn_debug (bool): enables the attention logging
 
         Returns:
-            all_scores: list of `batch_size` lists of `n_best` scores
-            all_predictions: list of `batch_size` lists of `n_best` predictions
+            (`list`, `list`)
+
+            * all_scores is a list of `batch_size` lists of `n_best` scores
+            * all_predictions is a list of `batch_size` lists
+                of `n_best` predictions
         """
         assert src_data_iter is not None or src_path is not None
 
