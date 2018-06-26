@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(name='OpenNMT-py',
       description='A python implementation of OpenNMT',
-      version='0.4',
+      version='0.2',
 
       packages=['onmt', 'onmt.encoders', 'onmt.modules', 'onmt.tests',
                 'onmt.translate', 'onmt.decoders', 'onmt.inputters',
