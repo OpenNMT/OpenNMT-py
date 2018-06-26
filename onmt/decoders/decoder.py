@@ -104,11 +104,11 @@ class RNNDecoderBase(nn.Module):
         self._reuse_copy_attn = reuse_copy_attn
 
     def forward(self, tgt, memory_bank, state, memory_lengths=None,
-            step=None):
+                step=None):
         """
         Args:
             tgt (`LongTensor`): sequences of padded tokens
-                                `[tgt_len x batch x nfeats]`.
+                 `[tgt_len x batch x nfeats]`.
             memory_bank (`FloatTensor`): vectors from the encoder
                  `[src_len x batch x hidden]`.
             state (:obj:`onmt.models.DecoderState`):
