@@ -189,15 +189,6 @@ class TransformerDecoder(nn.Module):
             self._copy = True
         self.layer_norm = onmt.modules.LayerNorm(hidden_size)
 
-    def _init_cache(self, memory_bank, memory_lengths=None):
-        cache = {}
-        batch_size = memory_bank.size(1)
-        depth = memory_bank.size(-1)
-        for l in range(self.num_layers):
-            layer_cache = {"prev_g": torch.zeros((batch_size, 1, depth))}
-            cache["layer_{}".format(l)] = layer_cache
-        return cache
-
     def forward(self, tgt, memory_bank, state, memory_lengths=None,
                 step=None, cache=None):
         """
@@ -274,6 +265,8 @@ class TransformerDecoder(nn.Module):
 
     def init_decoder_state(self, src, memory_bank, enc_hidden):
         """ Init decoder state """
+        state = TransformerDecoderState(src)
+        state._init_cache(memory_bank, self.num_layers)
         return TransformerDecoderState(src)
 
 
@@ -289,6 +282,7 @@ class TransformerDecoderState(DecoderState):
         self.src = src
         self.previous_input = None
         self.previous_layer_inputs = None
+        self.cache = None
 
     @property
     def _all(self):
@@ -308,6 +302,15 @@ class TransformerDecoderState(DecoderState):
         state.previous_input = new_input
         state.previous_layer_inputs = previous_layer_inputs
         return state
+
+    def _init_cache(self, memory_bank, num_layers):
+        cache = {}
+        batch_size = memory_bank.size(1)
+        depth = memory_bank.size(-1)
+        for l in range(num_layers):
+            layer_cache = {"prev_g": torch.zeros((batch_size, 1, depth))}
+            cache["layer_{}".format(l)] = layer_cache
+        return cache
 
     def repeat_beam_size_times(self, beam_size):
         """ Repeat beam_size times along batch dimension. """
