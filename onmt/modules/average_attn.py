@@ -34,11 +34,13 @@ class AverageAttention(nn.Module):
         https://arxiv.org/abs/1805.00631 -- Figure 3
 
         Args:
-          batch_size: batch size (int)
-          inputs_len: length of the inputs (int)
+            batch_size (int): batch size
+            inputs_len (int): length of the inputs
 
         Returns:
-          A Tensor of shape [batch_size, input_len, input_len]
+            (`FloatTensor`):
+
+            * A Tensor of shape `[batch_size x input_len x input_len]`
         """
 
         triangle = torch.tril(torch.ones((inputs_len, inputs_len)))
@@ -54,14 +56,14 @@ class AverageAttention(nn.Module):
         https://arxiv.org/abs/1805.00631 -- Equations (1) (5) (6)
 
         Args:
-          inputs: sequence to average -- Tensor of shape
-              [batch_size, input_len, dimension]
-          mask_or_step: if cache is set, this is assumed
-              to be the current step of the
-              dynamic decoding. Otherwise, it is the mask matrix
-              used to compute the cumulative average.
-          cache: a dictionary containing the cumulative average
-              of the previous step.
+            inputs (`FloatTensor`): sequence to average
+                `[batch_size x input_len x dimension]`
+            mask_or_step: if cache is set, this is assumed
+                to be the current step of the
+                dynamic decoding. Otherwise, it is the mask matrix
+                used to compute the cumulative average.
+            cache: a dictionary containing the cumulative average
+                of the previous step.
         """
         if layer_cache is not None:
             step = mask_or_step
@@ -77,11 +79,13 @@ class AverageAttention(nn.Module):
     def forward(self, inputs, mask=None, layer_cache=None, step=None):
         """
         Args:
-          inputs: [ batch_size, input_len, model_dim ]
+            inputs (`FloatTensor`): `[batch_size x input_len x model_dim]`
 
         Returns:
-          gating_outputs: [ batch_size, 1, model_dim ]
-          average_outputs: average attention - [ batch_size, 1, model_dim ]
+            (`FloatTensor`, `FloatTensor`):
+
+            * gating_outputs `[batch_size x 1 x model_dim]`
+            * average_outputs average attention `[batch_size x 1 x model_dim]`
         """
         batch_size = inputs.size(0)
         inputs_len = inputs.size(1)
