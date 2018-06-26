@@ -15,12 +15,12 @@ class TransformerEncoderLayer(nn.Module):
     A single layer of the transformer encoder.
 
     Args:
-        size(int): the dimension of keys/values/queries in
+        size (int): the dimension of keys/values/queries in
                    MultiHeadedAttention, also the input size of
                    the first-layer of the PositionwiseFeedForward.
-        droput(float): dropout probability(0-1.0).
-        head_count(int): the number of head for MultiHeadedAttention.
-        hidden_size(int): the second-layer of the PositionwiseFeedForward.
+        dropout (float): dropout probability(0-1.0).
+        head_count (int): the number of head for MultiHeadedAttention.
+        hidden_size (int): the second-layer of the PositionwiseFeedForward.
     """
 
     def __init__(self, size, dropout,
@@ -40,11 +40,13 @@ class TransformerEncoderLayer(nn.Module):
         Transformer Encoder Layer definition.
 
         Args:
-            inputs: [ batch_size, src_len, model_dim ]
-            mask: [ batch_size, src_len, src_len ]
+            inputs (`FloatTensor`): `[batch_size x src_len x model_dim]`
+            mask (`LongTensor`): `[batch_size x src_len x src_len]`
 
         Returns:
-            outputs: [ batch_size, src_len, model_dim ]
+            (`FloatTensor`):
+
+            * outputs `[batch_size x src_len x model_dim]`
         """
         input_norm = self.layer_norm(inputs)
         context, _ = self.self_attn(input_norm, input_norm, input_norm,
@@ -75,9 +77,12 @@ class TransformerEncoder(EncoderBase):
         dropout (float): dropout parameters
         embeddings (:obj:`onmt.modules.Embeddings`):
           embeddings to use, should have positional encodings
+
     Returns:
-        embeddings: [ src_len, batch_size, model_dim ]
-        memory_bank: [ src_len, batch_size, model_dim ]
+        (`FloatTensor`, `FloatTensor`):
+
+        * embeddings `[src_len x batch_size x model_dim]`
+        * memory_bank `[src_len x batch_size x model_dim]`
     """
 
     def __init__(self, num_layers, hidden_size,
