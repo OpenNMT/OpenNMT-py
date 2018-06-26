@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 """ Optimizers class """
 from __future__ import print_function
-
 import torch
 import torch.optim as optim
 from torch.nn.utils import clip_grad_norm_
-from onmt.utils.misc import use_gpu
+
+from onmt.utils import use_gpu
 
 
 def build_optim(model, opt, checkpoint):
@@ -237,7 +237,6 @@ class Optimizer(object):
             self.optimizer.param_groups[0]['lr'] = self.learning_rate
 
 
-# Debugging method for showing the optimizer state
 def _show_optimizer_state(optim):
     """ debug optimizer """
     print("optim.optimizer.state_dict()['state'] keys: ")

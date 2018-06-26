@@ -4,6 +4,11 @@ import torch.nn as nn
 
 from onmt.utils.misc import aeq, sequence_mask
 
+# This class is mainly used by decoder.py for RNNs but also
+# by the CNN / transformer decoder when copy attention is used
+# CNN has its own attention mechanism ConvMultiStepAttention
+# Transformer has its own MultiHeadedAttention
+
 
 class GlobalAttention(nn.Module):
     """
@@ -199,6 +204,7 @@ class GlobalAttention(nn.Module):
             batch_, source_l_ = align_vectors.size()
             aeq(batch, batch_)
             aeq(source_l, source_l_)
+
         else:
             attn_h = attn_h.transpose(0, 1).contiguous()
             align_vectors = align_vectors.transpose(0, 1).contiguous()

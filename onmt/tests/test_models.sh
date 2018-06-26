@@ -32,6 +32,7 @@
 ###             ./test_models set_debug all 
 ###  
 
+
 PYTHON_BIN=python
 
 
@@ -246,11 +247,6 @@ transformer(){
     maybe_translate
     rm_tmp_checkpoints
 
-    #$PYTHON_BIN train.py -data "$DATA_PATH" -save_model "$MODEL_PATH" -batch_type tokens -batch_size 128 -accum_count 4 \
-    # -layers 4 -rnn_size 128 -word_vec_size 128  -encoder_type transformer -decoder_type transformer \
-    # -epochs 10 -gpuid "$GPUID" -max_generator_batches 4 -dropout 0.1 -normalization tokens \
-    # -max_grad_norm 0 -optim sparseadam -decay_method noam -learning_rate 2 \
-    # -position_encoding -param_init 0 -warmup_steps 8000 -param_init_glorot -adam_beta2 0.998
 }
 
 

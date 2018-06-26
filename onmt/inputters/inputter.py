@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-"""Define generic inputters."""
-
-from __future__ import print_function
+"""
+    Defining general functions for inputters
+"""
 import glob
 import os
 from collections import Counter, defaultdict, OrderedDict
@@ -75,7 +75,7 @@ def save_fields_to_vocab(fields):
     vocab = []
     for k, f in fields.items():
         if f is not None and 'vocab' in f.__dict__:
-            f.vocab.stoi = dict(f.vocab.stoi)
+            f.vocab.stoi = f.vocab.stoi
             vocab.append((k, f.vocab))
     return vocab
 
@@ -178,8 +178,7 @@ def collect_feature_vocabs(fields, side):
 
 
 def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
-                  src_dir=None,
-                  tgt_data_iter=None, tgt_path=None,
+                  src_dir=None, tgt_data_iter=None, tgt_path=None,
                   src_seq_length=0, tgt_seq_length=0,
                   src_seq_length_trunc=0, tgt_seq_length_trunc=0,
                   dynamic_dict=True, sample_rate=0,
@@ -473,9 +472,8 @@ class DatasetLazyIter(object):
 def build_dataset_iter(datasets, fields, opt, is_train=True):
     """
     This returns user-defined train/validate data iterator for the trainer
-    to iterate over during each train epoch. We implement simple
-    ordered iterator strategy here, but more sophisticated strategy
-    like curriculum learning is ok too.
+    to iterate over. We implement simple ordered iterator strategy here,
+    but more sophisticated strategy like curriculum learning is ok too.
     """
     batch_size = opt.batch_size if is_train else opt.valid_batch_size
     if is_train and opt.batch_type == "tokens":
@@ -500,7 +498,12 @@ def build_dataset_iter(datasets, fields, opt, is_train=True):
             return max(src_elements, tgt_elements)
     else:
         batch_size_fn = None
-    device = opt.gpuid[0] if opt.gpuid else -1
+    # device = opt.device_id if opt.gpuid else -1
+    # breaking change torchtext 0.3
+    if opt.gpuid:
+        device = "cuda"
+    else:
+        device = "cpu"
 
     return DatasetLazyIter(datasets, fields, batch_size, batch_size_fn,
                            device, is_train)

@@ -162,7 +162,7 @@ ${PYTHON} preprocess.py -train_src /tmp/src-val.txt \
 		     -tgt_vocab_size 1000        >> ${LOG_FILE} 2>&1
 ${PYTHON} train.py -data /tmp/q -rnn_size 2 -batch_size 10 \
 		-word_vec_size 5 -report_every 5        \
-		-rnn_size 10 -epochs 1                 >> ${LOG_FILE} 2>&1
+		-rnn_size 10 -epochs 1        >> ${LOG_FILE} 2>&1
 ${PYTHON} translate.py -model ${TEST_DIR}/test_model2.pt  \
 		    -src ${DATA_DIR}/morph/src.valid   \
 		    -verbose -batch_size 10     \

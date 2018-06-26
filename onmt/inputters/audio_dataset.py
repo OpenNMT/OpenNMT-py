@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
-""" Dataset for data_type=='audio'"""
-
+"""
+    AudioDataset
+"""
 import codecs
 import os
 
 import torch
 import torchtext
 
-from onmt.inputters.dataset_base import DatasetBase,\
-     PAD_WORD, BOS_WORD, EOS_WORD
+from onmt.inputters.dataset_base import DatasetBase, PAD_WORD, BOS_WORD, \
+    EOS_WORD
 
 
 class AudioDataset(DatasetBase):
@@ -141,7 +142,6 @@ class AudioDataset(DatasetBase):
         assert (src_dir is not None) and os.path.exists(src_dir),\
             "src_dir must be a valid directory if data_type is audio"
 
-        # global torchaudio, librosa, np
         import torchaudio
         import librosa
         import numpy as np
@@ -209,7 +209,7 @@ class AudioDataset(DatasetBase):
         """
         fields = {}
 
-        def make_audio(data, vocab, is_train):
+        def make_audio(data, vocab):
             """ ? """
             nfft = data[0].size(0)
             t = max([t.size(1) for t in data])
@@ -219,7 +219,7 @@ class AudioDataset(DatasetBase):
             return sounds
 
         fields["src"] = torchtext.data.Field(
-            use_vocab=False, tensor_type=torch.FloatTensor,
+            use_vocab=False, dtype=torch.float,
             postprocessing=make_audio, sequential=False)
 
         for j in range(n_src_features):
@@ -235,7 +235,7 @@ class AudioDataset(DatasetBase):
                 torchtext.data.Field(init_token=BOS_WORD, eos_token=EOS_WORD,
                                      pad_token=PAD_WORD)
 
-        def make_src(data, vocab, is_train):
+        def make_src(data, vocab):
             """ ? """
             src_size = max([t.size(0) for t in data])
             src_vocab_size = max([t.max() for t in data]) + 1
@@ -246,10 +246,10 @@ class AudioDataset(DatasetBase):
             return alignment
 
         fields["src_map"] = torchtext.data.Field(
-            use_vocab=False, tensor_type=torch.FloatTensor,
+            use_vocab=False, dtype=torch.float,
             postprocessing=make_src, sequential=False)
 
-        def make_tgt(data, vocab, is_train):
+        def make_tgt(data, vocab):
             """ ? """
             tgt_size = max([t.size(0) for t in data])
             alignment = torch.zeros(tgt_size, len(data)).long()
@@ -258,11 +258,11 @@ class AudioDataset(DatasetBase):
             return alignment
 
         fields["alignment"] = torchtext.data.Field(
-            use_vocab=False, tensor_type=torch.LongTensor,
+            use_vocab=False, dtype=torch.long,
             postprocessing=make_tgt, sequential=False)
 
         fields["indices"] = torchtext.data.Field(
-            use_vocab=False, tensor_type=torch.LongTensor,
+            use_vocab=False, dtype=torch.long,
             sequential=False)
 
         return fields

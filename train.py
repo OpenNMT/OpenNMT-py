@@ -1,11 +1,13 @@
 #!/usr/bin/env python
-""" Main training workflow """
 # -*- coding: utf-8 -*-
-
+"""
+    Main training workflow
+"""
 from __future__ import print_function
 from __future__ import division
 
 import argparse
+
 import os
 import sys
 import random

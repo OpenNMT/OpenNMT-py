@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-import onmt
+import onmt.inputters
 
 
 def build_model_saver(model_opt, opt, model, fields, optim):

@@ -3,13 +3,11 @@ Implementation of "Attention is All You Need"
 """
 
 import torch.nn as nn
-from torch.autograd import Variable
 
 import onmt
 from onmt.encoders.encoder import EncoderBase
-from onmt.utils.misc import aeq
-from onmt.utils.transformer_util import PositionwiseFeedForward
-MAX_SIZE = 5000
+# from onmt.utils.misc import aeq
+from onmt.modules.position_ffn import PositionwiseFeedForward
 
 
 class TransformerEncoderLayer(nn.Module):
@@ -17,12 +15,12 @@ class TransformerEncoderLayer(nn.Module):
     A single layer of the transformer encoder.
 
     Args:
-            size(int): the dimension of keys/values/queries in
-                       MultiHeadedAttention, also the input size of
-                       the first-layer of the PositionwiseFeedForward.
-            droput(float): dropout probability(0-1.0).
-            head_count(int): the number of head for MultiHeadedAttention.
-            hidden_size(int): the second-layer of the PositionwiseFeedForward.
+        size (int): the dimension of keys/values/queries in
+                   MultiHeadedAttention, also the input size of
+                   the first-layer of the PositionwiseFeedForward.
+        dropout (float): dropout probability(0-1.0).
+        head_count (int): the number of head for MultiHeadedAttention.
+        hidden_size (int): the second-layer of the PositionwiseFeedForward.
     """
 
     def __init__(self, size, dropout,
@@ -38,6 +36,18 @@ class TransformerEncoderLayer(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, inputs, mask):
+        """
+        Transformer Encoder Layer definition.
+
+        Args:
+            inputs (`FloatTensor`): `[batch_size x src_len x model_dim]`
+            mask (`LongTensor`): `[batch_size x src_len x src_len]`
+
+        Returns:
+            (`FloatTensor`):
+
+            * outputs `[batch_size x src_len x model_dim]`
+        """
         input_norm = self.layer_norm(inputs)
         context, _ = self.self_attn(input_norm, input_norm, input_norm,
                                     mask=mask)
@@ -61,14 +71,18 @@ class TransformerEncoder(EncoderBase):
           B --> C
           C --> O
 
-
-
     Args:
-       num_layers (int): number of encoder layers
-       hidden_size (int): number of hidden units
-       dropout (float): dropout parameters
-       embeddings (:obj:`onmt.modules.Embeddings`):
+        num_layers (int): number of encoder layers
+        hidden_size (int): number of hidden units
+        dropout (float): dropout parameters
+        embeddings (:obj:`onmt.modules.Embeddings`):
           embeddings to use, should have positional encodings
+
+    Returns:
+        (`FloatTensor`, `FloatTensor`):
+
+        * embeddings `[src_len x batch_size x model_dim]`
+        * memory_bank `[src_len x batch_size x model_dim]`
     """
 
     def __init__(self, num_layers, hidden_size,
@@ -90,14 +104,15 @@ class TransformerEncoder(EncoderBase):
 
         out = emb.transpose(0, 1).contiguous()
         words = src[:, :, 0].transpose(0, 1)
-        # CHECKS
-        out_batch, out_len, _ = out.size()
-        w_batch, w_len = words.size()
-        aeq(out_batch, w_batch)
-        aeq(out_len, w_len)
+        # CHECKS - commented for performance issue
+        # out_batch, out_len, _ = out.size()
+        # w_batch, w_len = words.size()
+        # aeq(out_batch, w_batch)
+        # aeq(out_len, w_len)
         # END CHECKS
 
         # Make mask.
+        w_batch, w_len = words.size()
         padding_idx = self.embeddings.word_padding_idx
         mask = words.data.eq(padding_idx).unsqueeze(1) \
             .expand(w_batch, w_len, w_len)
@@ -106,4 +121,4 @@ class TransformerEncoder(EncoderBase):
             out = self.transformer[i](out, mask)
         out = self.layer_norm(out)
 
-        return Variable(emb.data), out.transpose(0, 1).contiguous()
+        return emb, out.transpose(0, 1).contiguous()

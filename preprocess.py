@@ -1,6 +1,8 @@
 #!/usr/bin/env python
-""" Pre-process Data / features files and build vocabulary """
 # -*- coding: utf-8 -*-
+"""
+    Pre-process Data / features files and build vocabulary
+"""
 
 from __future__ import print_function
 
@@ -77,7 +79,7 @@ def build_save_in_shards(src_corpus, tgt_corpus, fields,
     """
 
     corpus_size = os.path.getsize(src_corpus)
-    if corpus_size > 10 * (1024**2) and opt.max_shard_size == 0:
+    if corpus_size > 10 * (1024 ** 2) and opt.max_shard_size == 0:
         if logger:
             logger.info("Warning. The corpus %s is larger than 10M bytes, "
                         "you can set '-max_shard_size' to process it by "

@@ -28,7 +28,6 @@ def build_loss_compute(model, tgt_vocab, opt, train=True):
         compute = NMTLossCompute(
             model.generator, tgt_vocab,
             label_smoothing=opt.label_smoothing if train else 0.0)
-
     compute.to(device)
 
     return compute
@@ -155,7 +154,7 @@ class LossComputeBase(nn.Module):
             target (:obj:`FloatTensor`): true targets
 
         Returns:
-            :obj:`Statistics` : statistics for this batch.
+            :obj:`onmt.utils.Statistics` : statistics for this batch.
         """
         pred = scores.max(1)[1]
         non_padding = target.ne(self.padding_idx)
