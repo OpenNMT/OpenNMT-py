@@ -253,8 +253,41 @@
 <dl class="method">
 <dt id="onmt.translate.Translator.translate">
 <code class="descname">translate</code><span class="sig-paren">(</span><em>src_path=None</em>, <em>src_data_iter=None</em>, <em>tgt_path=None</em>, <em>tgt_data_iter=None</em>, <em>src_dir=None</em>, <em>batch_size=None</em>, <em>attn_debug=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translator.html#Translator.translate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translator.translate" title="Permalink to this definition">¶</a></dt>
-<dd><p>Note: batch_size must not be None
+<dd><p>Translate content of <cite>src_data_iter</cite> (if not None) or <cite>src_path</cite>
+and get gold scores if one of <cite>tgt_data_iter</cite> or <cite>tgt_path</cite> is set.</p>
+<p>Note: batch_size must not be None
 Note: one of (‘src_path’, ‘src_data_iter’) must not be None</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>src_path</strong> (<em>str</em>) – filepath of source data</li>
+<li><strong>src_data_iter</strong> (<em>iterator</em>) – an interator generating source data
+e.g. it may be a list or an openned file</li>
+<li><strong>tgt_path</strong> (<em>str</em>) – filepath of target data</li>
+<li><strong>tgt_data_iter</strong> (<em>iterator</em>) – an interator generating target data</li>
+<li><strong>src_dir</strong> (<em>str</em>) – source directory path
+(used for Audio and Image datasets)</li>
+<li><strong>batch_size</strong> (<em>int</em>) – size of examples per mini-batch</li>
+<li><strong>attn_debug</strong> (<em>bool</em>) – enables the attention logging</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><p>(<cite>list</cite>, <cite>list</cite>)</p>
+<ul class="simple">
+<li>all_scores is a list of <cite>batch_size</cite> lists of <cite>n_best</cite> scores</li>
+<li><dl class="first docutils">
+<dt>all_predictions is a list of <cite>batch_size</cite> lists</dt>
+<dd>of <cite>n_best</cite> predictions</dd>
+</dl>
+</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">

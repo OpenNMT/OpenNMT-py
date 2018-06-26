@@ -166,6 +166,7 @@
 <span class="kn">import</span> <span class="nn">math</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
+
 <span class="kn">from</span> <span class="nn">itertools</span> <span class="k">import</span> <span class="n">count</span>
 
 <span class="kn">import</span> <span class="nn">onmt.model_builder</span>
@@ -176,7 +177,7 @@
 
 <span class="k">def</span> <span class="nf">build_translator</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">report_score</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">out_file</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">out_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">out_file</span> <span class="o">=</span> <span class="n">codecs</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">output</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+        <span class="n">out_file</span> <span class="o">=</span> <span class="n">codecs</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">output</span><span class="p">,</span> <span class="s1">&#39;w+&#39;</span><span class="p">,</span> <span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">gpu</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">set_device</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">gpu</span><span class="p">)</span>
@@ -196,7 +197,7 @@
     <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
               <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;beam_size&quot;</span><span class="p">,</span> <span class="s2">&quot;n_best&quot;</span><span class="p">,</span> <span class="s2">&quot;max_length&quot;</span><span class="p">,</span> <span class="s2">&quot;min_length&quot;</span><span class="p">,</span>
                         <span class="s2">&quot;stepwise_penalty&quot;</span><span class="p">,</span> <span class="s2">&quot;block_ngram_repeat&quot;</span><span class="p">,</span>
-                        <span class="s2">&quot;ignore_when_blocking&quot;</span><span class="p">,</span> <span class="s2">&quot;dump_beam&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;ignore_when_blocking&quot;</span><span class="p">,</span> <span class="s2">&quot;dump_beam&quot;</span><span class="p">,</span> <span class="s2">&quot;report_bleu&quot;</span><span class="p">,</span>
                         <span class="s2">&quot;data_type&quot;</span><span class="p">,</span> <span class="s2">&quot;replace_unk&quot;</span><span class="p">,</span> <span class="s2">&quot;gpu&quot;</span><span class="p">,</span> <span class="s2">&quot;verbose&quot;</span><span class="p">]}</span>
 
     <span class="n">translator</span> <span class="o">=</span> <span class="n">Translator</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">global_scorer</span><span class="o">=</span><span class="n">scorer</span><span class="p">,</span>
@@ -301,9 +302,32 @@
                   <span class="n">batch_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                   <span class="n">attn_debug</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Translate content of `src_data_iter` (if not None) or `src_path`</span>
+<span class="sd">        and get gold scores if one of `tgt_data_iter` or `tgt_path` is set.</span>
+
 <span class="sd">        Note: batch_size must not be None</span>
 <span class="sd">        Note: one of (&#39;src_path&#39;, &#39;src_data_iter&#39;) must not be None</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            src_path (str): filepath of source data</span>
+<span class="sd">            src_data_iter (iterator): an interator generating source data</span>
+<span class="sd">                e.g. it may be a list or an openned file</span>
+<span class="sd">            tgt_path (str): filepath of target data</span>
+<span class="sd">            tgt_data_iter (iterator): an interator generating target data</span>
+<span class="sd">            src_dir (str): source directory path</span>
+<span class="sd">                (used for Audio and Image datasets)</span>
+<span class="sd">            batch_size (int): size of examples per mini-batch</span>
+<span class="sd">            attn_debug (bool): enables the attention logging</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (`list`, `list`)</span>
+
+<span class="sd">            * all_scores is a list of `batch_size` lists of `n_best` scores</span>
+<span class="sd">            * all_predictions is a list of `batch_size` lists</span>
+<span class="sd">                of `n_best` predictions</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="n">src_data_iter</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">src_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
         <span class="k">if</span> <span class="n">batch_size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;batch_size must be set&quot;</span><span class="p">)</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">build_dataset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">,</span>
@@ -319,8 +343,13 @@
                                        <span class="n">window</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">window</span><span class="p">,</span>
                                        <span class="n">use_filter_pred</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">use_filter_pred</span><span class="p">)</span>
 
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cuda</span><span class="p">:</span>
+            <span class="n">cur_device</span> <span class="o">=</span> <span class="s2">&quot;cuda&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cur_device</span> <span class="o">=</span> <span class="s2">&quot;cpu&quot;</span>
+
         <span class="n">data_iter</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">OrderedIterator</span><span class="p">(</span>
-            <span class="n">dataset</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">gpu</span><span class="p">,</span>
+            <span class="n">dataset</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">cur_device</span><span class="p">,</span>
             <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">train</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">sort</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="n">sort_within_batch</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
@@ -334,12 +363,14 @@
         <span class="n">gold_score_total</span><span class="p">,</span> <span class="n">gold_words_total</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
 
         <span class="n">all_scores</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">all_predictions</span> <span class="o">=</span> <span class="p">[]</span>
+
         <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">data_iter</span><span class="p">:</span>
             <span class="n">batch_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translate_batch</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
             <span class="n">translations</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="n">from_batch</span><span class="p">(</span><span class="n">batch_data</span><span class="p">)</span>
 
             <span class="k">for</span> <span class="n">trans</span> <span class="ow">in</span> <span class="n">translations</span><span class="p">:</span>
-                <span class="n">all_scores</span> <span class="o">+=</span> <span class="p">[</span><span class="n">trans</span><span class="o">.</span><span class="n">pred_scores</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+                <span class="n">all_scores</span> <span class="o">+=</span> <span class="p">[</span><span class="n">trans</span><span class="o">.</span><span class="n">pred_scores</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">n_best</span><span class="p">]]</span>
                 <span class="n">pred_score_total</span> <span class="o">+=</span> <span class="n">trans</span><span class="o">.</span><span class="n">pred_scores</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                 <span class="n">pred_words_total</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">trans</span><span class="o">.</span><span class="n">pred_sents</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
                 <span class="k">if</span> <span class="n">tgt_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -348,6 +379,7 @@
 
                 <span class="n">n_best_preds</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">pred</span><span class="p">)</span>
                                 <span class="k">for</span> <span class="n">pred</span> <span class="ow">in</span> <span class="n">trans</span><span class="o">.</span><span class="n">pred_sents</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">n_best</span><span class="p">]]</span>
+                <span class="n">all_predictions</span> <span class="o">+=</span> <span class="p">[</span><span class="n">n_best_preds</span><span class="p">]</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">out_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">n_best_preds</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">out_file</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
 
@@ -409,7 +441,7 @@
             <span class="kn">import</span> <span class="nn">json</span>
             <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">beam_accum</span><span class="p">,</span>
                       <span class="n">codecs</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dump_beam</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="s1">&#39;utf-8&#39;</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">all_scores</span></div>
+        <span class="k">return</span> <span class="n">all_scores</span><span class="p">,</span> <span class="n">all_predictions</span></div>
 
 <div class="viewcode-block" id="Translator.translate_batch"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.Translator.translate_batch">[docs]</a>    <span class="k">def</span> <span class="nf">translate_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -425,7 +457,10 @@
 <span class="sd">        Todo:</span>
 <span class="sd">           Shouldn&#39;t need the original dataset.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_batch</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span></div>
 
+    <span class="k">def</span> <span class="nf">_translate_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
         <span class="c1"># (0) Prep each of the components of the search.</span>
         <span class="c1"># And helper method for reducing verbosity.</span>
         <span class="n">beam_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span>
@@ -505,8 +540,11 @@
 
             <span class="c1"># Run one step.</span>
             <span class="n">dec_out</span><span class="p">,</span> <span class="n">dec_states</span><span class="p">,</span> <span class="n">attn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="p">(</span>
-                <span class="n">inp</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">dec_states</span><span class="p">,</span> <span class="n">memory_lengths</span><span class="o">=</span><span class="n">memory_lengths</span><span class="p">)</span>
+                <span class="n">inp</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">dec_states</span><span class="p">,</span> <span class="n">memory_lengths</span><span class="o">=</span><span class="n">memory_lengths</span><span class="p">,</span>
+                <span class="n">step</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+
             <span class="n">dec_out</span> <span class="o">=</span> <span class="n">dec_out</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
             <span class="c1"># dec_out: beam x rnn_size</span>
 
             <span class="c1"># (b) Compute a vector of batch x beam word scores.</span>
@@ -526,6 +564,7 @@
                 <span class="c1"># beam x tgt_vocab</span>
                 <span class="n">out</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">log</span><span class="p">()</span>
                 <span class="n">beam_attn</span> <span class="o">=</span> <span class="n">unbottle</span><span class="p">(</span><span class="n">attn</span><span class="p">[</span><span class="s2">&quot;copy&quot;</span><span class="p">])</span>
+
             <span class="c1"># (c) Advance each beam.</span>
             <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">beam</span><span class="p">):</span>
                 <span class="n">b</span><span class="o">.</span><span class="n">advance</span><span class="p">(</span><span class="n">out</span><span class="p">[:,</span> <span class="n">j</span><span class="p">],</span>
@@ -538,7 +577,8 @@
         <span class="k">if</span> <span class="s2">&quot;tgt&quot;</span> <span class="ow">in</span> <span class="n">batch</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">:</span>
             <span class="n">ret</span><span class="p">[</span><span class="s2">&quot;gold_score&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_target</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
         <span class="n">ret</span><span class="p">[</span><span class="s2">&quot;batch&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">batch</span>
-        <span class="k">return</span> <span class="n">ret</span></div>
+
+        <span class="k">return</span> <span class="n">ret</span>
 
     <span class="k">def</span> <span class="nf">_from_beam</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">beam</span><span class="p">):</span>
         <span class="n">ret</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;predictions&quot;</span><span class="p">:</span> <span class="p">[],</span>
@@ -596,10 +636,13 @@
 
     <span class="k">def</span> <span class="nf">_report_bleu</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tgt_path</span><span class="p">):</span>
         <span class="kn">import</span> <span class="nn">subprocess</span>
-        <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">base_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span> <span class="o">+</span> <span class="s2">&quot;/../../..&quot;</span><span class="p">)</span>
+        <span class="c1"># Rollback pointer to the beginning.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">out_file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">()</span>
 
-        <span class="n">res</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span><span class="s2">&quot;perl </span><span class="si">%s</span><span class="s2">/tools/multi-bleu.perl </span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2">&quot;</span>
-                                      <span class="o">%</span> <span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">tgt_path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="p">),</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span><span class="s2">&quot;perl </span><span class="si">%s</span><span class="s2">/tools/multi-bleu.perl </span><span class="si">%s</span><span class="s2">&quot;</span>
+                                      <span class="o">%</span> <span class="p">(</span><span class="n">base_dir</span><span class="p">,</span> <span class="n">tgt_path</span><span class="p">),</span>
                                       <span class="n">stdin</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">out_file</span><span class="p">,</span>
                                       <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
 

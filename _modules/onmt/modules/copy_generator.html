@@ -159,7 +159,6 @@
   <h1>Source code for onmt.modules.copy_generator</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot; Generator module &quot;&quot;&quot;</span>
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
-<span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">torch.cuda</span>
 
@@ -224,6 +223,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">linear</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">input_size</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">tgt_dict</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">linear_copy</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">input_size</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tgt_dict</span> <span class="o">=</span> <span class="n">tgt_dict</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">softmax</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Softmax</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sigmoid</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sigmoid</span><span class="p">()</span>
 
 <div class="viewcode-block" id="CopyGenerator.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.CopyGenerator.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hidden</span><span class="p">,</span> <span class="n">attn</span><span class="p">,</span> <span class="n">src_map</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -249,10 +250,10 @@
         <span class="c1"># Original probabilities.</span>
         <span class="n">logits</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear</span><span class="p">(</span><span class="n">hidden</span><span class="p">)</span>
         <span class="n">logits</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tgt_dict</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">inputters</span><span class="o">.</span><span class="n">PAD_WORD</span><span class="p">]]</span> <span class="o">=</span> <span class="o">-</span><span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">)</span>
-        <span class="n">prob</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">logits</span><span class="p">)</span>
+        <span class="n">prob</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">logits</span><span class="p">)</span>
 
         <span class="c1"># Probability of copying p(z=1) batch.</span>
-        <span class="n">p_copy</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">linear_copy</span><span class="p">(</span><span class="n">hidden</span><span class="p">))</span>
+        <span class="n">p_copy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">linear_copy</span><span class="p">(</span><span class="n">hidden</span><span class="p">))</span>
         <span class="c1"># Probibility of not copying: p_{word}(w) * (1 - p(z))</span>
         <span class="n">out_prob</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">prob</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">p_copy</span><span class="o">.</span><span class="n">expand_as</span><span class="p">(</span><span class="n">prob</span><span class="p">))</span>
         <span class="n">mul_attn</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">attn</span><span class="p">,</span> <span class="n">p_copy</span><span class="o">.</span><span class="n">expand_as</span><span class="p">(</span><span class="n">attn</span><span class="p">))</span>

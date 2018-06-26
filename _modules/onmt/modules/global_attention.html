@@ -163,6 +163,11 @@
 
 <span class="kn">from</span> <span class="nn">onmt.utils.misc</span> <span class="k">import</span> <span class="n">aeq</span><span class="p">,</span> <span class="n">sequence_mask</span>
 
+<span class="c1"># This class is mainly used by decoder.py for RNNs but also</span>
+<span class="c1"># by the CNN / transformer decoder when copy attention is used</span>
+<span class="c1"># CNN has its own attention mechanism ConvMultiStepAttention</span>
+<span class="c1"># Transformer has its own MultiHeadedAttention</span>
+
 
 <div class="viewcode-block" id="GlobalAttention"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.GlobalAttention">[docs]</a><span class="k">class</span> <span class="nc">GlobalAttention</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
@@ -358,6 +363,7 @@
             <span class="n">batch_</span><span class="p">,</span> <span class="n">source_l_</span> <span class="o">=</span> <span class="n">align_vectors</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
             <span class="n">aeq</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">batch_</span><span class="p">)</span>
             <span class="n">aeq</span><span class="p">(</span><span class="n">source_l</span><span class="p">,</span> <span class="n">source_l_</span><span class="p">)</span>
+
         <span class="k">else</span><span class="p">:</span>
             <span class="n">attn_h</span> <span class="o">=</span> <span class="n">attn_h</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
             <span class="n">align_vectors</span> <span class="o">=</span> <span class="n">align_vectors</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>

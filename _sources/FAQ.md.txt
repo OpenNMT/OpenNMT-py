@@ -2,9 +2,9 @@
 
 ## How do I use Pretrained embeddings (e.g. GloVe)?
 
-Using vocabularies from OpenNMT-py preprocessing outputs, `embeddings_to_torch.py` to generate encoder and decoder embeddings initialized with GloVe’s values.
+Using vocabularies from OpenNMT-py preprocessing outputs, `embeddings_to_torch.py` to generate encoder and decoder embeddings initialized with GloVes values.
 
-the script is a slightly modified version of ylhsieh’s one2.
+the script is a slightly modified version of ylhsiehs one2.
 
 Usage:
 
