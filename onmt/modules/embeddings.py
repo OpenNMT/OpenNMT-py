@@ -5,7 +5,6 @@ import torch
 import torch.nn as nn
 
 from onmt.modules.util_class import Elementwise
-# from onmt.utils.misc import aeq
 
 
 class PositionalEncoding(nn.Module):
@@ -39,8 +38,6 @@ class PositionalEncoding(nn.Module):
         emb = emb + self.pe[:emb.size(0)]
         emb = self.dropout(emb)
         return emb
-
-# used by model_builder.py and subsequently by all encoders / decoders
 
 
 class Embeddings(nn.Module):
@@ -184,14 +181,6 @@ class Embeddings(nn.Module):
         Return:
             `FloatTensor`: word embeddings `[len x batch x embedding_size]`
         """
-        # in_length, in_batch, nfeat = source.size()
-        # aeq(nfeat, len(self.emb_luts))
-
         emb = self.make_embedding(source)
-
-        # out_length, out_batch, emb_size = emb.size()
-        # aeq(in_length, out_length)
-        # aeq(in_batch, out_batch)
-        # aeq(emb_size, self.embedding_size)
 
         return emb
