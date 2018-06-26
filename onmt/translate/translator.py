@@ -44,7 +44,7 @@ def build_translator(opt, report_score=True, logger=None, out_file=None):
     translator = Translator(model, fields, global_scorer=scorer,
                             out_file=out_file, report_score=report_score,
                             copy_attn=model_opt.copy_attn, logger=logger,
-                            self_attn_type=model_opt.self_attn_type, **kwargs)
+                            **kwargs)
     return translator
 
 
@@ -77,7 +77,6 @@ class Translator(object):
                  global_scorer=None,
                  copy_attn=False,
                  logger=None,
-                 self_attn_type="scaled-dot",
                  gpu=False,
                  dump_beam="",
                  min_length=0,
@@ -106,7 +105,6 @@ class Translator(object):
         self.max_length = max_length
         self.global_scorer = global_scorer
         self.copy_attn = copy_attn
-        self.self_attn_type = self_attn_type
         self.beam_size = beam_size
         self.min_length = min_length
         self.stepwise_penalty = stepwise_penalty
