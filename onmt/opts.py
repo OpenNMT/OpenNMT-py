@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """ Implementation of all available options """
 from __future__ import print_function
 
@@ -225,11 +224,25 @@ def train_opts(parser):
 
     group.add_argument('-save_model', default='model',
                        help="""Model filename (the model will be saved as
-                       <save_model>_epochN_PPL.pt where PPL is the
-                       validation perplexity""")
+                       <save_model>_N.pt where N is the number
+                       of steps""")
+
+    group.add_argument('-save_checkpoint_steps', type=int, default=5000,
+                       help="""Save a checkpoint every X steps""")
+    group.add_argument('-keep_checkpoint', type=int, default=-1,
+                       help="""Keep X checkpoints (negative: keep all)""")
+
     # GPU
     group.add_argument('-gpuid', default=[], nargs='+', type=int,
                        help="Use CUDA on the listed devices.")
+    group.add_argument('-gpu_rank', default=0, nargs='+', type=int,
+                       help="Rank the current gpu device.")
+    group.add_argument('-device_id', default=0, nargs='+', type=int,
+                       help="Rank the current gpu device.")
+    group.add_argument('-gpu_backend', default='nccl', nargs='+', type=str,
+                       help="Type of torch distributed backend")
+    group.add_argument('-gpu_verbose', default=0, type=int,
+                       help="Gives more info on each process per GPU.")
 
     group.add_argument('-seed', type=int, default=-1,
                        help="""Random seed used for the experiments
@@ -237,8 +250,6 @@ def train_opts(parser):
 
     # Init options
     group = parser.add_argument_group('Initialization')
-    group.add_argument('-start_epoch', type=int, default=1,
-                       help='The epoch from which to start')
     group.add_argument('-param_init', type=float, default=0.1,
                        help="""Parameters are initialized over uniform distribution
                        with support (-param_init, param_init).
@@ -284,14 +295,16 @@ def train_opts(parser):
                        Approximately equivalent to updating
                        batch_size * accum_count batches at once.
                        Recommended for Transformer.""")
+    group.add_argument('-valid_steps', type=int, default=10000,
+                       help='Perfom validation every X steps')
     group.add_argument('-valid_batch_size', type=int, default=32,
                        help='Maximum batch size for validation')
     group.add_argument('-max_generator_batches', type=int, default=32,
                        help="""Maximum batches of words in a sequence to run
                         the generator on in parallel. Higher is faster, but
                         uses more memory.""")
-    group.add_argument('-epochs', type=int, default=13,
-                       help='Number of training epochs')
+    group.add_argument('-train_steps', type=int, default=100000,
+                       help='Number of training steps')
     group.add_argument('-optim', default='sgd',
                        choices=['sgd', 'adagrad', 'adadelta', 'adam',
                                 'sparseadam'],
@@ -343,14 +356,14 @@ def train_opts(parser):
     group.add_argument('-learning_rate_decay', type=float, default=0.5,
                        help="""If update_learning_rate, decay learning rate by
                        this much if (i) perplexity does not decrease on the
-                       validation set or (ii) epoch has gone past
-                       start_decay_at""")
-    group.add_argument('-start_decay_at', type=int, default=8,
-                       help="""Start decaying every epoch after and including this
-                       epoch""")
-    group.add_argument('-start_checkpoint_at', type=int, default=0,
-                       help="""Start checkpointing every epoch after and including
-                       this epoch""")
+                       validation set or (ii) steps have gone past
+                       start_decay_steps""")
+    group.add_argument('-start_decay_steps', type=int, default=50000,
+                       help="""Start decaying every decay_steps after
+                       start_decay_steps""")
+    group.add_argument('-decay_steps', type=int, default=10000,
+                       help="""Decay every decay_steps""")
+
     group.add_argument('-decay_method', type=str, default="",
                        choices=['noam'], help="Use a custom decay rate.")
     group.add_argument('-warmup_steps', type=int, default=4000,

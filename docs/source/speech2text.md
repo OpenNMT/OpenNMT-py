@@ -29,7 +29,7 @@ python preprocess.py -data_type audio -src_dir data/speech/an4_dataset -train_sr
 2) Train the model.
 
 ```
-python train.py -model_type audio -data data/speech/demo -save_model demo-model -gpuid 0 -batch_size 16 -max_grad_norm 20 -learning_rate 0.1 -learning_rate_decay 0.98 -epochs 60
+python train.py -model_type audio -data data/speech/demo -save_model demo-model -gpuid 0 -batch_size 16 -max_grad_norm 20 -learning_rate 0.1 -learning_rate_decay 0.98 -train_steps 100000
 ```
 
 3) Translate the speechs.
