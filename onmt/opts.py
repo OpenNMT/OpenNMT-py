@@ -464,6 +464,8 @@ def translate_opts(parser):
                        help="Output logs to a file under this path.")
     group.add_argument('-attn_debug', action="store_true",
                        help='Print best attn for each word')
+    group.add_argument('-copy_debug', action="store_true",
+                       help='Print copy probability for each word')
     group.add_argument('-dump_beam', type=str, default="",
                        help='File to dump beam information to.')
     group.add_argument('-n_best', type=int, default=1,
