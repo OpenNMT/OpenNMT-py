@@ -253,7 +253,7 @@ class Translator(object):
                     os.write(1, output.encode('utf-8'))
 
                 # Debug copy_probability.
-                if self.copy_attn and copy_debug: # !@#$%^&*
+                if self.copy_attn and copy_debug:
                     srcs = trans.src_raw
                     preds = trans.pred_sents[0]
                     preds.append('</s>')
@@ -327,7 +327,8 @@ class Translator(object):
         exclusion_tokens = set([vocab.stoi[t]
                                 for t in self.ignore_when_blocking])
 
-        beam = [onmt.translate.Beam(beam_size, self.copy_attn, n_best=self.n_best,
+        beam = [onmt.translate.Beam(beam_size, self.copy_attn,
+                                    n_best=self.n_best,
                                     cuda=self.cuda,
                                     global_scorer=self.global_scorer,
                                     pad=vocab.stoi[inputters.PAD_WORD],
@@ -411,7 +412,9 @@ class Translator(object):
                 out = self.model.generator.forward(dec_out,
                                                    attn["copy"].squeeze(0),
                                                    src_map)
-                beam_copy = unbottle(out.data)[:,:,len(self.fields["tgt"].vocab)+1:].sum(2)
+                beam_copy = \
+                    unbottle(out.data)[:, :, len(self.fields["tgt"].vocab)+1:]\
+                    .sum(2)
                 # beam x (tgt_vocab + extra_vocab)
                 out = data.collapse_copy_scores(
                     unbottle(out.data),
@@ -424,11 +427,11 @@ class Translator(object):
             for j, b in enumerate(beam):
                 if self.copy_attn:
                     b.advance(out[:, j],
-                          beam_attn.data[:, j, :memory_lengths[j]],
-                          beam_copy.data[:, j])
+                              beam_attn.data[:, j, :memory_lengths[j]],
+                              beam_copy.data[:, j])
                 else:
                     b.advance(out[:, j],
-                          beam_attn.data[:, j, :memory_lengths[j]])
+                              beam_attn.data[:, j, :memory_lengths[j]])
                 dec_states.beam_update(j, b.get_current_origin(), beam_size)
 
         # (4) Extract sentences from beam.
