@@ -17,7 +17,7 @@ class Beam(object):
        global_scorer (:obj:`GlobalScorer`)
     """
 
-    def __init__(self, size, pad, bos, eos,
+    def __init__(self, size, copy_attn, pad, bos, eos,
                  n_best=1, cuda=False,
                  global_scorer=None,
                  min_length=0,
@@ -47,6 +47,11 @@ class Beam(object):
         # The attentions (matrix) for each time.
         self.attn = []
 
+        # Use copy
+        self.copy_attn = copy_attn
+        # The copy probability (vector) for each time.
+        self.copy = []
+
         # Time and k pair for finished.
         self.finished = []
         self.n_best = n_best
@@ -71,7 +76,7 @@ class Beam(object):
         "Get the backpointers for the current timestep."
         return self.prev_ks[-1]
 
-    def advance(self, word_probs, attn_out):
+    def advance(self, word_probs, attn_out, copy_out = None):
         """
         Given prob over words for every last beam `wordLk` and attention
         `attn_out`: Compute and update the beam search.
@@ -105,7 +110,7 @@ class Beam(object):
                 ngrams = []
                 le = len(self.next_ys)
                 for j in range(self.next_ys[-1].size(0)):
-                    hyp, _ = self.get_hyp(le - 1, j)
+                    hyp, _, _ = self.get_hyp(le - 1, j)
                     ngrams = set()
                     fail = False
                     gram = []
@@ -135,6 +140,8 @@ class Beam(object):
         self.prev_ks.append(prev_k)
         self.next_ys.append((best_scores_id - prev_k * num_words))
         self.attn.append(attn_out.index_select(0, prev_k))
+        if self.copy_attn:
+            self.copy.append(copy_out.index_select(0, prev_k))
         self.global_scorer.update_global_state(self)
 
         for i in range(self.next_ys[-1].size(0)):
@@ -170,12 +177,14 @@ class Beam(object):
         """
         Walk back to construct the full hypothesis.
         """
-        hyp, attn = [], []
+        hyp, attn, copy = [], [], []
         for j in range(len(self.prev_ks[:timestep]) - 1, -1, -1):
             hyp.append(self.next_ys[j + 1][k])
             attn.append(self.attn[j][k])
+            if self.copy_attn:
+                copy.append(self.copy[j][k])
             k = self.prev_ks[j][k]
-        return hyp[::-1], torch.stack(attn[::-1])
+        return hyp[::-1], torch.stack(attn[::-1]), copy[::-1]
 
 
 class GNMTGlobalScorer(object):

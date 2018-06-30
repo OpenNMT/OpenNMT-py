@@ -141,7 +141,8 @@ class Translator(object):
                   tgt_data_iter=None,
                   src_dir=None,
                   batch_size=None,
-                  attn_debug=False):
+                  attn_debug=False,
+                  copy_debug=False):
         """
         Translate content of `src_data_iter` (if not None) or `src_path`
         and get gold scores if one of `tgt_data_iter` or `tgt_path` is set.
@@ -251,6 +252,18 @@ class Translator(object):
                         row_format = "{:>10.10} " + "{:>10.7f} " * len(srcs)
                     os.write(1, output.encode('utf-8'))
 
+                # Debug copy_probability.
+                if self.copy_attn and copy_debug: # !@#$%^&*
+                    srcs = trans.src_raw
+                    preds = trans.pred_sents[0]
+                    preds.append('</s>')
+                    copys = [copy.item() for copy in trans.copys[0]]
+                    row_format = "{:>10.10} " + "{:>10.7f} "
+                    output = ' '.join(srcs) + '\n'
+                    for word, copy in zip(preds, copys):
+                        output += row_format.format(word, copy) + '\n'
+                    os.write(1, output.encode('utf-8'))
+
         if self.report_score:
             msg = self._report_score('PRED', pred_score_total,
                                      pred_words_total)
@@ -314,7 +327,7 @@ class Translator(object):
         exclusion_tokens = set([vocab.stoi[t]
                                 for t in self.ignore_when_blocking])
 
-        beam = [onmt.translate.Beam(beam_size, n_best=self.n_best,
+        beam = [onmt.translate.Beam(beam_size, self.copy_attn, n_best=self.n_best,
                                     cuda=self.cuda,
                                     global_scorer=self.global_scorer,
                                     pad=vocab.stoi[inputters.PAD_WORD],
@@ -398,6 +411,7 @@ class Translator(object):
                 out = self.model.generator.forward(dec_out,
                                                    attn["copy"].squeeze(0),
                                                    src_map)
+                beam_copy = unbottle(out.data)[:,:,len(self.fields["tgt"].vocab)+1:].sum(2)
                 # beam x (tgt_vocab + extra_vocab)
                 out = data.collapse_copy_scores(
                     unbottle(out.data),
@@ -408,7 +422,12 @@ class Translator(object):
 
             # (c) Advance each beam.
             for j, b in enumerate(beam):
-                b.advance(out[:, j],
+                if self.copy_attn:
+                    b.advance(out[:, j],
+                          beam_attn.data[:, j, :memory_lengths[j]],
+                          beam_copy.data[:, j])
+                else:
+                    b.advance(out[:, j],
                           beam_attn.data[:, j, :memory_lengths[j]])
                 dec_states.beam_update(j, b.get_current_origin(), beam_size)
 
@@ -424,18 +443,21 @@ class Translator(object):
     def _from_beam(self, beam):
         ret = {"predictions": [],
                "scores": [],
-               "attention": []}
+               "attention": [],
+               "copy": []}
         for b in beam:
             n_best = self.n_best
             scores, ks = b.sort_finished(minimum=n_best)
-            hyps, attn = [], []
+            hyps, attn, copy = [], [], []
             for i, (times, k) in enumerate(ks[:n_best]):
-                hyp, att = b.get_hyp(times, k)
+                hyp, att, cop = b.get_hyp(times, k)
                 hyps.append(hyp)
                 attn.append(att)
+                copy.append(cop)
             ret["predictions"].append(hyps)
             ret["scores"].append(scores)
             ret["attention"].append(attn)
+            ret["copy"].append(copy)
         return ret
 
     def _run_target(self, batch, data):
