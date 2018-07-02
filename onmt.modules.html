@@ -607,12 +607,12 @@ For each source sentence we have a <cite>src_map</cite> that maps
 each source word to an index in <cite>tgt_dict</cite> if it known, or
 else to an extra word.</p>
 <p>The copy generator is an extended version of the standard
-generator that computse three values.</p>
+generator that computes three values.</p>
 <ul class="simple">
 <li><span class="math notranslate nohighlight">\(p_{softmax}\)</span> the standard softmax over <cite>tgt_dict</cite></li>
-<li><span class="math notranslate nohighlight">\(p(z)\)</span> the probability of instead copying a
-word from the source, computed using a bernoulli</li>
-<li><span class="math notranslate nohighlight">\(p_{copy}\)</span> the probility of copying a word instead.
+<li><span class="math notranslate nohighlight">\(p(z)\)</span> the probability of copying a word from
+the source</li>
+<li><span class="math notranslate nohighlight">\(p_{copy}\)</span> the probility of copying a particular word.
 taken from the attention distribution directly.</li>
 </ul>
 <p>The model returns a distribution over the extend dictionary,
