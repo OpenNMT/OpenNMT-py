@@ -20,12 +20,12 @@ class CopyGenerator(nn.Module):
     else to an extra word.
 
     The copy generator is an extended version of the standard
-    generator that computse three values.
+    generator that computes three values.
 
     * :math:`p_{softmax}` the standard softmax over `tgt_dict`
-    * :math:`p(z)` the probability of instead copying a
-      word from the source, computed using a bernoulli
-    * :math:`p_{copy}` the probility of copying a word instead.
+    * :math:`p(z)` the probability of copying a word from
+      the source
+    * :math:`p_{copy}` the probility of copying a particular word.
       taken from the attention distribution directly.
 
     The model returns a distribution over the extend dictionary,
