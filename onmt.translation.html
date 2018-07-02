@@ -228,7 +228,7 @@
 <h2>Translator Class<a class="headerlink" href="#translator-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.translate.Translator">
-<em class="property">class </em><code class="descclassname">onmt.translate.</code><code class="descname">Translator</code><span class="sig-paren">(</span><em>model</em>, <em>fields</em>, <em>beam_size</em>, <em>n_best=1</em>, <em>max_length=100</em>, <em>global_scorer=None</em>, <em>copy_attn=False</em>, <em>logger=None</em>, <em>gpu=False</em>, <em>dump_beam=''</em>, <em>min_length=0</em>, <em>stepwise_penalty=False</em>, <em>block_ngram_repeat=0</em>, <em>ignore_when_blocking=[]</em>, <em>sample_rate='16000'</em>, <em>window_size=0.02</em>, <em>window_stride=0.01</em>, <em>window='hamming'</em>, <em>use_filter_pred=False</em>, <em>data_type='text'</em>, <em>replace_unk=False</em>, <em>report_score=True</em>, <em>report_bleu=False</em>, <em>report_rouge=False</em>, <em>verbose=False</em>, <em>out_file=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translator.html#Translator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translator" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.translate.</code><code class="descname">Translator</code><span class="sig-paren">(</span><em>model</em>, <em>fields</em>, <em>beam_size</em>, <em>n_best=1</em>, <em>max_length=100</em>, <em>global_scorer=None</em>, <em>copy_attn=False</em>, <em>logger=None</em>, <em>gpu=False</em>, <em>dump_beam=''</em>, <em>min_length=0</em>, <em>stepwise_penalty=False</em>, <em>block_ngram_repeat=0</em>, <em>ignore_when_blocking=[]</em>, <em>sample_rate='16000'</em>, <em>window_size=0.02</em>, <em>window_stride=0.01</em>, <em>window='hamming'</em>, <em>use_filter_pred=False</em>, <em>data_type='text'</em>, <em>replace_unk=False</em>, <em>report_score=True</em>, <em>report_bleu=False</em>, <em>report_rouge=False</em>, <em>verbose=False</em>, <em>out_file=None</em>, <em>fast=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translator.html#Translator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Uses a model to translate a batch of sentences.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -292,7 +292,7 @@ e.g. it may be a list or an openned file</li>
 
 <dl class="method">
 <dt id="onmt.translate.Translator.translate_batch">
-<code class="descname">translate_batch</code><span class="sig-paren">(</span><em>batch</em>, <em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translator.html#Translator.translate_batch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translator.translate_batch" title="Permalink to this definition">¶</a></dt>
+<code class="descname">translate_batch</code><span class="sig-paren">(</span><em>batch</em>, <em>data</em>, <em>fast=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translator.html#Translator.translate_batch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translator.translate_batch" title="Permalink to this definition">¶</a></dt>
 <dd><p>Translate a batch of sentences.</p>
 <p>Mostly a wrapper around <a class="reference internal" href="#onmt.translate.Beam" title="onmt.translate.Beam"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Beam</span></code></a>.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -302,6 +302,7 @@ e.g. it may be a list or an openned file</li>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>batch</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Batch</span></code>) – a batch from a dataset object</li>
 <li><strong>data</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Dataset</span></code>) – the dataset object</li>
+<li><strong>fast</strong> (<em>bool</em>) – enables fast beam search (may not support all features)</li>
 </ul>
 </td>
 </tr>
