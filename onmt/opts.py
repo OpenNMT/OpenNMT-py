@@ -417,6 +417,9 @@ def translate_opts(parser):
                        help="Share source and target vocabulary")
 
     group = parser.add_argument_group('Beam')
+    group.add_argument('-fast', action="store_true",
+                       help="""Use fast beam search (some features may not be
+                       supported!)""")
     group.add_argument('-beam_size', type=int, default=5,
                        help='Beam size')
     group.add_argument('-min_length', type=int, default=0,
