@@ -8,7 +8,7 @@ import onmt
 
 def build_report_manager(opt):
     if opt.tensorboard:
-        from tensorboard import SummaryWriter
+        from tensorboardX import SummaryWriter
         writer = SummaryWriter(opt.tensorboard_log_dir
                                + datetime.now().strftime("/%b-%d_%H-%M-%S"),
                                comment="Unmt")
