@@ -66,7 +66,7 @@ class MultiHeadedAttention(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.final_linear = nn.Linear(model_dim, model_dim)
 
-    def forward(self, key, value, query, mask=None):
+    def forward(self, key, value, query, mask=None, layer_cache=None, type=None):
         """
         Compute the context vector and the attention vectors.
 
@@ -120,9 +120,83 @@ class MultiHeadedAttention(nn.Module):
                     .view(batch_size, -1, head_count * dim_per_head)
 
         # 1) Project key, value, and query.
-        key_up = shape(self.linear_keys(key))
-        value_up = shape(self.linear_values(value))
-        query_up = shape(self.linear_query(query))
+
+        if type == "self":
+
+          query, key, value = self.linear_query(query),\
+                              self.linear_keys(query),\
+                              self.linear_values(query)
+
+          if layer_cache is not None:
+            device = key.device
+            if layer_cache["self_keys"] is not None:
+              key = torch.cat((layer_cache["self_keys"].to(device), key), dim=1)
+            if layer_cache["self_values"] is not None:
+              value = torch.cat((layer_cache["self_values"].to(device), value), dim=1)
+            layer_cache["self_keys"] = key
+            layer_cache["self_values"] = value
+
+          # print("############")
+          # print("SELF")
+          # print("############")
+          # print("############")
+          # print("QUERY")
+          # print(query)
+          # print("############")
+          # print("############")
+          # print("KEY")
+          # print(key)
+          # print("############")
+          # print("############")
+          # print("VALUE")
+          # print(value)
+          # print("############")
+
+
+        elif type == "context":
+
+          query = self.linear_query(query)
+
+          if layer_cache is not None:
+
+            if layer_cache["memory_keys"] is None:
+              key, value = self.linear_keys(key), self.linear_values(value)
+            else:
+              key, value = layer_cache["memory_keys"], layer_cache["memory_values"]
+
+            layer_cache["memory_keys"] = key
+            layer_cache["memory_values"] = value
+          else:
+            key, value = self.linear_keys(key), self.linear_values(value)
+
+          # print("############")
+          # print("CONTEXT")
+          # print("############")
+          # print("############")
+          # print("QUERY")
+          # print(query)
+          # print("############")
+          # print("############")
+          # print("KEY")
+          # print(key)
+          # print("############")
+          # print("############")
+          # print("VALUE")
+          # print(value)
+          # print("############")
+
+        else:
+
+          key = self.linear_keys(key)
+          value = self.linear_values(value)
+          query = self.linear_query(query)
+
+        key_len = key.size(1)
+        query_len = query.size(1)
+
+        key_up = shape(key)
+        value_up = shape(value)
+        query_up = shape(query)
 
         # 2) Calculate and scale scores.
         query_up = query_up / math.sqrt(dim_per_head)

@@ -367,6 +367,8 @@ class Translator(object):
         results["batch"] = batch
 
         for step in range(self.max_length):
+            # print("STEP: ", step)
+
             decoder_input = alive_seq[:, -1].view(1, -1, 1)
 
             # Decoder forward.
