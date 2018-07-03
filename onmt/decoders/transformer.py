@@ -301,3 +301,16 @@ class TransformerDecoderState(DecoderState):
         #     self.previous_layer_inputs = fn(self.previous_layer_inputs, 1)
         if self.cache is not None:
             _recursive_map(self.cache)
+
+    def beam_update(self, idx, positions, beam_size):
+        """ Need to document this """
+
+        for k_layer, layer in self.cache.items():
+            if k_layer not in ["memory", "memory_mask"]:
+                for layer_cache in [layer["self_keys"], layer["self_values"]]:
+                    if layer_cache is not None:
+                        n, n_step, dim = layer_cache.size()
+                        batch_size = n // beam_size
+                        sent_states = layer_cache.view(beam_size, batch_size, -1)[:, idx, :]
+                        sent_states.data.copy_(
+                            sent_states.data.index_select(0, positions))
