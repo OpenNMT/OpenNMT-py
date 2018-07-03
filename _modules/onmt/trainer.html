@@ -158,28 +158,27 @@
             
   <h1>Source code for onmt.trainer</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">This is the loadable seq2seq trainer library that is</span>
-<span class="sd">in charge of training details, loss compute, and statistics.</span>
-<span class="sd">See train.py for a use case of this library.</span>
+<span class="sd">    This is the loadable seq2seq trainer library that is</span>
+<span class="sd">    in charge of training details, loss compute, and statistics.</span>
+<span class="sd">    See train.py for a use case of this library.</span>
 
-<span class="sd">Note!!! To make this a general library, we implement *only*</span>
-<span class="sd">mechanism things here(i.e. what to do), and leave the strategy</span>
-<span class="sd">things to users(i.e. how to do it). Also see train.py(one of the</span>
-<span class="sd">users of this library) for the strategy things we do.</span>
+<span class="sd">    Note: To make this a general library, we implement *only*</span>
+<span class="sd">          mechanism things here(i.e. what to do), and leave the strategy</span>
+<span class="sd">          things to users(i.e. how to do it). Also see train.py(one of the</span>
+<span class="sd">          users of this library) for the strategy things we do.</span>
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">division</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
 
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">division</span>
 
 <span class="kn">import</span> <span class="nn">onmt.inputters</span> <span class="k">as</span> <span class="nn">inputters</span>
 <span class="kn">import</span> <span class="nn">onmt.utils</span>
 
 
-<span class="k">def</span> <span class="nf">build_trainer</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">optim</span><span class="p">,</span> <span class="n">data_type</span><span class="p">,</span> <span class="n">model_saver</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">build_trainer</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">optim</span><span class="p">,</span> <span class="n">data_type</span><span class="p">,</span> <span class="n">logger</span><span class="p">,</span>
+                  <span class="n">model_saver</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Simplify `Trainer` creation based on user `opt`s*</span>
+
 <span class="sd">    Args:</span>
 <span class="sd">        opt (:obj:`Namespace`): user options (usually from argument parsing)</span>
 <span class="sd">        model (:obj:`onmt.models.NMTModel`): the model to train</span>
@@ -188,7 +187,7 @@
 <span class="sd">        data_type (str): string describing the type of data</span>
 <span class="sd">            e.g. &quot;text&quot;, &quot;img&quot;, &quot;audio&quot;</span>
 <span class="sd">        model_saver(:obj:`onmt.models.ModelSaverBase`): the utility object</span>
-<span class="sd">            used to save the model (after each epoch)</span>
+<span class="sd">            used to save the model</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">train_loss</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">loss</span><span class="o">.</span><span class="n">build_loss_compute</span><span class="p">(</span>
         <span class="n">model</span><span class="p">,</span> <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">vocab</span><span class="p">,</span> <span class="n">opt</span><span class="p">)</span>
@@ -199,12 +198,16 @@
     <span class="n">shard_size</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">max_generator_batches</span>
     <span class="n">norm_method</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">normalization</span>
     <span class="n">grad_accum_count</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">accum_count</span>
+    <span class="n">n_gpu</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">gpuid</span><span class="p">)</span>
+    <span class="n">gpu_rank</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">gpu_rank</span>
+    <span class="n">gpu_verbose_level</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">gpu_verbose_level</span>
 
     <span class="n">report_manager</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">build_report_manager</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
-    <span class="n">trainer</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">Trainer</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">train_loss</span><span class="p">,</span> <span class="n">valid_loss</span><span class="p">,</span> <span class="n">optim</span><span class="p">,</span>
-                           <span class="n">trunc_size</span><span class="p">,</span> <span class="n">shard_size</span><span class="p">,</span> <span class="n">data_type</span><span class="p">,</span>
-                           <span class="n">norm_method</span><span class="p">,</span> <span class="n">grad_accum_count</span><span class="p">,</span> <span class="n">report_manager</span><span class="p">,</span>
-                           <span class="n">model_saver</span><span class="o">=</span><span class="n">model_saver</span><span class="p">)</span>
+    <span class="n">trainer</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">Trainer</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">train_loss</span><span class="p">,</span> <span class="n">valid_loss</span><span class="p">,</span> <span class="n">optim</span><span class="p">,</span> <span class="n">trunc_size</span><span class="p">,</span>
+                           <span class="n">shard_size</span><span class="p">,</span> <span class="n">data_type</span><span class="p">,</span> <span class="n">norm_method</span><span class="p">,</span>
+                           <span class="n">grad_accum_count</span><span class="p">,</span> <span class="n">n_gpu</span><span class="p">,</span> <span class="n">gpu_rank</span><span class="p">,</span>
+                           <span class="n">gpu_verbose_level</span><span class="p">,</span> <span class="n">report_manager</span><span class="p">,</span>
+                           <span class="n">logger</span><span class="p">,</span> <span class="n">model_saver</span><span class="o">=</span><span class="n">model_saver</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">trainer</span>
 
 
@@ -213,8 +216,8 @@
 <span class="sd">    Class that controls the training process.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">            model(:py:class:`onmt.models.model.NMTModel`):</span>
-<span class="sd">               translation model to train</span>
+<span class="sd">            model(:py:class:`onmt.models.model.NMTModel`): translation model</span>
+<span class="sd">                to train</span>
 <span class="sd">            train_loss(:obj:`onmt.utils.loss.LossComputeBase`):</span>
 <span class="sd">               training loss computation</span>
 <span class="sd">            valid_loss(:obj:`onmt.utils.loss.LossComputeBase`):</span>
@@ -228,14 +231,16 @@
 <span class="sd">            grad_accum_count(int): accumulate gradients this many times.</span>
 <span class="sd">            report_manager(:obj:`onmt.utils.ReportMgrBase`):</span>
 <span class="sd">                the object that creates reports, or None</span>
+<span class="sd">            logger: logger file</span>
 <span class="sd">            model_saver(:obj:`onmt.models.ModelSaverBase`): the saver is</span>
-<span class="sd">                used after each epoch to save a checkpoint.</span>
+<span class="sd">                used to save a checkpoint.</span>
 <span class="sd">                Thus nothing will be saved if this parameter is None</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">train_loss</span><span class="p">,</span> <span class="n">valid_loss</span><span class="p">,</span> <span class="n">optim</span><span class="p">,</span>
                  <span class="n">trunc_size</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">shard_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">data_type</span><span class="o">=</span><span class="s1">&#39;text&#39;</span><span class="p">,</span>
-                 <span class="n">norm_method</span><span class="o">=</span><span class="s2">&quot;sents&quot;</span><span class="p">,</span> <span class="n">grad_accum_count</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">report_manager</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">norm_method</span><span class="o">=</span><span class="s2">&quot;sents&quot;</span><span class="p">,</span> <span class="n">grad_accum_count</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_gpu</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">gpu_rank</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                 <span class="n">gpu_verbose_level</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">report_manager</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">model_saver</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="c1"># Basic attributes.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
@@ -247,8 +252,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span> <span class="o">=</span> <span class="n">data_type</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">norm_method</span> <span class="o">=</span> <span class="n">norm_method</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">grad_accum_count</span> <span class="o">=</span> <span class="n">grad_accum_count</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_gpu</span> <span class="o">=</span> <span class="n">n_gpu</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gpu_rank</span> <span class="o">=</span> <span class="n">gpu_rank</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gpu_verbose_level</span> <span class="o">=</span> <span class="n">gpu_verbose_level</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">report_manager</span> <span class="o">=</span> <span class="n">report_manager</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model_saver</span> <span class="o">=</span> <span class="n">model_saver</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logger</span>
 
         <span class="k">assert</span> <span class="n">grad_accum_count</span> <span class="o">&gt;</span> <span class="mi">0</span>
         <span class="k">if</span> <span class="n">grad_accum_count</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
@@ -259,110 +268,107 @@
         <span class="c1"># Set model in training mode.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
 
-<div class="viewcode-block" id="Trainer.train"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.train">[docs]</a>    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_iter_fct</span><span class="p">,</span> <span class="n">valid_iter_fct</span><span class="p">,</span> <span class="n">start_epoch</span><span class="p">,</span> <span class="n">end_epoch</span><span class="p">):</span>
+<div class="viewcode-block" id="Trainer.train"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.train">[docs]</a>    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_iter_fct</span><span class="p">,</span> <span class="n">valid_iter_fct</span><span class="p">,</span> <span class="n">train_steps</span><span class="p">,</span> <span class="n">valid_steps</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        The main training loops.</span>
-<span class="sd">        It trains from epoch=`start_epoch` to `end_epoch`</span>
 <span class="sd">        by iterating over training data (i.e. `train_iter_fct`)</span>
 <span class="sd">        and running validation (i.e. iterating over `valid_iter_fct`</span>
-<span class="sd">        In other words it trains for:</span>
-<span class="sd">            n_epochs = (end_epoch + 1 - start_epoch, start_epoch)</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            train_iter_fct(function): a function that returns the train</span>
 <span class="sd">                iterator. e.g. something like</span>
 <span class="sd">                train_iter_fct = lambda: generator(*args, **kwargs)</span>
 <span class="sd">            valid_iter_fct(function): same as train_iter_fct, for valid data</span>
-<span class="sd">            start_epoch(int): epoch number to start from (begining = 0)</span>
-<span class="sd">            end_epoch(int): last epoch number</span>
+<span class="sd">            train_steps(int):</span>
+<span class="sd">            valid_steps(int):</span>
+<span class="sd">            save_checkpoint_steps(int):</span>
 
 <span class="sd">        Return:</span>
 <span class="sd">            None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Start training...&#39;</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39; * number of epochs: </span><span class="si">%d</span><span class="s1">, starting from Epoch </span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span>
-              <span class="p">(</span><span class="n">end_epoch</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">start_epoch</span><span class="p">,</span> <span class="n">start_epoch</span><span class="p">))</span>
-        <span class="c1"># print(&#39; * batch size: %d&#39; % batch_size)</span>
-        <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start_epoch</span><span class="p">,</span> <span class="n">end_epoch</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">logger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">logger</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Start training...&#39;</span><span class="p">)</span>
 
-            <span class="c1"># 1. Train for one epoch on the training set.</span>
-            <span class="n">train_iter</span> <span class="o">=</span> <span class="n">train_iter_fct</span><span class="p">()</span>
-            <span class="n">train_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_epoch</span><span class="p">(</span><span class="n">train_iter</span><span class="p">,</span> <span class="n">epoch</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">report_epoch</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span> <span class="n">epoch</span><span class="p">,</span> <span class="n">train_stats</span><span class="o">=</span><span class="n">train_stats</span><span class="p">)</span>
-
-            <span class="c1"># 2. Validate on the validation set.</span>
-            <span class="n">valid_iter</span> <span class="o">=</span> <span class="n">valid_iter_fct</span><span class="p">()</span>
-            <span class="n">valid_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">valid_iter</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">report_epoch</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span> <span class="n">epoch</span><span class="p">,</span> <span class="n">valid_stats</span><span class="o">=</span><span class="n">valid_stats</span><span class="p">)</span>
-
-            <span class="c1"># 3. Update the learning rate</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">epoch_step</span><span class="p">(</span><span class="n">valid_stats</span><span class="o">.</span><span class="n">ppl</span><span class="p">(),</span> <span class="n">epoch</span><span class="p">)</span>
-
-            <span class="c1"># 4. Drop a checkpoint if needed.</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">maybe_drop_checkpoint</span><span class="p">(</span><span class="n">epoch</span><span class="p">,</span> <span class="n">valid_stats</span><span class="p">)</span></div>
-
-<div class="viewcode-block" id="Trainer.train_epoch"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.train_epoch">[docs]</a>    <span class="k">def</span> <span class="nf">train_epoch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_iter</span><span class="p">,</span> <span class="n">epoch</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; Train next epoch.</span>
-<span class="sd">        Args:</span>
-<span class="sd">            train_iter: training data iterator</span>
-<span class="sd">            epoch(int): the epoch number</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            stats (:obj:`onmt.utils.Statistics`): epoch loss statistics</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">total_stats</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">Statistics</span><span class="p">()</span>
-        <span class="n">report_stats</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">Statistics</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">start_report_manager</span><span class="p">(</span><span class="n">start_time</span><span class="o">=</span><span class="n">total_stats</span><span class="o">.</span><span class="n">start_time</span><span class="p">)</span>
-
-        <span class="n">idx</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">_step</span> <span class="o">+</span> <span class="mi">1</span>
         <span class="n">true_batchs</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">accum</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">normalization</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">add_on</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">train_iter</span><span class="p">)</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_accum_count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">add_on</span> <span class="o">+=</span> <span class="mi">1</span>
-            <span class="n">num_batches</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">train_iter</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_accum_count</span> <span class="o">+</span> <span class="n">add_on</span>
-        <span class="k">except</span> <span class="ne">NotImplementedError</span><span class="p">:</span>
-            <span class="c1"># Dynamic batching</span>
-            <span class="n">num_batches</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="n">train_iter</span> <span class="o">=</span> <span class="n">train_iter_fct</span><span class="p">()</span>
 
-        <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">batch</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">train_iter</span><span class="p">):</span>
-            <span class="n">cur_dataset</span> <span class="o">=</span> <span class="n">train_iter</span><span class="o">.</span><span class="n">get_cur_dataset</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">train_loss</span><span class="o">.</span><span class="n">cur_dataset</span> <span class="o">=</span> <span class="n">cur_dataset</span>
+        <span class="n">total_stats</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">Statistics</span><span class="p">()</span>
+        <span class="n">report_stats</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">Statistics</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_start_report_manager</span><span class="p">(</span><span class="n">start_time</span><span class="o">=</span><span class="n">total_stats</span><span class="o">.</span><span class="n">start_time</span><span class="p">)</span>
 
-            <span class="n">true_batchs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
-            <span class="n">accum</span> <span class="o">+=</span> <span class="mi">1</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">norm_method</span> <span class="o">==</span> <span class="s2">&quot;tokens&quot;</span><span class="p">:</span>
-                <span class="n">num_tokens</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">tgt</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> \
-                    <span class="o">.</span><span class="n">ne</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_loss</span><span class="o">.</span><span class="n">padding_idx</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-                <span class="n">normalization</span> <span class="o">+=</span> <span class="n">num_tokens</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">normalization</span> <span class="o">+=</span> <span class="n">batch</span><span class="o">.</span><span class="n">batch_size</span>
+        <span class="k">while</span> <span class="n">step</span> <span class="o">&lt;=</span> <span class="n">train_steps</span><span class="p">:</span>
 
-            <span class="k">if</span> <span class="n">accum</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_accum_count</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_gradient_accumulation</span><span class="p">(</span>
-                    <span class="n">true_batchs</span><span class="p">,</span> <span class="n">total_stats</span><span class="p">,</span>
-                    <span class="n">report_stats</span><span class="p">,</span> <span class="n">normalization</span><span class="p">)</span>
+            <span class="n">reduce_counter</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">batch</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">train_iter</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_gpu</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="p">(</span><span class="n">i</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_gpu</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpu_rank</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpu_verbose_level</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;GpuRank </span><span class="si">%d</span><span class="s2">: index: </span><span class="si">%d</span><span class="s2"> accum: </span><span class="si">%d</span><span class="s2">&quot;</span>
+                                    <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gpu_rank</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">accum</span><span class="p">))</span>
+                    <span class="n">cur_dataset</span> <span class="o">=</span> <span class="n">train_iter</span><span class="o">.</span><span class="n">get_cur_dataset</span><span class="p">()</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">train_loss</span><span class="o">.</span><span class="n">cur_dataset</span> <span class="o">=</span> <span class="n">cur_dataset</span>
 
-                <span class="n">report_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_training</span><span class="p">(</span>
-                    <span class="n">epoch</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">num_batches</span><span class="p">,</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span>
-                    <span class="n">report_stats</span><span class="p">)</span>
+                    <span class="n">true_batchs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
 
-                <span class="n">true_batchs</span> <span class="o">=</span> <span class="p">[]</span>
-                <span class="n">accum</span> <span class="o">=</span> <span class="mi">0</span>
-                <span class="n">normalization</span> <span class="o">=</span> <span class="mi">0</span>
-                <span class="n">idx</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">norm_method</span> <span class="o">==</span> <span class="s2">&quot;tokens&quot;</span><span class="p">:</span>
+                        <span class="n">num_tokens</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">tgt</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> \
+                                     <span class="o">.</span><span class="n">ne</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_loss</span><span class="o">.</span><span class="n">padding_idx</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+                        <span class="n">normalization</span> <span class="o">+=</span> <span class="n">num_tokens</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">normalization</span> <span class="o">+=</span> <span class="n">batch</span><span class="o">.</span><span class="n">batch_size</span>
 
-        <span class="k">if</span> <span class="n">true_batchs</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_gradient_accumulation</span><span class="p">(</span>
-                <span class="n">true_batchs</span><span class="p">,</span> <span class="n">total_stats</span><span class="p">,</span>
-                <span class="n">report_stats</span><span class="p">,</span> <span class="n">normalization</span><span class="p">)</span>
-            <span class="n">true_batchs</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="n">accum</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="k">if</span> <span class="n">accum</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_accum_count</span><span class="p">:</span>
+                        <span class="n">reduce_counter</span> <span class="o">+=</span> <span class="mi">1</span>
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpu_verbose_level</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;GpuRank </span><span class="si">%d</span><span class="s2">: reduce_counter: </span><span class="si">%d</span><span class="s2"> </span><span class="se">\</span>
+<span class="s2">                                        n_minibatch </span><span class="si">%d</span><span class="s2">&quot;</span>
+                                        <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gpu_rank</span><span class="p">,</span> <span class="n">reduce_counter</span><span class="p">,</span>
+                                           <span class="nb">len</span><span class="p">(</span><span class="n">true_batchs</span><span class="p">)))</span>
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_gpu</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                            <span class="n">normalization</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">distributed</span>
+                                                <span class="o">.</span><span class="n">all_gather_list</span>
+                                                <span class="p">(</span><span class="n">normalization</span><span class="p">))</span>
+
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_gradient_accumulation</span><span class="p">(</span>
+                            <span class="n">true_batchs</span><span class="p">,</span> <span class="n">normalization</span><span class="p">,</span> <span class="n">total_stats</span><span class="p">,</span>
+                            <span class="n">report_stats</span><span class="p">)</span>
+
+                        <span class="n">report_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_maybe_report_training</span><span class="p">(</span>
+                            <span class="n">step</span><span class="p">,</span> <span class="n">train_steps</span><span class="p">,</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span>
+                            <span class="n">report_stats</span><span class="p">)</span>
+
+                        <span class="n">true_batchs</span> <span class="o">=</span> <span class="p">[]</span>
+                        <span class="n">accum</span> <span class="o">=</span> <span class="mi">0</span>
+                        <span class="n">normalization</span> <span class="o">=</span> <span class="mi">0</span>
+                        <span class="k">if</span> <span class="p">(</span><span class="n">step</span> <span class="o">%</span> <span class="n">valid_steps</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+                            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpu_verbose_level</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;GpuRank </span><span class="si">%d</span><span class="s1">: validate step </span><span class="si">%d</span><span class="s1">&#39;</span>
+                                            <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gpu_rank</span><span class="p">,</span> <span class="n">step</span><span class="p">))</span>
+                            <span class="n">valid_iter</span> <span class="o">=</span> <span class="n">valid_iter_fct</span><span class="p">()</span>
+                            <span class="n">valid_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">valid_iter</span><span class="p">)</span>
+                            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpu_verbose_level</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;GpuRank </span><span class="si">%d</span><span class="s1">: gather valid stat </span><span class="se">\</span>
+<span class="s1">                                            step </span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gpu_rank</span><span class="p">,</span> <span class="n">step</span><span class="p">))</span>
+                            <span class="n">valid_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_maybe_gather_stats</span><span class="p">(</span><span class="n">valid_stats</span><span class="p">)</span>
+                            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpu_verbos_level</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;GpuRank </span><span class="si">%d</span><span class="s1">: report stat step </span><span class="si">%d</span><span class="s1">&#39;</span>
+                                            <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gpu_rank</span><span class="p">,</span> <span class="n">step</span><span class="p">))</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_report_step</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span>
+                                              <span class="n">step</span><span class="p">,</span> <span class="n">valid_stats</span><span class="o">=</span><span class="n">valid_stats</span><span class="p">)</span>
+
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpu_rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_maybe_save</span><span class="p">(</span><span class="n">step</span><span class="p">)</span>
+                        <span class="n">step</span> <span class="o">+=</span> <span class="mi">1</span>
+                        <span class="k">if</span> <span class="n">step</span> <span class="o">&gt;</span> <span class="n">train_steps</span><span class="p">:</span>
+                            <span class="k">break</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpu_verbose_level</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;GpuRank </span><span class="si">%d</span><span class="s1">: we completed an epoch </span><span class="se">\</span>
+<span class="s1">                            at step </span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gpu_rank</span><span class="p">,</span> <span class="n">step</span><span class="p">))</span>
+            <span class="n">train_iter</span> <span class="o">=</span> <span class="n">train_iter_fct</span><span class="p">()</span>
 
         <span class="k">return</span> <span class="n">total_stats</span></div>
 
@@ -404,45 +410,8 @@
 
         <span class="k">return</span> <span class="n">stats</span></div>
 
-<div class="viewcode-block" id="Trainer.epoch_step"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.epoch_step">[docs]</a>    <span class="k">def</span> <span class="nf">epoch_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ppl</span><span class="p">,</span> <span class="n">epoch</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; Epoch step.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">update_learning_rate</span><span class="p">(</span><span class="n">ppl</span><span class="p">,</span> <span class="n">epoch</span><span class="p">)</span></div>
-
-<div class="viewcode-block" id="Trainer.drop_checkpoint"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.drop_checkpoint">[docs]</a>    <span class="k">def</span> <span class="nf">drop_checkpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">epoch</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">valid_stats</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; Save a resumable checkpoint.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            opt (dict): option object</span>
-<span class="sd">            epoch (int): epoch number</span>
-<span class="sd">            fields (dict): fields and vocabulary</span>
-<span class="sd">            valid_stats : statistics of last validation run</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">real_model</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">module</span>
-                      <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">DataParallel</span><span class="p">)</span>
-                      <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
-        <span class="n">real_generator</span> <span class="o">=</span> <span class="p">(</span><span class="n">real_model</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">module</span>
-                          <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">real_model</span><span class="o">.</span><span class="n">generator</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">DataParallel</span><span class="p">)</span>
-                          <span class="k">else</span> <span class="n">real_model</span><span class="o">.</span><span class="n">generator</span><span class="p">)</span>
-
-        <span class="n">model_state_dict</span> <span class="o">=</span> <span class="n">real_model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">()</span>
-        <span class="n">model_state_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">model_state_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
-                            <span class="k">if</span> <span class="s1">&#39;generator&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">k</span><span class="p">}</span>
-        <span class="n">generator_state_dict</span> <span class="o">=</span> <span class="n">real_generator</span><span class="o">.</span><span class="n">state_dict</span><span class="p">()</span>
-        <span class="n">checkpoint</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;model&#39;</span><span class="p">:</span> <span class="n">model_state_dict</span><span class="p">,</span>
-            <span class="s1">&#39;generator&#39;</span><span class="p">:</span> <span class="n">generator_state_dict</span><span class="p">,</span>
-            <span class="s1">&#39;vocab&#39;</span><span class="p">:</span> <span class="n">inputters</span><span class="o">.</span><span class="n">save_fields_to_vocab</span><span class="p">(</span><span class="n">fields</span><span class="p">),</span>
-            <span class="s1">&#39;opt&#39;</span><span class="p">:</span> <span class="n">opt</span><span class="p">,</span>
-            <span class="s1">&#39;epoch&#39;</span><span class="p">:</span> <span class="n">epoch</span><span class="p">,</span>
-            <span class="s1">&#39;optim&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="p">,</span>
-        <span class="p">}</span>
-        <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">,</span>
-                   <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">_acc_</span><span class="si">%.2f</span><span class="s1">_ppl_</span><span class="si">%.2f</span><span class="s1">_e</span><span class="si">%d</span><span class="s1">.pt&#39;</span>
-                   <span class="o">%</span> <span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">save_model</span><span class="p">,</span> <span class="n">valid_stats</span><span class="o">.</span><span class="n">accuracy</span><span class="p">(),</span>
-                      <span class="n">valid_stats</span><span class="o">.</span><span class="n">ppl</span><span class="p">(),</span> <span class="n">epoch</span><span class="p">))</span></div>
-
-    <span class="k">def</span> <span class="nf">_gradient_accumulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">true_batchs</span><span class="p">,</span> <span class="n">total_stats</span><span class="p">,</span>
-                               <span class="n">report_stats</span><span class="p">,</span> <span class="n">normalization</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_gradient_accumulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">true_batchs</span><span class="p">,</span> <span class="n">normalization</span><span class="p">,</span> <span class="n">total_stats</span><span class="p">,</span>
+                               <span class="n">report_stats</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_accum_count</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
 
@@ -464,7 +433,7 @@
 
             <span class="n">tgt_outer</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">make_features</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="s1">&#39;tgt&#39;</span><span class="p">)</span>
 
-            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">target_size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">trunc_size</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">target_size</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">trunc_size</span><span class="p">):</span>
                 <span class="c1"># 1. Create truncated target.</span>
                 <span class="n">tgt</span> <span class="o">=</span> <span class="n">tgt_outer</span><span class="p">[</span><span class="n">j</span><span class="p">:</span> <span class="n">j</span> <span class="o">+</span> <span class="n">trunc_size</span><span class="p">]</span>
 
@@ -478,21 +447,24 @@
                 <span class="n">batch_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_loss</span><span class="o">.</span><span class="n">sharded_compute_loss</span><span class="p">(</span>
                     <span class="n">batch</span><span class="p">,</span> <span class="n">outputs</span><span class="p">,</span> <span class="n">attns</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span>
                     <span class="n">trunc_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shard_size</span><span class="p">,</span> <span class="n">normalization</span><span class="p">)</span>
-
-                <span class="c1"># 4. Update the parameters and statistics.</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_accum_count</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
                 <span class="n">total_stats</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">batch_stats</span><span class="p">)</span>
                 <span class="n">report_stats</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">batch_stats</span><span class="p">)</span>
 
                 <span class="c1"># If truncated, don&#39;t backprop fully.</span>
-                <span class="k">if</span> <span class="n">dec_state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">j</span><span class="o">+</span><span class="n">trunc_size</span> <span class="o">&lt;</span> <span class="n">target_size</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">dec_state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">dec_state</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_accum_count</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+        <span class="c1"># 3.bis Multi GPU gradient gather</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_gpu</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">grads</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">grad</span><span class="o">.</span><span class="n">data</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">()</span>
+                     <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">]</span>
+            <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">all_reduce_and_rescale_tensors</span><span class="p">(</span>
+                <span class="n">grads</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
 
-<div class="viewcode-block" id="Trainer.start_report_manager"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.start_report_manager">[docs]</a>    <span class="k">def</span> <span class="nf">start_report_manager</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_time</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="c1"># 4. Update the parameters and statistics.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_start_report_manager</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_time</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Simple function to start report manager (if any)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -500,31 +472,51 @@
             <span class="k">if</span> <span class="n">start_time</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">report_manager</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">report_manager</span><span class="o">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="n">start_time</span></div>
+                <span class="bp">self</span><span class="o">.</span><span class="n">report_manager</span><span class="o">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="n">start_time</span>
 
-<div class="viewcode-block" id="Trainer.report_training"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.report_training">[docs]</a>    <span class="k">def</span> <span class="nf">report_training</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_maybe_gather_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stat</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gather statistics in multi-processes cases</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            stat(:obj:onmt.utils.Statistics): a Statistics object to gather</span>
+<span class="sd">                or None (it returns None in this case)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            stat: the updated (or unchanged) stat object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">stat</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_gpu</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">Statistics</span><span class="o">.</span><span class="n">all_gather_stats</span><span class="p">(</span><span class="n">stat</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">stat</span>
+
+    <span class="k">def</span> <span class="nf">_maybe_report_training</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">num_steps</span><span class="p">,</span> <span class="n">learning_rate</span><span class="p">,</span>
+                               <span class="n">report_stats</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Simple function to report training stats (if report_manager is set)</span>
 <span class="sd">        see `onmt.utils.ReportManagerBase.report_training` for doc</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_manager</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_manager</span><span class="o">.</span><span class="n">report_training</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_manager</span><span class="o">.</span><span class="n">report_training</span><span class="p">(</span>
+                <span class="n">step</span><span class="p">,</span> <span class="n">num_steps</span><span class="p">,</span> <span class="n">learning_rate</span><span class="p">,</span> <span class="n">report_stats</span><span class="p">,</span>
+                <span class="n">multigpu</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_gpu</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Trainer.report_epoch"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.report_epoch">[docs]</a>    <span class="k">def</span> <span class="nf">report_epoch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_report_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">learning_rate</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">train_stats</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">valid_stats</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Simple function to report epoch stats (if report_manager is set)</span>
-<span class="sd">        see `onmt.utils.ReportManagerBase.report_epoch` for doc</span>
+<span class="sd">        Simple function to report stats (if report_manager is set)</span>
+<span class="sd">        see `onmt.utils.ReportManagerBase.report_step` for doc</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_manager</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_manager</span><span class="o">.</span><span class="n">report_epoch</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_manager</span><span class="o">.</span><span class="n">report_step</span><span class="p">(</span>
+                <span class="n">learning_rate</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">train_stats</span><span class="o">=</span><span class="n">train_stats</span><span class="p">,</span>
+                <span class="n">valid_stats</span><span class="o">=</span><span class="n">valid_stats</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Trainer.maybe_drop_checkpoint"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.maybe_drop_checkpoint">[docs]</a>    <span class="k">def</span> <span class="nf">maybe_drop_checkpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_maybe_save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Drop a checkpoint (i.e. save the model) if a model saver is set</span>
-<span class="sd">        see `onmt.models.ModelSaverBase.maybe_save` for doc</span>
+<span class="sd">        Save the model if a model saver is set</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_saver</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">model_saver</span><span class="o">.</span><span class="n">maybe_save</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model_saver</span><span class="o">.</span><span class="n">maybe_save</span><span class="p">(</span><span class="n">step</span><span class="p">)</span></div>
 </pre></div>
 
            </div>

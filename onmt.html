@@ -175,14 +175,15 @@
 <h2>Trainer<a class="headerlink" href="#trainer" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.Trainer">
-<em class="property">class </em><code class="descclassname">onmt.</code><code class="descname">Trainer</code><span class="sig-paren">(</span><em>model</em>, <em>train_loss</em>, <em>valid_loss</em>, <em>optim</em>, <em>trunc_size=0</em>, <em>shard_size=32</em>, <em>data_type='text'</em>, <em>norm_method='sents'</em>, <em>grad_accum_count=1</em>, <em>report_manager=None</em>, <em>model_saver=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/trainer.html#Trainer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.</code><code class="descname">Trainer</code><span class="sig-paren">(</span><em>model</em>, <em>train_loss</em>, <em>valid_loss</em>, <em>optim</em>, <em>trunc_size=0</em>, <em>shard_size=32</em>, <em>data_type='text'</em>, <em>norm_method='sents'</em>, <em>grad_accum_count=1</em>, <em>n_gpu=1</em>, <em>gpu_rank=1</em>, <em>gpu_verbose_level=0</em>, <em>report_manager=None</em>, <em>logger=None</em>, <em>model_saver=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/trainer.html#Trainer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class that controls the training process.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>model</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.models.model.NMTModel</span></code>) – translation model to train</li>
+<li><strong>model</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.models.model.NMTModel</span></code>) – translation model
+to train</li>
 <li><strong>train_loss</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.utils.loss.LossComputeBase</span></code>) – training loss computation</li>
 <li><strong>valid_loss</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.utils.loss.LossComputeBase</span></code>) – training loss computation</li>
 <li><strong>optim</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.utils.optimizers.Optimizer</span></code>) – the optimizer responsible for update</li>
@@ -192,8 +193,9 @@
 <li><strong>norm_method</strong> (<em>string</em>) – normalization methods: [sents|tokens]</li>
 <li><strong>grad_accum_count</strong> (<em>int</em>) – accumulate gradients this many times.</li>
 <li><strong>report_manager</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.utils.ReportMgrBase</span></code>) – the object that creates reports, or None</li>
+<li><strong>logger</strong> – logger file</li>
 <li><strong>model_saver</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.models.ModelSaverBase</span></code>) – the saver is
-used after each epoch to save a checkpoint.
+used to save a checkpoint.
 Thus nothing will be saved if this parameter is None</li>
 </ul>
 </td>
@@ -201,68 +203,11 @@ Thus nothing will be saved if this parameter is None</li>
 </tbody>
 </table>
 <dl class="method">
-<dt id="onmt.Trainer.drop_checkpoint">
-<code class="descname">drop_checkpoint</code><span class="sig-paren">(</span><em>opt</em>, <em>epoch</em>, <em>fields</em>, <em>valid_stats</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/trainer.html#Trainer.drop_checkpoint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer.drop_checkpoint" title="Permalink to this definition">¶</a></dt>
-<dd><p>Save a resumable checkpoint.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>opt</strong> (<em>dict</em>) – option object</li>
-<li><strong>epoch</strong> (<em>int</em>) – epoch number</li>
-<li><strong>fields</strong> (<em>dict</em>) – fields and vocabulary</li>
-<li><strong>valid_stats</strong> – statistics of last validation run</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="onmt.Trainer.epoch_step">
-<code class="descname">epoch_step</code><span class="sig-paren">(</span><em>ppl</em>, <em>epoch</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/trainer.html#Trainer.epoch_step"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer.epoch_step" title="Permalink to this definition">¶</a></dt>
-<dd><p>Epoch step.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="onmt.Trainer.maybe_drop_checkpoint">
-<code class="descname">maybe_drop_checkpoint</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/trainer.html#Trainer.maybe_drop_checkpoint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer.maybe_drop_checkpoint" title="Permalink to this definition">¶</a></dt>
-<dd><p>Drop a checkpoint (i.e. save the model) if a model saver is set
-see <cite>onmt.models.ModelSaverBase.maybe_save</cite> for doc</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="onmt.Trainer.report_epoch">
-<code class="descname">report_epoch</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/trainer.html#Trainer.report_epoch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer.report_epoch" title="Permalink to this definition">¶</a></dt>
-<dd><p>Simple function to report epoch stats (if report_manager is set)
-see <cite>onmt.utils.ReportManagerBase.report_epoch</cite> for doc</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="onmt.Trainer.report_training">
-<code class="descname">report_training</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/trainer.html#Trainer.report_training"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer.report_training" title="Permalink to this definition">¶</a></dt>
-<dd><p>Simple function to report training stats (if report_manager is set)
-see <cite>onmt.utils.ReportManagerBase.report_training</cite> for doc</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="onmt.Trainer.start_report_manager">
-<code class="descname">start_report_manager</code><span class="sig-paren">(</span><em>start_time=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/trainer.html#Trainer.start_report_manager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer.start_report_manager" title="Permalink to this definition">¶</a></dt>
-<dd><p>Simple function to start report manager (if any)</p>
-</dd></dl>
-
-<dl class="method">
 <dt id="onmt.Trainer.train">
-<code class="descname">train</code><span class="sig-paren">(</span><em>train_iter_fct</em>, <em>valid_iter_fct</em>, <em>start_epoch</em>, <em>end_epoch</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/trainer.html#Trainer.train"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer.train" title="Permalink to this definition">¶</a></dt>
+<code class="descname">train</code><span class="sig-paren">(</span><em>train_iter_fct</em>, <em>valid_iter_fct</em>, <em>train_steps</em>, <em>valid_steps</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/trainer.html#Trainer.train"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer.train" title="Permalink to this definition">¶</a></dt>
 <dd><p>The main training loops.
-It trains from epoch=`start_epoch` to <cite>end_epoch</cite>
 by iterating over training data (i.e. <cite>train_iter_fct</cite>)
-and running validation (i.e. iterating over <cite>valid_iter_fct</cite>
-In other words it trains for:</p>
-<blockquote>
-<div>n_epochs = (end_epoch + 1 - start_epoch, start_epoch)</div></blockquote>
+and running validation (i.e. iterating over <cite>valid_iter_fct</cite></p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -272,32 +217,14 @@ In other words it trains for:</p>
 iterator. e.g. something like
 train_iter_fct = lambda: generator(<a href="#id1"><span class="problematic" id="id2">*</span></a>args, <a href="#id3"><span class="problematic" id="id4">**</span></a>kwargs)</li>
 <li><strong>valid_iter_fct</strong> (<em>function</em>) – same as train_iter_fct, for valid data</li>
-<li><strong>start_epoch</strong> (<em>int</em>) – epoch number to start from (begining = 0)</li>
-<li><strong>end_epoch</strong> (<em>int</em>) – last epoch number</li>
+<li><strong>train_steps</strong> (<em>int</em>) – </li>
+<li><strong>valid_steps</strong> (<em>int</em>) – </li>
+<li><strong>save_checkpoint_steps</strong> (<em>int</em>) – </li>
 </ul>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">None</p>
 </td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="onmt.Trainer.train_epoch">
-<code class="descname">train_epoch</code><span class="sig-paren">(</span><em>train_iter</em>, <em>epoch</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/trainer.html#Trainer.train_epoch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer.train_epoch" title="Permalink to this definition">¶</a></dt>
-<dd><p>Train next epoch.
-:param train_iter: training data iterator
-:param epoch: the epoch number
-:type epoch: int</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">epoch loss statistics</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">stats (<code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.utils.Statistics</span></code>)</td>
 </tr>
 </tbody>
 </table>
