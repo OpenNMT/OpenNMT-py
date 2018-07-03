@@ -4,8 +4,6 @@
     Pre-process Data / features files and build vocabulary
 """
 
-from __future__ import print_function
-
 import argparse
 import os
 import glob

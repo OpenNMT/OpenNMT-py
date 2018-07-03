@@ -301,7 +301,8 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
     # if len(src_vocab_path) > 0:
     if src_vocab_path:
         src_vocab = set([])
-        print('Loading source vocab from %s' % src_vocab_path)
+        if logger:
+            logger.info('Loading source vocab from %s' % src_vocab_path)
         assert os.path.exists(src_vocab_path), \
             'src vocab %s not found!' % src_vocab_path
         with open(src_vocab_path) as f:
@@ -315,7 +316,8 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
     # if len(tgt_vocab_path) > 0:
     if tgt_vocab_path:
         tgt_vocab = set([])
-        print('Loading target vocab from %s' % tgt_vocab_path)
+        if logger:
+            logger.info('Loading target vocab from %s' % tgt_vocab_path)
         assert os.path.exists(tgt_vocab_path), \
             'tgt vocab %s not found!' % tgt_vocab_path
         with open(tgt_vocab_path) as f:
@@ -509,7 +511,7 @@ def build_dataset_iter(datasets, fields, opt, is_train=True):
                            device, is_train)
 
 
-def lazily_load_dataset(corpus_type, opt):
+def lazily_load_dataset(corpus_type, opt, logger):
     """
     Dataset generator. Don't do extra stuff here, like printing,
     because they will be postponed to the first loading time.
@@ -523,8 +525,8 @@ def lazily_load_dataset(corpus_type, opt):
 
     def _lazy_dataset_loader(pt_file, corpus_type):
         dataset = torch.load(pt_file)
-        print('Loading %s dataset from %s, number of examples: %d' %
-              (corpus_type, pt_file, len(dataset)))
+        logger.info('Loading %s dataset from %s, number of examples: %d' %
+                    (corpus_type, pt_file, len(dataset)))
         return dataset
 
     # Sort the glob output by file name (by increasing indexes).
@@ -538,9 +540,9 @@ def lazily_load_dataset(corpus_type, opt):
         yield _lazy_dataset_loader(pt, corpus_type)
 
 
-def _load_fields(dataset, data_type, opt, checkpoint):
+def _load_fields(dataset, data_type, opt, checkpoint, logger):
     if checkpoint is not None:
-        print('Loading vocab from checkpoint at %s.' % opt.train_from)
+        logger.info('Loading vocab from checkpoint at %s.' % opt.train_from)
         fields = load_fields_from_vocab(
             checkpoint['vocab'], data_type)
     else:
@@ -550,11 +552,11 @@ def _load_fields(dataset, data_type, opt, checkpoint):
                    if k in dataset.examples[0].__dict__])
 
     if data_type == 'text':
-        print(' * vocabulary size. source = %d; target = %d' %
-              (len(fields['src'].vocab), len(fields['tgt'].vocab)))
+        logger.info(' * vocabulary size. source = %d; target = %d' %
+                    (len(fields['src'].vocab), len(fields['tgt'].vocab)))
     else:
-        print(' * vocabulary size. target = %d' %
-              (len(fields['tgt'].vocab)))
+        logger.info(' * vocabulary size. target = %d' %
+                    (len(fields['tgt'].vocab)))
 
     return fields
 
@@ -563,7 +565,4 @@ def _collect_report_features(fields):
     src_features = collect_features(fields, side='src')
     tgt_features = collect_features(fields, side='tgt')
 
-    for j, feat in enumerate(src_features):
-        print(' * src feature %d size = %d' % (j, len(fields[feat].vocab)))
-    for j, feat in enumerate(tgt_features):
-        print(' * tgt feature %d size = %d' % (j, len(fields[feat].vocab)))
+    return src_features, tgt_features
