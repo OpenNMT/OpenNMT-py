@@ -8,13 +8,15 @@ import signal
 import torch
 
 import onmt.opts as opts
-import onmt.utils.multi_utils
-from train_single import main as single_main
+import onmt.utils.distributed
+from onmt.utils.misc import get_logger
+from onmt.train_single import main as single_main
 
 
 def main(opt):
     """ Spawns 1 process per GPU """
     nb_gpu = len(opt.gpuid)
+    logger = get_logger(opt.log_file)
     mp = torch.multiprocessing.get_context('spawn')
 
     # Create a thread to listen for errors in the child processes.
@@ -30,7 +32,7 @@ def main(opt):
         procs.append(mp.Process(target=run, args=(
             opt, error_queue, ), daemon=True))
         procs[i].start()
-        print(" Starting process pid: %d  " % procs[i].pid)
+        logger.info(" Starting process pid: %d  " % procs[i].pid)
         error_handler.add_child(procs[i].pid)
     for p in procs:
         p.join()
@@ -39,7 +41,7 @@ def main(opt):
 def run(opt, error_queue):
     """ run process """
     try:
-        opt.gpu_rank = onmt.utils.multi_utils.multi_init(opt)
+        opt.gpu_rank = onmt.utils.distributed.multi_init(opt)
         single_main(opt)
     except KeyboardInterrupt:
         pass  # killed by parent, do nothing

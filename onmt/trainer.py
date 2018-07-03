@@ -10,13 +10,13 @@
 """
 
 from __future__ import division
-from __future__ import print_function
 
 import onmt.inputters as inputters
 import onmt.utils
 
 
-def build_trainer(opt, model, fields, optim, data_type, model_saver=None):
+def build_trainer(opt, model, fields, optim, data_type, logger,
+                  model_saver=None):
     """
     Simplify `Trainer` creation based on user `opt`s*
 
@@ -41,13 +41,14 @@ def build_trainer(opt, model, fields, optim, data_type, model_saver=None):
     grad_accum_count = opt.accum_count
     n_gpu = len(opt.gpuid)
     gpu_rank = opt.gpu_rank
-    gpu_verbose = opt.gpu_verbose
+    gpu_verbose_level = opt.gpu_verbose_level
 
     report_manager = onmt.utils.build_report_manager(opt)
     trainer = onmt.Trainer(model, train_loss, valid_loss, optim, trunc_size,
                            shard_size, data_type, norm_method,
-                           grad_accum_count, n_gpu, gpu_rank, gpu_verbose,
-                           report_manager, model_saver=model_saver)
+                           grad_accum_count, n_gpu, gpu_rank,
+                           gpu_verbose_level, report_manager,
+                           logger, model_saver=model_saver)
     return trainer
 
 
@@ -71,6 +72,7 @@ class Trainer(object):
             grad_accum_count(int): accumulate gradients this many times.
             report_manager(:obj:`onmt.utils.ReportMgrBase`):
                 the object that creates reports, or None
+            logger: logger file
             model_saver(:obj:`onmt.models.ModelSaverBase`): the saver is
                 used to save a checkpoint.
                 Thus nothing will be saved if this parameter is None
@@ -79,7 +81,8 @@ class Trainer(object):
     def __init__(self, model, train_loss, valid_loss, optim,
                  trunc_size=0, shard_size=32, data_type='text',
                  norm_method="sents", grad_accum_count=1, n_gpu=1, gpu_rank=1,
-                 gpu_verbose=0, report_manager=None, model_saver=None):
+                 gpu_verbose_level=0, report_manager=None, logger=None,
+                 model_saver=None):
         # Basic attributes.
         self.model = model
         self.train_loss = train_loss
@@ -92,9 +95,10 @@ class Trainer(object):
         self.grad_accum_count = grad_accum_count
         self.n_gpu = n_gpu
         self.gpu_rank = gpu_rank
-        self.gpu_verbose = gpu_verbose
+        self.gpu_verbose_level = gpu_verbose_level
         self.report_manager = report_manager
         self.model_saver = model_saver
+        self.logger = logger
 
         assert grad_accum_count > 0
         if grad_accum_count > 1:
@@ -123,7 +127,8 @@ class Trainer(object):
         Return:
             None
         """
-        print('\nStart training...')
+        logger = self.logger
+        logger.info('\nStart training...')
 
         step = self.optim._step + 1
         true_batchs = []
@@ -133,16 +138,16 @@ class Trainer(object):
 
         total_stats = onmt.utils.Statistics()
         report_stats = onmt.utils.Statistics()
-        self.start_report_manager(start_time=total_stats.start_time)
+        self._start_report_manager(start_time=total_stats.start_time)
 
         while step <= train_steps:
 
             reduce_counter = 0
             for i, batch in enumerate(train_iter):
                 if self.n_gpu == 0 or (i % self.n_gpu == self.gpu_rank):
-                    if self.gpu_verbose > 1:
-                        print("GPU %d: index: %d accum: %d"
-                              % (self.gpu_rank, i, accum))
+                    if self.gpu_verbose_level > 1:
+                        logger.info("GpuRank %d: index: %d accum: %d"
+                                    % (self.gpu_rank, i, accum))
                     cur_dataset = train_iter.get_cur_dataset()
                     self.train_loss.cur_dataset = cur_dataset
 
@@ -158,12 +163,13 @@ class Trainer(object):
                     accum += 1
                     if accum == self.grad_accum_count:
                         reduce_counter += 1
-                        if self.gpu_verbose > 0:
-                            print("GPU %d: reduce_counter: %d n_minibatch %d"
-                                  % (self.gpu_rank, reduce_counter,
-                                     len(true_batchs)))
+                        if self.gpu_verbose_level > 0:
+                            logger.info("GpuRank %d: reduce_counter: %d \
+                                        n_minibatch %d"
+                                        % (self.gpu_rank, reduce_counter,
+                                           len(true_batchs)))
                         if self.n_gpu > 1:
-                            normalization = sum(onmt.utils.multi_utils
+                            normalization = sum(onmt.utils.distributed
                                                 .all_gather_list
                                                 (normalization))
 
@@ -171,7 +177,7 @@ class Trainer(object):
                             true_batchs, normalization, total_stats,
                             report_stats)
 
-                        report_stats = self.maybe_report_training(
+                        report_stats = self._maybe_report_training(
                             step, train_steps,
                             self.optim.learning_rate,
                             report_stats)
@@ -180,29 +186,29 @@ class Trainer(object):
                         accum = 0
                         normalization = 0
                         if (step % valid_steps == 0):
-                            if self.gpu_verbose > 0:
-                                print('GPU %d: validate step %d'
-                                      % (self.gpu_rank, step))
+                            if self.gpu_verbose_level > 0:
+                                logger.info('GpuRank %d: validate step %d'
+                                            % (self.gpu_rank, step))
                             valid_iter = valid_iter_fct()
                             valid_stats = self.validate(valid_iter)
-                            if self.gpu_verbose > 0:
-                                print('GPU %d: gather valid stat step %d'
-                                      % (self.gpu_rank, step))
-                            valid_stats = self.maybe_gather_stats(valid_stats)
-                            if self.gpu_verbose > 0:
-                                print('GPU %d: report stat step %d'
-                                      % (self.gpu_rank, step))
-                            self.report_step(self.optim.learning_rate,
-                                             step, valid_stats=valid_stats)
+                            if self.gpu_verbose_level > 0:
+                                logger.info('GpuRank %d: gather valid stat \
+                                            step %d' % (self.gpu_rank, step))
+                            valid_stats = self._maybe_gather_stats(valid_stats)
+                            if self.gpu_verbos_level > 0:
+                                logger.info('GpuRank %d: report stat step %d'
+                                            % (self.gpu_rank, step))
+                            self._report_step(self.optim.learning_rate,
+                                              step, valid_stats=valid_stats)
 
                         if self.gpu_rank == 0:
-                            self.maybe_save(step)
+                            self._maybe_save(step)
                         step += 1
                         if step > train_steps:
                             break
-
-            print('GPU %d: for information we completed an epoch at step %d'
-                  % (self.gpu_rank, step))
+            if self.gpu_verbose_level > 0:
+                logger.info('GpuRank %d: we completed an epoch \
+                            at step %d' % (self.gpu_rank, step))
             train_iter = train_iter_fct()
 
         return total_stats
@@ -293,13 +299,13 @@ class Trainer(object):
         if self.n_gpu > 1:
             grads = [p.grad.data for p in self.model.parameters()
                      if p.requires_grad]
-            onmt.utils.multi_utils.all_reduce_and_rescale_tensors(
+            onmt.utils.distributed.all_reduce_and_rescale_tensors(
                 grads, float(1))
 
         # 4. Update the parameters and statistics.
         self.optim.step()
 
-    def start_report_manager(self, start_time=None):
+    def _start_report_manager(self, start_time=None):
         """
         Simple function to start report manager (if any)
         """
@@ -309,7 +315,7 @@ class Trainer(object):
             else:
                 self.report_manager.start_time = start_time
 
-    def maybe_gather_stats(self, stat):
+    def _maybe_gather_stats(self, stat):
         """
         Gather statistics in multi-processes cases
 
@@ -324,8 +330,8 @@ class Trainer(object):
             return onmt.utils.Statistics.all_gather_stats(stat)
         return stat
 
-    def maybe_report_training(self, step, num_steps, learning_rate,
-                              report_stats):
+    def _maybe_report_training(self, step, num_steps, learning_rate,
+                               report_stats):
         """
         Simple function to report training stats (if report_manager is set)
         see `onmt.utils.ReportManagerBase.report_training` for doc
@@ -335,8 +341,8 @@ class Trainer(object):
                 step, num_steps, learning_rate, report_stats,
                 multigpu=self.n_gpu > 1)
 
-    def report_step(self, learning_rate, step, train_stats=None,
-                    valid_stats=None):
+    def _report_step(self, learning_rate, step, train_stats=None,
+                     valid_stats=None):
         """
         Simple function to report stats (if report_manager is set)
         see `onmt.utils.ReportManagerBase.report_step` for doc
@@ -346,7 +352,7 @@ class Trainer(object):
                 learning_rate, step, train_stats=train_stats,
                 valid_stats=valid_stats)
 
-    def maybe_save(self, step):
+    def _maybe_save(self, step):
         """
         Save the model if a model saver is set
         """

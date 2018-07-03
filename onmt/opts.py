@@ -241,7 +241,7 @@ def train_opts(parser):
                        help="Rank the current gpu device.")
     group.add_argument('-gpu_backend', default='nccl', nargs='+', type=str,
                        help="Type of torch distributed backend")
-    group.add_argument('-gpu_verbose', default=0, type=int,
+    group.add_argument('-gpu_verbose_level', default=0, type=int,
                        help="Gives more info on each process per GPU.")
 
     group.add_argument('-seed', type=int, default=-1,
@@ -305,6 +305,8 @@ def train_opts(parser):
                         uses more memory.""")
     group.add_argument('-train_steps', type=int, default=100000,
                        help='Number of training steps')
+    group.add_argument('-epochs', type=int, default=0,
+                       help='Deprecated epochs see train_steps')
     group.add_argument('-optim', default='sgd',
                        choices=['sgd', 'adagrad', 'adadelta', 'adam',
                                 'sparseadam'],

@@ -3,9 +3,9 @@ from __future__ import division
 import time
 import math
 import sys
-import torch
 
-import onmt
+from torch.distributed import get_rank
+from onmt.utils.distributed import all_gather_list
 
 
 class Statistics(object):
@@ -55,10 +55,9 @@ class Statistics(object):
             our_stats(list([`Statistics`])): list of updated stats
         """
         # Get a list of world_size lists with len(stat_list) Statistics objects
-        all_stats = onmt.utils.multi_utils.all_gather_list(stat_list,
-                                                           max_size=max_size)
+        all_stats = all_gather_list(stat_list, max_size=max_size)
 
-        our_rank = torch.distributed.get_rank()
+        our_rank = get_rank()
         our_stats = all_stats[our_rank]
         for other_rank, stats in enumerate(all_stats):
             if other_rank == our_rank:

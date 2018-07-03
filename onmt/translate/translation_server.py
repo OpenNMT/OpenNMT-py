@@ -9,6 +9,7 @@ import json
 import threading
 
 import torch
+from onmt.utils.misc import get_logger
 from onmt.translate.translator import build_translator
 
 import onmt.opts
@@ -174,6 +175,7 @@ class ServerModel:
         self.unload_timer = None
         self.user_opt = opt
         self.tokenizer = None
+        self.logger = get_logger(opt.log_file)
 
         if load:
             self.load()
@@ -209,7 +211,7 @@ class ServerModel:
 
     def load(self):
         timer = Timer()
-        print("Loading model %d" % self.model_id)
+        self.logger.info("Loading model %d" % self.model_id)
         timer.start()
 
         try:
@@ -221,7 +223,7 @@ class ServerModel:
 
         timer.tick("model_loading")
         if self.tokenizer_opt is not None:
-            print("Loading tokenizer")
+            self.logger.info("Loading tokenizer")
             mandatory = ["type", "model"]
             for m in mandatory:
                 if m not in self.tokenizer_opt:
@@ -251,7 +253,7 @@ class ServerModel:
                 times: (dict) containing times
         """
         timer = Timer()
-        print("\nRunning translation using %d" % self.model_id)
+        self.logger.info("\nRunning translation using %d" % self.model_id)
 
         timer.start()
         if not self.loaded:
@@ -291,7 +293,7 @@ class ServerModel:
                 raise ServerModelError("Runtime Error: %s" % str(e))
 
         timer.tick(name="translation")
-        print("""Using model #%d\t%d inputs (%d subsegment)
+        self.logger.info("""Using model #%d\t%d inputs (%d subsegment)
                \ttranslation time: %f""" % (self.model_id, len(subsegment),
                                             sscount,
                                             timer.times['translation']))
@@ -305,9 +307,10 @@ class ServerModel:
         scores = [score_tensor.item()
                   for score_tensor in flatten_list(scores)]
 
-        print("Translation Results: ", len(results))
+        self.logger.info("Translation Results: ", len(results))
         if len(whitespace_segments) > 0:
-            print("Whitespace segments: %d" % len(whitespace_segments))
+            self.logger.info("Whitespace segments: %d"
+                             % len(whitespace_segments))
 
         for k in sorted(whitespace_segments.keys()):
             results.insert(k, whitespace_segments[k])
@@ -330,14 +333,15 @@ class ServerModel:
            or unloading it; depending on `self.on_timemout` value
         """
         if self.on_timeout == "unload":
-            print("Timeout: unloading model %d" % self.model_id)
+            self.logger.info("Timeout: unloading model %d" % self.model_id)
             self.unload()
         if self.on_timeout == "to_cpu":
-            print("Timeout: sending model %d to CPU" % self.model_id)
+            self.logger.info("Timeout: sending model %d to CPU"
+                             % self.model_id)
             self.to_cpu()
 
     def unload(self):
-        print("Unloading model %d" % self.model_id)
+        self.logger.info("Unloading model %d" % self.model_id)
         del self.translator
         if self.opt.cuda:
             torch.cuda.empty_cache()

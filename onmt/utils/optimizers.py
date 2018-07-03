@@ -11,7 +11,6 @@ def build_optim(model, opt, checkpoint):
     saved_optimizer_state_dict = None
 
     if opt.train_from:
-        print('Loading optimizer from checkpoint.')
         optim = checkpoint['optim']
         # We need to save a copy of optim.optimizer.state_dict() for setting
         # the, optimizer state later on in Stage 2 in this method, since
@@ -20,7 +19,6 @@ def build_optim(model, opt, checkpoint):
         # optim.optimizer.state_dict()
         saved_optimizer_state_dict = optim.optimizer.state_dict()
     else:
-        print('Making optimizer for training.')
         optim = Optimizer(
             opt.optim, opt.learning_rate, opt.max_grad_norm,
             lr_decay=opt.learning_rate_decay,
@@ -221,7 +219,6 @@ class Optimizer(object):
                 if ((self._step - self.start_decay_steps)
                    % self.decay_steps == 0):
                     self.learning_rate = self.learning_rate * self.lr_decay
-                    print("Decaying learning rate to %g" % self.learning_rate)
 
         if self.method != 'sparseadam':
             self.optimizer.param_groups[0]['lr'] = self.learning_rate
@@ -229,15 +226,3 @@ class Optimizer(object):
         if self.max_grad_norm:
             clip_grad_norm_(self.params, self.max_grad_norm)
         self.optimizer.step()
-
-
-def _show_optimizer_state(optim):
-    """ debug optimizer """
-    print("optim.optimizer.state_dict()['state'] keys: ")
-    for key in optim.optimizer.state_dict()['state'].keys():
-        print("optim.optimizer.state_dict()['state'] key: " + str(key))
-
-    print("optim.optimizer.state_dict()['param_groups'] elements: ")
-    for element in optim.optimizer.state_dict()['param_groups']:
-        print("optim.optimizer.state_dict()['param_groups'] element: " + str(
-            element))

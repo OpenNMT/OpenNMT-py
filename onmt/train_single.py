@@ -2,7 +2,6 @@
 """
     Training on a single process
 """
-from __future__ import print_function
 from __future__ import division
 
 import argparse
@@ -18,6 +17,7 @@ from onmt.model_builder import build_model
 from onmt.utils.optimizers import build_optim
 from onmt.trainer import build_trainer
 from onmt.models import build_model_saver
+from onmt.utils.misc import get_logger
 
 
 def _check_save_model_path(opt):
@@ -29,7 +29,6 @@ def _check_save_model_path(opt):
 
 def _tally_parameters(model):
     n_params = sum([p.nelement() for p in model.parameters()])
-    print('* number of parameters: %d' % n_params)
     enc = 0
     dec = 0
     for name, param in model.named_parameters():
@@ -37,11 +36,10 @@ def _tally_parameters(model):
             enc += param.nelement()
         elif 'decoder' or 'generator' in name:
             dec += param.nelement()
-    print('encoder: ', enc)
-    print('decoder: ', dec)
+    return n_params, enc, dec
 
 
-def training_opt_postprocessing(opt):
+def training_opt_postprocessing(opt, logger):
     if opt.word_vec_size != -1:
         opt.src_word_vec_size = opt.word_vec_size
         opt.tgt_word_vec_size = opt.word_vec_size
@@ -56,7 +54,7 @@ def training_opt_postprocessing(opt):
         raise AssertionError("Using SRU requires -gpuid set.")
 
     if torch.cuda.is_available() and not opt.gpuid:
-        print("WARNING: You have a CUDA device, should run with -gpuid 0")
+        logger.info("WARNING: You have a CUDA device, should run with -gpuid")
 
     if opt.gpuid:
         torch.cuda.set_device(opt.device_id)
@@ -72,11 +70,13 @@ def training_opt_postprocessing(opt):
 
 
 def main(opt):
-    opt = training_opt_postprocessing(opt)
+    logger = get_logger(opt.log_file)
+
+    opt = training_opt_postprocessing(opt, logger)
 
     # Load checkpoint if we resume from a previous training.
     if opt.train_from:
-        print('Loading checkpoint from %s' % opt.train_from)
+        logger.info('Loading checkpoint from %s' % opt.train_from)
         checkpoint = torch.load(opt.train_from,
                                 map_location=lambda storage, loc: storage)
         model_opt = checkpoint['opt']
@@ -86,18 +86,28 @@ def main(opt):
 
     # Peek the fisrt dataset to determine the data_type.
     # (All datasets have the same data_type).
-    first_dataset = next(lazily_load_dataset("train", opt))
+    first_dataset = next(lazily_load_dataset("train", opt, logger))
     data_type = first_dataset.data_type
 
     # Load fields generated from preprocess phase.
-    fields = _load_fields(first_dataset, data_type, opt, checkpoint)
+    fields = _load_fields(first_dataset, data_type, opt, checkpoint, logger)
 
     # Report src/tgt features.
-    _collect_report_features(fields)
+
+    src_features, tgt_features = _collect_report_features(fields)
+    for j, feat in enumerate(src_features):
+        logger.info(' * src feature %d size = %d'
+                    % (j, len(fields[feat].vocab)))
+    for j, feat in enumerate(tgt_features):
+        logger.info(' * tgt feature %d size = %d'
+                    % (j, len(fields[feat].vocab)))
 
     # Build model.
-    model = build_model(model_opt, opt, fields, checkpoint)
-    _tally_parameters(model)
+    model = build_model(model_opt, opt, fields, checkpoint, logger)
+    n_params, enc, dec = _tally_parameters(model)
+    logger.info('encoder: %d' % enc)
+    logger.info('decoder: %d' % dec)
+    logger.info('* number of parameters: %d' % n_params)
     _check_save_model_path(opt)
 
     # Build optimizer.
@@ -107,13 +117,13 @@ def main(opt):
     model_saver = build_model_saver(model_opt, opt, model, fields, optim)
 
     trainer = build_trainer(
-        opt, model, fields, optim, data_type, model_saver=model_saver)
+        opt, model, fields, optim, data_type, logger, model_saver=model_saver)
 
     def train_iter_fct(): return build_dataset_iter(
-        lazily_load_dataset("train", opt), fields, opt)
+        lazily_load_dataset("train", opt, logger), fields, opt)
 
     def valid_iter_fct(): return build_dataset_iter(
-        lazily_load_dataset("valid", opt), fields, opt)
+        lazily_load_dataset("valid", opt, logger), fields, opt)
 
     # Do training.
     trainer.train(train_iter_fct, valid_iter_fct, opt.train_steps,

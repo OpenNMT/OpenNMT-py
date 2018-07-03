@@ -2,7 +2,6 @@
 This file is for models creation, which consults options
 and creates each encoder and decoder accordingly.
 """
-from __future__ import print_function
 
 import torch
 import torch.nn as nn
@@ -237,11 +236,10 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
     return model
 
 
-def build_model(model_opt, opt, fields, checkpoint):
+def build_model(model_opt, opt, fields, checkpoint, logger):
     """ Build the Model """
-    print('Building model...')
+    logger.info('Building model...')
     model = build_base_model(model_opt, fields,
                              use_gpu(opt), checkpoint)
-    print(model)
-
+    logger.info(model)
     return model

@@ -2,7 +2,6 @@
 """
     Main training workflow
 """
-from __future__ import print_function
 from __future__ import division
 
 import argparse
@@ -10,8 +9,8 @@ import argparse
 import torch
 
 import onmt.opts as opts
-from train_multi import main as multi_main
-from train_single import main as single_main
+from onmt.train_multi import main as multi_main
+from onmt.train_single import main as single_main
 
 
 def main(opt):
@@ -19,8 +18,8 @@ def main(opt):
     if opt.rnn_type == "SRU" and not opt.gpuid:
         raise AssertionError("Using SRU requires -gpuid set.")
 
-    if torch.cuda.is_available() and not opt.gpuid:
-        print("WARNING: You have a CUDA device, should run with -gpuid 0")
+    if opt.epochs:
+        raise AssertionError("-epochs is deprecated please use -train_steps.")
 
     if len(opt.gpuid) > 1:
         multi_main(opt)
