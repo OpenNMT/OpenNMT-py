@@ -303,16 +303,18 @@ class Translator(object):
         """
         with torch.no_grad():
             if fast:
-                return self._fast_translate_batch(batch, data)
+                return self._fast_translate_batch(
+                    batch,
+                    data,
+                    n_best=self.n_best)
             else:
                 return self._translate_batch(batch, data)
 
-    def _fast_translate_batch(self, batch, data):
+    def _fast_translate_batch(self, batch, data, n_best=1):
         # TODO: faster code path for beam_size == 1.
 
         # TODO: support these blacklisted features.
         assert data.data_type == 'text'
-        assert self.n_best == 1
         assert self.min_length == 0
         assert not self.copy_attn
         assert not self.replace_unk
@@ -362,7 +364,7 @@ class Translator(object):
         results = {}
         results["predictions"] = [[] for _ in range(batch_size)]  # noqa: F812
         results["scores"] = [[] for _ in range(batch_size)]  # noqa: F812
-        results["attention"] = [[[]] for _ in range(batch_size)]  # noqa: F812
+        results["attention"] = [[] for _ in range(batch_size)]  # noqa: F812
         results["gold_score"] = [0] * batch_size
         results["batch"] = batch
 
@@ -418,8 +420,10 @@ class Translator(object):
                     # TODO: if we get there because of max_length, the last
                     # predicted token is currently discarded.
                     b = batch_offset[i]
-                    results["predictions"][b].append(predictions[i, 0, 1:])
-                    results["scores"][b].append(scores[i, 0])
+                    for n in range(n_best):
+                        results["attention"][b].append([])
+                        results["predictions"][b].append(predictions[i, n, 1:])
+                        results["scores"][b].append(scores[i, n])
                 non_finished = end_condition.eq(0).nonzero().view(-1)
                 # If all sentences are translated, no need to go further.
                 if len(non_finished) == 0:
