@@ -6,8 +6,6 @@ from __future__ import division
 
 import argparse
 
-import torch
-
 import onmt.opts as opts
 from onmt.train_multi import main as multi_main
 from onmt.train_single import main as single_main
