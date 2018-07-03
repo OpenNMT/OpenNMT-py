@@ -198,8 +198,6 @@ class TransformerDecoder(nn.Module):
         tgt_pad_mask = tgt_words.data.eq(padding_idx).unsqueeze(1) \
             .expand(tgt_batch, tgt_len, tgt_len)
 
-        saved_inputs = []
-
         for i in range(self.num_layers):
             output, attn, all_input \
                 = self.transformer_layers[i](output, src_memory_bank,
@@ -208,9 +206,7 @@ class TransformerDecoder(nn.Module):
                                                                format(i)]
                                              if state.cache is not None else None,
                                              step=step)
-            saved_inputs.append(all_input)
 
-        saved_inputs = torch.stack(saved_inputs)
         output = self.layer_norm(output)
 
         # Process the result and update the attentions.
@@ -221,8 +217,6 @@ class TransformerDecoder(nn.Module):
         if self._copy:
             attns["copy"] = attn
 
-        # Update the state.
-        # state = state.update_state(tgt, saved_inputs)
         return outputs, state, attns
 
     def init_decoder_state(self, src, memory_bank, enc_hidden):
@@ -253,13 +247,6 @@ class TransformerDecoderState(DecoderState):
 
     def detach(self):
         self.src = self.src.detach()
-
-    def update_state(self, new_input, previous_layer_inputs):
-        """ Called for every decoder forward pass. """
-        state = TransformerDecoderState(self.src)
-        state.previous_input = new_input
-        state.previous_layer_inputs = previous_layer_inputs
-        return state
 
     def _init_cache(self, memory_bank, num_layers, self_attn_type):
         self.cache = {}
@@ -295,10 +282,6 @@ class TransformerDecoderState(DecoderState):
                         struct[k] = fn(v, batch_dim)
 
         self.src = fn(self.src, 1)
-        # if self.previous_input is not None:
-        #     self.previous_input = fn(self.previous_input, 1)
-        # if self.previous_layer_inputs is not None:
-        #     self.previous_layer_inputs = fn(self.previous_layer_inputs, 1)
         if self.cache is not None:
             _recursive_map(self.cache)
 
