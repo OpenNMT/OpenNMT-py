@@ -377,7 +377,8 @@ class Translator(object):
                 memory_bank,
                 dec_states,
                 memory_lengths=memory_lengths,
-                step=step)
+                step=step,
+                fast=True)
 
             # Generator forward.
             log_probs = self.model.generator.forward(dec_out.squeeze(0))
@@ -530,8 +531,9 @@ class Translator(object):
 
             # Run one step.
             dec_out, dec_states, attn = self.model.decoder(
-                inp, memory_bank, dec_states, memory_lengths=memory_lengths,
-                step=i)
+                inp, memory_bank, dec_states,
+                memory_lengths=memory_lengths,
+                step=i, fast=False)
 
             dec_out = dec_out.squeeze(0)
 

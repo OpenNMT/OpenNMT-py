@@ -52,7 +52,7 @@ class TransformerDecoderLayer(nn.Module):
         self.register_buffer('mask', mask)
 
     def forward(self, inputs, memory_bank, src_pad_mask, tgt_pad_mask,
-                previous_input=None, layer_cache=None, step=None):
+                previous_input=None, layer_cache=None, step=None, fast=False):
         """
         Args:
             inputs (`FloatTensor`): `[batch_size x 1 x model_dim]`
@@ -81,7 +81,8 @@ class TransformerDecoderLayer(nn.Module):
             query, attn = self.self_attn(all_input, all_input, input_norm,
                                          mask=dec_mask,
                                          layer_cache=layer_cache,
-                                         type="self")
+                                         type="self",
+                                         fast=fast)
         elif self.self_attn_type == "average":
             query, attn = self.self_attn(input_norm, mask=dec_mask,
                                          layer_cache=layer_cache, step=step)
@@ -92,7 +93,8 @@ class TransformerDecoderLayer(nn.Module):
         mid, attn = self.context_attn(memory_bank, memory_bank, query_norm,
                                       mask=src_pad_mask,
                                       layer_cache=None,
-                                      type="context")
+                                      type="context",
+                                      fast=fast)
         output = self.feed_forward(self.drop(mid) + query)
 
         return output, attn, all_input
@@ -169,7 +171,7 @@ class TransformerDecoder(nn.Module):
         self.layer_norm = onmt.modules.LayerNorm(hidden_size)
 
     def forward(self, tgt, memory_bank, state, memory_lengths=None,
-                step=None, cache=None):
+                step=None, cache=None, fast=None):
         """
         See :obj:`onmt.modules.RNNDecoderBase.forward()`
         """
@@ -198,14 +200,28 @@ class TransformerDecoder(nn.Module):
         tgt_pad_mask = tgt_words.data.eq(padding_idx).unsqueeze(1) \
             .expand(tgt_batch, tgt_len, tgt_len)
 
+        if not(fast):
+            saved_inputs = []
+            state.cache = None
+
         for i in range(self.num_layers):
+            prev_layer_input = None
+            if not(fast):
+                if state.previous_input is not None:
+                    prev_layer_input = state.previous_layer_inputs[i]
             output, attn, all_input \
                 = self.transformer_layers[i](output, src_memory_bank,
                                              src_pad_mask, tgt_pad_mask,
+                                             previous_input=prev_layer_input,
                                              layer_cache=state.cache["layer_{}".
                                                                format(i)]
                                              if state.cache is not None else None,
-                                             step=step)
+                                             step=step, fast=fast)
+            if not(fast):
+                saved_inputs.append(all_input)
+
+        if not(fast):
+            saved_inputs = torch.stack(saved_inputs)
 
         output = self.layer_norm(output)
 
@@ -216,6 +232,9 @@ class TransformerDecoder(nn.Module):
         attns["std"] = attn
         if self._copy:
             attns["copy"] = attn
+
+        if not(fast):
+            state = state.update_state(tgt, saved_inputs)
 
         return outputs, state, attns
 
@@ -236,6 +255,8 @@ class TransformerDecoderState(DecoderState):
                     with optional feature tensors, of size (len x batch).
         """
         self.src = src
+        self.previous_input = None
+        self.previous_layer_inputs = None
         self.cache = None
 
     @property
@@ -243,10 +264,23 @@ class TransformerDecoderState(DecoderState):
         """
         Contains attributes that need to be updated in self.beam_update().
         """
-        return (self.src)
+        if self.previous_input is not None and self.previous_layer_inputs is not None:
+            return (self.previous_input, self.previous_layer_inputs, self.src)
+        else:
+            return (self.src)
 
     def detach(self):
+        if self.previous_input is not None:
+            self.previous_input = self.previous_input.detach()
+        if self.previous_layer_inputs is not None:
+            self.previous_layer_inputs = self.previous_layer_inputs.detach()
         self.src = self.src.detach()
+
+    def update_state(self, new_input, previous_layer_inputs):
+        state = TransformerDecoderState(self.src)
+        state.previous_input = new_input
+        state.previous_layer_inputs = previous_layer_inputs
+        return state
 
     def _init_cache(self, memory_bank, num_layers, self_attn_type):
         self.cache = {}
@@ -285,15 +319,15 @@ class TransformerDecoderState(DecoderState):
         if self.cache is not None:
             _recursive_map(self.cache)
 
-    def beam_update(self, idx, positions, beam_size):
-        """ Need to document this """
-
-        for k_layer, layer in self.cache.items():
-            if k_layer not in ["memory", "memory_mask"]:
-                for layer_cache in [layer["self_keys"], layer["self_values"]]:
-                    if layer_cache is not None:
-                        n, n_step, dim = layer_cache.size()
-                        batch_size = n // beam_size
-                        sent_states = layer_cache.view(beam_size, batch_size, -1)[:, idx, :]
-                        sent_states.data.copy_(
-                            sent_states.data.index_select(0, positions))
+    # def beam_update(self, idx, positions, beam_size):
+    #     """ Need to document this """
+    #     if self.cache is not None:
+    #         for k_layer, layer in self.cache.items():
+    #             if k_layer not in ["memory", "memory_mask"]:
+    #                 for layer_cache in [layer["self_keys"], layer["self_values"]]:
+    #                     if layer_cache is not None:
+    #                         n, n_step, dim = layer_cache.size()
+    #                         batch_size = n // beam_size
+    #                         sent_states = layer_cache.view(beam_size, batch_size, -1)[:, idx, :]
+    #                         sent_states.data.copy_(
+    #                             sent_states.data.index_select(0, positions))
