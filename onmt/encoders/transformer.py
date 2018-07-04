@@ -15,24 +15,21 @@ class TransformerEncoderLayer(nn.Module):
     A single layer of the transformer encoder.
 
     Args:
-        size (int): the dimension of keys/values/queries in
+        d_model (int): the dimension of keys/values/queries in
                    MultiHeadedAttention, also the input size of
                    the first-layer of the PositionwiseFeedForward.
+        heads (int): the number of head for MultiHeadedAttention.
+        d_ff (int): the second-layer of the PositionwiseFeedForward.
         dropout (float): dropout probability(0-1.0).
-        head_count (int): the number of head for MultiHeadedAttention.
-        hidden_size (int): the second-layer of the PositionwiseFeedForward.
     """
 
-    def __init__(self, size, dropout,
-                 head_count=8, hidden_size=2048):
+    def __init__(self, d_model, heads, d_ff, dropout):
         super(TransformerEncoderLayer, self).__init__()
 
         self.self_attn = onmt.modules.MultiHeadedAttention(
-            head_count, size, dropout=dropout)
-        self.feed_forward = PositionwiseFeedForward(size,
-                                                    hidden_size,
-                                                    dropout)
-        self.layer_norm = onmt.modules.LayerNorm(size)
+            heads, d_model, dropout=dropout)
+        self.feed_forward = PositionwiseFeedForward(d_model, d_ff, dropout)
+        self.layer_norm = onmt.modules.LayerNorm(d_model)
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, inputs, mask):
@@ -73,7 +70,9 @@ class TransformerEncoder(EncoderBase):
 
     Args:
         num_layers (int): number of encoder layers
-        hidden_size (int): number of hidden units
+        d_model (int): size of the model
+        heads (int): number of heads
+        d_ff (int): size of the inner FF layer
         dropout (float): dropout parameters
         embeddings (:obj:`onmt.modules.Embeddings`):
           embeddings to use, should have positional encodings
@@ -85,16 +84,16 @@ class TransformerEncoder(EncoderBase):
         * memory_bank `[src_len x batch_size x model_dim]`
     """
 
-    def __init__(self, num_layers, hidden_size,
+    def __init__(self, num_layers, d_model, heads, d_ff,
                  dropout, embeddings):
         super(TransformerEncoder, self).__init__()
 
         self.num_layers = num_layers
         self.embeddings = embeddings
         self.transformer = nn.ModuleList(
-            [TransformerEncoderLayer(hidden_size, dropout)
+            [TransformerEncoderLayer(d_model, heads, d_ff, dropout)
              for _ in range(num_layers)])
-        self.layer_norm = onmt.modules.LayerNorm(hidden_size)
+        self.layer_norm = onmt.modules.LayerNorm(d_model)
 
     def forward(self, src, lengths=None):
         """ See :obj:`EncoderBase.forward()`"""
@@ -104,14 +103,6 @@ class TransformerEncoder(EncoderBase):
 
         out = emb.transpose(0, 1).contiguous()
         words = src[:, :, 0].transpose(0, 1)
-        # CHECKS - commented for performance issue
-        # out_batch, out_len, _ = out.size()
-        # w_batch, w_len = words.size()
-        # aeq(out_batch, w_batch)
-        # aeq(out_len, w_len)
-        # END CHECKS
-
-        # Make mask.
         w_batch, w_len = words.size()
         padding_idx = self.embeddings.word_padding_idx
         mask = words.data.eq(padding_idx).unsqueeze(1) \

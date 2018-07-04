@@ -107,6 +107,10 @@ def model_opts(parser):
     group.add_argument('-self_attn_type', type=str, default="scaled-dot",
                        help="""Self attention type in Transformer decoder
                        layer -- currently "scaled-dot" or "average" """)
+    group.add_argument('-heads', type=int, default=8,
+                       help='Number of heads for transformer self-attention')
+    group.add_argument('-transformer_ff', type=int, default=2048,
+                       help='Size of hidden transformer feed-forward')
 
     # Genenerator and loss options.
     group.add_argument('-copy_attn', action="store_true",

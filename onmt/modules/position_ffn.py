@@ -11,21 +11,19 @@ class PositionwiseFeedForward(nn.Module):
     """ A two-layer Feed-Forward-Network with residual layer norm.
 
         Args:
-            size (int): the size of input for the first-layer of the FFN.
-            hidden_size (int): the hidden layer size of the second-layer
+            d_model (int): the size of input for the first-layer of the FFN.
+            d_ff (int): the hidden layer size of the second-layer
                               of the FNN.
             dropout (float): dropout probability(0-1.0).
     """
 
-    def __init__(self, size, hidden_size, dropout=0.1):
+    def __init__(self, d_model, d_ff, dropout=0.1):
         super(PositionwiseFeedForward, self).__init__()
-        self.w_1 = nn.Linear(size, hidden_size)
-        self.w_2 = nn.Linear(hidden_size, size)
-        self.layer_norm = onmt.modules.LayerNorm(size)
+        self.w_1 = nn.Linear(d_model, d_ff)
+        self.w_2 = nn.Linear(d_ff, d_model)
+        self.layer_norm = onmt.modules.LayerNorm(d_model)
         self.dropout_1 = nn.Dropout(dropout)
         self.relu = nn.ReLU()
-        # Save a little memory, by doing inplace.
-        # self.relu = nn.ReLU(inplace=True)
         self.dropout_2 = nn.Dropout(dropout)
 
     def forward(self, x):
