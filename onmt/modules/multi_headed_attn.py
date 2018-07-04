@@ -66,7 +66,8 @@ class MultiHeadedAttention(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.final_linear = nn.Linear(model_dim, model_dim)
 
-    def forward(self, key, value, query, mask=None, layer_cache=None, type=None, fast=False):
+    def forward(self, key, value, query, mask=None,
+                layer_cache=None, type=None, fast=False):
         """
         Compute the context vector and the attention vectors.
 
@@ -121,33 +122,40 @@ class MultiHeadedAttention(nn.Module):
 
         # 1) Project key, value, and query.
         if fast:
-          if type == "self":
-            query, key, value = self.linear_query(query),\
-                                self.linear_keys(query),\
-                                self.linear_values(query)
-            if layer_cache is not None:
-              device = key.device
-              if layer_cache["self_keys"] is not None:
-                key = torch.cat((layer_cache["self_keys"].to(device), key), dim=1)
-              if layer_cache["self_values"] is not None:
-                value = torch.cat((layer_cache["self_values"].to(device), value), dim=1)
-              layer_cache["self_keys"] = key
-              layer_cache["self_values"] = value
-          elif type == "context":
-            query = self.linear_query(query)
-            if layer_cache is not None:
-              if layer_cache["memory_keys"] is None:
-                key, value = self.linear_keys(key), self.linear_values(value)
-              else:
-                key, value = layer_cache["memory_keys"], layer_cache["memory_values"]
-              layer_cache["memory_keys"] = key
-              layer_cache["memory_values"] = value
-            else:
-              key, value = self.linear_keys(key), self.linear_values(value)
+            if type == "self":
+                query, key, value = self.linear_query(query),\
+                                    self.linear_keys(query),\
+                                    self.linear_values(query)
+                if layer_cache is not None:
+                    device = key.device
+                    if layer_cache["self_keys"] is not None:
+                        key = torch.cat(
+                            (layer_cache["self_keys"].to(device), key),
+                            dim=1)
+                    if layer_cache["self_values"] is not None:
+                        value = torch.cat(
+                            (layer_cache["self_values"].to(device), value),
+                            dim=1)
+                    layer_cache["self_keys"] = key
+                    layer_cache["self_values"] = value
+            elif type == "context":
+                query = self.linear_query(query)
+                if layer_cache is not None:
+                    if layer_cache["memory_keys"] is None:
+                        key, value = self.linear_keys(key),\
+                                     self.linear_values(value)
+                    else:
+                        key, value = layer_cache["memory_keys"],\
+                                   layer_cache["memory_values"]
+                    layer_cache["memory_keys"] = key
+                    layer_cache["memory_values"] = value
+                else:
+                    key, value = self.linear_keys(key),\
+                                 self.linear_values(value)
         else:
-          key = self.linear_keys(key)
-          value = self.linear_values(value)
-          query = self.linear_query(query)
+            key = self.linear_keys(key)
+            value = self.linear_values(value)
+            query = self.linear_query(query)
 
         key_len = key.size(1)
         query_len = query.size(1)

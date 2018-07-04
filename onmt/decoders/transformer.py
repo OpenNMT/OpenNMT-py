@@ -210,13 +210,13 @@ class TransformerDecoder(nn.Module):
                 if state.previous_input is not None:
                     prev_layer_input = state.previous_layer_inputs[i]
             output, attn, all_input \
-                = self.transformer_layers[i](output, src_memory_bank,
-                                             src_pad_mask, tgt_pad_mask,
-                                             previous_input=prev_layer_input,
-                                             layer_cache=state.cache["layer_{}".
-                                                               format(i)]
-                                             if state.cache is not None else None,
-                                             step=step, fast=fast)
+                = self.transformer_layers[i](
+                    output, src_memory_bank,
+                    src_pad_mask, tgt_pad_mask,
+                    previous_input=prev_layer_input,
+                    layer_cache=state.cache["layer_{}".format(i)]
+                    if state.cache is not None else None,
+                    step=step, fast=fast)
             if not(fast):
                 saved_inputs.append(all_input)
 
@@ -264,8 +264,11 @@ class TransformerDecoderState(DecoderState):
         """
         Contains attributes that need to be updated in self.beam_update().
         """
-        if self.previous_input is not None and self.previous_layer_inputs is not None:
-            return (self.previous_input, self.previous_layer_inputs, self.src)
+        if (self.previous_input is not None
+                and self.previous_layer_inputs is not None):
+            return (self.previous_input,
+                    self.previous_layer_inputs,
+                    self.src)
         else:
             return (self.src)
 
