@@ -298,7 +298,8 @@ class Trainer(object):
         # 3.bis Multi GPU gradient gather
         if self.n_gpu > 1:
             grads = [p.grad.data for p in self.model.parameters()
-                     if p.requires_grad]
+                     if p.requires_grad
+                     and p.grad is not None]
             onmt.utils.distributed.all_reduce_and_rescale_tensors(
                 grads, float(1))
 
