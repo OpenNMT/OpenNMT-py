@@ -186,11 +186,9 @@ class Embeddings(nn.Module):
         Return:
             `FloatTensor`: word embeddings `[len x batch x embedding_size]`
         """
-        # emb = self.make_embedding(source)
         if self.position_encoding:
             for i, module in enumerate(self.make_embedding._modules.values()):
                 if i == len(self.make_embedding._modules.values()) - 1:
-                    # print("STEP : ", step)
                     source = module(source, step=step)
                 else:
                     source = module(source)
