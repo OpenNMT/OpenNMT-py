@@ -270,7 +270,7 @@ class TransformerDecoderState(DecoderState):
                     self.previous_layer_inputs,
                     self.src)
         else:
-            return (self.src)
+            return (self.src,)
 
     def detach(self):
         if self.previous_input is not None:
