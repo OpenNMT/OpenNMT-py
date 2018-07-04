@@ -104,7 +104,7 @@ class RNNDecoderBase(nn.Module):
         self._reuse_copy_attn = reuse_copy_attn
 
     def forward(self, tgt, memory_bank, state, memory_lengths=None,
-                step=None):
+                step=None, fast=None):
         """
         Args:
             tgt (`LongTensor`): sequences of padded tokens
