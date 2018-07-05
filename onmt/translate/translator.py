@@ -405,30 +405,26 @@ class Translator(object):
                 + beam_offset[:topk_beam_index.size(0)].unsqueeze(1))
 
             # End condition is the top beam reached end_token.
-            finished = topk_ids[:, 0].eq(end_token)
-            finished_count = finished.sum()
+            end_condition = topk_ids[:, 0].eq(end_token)
+            if step + 1 == self.max_length:
+                end_condition.fill_(1)
+            finished = end_condition.nonzero().view(-1)
 
             # Save result of finished sentences.
-            if finished_count > 0 or step + 1 == self.max_length:
+            if len(finished) > 0:
                 predictions = alive_seq.view(-1, beam_size, alive_seq.size(-1))
                 scores = topk_scores.view(-1, beam_size)
-                for i, is_finished in enumerate(finished.tolist()):
-                    if step + 1 != self.max_length and is_finished == 0:
-                        continue
+                for i in finished:
                     # TODO: if we get there because of max_length, the last
                     # predicted token is currently discarded.
                     b = batch_offset[i]
                     results["predictions"][b].append(predictions[i, 0, 1:])
                     results["scores"][b].append(scores[i, 0])
-
-            non_finished = finished.eq(0).nonzero().view(-1)
-
-            # If all sentences are translated, no need to go further.
-            if non_finished.nelement() == 0:
-                break
-
-            # Remove finished batches for the next step.
-            if non_finished.nelement() < finished.nelement():
+                non_finished = end_condition.eq(0).nonzero().view(-1)
+                # If all sentences are translated, no need to go further.
+                if len(non_finished) == 0:
+                    break
+                # Remove finished batches for the next step.
                 topk_log_probs = topk_log_probs.index_select(
                     0, non_finished.to(topk_log_probs.device))
                 topk_ids = topk_ids.index_select(0, non_finished)
