@@ -104,7 +104,7 @@ class RNNDecoderBase(nn.Module):
         self._reuse_copy_attn = reuse_copy_attn
 
     def forward(self, tgt, memory_bank, state, memory_lengths=None,
-                step=None, fast=None):
+                step=None):
         """
         Args:
             tgt (`LongTensor`): sequences of padded tokens
@@ -156,7 +156,7 @@ class RNNDecoderBase(nn.Module):
 
         return decoder_outputs, state, attns
 
-    def init_decoder_state(self, src, memory_bank, encoder_final):
+    def init_decoder_state(self, src, memory_bank, encoder_final, with_cache=False):
         """ Init decoder state with last state of the encoder """
         def _fix_enc_hidden(hidden):
             # The encoder hidden is  (layers*directions) x batch x dim.

@@ -332,7 +332,7 @@ class Translator(object):
         _, src_lengths = batch.src
         enc_states, memory_bank = self.model.encoder(src, src_lengths)
         dec_states = self.model.decoder.init_decoder_state(
-            src, memory_bank, enc_states)
+            src, memory_bank, enc_states, with_cache=True)
 
         # Tile states and memory beam_size times.
         dec_states.map_batch_fn(
@@ -375,8 +375,7 @@ class Translator(object):
                 memory_bank,
                 dec_states,
                 memory_lengths=memory_lengths,
-                step=step,
-                fast=True)
+                step=step)
 
             # Generator forward.
             log_probs = self.model.generator.forward(dec_out.squeeze(0))
@@ -531,7 +530,7 @@ class Translator(object):
             dec_out, dec_states, attn = self.model.decoder(
                 inp, memory_bank, dec_states,
                 memory_lengths=memory_lengths,
-                step=i, fast=False)
+                step=i)
 
             dec_out = dec_out.squeeze(0)
 

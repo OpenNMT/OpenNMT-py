@@ -52,7 +52,7 @@ class TransformerDecoderLayer(nn.Module):
         self.register_buffer('mask', mask)
 
     def forward(self, inputs, memory_bank, src_pad_mask, tgt_pad_mask,
-                previous_input=None, layer_cache=None, step=None, fast=False):
+                previous_input=None, layer_cache=None, step=None):
         """
         Args:
             inputs (`FloatTensor`): `[batch_size x 1 x model_dim]`
@@ -81,8 +81,7 @@ class TransformerDecoderLayer(nn.Module):
             query, attn = self.self_attn(all_input, all_input, input_norm,
                                          mask=dec_mask,
                                          layer_cache=layer_cache,
-                                         type="self",
-                                         fast=fast)
+                                         type="self")
         elif self.self_attn_type == "average":
             query, attn = self.self_attn(input_norm, mask=dec_mask,
                                          layer_cache=layer_cache, step=step)
@@ -93,8 +92,7 @@ class TransformerDecoderLayer(nn.Module):
         mid, attn = self.context_attn(memory_bank, memory_bank, query_norm,
                                       mask=src_pad_mask,
                                       layer_cache=layer_cache,
-                                      type="context",
-                                      fast=fast)
+                                      type="context")
         output = self.feed_forward(self.drop(mid) + query)
 
         return output, attn, all_input
@@ -158,7 +156,7 @@ class TransformerDecoder(nn.Module):
         # Build TransformerDecoder.
         self.transformer_layers = nn.ModuleList(
             [TransformerDecoderLayer(hidden_size, dropout,
-             self_attn_type=self.self_attn_type)
+             self_attn_type=self_attn_type)
              for _ in range(num_layers)])
 
         # TransformerDecoder has its own attention mechanism.
@@ -171,7 +169,7 @@ class TransformerDecoder(nn.Module):
         self.layer_norm = onmt.modules.LayerNorm(hidden_size)
 
     def forward(self, tgt, memory_bank, state, memory_lengths=None,
-                step=None, cache=None, fast=None):
+                step=None, cache=None):
         """
         See :obj:`onmt.modules.RNNDecoderBase.forward()`
         """
@@ -200,13 +198,12 @@ class TransformerDecoder(nn.Module):
         tgt_pad_mask = tgt_words.data.eq(padding_idx).unsqueeze(1) \
             .expand(tgt_batch, tgt_len, tgt_len)
 
-        if not(fast):
+        if state.cache is None:
             saved_inputs = []
-            state.cache = None
 
         for i in range(self.num_layers):
             prev_layer_input = None
-            if not(fast):
+            if state.cache is None:
                 if state.previous_input is not None:
                     prev_layer_input = state.previous_layer_inputs[i]
             output, attn, all_input \
@@ -216,11 +213,11 @@ class TransformerDecoder(nn.Module):
                     previous_input=prev_layer_input,
                     layer_cache=state.cache["layer_{}".format(i)]
                     if state.cache is not None else None,
-                    step=step, fast=fast)
-            if not(fast):
+                    step=step)
+            if state.cache is None:
                 saved_inputs.append(all_input)
 
-        if not(fast):
+        if state.cache is None:
             saved_inputs = torch.stack(saved_inputs)
 
         output = self.layer_norm(output)
@@ -233,15 +230,16 @@ class TransformerDecoder(nn.Module):
         if self._copy:
             attns["copy"] = attn
 
-        if not(fast):
+        if state.cache is None:
             state = state.update_state(tgt, saved_inputs)
 
         return outputs, state, attns
 
-    def init_decoder_state(self, src, memory_bank, enc_hidden):
+    def init_decoder_state(self, src, memory_bank, enc_hidden, with_cache=False):
         """ Init decoder state """
         state = TransformerDecoderState(src)
-        state._init_cache(memory_bank, self.num_layers, self.self_attn_type)
+        if with_cache:
+            state._init_cache(memory_bank, self.num_layers, self.self_attn_type)
         return state
 
 

@@ -67,7 +67,7 @@ class MultiHeadedAttention(nn.Module):
         self.final_linear = nn.Linear(model_dim, model_dim)
 
     def forward(self, key, value, query, mask=None,
-                layer_cache=None, type=None, fast=False):
+                layer_cache=None, type=None):
         """
         Compute the context vector and the attention vectors.
 
@@ -121,7 +121,7 @@ class MultiHeadedAttention(nn.Module):
                     .view(batch_size, -1, head_count * dim_per_head)
 
         # 1) Project key, value, and query.
-        if fast:
+        if layer_cache is not None:
             if type == "self":
                 query, key, value = self.linear_query(query),\
                                     self.linear_keys(query),\
