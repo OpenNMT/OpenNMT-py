@@ -306,18 +306,22 @@ class Translator(object):
                 return self._fast_translate_batch(
                     batch,
                     data,
-                    n_best=self.n_best)
+                    n_best=self.n_best,
+                    return_attention=self.replace_unk)
             else:
                 return self._translate_batch(batch, data)
 
-    def _fast_translate_batch(self, batch, data, n_best=1):
+    def _fast_translate_batch(self,
+                              batch,
+                              data,
+                              n_best=1,
+                              return_attention=False):
         # TODO: faster code path for beam_size == 1.
 
         # TODO: support these blacklisted features.
         assert data.data_type == 'text'
         assert self.min_length == 0
         assert not self.copy_attn
-        assert not self.replace_unk
         assert not self.dump_beam
         assert not self.use_filter_pred
         assert self.block_ngram_repeat == 0
@@ -355,6 +359,7 @@ class Translator(object):
             start_token,
             dtype=torch.long,
             device=memory_bank.device)
+        alive_attn = None
 
         # Give full probability to the first beam on the first step.
         topk_log_probs = (
@@ -416,14 +421,22 @@ class Translator(object):
             if len(finished) > 0:
                 predictions = alive_seq.view(-1, beam_size, alive_seq.size(-1))
                 scores = topk_scores.view(-1, beam_size)
+                attention = None
+                if alive_attn is not None:
+                    attention = alive_attn.view(
+                        alive_attn.size(0), -1, beam_size, alive_attn.size(-1))
                 for i in finished:
                     # TODO: if we get there because of max_length, the last
                     # predicted token is currently discarded.
                     b = batch_offset[i]
                     for n in range(n_best):
-                        results["attention"][b].append([])
                         results["predictions"][b].append(predictions[i, n, 1:])
                         results["scores"][b].append(scores[i, n])
+                        if attention is None:
+                            results["attention"][b].append([])
+                        else:
+                            results["attention"][b].append(
+                                attention[:, i, n, :memory_lengths[i]])
                 non_finished = end_condition.eq(0).nonzero().view(-1)
                 # If all sentences are translated, no need to go further.
                 if len(non_finished) == 0:
@@ -445,6 +458,14 @@ class Translator(object):
 
             # Append last prediction.
             alive_seq = torch.cat([alive_seq, topk_ids.view(-1, 1)], -1)
+
+            if return_attention:
+                current_attn = attn["std"].index_select(1, select_indices)
+                if alive_attn is None:
+                    alive_attn = current_attn
+                else:
+                    alive_attn = alive_attn.index_select(1, select_indices)
+                    alive_attn = torch.cat([alive_attn, current_attn], 0)
 
         return results
 
