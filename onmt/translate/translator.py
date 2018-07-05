@@ -306,6 +306,8 @@ class Translator(object):
                 return self._fast_translate_batch(
                     batch,
                     data,
+                    self.max_length,
+                    min_length=self.min_length,
                     n_best=self.n_best,
                     return_attention=self.replace_unk)
             else:
@@ -314,13 +316,14 @@ class Translator(object):
     def _fast_translate_batch(self,
                               batch,
                               data,
+                              max_length,
+                              min_length=0,
                               n_best=1,
                               return_attention=False):
         # TODO: faster code path for beam_size == 1.
 
         # TODO: support these blacklisted features.
         assert data.data_type == 'text'
-        assert self.min_length == 0
         assert not self.copy_attn
         assert not self.dump_beam
         assert not self.use_filter_pred
@@ -373,7 +376,7 @@ class Translator(object):
         results["gold_score"] = [0] * batch_size
         results["batch"] = batch
 
-        for step in range(self.max_length):
+        for step in range(max_length):
             decoder_input = alive_seq[:, -1].view(1, -1, 1)
 
             # Decoder forward.
@@ -387,6 +390,9 @@ class Translator(object):
             # Generator forward.
             log_probs = self.model.generator.forward(dec_out.squeeze(0))
             vocab_size = log_probs.size(-1)
+
+            if step < min_length:
+                log_probs[:, end_token] = -1e20
 
             # Multiply probs by the beam probability.
             log_probs += topk_log_probs.view(-1).unsqueeze(1)
@@ -413,7 +419,7 @@ class Translator(object):
 
             # End condition is the top beam reached end_token.
             end_condition = topk_ids[:, 0].eq(end_token)
-            if step + 1 == self.max_length:
+            if step + 1 == max_length:
                 end_condition.fill_(1)
             finished = end_condition.nonzero().view(-1)
 
