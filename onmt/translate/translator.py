@@ -376,6 +376,8 @@ class Translator(object):
         results["gold_score"] = [0] * batch_size
         results["batch"] = batch
 
+        max_length += 1
+
         for step in range(max_length):
             decoder_input = alive_seq[:, -1].view(1, -1, 1)
 
@@ -432,8 +434,6 @@ class Translator(object):
                     attention = alive_attn.view(
                         alive_attn.size(0), -1, beam_size, alive_attn.size(-1))
                 for i in finished:
-                    # TODO: if we get there because of max_length, the last
-                    # predicted token is currently discarded.
                     b = batch_offset[i]
                     for n in range(n_best):
                         results["predictions"][b].append(predictions[i, n, 1:])
