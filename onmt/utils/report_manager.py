@@ -5,6 +5,8 @@ from datetime import datetime
 
 import onmt
 
+from onmt.utils.logging import logger
+
 
 def build_report_manager(opt):
     if opt.tensorboard:
@@ -41,6 +43,9 @@ class ReportMgrBase(object):
 
     def start(self):
         self.start_time = time.time()
+
+    def log(self, *args, **kwargs):
+        logger.info(*args, **kwargs)
 
     def report_training(self, step, num_steps, learning_rate,
                         report_stats, multigpu=False):
@@ -130,8 +135,8 @@ class ReportMgr(ReportMgrBase):
         See base class method `ReportMgrBase.report_step`.
         """
         if train_stats is not None:
-            print('Train perplexity: %g' % train_stats.ppl())
-            print('Train accuracy: %g' % train_stats.accuracy())
+            self.log('Train perplexity: %g' % train_stats.ppl())
+            self.log('Train accuracy: %g' % train_stats.accuracy())
 
             self.maybe_log_tensorboard(train_stats,
                                        "train",
@@ -139,8 +144,8 @@ class ReportMgr(ReportMgrBase):
                                        step)
 
         if valid_stats is not None:
-            print('Validation perplexity: %g' % valid_stats.ppl())
-            print('Validation accuracy: %g' % valid_stats.accuracy())
+            self.log('Validation perplexity: %g' % valid_stats.ppl())
+            self.log('Validation accuracy: %g' % valid_stats.accuracy())
 
             self.maybe_log_tensorboard(valid_stats,
                                        "valid",

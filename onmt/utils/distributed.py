@@ -10,6 +10,8 @@ import math
 import pickle
 import torch.distributed
 
+from onmt.utils.logging import logger
+
 
 def is_master(opt):
     return opt.gpu_rank == 0
@@ -25,25 +27,9 @@ def multi_init(opt):
         world_size=dist_world_size, rank=opt.gpu_rank)
     opt.gpu_rank = torch.distributed.get_rank()
     if not is_master(opt):
-        suppress_output()
+        logger.disabled = True
 
     return opt.gpu_rank
-
-
-def suppress_output():
-    """Suppress printing on the current device.
-    Force printing with `force=True`.
-    """
-    import builtins as __builtin__
-    builtin_print = __builtin__.print
-
-    def print(*args, **kwargs):
-        if 'force' in kwargs:
-            force = kwargs.pop('force')
-            if force:
-                builtin_print(*args, **kwargs)
-
-    __builtin__.print = print
 
 
 def all_reduce_and_rescale_tensors(tensors, rescale_denom,

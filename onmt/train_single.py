@@ -17,7 +17,7 @@ from onmt.model_builder import build_model
 from onmt.utils.optimizers import build_optim
 from onmt.trainer import build_trainer
 from onmt.models import build_model_saver
-from onmt.utils.misc import get_logger
+from onmt.utils.logging import logger
 
 
 def _check_save_model_path(opt):
@@ -39,7 +39,7 @@ def _tally_parameters(model):
     return n_params, enc, dec
 
 
-def training_opt_postprocessing(opt, logger):
+def training_opt_postprocessing(opt):
     if opt.word_vec_size != -1:
         opt.src_word_vec_size = opt.word_vec_size
         opt.tgt_word_vec_size = opt.word_vec_size
@@ -70,9 +70,7 @@ def training_opt_postprocessing(opt, logger):
 
 
 def main(opt):
-    logger = get_logger(opt.log_file)
-
-    opt = training_opt_postprocessing(opt, logger)
+    opt = training_opt_postprocessing(opt)
 
     # Load checkpoint if we resume from a previous training.
     if opt.train_from:
@@ -86,11 +84,11 @@ def main(opt):
 
     # Peek the fisrt dataset to determine the data_type.
     # (All datasets have the same data_type).
-    first_dataset = next(lazily_load_dataset("train", opt, logger))
+    first_dataset = next(lazily_load_dataset("train", opt))
     data_type = first_dataset.data_type
 
     # Load fields generated from preprocess phase.
-    fields = _load_fields(first_dataset, data_type, opt, checkpoint, logger)
+    fields = _load_fields(first_dataset, data_type, opt, checkpoint)
 
     # Report src/tgt features.
 
@@ -103,7 +101,7 @@ def main(opt):
                     % (j, len(fields[feat].vocab)))
 
     # Build model.
-    model = build_model(model_opt, opt, fields, checkpoint, logger)
+    model = build_model(model_opt, opt, fields, checkpoint)
     n_params, enc, dec = _tally_parameters(model)
     logger.info('encoder: %d' % enc)
     logger.info('decoder: %d' % dec)
@@ -117,13 +115,13 @@ def main(opt):
     model_saver = build_model_saver(model_opt, opt, model, fields, optim)
 
     trainer = build_trainer(
-        opt, model, fields, optim, data_type, logger, model_saver=model_saver)
+        opt, model, fields, optim, data_type, model_saver=model_saver)
 
     def train_iter_fct(): return build_dataset_iter(
-        lazily_load_dataset("train", opt, logger), fields, opt)
+        lazily_load_dataset("train", opt), fields, opt)
 
     def valid_iter_fct(): return build_dataset_iter(
-        lazily_load_dataset("valid", opt, logger), fields, opt)
+        lazily_load_dataset("valid", opt), fields, opt)
 
     # Do training.
     trainer.train(train_iter_fct, valid_iter_fct, opt.train_steps,

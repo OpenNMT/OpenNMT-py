@@ -7,7 +7,7 @@ import sys
 import numpy as np
 import argparse
 import torch
-from onmt.utils.misc import get_logger
+from onmt.utils.logging import init_logger, logger
 
 
 def get_vocabs(dict_file):
@@ -140,5 +140,5 @@ def main():
 
 
 if __name__ == "__main__":
-    logger = get_logger('embeddings_to_torch.log')
+    init_logger('embeddings_to_torch.log')
     main()

@@ -9,10 +9,10 @@ import json
 import threading
 
 import torch
-from onmt.utils.misc import get_logger
-from onmt.translate.translator import build_translator
-
 import onmt.opts
+
+from onmt.utils.logging import init_logger
+from onmt.translate.translator import build_translator
 
 
 class Timer:
@@ -175,7 +175,7 @@ class ServerModel:
         self.unload_timer = None
         self.user_opt = opt
         self.tokenizer = None
-        self.logger = get_logger(opt.log_file)
+        self.logger = init_logger(opt.log_file)
 
         if load:
             self.load()

@@ -9,14 +9,14 @@ import torch
 
 import onmt.opts as opts
 import onmt.utils.distributed
-from onmt.utils.misc import get_logger
+
+from onmt.utils.logging import logger
 from onmt.train_single import main as single_main
 
 
 def main(opt):
     """ Spawns 1 process per GPU """
     nb_gpu = len(opt.gpuid)
-    logger = get_logger(opt.log_file)
     mp = torch.multiprocessing.get_context('spawn')
 
     # Create a thread to listen for errors in the child processes.

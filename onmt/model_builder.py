@@ -22,6 +22,7 @@ from onmt.decoders.cnn_decoder import CNNDecoder
 
 from onmt.modules import Embeddings, CopyGenerator
 from onmt.utils.misc import use_gpu
+from onmt.utils.logging import logger
 
 
 def build_embeddings(opt, word_dict, feature_dicts, for_encoder=True):
@@ -236,7 +237,7 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
     return model
 
 
-def build_model(model_opt, opt, fields, checkpoint, logger):
+def build_model(model_opt, opt, fields, checkpoint):
     """ Build the Model """
     logger.info('Building model...')
     model = build_base_model(model_opt, fields,
