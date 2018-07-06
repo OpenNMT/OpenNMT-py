@@ -151,7 +151,9 @@ def preprocess_opts(parser):
                        be divided into shards of this size to preprocess.
                        If 0, the data will be handled as a whole. The unit
                        is in bytes. Optimal value should be multiples of
-                       64 bytes.""")
+                       64 bytes. A commonly used sharding value is 131072000.
+                       It is recommended to ensure the corpus is shuffled
+                       before sharding.""")
 
     # Dictionary options, for text corpus
 
