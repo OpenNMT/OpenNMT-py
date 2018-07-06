@@ -6,7 +6,8 @@ import onmt.model_builder
 import onmt.inputters
 import onmt.opts
 
-from onmt.utils.misc import use_gpu, get_logger
+from onmt.utils.misc import use_gpu
+from onmt.utils.logging import init_logger, logger
 
 parser = argparse.ArgumentParser(description='translate.py')
 
@@ -71,5 +72,5 @@ def main():
 
 
 if __name__ == "__main__":
-    logger = get_logger('extract_embeddings.log')
+    init_logger('extract_embeddings.log')
     main()

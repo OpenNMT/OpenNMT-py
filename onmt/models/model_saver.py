@@ -5,6 +5,7 @@ import torch.nn as nn
 import onmt.inputters
 
 from collections import deque
+from onmt.utils.logging import logger
 
 
 def build_model_saver(model_opt, opt, model, fields, optim):
@@ -113,7 +114,7 @@ class ModelSaver(ModelSaverBase):
             'optim': self.optim,
         }
 
-        print("Saving checkpoint %s_step_%d.pt" % (self.base_path, step))
+        logger.info("Saving checkpoint %s_step_%d.pt" % (self.base_path, step))
         checkpoint_path = '%s_step_%d.pt' % (self.base_path, step)
         torch.save(checkpoint, checkpoint_path)
         return checkpoint, checkpoint_path

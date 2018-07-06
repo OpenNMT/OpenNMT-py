@@ -11,7 +11,7 @@ import sys
 
 import torch
 
-from onmt.utils.misc import get_logger
+from onmt.utils.logging import init_logger, logger
 
 import onmt.inputters as inputters
 import onmt.opts as opts
@@ -48,7 +48,7 @@ def parse_args():
 
 
 def build_save_in_shards(src_corpus, tgt_corpus, fields,
-                         corpus_type, opt, logger=None):
+                         corpus_type, opt):
     """
     Divide the big corpus into shards, and build dataset separately.
     This is currently only for data_type=='text'.
@@ -78,16 +78,14 @@ def build_save_in_shards(src_corpus, tgt_corpus, fields,
 
     corpus_size = os.path.getsize(src_corpus)
     if corpus_size > 10 * (1024 ** 2) and opt.max_shard_size == 0:
-        if logger:
-            logger.info("Warning. The corpus %s is larger than 10M bytes, "
-                        "you can set '-max_shard_size' to process it by "
-                        "small shards to use less memory." % src_corpus)
+        logger.info("Warning. The corpus %s is larger than 10M bytes, "
+                    "you can set '-max_shard_size' to process it by "
+                    "small shards to use less memory." % src_corpus)
 
     if opt.max_shard_size != 0:
-        if logger:
-            logger.info(' * divide corpus into shards and build dataset '
-                        'separately (shard_size = %d bytes).'
-                        % opt.max_shard_size)
+        logger.info(' * divide corpus into shards and build dataset '
+                    'separately (shard_size = %d bytes).'
+                    % opt.max_shard_size)
 
     ret_list = []
     src_iter = inputters.ShardedTextCorpusIterator(
@@ -113,9 +111,8 @@ def build_save_in_shards(src_corpus, tgt_corpus, fields,
 
         pt_file = "{:s}.{:s}.{:d}.pt".format(
             opt.save_data, corpus_type, index)
-        if logger:
-            logger.info(" * saving %s data shard to %s."
-                        % (corpus_type, pt_file))
+        logger.info(" * saving %s data shard to %s."
+                    % (corpus_type, pt_file))
         torch.save(dataset, pt_file)
 
         ret_list.append(pt_file)
@@ -123,7 +120,7 @@ def build_save_in_shards(src_corpus, tgt_corpus, fields,
     return ret_list
 
 
-def build_save_dataset(corpus_type, fields, opt, logger=None):
+def build_save_dataset(corpus_type, fields, opt):
     """ Building and saving the dataset """
     assert corpus_type in ['train', 'valid']
 
@@ -163,14 +160,13 @@ def build_save_dataset(corpus_type, fields, opt, logger=None):
     dataset.fields = []
 
     pt_file = "{:s}.{:s}.pt".format(opt.save_data, corpus_type)
-    if logger:
-        logger.info(" * saving %s dataset to %s." % (corpus_type, pt_file))
+    logger.info(" * saving %s dataset to %s." % (corpus_type, pt_file))
     torch.save(dataset, pt_file)
 
     return [pt_file]
 
 
-def build_save_vocab(train_dataset, fields, opt, logger=None):
+def build_save_vocab(train_dataset, fields, opt):
     """ Building and saving the vocab """
     fields = inputters.build_vocab(train_dataset, fields, opt.data_type,
                                    opt.share_vocab,
@@ -179,8 +175,7 @@ def build_save_vocab(train_dataset, fields, opt, logger=None):
                                    opt.src_words_min_frequency,
                                    opt.tgt_vocab,
                                    opt.tgt_vocab_size,
-                                   opt.tgt_words_min_frequency,
-                                   logger)
+                                   opt.tgt_words_min_frequency)
 
     # Can't save fields, so remove/reconstruct at training time.
     vocab_file = opt.save_data + '.vocab.pt'
@@ -189,7 +184,7 @@ def build_save_vocab(train_dataset, fields, opt, logger=None):
 
 def main():
     opt = parse_args()
-    logger = get_logger(opt.log_file)
+    init_logger(opt.log_file)
     logger.info("Extracting features...")
 
     src_nfeats = inputters.get_num_features(
@@ -203,13 +198,13 @@ def main():
     fields = inputters.get_fields(opt.data_type, src_nfeats, tgt_nfeats)
 
     logger.info("Building & saving training data...")
-    train_dataset_files = build_save_dataset('train', fields, opt, logger)
+    train_dataset_files = build_save_dataset('train', fields, opt)
 
     logger.info("Building & saving vocabulary...")
-    build_save_vocab(train_dataset_files, fields, opt, logger)
+    build_save_vocab(train_dataset_files, fields, opt)
 
     logger.info("Building & saving validation data...")
-    build_save_dataset('valid', fields, opt, logger)
+    build_save_dataset('valid', fields, opt)
 
 
 if __name__ == "__main__":

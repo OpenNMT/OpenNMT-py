@@ -6,6 +6,7 @@ import sys
 
 from torch.distributed import get_rank
 from onmt.utils.distributed import all_gather_list
+from onmt.utils.logging import logger
 
 
 class Statistics(object):
@@ -108,9 +109,10 @@ class Statistics(object):
            start (int): start time of step.
         """
         t = self.elapsed_time()
-        print(("Step %2d, %5d; acc: %6.2f; ppl: %6.2f; xent: %6.2f; " +
-               "lr: %7.5f; %3.0f / %3.0f tok/s; %6.0f sec") %
-              (step, num_steps,
+        logger.info(
+            ("Step %2d, %5d; acc: %6.2f; ppl: %6.2f; xent: %6.2f; " +
+             "lr: %7.5f; %3.0f / %3.0f tok/s; %6.0f sec")
+            % (step, num_steps,
                self.accuracy(),
                self.ppl(),
                self.xent(),

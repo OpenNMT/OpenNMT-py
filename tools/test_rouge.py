@@ -5,7 +5,8 @@ import time
 import pyrouge
 import shutil
 import sys
-from onmt.Utils import get_logger
+
+from onmt.utils.logging import init_logger, logger
 
 
 def test_rouge(cand, ref):
@@ -56,7 +57,7 @@ def rouge_results_to_str(results_dict):
 
 
 if __name__ == "__main__":
-    logger = get_logger('test_rouge.log')
+    init_logger('test_rouge.log')
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', type=str, default="candidate.txt",
                         help='candidate file')
