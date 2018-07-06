@@ -55,7 +55,7 @@ class CNNDecoder(nn.Module):
                 hidden_size, attn_type=attn_type)
             self._copy = True
 
-    def forward(self, tgt, memory_bank, state, memory_lengths=None):
+    def forward(self, tgt, memory_bank, state, memory_lengths=None, step=None):
         """ See :obj:`onmt.modules.RNNDecoderBase.forward()`"""
         # NOTE: memory_lengths is only here for compatibility reasons
         #       with onmt.modules.RNNDecoderBase.forward()
