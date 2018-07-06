@@ -454,7 +454,8 @@
         <span class="c1"># 3.bis Multi GPU gradient gather</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_gpu</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">grads</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">grad</span><span class="o">.</span><span class="n">data</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">()</span>
-                     <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">]</span>
+                     <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">requires_grad</span>
+                     <span class="ow">and</span> <span class="n">p</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
             <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">all_reduce_and_rescale_tensors</span><span class="p">(</span>
                 <span class="n">grads</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
 
