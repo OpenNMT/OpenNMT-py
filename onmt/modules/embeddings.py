@@ -174,7 +174,8 @@ class Embeddings(nn.Module):
             if self.word_vec_size > pretrained_vec_size:
                 self.word_lut.weight.data[:,:pretrained_vec_size] = pretrained
             elif self.word_vec_size < pretrained_vec_size:
-                self.word_lut.weight.data.copy_(pretrained[:,:self.word_vec_size])
+                self.word_lut.weight.data \
+                    .copy_(pretrained[:,:self.word_vec_size])
             else:
                 self.word_lut.weight.data.copy_(pretrained)
             if fixed:
