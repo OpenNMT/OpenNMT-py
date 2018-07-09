@@ -17,7 +17,7 @@ from onmt.model_builder import build_model
 from onmt.utils.optimizers import build_optim
 from onmt.trainer import build_trainer
 from onmt.models import build_model_saver
-from onmt.utils.logging import logger
+from onmt.utils.logging import init_logger, logger
 
 
 def _check_save_model_path(opt):
@@ -71,7 +71,7 @@ def training_opt_postprocessing(opt):
 
 def main(opt):
     opt = training_opt_postprocessing(opt)
-
+    init_logger(opt.log_file)
     # Load checkpoint if we resume from a previous training.
     if opt.train_from:
         logger.info('Loading checkpoint from %s' % opt.train_from)
