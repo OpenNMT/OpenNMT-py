@@ -235,11 +235,13 @@ class TransformerDecoder(nn.Module):
 
         return outputs, state, attns
 
-    def init_decoder_state(self, src, memory_bank, enc_hidden, with_cache=False):
+    def init_decoder_state(self, src, memory_bank, enc_hidden,
+                           with_cache=False):
         """ Init decoder state """
         state = TransformerDecoderState(src)
         if with_cache:
-            state._init_cache(memory_bank, self.num_layers, self.self_attn_type)
+            state._init_cache(memory_bank, self.num_layers,
+                              self.self_attn_type)
         return state
 
 
