@@ -126,16 +126,20 @@ class MultiHeadedAttention(nn.Module):
                 query, key, value = self.linear_query(query),\
                                     self.linear_keys(query),\
                                     self.linear_values(query)
+
+                key = shape(key)
+                value = shape(value)
+
                 if layer_cache is not None:
                     device = key.device
                     if layer_cache["self_keys"] is not None:
                         key = torch.cat(
                             (layer_cache["self_keys"].to(device), key),
-                            dim=1)
+                            dim=2)
                     if layer_cache["self_values"] is not None:
                         value = torch.cat(
                             (layer_cache["self_values"].to(device), value),
-                            dim=1)
+                            dim=2)
                     layer_cache["self_keys"] = key
                     layer_cache["self_values"] = value
             elif type == "context":
@@ -144,6 +148,8 @@ class MultiHeadedAttention(nn.Module):
                     if layer_cache["memory_keys"] is None:
                         key, value = self.linear_keys(key),\
                                      self.linear_values(value)
+                        key = shape(key)
+                        value = shape(value)
                     else:
                         key, value = layer_cache["memory_keys"],\
                                    layer_cache["memory_values"]
@@ -152,17 +158,22 @@ class MultiHeadedAttention(nn.Module):
                 else:
                     key, value = self.linear_keys(key),\
                                  self.linear_values(value)
+                    key = shape(key)
+                    value = shape(value)
         else:
             key = self.linear_keys(key)
             value = self.linear_values(value)
             query = self.linear_query(query)
+            key = shape(key)
+            value = shape(value)
 
-        key_len = key.size(1)
-        query_len = query.size(1)
 
-        key_up = shape(key)
-        value_up = shape(value)
+        key_up = key
+        value_up = value
         query_up = shape(query)
+
+        key_len = key_up.size(2)
+        query_len = query_up.size(2)
 
         # 2) Calculate and scale scores.
         query_up = query_up / math.sqrt(dim_per_head)
