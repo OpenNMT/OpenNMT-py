@@ -18,6 +18,9 @@ def make_translator(opt, report_score=True, logger=None, out_file=None):
 
     if opt.gpu > -1:
         torch.cuda.set_device(opt.gpu)
+        device = torch.device('cuda')
+    else:
+        device = torch.device('cpu')
 
     dummy_parser = argparse.ArgumentParser(description='train.py')
     onmt.opts.model_opts(dummy_parser)
@@ -39,7 +42,7 @@ def make_translator(opt, report_score=True, logger=None, out_file=None):
                         "sample_rate", "window_size", "window_stride",
                         "window"]}
 
-    translator = Translator(model, fields, global_scorer=scorer,
+    translator = Translator(model, fields, global_scorer=scorer, device=device,
                             out_file=out_file, report_score=report_score,
                             copy_attn=model_opt.copy_attn, logger=logger,
                             **kwargs)
@@ -76,6 +79,7 @@ class Translator(object):
                  copy_attn=False,
                  logger=None,
                  gpu=False,
+                 device=None,
                  dump_beam="",
                  min_length=0,
                  stepwise_penalty=False,
@@ -98,6 +102,7 @@ class Translator(object):
         self.cuda = gpu > -1
 
         self.model = model
+        self.device = device
         self.fields = fields
         self.n_best = n_best
         self.max_length = max_length
@@ -146,7 +151,7 @@ class Translator(object):
                                      use_filter_pred=self.use_filter_pred)
 
         data_iter = onmt.io.OrderedIterator(
-            dataset=data, device=self.gpu,
+            dataset=data, device=self.device,
             batch_size=batch_size, train=False, sort=False,
             sort_within_batch=True, shuffle=False)
 

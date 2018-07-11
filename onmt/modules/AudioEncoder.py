@@ -48,8 +48,7 @@ class AudioEncoder(nn.Module):
         else:
             self.dropout = None
         self.W = nn.Linear(enc_rnn_size, dec_rnn_size, bias=False)
-        self.batchnorm_W = nn.BatchNorm1d(enc_rnn_size, affine=True)
-        self.batchnorm_0 = nn.BatchNorm1d(input_size, affine=True)
+        self.batchnorm_0 = nn.BatchNorm1d(enc_rnn_size, affine=True)
         self.rnn_0, self.no_pack_padded_seq = \
             rnn_factory(rnn_type,
                         input_size=input_size,
@@ -90,9 +89,6 @@ class AudioEncoder(nn.Module):
             pool = getattr(self, 'pool_%d' % l)
             batchnorm = getattr(self, 'batchnorm_%d' % l)
             stride = self.enc_pooling[l]
-            t, _, num_feat = input.size()
-            input = batchnorm(input.contiguous().view(-1, num_feat))
-            input = input.view(t, -1, num_feat)
             packed_emb = pack(input, lengths)
             memory_bank, tmp = rnn(packed_emb)
             memory_bank = unpack(memory_bank)[0]
@@ -103,11 +99,13 @@ class AudioEncoder(nn.Module):
                        for length in lengths]
             memory_bank = memory_bank.transpose(0, 2)
             input = memory_bank
+            t, _, num_feat = input.size()
+            input = batchnorm(input.contiguous().view(-1, num_feat))
+            input = input.view(t, -1, num_feat)
             if self.dropout and l + 1 != self.enc_layers:
                 input = self.dropout(input)
 
         memory_bank = memory_bank.contiguous().view(-1, memory_bank.size(2))
-        memory_bank = self.batchnorm_W(memory_bank)
         memory_bank = self.W(memory_bank).view(-1, batch_size,
                                                self.dec_rnn_size)
 
