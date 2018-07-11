@@ -363,10 +363,12 @@ def load_vocabulary(vocabulary_path, tag=""):
     vocabulary = None
     if vocabulary_path:
         vocabulary = set([])
-        logger.info("Loading {} vocabulary from {}".format(tag, vocabulary_path))
+        logger.info("Loading {} vocabulary from {}".format(tag,
+                                                           vocabulary_path))
 
         if not os.path.exists(vocabulary_path):
-            raise RuntimeError("{} vocabulary not found at {}!".format(tag, vocabulary_path))
+            raise RuntimeError(
+                "{} vocabulary not found at {}!".format(tag, vocabulary_path))
         else:
             with open(vocabulary_path) as f:
                 for line in f:
