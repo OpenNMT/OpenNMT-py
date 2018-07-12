@@ -13,8 +13,6 @@ from onmt.utils.logging import init_logger
 
 
 def main(opt):
-    init_logger(opt.log_file)
-
     if opt.rnn_type == "SRU" and not opt.gpuid:
         raise AssertionError("Using SRU requires -gpuid set.")
 
