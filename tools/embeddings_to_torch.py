@@ -64,7 +64,10 @@ def match_embeddings(vocab, emb, opt, side):
     count = defaultdict(int)
     matched_types = set()
     ignored_types = set()
+    dupe_types = set()
     for w, w_vec in emb:
+        if w in matched_types:  # already seen, but same type showed up once more
+            dupe_types.add(dupe_types)
         count['tot_emb'] += 1
         if w in vocab.stoi:
             w_id = vocab.stoi[w]
@@ -73,7 +76,7 @@ def match_embeddings(vocab, emb, opt, side):
             matched_types.add(w)
         else:
             ignored_types.add(w)
-    count['miss'] = len(vocab) - count['match']
+    count['miss'] = len(vocab) - len(matched_types)
 
     logger.info("Matching: ")
     match_percent = count['match'] / (len(vocab)) * 100
@@ -83,7 +86,8 @@ def match_embeddings(vocab, emb, opt, side):
     if opt.verbose:
         for name, types in [('missed', set(vocab.stoi.keys()) - matched_types),
                             ('matched', matched_types),
-                            ('ignored', ignored_types)]:
+                            ('ignored', ignored_types),
+                            ('dupes', dupe_types)]:
             path = opt.output_file + '.%s.%s.txt' % (side, name)
             logger.info("Writing %d %s types to %s" % (len(types), name, path))
             write_lines(types, path)
