@@ -3,11 +3,12 @@
 from __future__ import print_function
 from __future__ import division
 import six
-import sys
 import numpy as np
 import argparse
 import torch
 from onmt.utils.logging import init_logger, logger
+import itertools
+from collections import defaultdict
 
 
 def get_vocabs(dict_file):
@@ -31,54 +32,73 @@ def get_vocabs(dict_file):
     return enc_vocab, dec_vocab
 
 
-def get_embeddings(file_enc, opt, flag):
-    embs = dict()
-    if flag == 'enc':
-        for (i, l) in enumerate(open(file_enc, 'rb')):
-            if i < opt.skip_lines:
-                continue
-            if not l:
-                break
-            if len(l) == 0:
-                continue
+def get_embeddings(file_enc, opt):
+    logger.info("Reading %s" % file_enc)
+    count = 0
+    for (i, l) in enumerate(open(file_enc, 'rb')):
+        if i < opt.skip_lines:
+            continue
+        if not l:
+            break
+        if len(l) == 0:
+            continue
+        l_split = l.decode('utf8').strip().split(' ')
+        if len(l_split) == 2:
+            continue
+        count += 1
+        word, vec = l_split[0], list(map(float, l_split[1:]))
+        yield word, vec
 
-            l_split = l.decode('utf8').strip().split(' ')
-            if len(l_split) == 2:
-                continue
-            embs[l_split[0]] = [float(em) for em in l_split[1:]]
-        logger.info("Got {} encryption embeddings from {}".format(len(embs),
-                                                                  file_enc))
-    else:
-
-        for (i, l) in enumerate(open(file_enc, 'rb')):
-            if not l:
-                break
-            if len(l) == 0:
-                continue
-
-            l_split = l.decode('utf8').strip().split(' ')
-            if len(l_split) == 2:
-                continue
-            embs[l_split[0]] = [float(em) for em in l_split[1:]]
-        logger.info("Got {} decryption embeddings from {}".format(len(embs),
-                                                                  file_enc))
-    return embs
+    logger.info("Got {} encryption embeddings from {}".format(count, file_enc))
 
 
-def match_embeddings(vocab, emb, opt):
-    dim = len(six.next(six.itervalues(emb)))
+def match_embeddings(vocab, emb, opt, side):
+
+    # peeking first item to know its dimension
+    first_word, first_vec = six.next(emb)
+    dim = len(first_vec)
+    logger.info("%s dimensions %d" % (side, dim))
+    # put the peeked record back it to generator stream
+    emb = itertools.chain([(first_word, first_vec)], emb)
     filtered_embeddings = np.zeros((len(vocab), dim))
-    count = {"match": 0, "miss": 0}
-    for w, w_id in vocab.stoi.items():
-        if w in emb:
-            filtered_embeddings[w_id] = emb[w]
+    count = defaultdict(int)
+    matched_types = set()
+    ignored_types = set()
+    dupe_types = set()
+    for w, w_vec in emb:
+        if w in matched_types:  # already seen, but same type showed up once more
+            dupe_types.add(dupe_types)
+        count['tot_emb'] += 1
+        if w in vocab.stoi:
+            w_id = vocab.stoi[w]
+            filtered_embeddings[w_id] = w_vec
             count['match'] += 1
+            matched_types.add(w)
         else:
-            if opt.verbose:
-                logger.info(u"not found:\t{}".format(w), file=sys.stderr)
-            count['miss'] += 1
+            ignored_types.add(w)
+    count['miss'] = len(vocab) - len(matched_types)
 
+    logger.info("Matching: ")
+    match_percent = count['match'] / (len(vocab)) * 100
+    logger.info("* %s: %d match, %d missing, (%.2f%%)" % (
+        side, count['match'], count['miss'], match_percent))
+
+    if opt.verbose:
+        for name, types in [('missed', set(vocab.stoi.keys()) - matched_types),
+                            ('matched', matched_types),
+                            ('ignored', ignored_types),
+                            ('dupes', dupe_types)]:
+            path = opt.output_file + '.%s.%s.txt' % (side, name)
+            logger.info("Writing %d %s types to %s" % (len(types), name, path))
+            write_lines(types, path)
     return torch.Tensor(filtered_embeddings), count
+
+
+def write_lines(items, path):
+    with open(path, 'w', encoding='utf-8') as fw:
+        for line in items:
+            fw.write(line)
+            fw.write('\n')
 
 
 TYPES = ["GloVe", "word2vec"]
@@ -87,56 +107,47 @@ TYPES = ["GloVe", "word2vec"]
 def main():
 
     parser = argparse.ArgumentParser(description='embeddings_to_torch.py')
-    parser.add_argument('-emb_file_enc', required=True,
+    parser.add_argument('-emb_file_enc',
                         help="source Embeddings from this file")
-    parser.add_argument('-emb_file_dec', required=True,
+    parser.add_argument('-emb_file_dec',
                         help="target Embeddings from this file")
     parser.add_argument('-output_file', required=True,
                         help="Output file for the prepared data")
     parser.add_argument('-dict_file', required=True,
                         help="Dictionary file")
-    parser.add_argument('-verbose', action="store_true", default=False)
+    parser.add_argument('-verbose', action="store_true",
+                        help='produce matched, ignored, missed types report')
     parser.add_argument('-skip_lines', type=int, default=0,
                         help="Skip first lines of the embedding file")
     parser.add_argument('-type', choices=TYPES, default="GloVe")
     opt = parser.parse_args()
+    if not opt.emb_file_enc and not opt.emb_file_dec:
+        raise Exception('Either or both required: -emb_file_enc, -emb_file_dec')
 
     enc_vocab, dec_vocab = get_vocabs(opt.dict_file)
     if opt.type == "word2vec":
         opt.skip_lines = 1
 
-    embeddings_enc = get_embeddings(opt.emb_file_enc, opt, flag='enc')
-    embeddings_dec = get_embeddings(opt.emb_file_dec, opt, flag='dec')
+    if opt.emb_file_enc:
+        embeddings_enc = get_embeddings(opt.emb_file_enc, opt)
+        filtered_enc_embeddings, enc_count = match_embeddings(
+            enc_vocab, embeddings_enc, opt, 'enc')
 
-    filtered_enc_embeddings, enc_count = match_embeddings(enc_vocab,
-                                                          embeddings_enc,
-                                                          opt)
-    filtered_dec_embeddings, dec_count = match_embeddings(dec_vocab,
-                                                          embeddings_dec,
-                                                          opt)
-    logger.info("\nMatching: ")
-    match_percent = [_['match'] / (_['match'] + _['miss']) * 100
-                     for _ in [enc_count, dec_count]]
-    logger.info("\t* enc: %d match, %d missing, (%.2f%%)"
-                % (enc_count['match'],
-                   enc_count['miss'],
-                   match_percent[0]))
-    logger.info("\t* dec: %d match, %d missing, (%.2f%%)"
-                % (dec_count['match'],
-                   dec_count['miss'],
-                   match_percent[1]))
+        enc_output_file = opt.output_file + ".enc.pt"
+        logger.info("Saving enc embeddings {} as: {}".format(
+            filtered_enc_embeddings.size(), enc_output_file))
+        torch.save(filtered_enc_embeddings, enc_output_file)
+        del filtered_enc_embeddings     # free memory
 
-    logger.info("\nFiltered embeddings:")
-    logger.info("\t* enc: ", filtered_enc_embeddings.size())
-    logger.info("\t* dec: ", filtered_dec_embeddings.size())
-
-    enc_output_file = opt.output_file + ".enc.pt"
-    dec_output_file = opt.output_file + ".dec.pt"
-    logger.info("\nSaving embedding as:\n\t* enc: %s\n\t* dec: %s"
-                % (enc_output_file, dec_output_file))
-    torch.save(filtered_enc_embeddings, enc_output_file)
-    torch.save(filtered_dec_embeddings, dec_output_file)
-    logger.info("\nDone.")
+    if opt.emb_file_dec:
+        embeddings_dec = get_embeddings(opt.emb_file_dec, opt)
+        filtered_dec_embeddings, dec_count = match_embeddings(
+            dec_vocab, embeddings_dec, opt, 'dec')
+        dec_output_file = opt.output_file + ".dec.pt"
+        logger.info("Saving dec embeddings {} as: {}" .format(
+            filtered_dec_embeddings.size(), dec_output_file))
+        torch.save(filtered_dec_embeddings, dec_output_file)
+    logger.info("Done.")
 
 
 if __name__ == "__main__":
