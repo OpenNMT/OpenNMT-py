@@ -9,7 +9,6 @@ import argparse
 import onmt.opts as opts
 from onmt.train_multi import main as multi_main
 from onmt.train_single import main as single_main
-from onmt.utils.logging import init_logger
 
 
 def main(opt):
