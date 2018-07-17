@@ -15,10 +15,10 @@ def threshold_and_support(z, dim=0):
     """
     sorted_z, _ = torch.sort(z, descending=True, dim=dim)
     z_sum = sorted_z.cumsum(dim) - 1  # sort of a misnomer
-    K = torch.arange(1, sorted_z.size(dim) + 1).view(
+    k = torch.arange(1, sorted_z.size(dim) + 1).view(
         torch.Size([-1] + [1] * (z.dim() - 1))
     ).transpose(0, dim)
-    support = K * sorted_z > z_sum
+    support = k * sorted_z > z_sum
 
     k_z_indices = support.sum(dim=dim).unsqueeze(dim)
     k_z = k_z_indices.float()
