@@ -51,6 +51,7 @@ class SparsemaxFunction(Function):
         grad_input = torch.where(output != 0, grad_input - v_hat, grad_input)
         return grad_input, None
 
+
 sparsemax = SparsemaxFunction.apply
 
 
