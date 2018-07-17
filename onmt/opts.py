@@ -104,6 +104,8 @@ def model_opts(parser):
                        choices=['dot', 'general', 'mlp'],
                        help="""The attention type to use:
                        dotprod or general (Luong) or MLP (Bahdanau)""")
+    group.add_argument('-global_attention_function', type=str,
+                       default="softmax", choices=["softmax", "sparsemax"])
     group.add_argument('-self_attn_type', type=str, default="scaled-dot",
                        help="""Self attention type in Transformer decoder
                        layer -- currently "scaled-dot" or "average" """)
