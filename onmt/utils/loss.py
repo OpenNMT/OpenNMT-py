@@ -11,6 +11,8 @@ import torch.nn.functional as F
 
 import onmt
 import onmt.inputters as inputters
+from onmt.modules.sparse_activations import Sparsemax
+from onmt.modules.sparse_losses import SparsemaxLoss
 
 
 def build_loss_compute(model, tgt_vocab, opt, train=True):
@@ -211,12 +213,16 @@ class NMTLossCompute(LossComputeBase):
     def __init__(self, generator, tgt_vocab, normalization="sents",
                  label_smoothing=0.0):
         super(NMTLossCompute, self).__init__(generator, tgt_vocab)
+        self.sparse = isinstance(generator[1], Sparsemax)
         if label_smoothing > 0:
             self.criterion = LabelSmoothingLoss(
                 label_smoothing, len(tgt_vocab), ignore_index=self.padding_idx
             )
+        elif self.sparse:
+            self.criterion = SparsemaxLoss(
+                ignore_index=self.padding_idx, size_average=False
+            )
         else:
-            # if no label smoothing, using negative log likelihood loss
             self.criterion = nn.NLLLoss(
                 ignore_index=self.padding_idx, size_average=False
             )
@@ -228,7 +234,14 @@ class NMTLossCompute(LossComputeBase):
         }
 
     def _compute_loss(self, batch, output, target):
-        scores = self.generator(self._bottle(output))
+        bottled_output = self._bottle(output)
+        if self.sparse:
+            # for sparsemax loss, the loss function operates on the raw output
+            # vector, not a probability vector. Hence it's only necessary to
+            # apply the first part of the generator here.
+            scores = self.generator[0](bottled_output)
+        else:
+            scores = self.generator(bottled_output)
         gtruth = target.view(-1)
 
         loss = self.criterion(scores, gtruth)
