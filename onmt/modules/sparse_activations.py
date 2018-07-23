@@ -62,4 +62,4 @@ class Sparsemax(nn.Module):
         super(Sparsemax, self).__init__()
 
     def forward(self, input):
-        return sparsemax(input, dim=self.dim)
+        return sparsemax(input, self.dim)
