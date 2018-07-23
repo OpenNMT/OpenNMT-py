@@ -318,7 +318,7 @@ class ServerModel:
         scores = [score_tensor.item()
                   for score_tensor in flatten_list(scores)]
 
-        self.logger.info("Translation Results: ", len(results))
+        self.logger.info("Translation Results: %d" % len(results))
         if len(whitespace_segments) > 0:
             self.logger.info("Whitespace segments: %d"
                              % len(whitespace_segments))
