@@ -445,5 +445,4 @@ class ServerModel:
         elif self.tokenizer_opt["type"] == "bpe_onmt_tokenizer":
             detok = self.tokenizer.detokenize(sequence.split())
 
-
         return detok
