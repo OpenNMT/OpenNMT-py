@@ -189,14 +189,14 @@ class NMTLossCompute(LossComputeBase):
             # is equivalent to NLLLoss or CrossEntropyLoss.
             # All non-true labels are uniformly set to low-confidence.
             self.criterion = nn.KLDivLoss(size_average=False)
-            one_hot = torch.randn(1, len(tgt_vocab))
-            one_hot.fill_(label_smoothing / (len(tgt_vocab) - 2))
+            smoothing_value = label_smoothing / (len(tgt_vocab) - 2)
+            one_hot = torch.full((1, len(tgt_vocab)), smoothing_value)
             one_hot[0][self.padding_idx] = 0
             self.register_buffer('one_hot', one_hot)
         else:
-            weight = torch.ones(len(tgt_vocab))
-            weight[self.padding_idx] = 0
-            self.criterion = nn.NLLLoss(weight, size_average=False)
+            self.criterion = nn.NLLLoss(
+                ignore_index=self.padding_idx, size_average=False
+            )
         self.confidence = 1.0 - label_smoothing
 
     def _make_shard_state(self, batch, output, range_, attns=None):
@@ -206,11 +206,11 @@ class NMTLossCompute(LossComputeBase):
         }
 
     def _compute_loss(self, batch, output, target):
-        scores = self.generator(self._bottle(output))
+        scores = self.generator(self._bottle(output))  # linear + softmax
 
         gtruth = target.view(-1)
         if self.confidence < 1:
-            tdata = gtruth.data
+            tdata = gtruth.data  # 0.4.0 update...
             mask = torch.nonzero(tdata.eq(self.padding_idx)).squeeze(-1)
             # log_likelihood = torch.gather(scores.data, 1, tdata.unsqueeze(1))
             tmp_ = self.one_hot.repeat(gtruth.size(0), 1)
@@ -218,15 +218,10 @@ class NMTLossCompute(LossComputeBase):
             if mask.size(0) > 0:
                 tmp_.index_fill_(0, mask, 0)
             gtruth = tmp_
-        loss = self.criterion(scores, gtruth)
-        if self.confidence < 1:
-            # Default: report smoothed ppl.
-            # loss_data = -log_likelihood.sum(0)
-            loss_data = loss.data.clone()
-        else:
-            loss_data = loss.data.clone()
 
-        stats = self._stats(loss_data, scores.data, target.view(-1).data)
+        loss = self.criterion(scores, gtruth)
+
+        stats = self._stats(loss.clone(), scores.data, target.view(-1).data)
 
         return loss, stats
 
