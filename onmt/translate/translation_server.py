@@ -236,6 +236,17 @@ class ServerModel:
                                           self.tokenizer_opt['model'])
                 sp.Load(model_path)
                 self.tokenizer = sp
+            elif self.tokenizer_opt['type'] == 'bpe_onmt_tokenizer':
+                import pyonmttok
+                model_path = os.path.join(self.model_root,
+                                          self.tokenizer_opt['model'])
+                tokenizer = pyonmttok.Tokenizer(
+                    "aggressive",
+                    bpe_model_path=model_path,
+                    joiner_annotate=True,
+                    joiner_new=True,
+                    preserve_placeholders=True)
+                self.tokenizer = tokenizer
             else:
                 raise ValueError("Invalid value for tokenizer type")
 
@@ -407,6 +418,9 @@ class ServerModel:
         if self.tokenizer_opt["type"] == "sentencepiece":
             tok = self.tokenizer.EncodeAsPieces(sequence)
             tok = " ".join(tok)
+        elif self.tokenizer_opt["type"] == "bpe_onmt_tokenizer":
+            tok, _ = self.tokenizer.tokenize(sequence)
+            tok = " ".join(tok)
         return tok
 
     def maybe_detokenize(self, sequence):
@@ -428,4 +442,8 @@ class ServerModel:
 
         if self.tokenizer_opt["type"] == "sentencepiece":
             detok = self.tokenizer.DecodePieces(sequence.split())
+        elif self.tokenizer_opt["type"] == "bpe_onmt_tokenizer":
+            detok = self.tokenizer.detokenize(sequence.split())
+
+
         return detok
