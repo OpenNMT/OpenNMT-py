@@ -156,7 +156,8 @@ class RNNDecoderBase(nn.Module):
 
         return decoder_outputs, state, attns
 
-    def init_decoder_state(self, src, memory_bank, encoder_final):
+    def init_decoder_state(self, src, memory_bank, encoder_final,
+                           with_cache=False):
         """ Init decoder state with last state of the encoder """
         def _fix_enc_hidden(hidden):
             # The encoder hidden is  (layers*directions) x batch x dim.
