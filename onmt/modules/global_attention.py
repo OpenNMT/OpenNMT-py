@@ -1,7 +1,9 @@
 """ Global attention modules (Luong / Bahdanau) """
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
+from onmt.modules.sparse_activations import sparsemax
 from onmt.utils.misc import aeq, sequence_mask
 
 # This class is mainly used by decoder.py for RNNs but also
@@ -65,13 +67,17 @@ class GlobalAttention(nn.Module):
 
     """
 
-    def __init__(self, dim, coverage=False, attn_type="dot"):
+    def __init__(self, dim, coverage=False, attn_type="dot",
+                 attn_func="softmax"):
         super(GlobalAttention, self).__init__()
 
         self.dim = dim
-        self.attn_type = attn_type
-        assert (self.attn_type in ["dot", "general", "mlp"]), (
+        assert attn_type in ["dot", "general", "mlp"], (
             "Please select a valid attention type.")
+        self.attn_type = attn_type
+        assert attn_func in ["softmax", "sparsemax"], (
+            "Please select a valid attention function.")
+        self.attn_func = attn_func
 
         if self.attn_type == "general":
             self.linear_in = nn.Linear(dim, dim, bias=False)
@@ -82,9 +88,6 @@ class GlobalAttention(nn.Module):
         # mlp wants it with bias
         out_bias = self.attn_type == "mlp"
         self.linear_out = nn.Linear(dim * 2, dim, bias=out_bias)
-
-        self.softmax = nn.Softmax(dim=-1)
-        self.tanh = nn.Tanh()
 
         if coverage:
             self.linear_cover = nn.Linear(1, dim, bias=False)
@@ -128,7 +131,7 @@ class GlobalAttention(nn.Module):
             uh = uh.expand(src_batch, tgt_len, src_len, dim)
 
             # (batch, t_len, s_len, d)
-            wquh = self.tanh(wq + uh)
+            wquh = F.tanh(wq + uh)
 
             return self.v(wquh.view(-1, dim)).view(tgt_batch, tgt_len, src_len)
 
@@ -169,7 +172,7 @@ class GlobalAttention(nn.Module):
         if coverage is not None:
             cover = coverage.view(-1).unsqueeze(1)
             memory_bank += self.linear_cover(cover).view_as(memory_bank)
-            memory_bank = self.tanh(memory_bank)
+            memory_bank = F.tanh(memory_bank)
 
         # compute attention scores, as in Luong et al.
         align = self.score(source, memory_bank)
@@ -179,8 +182,11 @@ class GlobalAttention(nn.Module):
             mask = mask.unsqueeze(1)  # Make it broadcastable.
             align.masked_fill_(1 - mask, -float('inf'))
 
-        # Softmax to normalize attention weights
-        align_vectors = self.softmax(align.view(batch*target_l, source_l))
+        # Softmax or sparsemax to normalize attention weights
+        if self.attn_func == "softmax":
+            align_vectors = F.softmax(align.view(batch*target_l, source_l), -1)
+        else:
+            align_vectors = sparsemax(align.view(batch*target_l, source_l), -1)
         align_vectors = align_vectors.view(batch, target_l, source_l)
 
         # each context vector c_t is the weighted average
@@ -191,7 +197,7 @@ class GlobalAttention(nn.Module):
         concat_c = torch.cat([c, source], 2).view(batch*target_l, dim*2)
         attn_h = self.linear_out(concat_c).view(batch, target_l, dim)
         if self.attn_type in ["general", "dot"]:
-            attn_h = self.tanh(attn_h)
+            attn_h = F.tanh(attn_h)
 
         if one_step:
             attn_h = attn_h.squeeze(1)
