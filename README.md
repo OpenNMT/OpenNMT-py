@@ -1,6 +1,7 @@
 # OpenNMT-py: Open-Source Neural Machine Translation
 
 [![Build Status](https://travis-ci.org/OpenNMT/OpenNMT-py.svg?branch=master)](https://travis-ci.org/OpenNMT/OpenNMT-py)
+[![Run on FH](https://img.shields.io/badge/Run%20on-FloydHub-blue.svg)](https://floydhub.com/run?template=https://github.com/ReDeiPirati/OpenNMT-py)
 
 This is a [Pytorch](https://github.com/pytorch/pytorch)
 port of [OpenNMT](https://github.com/OpenNMT/OpenNMT),
@@ -8,8 +9,8 @@ an open-source (MIT) neural machine translation system. It is designed to be res
 
 Codebase is relatively stable, but PyTorch is still evolving. We currently only support PyTorch 0.4 and recommend forking if you need to have stable code.
 
-OpenNMT-py is run as a collaborative open-source project. It is maintained by [Sasha Rush](http://github.com/srush) (Cambridge, MA), [Ben Peters](http://github.com/bpopeters) (Saarbrücken), and [Jianyu Zhan](http://github.com/jianyuzhan) (Shanghai). The original code was written by [Adam Lerer](http://github.com/adamlerer) (NYC). 
-We love contributions. Please consult the Issues page for any [Contributions Welcome](https://github.com/OpenNMT/OpenNMT-py/issues?q=is%3Aissue+is%3Aopen+label%3A%22contributions+welcome%22) tagged post. 
+OpenNMT-py is run as a collaborative open-source project. It is maintained by [Sasha Rush](http://github.com/srush) (Cambridge, MA), [Ben Peters](http://github.com/bpopeters) (Saarbrücken), and [Jianyu Zhan](http://github.com/jianyuzhan) (Shanghai). The original code was written by [Adam Lerer](http://github.com/adamlerer) (NYC).
+We love contributions. Please consult the Issues page for any [Contributions Welcome](https://github.com/OpenNMT/OpenNMT-py/issues?q=is%3Aissue+is%3Aopen+label%3A%22contributions+welcome%22) tagged post.
 
 <center style="padding: 40px"><img width="70%" src="http://opennmt.github.io/simple-attn.png" /></center>
 
@@ -19,9 +20,10 @@ Table of Contents
   * [Full Documentation](http://opennmt.net/OpenNMT-py/)
   * [Requirements](#requirements)
   * [Features](#features)
+  * [Run on FloydHub](#run-on-floydhub)
   * [Quickstart](#quickstart)
   * [Citation](#citation)
- 
+
 ## Requirements
 
 All dependencies can be installed via:
@@ -53,6 +55,12 @@ Beta Features (committed):
 - Structured attention
 - [Conv2Conv convolution model]
 - SRU "RNNs faster than CNN" paper
+
+## Run on FloydHub
+
+[![Run on FloydHub](https://static.floydhub.com/button/button.svg)](https://floydhub.com/run?template=https://github.com/ReDeiPirati/OpenNMT-py)
+
+Click this button to open a Workspace on [FloydHub](https://www.floydhub.com/?utm_medium=readme&utm_source=opennmt-py&utm_campaign=jul_2018) for training/testing your code.
 
 ## Quickstart
 
