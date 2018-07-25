@@ -13,13 +13,15 @@ class SparsemaxLossFunction(Function):
         target (LongTensor): n, the indices of the target classes
         """
         z_k = input.gather(1, target.unsqueeze(1)).squeeze()
-        tau_z, support_size = threshold_and_support(input)
+        tau_z, support_size = threshold_and_support(input, dim=1)
         support = input > tau_z
         x = torch.where(
             support, input**2 - tau_z**2, torch.tensor(0.0)
         ).sum(dim=1)
         ctx.save_for_backward(input, target, tau_z)
-        return x / 2 - z_k + 0.5
+        # clamping necessary because of numerical errors: loss should be lower
+        # bounded by zero
+        return torch.clamp(x / 2 - z_k + 0.5, min=0.0)
 
     @staticmethod
     def backward(ctx, grad_output):
