@@ -175,7 +175,7 @@ class ServerModel:
         self.unload_timer = None
         self.user_opt = opt
         self.tokenizer = None
-        self.logger = init_logger(opt.log_file)
+        self.logger = init_logger(self.opt.log_file)
 
         if load:
             self.load()

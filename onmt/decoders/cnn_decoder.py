@@ -121,7 +121,7 @@ class CNNDecoder(nn.Module):
 
         return outputs, state, attns
 
-    def init_decoder_state(self, _, memory_bank, enc_hidden):
+    def init_decoder_state(self, _, memory_bank, enc_hidden, with_cache=False):
         """
         Init decoder state.
         """

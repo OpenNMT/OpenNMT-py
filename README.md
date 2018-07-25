@@ -1,6 +1,7 @@
 # OpenNMT-py: Open-Source Neural Machine Translation
 
 [![Build Status](https://travis-ci.org/OpenNMT/OpenNMT-py.svg?branch=master)](https://travis-ci.org/OpenNMT/OpenNMT-py)
+[![Run on FH](https://img.shields.io/badge/Run%20on-FloydHub-blue.svg)](https://floydhub.com/run?template=https://github.com/OpenNMT/OpenNMT-py)
 
 This is a [Pytorch](https://github.com/pytorch/pytorch)
 port of [OpenNMT](https://github.com/OpenNMT/OpenNMT),
@@ -20,8 +21,9 @@ Table of Contents
   * [Requirements](#requirements)
   * [Features](#features)
   * [Quickstart](#quickstart)
+  * [Run on FloydHub](#run-on-floydhub)
   * [Citation](#citation)
- 
+
 ## Requirements
 
 All dependencies can be installed via:
@@ -107,6 +109,13 @@ Now you have a model which you can use to predict on new data. We do this by run
 
 !!! note "Note"
     The predictions are going to be quite terrible, as the demo dataset is small. Try running on some larger datasets! For example you can download millions of parallel sentences for [translation](http://www.statmt.org/wmt16/translation-task.html) or [summarization](https://github.com/harvardnlp/sent-summary).
+
+## Alternative: Run on FloydHub
+
+[![Run on FloydHub](https://static.floydhub.com/button/button.svg)](https://floydhub.com/run?template=https://github.com/OpenNMT/OpenNMT-py)
+
+Click this button to open a Workspace on [FloydHub](https://www.floydhub.com/?utm_medium=readme&utm_source=opennmt-py&utm_campaign=jul_2018) for training/testing your code.
+
 
 ## Pretrained embeddings (e.g. GloVe)
 

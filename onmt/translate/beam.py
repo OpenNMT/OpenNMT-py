@@ -111,7 +111,8 @@ class Beam(object):
                     gram = []
                     for i in range(le - 1):
                         # Last n tokens, n = block_ngram_repeat
-                        gram = (gram + [hyp[i]])[-self.block_ngram_repeat:]
+                        gram = (gram +
+                                [hyp[i].item()])[-self.block_ngram_repeat:]
                         # Skip the blocking if it is in the exclusion list
                         if set(gram) & self.exclusion_tokens:
                             continue
