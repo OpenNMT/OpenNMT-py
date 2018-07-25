@@ -20,8 +20,8 @@ Table of Contents
   * [Full Documentation](http://opennmt.net/OpenNMT-py/)
   * [Requirements](#requirements)
   * [Features](#features)
-  * [Run on FloydHub](#run-on-floydhub)
   * [Quickstart](#quickstart)
+  * [Run on FloydHub](#run-on-floydhub)
   * [Citation](#citation)
 
 ## Requirements
@@ -55,12 +55,6 @@ Beta Features (committed):
 - Structured attention
 - [Conv2Conv convolution model]
 - SRU "RNNs faster than CNN" paper
-
-## Run on FloydHub
-
-[![Run on FloydHub](https://static.floydhub.com/button/button.svg)](https://floydhub.com/run?template=https://github.com/OpenNMT/OpenNMT-py)
-
-Click this button to open a Workspace on [FloydHub](https://www.floydhub.com/?utm_medium=readme&utm_source=opennmt-py&utm_campaign=jul_2018) for training/testing your code.
 
 ## Quickstart
 
@@ -115,6 +109,13 @@ Now you have a model which you can use to predict on new data. We do this by run
 
 !!! note "Note"
     The predictions are going to be quite terrible, as the demo dataset is small. Try running on some larger datasets! For example you can download millions of parallel sentences for [translation](http://www.statmt.org/wmt16/translation-task.html) or [summarization](https://github.com/harvardnlp/sent-summary).
+
+## Alternative: Run on FloydHub
+
+[![Run on FloydHub](https://static.floydhub.com/button/button.svg)](https://floydhub.com/run?template=https://github.com/OpenNMT/OpenNMT-py)
+
+Click this button to open a Workspace on [FloydHub](https://www.floydhub.com/?utm_medium=readme&utm_source=opennmt-py&utm_campaign=jul_2018) for training/testing your code.
+
 
 ## Pretrained embeddings (e.g. GloVe)
 
