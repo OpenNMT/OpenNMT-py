@@ -270,7 +270,8 @@
                     <span class="n">gram</span> <span class="o">=</span> <span class="p">[]</span>
                     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">le</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
                         <span class="c1"># Last n tokens, n = block_ngram_repeat</span>
-                        <span class="n">gram</span> <span class="o">=</span> <span class="p">(</span><span class="n">gram</span> <span class="o">+</span> <span class="p">[</span><span class="n">hyp</span><span class="p">[</span><span class="n">i</span><span class="p">]])[</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">block_ngram_repeat</span><span class="p">:]</span>
+                        <span class="n">gram</span> <span class="o">=</span> <span class="p">(</span><span class="n">gram</span> <span class="o">+</span>
+                                <span class="p">[</span><span class="n">hyp</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()])[</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">block_ngram_repeat</span><span class="p">:]</span>
                         <span class="c1"># Skip the blocking if it is in the exclusion list</span>
                         <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">gram</span><span class="p">)</span> <span class="o">&amp;</span> <span class="bp">self</span><span class="o">.</span><span class="n">exclusion_tokens</span><span class="p">:</span>
                             <span class="k">continue</span>
