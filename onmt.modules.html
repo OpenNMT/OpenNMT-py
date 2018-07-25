@@ -235,7 +235,7 @@ number of values of feature takes.</li>
 
 <dl class="method">
 <dt id="onmt.modules.Embeddings.forward">
-<code class="descname">forward</code><span class="sig-paren">(</span><em>source</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/modules/embeddings.html#Embeddings.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.modules.Embeddings.forward" title="Permalink to this definition">¶</a></dt>
+<code class="descname">forward</code><span class="sig-paren">(</span><em>source</em>, <em>step=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/modules/embeddings.html#Embeddings.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.modules.Embeddings.forward" title="Permalink to this definition">¶</a></dt>
 <dd><p>Computes the embeddings for words and features.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -441,7 +441,7 @@ non-recurrent neural networks.</p>
 </table>
 <dl class="method">
 <dt id="onmt.modules.PositionalEncoding.forward">
-<code class="descname">forward</code><span class="sig-paren">(</span><em>emb</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/modules/embeddings.html#PositionalEncoding.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.modules.PositionalEncoding.forward" title="Permalink to this definition">¶</a></dt>
+<code class="descname">forward</code><span class="sig-paren">(</span><em>emb</em>, <em>step=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/modules/embeddings.html#PositionalEncoding.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.modules.PositionalEncoding.forward" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines the computation performed at every call.</p>
 <p>Should be overridden by all subclasses.</p>
 <div class="admonition note">
@@ -509,7 +509,7 @@ must be divisible by head_count</li>
 </table>
 <dl class="method">
 <dt id="onmt.modules.MultiHeadedAttention.forward">
-<code class="descname">forward</code><span class="sig-paren">(</span><em>key</em>, <em>value</em>, <em>query</em>, <em>mask=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/modules/multi_headed_attn.html#MultiHeadedAttention.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.modules.MultiHeadedAttention.forward" title="Permalink to this definition">¶</a></dt>
+<code class="descname">forward</code><span class="sig-paren">(</span><em>key</em>, <em>value</em>, <em>query</em>, <em>mask=None</em>, <em>layer_cache=None</em>, <em>type=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/modules/multi_headed_attn.html#MultiHeadedAttention.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.modules.MultiHeadedAttention.forward" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute the context vector and the attention vectors.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
