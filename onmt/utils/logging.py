@@ -18,6 +18,6 @@ def init_logger(log_file=None):
 
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(log_format)
-    logger.addHandler(console_handler)
+    logger.handlers = [console_handler]
 
     return logger
