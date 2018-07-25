@@ -61,7 +61,7 @@ set_gpu(){
 
 
 set_all_gpu(){
-    GPUID="$(echo $CUDA_VISIBLE_DEVICES)"
+    GPUID=$(sed 's/,/ /g' <(echo $CUDA_VISIBLE_DEVICES) >&1)
 }
 print_gpuid(){
     echo "$GPUID"
@@ -100,7 +100,7 @@ lstm(){
 
     $PYTHON_BIN train.py -data "$DATA_PATH" \
                     -save_model "$MODEL_PATH" \
-                    -gpuid "$GPUID" \
+                    -gpuid $GPUID \
                     -rnn_size 512 \
                     -word_vec_size 512 \
                     -layers 1 \
@@ -131,7 +131,7 @@ sru(){
 
     $PYTHON_BIN train.py -data "$DATA_PATH" \
                     -save_model "$MODEL_PATH" \
-                    -gpuid "$GPUID" \
+                    -gpuid $GPUID \
                     -rnn_size 512 \
                     -word_vec_size 512 \
                     -layers 1 \
@@ -157,7 +157,7 @@ cnn(){
     
     $PYTHON_BIN train.py -data "$DATA_PATH" \
                     -save_model "$MODEL_PATH" \
-                    -gpuid "$GPUID" \
+                    -gpuid $GPUID \
                     -rnn_size 256 \
                     -word_vec_size 256 \
                     -layers 2 \
@@ -185,7 +185,7 @@ morph(){
 
     $PYTHON_BIN train.py -data "$DATA_DIR"/morph/data \
                     -save_model "$MODEL_PATH" \
-                    -gpuid "$GPUID" \
+                    -gpuid $GPUID \
                     -rnn_size 400 \
                     -word_vec_size 100 \
                     -layers 1 \
@@ -225,7 +225,7 @@ transformer(){
                     -encoder_type transformer \
                     -decoder_type transformer \
                     -train_steps 10000 \
-                    -gpuid "$GPUID" \
+                    -gpuid $GPUID \
                     -max_generator_batches 4 \
                     -dropout 0.1 \
                     -normalization tokens \
