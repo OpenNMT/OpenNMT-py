@@ -292,7 +292,6 @@ class ServerModel:
                     whitespace_segments[sscount] = line
                     sscount += 1
                 else:
-
                     texts += [tok]
                     sslength += [len(tok.split())]
                     sscount += 1
