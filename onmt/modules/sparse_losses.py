@@ -20,7 +20,8 @@ class SparsemaxLossFunction(Function):
         ).sum(dim=1)
         ctx.save_for_backward(input, target, tau_z)
         # clamping necessary because of numerical errors: loss should be lower
-        # bounded by zero
+        # bounded by zero, but negative values near zero are possible without
+        # the clamp
         return torch.clamp(x / 2 - z_k + 0.5, min=0.0)
 
     @staticmethod
@@ -36,6 +37,16 @@ sparsemax_loss = SparsemaxLossFunction.apply
 
 
 class SparsemaxLoss(nn.Module):
+    """
+    An implementation of sparsemax loss, first proposed in "From Softmax to
+    Sparsemax: A Sparse Model of Attention and Multi-Label Classification"
+    (Martins & Astudillo, 2016: https://arxiv.org/pdf/1602.02068). If using
+    a sparse output layer, it is not possible to use negative log likelihood
+    because the loss is infinite in the case the target is assigned zero
+    probability. Inputs to SparsemaxLoss are arbitrary dense real-valued
+    vectors (like in nn.CrossEntropyLoss), not probability vectors (like in
+    nn.NLLLoss).
+    """
 
     def __init__(self, weight=None, ignore_index=-100,
                  reduce=True, size_average=True):
