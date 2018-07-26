@@ -11,7 +11,6 @@ import torch.nn.functional as F
 
 import onmt
 import onmt.inputters as inputters
-from onmt.modules.sparse_activations import Sparsemax
 from onmt.modules.sparse_losses import SparsemaxLoss
 
 
@@ -213,7 +212,7 @@ class NMTLossCompute(LossComputeBase):
     def __init__(self, generator, tgt_vocab, normalization="sents",
                  label_smoothing=0.0):
         super(NMTLossCompute, self).__init__(generator, tgt_vocab)
-        self.sparse = isinstance(generator[1], Sparsemax)
+        self.sparse = not isinstance(generator[1], nn.LogSoftmax)
         if label_smoothing > 0:
             self.criterion = LabelSmoothingLoss(
                 label_smoothing, len(tgt_vocab), ignore_index=self.padding_idx
