@@ -201,7 +201,7 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
     # Build Generator.
     if not model_opt.copy_attn:
         if model_opt.generator_function == "sparsemax":
-            gen_func = onmt.modules.sparse_activations.Sparsemax(dim=-1)
+            gen_func = onmt.modules.sparse_activations.LogSparsemax(dim=-1)
         else:
             gen_func = nn.LogSoftmax(dim=-1)
         generator = nn.Sequential(
