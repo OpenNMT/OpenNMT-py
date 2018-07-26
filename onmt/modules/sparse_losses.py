@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from torch.autograd import Function
 from onmt.modules.sparse_activations import threshold_and_support
+from onmt.utils.misc import aeq
 
 
 class SparsemaxLossFunction(Function):
@@ -12,6 +13,10 @@ class SparsemaxLossFunction(Function):
         input (FloatTensor): n x num_classes
         target (LongTensor): n, the indices of the target classes
         """
+        input_batch, classes = input.size()
+        target_batch = target.size(0)
+        aeq(input_batch, target_batch)
+
         z_k = input.gather(1, target.unsqueeze(1)).squeeze()
         tau_z, support_size = threshold_and_support(input, dim=1)
         support = input > tau_z
