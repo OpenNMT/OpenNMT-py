@@ -1,6 +1,6 @@
 """
 An implementation of sparsemax (Martins & Astudillo, 2016). See
-https://arxiv.org/pdf/1602.02068.pdf for detailed description.
+https://arxiv.org/pdf/1602.02068 for detailed description.
 """
 
 import torch
@@ -63,3 +63,13 @@ class Sparsemax(nn.Module):
 
     def forward(self, input):
         return sparsemax(input, self.dim)
+
+
+class LogSparsemax(nn.Module):
+
+    def __init__(self, dim=0):
+        self.dim = dim
+        super(LogSparsemax, self).__init__()
+
+    def forward(self, input):
+        return torch.log(sparsemax(input, self.dim))
