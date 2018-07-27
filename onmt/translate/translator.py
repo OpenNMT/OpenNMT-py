@@ -534,10 +534,9 @@ class Translator(object):
             ).t().contiguous().view(1, -1)
 
             # Turn any copied words to UNKs
-            # 0 is unk
             if self.copy_attn:
                 inp = inp.masked_fill(
-                    inp.gt(len(self.fields["tgt"].vocab) - 1), 0)
+                    inp.gt(len(self.fields["tgt"].vocab) - 1), inputters.UNK)
 
             # Temporary kludge solution to handle changed dim expectation
             # in the decoder
