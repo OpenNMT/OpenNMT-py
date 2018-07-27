@@ -81,12 +81,11 @@ class Beam(object):
             (beam width x vocab size)
         * `attn_out`- attention at the last step
         """
-        num_words = word_probs.size(1)
+        beam_width, num_words = word_probs.size()
         if self.stepwise_penalty:
             self.global_scorer.update_score(self, attn_out)
         # force the output to be longer than self.min_length
-        cur_len = len(self.next_ys)
-        if cur_len < self.min_length:
+        if len(self.next_ys) < self.min_length:
             word_probs[:, self._eos] = -1e20
         # Sum the previous scores.
         if self.prev_ks:
@@ -95,32 +94,28 @@ class Beam(object):
             # Don't let EOS have children.
             beam_scores[self.next_ys[-1] == self._eos] = -1e20
 
-            # Block ngram repeats
             if self.block_ngram_repeat:
-                ngrams = []
+                n = self.block_ngram_repeat
                 le = len(self.next_ys)
-                for j in range(self.next_ys[-1].size(0)):
+                for j in range(beam_width):
                     hyp, _ = self.get_hyp(le - 1, j)
                     ngrams = set()
                     fail = False
-                    gram = []
+                    gram = tuple()
                     for i in range(le - 1):
-                        # Last n tokens, n = block_ngram_repeat
-                        gram = (gram +
-                                [hyp[i].item()])[-self.block_ngram_repeat:]
+                        gram = (gram + (hyp[i].item(),))[-n:]
                         # Skip the blocking if it is in the exclusion list
-                        if set(gram) & self.exclusion_tokens:
+                        if any(tok in self.exclusion_tokens for tok in gram):
                             continue
-                        if tuple(gram) in ngrams:
+                        if gram in ngrams:
                             fail = True
-                        ngrams.add(tuple(gram))
+                        ngrams.add(gram)
                     if fail:
-                        beam_scores[j] = -10e20
+                        beam_scores[j] = -1e20
+            beam_scores = beam_scores.view(-1)
         else:
             beam_scores = word_probs[0]
-        flat_beam_scores = beam_scores.view(-1)
-        best_scores, best_scores_id = flat_beam_scores.topk(self.size, 0,
-                                                            True, True)
+        best_scores, best_scores_id = beam_scores.topk(self.size, 0)
 
         self.all_scores.append(self.scores)
         self.scores = best_scores
@@ -133,7 +128,7 @@ class Beam(object):
         self.attn.append(attn_out.index_select(0, prev_k))
         self.global_scorer.update_global_state(self)
 
-        for i in range(self.next_ys[-1].size(0)):
+        for i in range(beam_width):
             if self.next_ys[-1][i] == self._eos:
                 global_scores = self.global_scorer.score(self, self.scores)
                 s = global_scores[i]
@@ -167,7 +162,7 @@ class Beam(object):
         Walk back to construct the full hypothesis.
         """
         hyp, attn = [], []
-        for j in range(len(self.prev_ks[:timestep]) - 1, -1, -1):
+        for j in range(timestep - 1, -1, -1):
             hyp.append(self.next_ys[j + 1][k])
             attn.append(self.attn[j][k])
             k = self.prev_ks[j][k]
