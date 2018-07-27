@@ -588,11 +588,11 @@ class Translator(object):
         ret = {"predictions": [],
                "scores": [],
                "attention": []}
+        n_best = self.n_best
         for b in beam:
-            n_best = self.n_best
             scores, ks = b.sort_finished(minimum=n_best)
             hyps, attn = [], []
-            for i, (times, k) in enumerate(ks[:n_best]):
+            for times, k in ks[:n_best]:
                 hyp, att = b.get_hyp(times, k)
                 hyps.append(hyp)
                 attn.append(att)
