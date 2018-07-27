@@ -17,6 +17,7 @@ class Beam(object):
        global_scorer (:obj:`GlobalScorer`)
     """
 
+    # TODO: fix mutable argument value
     def __init__(self, size, pad, bos, eos,
                  n_best=1, cuda=False,
                  global_scorer=None,
@@ -25,11 +26,10 @@ class Beam(object):
                  block_ngram_repeat=0,
                  exclusion_tokens=set()):
 
-        self.size = size
-        self.tt = torch.cuda if cuda else torch
+        self.tt = torch.cuda if cuda else torch  # not obviously necessary
 
         # The score for each translation on the beam.
-        self.scores = self.tt.zeros(size)
+        self.scores = self.tt.zeros(size)  # is this necessary?
         self.all_scores = []
 
         # The backpointers at each time-step.
@@ -64,6 +64,7 @@ class Beam(object):
 
     def get_current_state(self):
         "Get the outputs for the current timestep."
+        # opaque name because there is much more to a beam's state than this
         return self.next_ys[-1]
 
     def get_current_origin(self):
@@ -94,6 +95,7 @@ class Beam(object):
             # Don't let EOS have children.
             beam_scores[self.next_ys[-1] == self._eos] = -1e20
 
+            # TODO: clean up the block_ngram_repeat section
             if self.block_ngram_repeat:
                 n = self.block_ngram_repeat
                 le = len(self.next_ys)
@@ -115,7 +117,7 @@ class Beam(object):
             beam_scores = beam_scores.view(-1)
         else:
             beam_scores = word_probs[0]
-        best_scores, best_scores_id = beam_scores.topk(self.size, 0)
+        best_scores, best_scores_id = beam_scores.topk(beam_width, 0)
 
         self.all_scores.append(self.scores)
         self.scores = best_scores
@@ -153,6 +155,8 @@ class Beam(object):
         if minimum is not None:
             i = 0
             # Add from beam until we have minimum outputs.
+            # why should a sort_finished method change what the thing to be
+            # sorted is?
             while len(self.finished) < minimum:
                 global_scores = self.global_scorer.score(self, self.scores)
                 s = global_scores[i]
@@ -189,8 +193,7 @@ class GNMTGlobalScorer(object):
     def __init__(self, alpha, beta, cov_penalty, length_penalty):
         self.alpha = alpha
         self.beta = beta
-        penalty_builder = penalties.PenaltyBuilder(cov_penalty,
-                                                   length_penalty)
+        penalty_builder = penalties.PenaltyBuilder(cov_penalty, length_penalty)
         # Term will be subtracted from probability
         self.cov_penalty = penalty_builder.coverage_penalty()
         # Probability will be divided by this
@@ -200,9 +203,7 @@ class GNMTGlobalScorer(object):
         """
         Rescores a prediction based on penalty functions
         """
-        normalized_probs = self.length_penalty(beam,
-                                               logprobs,
-                                               self.alpha)
+        normalized_probs = self.length_penalty(beam, logprobs, self.alpha)
         if not beam.stepwise_penalty:
             penalty = self.cov_penalty(beam,
                                        beam.global_state["coverage"],
@@ -225,7 +226,7 @@ class GNMTGlobalScorer(object):
     def update_global_state(self, beam):
         "Keeps the coverage vector as sum of attentions"
         if len(beam.prev_ks) == 1:
-            beam.global_state["prev_penalty"] = beam.scores.clone().fill_(0.0)
+            beam.global_state["prev_penalty"] = torch.zeros_like(beam.scores)
             beam.global_state["coverage"] = beam.attn[-1]
             self.cov_total = beam.attn[-1].sum(1)
         else:

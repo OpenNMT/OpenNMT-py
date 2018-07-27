@@ -585,6 +585,8 @@ class Translator(object):
         return ret
 
     def _from_beam(self, beam):
+        # what is this for? Does it do anything except put the beam's
+        # predictions into a dictionary?
         ret = {"predictions": [],
                "scores": [],
                "attention": []}
