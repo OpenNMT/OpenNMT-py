@@ -33,19 +33,18 @@ class TranslationBuilder(object):
     def _build_target_tokens(self, src, src_vocab, src_raw, pred, attn):
         vocab = self.fields["tgt"].vocab
         tokens = []
-        for tok in pred:
+        for i, tok in enumerate(pred):
             if tok < len(vocab):
-                tokens.append(vocab.itos[tok])
+                tok_str = vocab.itos[tok]
             else:
-                tokens.append(src_vocab.itos[tok - len(vocab)])
-            if tokens[-1] == inputters.EOS_WORD:
-                tokens = tokens[:-1]
+                tok_str = src_vocab.itos[tok - len(vocab)]
+            if tok_str == inputters.EOS_WORD:
                 break
-        if self.replace_unk and (attn is not None) and (src is not None):
-            for i in range(len(tokens)):
-                if tokens[i] == vocab.itos[inputters.UNK]:
+            if self.replace_unk and attn is not None and src is not None:
+                if tok_str == vocab.itos[inputters.UNK]:
                     _, max_index = attn[i].max(0)
-                    tokens[i] = src_raw[max_index[0]]
+                    tok_str = src_raw[max_index[0]]
+            tokens.append(tok_str)
         return tokens
 
     def from_batch(self, translation_batch):
