@@ -603,10 +603,7 @@ class Translator(object):
 
     def _run_target(self, batch, data):
         data_type = data.data_type
-        if data_type == 'text':
-            _, src_lengths = batch.src
-        else:
-            src_lengths = None
+        src_lengths = batch.src[1] if data_type == 'text' else None
         src = inputters.make_features(batch, 'src', data_type)
         tgt_in = inputters.make_features(batch, 'tgt')[:-1]
 
@@ -615,19 +612,19 @@ class Translator(object):
         dec_states = \
             self.model.decoder.init_decoder_state(src, memory_bank, enc_states)
 
-        #  (2) if a target is specified, compute the 'goldScore'
+        #  (2) if a target is specified, compute the gold scores
         #  (i.e. log likelihood) of the target under the model
         tt = torch.cuda if self.cuda else torch
-        gold_scores = tt.FloatTensor(batch.batch_size).fill_(0)
+        gold_scores = tt.zeros(batch.batch_size)
         dec_out, _, _ = self.model.decoder(
             tgt_in, memory_bank, dec_states, memory_lengths=src_lengths)
 
         tgt_pad = self.fields["tgt"].vocab.stoi[inputters.PAD_WORD]
-        for dec, tgt in zip(dec_out, batch.tgt[1:].data):
+        for dec, tgt in zip(dec_out, batch.tgt[1:]):
             # Log prob of each word.
             out = self.model.generator(dec)
             tgt = tgt.unsqueeze(1)
-            scores = out.data.gather(1, tgt)
+            scores = out.gather(1, tgt)
             scores.masked_fill_(tgt.eq(tgt_pad), 0)
             gold_scores += scores.view(-1)
         return gold_scores
