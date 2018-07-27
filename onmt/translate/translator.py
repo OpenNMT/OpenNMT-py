@@ -376,9 +376,9 @@ class Translator(object):
         results["gold_score"] = [0] * batch_size
         results["batch"] = batch
 
-        max_length += 1
+        # max_length += 1
 
-        for step in range(max_length):
+        for step in range(max_length + 1):
             decoder_input = alive_seq[:, -1].view(1, -1, 1)
 
             # Decoder forward.
@@ -421,7 +421,7 @@ class Translator(object):
 
             # End condition is the top beam reached end_token.
             end_condition = topk_ids[:, 0].eq(end_token)
-            if step + 1 == max_length:
+            if step == max_length:
                 end_condition.fill_(1)
             finished = end_condition.nonzero().view(-1)
 
