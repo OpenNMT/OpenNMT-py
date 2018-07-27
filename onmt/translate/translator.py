@@ -376,8 +376,6 @@ class Translator(object):
         results["gold_score"] = [0] * batch_size
         results["batch"] = batch
 
-        # max_length += 1
-
         for step in range(max_length + 1):
             decoder_input = alive_seq[:, -1].view(1, -1, 1)
 
@@ -485,8 +483,7 @@ class Translator(object):
 
         # Define a list of tokens to exclude from ngram-blocking
         # exclusion_list = ["<t>", "</t>", "."]
-        exclusion_tokens = set([vocab.stoi[t]
-                                for t in self.ignore_when_blocking])
+        exclusion_tokens = {vocab.stoi[t] for t in self.ignore_when_blocking}
 
         beam = [onmt.translate.Beam(beam_size, n_best=self.n_best,
                                     cuda=self.cuda,
@@ -505,37 +502,31 @@ class Translator(object):
 
         def rvar(a): return var(a.repeat(1, beam_size, 1))
 
-        def bottle(m):
-            return m.view(batch_size * beam_size, -1)
+        def bottle(m): return m.view(batch_size * beam_size, -1)
 
-        def unbottle(m):
-            return m.view(beam_size, batch_size, -1)
+        def unbottle(m): return m.view(beam_size, batch_size, -1)
 
         # (1) Run the encoder on the src.
         src = inputters.make_features(batch, 'src', data_type)
-        src_lengths = None
-        if data_type == 'text':
-            _, src_lengths = batch.src
+        src_lengths = batch.src[1] if data_type == 'text' else None
 
         enc_states, memory_bank = self.model.encoder(src, src_lengths)
         dec_states = self.model.decoder.init_decoder_state(
             src, memory_bank, enc_states)
 
         if src_lengths is None:
-            src_lengths = torch.Tensor(batch_size).type_as(memory_bank.data)\
-                                                  .long()\
-                                                  .fill_(memory_bank.size(0))
+            src_lengths = torch.full((batch_size,), memory_bank.size(0)).long()
 
         # (2) Repeat src objects `beam_size` times.
-        src_map = rvar(batch.src_map.data) \
+        src_map = rvar(batch.src_map) \
             if data_type == 'text' and self.copy_attn else None
-        memory_bank = rvar(memory_bank.data)
+        memory_bank = rvar(memory_bank)
         memory_lengths = src_lengths.repeat(beam_size)
         dec_states.repeat_beam_size_times(beam_size)
 
         # (3) run the decoder to generate sentences, using beam search.
         for i in range(self.max_length):
-            if all((b.done() for b in beam)):
+            if all(b.done() for b in beam):
                 break
 
             # Construct batch x beam_size nxt words.
@@ -575,7 +566,7 @@ class Translator(object):
                                            src_map)
                 # beam x (tgt_vocab + extra_vocab)
                 out = data.collapse_copy_scores(
-                    unbottle(out.data),
+                    unbottle(out),
                     batch, self.fields["tgt"].vocab, data.src_vocabs)
                 # beam x tgt_vocab
                 out = out.log()
@@ -583,8 +574,7 @@ class Translator(object):
 
             # (c) Advance each beam.
             for j, b in enumerate(beam):
-                b.advance(out[:, j],
-                          beam_attn.data[:, j, :memory_lengths[j]])
+                b.advance(out[:, j], beam_attn[:, j, :memory_lengths[j]])
                 dec_states.beam_update(j, b.get_current_origin(), beam_size)
 
         # (4) Extract sentences from beam.
