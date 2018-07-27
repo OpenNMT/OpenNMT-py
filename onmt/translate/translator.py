@@ -390,7 +390,7 @@ class Translator(object):
                 step=step)
 
             # Generator forward.
-            log_probs = self.model.generator.forward(dec_out.squeeze(0))
+            log_probs = self.model.generator(dec_out.squeeze(0))
             vocab_size = log_probs.size(-1)
 
             if step < min_length:
@@ -565,14 +565,14 @@ class Translator(object):
 
             # (b) Compute a vector of batch x beam word scores.
             if not self.copy_attn:
-                out = self.model.generator.forward(dec_out).data
+                out = self.model.generator(dec_out)
                 out = unbottle(out)
                 # beam x tgt_vocab
                 beam_attn = unbottle(attn["std"])
             else:
-                out = self.model.generator.forward(dec_out,
-                                                   attn["copy"].squeeze(0),
-                                                   src_map)
+                out = self.model.generator(dec_out,
+                                           attn["copy"].squeeze(0),
+                                           src_map)
                 # beam x (tgt_vocab + extra_vocab)
                 out = data.collapse_copy_scores(
                     unbottle(out.data),
@@ -637,7 +637,7 @@ class Translator(object):
         tgt_pad = self.fields["tgt"].vocab.stoi[inputters.PAD_WORD]
         for dec, tgt in zip(dec_out, batch.tgt[1:].data):
             # Log prob of each word.
-            out = self.model.generator.forward(dec)
+            out = self.model.generator(dec)
             tgt = tgt.unsqueeze(1)
             scores = out.data.gather(1, tgt)
             scores.masked_fill_(tgt.eq(tgt_pad), 0)
