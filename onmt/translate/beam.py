@@ -128,11 +128,18 @@ class Beam(object):
         self.attn.append(attn_out.index_select(0, prev_k))
         self.global_scorer.update_global_state(self)
 
-        for i in range(beam_width):
-            if self.next_ys[-1][i] == self._eos:
-                global_scores = self.global_scorer.score(self, self.scores)
-                s = global_scores[i]
-                self.finished.append((s, len(self.next_ys) - 1, i))
+        finished_sents = self.next_ys[-1] == self._eos
+        if finished_sents.any():
+            indices = torch.arange(0, beam_width, dtype=torch.long)
+            seq_len = len(self.next_ys) - 1
+            # this would be more efficient if only the finished scores were
+            # given to self.global_scorer.score, but this does not work right
+            # now
+            global_scores = self.global_scorer.score(self, self.scores)
+            finished_globals = global_scores.masked_select(finished_sents)
+            ix = indices.masked_select(finished_sents)
+            self.finished.extend((s, seq_len, i)
+                                 for s, i in zip(finished_globals, ix))
 
         # End condition is when top-of-beam is EOS and no global score.
         if self.next_ys[-1][0] == self._eos:
