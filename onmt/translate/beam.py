@@ -29,15 +29,14 @@ class Beam(object):
         self.tt = torch.cuda if cuda else torch
 
         # The score for each translation on the beam.
-        self.scores = self.tt.FloatTensor(size).zero_()
+        self.scores = self.tt.zeros(size)
         self.all_scores = []
 
         # The backpointers at each time-step.
         self.prev_ks = []
 
         # The outputs at each time-step.
-        self.next_ys = [self.tt.LongTensor(size)
-                        .fill_(pad)]
+        self.next_ys = [self.tt.full((size,), pad).long()]
         self.next_ys[0][0] = bos
 
         # Has EOS topped the beam yet.
@@ -78,10 +77,9 @@ class Beam(object):
 
         Parameters:
 
-        * `word_probs`- probs of advancing from the last step (K x words)
+        * `word_probs`- probs of advancing from the last step
+            (beam width x vocab size)
         * `attn_out`- attention at the last step
-
-        Returns: True if beam search is complete.
         """
         num_words = word_probs.size(1)
         if self.stepwise_penalty:
@@ -89,19 +87,16 @@ class Beam(object):
         # force the output to be longer than self.min_length
         cur_len = len(self.next_ys)
         if cur_len < self.min_length:
-            for k in range(len(word_probs)):
-                word_probs[k][self._eos] = -1e20
+            word_probs[:, self._eos] = -1e20
         # Sum the previous scores.
-        if len(self.prev_ks) > 0:
+        if self.prev_ks:
             beam_scores = word_probs + \
                 self.scores.unsqueeze(1).expand_as(word_probs)
             # Don't let EOS have children.
-            for i in range(self.next_ys[-1].size(0)):
-                if self.next_ys[-1][i] == self._eos:
-                    beam_scores[i] = -1e20
+            beam_scores[self.next_ys[-1] == self._eos] = -1e20
 
             # Block ngram repeats
-            if self.block_ngram_repeat > 0:
+            if self.block_ngram_repeat:
                 ngrams = []
                 le = len(self.next_ys)
                 for j in range(self.next_ys[-1].size(0)):
