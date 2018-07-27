@@ -498,9 +498,7 @@ class Translator(object):
                 for __ in range(batch_size)]
 
         # Help functions for working with beams and batches
-        def var(a): return torch.tensor(a, requires_grad=False)
-
-        def rvar(a): return var(a.repeat(1, beam_size, 1))
+        def rvar(a): return a.repeat(1, beam_size, 1)
 
         def bottle(m): return m.view(batch_size * beam_size, -1)
 
@@ -531,8 +529,9 @@ class Translator(object):
 
             # Construct batch x beam_size nxt words.
             # Get all the pending current beam words and arrange for forward.
-            inp = var(torch.stack([b.get_current_state() for b in beam])
-                      .t().contiguous().view(1, -1))
+            inp = torch.stack(
+                [b.get_current_state() for b in beam]
+            ).t().contiguous().view(1, -1)
 
             # Turn any copied words to UNKs
             # 0 is unk
