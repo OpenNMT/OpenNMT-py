@@ -78,6 +78,10 @@ class Beam(object):
 
     def advance(self, word_probs, attn_out):
         """
+        TODO: properly consider what should be changed by advancing the beam
+        and specify that in here
+        self.all_scores is appended to exactly once per call, unless you are
+        in the end condition (i.e. self.current_state[0] == self._eos)
         Given prob over words for every last beam `wordLk` and attention
         `attn_out`: Compute and update the beam search.
 
@@ -126,9 +130,6 @@ class Beam(object):
         if finished_sents.any():
             indices = torch.arange(0, self.width, dtype=torch.long)
             seq_len = len(self.next_ys) - 1
-            # this would be more efficient if only the finished scores were
-            # given to self.global_scorer.score, but this does not work
-            # with the current implementation of GNMTGlobalScorer
 
             global_scores = self.compute_global_score()
             finished_globals = global_scores.masked_select(finished_sents)
@@ -137,7 +138,7 @@ class Beam(object):
                                  for s, i in zip(finished_globals, ix))
 
         # End condition is when top-of-beam is EOS and no global score.
-        if self.next_ys[-1][0] == self._eos:
+        if self.current_state[0] == self._eos:
             self.all_scores.append(self.scores)
             self.eos_top = True
 
@@ -165,11 +166,8 @@ class Beam(object):
     def sort_finished(self, minimum=None):
         if minimum is not None:
             i = 0
-            # Add from beam until we have minimum outputs.
-            # why should a sort_finished method change what the thing to be
-            # sorted is?
+            global_scores = self.compute_global_score()
             while len(self.finished) < minimum:
-                global_scores = self.compute_global_score()
                 s = global_scores[i]
                 self.finished.append((s, len(self.next_ys) - 1, i))
                 i += 1
