@@ -40,32 +40,28 @@ class PenaltyBuilder(object):
         NMT coverage re-ranking score from
         "Google's Neural Machine Translation System" :cite:`wu2016google`.
         """
-        penalty = -torch.min(cov, cov.clone().fill_(1.0)).log().sum(1)
-        return beta * penalty
+        return 0. if beta == 0. else beta * -cov.clamp(max=1.0).log().sum(1)
 
     def coverage_summary(self, beam, cov, beta=0.):
         """
         Our summary penalty.
         """
-        penalty = torch.max(cov, cov.clone().fill_(1.0)).sum(1)
-        penalty -= cov.size(1)
-        return beta * penalty
+        return 0. if beta == 0. else beta * \
+            (-cov.clamp(min=1.0).sum(1) - cov.size(1))
 
     def coverage_none(self, beam, cov, beta=0.):
         """
         returns zero as penalty
         """
-        return beam.scores.clone().fill_(0.0)
+        return torch.zeros_like(beam.scores)
 
     def length_wu(self, beam, logprobs, alpha=0.):
         """
         NMT length re-ranking score from
         "Google's Neural Machine Translation System" :cite:`wu2016google`.
         """
-
-        modifier = (((5 + len(beam.next_ys)) ** alpha) /
-                    ((5 + 1) ** alpha))
-        return (logprobs / modifier)
+        modifier = ((5 + len(beam.next_ys)) / 6) ** alpha
+        return logprobs / modifier
 
     def length_average(self, beam, logprobs, alpha=0.):
         """
