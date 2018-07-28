@@ -26,17 +26,17 @@ class Beam(object):
                  block_ngram_repeat=0,
                  exclusion_tokens=set()):
 
-        self.tt = torch.cuda if cuda else torch  # not obviously necessary
+        device = 'cuda' if cuda else 'cpu'  # not sure if necessary
 
         # The score for each translation on the beam.
-        self.scores = self.tt.zeros(size)  # is this necessary?
+        self.scores = torch.zeros(size, device=device)
         self.all_scores = []
 
         # The backpointers at each time-step.
         self.prev_ks = []
 
         # The outputs at each time-step.
-        self.next_ys = [self.tt.full((size,), pad).long()]
+        self.next_ys = [torch.full((size,), pad, device=device).long()]
         self.next_ys[0][0] = bos
 
         # Has EOS topped the beam yet.
@@ -135,8 +135,8 @@ class Beam(object):
             indices = torch.arange(0, beam_width, dtype=torch.long)
             seq_len = len(self.next_ys) - 1
             # this would be more efficient if only the finished scores were
-            # given to self.global_scorer.score, but this does not work right
-            # now
+            # given to self.global_scorer.score, but this does not work
+            # with the current implementation of GNMTGlobalScorer
             global_scores = self.global_scorer.score(self, self.scores)
             finished_globals = global_scores.masked_select(finished_sents)
             ix = indices.masked_select(finished_sents)
@@ -205,9 +205,9 @@ class GNMTGlobalScorer(object):
         """
         normalized_probs = self.length_penalty(beam, logprobs, self.alpha)
         if not beam.stepwise_penalty:
-            penalty = self.cov_penalty(beam,
-                                       beam.global_state["coverage"],
-                                       self.beta)
+            penalty = self.cov_penalty(
+                beam, beam.global_state["coverage"], self.beta
+            )
             normalized_probs -= penalty
 
         return normalized_probs
@@ -216,11 +216,11 @@ class GNMTGlobalScorer(object):
         """
         Function to update scores of a Beam that is not finished
         """
-        if "prev_penalty" in beam.global_state.keys():
+        if "prev_penalty" in beam.global_state:
             beam.scores.add_(beam.global_state["prev_penalty"])
-            penalty = self.cov_penalty(beam,
-                                       beam.global_state["coverage"] + attn,
-                                       self.beta)
+            penalty = self.cov_penalty(
+                beam, beam.global_state["coverage"] + attn, self.beta
+            )
             beam.scores.sub_(penalty)
 
     def update_global_state(self, beam):
@@ -235,7 +235,7 @@ class GNMTGlobalScorer(object):
             beam.global_state["coverage"] = beam.global_state["coverage"] \
                 .index_select(0, beam.prev_ks[-1]).add(beam.attn[-1])
 
-            prev_penalty = self.cov_penalty(beam,
-                                            beam.global_state["coverage"],
-                                            self.beta)
+            prev_penalty = self.cov_penalty(
+                beam, beam.global_state["coverage"], self.beta
+            )
             beam.global_state["prev_penalty"] = prev_penalty
