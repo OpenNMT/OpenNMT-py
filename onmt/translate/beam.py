@@ -1,6 +1,7 @@
 from __future__ import division
 import torch
 from onmt.translate import penalties
+from onmt.utils.misc import aeq
 
 
 class Beam(object):
@@ -62,13 +63,16 @@ class Beam(object):
         self.block_ngram_repeat = block_ngram_repeat
         self.exclusion_tokens = exclusion_tokens
 
-    def get_current_state(self):
-        "Get the outputs for the current timestep."
-        # opaque name because there is much more to a beam's state than this
+    @property
+    def width(self):
+        return len(self.next_ys[-1])
+
+    @property
+    def current_state(self):
         return self.next_ys[-1]
 
-    def get_current_origin(self):
-        "Get the backpointers for the current timestep."
+    @property
+    def backpointers(self):
         return self.prev_ks[-1]
 
     def advance(self, word_probs, attn_out):
@@ -82,7 +86,9 @@ class Beam(object):
             (beam width x vocab size)
         * `attn_out`- attention at the last step
         """
-        beam_width, num_words = word_probs.size()
+        probs_beam_width, num_words = word_probs.size()
+        aeq(probs_beam_width, self.width)
+
         if self.stepwise_penalty:
             self.global_scorer.update_score(self, attn_out)
         # force the output to be longer than self.min_length
@@ -93,31 +99,16 @@ class Beam(object):
             beam_scores = word_probs + \
                 self.scores.unsqueeze(1).expand_as(word_probs)
             # Don't let EOS have children.
-            beam_scores[self.next_ys[-1] == self._eos] = -1e20
+            beam_scores[self.current_state == self._eos] = -1e20
 
-            # TODO: clean up the block_ngram_repeat section
             if self.block_ngram_repeat:
-                n = self.block_ngram_repeat
-                le = len(self.next_ys)
-                for j in range(beam_width):
-                    hyp, _ = self.get_hyp(le - 1, j)
-                    ngrams = set()
-                    fail = False
-                    gram = tuple()
-                    for i in range(le - 1):
-                        gram = (gram + (hyp[i].item(),))[-n:]
-                        # Skip the blocking if it is in the exclusion list
-                        if any(tok in self.exclusion_tokens for tok in gram):
-                            continue
-                        if gram in ngrams:
-                            fail = True
-                        ngrams.add(gram)
-                    if fail:
-                        beam_scores[j] = -1e20
+                blocked_indices = self._find_ngram_repetitions()
+                beam_scores[blocked_indices] = -1e20
+
             beam_scores = beam_scores.view(-1)
         else:
             beam_scores = word_probs[0]
-        best_scores, best_scores_id = beam_scores.topk(beam_width, 0)
+        best_scores, best_scores_id = beam_scores.topk(self.width, 0)
 
         self.all_scores.append(self.scores)
         self.scores = best_scores
@@ -130,9 +121,9 @@ class Beam(object):
         self.attn.append(attn_out.index_select(0, prev_k))
         self.global_scorer.update_global_state(self)
 
-        finished_sents = self.next_ys[-1] == self._eos
+        finished_sents = self.current_state == self._eos
         if finished_sents.any():
-            indices = torch.arange(0, beam_width, dtype=torch.long)
+            indices = torch.arange(0, self.width, dtype=torch.long)
             seq_len = len(self.next_ys) - 1
             # this would be more efficient if only the finished scores were
             # given to self.global_scorer.score, but this does not work
@@ -147,6 +138,24 @@ class Beam(object):
         if self.next_ys[-1][0] == self._eos:
             self.all_scores.append(self.scores)
             self.eos_top = True
+
+    def _find_ngram_repetitions(self):
+        n = self.block_ngram_repeat
+        le = len(self.next_ys)
+        indices = set()
+        for j in range(self.width):
+            hyp, _ = self.get_hyp(le - 1, j)
+            ngrams = set()
+            gram = tuple()
+            for i in range(le - 1):
+                gram = (gram + (hyp[i].item(),))[-n:]
+                # Skip the blocking if it is in the exclusion list
+                if any(tok in self.exclusion_tokens for tok in gram):
+                    continue
+                if gram in ngrams:
+                    indices.add(j)
+                ngrams.add(gram)
+        return torch.LongTensor(sorted(indices))
 
     def done(self):
         return self.eos_top and len(self.finished) >= self.n_best

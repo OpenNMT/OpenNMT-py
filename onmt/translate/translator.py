@@ -529,9 +529,8 @@ class Translator(object):
 
             # Construct batch x beam_size nxt words.
             # Get all the pending current beam words and arrange for forward.
-            inp = torch.stack(
-                [b.get_current_state() for b in beam]
-            ).t().contiguous().view(1, -1)
+            inp = torch.stack([b.current_state for b in beam])
+            inp = inp.t().contiguous().view(1, -1)
 
             # Turn any copied words to UNKs
             if self.copy_attn:
@@ -573,7 +572,7 @@ class Translator(object):
             # (c) Advance each beam.
             for j, b in enumerate(beam):
                 b.advance(out[:, j], beam_attn[:, j, :memory_lengths[j]])
-                dec_states.beam_update(j, b.get_current_origin(), beam_size)
+                dec_states.beam_update(j, b.backpointers, beam_size)
 
         # (4) Extract sentences from beam.
         ret = self._from_beam(beam)
