@@ -2,75 +2,57 @@ from __future__ import division
 import torch
 
 
-class PenaltyBuilder(object):
+def coverage_penalty(name):
+    coverages = {"wu": coverage_wu, "summary": coverage_summary}
+    return coverages.get(name, coverage_none)
+
+
+def length_penalty(name):
+    lengths = {"wu": length_wu, "average": length_average}
+    return lengths.get(name, length_none)
+
+
+def coverage_wu(scores, cov, beta=0.):
     """
-    Returns the Length and Coverage Penalty function for Beam Search.
-
-    Args:
-        length_pen (str): option name of length pen
-        cov_pen (str): option name of cov pen
+    NMT coverage re-ranking score from
+    "Google's Neural Machine Translation System" :cite:`wu2016google`.
     """
+    return 0. if beta == 0. else beta * -cov.clamp(max=1.0).log().sum(1)
 
-    def __init__(self, cov_pen, length_pen):
-        self.length_pen = length_pen
-        self.cov_pen = cov_pen
 
-    def coverage_penalty(self):
-        if self.cov_pen == "wu":
-            return self.coverage_wu
-        elif self.cov_pen == "summary":
-            return self.coverage_summary
-        else:
-            return self.coverage_none
-
-    def length_penalty(self):
-        if self.length_pen == "wu":
-            return self.length_wu
-        elif self.length_pen == "avg":
-            return self.length_average
-        else:
-            return self.length_none
-
+def coverage_summary(scores, cov, beta=0.):
     """
-    Below are all the different penalty terms implemented so far
+    Our summary penalty.
     """
+    return 0. if beta == 0. else beta * \
+        (-cov.clamp(min=1.0).sum(1) - cov.size(1))
 
-    def coverage_wu(self, beam, cov, beta=0.):
-        """
-        NMT coverage re-ranking score from
-        "Google's Neural Machine Translation System" :cite:`wu2016google`.
-        """
-        return 0. if beta == 0. else beta * -cov.clamp(max=1.0).log().sum(1)
 
-    def coverage_summary(self, beam, cov, beta=0.):
-        """
-        Our summary penalty.
-        """
-        return 0. if beta == 0. else beta * \
-            (-cov.clamp(min=1.0).sum(1) - cov.size(1))
+def coverage_none(scores, cov, beta=0.):
+    """
+    returns zero as penalty
+    """
+    return torch.zeros_like(scores)
 
-    def coverage_none(self, beam, cov, beta=0.):
-        """
-        returns zero as penalty
-        """
-        return torch.zeros_like(beam.scores)
 
-    def length_wu(self, beam, logprobs, alpha=0.):
-        """
-        NMT length re-ranking score from
-        "Google's Neural Machine Translation System" :cite:`wu2016google`.
-        """
-        modifier = ((5 + len(beam.next_ys)) / 6) ** alpha
-        return logprobs / modifier
+def length_wu(scores, next_ys, alpha=0.):
+    """
+    NMT length re-ranking score from
+    "Google's Neural Machine Translation System" :cite:`wu2016google`.
+    """
+    modifier = ((5 + len(next_ys)) / 6) ** alpha
+    return scores / modifier
 
-    def length_average(self, beam, logprobs, alpha=0.):
-        """
-        Returns the average probability of tokens in a sequence.
-        """
-        return logprobs / len(beam.next_ys)
 
-    def length_none(self, beam, logprobs, alpha=0., beta=0.):
-        """
-        Returns unmodified scores.
-        """
-        return logprobs
+def length_average(scores, next_ys, alpha=0.):
+    """
+    Returns the average probability of tokens in a sequence.
+    """
+    return scores / len(next_ys)
+
+
+def length_none(scores, next_ys, alpha=0.):
+    """
+    Returns unmodified scores.
+    """
+    return scores
