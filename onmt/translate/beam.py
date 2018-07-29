@@ -75,46 +75,36 @@ class Beam(object):
     def backpointers(self):
         return self.prev_ks[-1]
 
-    def advance(self, word_probs, attn_out):
+    def advance(self, probs, attn_out):
         """
         Given prob over words for every last beam `wordLk` and attention
         `attn_out`: Compute and update the beam search.
 
         Parameters:
-
-        * `word_probs`- probs of advancing from the last step
+        * `probs`- probs of advancing from the last step
             (beam width x vocab size)
         * `attn_out`- attention at the last step
         """
-        probs_beam_width, num_words = word_probs.size()
+        probs_beam_width, vocab_size = probs.size()
         aeq(probs_beam_width, self.width)
 
         if self.stepwise_penalty:
             self.update_score(attn_out)
         # force the output to be longer than self.min_length
         if len(self.next_ys) < self.min_length:
-            word_probs[:, self._eos] = -1e20
-        # Sum the previous scores.
-        if self.prev_ks:
-            beam_scores = word_probs + self.scores.unsqueeze(1)
-            # Don't let EOS have children.
-            beam_scores[self.current_state == self._eos] = -1e20
+            probs[:, self._eos] = -1e20
 
-            if self.block_ngram_repeat:
-                blocked_indices = self._find_ngram_repetitions()
-                beam_scores[blocked_indices] = -1e20
+        # compute the beam
+        beam_scores = self._successors(probs) if self.prev_ks else probs[0]
 
-            beam_scores = beam_scores.view(-1)
-        else:
-            beam_scores = word_probs[0]
         # prune the beam
         self.scores, best_scores_id = beam_scores.topk(self.width, 0)
 
         # best_scores_id is flattened beam x word array, so calculate which
         # word and beam each score came from
-        prev_k = best_scores_id / num_words
+        prev_k = best_scores_id / vocab_size
         self.prev_ks.append(prev_k)
-        self.next_ys.append(best_scores_id - prev_k * num_words)
+        self.next_ys.append(best_scores_id - prev_k * vocab_size)
         self.attn.append(attn_out.index_select(0, prev_k))
         self.update_global_state()
 
@@ -132,6 +122,18 @@ class Beam(object):
         # End condition is when top-of-beam is EOS and no global score.
         if self.current_state[0] == self._eos:
             self.eos_top = True
+
+    def _successors(self, word_probs):
+        beam_scores = word_probs + self.scores.unsqueeze(1)
+        # Don't let EOS have children.
+        beam_scores[self.current_state == self._eos] = -1e20
+
+        if self.block_ngram_repeat:
+            blocked_indices = self._find_ngram_repetitions()
+            beam_scores[blocked_indices] = -1e20
+
+        beam_scores = beam_scores.view(-1)
+        return beam_scores
 
     def _find_ngram_repetitions(self):
         n = self.block_ngram_repeat
