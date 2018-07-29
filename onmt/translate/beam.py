@@ -155,7 +155,8 @@ class Beam(object):
     def done(self):
         return self.eos_top and len(self.finished) >= self.n_best
 
-    def sort_finished(self, minimum=1):
+    def sort_finished(self):
+        minimum = self.n_best
         if len(self.finished) < minimum:
             gs = self.compute_global_score()
             self.finished.extend((gs[i], len(self.next_ys) - 1, i)
@@ -208,6 +209,19 @@ class Beam(object):
             self.scores, self.next_ys,
             self.global_state["coverage"],
             self.stepwise_penalty)
+
+    def to_dict(self):
+        ret = {"predictions": [], "scores": [], "attention": []}
+        scores, ks = self.sort_finished()
+        hyps, attn = [], []
+        for times, k in ks[:self.n_best]:
+            hyp, att = self.get_hyp(times, k)
+            hyps.append(hyp)
+            attn.append(att)
+        ret["predictions"].append(hyps)
+        ret["scores"].append(scores)
+        ret["attention"].append(attn)
+        return ret
 
 
 class GNMTGlobalScorer(object):

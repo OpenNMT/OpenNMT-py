@@ -49,6 +49,14 @@ def build_translator(opt, report_score=True, logger=None, out_file=None):
     return translator
 
 
+def beam_to_dict(beam):
+    ret = {"predictions": [], "scores": [], "attention": []}
+    for b in beam:
+        for k, v in b.to_dict().items():
+            ret[k].extend(v)
+    return ret
+
+
 class Translator(object):
     """
     Uses a model to translate a batch of sentences.
@@ -575,31 +583,12 @@ class Translator(object):
                 dec_states.beam_update(j, b.backpointers, beam_size)
 
         # (4) Extract sentences from beam.
-        ret = self._from_beam(beam)
+        ret = beam_to_dict(beam)
         ret["gold_score"] = [0] * batch_size
         if "tgt" in batch.__dict__:
             ret["gold_score"] = self._run_target(batch, data)
         ret["batch"] = batch
 
-        return ret
-
-    def _from_beam(self, beam):
-        # what is this for? Does it do anything except put the beam's
-        # predictions into a dictionary?
-        ret = {"predictions": [],
-               "scores": [],
-               "attention": []}
-        n_best = self.n_best
-        for b in beam:
-            scores, ks = b.sort_finished(minimum=n_best)
-            hyps, attn = [], []
-            for times, k in ks[:n_best]:
-                hyp, att = b.get_hyp(times, k)
-                hyps.append(hyp)
-                attn.append(att)
-            ret["predictions"].append(hyps)
-            ret["scores"].append(scores)
-            ret["attention"].append(attn)
         return ret
 
     def _run_target(self, batch, data):
