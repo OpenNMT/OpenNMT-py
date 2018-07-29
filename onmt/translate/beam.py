@@ -158,7 +158,7 @@ class Beam(object):
                 if gram in ngrams:
                     indices.add(j)
                 ngrams.add(gram)
-        return torch.LongTensor(sorted(indices))
+        return torch.LongTensor(indices)
 
     def done(self):
         return self.eos_top and len(self.finished) >= self.n_best
