@@ -1,5 +1,4 @@
 from __future__ import division
-import torch
 
 
 def coverage_penalty(name):
