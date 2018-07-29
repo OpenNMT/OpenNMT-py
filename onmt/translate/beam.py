@@ -158,21 +158,18 @@ class Beam(object):
                 if gram in ngrams:
                     indices.add(j)
                 ngrams.add(gram)
-        return torch.LongTensor(indices)
+        return list(indices)
 
     def done(self):
         return self.eos_top and len(self.finished) >= self.n_best
 
-    def sort_finished(self, minimum=None):
-        if minimum is not None:
-            i = 0
-            global_scores = self.compute_global_score()
-            while len(self.finished) < minimum:
-                s = global_scores[i]
-                self.finished.append((s, len(self.next_ys) - 1, i))
-                i += 1
+    def sort_finished(self, minimum=1):
+        if len(self.finished) < minimum:
+            gs = self.compute_global_score()
+            self.finished.extend((gs[i], len(self.next_ys) - 1, i)
+                                 for i in range(minimum - len(self.finished)))
 
-        self.finished.sort(key=lambda a: -a[0])
+        self.finished.sort(reverse=True)
         scores = [sc for sc, _, _ in self.finished]
         ks = [(t, k) for _, t, k in self.finished]
         return scores, ks
