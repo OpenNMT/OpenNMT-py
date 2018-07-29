@@ -32,7 +32,7 @@ def coverage_none(scores, cov, beta=0.):
     """
     returns zero as penalty
     """
-    return torch.zeros_like(scores)
+    return 0.0
 
 
 def length_wu(scores, next_ys, alpha=0.):
