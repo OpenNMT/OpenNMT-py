@@ -18,14 +18,13 @@ class Beam(object):
        global_scorer (:obj:`GlobalScorer`)
     """
 
-    # TODO: fix mutable argument value
     def __init__(self, size, pad, bos, eos,
                  n_best=1, cuda=False,
                  global_scorer=None,
                  min_length=0,
                  stepwise_penalty=False,
                  block_ngram_repeat=0,
-                 exclusion_tokens=set()):
+                 exclusion_tokens=frozenset()):
 
         device = 'cuda' if cuda else 'cpu'  # not sure if necessary
 
