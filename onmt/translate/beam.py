@@ -96,8 +96,7 @@ class Beam(object):
             word_probs[:, self._eos] = -1e20
         # Sum the previous scores.
         if self.prev_ks:
-            beam_scores = word_probs + \
-                self.scores.unsqueeze(1).expand_as(word_probs)
+            beam_scores = word_probs + self.scores.unsqueeze(1)
             # Don't let EOS have children.
             beam_scores[self.current_state == self._eos] = -1e20
 
@@ -115,7 +114,7 @@ class Beam(object):
         # word and beam each score came from
         prev_k = best_scores_id / num_words
         self.prev_ks.append(prev_k)
-        self.next_ys.append((best_scores_id - prev_k * num_words))
+        self.next_ys.append(best_scores_id - prev_k * num_words)
         self.attn.append(attn_out.index_select(0, prev_k))
         self.update_global_state()
 
