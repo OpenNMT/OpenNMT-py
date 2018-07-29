@@ -32,7 +32,6 @@ class Beam(object):
         # The score for each translation on the beam.
         # TODO: get rid of one of these attributes
         self.scores = torch.zeros(size, device=device)
-        self.all_scores = []
 
         # The backpointers at each time-step.
         self.prev_ks = []
@@ -78,10 +77,6 @@ class Beam(object):
 
     def advance(self, word_probs, attn_out):
         """
-        TODO: properly consider what should be changed by advancing the beam
-        and specify that in here
-        self.all_scores is appended to exactly once per call, unless you are
-        in the end condition (i.e. self.current_state[0] == self._eos)
         Given prob over words for every last beam `wordLk` and attention
         `attn_out`: Compute and update the beam search.
 
@@ -113,10 +108,8 @@ class Beam(object):
             beam_scores = beam_scores.view(-1)
         else:
             beam_scores = word_probs[0]
-        best_scores, best_scores_id = beam_scores.topk(self.width, 0)
-
-        self.all_scores.append(self.scores)
-        self.scores = best_scores
+        # prune the beam
+        self.scores, best_scores_id = beam_scores.topk(self.width, 0)
 
         # best_scores_id is flattened beam x word array, so calculate which
         # word and beam each score came from
@@ -139,7 +132,6 @@ class Beam(object):
 
         # End condition is when top-of-beam is EOS and no global score.
         if self.current_state[0] == self._eos:
-            self.all_scores.append(self.scores)
             self.eos_top = True
 
     def _find_ngram_repetitions(self):
