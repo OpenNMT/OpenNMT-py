@@ -29,7 +29,6 @@ class Beam(object):
         device = 'cuda' if cuda else 'cpu'  # not sure if necessary
 
         # The score for each translation on the beam.
-        # TODO: get rid of one of these attributes
         self.scores = torch.zeros(size, device=device)
 
         # The backpointers at each time-step.
