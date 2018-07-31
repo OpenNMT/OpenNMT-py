@@ -15,7 +15,7 @@ def threshold_and_support(z, dim=0):
     """
     sorted_z, _ = torch.sort(z, descending=True, dim=dim)
     z_sum = sorted_z.cumsum(dim) - 1  # sort of a misnomer
-    k = torch.arange(1, sorted_z.size(dim) + 1).view(
+    k = torch.arange(1, sorted_z.size(dim) + 1, device=z.device).float().view(
         torch.Size([-1] + [1] * (z.dim() - 1))
     ).transpose(0, dim)
     support = k * sorted_z > z_sum
