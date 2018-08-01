@@ -291,7 +291,7 @@ class Translator(object):
 
         if self.dump_beam:
             import json
-            json.dump(self.translator.beam_accum,
+            json.dump(self.beam_accum,
                       codecs.open(self.dump_beam, 'w', 'utf-8'))
         return all_scores, all_predictions
 
