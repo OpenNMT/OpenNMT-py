@@ -2,10 +2,12 @@ from __future__ import division
 import torch
 import argparse
 import onmt
-import onmt.ModelConstructor
-import onmt.io
+import onmt.model_builder
+import onmt.inputters
 import onmt.opts
-from onmt.Utils import use_gpu, get_logger
+
+from onmt.utils.misc import use_gpu
+from onmt.utils.logging import init_logger, logger
 
 parser = argparse.ArgumentParser(description='translate.py')
 
@@ -42,14 +44,14 @@ def main():
     src_dict = checkpoint['vocab'][1][1]
     tgt_dict = checkpoint['vocab'][0][1]
 
-    fields = onmt.io.load_fields_from_vocab(checkpoint['vocab'])
+    fields = onmt.inputters.load_fields_from_vocab(checkpoint['vocab'])
 
     model_opt = checkpoint['opt']
     for arg in dummy_opt.__dict__:
         if arg not in model_opt:
             model_opt.__dict__[arg] = dummy_opt.__dict__[arg]
 
-    model = onmt.ModelConstructor.make_base_model(
+    model = onmt.model_builder.build_base_model(
         model_opt, fields, use_gpu(opt), checkpoint)
     encoder = model.encoder
     decoder = model.decoder
@@ -70,5 +72,5 @@ def main():
 
 
 if __name__ == "__main__":
-    logger = get_logger('extract_embeddings.log')
+    init_logger('extract_embeddings.log')
     main()
