@@ -136,7 +136,7 @@ class GlobalAttention(nn.Module):
         """
 
         Args:
-          input (`FloatTensor`): query vectors `[batch x tgt_len x dim]`
+          source (`FloatTensor`): query vectors `[batch x tgt_len x dim]`
           memory_bank (`FloatTensor`): source vectors `[batch x src_len x dim]`
           memory_lengths (`LongTensor`): the source context lengths `[batch]`
           coverage (`FloatTensor`): None (not supported yet)
