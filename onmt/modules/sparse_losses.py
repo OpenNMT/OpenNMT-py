@@ -21,7 +21,8 @@ class SparsemaxLossFunction(Function):
         tau_z, support_size = threshold_and_support(input, dim=1)
         support = input > tau_z
         x = torch.where(
-            support, input**2 - tau_z**2, torch.tensor(0.0)
+            support, input**2 - tau_z**2,
+            torch.tensor(0.0, device=input.device)
         ).sum(dim=1)
         ctx.save_for_backward(input, target, tau_z)
         # clamping necessary because of numerical errors: loss should be lower
