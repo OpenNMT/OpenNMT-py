@@ -197,7 +197,10 @@ class ServerModel:
         opt['src'] = "dummy_src"
 
         for (k, v) in opt.items():
-            sys.argv += ['-%s' % k, str(v)]
+            if type(v) == bool:
+                sys.argv += ['-%s' % k]
+            else:
+                sys.argv += ['-%s' % k, str(v)]
 
         opt = parser.parse_args()
         opt.cuda = opt.gpu > -1
@@ -236,6 +239,17 @@ class ServerModel:
                                           self.tokenizer_opt['model'])
                 sp.Load(model_path)
                 self.tokenizer = sp
+            elif self.tokenizer_opt['type'] == 'bpe_onmt_tokenizer':
+                import pyonmttok
+                model_path = os.path.join(self.model_root,
+                                          self.tokenizer_opt['model'])
+                tokenizer = pyonmttok.Tokenizer(
+                    "aggressive",
+                    bpe_model_path=model_path,
+                    joiner_annotate=True,
+                    joiner_new=True,
+                    preserve_placeholders=True)
+                self.tokenizer = tokenizer
             else:
                 raise ValueError("Invalid value for tokenizer type")
 
@@ -276,6 +290,7 @@ class ServerModel:
                 tok = self.maybe_tokenize(line)
                 if len(''.join(line.split())) == 0:
                     whitespace_segments[sscount] = line
+                    sscount += 1
                 else:
                     texts += [tok]
                     sslength += [len(tok.split())]
@@ -307,7 +322,7 @@ class ServerModel:
         scores = [score_tensor.item()
                   for score_tensor in flatten_list(scores)]
 
-        self.logger.info("Translation Results: ", len(results))
+        self.logger.info("Translation Results: %d", len(results))
         if len(whitespace_segments) > 0:
             self.logger.info("Whitespace segments: %d"
                              % len(whitespace_segments))
@@ -407,6 +422,9 @@ class ServerModel:
         if self.tokenizer_opt["type"] == "sentencepiece":
             tok = self.tokenizer.EncodeAsPieces(sequence)
             tok = " ".join(tok)
+        elif self.tokenizer_opt["type"] == "bpe_onmt_tokenizer":
+            tok, _ = self.tokenizer.tokenize(sequence)
+            tok = " ".join(tok)
         return tok
 
     def maybe_detokenize(self, sequence):
@@ -414,7 +432,7 @@ class ServerModel:
 
            Same args/returns as `tokenize`
         """
-        if self.tokenizer_opt is not None:
+        if self.tokenizer_opt is not None and ''.join(sequence.split()) != '':
             return self.detokenize(sequence)
         return sequence
 
@@ -428,4 +446,7 @@ class ServerModel:
 
         if self.tokenizer_opt["type"] == "sentencepiece":
             detok = self.tokenizer.DecodePieces(sequence.split())
+        elif self.tokenizer_opt["type"] == "bpe_onmt_tokenizer":
+            detok = self.tokenizer.detokenize(sequence.split())
+
         return detok
