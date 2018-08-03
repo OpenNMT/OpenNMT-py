@@ -419,40 +419,50 @@ class Translator(object):
                 topk_beam_index
                 + beam_offset[:topk_beam_index.size(0)].unsqueeze(1))
 
-            # End condition is the top beam reached end_token.
-            end_condition = topk_ids[:, 0].eq(end_token)
+            finished = topk_ids.eq(end_token)
             if step + 1 == max_length:
-                end_condition.fill_(1)
-            finished = end_condition.nonzero().view(-1)
+                finished.fill_(1)
 
             # Save result of finished sentences.
-            if len(finished) > 0:
-                predictions = alive_seq.view(-1, beam_size, alive_seq.size(-1))
+            if finished.any() > 0:
+                # End condition is the top beam reached end_token.
+                end_condition = finished[:, 0]
+
+                select_indices = batch_index.view(-1)
+                predictions = alive_seq.index_select(0, select_indices)
+                predictions = torch.cat(
+                    [predictions, topk_ids.view(-1, 1)], -1)
+                predictions = predictions.view(
+                    -1, beam_size, predictions.size(-1))
                 scores = topk_scores.view(-1, beam_size)
                 attention = None
                 if alive_attn is not None:
                     attention = alive_attn.view(
                         alive_attn.size(0), -1, beam_size, alive_attn.size(-1))
-                for i in finished:
+                for i in range(finished.size(0)):
                     b = batch_offset[i]
-                    for n in range(n_best):
-                        results["predictions"][b].append(predictions[i, n, 1:])
-                        results["scores"][b].append(scores[i, n])
+                    for j, is_finished in enumerate(finished[i].tolist()):
+                        if end_condition[i] == 0 and is_finished == 0:
+                            continue
+                        results["predictions"][b].append(predictions[i, j, 1:])
+                        results["scores"][b].append(scores[i, j])
                         if attention is None:
                             results["attention"][b].append([])
                         else:
                             results["attention"][b].append(
-                                attention[:, i, n, :memory_lengths[i]])
+                                attention[:, i, j, :memory_lengths[i]])
+
                 non_finished = end_condition.eq(0).nonzero().view(-1)
                 # If all sentences are translated, no need to go further.
                 if len(non_finished) == 0:
                     break
                 # Remove finished batches for the next step.
-                topk_log_probs = topk_log_probs.index_select(
-                    0, non_finished.to(topk_log_probs.device))
-                topk_ids = topk_ids.index_select(0, non_finished)
-                batch_index = batch_index.index_select(0, non_finished)
-                batch_offset = batch_offset.index_select(0, non_finished)
+                if end_condition.any():
+                    topk_log_probs = topk_log_probs.index_select(
+                        0, non_finished.to(topk_log_probs.device))
+                    topk_ids = topk_ids.index_select(0, non_finished)
+                    batch_index = batch_index.index_select(0, non_finished)
+                    batch_offset = batch_offset.index_select(0, non_finished)
 
             # Select and reorder alive batches.
             select_indices = batch_index.view(-1)
@@ -472,6 +482,17 @@ class Translator(object):
                 else:
                     alive_attn = alive_attn.index_select(1, select_indices)
                     alive_attn = torch.cat([alive_attn, current_attn], 0)
+
+        p, s, a = "predictions", "scores", "attention"
+        for b in range(batch_size):
+            results[p][b], results[s][b], results[a][b] = list(
+                zip(
+                    *sorted(
+                        zip(results[p][b], results[s][b], results[a][b]),
+                        key=lambda a: -a[1]
+                    )
+                )
+            )
 
         return results
 
