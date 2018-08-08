@@ -31,7 +31,7 @@ def build_translator(opt, report_score=True, logger=None, out_file=None,
 
     if use_ensemble:
         fields, model, model_opt = \
-            onmt.modules.Ensemble.load_test_model(opt, dummy_opt.__dict__)
+            onmt.decoders.ensemble.load_test_model(opt, dummy_opt.__dict__)
     else:
         fields, model, model_opt = \
             onmt.model_builder.load_test_model(opt, dummy_opt.__dict__)

@@ -9,8 +9,10 @@ All models in the ensemble must share a target vocabulary.
 import torch
 import torch.nn as nn
 
-from onmt.Models import DecoderState, EncoderBase, NMTModel
-import onmt.ModelConstructor
+from onmt.decoders.decoder import DecoderState
+from onmt.encoders.encoder import EncoderBase
+from onmt.models import NMTModel
+import onmt.model_builder
 
 
 class EnsembleDecoderState(DecoderState):
@@ -54,9 +56,9 @@ class EnsembleEncoder(EncoderBase):
         super(EnsembleEncoder, self).__init__()
         self.model_encoders = nn.ModuleList(list(model_encoders))
 
-    def forward(self, src, lengths=None, encoder_state=None):
+    def forward(self, src, lengths=None):
         enc_hidden, memory_bank = zip(*[
-            model_encoder.forward(src, lengths, encoder_state)
+            model_encoder.forward(src, lengths)
             for model_encoder in self.model_encoders])
         return enc_hidden, memory_bank
 
@@ -67,7 +69,8 @@ class EnsembleDecoder(nn.Module):
         super(EnsembleDecoder, self).__init__()
         self.model_decoders = nn.ModuleList(list(model_decoders))
 
-    def forward(self, tgt, memory_bank, state, memory_lengths=None):
+    def forward(self, tgt, memory_bank, state, memory_lengths=None,
+                step=None):
         """ See :obj:`RNNDecoderBase.forward()` """
         # Memory_lengths is a single tensor shared between all models.
         # This assumption will not hold if Translator is modified
@@ -75,7 +78,7 @@ class EnsembleDecoder(nn.Module):
         # of the input.
         outputs, states, attns = zip(*[
             model_decoder.forward(
-                tgt, memory_bank[i], state[i], memory_lengths)
+                tgt, memory_bank[i], state[i], memory_lengths, step=step)
             for (i, model_decoder)
             in enumerate(self.model_decoders)])
         mean_attns = self.combine_attns(attns)
@@ -135,9 +138,9 @@ def load_test_model(opt, dummy_opt):
     models = []
     for model_path in opt.models:
         fields, model, model_opt = \
-            onmt.ModelConstructor.load_test_model(opt,
-                                                  dummy_opt,
-                                                  model_path=model_path)
+            onmt.model_builder.load_test_model(opt,
+                                               dummy_opt,
+                                               model_path=model_path)
         if shared_fields is None:
             shared_fields = fields
         else:
