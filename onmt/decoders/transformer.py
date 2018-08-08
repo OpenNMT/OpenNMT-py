@@ -21,7 +21,7 @@ class TransformerDecoderLayer(nn.Module):
                        the first-layer of the PositionwiseFeedForward.
       heads (int): the number of heads for MultiHeadedAttention.
       d_ff (int): the second-layer of the PositionwiseFeedForward.
-      droput (float): dropout probability(0-1.0).
+      dropout (float): dropout probability(0-1.0).
       self_attn_type (string): type of self-attention scaled-dot, average
     """
 
