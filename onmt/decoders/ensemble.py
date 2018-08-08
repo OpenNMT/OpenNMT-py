@@ -151,6 +151,5 @@ def load_test_model(opt, dummy_opt):
         models.append(model)
         if shared_model_opt is None:
             shared_model_opt = model_opt
-        print(model_opt)
     ensemble_model = EnsembleModel(models)
     return shared_fields, ensemble_model, shared_model_opt
