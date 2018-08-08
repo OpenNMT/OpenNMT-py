@@ -15,6 +15,7 @@ import onmt.model_builder
 import onmt.translate.beam
 import onmt.inputters as inputters
 import onmt.opts as opts
+import onmt.decoders.ensemble
 
 
 def build_translator(opt, report_score=True, logger=None, out_file=None,
