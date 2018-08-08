@@ -16,7 +16,7 @@ from onmt.inputters.text_dataset import TextDataset
 from onmt.inputters.image_dataset import ImageDataset
 from onmt.inputters.audio_dataset import AudioDataset
 from onmt.utils.logging import logger
-
+import gc
 
 def _getstate(self):
     return dict(self.__dict__, stoi=dict(self.stoi))
@@ -292,6 +292,9 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
         Dict of Fields
     """
     counter = {}
+
+    # Prop src from field to get lower memory using
+    fields.pop("src")
     for k in fields:
         counter[k] = Counter()
 
@@ -299,7 +302,7 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
     src_vocab = load_vocabulary(src_vocab_path, tag="source")
     tgt_vocab = load_vocabulary(tgt_vocab_path, tag="target")
 
-    for path in train_dataset_files:
+    for index, path in enumerate(train_dataset_files):
         dataset = torch.load(path)
         logger.info(" * reloading %s." % path)
         for ex in dataset.examples:
@@ -312,6 +315,15 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
                 elif k == 'tgt' and tgt_vocab:
                     val = [item for item in val if item in tgt_vocab]
                 counter[k].update(val)
+
+        # Drop the none-using from memory but keep the last
+        if (index < len(train_dataset_files) - 1):
+            dataset.examples = None
+            gc.collect()
+            del dataset.examples
+            gc.collect()
+            del dataset
+            gc.collect()
 
     _build_field_vocab(fields["tgt"], counter["tgt"],
                        max_size=tgt_vocab_size,
@@ -446,6 +458,12 @@ class DatasetLazyIter(object):
 
     def _next_dataset_iterator(self, dataset_iter):
         try:
+            # Drop the current dataset for decreasing memory
+            self.cur_dataset = None
+            gc.collect()
+            del self.cur_dataset
+            gc.collect()
+
             self.cur_dataset = next(dataset_iter)
         except StopIteration:
             return None

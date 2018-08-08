@@ -18,7 +18,8 @@ from onmt.utils.optimizers import build_optim
 from onmt.trainer import build_trainer
 from onmt.models import build_model_saver
 from onmt.utils.logging import init_logger, logger
-
+import gc
+import copy
 
 def _check_save_model_path(opt):
     save_model_path = os.path.abspath(opt.save_model)
@@ -85,10 +86,21 @@ def main(opt):
     # Peek the fisrt dataset to determine the data_type.
     # (All datasets have the same data_type).
     first_dataset = next(lazily_load_dataset("train", opt))
-    data_type = first_dataset.data_type
+
+    # Deep copy for deleting in the under
+    data_type = copy.deepcopy(first_dataset.data_type)
 
     # Load fields generated from preprocess phase.
-    fields = _load_fields(first_dataset, data_type, opt, checkpoint)
+    # Deep copy for deleting in the under
+    fields = copy.deepcopy(_load_fields(first_dataset, data_type, opt, checkpoint))
+
+    # Drop loaded first_dataset from memory
+    del first_dataset.examples
+    gc.collect()
+    first_dataset = None
+    gc.collect()
+    del first_dataset
+    gc.collect()
 
     # Report src/tgt features.
 
