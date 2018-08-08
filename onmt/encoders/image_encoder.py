@@ -40,7 +40,7 @@ class ImageEncoder(nn.Module):
         self.batch_norm3 = nn.BatchNorm2d(512)
 
         src_size = 512
-        self.rnn = nn.LSTM(src_size, rnn_size,
+        self.rnn = nn.LSTM(src_size, int(rnn_size/self.num_directions),
                            num_layers=num_layers,
                            dropout=dropout,
                            bidirectional=bidirectional)
