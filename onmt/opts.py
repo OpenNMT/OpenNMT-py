@@ -409,10 +409,6 @@ def train_opts(parser):
     group.add_argument('-window_size', type=float, default=.02,
                        help="Window size for spectrogram in seconds.")
 
-    # Image inputer option
-    group.add_argument('-use_gray', action="store_false",
-                       help="""Using grayscale image can training OCR model faster and smaller""")
-
 def translate_opts(parser):
     """ Translation / inference options """
     group = parser.add_argument_group('Model')
