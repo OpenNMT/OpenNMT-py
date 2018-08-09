@@ -88,10 +88,7 @@ def main(opt):
     first_dataset = next(lazily_load_dataset("train", opt))
 
     # Deep copy for deleting in the under
-    if (opt.data_type == 'img'):
-        data_type = copy.deepcopy(first_dataset.data_type)
-    else:
-        data_type = first_dataset.data_type
+    data_type = copy.deepcopy(first_dataset.data_type)
 
     # Load fields generated from preprocess phase.
     # Deep copy for deleting in the under
