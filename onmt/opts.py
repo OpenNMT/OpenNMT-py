@@ -127,7 +127,7 @@ def model_opts(parser):
                        help='Lambda value for coverage.')
 
     # Image inputer option
-    group.add_argument('-use_gray', action="store_true",
+    group.add_argument('-use_gray', action="store_false",
                        help="""Using grayscale image can training OCR model faster and smaller""")
 
 def preprocess_opts(parser):
@@ -222,6 +222,9 @@ def preprocess_opts(parser):
     group.add_argument('-window', default='hamming',
                        help="Window type for spectrogram generation.")
 
+    # Image inputer option
+    group.add_argument('-use_gray', action="store_false",
+                       help="""Using grayscale image can training OCR model faster and smaller""")
 
 def train_opts(parser):
     """ Training and saving options """
@@ -406,6 +409,9 @@ def train_opts(parser):
     group.add_argument('-window_size', type=float, default=.02,
                        help="Window size for spectrogram in seconds.")
 
+    # Image inputer option
+    group.add_argument('-use_gray', action="store_false",
+                       help="""Using grayscale image can training OCR model faster and smaller""")
 
 def translate_opts(parser):
     """ Translation / inference options """
@@ -514,6 +520,9 @@ def translate_opts(parser):
     group.add_argument('-window', default='hamming',
                        help='Window type for spectrogram generation')
 
+    # Image inputer option
+    group.add_argument('-use_gray', action="store_false",
+                       help="""Using grayscale image can training OCR model faster and smaller""")
 
 def add_md_help_argument(parser):
     """ md help parser """
