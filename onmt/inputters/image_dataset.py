@@ -5,7 +5,7 @@
 
 import codecs
 import os
-
+import cv2
 import torch
 import torchtext
 
@@ -34,9 +34,9 @@ class ImageDataset(DatasetBase):
 
     def __init__(self, fields, src_examples_iter, tgt_examples_iter,
                  num_src_feats=0, num_tgt_feats=0,
-                 tgt_seq_length=0, use_filter_pred=True):
+                 tgt_seq_length=0, use_filter_pred=True, use_gray = False):
         self.data_type = 'img'
-
+        self.use_gray = use_gray
         self.n_src_feats = num_src_feats
         self.n_tgt_feats = num_tgt_feats
 
@@ -79,7 +79,7 @@ class ImageDataset(DatasetBase):
         return (ex.src.size(2), ex.src.size(1))
 
     @staticmethod
-    def make_image_examples_nfeats_tpl(img_iter, img_path, img_dir):
+    def make_image_examples_nfeats_tpl(img_iter, img_path, img_dir, use_gray=False):
         """
         Note: one of img_iter and img_path must be not None
         Args:
@@ -95,7 +95,8 @@ class ImageDataset(DatasetBase):
         if img_iter is None:
             if img_path is not None:
                 img_iter = ImageDataset.make_img_iterator_from_file(img_path,
-                                                                    img_dir)
+                                                                    img_dir,
+                                                                    use_gray=use_gray)
             else:
                 raise ValueError("""One of 'img_iter' and 'img_path'
                                     must be not None""")
@@ -131,7 +132,7 @@ class ImageDataset(DatasetBase):
             yield example_dict
 
     @staticmethod
-    def make_img_iterator_from_file(path, src_dir):
+    def make_img_iterator_from_file(path, src_dir, use_gray=False):
         """
         Args:
             path(str):
@@ -154,7 +155,10 @@ class ImageDataset(DatasetBase):
                 assert os.path.exists(img_path), \
                     'img path %s not found' % (line.strip())
 
-                img = transforms.ToTensor()(Image.open(img_path))
+                if (use_gray == False):
+                    img = transforms.ToTensor()(Image.open(img_path))
+                else:
+                    img = transforms.ToTensor()(Image.fromarray(cv2.imread(img_path, 0)))
                 yield img, filename
 
     @staticmethod

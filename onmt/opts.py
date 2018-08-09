@@ -126,6 +126,9 @@ def model_opts(parser):
     group.add_argument('-lambda_coverage', type=float, default=1,
                        help='Lambda value for coverage.')
 
+    # Image inputer option
+    group.add_argument('-use_gray', action="store_true",
+                       help="""Using grayscale image can training OCR model faster and smaller""")
 
 def preprocess_opts(parser):
     """ Pre-procesing options """

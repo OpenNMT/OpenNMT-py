@@ -171,7 +171,8 @@ def build_save_in_shards_for_image_input(src_corpus, tgt_corpus, fields,
             sample_rate=opt.sample_rate,
             window_size=opt.window_size,
             window_stride=opt.window_stride,
-            window=opt.window)
+            window=opt.window,
+            use_gray=opt.use_gray)
 
         pt_file = "{:s}.{:s}.{:d}.pt".format(
             opt.save_data, corpus_type, index)
