@@ -293,8 +293,10 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
     """
     counter = {}
 
-    # Prop src from field to get lower memory using
-    fields.pop("src")
+    # Prop src from field to get lower memory using when training with image
+    if data_type == 'img':
+        fields.pop("src")
+
     for k in fields:
         counter[k] = Counter()
 

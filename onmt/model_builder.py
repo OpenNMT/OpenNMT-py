@@ -164,6 +164,9 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
     elif model_opt.model_type == "img":
         try:
             use_gray = model_opt.use_gray
+
+            if (use_gray is None):
+                use_gray = False
         except:
             use_gray = False
 

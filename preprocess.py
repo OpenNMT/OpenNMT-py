@@ -174,8 +174,12 @@ def build_save_in_shards_for_image_input(src_corpus, tgt_corpus, fields,
             window=opt.window,
             use_gray=opt.use_gray)
 
-        pt_file = "{:s}.{:s}.{:d}.pt".format(
-            opt.save_data, corpus_type, index)
+        if corpus_type == "train":
+            pt_file = "{:s}.{:s}.{:d}.pt".format(
+                opt.save_data, corpus_type, index)
+        else:
+            pt_file = "{:s}.{:s}.pt".format(
+                opt.save_data, corpus_type)
 
         # We save fields in vocab.pt seperately, so make it empty.
         dataset.fields = []
@@ -210,7 +214,8 @@ def build_save_dataset(corpus_type, fields, opt):
             src_corpus, tgt_corpus, fields,
             corpus_type, opt)
 
-    if opt.data_type == "img":
+
+    if opt.data_type == "img" and opt.use_image_shards:
         return build_save_in_shards_for_image_input(src_corpus, tgt_corpus, fields,
                          corpus_type, opt)
 

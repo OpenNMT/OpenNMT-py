@@ -226,6 +226,28 @@ def preprocess_opts(parser):
     group.add_argument('-use_gray', action="store_false",
                        help="""Using grayscale image can training OCR model faster and smaller""")
 
+    group.add_argument('-use_image_shards', action="store_false",
+                        help="""You must divide images src_corpus and tgt_corpus into smaller multiples
+                                src_copus and tgt corpus files
+                                This is currently only for data_type=='img'.
+                            
+                                The reason we do this is to avoid taking up too much memory due
+                                to sucking in a huge corpus file.
+                            
+                                Format of new src_corpus:
+                                src-train.0.txt
+                                src-train.1.txt
+                                ...
+                            
+                                Format of new tgt_corpus:
+                                tgt-train.0.txt
+                                tgt-train.1.txt
+                                ....
+                            
+                                """)
+
+
+
 def train_opts(parser):
     """ Training and saving options """
 

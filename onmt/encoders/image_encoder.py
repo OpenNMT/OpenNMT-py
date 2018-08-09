@@ -22,11 +22,11 @@ class ImageEncoder(nn.Module):
         self.num_directions = 2 if bidirectional else 1
         self.hidden_size = rnn_size
 
-        if (use_gray == False):
-            self.layer1 = nn.Conv2d(3, 64, kernel_size=(3, 3),
+        if (use_gray == True):
+            self.layer1 = nn.Conv2d(1, 64, kernel_size=(3, 3),
                                     padding=(1, 1), stride=(1, 1))
         else:
-            self.layer1 = nn.Conv2d(1, 64, kernel_size=(3, 3),
+            self.layer1 = nn.Conv2d(3, 64, kernel_size=(3, 3),
                                     padding=(1, 1), stride=(1, 1))
 
         self.layer2 = nn.Conv2d(64, 128, kernel_size=(3, 3),
