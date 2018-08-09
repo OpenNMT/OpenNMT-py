@@ -187,7 +187,7 @@ class ImageDataset(DatasetBase):
             return imgs
 
         fields["src"] = torchtext.data.Field(
-            use_vocab=False, dtype=torch.float,
+            use_vocab=False,
             postprocessing=make_img, sequential=False)
 
         for j in range(n_src_features):
@@ -214,7 +214,7 @@ class ImageDataset(DatasetBase):
             return alignment
 
         fields["src_map"] = torchtext.data.Field(
-            use_vocab=False, dtype=torch.float,
+            use_vocab=False,
             postprocessing=make_src, sequential=False)
 
         def make_tgt(data, vocab):
@@ -226,11 +226,11 @@ class ImageDataset(DatasetBase):
             return alignment
 
         fields["alignment"] = torchtext.data.Field(
-            use_vocab=False, dtype=torch.long,
+            use_vocab=False,
             postprocessing=make_tgt, sequential=False)
 
         fields["indices"] = torchtext.data.Field(
-            use_vocab=False, dtype=torch.long,
+            use_vocab=False,
             sequential=False)
 
         return fields
