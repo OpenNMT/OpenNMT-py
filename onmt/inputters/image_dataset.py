@@ -176,7 +176,7 @@ class ImageDataset(DatasetBase):
         """
         fields = {}
 
-        def make_img(data, vocab):
+        def make_img(data, vocab, is_train):
             """ ? """
             c = data[0].size(0)
             h = max([t.size(1) for t in data])
