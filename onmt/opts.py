@@ -127,7 +127,7 @@ def model_opts(parser):
                        help='Lambda value for coverage.')
 
     # Image inputer option
-    group.add_argument('-use_gray', action="store_false",
+    group.add_argument('-use_gray', action="store_true",
                        help="""Using grayscale image can training OCR model faster and smaller""")
 
 def preprocess_opts(parser):
@@ -223,10 +223,10 @@ def preprocess_opts(parser):
                        help="Window type for spectrogram generation.")
 
     # Image inputer option
-    group.add_argument('-use_gray', action="store_false",
+    group.add_argument('-use_gray', action="store_true",
                        help="""Using grayscale image can training OCR model faster and smaller""")
 
-    group.add_argument('-use_image_shards', action="store_false",
+    group.add_argument('-use_image_shards', action="store_true",
                         help="""You must divide images src_corpus and tgt_corpus into smaller multiples
                                 src_copus and tgt corpus files
                                 This is currently only for data_type=='img'.
@@ -539,7 +539,7 @@ def translate_opts(parser):
                        help='Window type for spectrogram generation')
 
     # Image inputer option
-    group.add_argument('-use_gray', action="store_false",
+    group.add_argument('-use_gray', action="store_true",
                        help="""Using grayscale image can training OCR model faster and smaller""")
 
 def add_md_help_argument(parser):
