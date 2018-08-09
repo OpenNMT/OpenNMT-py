@@ -88,22 +88,27 @@ def main(opt):
     first_dataset = next(lazily_load_dataset("train", opt))
 
     # Deep copy for deleting in the under
-    data_type = copy.deepcopy(first_dataset.data_type)
+    if (opt.data_type == 'img'):
+        data_type = copy.deepcopy(first_dataset.data_type)
+    else:
+        data_type = first_dataset.data_type
 
     # Load fields generated from preprocess phase.
     # Deep copy for deleting in the under
-    fields = copy.deepcopy(_load_fields(first_dataset, data_type, opt, checkpoint))
+    if (opt.data_type == 'img'):
+        fields = copy.deepcopy(_load_fields(first_dataset, data_type, opt, checkpoint))
 
-    # Drop loaded first_dataset from memory
-    del first_dataset.examples
-    gc.collect()
-    first_dataset = None
-    gc.collect()
-    del first_dataset
-    gc.collect()
+        # Drop loaded first_dataset from memory
+        del first_dataset.examples
+        gc.collect()
+        first_dataset = None
+        gc.collect()
+        del first_dataset
+        gc.collect()
+    else:
+        fields = _load_fields(first_dataset, data_type, opt, checkpoint)
 
     # Report src/tgt features.
-
     src_features, tgt_features = _collect_report_features(fields)
     for j, feat in enumerate(src_features):
         logger.info(' * src feature %d size = %d'
