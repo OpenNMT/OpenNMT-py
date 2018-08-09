@@ -95,7 +95,7 @@ def main(opt):
 
     # Load fields generated from preprocess phase.
     # Deep copy for deleting in the under
-    if (opt.data_type == 'img'):
+    if (data_type == 'img'):
         fields = copy.deepcopy(_load_fields(first_dataset, data_type, opt, checkpoint))
 
         # Drop loaded first_dataset from memory
