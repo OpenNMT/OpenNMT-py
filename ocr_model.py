@@ -66,7 +66,7 @@ def enhance(img):
 class OPT:
     gpu = 0
     data_type = "img"
-    model = "demo-model_step_55000.pt"
+    model = "demo-model_step_97000.pt"
 
     dropout = 0.0
     alpha = 0.00
