@@ -96,6 +96,7 @@ class OPT:
     window = 'hamming'
     window_size = 0.02
     window_stride = 0.01
+    use_gray = True
 
     # Debug
     # verbose = True
