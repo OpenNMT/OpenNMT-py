@@ -34,7 +34,7 @@ class ImageDataset(DatasetBase):
 
     def __init__(self, fields, src_examples_iter, tgt_examples_iter,
                  num_src_feats=0, num_tgt_feats=0,
-                 tgt_seq_length=0, use_filter_pred=True, use_gray = False):
+                 tgt_seq_length=0, use_filter_pred=True, use_gray=False):
         self.data_type = 'img'
         self.use_gray = use_gray
         self.n_src_feats = num_src_feats
@@ -117,7 +117,7 @@ class ImageDataset(DatasetBase):
         Yields:
             a dictionary containing image data, path and index for each line.
         """
-        assert (src_dir is not None) and os.path.exists(src_dir),\
+        assert (src_dir is not None) and os.path.exists(src_dir), \
             'src_dir must be a valid directory if data_type is img'
 
         for index, (img, filename) in enumerate(img_iter):
@@ -127,7 +127,7 @@ class ImageDataset(DatasetBase):
                     continue
 
             example_dict = {side: img,
-                            side+'_path': filename,
+                            side + '_path': filename,
                             'indices': index}
             yield example_dict
 

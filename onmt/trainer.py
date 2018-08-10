@@ -100,7 +100,7 @@ class Trainer(object):
 
         assert grad_accum_count > 0
         if grad_accum_count > 1:
-            assert(self.trunc_size == 0), \
+            assert (self.trunc_size == 0), \
                 """To enable accumulated gradients,
                    you must disable target sequence truncating."""
 
@@ -152,7 +152,7 @@ class Trainer(object):
 
                     if self.norm_method == "tokens":
                         num_tokens = batch.tgt[1:].data.view(-1) \
-                                     .ne(self.train_loss.padding_idx).sum()
+                            .ne(self.train_loss.padding_idx).sum()
                         normalization += num_tokens
                     else:
                         normalization += batch.batch_size
@@ -271,7 +271,7 @@ class Trainer(object):
 
             tgt_outer = inputters.make_features(batch, 'tgt')
 
-            for j in range(0, target_size-1, trunc_size):
+            for j in range(0, target_size - 1, trunc_size):
                 # 1. Create truncated target.
                 tgt = tgt_outer[j: j + trunc_size]
 

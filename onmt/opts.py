@@ -130,6 +130,7 @@ def model_opts(parser):
     group.add_argument('-use_gray', action="store_true",
                        help="""Using grayscale image can training OCR model faster and smaller""")
 
+
 def preprocess_opts(parser):
     """ Pre-procesing options """
     # Data options
@@ -227,7 +228,7 @@ def preprocess_opts(parser):
                        help="""Using grayscale image can training OCR model faster and smaller""")
 
     group.add_argument('-use_image_shards', action="store_true",
-                        help="""You must divide images src_corpus and tgt_corpus into smaller multiples
+                       help="""You must divide images src_corpus and tgt_corpus into smaller multiples
                                 src_copus and tgt corpus files
                                 This is currently only for data_type=='img'.
                             
@@ -245,7 +246,6 @@ def preprocess_opts(parser):
                                 ....
                             
                                 """)
-
 
 
 def train_opts(parser):
@@ -431,6 +431,7 @@ def train_opts(parser):
     group.add_argument('-window_size', type=float, default=.02,
                        help="Window size for spectrogram in seconds.")
 
+
 def translate_opts(parser):
     """ Translation / inference options """
     group = parser.add_argument_group('Model')
@@ -542,6 +543,7 @@ def translate_opts(parser):
     group.add_argument('-use_gray', action="store_true",
                        help="""Using grayscale image can training OCR model faster and smaller""")
 
+
 def add_md_help_argument(parser):
     """ md help parser """
     parser.add_argument('-md', action=MarkdownHelpAction,
@@ -573,7 +575,7 @@ class MarkdownHelpFormatter(argparse.HelpFormatter):
         return super(MarkdownHelpFormatter, self).format_help()
 
     def start_section(self, heading):
-        super(MarkdownHelpFormatter, self)\
+        super(MarkdownHelpFormatter, self) \
             .start_section('### **%s**' % heading)
 
     def _format_action(self, action):

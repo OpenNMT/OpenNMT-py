@@ -18,6 +18,7 @@ from onmt.inputters.audio_dataset import AudioDataset
 from onmt.utils.logging import logger
 import gc
 
+
 def _getstate(self):
     return dict(self.__dict__, stoi=dict(self.stoi))
 
@@ -189,6 +190,7 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
     Build src/tgt examples iterator from corpus files, also extract
     number of features.
     """
+
     def _make_examples_nfeats_tpl(data_type, src_data_iter, src_path, src_dir,
                                   src_seq_length_trunc, sample_rate,
                                   window_size, window_stride,
@@ -406,6 +408,7 @@ class OrderedIterator(torchtext.data.Iterator):
                         self.batch_size, self.batch_size_fn)
                     for b in random_shuffler(list(p_batch)):
                         yield b
+
             self.batches = _pool(self.data(), self.random_shuffler)
         else:
             self.batches = []

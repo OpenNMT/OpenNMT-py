@@ -21,6 +21,7 @@ from onmt.utils.logging import init_logger, logger
 import gc
 import copy
 
+
 def _check_save_model_path(opt):
     save_model_path = os.path.abspath(opt.save_model)
     model_dirname = os.path.dirname(save_model_path)
@@ -119,11 +120,13 @@ def main(opt):
     trainer = build_trainer(
         opt, model, fields, optim, data_type, model_saver=model_saver)
 
-    def train_iter_fct(): return build_dataset_iter(
-        lazily_load_dataset("train", opt), fields, opt)
+    def train_iter_fct():
+        return build_dataset_iter(
+            lazily_load_dataset("train", opt), fields, opt)
 
-    def valid_iter_fct(): return build_dataset_iter(
-        lazily_load_dataset("valid", opt), fields, opt)
+    def valid_iter_fct():
+        return build_dataset_iter(
+            lazily_load_dataset("valid", opt), fields, opt)
 
     # Do training.
     trainer.train(train_iter_fct, valid_iter_fct, opt.train_steps,
