@@ -73,7 +73,9 @@ def load_fields_from_vocab(vocab, data_type="text"):
 
 def fields_to_vocab(fields):
     """
-    Save Vocab objects in Field objects to `vocab.pt` file. NOT TRUE
+    fields: a dict whose keys are strings and whose values are Field objects
+    returns: a list of 2-tuples whose first items are keys of the fields dict
+             and whose values are the vocabs of the corresponding Fields.
     """
     return [(k, f.vocab) for k, f in fields.items()
             if f is not None and 'vocab' in f.__dict__]
