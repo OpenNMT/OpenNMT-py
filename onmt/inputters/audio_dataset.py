@@ -161,6 +161,7 @@ class AudioDataset(DatasetBase):
                     if sound.size(0) > truncate:
                         continue
 
+                # TODO: find out what this is supposed to be
                 assert sample_rate == sample_rate, \
                     'Sample rate of %s != -sample_rate (%d vs %d)' \
                     % (audio_path, sample_rate, sample_rate)

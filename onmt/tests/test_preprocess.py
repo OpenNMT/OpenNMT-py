@@ -50,11 +50,13 @@ class TestData(unittest.TestCase):
             with codecs.open(opt.tgt_vocab, 'w', 'utf-8') as f:
                 f.write('a\nb\nc\nd\ne\nf\n')
 
-        train_data_files = preprocess.build_save_dataset('train', fields, opt)
+        train_datasets = preprocess.build_datasets('train', fields, opt)
+        preprocess.save_datasets(train_datasets, 'train', opt.save_data)
 
-        preprocess.build_save_vocab(train_data_files, fields, opt)
+        preprocess.build_vocab(train_datasets, fields, opt)
 
-        preprocess.build_save_dataset('valid', fields, opt)
+        valid_datasets = preprocess.build_datasets('valid', fields, opt)
+        preprocess.save_datasets(valid_datasets, 'valid', opt.save_data)
 
         # Remove the generated *pt files.
         for pt in glob.glob(SAVE_DATA_PREFIX + '*.pt'):

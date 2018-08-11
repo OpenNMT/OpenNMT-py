@@ -77,8 +77,7 @@ class TextDataset(DatasetBase):
 
         out_examples = []
         for ex_values in example_values:
-            example = self._construct_example_fromlist(
-                ex_values, out_fields)
+            example = self._construct_example_fromlist(ex_values, out_fields)
             src_size += len(example.src)
             out_examples.append(example)
 
@@ -151,15 +150,15 @@ class TextDataset(DatasetBase):
             else:
                 return (None, 0)
 
-        # All examples have same number of features, so we peek first one
-        # to get the num_feats.
+        # All examples have same number of features, so we peek at the first
+        # one to get the num_feats.
         examples_nfeats_iter = \
             TextDataset.make_examples(text_iter, truncate, side)
 
         first_ex = next(examples_nfeats_iter)
         num_feats = first_ex[1]
 
-        # Chain back the first element - we only want to peek it.
+        # Chain back the first element - we only want to peek at it.
         examples_nfeats_iter = chain([first_ex], examples_nfeats_iter)
         examples_iter = (ex for ex, nfeats in examples_nfeats_iter)
 
@@ -181,8 +180,7 @@ class TextDataset(DatasetBase):
             if truncate:
                 line = line[:truncate]
 
-            words, feats, n_feats = \
-                TextDataset.extract_text_features(line)
+            words, feats, n_feats = TextDataset.extract_text_features(line)
 
             example_dict = {side: words, "indices": i}
             if feats:
@@ -221,8 +219,7 @@ class TextDataset(DatasetBase):
                 torchtext.data.Field(pad_token=PAD_WORD)
 
         fields["tgt"] = torchtext.data.Field(
-            init_token=BOS_WORD, eos_token=EOS_WORD,
-            pad_token=PAD_WORD)
+            init_token=BOS_WORD, eos_token=EOS_WORD, pad_token=PAD_WORD)
 
         for j in range(n_tgt_features):
             fields["tgt_feat_" + str(j)] = \

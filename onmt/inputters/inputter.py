@@ -44,6 +44,8 @@ def get_fields(data_type, n_src_features, n_tgt_features):
         A dictionary whose keys are strings and whose values are the
         corresponding Field objects.
     """
+    # get_fields redirects traffic to the get_fields static methods
+    # defined on the various dataset classes.
     if data_type == 'text':
         return TextDataset.get_fields(n_src_features, n_tgt_features)
     elif data_type == 'img':
@@ -69,16 +71,12 @@ def load_fields_from_vocab(vocab, data_type="text"):
     return fields
 
 
-def save_fields_to_vocab(fields):
+def fields_to_vocab(fields):
     """
-    Save Vocab objects in Field objects to `vocab.pt` file.
+    Save Vocab objects in Field objects to `vocab.pt` file. NOT TRUE
     """
-    vocab = []
-    for k, f in fields.items():
-        if f is not None and 'vocab' in f.__dict__:
-            f.vocab.stoi = f.vocab.stoi
-            vocab.append((k, f.vocab))
-    return vocab
+    return [(k, f.vocab) for k, f in fields.items()
+            if f is not None and 'vocab' in f.__dict__]
 
 
 def merge_vocabs(vocabs, vocab_size=None):
@@ -189,6 +187,7 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
     Build src/tgt examples iterator from corpus files, also extract
     number of features.
     """
+    # what is the justification for the nested function definition?
     def _make_examples_nfeats_tpl(data_type, src_data_iter, src_path, src_dir,
                                   src_seq_length_trunc, sample_rate,
                                   window_size, window_stride,
@@ -198,6 +197,8 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
         on source side for different 'data_type'.
         """
 
+        # TODO: refactor so redundant-looking if/elses like this are not
+        # necessary
         if data_type == 'text':
             src_examples_iter, num_src_feats = \
                 TextDataset.make_text_examples_nfeats_tpl(
@@ -220,6 +221,7 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
                     src_path, src_dir, sample_rate,
                     window_size, window_stride, window,
                     normalize_audio)
+        # what happens if the data_type is something else?
 
         return src_examples_iter, num_src_feats
 
@@ -258,6 +260,7 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
                                window=window,
                                normalize_audio=normalize_audio,
                                use_filter_pred=use_filter_pred)
+    # what happens if the data_type is something else?
 
     return dataset
 
@@ -270,9 +273,9 @@ def _build_field_vocab(field, counter, **kwargs):
     field.vocab = field.vocab_cls(counter, specials=specials, **kwargs)
 
 
-def build_vocab(train_dataset_files, fields, data_type, share_vocab,
-                src_vocab_path, src_vocab_size, src_words_min_frequency,
-                tgt_vocab_path, tgt_vocab_size, tgt_words_min_frequency):
+def build_fields(datasets, fields, data_type, share_vocab,
+                 src_vocab_path, src_vocab_size, src_words_min_frequency,
+                 tgt_vocab_path, tgt_vocab_size, tgt_words_min_frequency):
     """
     Args:
         train_dataset_files: a list of train dataset pt file.
@@ -291,17 +294,13 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
     Returns:
         Dict of Fields
     """
-    counter = {}
-    for k in fields:
-        counter[k] = Counter()
+    counters = {k: Counter() for k in fields}
 
     # Load vocabulary
     src_vocab = load_vocabulary(src_vocab_path, tag="source")
     tgt_vocab = load_vocabulary(tgt_vocab_path, tag="target")
 
-    for path in train_dataset_files:
-        dataset = torch.load(path)
-        logger.info(" * reloading %s." % path)
+    for dataset in datasets:
         for ex in dataset.examples:
             for k in fields:
                 val = getattr(ex, k, None)
@@ -311,9 +310,9 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
                     val = [item for item in val if item in src_vocab]
                 elif k == 'tgt' and tgt_vocab:
                     val = [item for item in val if item in tgt_vocab]
-                counter[k].update(val)
+                counters[k].update(val)
 
-    _build_field_vocab(fields["tgt"], counter["tgt"],
+    _build_field_vocab(fields["tgt"], counters["tgt"],
                        max_size=tgt_vocab_size,
                        min_freq=tgt_words_min_frequency)
     logger.info(" * tgt vocab size: %d." % len(fields["tgt"].vocab))
@@ -322,12 +321,11 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
     # getting the last one is OK.
     for j in range(dataset.n_tgt_feats):
         key = "tgt_feat_" + str(j)
-        _build_field_vocab(fields[key], counter[key])
-        logger.info(" * %s vocab size: %d." % (key,
-                                               len(fields[key].vocab)))
+        _build_field_vocab(fields[key], counters[key])
+        logger.info(" * %s vocab size: %d." % (key, len(fields[key].vocab)))
 
     if data_type == 'text':
-        _build_field_vocab(fields["src"], counter["src"],
+        _build_field_vocab(fields["src"], counters["src"],
                            max_size=src_vocab_size,
                            min_freq=src_words_min_frequency)
         logger.info(" * src vocab size: %d." % len(fields["src"].vocab))
@@ -336,7 +334,7 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
         # getting the last one is OK.
         for j in range(dataset.n_src_feats):
             key = "src_feat_" + str(j)
-            _build_field_vocab(fields[key], counter[key])
+            _build_field_vocab(fields[key], counters[key])
             logger.info(" * %s vocab size: %d." %
                         (key, len(fields[key].vocab)))
 
@@ -362,7 +360,7 @@ def load_vocabulary(vocabulary_path, tag=""):
     """
     vocabulary = None
     if vocabulary_path:
-        vocabulary = set([])
+        vocabulary = set()
         logger.info("Loading {} vocabulary from {}".format(tag,
                                                            vocabulary_path))
 
@@ -535,8 +533,7 @@ def lazily_load_dataset(corpus_type, opt):
 def _load_fields(dataset, data_type, opt, checkpoint):
     if checkpoint is not None:
         logger.info('Loading vocab from checkpoint at %s.' % opt.train_from)
-        fields = load_fields_from_vocab(
-            checkpoint['vocab'], data_type)
+        fields = load_fields_from_vocab(checkpoint['vocab'], data_type)
     else:
         fields = load_fields_from_vocab(
             torch.load(opt.data + '.vocab.pt'), data_type)

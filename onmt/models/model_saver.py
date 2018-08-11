@@ -109,7 +109,7 @@ class ModelSaver(ModelSaverBase):
         checkpoint = {
             'model': model_state_dict,
             'generator': generator_state_dict,
-            'vocab': onmt.inputters.save_fields_to_vocab(self.fields),
+            'vocab': onmt.inputters.fields_to_vocab(self.fields),
             'opt': self.model_opt,
             'optim': self.optim,
         }

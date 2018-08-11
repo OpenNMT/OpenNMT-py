@@ -191,8 +191,7 @@ class ImageDataset(DatasetBase):
                 torchtext.data.Field(pad_token=PAD_WORD)
 
         fields["tgt"] = torchtext.data.Field(
-            init_token=BOS_WORD, eos_token=EOS_WORD,
-            pad_token=PAD_WORD)
+            init_token=BOS_WORD, eos_token=EOS_WORD, pad_token=PAD_WORD)
 
         for j in range(n_tgt_features):
             fields["tgt_feat_" + str(j)] = \
