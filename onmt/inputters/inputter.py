@@ -31,6 +31,47 @@ torchtext.vocab.Vocab.__getstate__ = _getstate
 torchtext.vocab.Vocab.__setstate__ = _setstate
 
 
+def make_src(data, vocab):
+    """ ? """
+    src_size = max([t.size(0) for t in data])
+    src_vocab_size = max([t.max() for t in data]) + 1
+    alignment = torch.zeros(src_size, len(data), src_vocab_size)
+    for i, sent in enumerate(data):
+        for j, t in enumerate(sent):
+            alignment[j, i, t] = 1
+    return alignment
+
+
+def make_tgt(data, vocab):
+    """ ? """
+    tgt_size = max([t.size(0) for t in data])
+    alignment = torch.zeros(tgt_size, len(data)).long()
+    for i, sent in enumerate(data):
+        alignment[:sent.size(0), i] = sent
+    return alignment
+
+
+def make_img(data, vocab):
+    """ ? """
+    c = data[0].size(0)
+    h = max([t.size(1) for t in data])
+    w = max([t.size(2) for t in data])
+    imgs = torch.zeros(len(data), c, h, w).fill_(1)
+    for i, img in enumerate(data):
+        imgs[i, :, 0:img.size(1), 0:img.size(2)] = img
+    return imgs
+
+
+def make_audio(data, vocab):
+    """ ? """
+    nfft = data[0].size(0)
+    t = max([t.size(1) for t in data])
+    sounds = torch.zeros(len(data), 1, nfft, t)
+    for i, spect in enumerate(data):
+        sounds[i, :, :, 0:spect.size(1)] = spect
+    return sounds
+
+
 def get_fields(data_type, n_src_features, n_tgt_features):
     """
     Args:
@@ -44,16 +85,50 @@ def get_fields(data_type, n_src_features, n_tgt_features):
         A dictionary whose keys are strings and whose values are the
         corresponding Field objects.
     """
-    # get_fields redirects traffic to the get_fields static methods
-    # defined on the various dataset classes.
-    if data_type == 'text':
-        return TextDataset.get_fields(n_src_features, n_tgt_features)
-    elif data_type == 'img':
-        return ImageDataset.get_fields(n_src_features, n_tgt_features)
-    elif data_type == 'audio':
-        return AudioDataset.get_fields(n_src_features, n_tgt_features)
-    else:
+    if data_type not in ['text', 'img', 'audio']:
         raise ValueError("Data type not implemented")
+
+    fields = {}
+
+    # at the moment, "data_type" only refers to the source
+    if data_type == 'text':
+        fields["src"] = torchtext.data.Field(
+            pad_token=PAD_WORD, include_lengths=True)
+    elif data_type == 'img':
+        fields["src"] = torchtext.data.Field(
+            use_vocab=False, dtype=torch.float,
+            postprocessing=make_img, sequential=False)
+    else:
+        fields["src"] = torchtext.data.Field(
+            use_vocab=False, dtype=torch.float,
+            postprocessing=make_audio, sequential=False)
+
+    for j in range(n_src_features):
+        fields["src_feat_" + str(j)] = torchtext.data.Field(pad_token=PAD_WORD)
+
+    fields["tgt"] = torchtext.data.Field(
+            init_token=BOS_WORD, eos_token=EOS_WORD, pad_token=PAD_WORD)
+
+    for j in range(n_tgt_features):
+        fields["tgt_feat_" + str(j)] = \
+            torchtext.data.Field(init_token=BOS_WORD, eos_token=EOS_WORD,
+                                 pad_token=PAD_WORD)
+
+    fields["indices"] = torchtext.data.Field(
+        use_vocab=False, dtype=torch.long, sequential=False)
+
+    # src_map and alignment are only relevant for copy attention. It is a
+    # mystery why they are created when there is no copy attention, because
+    # they will not end up being used.
+    fields["src_map"] = torchtext.data.Field(
+        use_vocab=False, dtype=torch.float,
+        postprocessing=make_src, sequential=False)
+
+    fields["alignment"] = torchtext.data.Field(
+        use_vocab=False, dtype=torch.long,
+        postprocessing=make_tgt, sequential=False)
+
+    return fields
 
 
 def load_fields_from_vocab(vocab, data_type="text"):
