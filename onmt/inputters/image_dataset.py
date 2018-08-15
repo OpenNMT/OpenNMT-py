@@ -30,11 +30,11 @@ class ImageDataset(DatasetBase):
                 out examples?
     """
 
+    data_type = 'img'
+
     def __init__(self, fields, src_examples_iter, tgt_examples_iter,
                  num_src_feats=0, num_tgt_feats=0,
                  tgt_seq_length=0, use_filter_pred=True):
-        self.data_type = 'img'
-
         self.n_src_feats = num_src_feats
         self.n_tgt_feats = num_tgt_feats
 
@@ -53,14 +53,12 @@ class ImageDataset(DatasetBase):
         example_values = ([ex[k] for k in keys] for ex in examples_iter)
         examples = [Example.fromlist(ev, out_fields) for ev in example_values]
 
-        def filter_pred(example):
+        def filter_pred(ex):
             """ ? """
-            if tgt_examples_iter is not None:
-                return 0 < len(example.tgt) <= tgt_seq_length
-            else:
-                return True
+            return 0 < len(ex.tgt) <= tgt_seq_length
 
-        filter_pred = filter_pred if use_filter_pred else None
+        filter_pred = filter_pred if use_filter_pred \
+            and tgt_examples_iter is not None else None
 
         super(ImageDataset, self).__init__(examples, out_fields, filter_pred)
 
