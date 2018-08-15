@@ -73,23 +73,3 @@ class DatasetBase(torchtext.data.Dataset):
         """
         first = next(seq)
         return first, chain([first], seq)
-
-    def _construct_example_fromlist(self, data, fields):
-        """
-        Args:
-            data: the data to be set as the value of the attributes of
-                the to-be-created `Example`, associating with respective
-                `Field` objects with same key.
-            fields: a dict of `torchtext.data.Field` objects. The keys
-                are attributes of the to-be-created `Example`.
-
-        Returns:
-            the created `Example` object.
-        """
-        ex = torchtext.data.Example()
-        for (name, field), val in zip(fields, data):
-            if field is not None:
-                setattr(ex, name, field.preprocess(val))
-            else:
-                setattr(ex, name, val)
-        return ex

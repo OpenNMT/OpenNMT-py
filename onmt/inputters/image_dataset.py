@@ -6,6 +6,8 @@
 import codecs
 import os
 
+from torchtext.data import Example
+
 from onmt.inputters.dataset_base import DatasetBase
 
 
@@ -49,13 +51,7 @@ class ImageDataset(DatasetBase):
         out_fields = [(k, fields[k]) if k in fields else (k, None)
                       for k in keys]
         example_values = ([ex[k] for k in keys] for ex in examples_iter)
-        out_examples = (self._construct_example_fromlist(
-            ex_values, out_fields)
-            for ex_values in example_values)
-        # If out_examples is a generator, we need to save the filter_pred
-        # function in serialization too, which would cause a problem when
-        # `torch.save()`. Thus we materialize it as a list.
-        out_examples = list(out_examples)
+        examples = [Example.fromlist(ev, out_fields) for ev in example_values]
 
         def filter_pred(example):
             """ ? """
@@ -66,9 +62,7 @@ class ImageDataset(DatasetBase):
 
         filter_pred = filter_pred if use_filter_pred else lambda x: True
 
-        super(ImageDataset, self).__init__(
-            out_examples, out_fields, filter_pred
-        )
+        super(ImageDataset, self).__init__(examples, out_fields, filter_pred)
 
     def sort_key(self, ex):
         """ Sort using the size of the image: (width, height)."""
@@ -112,7 +106,7 @@ class ImageDataset(DatasetBase):
         Yields:
             a dictionary containing image data, path and index for each line.
         """
-        assert (src_dir is not None) and os.path.exists(src_dir),\
+        assert src_dir is not None and os.path.exists(src_dir), \
             'src_dir must be a valid directory if data_type is img'
 
         for index, (img, filename) in enumerate(img_iter):
@@ -122,7 +116,7 @@ class ImageDataset(DatasetBase):
                     continue
 
             example_dict = {side: img,
-                            side+'_path': filename,
+                            side + '_path': filename,
                             'indices': index}
             yield example_dict
 

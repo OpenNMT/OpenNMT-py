@@ -218,6 +218,7 @@ def make_features(batch, side, data_type='text'):
         A sequence of src/tgt tensors with optional feature tensors
         of size (len x batch).
     """
+    # this should be a field issue
     assert side in ['src', 'tgt']
     if isinstance(batch.__dict__[side], tuple):
         data = batch.__dict__[side][0]
@@ -242,6 +243,7 @@ def collect_features(fields, side="src"):
     side: src or tgt
     returns: list of the string names of the features on the given side
     """
+    # this is currently not used outside of inputter.py
     assert side in ["src", "tgt"]
     feats = []
     for j in count():

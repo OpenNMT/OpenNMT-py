@@ -8,7 +8,8 @@ import codecs
 import sys
 
 import torch
-import torchtext
+from torchtext.vocab import Vocab
+from torchtext.data import Example
 
 from onmt.inputters.dataset_base import DatasetBase, UNK_WORD, PAD_WORD
 from onmt.utils.misc import aeq
@@ -94,15 +95,10 @@ class TextDataset(DatasetBase):
         example_values = ([ex[k] for k in keys] for ex in examples_iter)
 
         # If out_examples is a generator, we need to save the filter_pred
-        # function in serialization too, which would cause a problem when
+        # function in serialization too, which could cause a problem when
         # `torch.save()`. Thus we materialize it as a list.
-        src_size = 0
 
-        out_examples = []
-        for ex_values in example_values:
-            example = self._construct_example_fromlist(ex_values, out_fields)
-            src_size += len(example.src)
-            out_examples.append(example)
+        examples = [Example.fromlist(ev, out_fields) for ev in example_values]
 
         def filter_pred(example):
             """ ? """
@@ -111,9 +107,7 @@ class TextDataset(DatasetBase):
 
         filter_pred = filter_pred if use_filter_pred else lambda x: True
 
-        super(TextDataset, self).__init__(
-            out_examples, out_fields, filter_pred
-        )
+        super(TextDataset, self).__init__(examples, out_fields, filter_pred)
 
     def sort_key(self, ex):
         """ Sort using length of source sentences. """
@@ -171,7 +165,7 @@ class TextDataset(DatasetBase):
             if text_path is not None:
                 text_iter = TextDataset.make_text_iterator_from_file(text_path)
             else:
-                return (None, 0)
+                return None, 0
 
         # All examples have same number of features, so we peek at the first
         # one to get the num_feats.
@@ -185,7 +179,7 @@ class TextDataset(DatasetBase):
         examples_nfeats_iter = chain([first_ex], examples_nfeats_iter)
         examples_iter = (ex for ex, nfeats in examples_nfeats_iter)
 
-        return (examples_iter, num_feats)
+        return examples_iter, num_feats
 
     @staticmethod
     def make_examples(text_iter, truncate, side):
@@ -222,8 +216,7 @@ class TextDataset(DatasetBase):
     def _dynamic_dict(self, examples_iter):
         for example in examples_iter:
             src = example["src"]
-            src_vocab = torchtext.vocab.Vocab(Counter(src),
-                                              specials=[UNK_WORD, PAD_WORD])
+            src_vocab = Vocab(Counter(src), specials=[UNK_WORD, PAD_WORD])
             self.src_vocabs.append(src_vocab)
             # Mapping source tokens to indices in the dynamic dict.
             src_map = torch.LongTensor([src_vocab.stoi[w] for w in src])

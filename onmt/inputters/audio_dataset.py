@@ -6,6 +6,7 @@ import codecs
 import os
 
 import torch
+from torchtext.data import Example
 
 from onmt.inputters.dataset_base import DatasetBase
 
@@ -64,13 +65,7 @@ class AudioDataset(DatasetBase):
         out_fields = [(k, fields[k]) if k in fields else (k, None)
                       for k in keys]
         example_values = ([ex[k] for k in keys] for ex in examples_iter)
-        out_examples = (self._construct_example_fromlist(
-            ex_values, out_fields)
-            for ex_values in example_values)
-        # If out_examples is a generator, we need to save the filter_pred
-        # function in serialization too, which would cause a problem when
-        # `torch.save()`. Thus we materialize it as a list.
-        out_examples = list(out_examples)
+        examples = [Example.fromlist(ev, out_fields) for ev in example_values]
 
         def filter_pred(example):
             """    ?    """
@@ -81,9 +76,7 @@ class AudioDataset(DatasetBase):
 
         filter_pred = filter_pred if use_filter_pred else lambda x: True
 
-        super(AudioDataset, self).__init__(
-            out_examples, out_fields, filter_pred
-        )
+        super(AudioDataset, self).__init__(examples, out_fields, filter_pred)
 
     def sort_key(self, ex):
         """ Sort using duration time of the sound spectrogram. """
@@ -115,7 +108,7 @@ class AudioDataset(DatasetBase):
             normalize_audio, truncate)
         num_feats = 0  # Source side(audio) has no features.
 
-        return (examples_iter, num_feats)
+        return examples_iter, num_feats
 
     @staticmethod
     def read_audio_file(path, src_dir, side, sample_rate, window_size,
