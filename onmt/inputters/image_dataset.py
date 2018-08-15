@@ -60,11 +60,12 @@ class ImageDataset(DatasetBase):
             else:
                 return True
 
-        filter_pred = filter_pred if use_filter_pred else lambda x: True
+        filter_pred = filter_pred if use_filter_pred else None
 
         super(ImageDataset, self).__init__(examples, out_fields, filter_pred)
 
-    def sort_key(self, ex):
+    @staticmethod
+    def sort_key(ex):
         """ Sort using the size of the image: (width, height)."""
         return ex.src.size(2), ex.src.size(1)
 

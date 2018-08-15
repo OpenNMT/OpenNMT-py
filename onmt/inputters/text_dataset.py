@@ -94,10 +94,6 @@ class TextDataset(DatasetBase):
                       for k in keys]
         example_values = ([ex[k] for k in keys] for ex in examples_iter)
 
-        # If out_examples is a generator, we need to save the filter_pred
-        # function in serialization too, which could cause a problem when
-        # `torch.save()`. Thus we materialize it as a list.
-
         examples = [Example.fromlist(ev, out_fields) for ev in example_values]
 
         def filter_pred(example):
@@ -105,11 +101,12 @@ class TextDataset(DatasetBase):
             return 0 < len(example.src) <= src_seq_length \
                 and 0 < len(example.tgt) <= tgt_seq_length
 
-        filter_pred = filter_pred if use_filter_pred else lambda x: True
+        filter_pred = filter_pred if use_filter_pred else None
 
         super(TextDataset, self).__init__(examples, out_fields, filter_pred)
 
-    def sort_key(self, ex):
+    @staticmethod
+    def sort_key(ex):
         """ Sort using length of source sentences. """
         # Default to a balanced sort, prioritizing tgt len match.
         # TODO: make this configurable.
@@ -130,7 +127,7 @@ class TextDataset(DatasetBase):
             fill = []
             index = batch.indices.data[b]
             src_vocab = src_vocabs[index]
-            for i in range(1, len(src_vocab)):
+            for i, sw in enumerate(src_vocab, 1):
                 sw = src_vocab.itos[i]
                 ti = tgt_vocab.stoi[sw]
                 if ti != 0:
