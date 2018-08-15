@@ -51,9 +51,9 @@ class TestData(unittest.TestCase):
                 f.write('a\nb\nc\nd\ne\nf\n')
 
         train_datasets = preprocess.build_datasets('train', fields, opt)
-        preprocess.save_datasets(train_datasets, 'train', opt.save_data)
-
         preprocess.build_vocab(train_datasets, fields, opt)
+
+        preprocess.save_datasets(train_datasets, 'train', opt.save_data)
 
         valid_datasets = preprocess.build_datasets('valid', fields, opt)
         preprocess.save_datasets(valid_datasets, 'valid', opt.save_data)
