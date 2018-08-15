@@ -61,12 +61,12 @@ class TextDataset(DatasetBase):
                 out examples?
     """
 
+    data_type = 'text'
+
     def __init__(self, fields, src_examples_iter, tgt_examples_iter,
                  num_src_feats=0, num_tgt_feats=0,
                  src_seq_length=0, tgt_seq_length=0,
                  dynamic_dict=True, use_filter_pred=True):
-        self.data_type = 'text'
-
         # self.src_vocabs: mutated in dynamic_dict, used in
         # collapse_copy_scores and in Translator.py
         self.src_vocabs = []
@@ -96,10 +96,10 @@ class TextDataset(DatasetBase):
 
         examples = [Example.fromlist(ev, out_fields) for ev in example_values]
 
-        def filter_pred(example):
+        def filter_pred(ex):
             """ ? """
-            return 0 < len(example.src) <= src_seq_length \
-                and 0 < len(example.tgt) <= tgt_seq_length
+            return 0 < len(ex.src) <= src_seq_length \
+                and 0 < len(ex.tgt) <= tgt_seq_length
 
         filter_pred = filter_pred if use_filter_pred else None
 
@@ -127,7 +127,7 @@ class TextDataset(DatasetBase):
             fill = []
             index = batch.indices.data[b]
             src_vocab = src_vocabs[index]
-            for i, sw in enumerate(src_vocab, 1):
+            for i in range(1, len(src_vocab)):
                 sw = src_vocab.itos[i]
                 ti = tgt_vocab.stoi[sw]
                 if ti != 0:
