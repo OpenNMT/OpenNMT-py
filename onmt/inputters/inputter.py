@@ -5,12 +5,12 @@
 import glob
 import os
 import codecs
-from collections import Counter, defaultdict, OrderedDict
+from collections import Counter, defaultdict
 from itertools import count
 
 import torch
 import torchtext.data
-import torchtext.vocab
+from torchtext.vocab import Vocab
 
 from onmt.inputters.dataset_base import UNK_WORD, PAD_WORD, BOS_WORD, EOS_WORD
 from onmt.inputters.text_dataset import TextDataset, extract_text_features
@@ -28,8 +28,8 @@ def _setstate(self, state):
     self.stoi = defaultdict(lambda: 0, self.stoi)
 
 
-torchtext.vocab.Vocab.__getstate__ = _getstate
-torchtext.vocab.Vocab.__setstate__ = _setstate
+Vocab.__getstate__ = _getstate
+Vocab.__setstate__ = _setstate
 
 
 def make_src(data, vocab):
@@ -94,40 +94,43 @@ def get_fields(data_type, n_src_features, n_tgt_features):
     # at the moment, "data_type" only refers to the source
     if data_type == 'text':
         fields["src"] = torchtext.data.Field(
-            pad_token=PAD_WORD, include_lengths=True)
+            tokenize=str.split, pad_token=PAD_WORD, include_lengths=True)
     elif data_type == 'img':
         fields["src"] = torchtext.data.Field(
-            use_vocab=False, dtype=torch.float,
+            tokenize=str.split, use_vocab=False, dtype=torch.float,
             postprocessing=make_img, sequential=False)
     else:
         fields["src"] = torchtext.data.Field(
-            use_vocab=False, dtype=torch.float,
+            tokenize=str.split, use_vocab=False, dtype=torch.float,
             postprocessing=make_audio, sequential=False)
 
     for j in range(n_src_features):
-        fields["src_feat_" + str(j)] = torchtext.data.Field(pad_token=PAD_WORD)
+        fields["src_feat_" + str(j)] = torchtext.data.Field(
+            pad_token=PAD_WORD, tokenize=str.split)
 
     fields["tgt"] = torchtext.data.Field(
-            init_token=BOS_WORD, eos_token=EOS_WORD, pad_token=PAD_WORD)
+            init_token=BOS_WORD, eos_token=EOS_WORD,
+            pad_token=PAD_WORD, tokenize=str.split)
 
     for j in range(n_tgt_features):
         fields["tgt_feat_" + str(j)] = \
             torchtext.data.Field(init_token=BOS_WORD, eos_token=EOS_WORD,
-                                 pad_token=PAD_WORD)
+                                 pad_token=PAD_WORD, tokenize=str.split)
 
     fields["indices"] = torchtext.data.Field(
-        use_vocab=False, dtype=torch.long, sequential=False)
+        use_vocab=False, dtype=torch.long,
+        sequential=False, tokenize=str.split)
 
     # src_map and alignment are only relevant for copy attention. It is a
     # mystery why they are created when there is no copy attention, because
     # they will not end up being used.
     fields["src_map"] = torchtext.data.Field(
         use_vocab=False, dtype=torch.float,
-        postprocessing=make_src, sequential=False)
+        postprocessing=make_src, sequential=False, tokenize=str.split)
 
     fields["alignment"] = torchtext.data.Field(
         use_vocab=False, dtype=torch.long,
-        postprocessing=make_tgt, sequential=False)
+        postprocessing=make_tgt, sequential=False, tokenize=str.split)
 
     return fields
 
@@ -176,10 +179,9 @@ def merge_vocabs(vocabs, vocab_size=None):
         `torchtext.vocab.Vocab`
     """
     merged = sum([vocab.freqs for vocab in vocabs], Counter())
-    return torchtext.vocab.Vocab(merged,
-                                 specials=[UNK_WORD, PAD_WORD,
-                                           BOS_WORD, EOS_WORD],
-                                 max_size=vocab_size)
+    return Vocab(
+        merged, max_size=vocab_size,
+        specials=[UNK_WORD, PAD_WORD, BOS_WORD, EOS_WORD])
 
 
 def get_num_features(data_type, corpus_file, side):
@@ -357,21 +359,18 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
     return dataset
 
 
-def _build_field_vocab(field, counter, **kwargs):
-    specials = list(OrderedDict.fromkeys(
-        tok for tok in [field.unk_token, field.pad_token, field.init_token,
-                        field.eos_token]
-        if tok is not None))
-    field.vocab = field.vocab_cls(counter, specials=specials, **kwargs)
+def filtered_vocab(vocab, wordset):
+    counts = Counter({k: v for k, v in vocab.freqs.items() if k in wordset})
+    return Vocab(counts, specials=[UNK_WORD, PAD_WORD, BOS_WORD, EOS_WORD])
 
 
-def build_fields(datasets, fields, data_type, share_vocab,
+def build_vocabs(datasets, fields, data_type, share_vocab,
                  src_vocab_path, src_vocab_size, src_words_min_frequency,
                  tgt_vocab_path, tgt_vocab_size, tgt_words_min_frequency):
     """
     Args:
-        train_dataset_files: a list of train dataset pt file.
-        fields (dict): fields to build vocab for.
+        datasets: a list of train dataset objects.
+        fields (dict): dict whose keys are strings and values are Fields
         data_type: "text", "img" or "audio"?
         share_vocab(bool): share source and target vocabulary?
         src_vocab_path(string): Path to src vocabulary file.
@@ -384,93 +383,73 @@ def build_fields(datasets, fields, data_type, share_vocab,
                 include a target word in the vocabulary.
 
     Returns:
-        Dict of Fields
+        fields, but after .build_vocab has been called for each field
     """
-    counters = {k: Counter() for k in fields}
 
-    # Load vocabulary
     src_vocab = load_vocabulary(src_vocab_path, tag="source")
     tgt_vocab = load_vocabulary(tgt_vocab_path, tag="target")
+    print(datasets[0].fields)
 
-    for dataset in datasets:
-        for ex in dataset.examples:
-            for k in fields:
-                val = getattr(ex, k, None)
-                if val is not None and not fields[k].sequential:
-                    val = [val]
-                elif k == 'src' and src_vocab:
-                    val = [item for item in val if item in src_vocab]
-                elif k == 'tgt' and tgt_vocab:
-                    val = [item for item in val if item in tgt_vocab]
-                counters[k].update(val)
-
-    _build_field_vocab(fields["tgt"], counters["tgt"],
-                       max_size=tgt_vocab_size,
-                       min_freq=tgt_words_min_frequency)
-    logger.info(" * tgt vocab size: %d." % len(fields["tgt"].vocab))
-
-    # All datasets have same num of n_tgt_features,
-    # getting the last one is OK.
-    for j in range(dataset.n_tgt_feats):
-        key = "tgt_feat_" + str(j)
-        _build_field_vocab(fields[key], counters[key])
-        logger.info(" * %s vocab size: %d." % (key, len(fields[key].vocab)))
+    for name, field in fields.items():
+        if name == 'src':
+            field.build_vocab(
+                *datasets, max_size=src_vocab_size,
+                min_freq=src_words_min_frequency)
+            if src_vocab is not None:
+                field.vocab = filtered_vocab(field.vocab, src_vocab)
+        elif name == 'tgt':
+            field.build_vocab(
+                *datasets, max_size=tgt_vocab_size,
+                min_freq=tgt_words_min_frequency)
+            if tgt_vocab is not None:
+                field.vocab = filtered_vocab(field.vocab, tgt_vocab)
+        else:
+            field.build_vocab(*datasets)
 
     if data_type == 'text':
-        _build_field_vocab(fields["src"], counters["src"],
-                           max_size=src_vocab_size,
-                           min_freq=src_words_min_frequency)
         logger.info(" * src vocab size: %d." % len(fields["src"].vocab))
+    logger.info(" * tgt vocab size: %d." % len(fields["tgt"].vocab))
 
-        # All datasets have same num of n_src_features,
-        # getting the last one is OK.
-        for j in range(dataset.n_src_feats):
-            key = "src_feat_" + str(j)
-            _build_field_vocab(fields[key], counters[key])
-            logger.info(" * %s vocab size: %d." %
-                        (key, len(fields[key].vocab)))
+    for j in range(datasets[0].n_src_feats):
+        key = "src_feat_" + str(j)
+        logger.info(" * %s vocab size: %d." % (key, len(fields[key].vocab)))
+    for j in range(datasets[0].n_tgt_feats):
+        key = "tgt_feat_" + str(j)
+        logger.info(" * %s vocab size: %d." % (key, len(fields[key].vocab)))
 
+    if data_type == 'text' and share_vocab:
         # Merge the input and output vocabularies.
-        if share_vocab:
-            # `tgt_vocab_size` is ignored when sharing vocabularies
-            logger.info(" * merging src and tgt vocab...")
-            merged_vocab = merge_vocabs(
-                [fields["src"].vocab, fields["tgt"].vocab],
-                vocab_size=src_vocab_size)
-            fields["src"].vocab = merged_vocab
-            fields["tgt"].vocab = merged_vocab
+        # `tgt_vocab_size` is ignored when sharing vocabularies
+        logger.info(" * merging src and tgt vocab...")
+        merged_vocab = merge_vocabs(
+            [fields["src"].vocab, fields["tgt"].vocab],
+            vocab_size=src_vocab_size)
+        fields["src"].vocab = merged_vocab
+        fields["tgt"].vocab = merged_vocab
 
     return fields
 
 
-def load_vocabulary(vocabulary_path, tag=""):
+def load_vocabulary(vocab_path, tag=""):
     """
     Loads a vocabulary from the given path.
     :param vocabulary_path: path to load vocabulary from
     :param tag: tag for vocabulary (only used for logging)
     :return: vocabulary or None if path is null
     """
-    vocabulary = None
-    if vocabulary_path:
-        vocabulary = set()
-        logger.info("Loading {} vocabulary from {}".format(tag,
-                                                           vocabulary_path))
+    if vocab_path:
+        logger.info("Loading {} vocabulary from {}".format(tag, vocab_path))
 
-        if not os.path.exists(vocabulary_path):
+        if not os.path.exists(vocab_path):
             raise RuntimeError(
-                "{} vocabulary not found at {}!".format(tag, vocabulary_path))
-        else:
-            with open(vocabulary_path) as f:
-                for line in f:
-                    if len(line.strip()) == 0:
-                        continue
-                    word = line.strip().split()[0]
-                    vocabulary.add(word)
-    return vocabulary
+                "{} vocabulary not found at {}!".format(tag, vocab_path))
+        with open(vocab_path) as f:
+            return {line.strip().split()[0]
+                    for line in f if len(line.strip()) > 0}
+    return None
 
 
 class OrderedIterator(torchtext.data.Iterator):
-    """ Ordered Iterator Class """
 
     def create_batches(self):
         """ Create batches """

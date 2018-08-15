@@ -129,7 +129,7 @@ def build_datasets(corpus_type, fields, opt):
 
 def save_datasets(datasets, corpus_type, save_data):
     for i, dataset in enumerate(datasets, 1):
-        dataset.fields = []  # fields cannot be saved
+        dataset.fields = []  # fields probably CAN be saved, actually!
 
         if len(datasets) > 1:
             pt_file = "{:s}.{:s}.{:d}.pt".format(save_data, corpus_type, i)
@@ -140,7 +140,7 @@ def save_datasets(datasets, corpus_type, save_data):
 
 
 def build_vocab(train_dataset, fields, opt):
-    fields = inputters.build_fields(
+    fields = inputters.build_vocabs(
         train_dataset, fields, opt.data_type, opt.share_vocab,
         opt.src_vocab, opt.src_vocab_size, opt.src_words_min_frequency,
         opt.tgt_vocab, opt.tgt_vocab_size, opt.tgt_words_min_frequency)
@@ -162,12 +162,12 @@ def main():
     logger.info("Building `Fields` object...")
     fields = inputters.get_fields(opt.data_type, src_nfeats, tgt_nfeats)
 
-    logger.info("Building & saving training data...")
+    logger.info("Building training data and vocabulary...")
     train_datasets = build_datasets('train', fields, opt)
-    save_datasets(train_datasets, 'train', opt.save_data)
-
-    logger.info("Building & saving vocabulary...")
     vocab = build_vocab(train_datasets, fields, opt)
+
+    logger.info("Saving training data and vocabulary...")
+    save_datasets(train_datasets, 'train', opt.save_data)
     torch.save(vocab, opt.save_data + '.vocab.pt')
 
     logger.info("Building & saving validation data...")
