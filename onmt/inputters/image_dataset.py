@@ -72,7 +72,7 @@ class ImageDataset(DatasetBase):
 
     def sort_key(self, ex):
         """ Sort using the size of the image: (width, height)."""
-        return (ex.src.size(2), ex.src.size(1))
+        return ex.src.size(2), ex.src.size(1)
 
     @staticmethod
     def make_image_examples_nfeats_tpl(img_iter, img_path, img_dir):
@@ -98,7 +98,7 @@ class ImageDataset(DatasetBase):
         examples_iter = ImageDataset.make_examples(img_iter, img_dir, 'src')
         num_feats = 0  # Source side(img) has no features.
 
-        return (examples_iter, num_feats)
+        return examples_iter, num_feats
 
     @staticmethod
     def make_examples(img_iter, src_dir, side, truncate=None):
@@ -152,26 +152,3 @@ class ImageDataset(DatasetBase):
 
                 img = transforms.ToTensor()(Image.open(img_path))
                 yield img, filename
-
-    @staticmethod
-    def get_num_features(corpus_file, side):
-        """
-        For image corpus, source side is in form of image, thus
-        no feature; while target side is in form of text, thus
-        we can extract its text features.
-
-        Args:
-            corpus_file (str): file path to get the features.
-            side (str): 'src' or 'tgt'.
-
-        Returns:
-            number of features on `side`.
-        """
-        if side == 'src':
-            num_feats = 0
-        else:
-            with codecs.open(corpus_file, "r", "utf-8") as cf:
-                f_line = cf.readline().strip().split()
-                _, _, num_feats = ImageDataset.extract_text_features(f_line)
-
-        return num_feats

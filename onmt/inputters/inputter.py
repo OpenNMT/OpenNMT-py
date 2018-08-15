@@ -4,6 +4,7 @@
 """
 import glob
 import os
+import codecs
 from collections import Counter, defaultdict, OrderedDict
 from itertools import count
 
@@ -12,7 +13,7 @@ import torchtext.data
 import torchtext.vocab
 
 from onmt.inputters.dataset_base import UNK_WORD, PAD_WORD, BOS_WORD, EOS_WORD
-from onmt.inputters.text_dataset import TextDataset
+from onmt.inputters.text_dataset import TextDataset, extract_text_features
 from onmt.inputters.image_dataset import ImageDataset
 from onmt.inputters.audio_dataset import AudioDataset
 from onmt.utils.logging import logger
@@ -133,14 +134,21 @@ def get_fields(data_type, n_src_features, n_tgt_features):
 
 def load_fields_from_vocab(vocab, data_type="text"):
     """
-    Load Field objects from `vocab.pt` file.
+    vocab: a list of (str, torchtext.vocab.Vocab) tuples (always?)
+    data_type: text, img, or audio
+    returns: a dict whose
     """
     vocab = dict(vocab)
     n_src_features = len(collect_features(vocab, 'src'))
     n_tgt_features = len(collect_features(vocab, 'tgt'))
     fields = get_fields(data_type, n_src_features, n_tgt_features)
+    # why turn vocab from a sequence of tuples into a dict and then back into
+    # a sequence of tuples? It might make sense if the vocab arg might have a
+    # different type
     for k, v in vocab.items():
         # Hack. Can't pickle defaultdict :(
+        # bp: this isn't true, you can pickle a defaultdict if the callable
+        # is defined at the top level of the class. You can't pickle lambdas.
         v.stoi = defaultdict(lambda: 0, v.stoi)
         fields[k].vocab = v
     return fields
@@ -186,15 +194,17 @@ def get_num_features(data_type, corpus_file, side):
         number of features on `side`.
     """
     assert side in ["src", "tgt"]
-
-    if data_type == 'text':
-        return TextDataset.get_num_features(corpus_file, side)
-    elif data_type == 'img':
-        return ImageDataset.get_num_features(corpus_file, side)
-    elif data_type == 'audio':
-        return AudioDataset.get_num_features(corpus_file, side)
-    else:
+    if data_type not in ['text', 'img', 'audio']:
         raise ValueError("Data type not implemented")
+    if side == 'src' and data_type != 'text':
+        num_feats = 0
+    else:
+        # in the long run tokenization (including for the features) should be
+        # a field issue.
+        with codecs.open(corpus_file, "r", "utf-8") as cf:
+            f_line = cf.readline().strip().split()
+            _, _, num_feats = extract_text_features(f_line)
+    return num_feats
 
 
 def make_features(batch, side, data_type='text'):
@@ -227,7 +237,10 @@ def make_features(batch, side, data_type='text'):
 
 def collect_features(fields, side="src"):
     """
-    Collect features from Field object.
+    Collect features from a diction object.
+    fields: a dict whose keys are strings and whose values are Field objects.
+    side: src or tgt
+    returns: list of the string names of the features on the given side
     """
     assert side in ["src", "tgt"]
     feats = []
