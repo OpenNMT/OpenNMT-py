@@ -388,7 +388,6 @@ def build_vocabs(datasets, fields, data_type, share_vocab,
 
     src_vocab = load_vocabulary(src_vocab_path, tag="source")
     tgt_vocab = load_vocabulary(tgt_vocab_path, tag="target")
-    print(datasets[0].fields)
 
     for name, field in fields.items():
         if name == 'src':
