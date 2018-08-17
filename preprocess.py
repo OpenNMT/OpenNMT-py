@@ -139,9 +139,9 @@ def save_datasets(datasets, corpus_type, save_data):
         torch.save(dataset, pt_file)
 
 
-def build_vocab(train_dataset, fields, opt):
+def build_vocab(train_dataset, opt):
     fields = inputters.build_vocabs(
-        train_dataset, fields, opt.data_type, opt.share_vocab,
+        train_dataset, opt.data_type, opt.share_vocab,
         opt.src_vocab, opt.src_vocab_size, opt.src_words_min_frequency,
         opt.tgt_vocab, opt.tgt_vocab_size, opt.tgt_words_min_frequency)
     return inputters.fields_to_vocab(fields)
@@ -163,8 +163,9 @@ def main():
     fields = inputters.get_fields(opt.data_type, src_nfeats, tgt_nfeats)
 
     logger.info("Building training data and vocabulary...")
+
     train_datasets = build_datasets('train', fields, opt)
-    vocab = build_vocab(train_datasets, fields, opt)
+    vocab = build_vocab(train_datasets, opt)
 
     logger.info("Saving training data and vocabulary...")
     save_datasets(train_datasets, 'train', opt.save_data)

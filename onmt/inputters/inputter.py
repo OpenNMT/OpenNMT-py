@@ -81,6 +81,8 @@ def get_fields(data_type, n_src_features, n_tgt_features):
             create `torchtext.data.Field` for.
         n_tgt_features: the number of target features to
             create `torchtext.data.Field` for.
+        dynamic_dict (bool): whether the model has a dynamic dict/copy attn.
+            If so, additional fields are required.
 
     Returns:
         A dictionary whose keys are strings and whose values are the
@@ -121,9 +123,6 @@ def get_fields(data_type, n_src_features, n_tgt_features):
         use_vocab=False, dtype=torch.long,
         sequential=False, tokenize=str.split)
 
-    # src_map and alignment are only relevant for copy attention. It is a
-    # mystery why they are created when there is no copy attention, because
-    # they will not end up being used.
     fields["src_map"] = torchtext.data.Field(
         use_vocab=False, dtype=torch.float,
         postprocessing=make_src, sequential=False, tokenize=str.split)
@@ -364,7 +363,7 @@ def filtered_vocab(vocab, wordset):
     return Vocab(counts, specials=[UNK_WORD, PAD_WORD, BOS_WORD, EOS_WORD])
 
 
-def build_vocabs(datasets, fields, data_type, share_vocab,
+def build_vocabs(datasets, data_type, share_vocab,
                  src_vocab_path, src_vocab_size, src_words_min_frequency,
                  tgt_vocab_path, tgt_vocab_size, tgt_words_min_frequency):
     """
@@ -389,6 +388,7 @@ def build_vocabs(datasets, fields, data_type, share_vocab,
     src_vocab = load_vocabulary(src_vocab_path, tag="source")
     tgt_vocab = load_vocabulary(tgt_vocab_path, tag="target")
 
+    fields = datasets[0].fields
     for name, field in fields.items():
         if name == 'src':
             field.build_vocab(
