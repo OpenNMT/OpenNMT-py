@@ -294,12 +294,12 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
         # necessary
         if data_type == 'text':
             src_examples_iter, num_src_feats = \
-                TextDataset.make_text_examples_nfeats_tpl(
+                TextDataset.make_examples_nfeats_tpl(
                     src_data_iter, src_path, src_seq_length_trunc, "src")
 
         elif data_type == 'img':
             src_examples_iter, num_src_feats = \
-                ImageDataset.make_image_examples_nfeats_tpl(
+                ImageDataset.make_examples_nfeats_tpl(
                     src_data_iter, src_path, src_dir)
 
         elif data_type == 'audio':
@@ -310,7 +310,7 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
             if src_path is None:
                 raise ValueError("AudioDataset requires a non None path")
             src_examples_iter, num_src_feats = \
-                AudioDataset.make_audio_examples_nfeats_tpl(
+                AudioDataset.make_examples_nfeats_tpl(
                     src_path, src_dir, sample_rate,
                     window_size, window_stride, window,
                     normalize_audio)
@@ -326,7 +326,7 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
 
     # For all data types, the tgt side corpus is in form of text.
     tgt_examples_iter, num_tgt_feats = \
-        TextDataset.make_text_examples_nfeats_tpl(
+        TextDataset.make_examples_nfeats_tpl(
             tgt_data_iter, tgt_path, tgt_seq_length_trunc, "tgt")
 
     if data_type == 'text':

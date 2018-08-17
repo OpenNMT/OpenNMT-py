@@ -2,7 +2,6 @@
 """Define word-based embedders."""
 
 from collections import Counter
-from itertools import chain
 import io
 import codecs
 import sys
@@ -90,11 +89,12 @@ class TextDataset(DatasetBase):
         ex, examples_iter = self._peek(examples_iter)
         keys = ex.keys()
 
-        out_fields = [(k, fields[k]) if k in fields else (k, None)
-                      for k in keys]
+        # why are the fields in the examples_iter different from the ones
+        # in the fields argument?
+        fields = [(k, fields[k]) if k in fields else (k, None) for k in keys]
         example_values = ([ex[k] for k in keys] for ex in examples_iter)
 
-        examples = [Example.fromlist(ev, out_fields) for ev in example_values]
+        examples = [Example.fromlist(ev, fields) for ev in example_values]
 
         def filter_pred(ex):
             """ ? """
@@ -103,7 +103,7 @@ class TextDataset(DatasetBase):
 
         filter_pred = filter_pred if use_filter_pred else None
 
-        super(TextDataset, self).__init__(examples, out_fields, filter_pred)
+        super(TextDataset, self).__init__(examples, fields, filter_pred)
 
     @staticmethod
     def sort_key(ex):
@@ -134,15 +134,15 @@ class TextDataset(DatasetBase):
                     blank.append(offset + i)
                     fill.append(ti)
             if blank:
-                blank = torch.Tensor(blank).type_as(batch.indices.data)
-                fill = torch.Tensor(fill).type_as(batch.indices.data)
+                blank = torch.Tensor(blank).type_as(batch.indices)
+                fill = torch.Tensor(fill).type_as(batch.indices)
                 scores[:, b].index_add_(1, fill,
                                         scores[:, b].index_select(1, blank))
                 scores[:, b].index_fill_(1, blank, 1e-10)
         return scores
 
-    @staticmethod
-    def make_text_examples_nfeats_tpl(text_iter, text_path, truncate, side):
+    @classmethod
+    def make_examples_nfeats_tpl(cls, text_iter, text_path, truncate, side):
         """
         Args:
             text_iter(iterator): an iterator (or None) that we can loop over
@@ -160,26 +160,18 @@ class TextDataset(DatasetBase):
 
         if text_iter is None:
             if text_path is not None:
-                text_iter = TextDataset.make_text_iterator_from_file(text_path)
+                text_iter = cls.make_iterator_from_file(text_path)
             else:
                 return None, 0
 
-        # All examples have same number of features, so we peek at the first
-        # one to get the num_feats.
-        examples_nfeats_iter = \
-            TextDataset.make_examples(text_iter, truncate, side)
-
-        first_ex = next(examples_nfeats_iter)
-        num_feats = first_ex[1]
-
-        # Chain back the first element - we only want to peek at it.
-        examples_nfeats_iter = chain([first_ex], examples_nfeats_iter)
+        examples_nfeats_iter = cls.make_examples(text_iter, truncate, side)
+        _, num_feats = cls._peek(examples_nfeats_iter)
         examples_iter = (ex for ex, nfeats in examples_nfeats_iter)
 
         return examples_iter, num_feats
 
-    @staticmethod
-    def make_examples(text_iter, truncate, side):
+    @classmethod
+    def make_examples(cls, text_iter, truncate, side):
         """
         Args:
             text_iter (iterator): iterator of text sequences
@@ -203,14 +195,20 @@ class TextDataset(DatasetBase):
                                     for j, f in enumerate(feats))
             yield example_dict, n_feats
 
-    @staticmethod
-    def make_text_iterator_from_file(path):
+    @classmethod
+    def make_iterator_from_file(path):
         with codecs.open(path, "r", "utf-8") as corpus_file:
             for line in corpus_file:
                 yield line
 
     # Below are helper functions for intra-class use only.
     def _dynamic_dict(self, examples_iter):
+        """
+        self: pretend it's not there
+        examples_iter: (self._join_dicts(src, tgt) for src, tgt in
+                        zip(src_examples_iter, tgt_examples_iter))
+        yields: dicts.
+        """
         for example in examples_iter:
             src = example["src"]
             src_vocab = Vocab(Counter(src), specials=[UNK_WORD, PAD_WORD])

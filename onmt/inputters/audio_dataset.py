@@ -62,10 +62,9 @@ class AudioDataset(DatasetBase):
         ex, examples_iter = self._peek(examples_iter)
         keys = ex.keys()
 
-        out_fields = [(k, fields[k]) if k in fields else (k, None)
-                      for k in keys]
+        fields = [(k, fields[k]) if k in fields else (k, None) for k in keys]
         example_values = ([ex[k] for k in keys] for ex in examples_iter)
-        examples = [Example.fromlist(ev, out_fields) for ev in example_values]
+        examples = [Example.fromlist(ev, fields) for ev in example_values]
 
         def filter_pred(example):
             """    ?    """
@@ -76,18 +75,18 @@ class AudioDataset(DatasetBase):
 
         filter_pred = filter_pred if use_filter_pred else None
 
-        super(AudioDataset, self).__init__(examples, out_fields, filter_pred)
+        super(AudioDataset, self).__init__(examples, fields, filter_pred)
 
     @staticmethod
     def sort_key(ex):
         """ Sort using duration time of the sound spectrogram. """
         return ex.src.size(1)
 
-    @staticmethod
-    def make_audio_examples_nfeats_tpl(path, audio_dir,
-                                       sample_rate, window_size,
-                                       window_stride, window,
-                                       normalize_audio, truncate=None):
+    @classmethod
+    def make_examples_nfeats_tpl(cls, path, audio_dir,
+                                 sample_rate, window_size,
+                                 window_stride, window,
+                                 normalize_audio, truncate=None):
         """
         Args:
             path (str): location of a src file containing audio paths.
@@ -103,16 +102,15 @@ class AudioDataset(DatasetBase):
         Returns:
             (example_dict iterator, num_feats) tuple
         """
-        examples_iter = AudioDataset.read_audio_file(
+        examples_iter = cls.read_audio_file(
             path, audio_dir, "src", sample_rate,
             window_size, window_stride, window,
             normalize_audio, truncate)
-        num_feats = 0  # Source side(audio) has no features.
 
-        return examples_iter, num_feats
+        return examples_iter, 0
 
-    @staticmethod
-    def read_audio_file(path, src_dir, side, sample_rate, window_size,
+    @classmethod
+    def read_audio_file(cls, path, src_dir, side, sample_rate, window_size,
                         window_stride, window, normalize_audio,
                         truncate=None):
         """
@@ -131,7 +129,8 @@ class AudioDataset(DatasetBase):
         Yields:
             a dictionary containing audio data for each line.
         """
-        assert (src_dir is not None) and os.path.exists(src_dir),\
+        # might be the case that this needs to be an instance method
+        assert src_dir is not None and os.path.exists(src_dir), \
             "src_dir must be a valid directory if data_type is audio"
 
         import torchaudio
@@ -153,7 +152,7 @@ class AudioDataset(DatasetBase):
                     if sound.size(0) > truncate:
                         continue
 
-                # TODO: find out what this is supposed to be
+                # TODO: find out what this was supposed to be
                 assert sample_rate == sample_rate, \
                     'Sample rate of %s != -sample_rate (%d vs %d)' \
                     % (audio_path, sample_rate, sample_rate)

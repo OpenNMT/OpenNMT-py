@@ -49,8 +49,6 @@ class DatasetBase(torchtext.data.Dataset):
         self.fields = dict([(k, f) for (k, f) in fields.items()
                             if k in self.examples[0].__dict__])
 
-    # Below are helper functions for intra-class use only.
-
     def _join_dicts(self, *args):
         """
         Args:
@@ -61,7 +59,8 @@ class DatasetBase(torchtext.data.Dataset):
         """
         return dict(chain(*[d.items() for d in args]))
 
-    def _peek(self, seq):
+    @classmethod
+    def _peek(cls, seq):
         """
         Args:
             seq: an iterator.

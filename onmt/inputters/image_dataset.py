@@ -48,53 +48,48 @@ class ImageDataset(DatasetBase):
         ex, examples_iter = self._peek(examples_iter)
         keys = ex.keys()
 
-        out_fields = [(k, fields[k]) if k in fields else (k, None)
-                      for k in keys]
+        fields = [(k, fields[k]) if k in fields else (k, None) for k in keys]
         example_values = ([ex[k] for k in keys] for ex in examples_iter)
-        examples = [Example.fromlist(ev, out_fields) for ev in example_values]
+        examples = [Example.fromlist(ev, fields) for ev in example_values]
 
         def filter_pred(ex):
-            """ ? """
             return 0 < len(ex.tgt) <= tgt_seq_length
 
         filter_pred = filter_pred if use_filter_pred \
             and tgt_examples_iter is not None else None
 
-        super(ImageDataset, self).__init__(examples, out_fields, filter_pred)
+        super(ImageDataset, self).__init__(examples, fields, filter_pred)
 
     @staticmethod
     def sort_key(ex):
         """ Sort using the size of the image: (width, height)."""
         return ex.src.size(2), ex.src.size(1)
 
-    @staticmethod
-    def make_image_examples_nfeats_tpl(img_iter, img_path, img_dir):
+    @classmethod
+    def make_examples_nfeats_tpl(cls, img_iter, img_path, img_dir):
         """
         Note: one of img_iter and img_path must be not None
         Args:
             img_iter(iterator): an iterator that yields pairs (img, filename)
-                (or None)
+                or None
             img_path(str): location of a src file containing image paths
-                (or None)
+                or None
             src_dir (str): location of source images
 
         Returns:
             (example_dict iterator, num_feats) tuple
         """
-        if img_iter is None:
-            if img_path is not None:
-                img_iter = ImageDataset.make_img_iterator_from_file(img_path,
-                                                                    img_dir)
-            else:
-                raise ValueError("""One of 'img_iter' and 'img_path'
-                                    must be not None""")
-        examples_iter = ImageDataset.make_examples(img_iter, img_dir, 'src')
-        num_feats = 0  # Source side(img) has no features.
+        # this method disregards one of its arguments...
+        if img_iter is None and img_path is None:
+            raise ValueError("'img_iter' and 'img_path' must not both be None")
 
-        return examples_iter, num_feats
+        img_iter = cls.make_iterator_from_file(img_path, img_dir)
+        examples_iter = cls.make_examples(img_iter, img_dir, 'src')
 
-    @staticmethod
-    def make_examples(img_iter, src_dir, side, truncate=None):
+        return examples_iter, 0
+
+    @classmethod
+    def make_examples(cls, img_iter, src_dir, side, truncate=None):
         """
         Args:
             path (str): location of a src file containing image paths
@@ -106,7 +101,8 @@ class ImageDataset(DatasetBase):
             a dictionary containing image data, path and index for each line.
         """
         assert src_dir is not None and os.path.exists(src_dir), \
-            'src_dir must be a valid directory if data_type is img'
+            'src_dir must be a valid directory if data_type is {}'.format(
+            cls.data_type)
 
         for index, (img, filename) in enumerate(img_iter):
             if truncate and truncate != (0, 0):
@@ -114,13 +110,15 @@ class ImageDataset(DatasetBase):
                         and img.size(2) <= truncate[1]):
                     continue
 
+            # if the continue statement is reached, then the outputs of this
+            # function will have missing indices
             example_dict = {side: img,
                             side + '_path': filename,
                             'indices': index}
             yield example_dict
 
-    @staticmethod
-    def make_img_iterator_from_file(path, src_dir):
+    @classmethod
+    def make_iterator_from_file(cls, path, src_dir):
         """
         Args:
             path(str):
