@@ -66,8 +66,7 @@ class TextDataset(DatasetBase):
                  num_src_feats=0, num_tgt_feats=0,
                  src_seq_length=0, tgt_seq_length=0,
                  dynamic_dict=True, use_filter_pred=True):
-        # self.src_vocabs: mutated in dynamic_dict, used in
-        # collapse_copy_scores and in Translator.py
+        # self.src_vocabs: mutated in dynamic_dict, used in Translator.py
         self.src_vocabs = []
 
         self.n_src_feats = num_src_feats
@@ -83,7 +82,7 @@ class TextDataset(DatasetBase):
             examples_iter = src_examples_iter
 
         if dynamic_dict:
-            examples_iter = self._dynamic_dict(examples_iter)
+            examples_iter = (self._dynamic_dict(ex) for ex in examples_iter)
 
         # Peek at the first to see which fields are used.
         ex, examples_iter = self._peek(examples_iter)
@@ -121,11 +120,15 @@ class TextDataset(DatasetBase):
         corresponeding to a batch, sums together copies,
         with a dictionary word when it is ambigious.
         """
+        # this is a static method, but at least one of the arguments is always
+        # an attribute of a TextDataset instance. It is not clear why this
+        # is in the Dataset at all because it's used for computing scores,
+        # not anything relating to iterating over the data.
         offset = len(tgt_vocab)
         for b in range(batch.batch_size):
             blank = []
             fill = []
-            index = batch.indices.data[b]
+            index = batch.indices[b]
             src_vocab = src_vocabs[index]
             for i in range(1, len(src_vocab)):
                 sw = src_vocab.itos[i]
@@ -202,27 +205,28 @@ class TextDataset(DatasetBase):
                 yield line
 
     # Below are helper functions for intra-class use only.
-    def _dynamic_dict(self, examples_iter):
+    def _dynamic_dict(self, example):
         """
-        self: pretend it's not there
         examples_iter: (self._join_dicts(src, tgt) for src, tgt in
                         zip(src_examples_iter, tgt_examples_iter))
         yields: dicts.
         """
-        for example in examples_iter:
-            src = example["src"]
-            src_vocab = Vocab(Counter(src), specials=[UNK_WORD, PAD_WORD])
-            self.src_vocabs.append(src_vocab)
-            # Mapping source tokens to indices in the dynamic dict.
-            src_map = torch.LongTensor([src_vocab.stoi[w] for w in src])
-            example["src_map"] = src_map
+        # this basically says that if you're using dynamic dict, you're
+        # going to need some extra fields, and they get created in a
+        # different way from other fields.
+        src = example["src"]
+        src_vocab = Vocab(Counter(src), specials=[UNK_WORD, PAD_WORD])
+        self.src_vocabs.append(src_vocab)
+        # Mapping source tokens to indices in the dynamic dict.
+        src_map = torch.LongTensor([src_vocab.stoi[w] for w in src])
+        example["src_map"] = src_map
 
-            if "tgt" in example:
-                tgt = example["tgt"]
-                mask = torch.LongTensor(
-                    [0] + [src_vocab.stoi[w] for w in tgt] + [0])
-                example["alignment"] = mask
-            yield example
+        if "tgt" in example:
+            tgt = example["tgt"]
+            mask = torch.LongTensor(
+                [0] + [src_vocab.stoi[w] for w in tgt] + [0])
+            example["alignment"] = mask
+        return example
 
 
 class ShardedTextCorpusIterator(object):
