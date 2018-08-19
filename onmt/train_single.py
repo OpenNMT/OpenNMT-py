@@ -82,9 +82,9 @@ def main(opt):
         checkpoint = None
         model_opt = opt
 
-    # Peek the fisrt dataset to determine the data_type.
+    # Peek at the first dataset to determine the data_type.
     # (All datasets have the same data_type).
-    first_dataset = next(lazily_load_dataset("train", opt))
+    first_dataset = next(lazily_load_dataset("train", opt.data))
     data_type = first_dataset.data_type
 
     # Load fields generated from preprocess phase.
@@ -118,10 +118,10 @@ def main(opt):
         opt, model, fields, optim, data_type, model_saver=model_saver)
 
     def train_iter_fct(): return build_dataset_iter(
-        lazily_load_dataset("train", opt), fields, opt)
+        lazily_load_dataset("train", opt.data), fields, opt)
 
     def valid_iter_fct(): return build_dataset_iter(
-        lazily_load_dataset("valid", opt), fields, opt)
+        lazily_load_dataset("valid", opt.data), fields, opt)
 
     # Do training.
     trainer.train(train_iter_fct, valid_iter_fct, opt.train_steps,
