@@ -32,6 +32,8 @@ Vocab.__getstate__ = _getstate
 Vocab.__setstate__ = _setstate
 
 
+# below: postprocessing functions for fields. Their usage is not
+# well-understood
 def make_src(data, vocab):
     """ ? """
     src_size = max([t.size(0) for t in data])
@@ -57,7 +59,7 @@ def make_img(data, vocab):
     c = data[0].size(0)
     h = max([t.size(1) for t in data])
     w = max([t.size(2) for t in data])
-    imgs = torch.zeros(len(data), c, h, w).fill_(1)
+    imgs = torch.ones(len(data), c, h, w)
     for i, img in enumerate(data):
         imgs[i, :, 0:img.size(1), 0:img.size(2)] = img
     return imgs
@@ -138,8 +140,21 @@ def load_fields_from_vocab(vocab, data_type="text"):
     """
     vocab: a list of (str, torchtext.vocab.Vocab) tuples (always?)
     data_type: text, img, or audio
-    returns: a dict whose
+    returns: a dict whose keys are the strings from the input vocab and whose
+        values are fields created by a call to get_fields.
     """
+    # this function is used:
+    # 1) elsewhere in inputter.py (in load_fields, which
+    # is used to create the data in train_single.py)
+    # 2) in dataset_base.py, in the class method DatasetBase.load_fields, which
+    # is used in a .md and a jupyter notebook but not in the actual codebase
+    # 3) in model_builder.py, in the function load_test_model, which is used
+    # in translator.py.
+    # 4) in extract_embeddings.py, in order to build the model whose embeddings
+    # will get extracted (this through a call to
+    # model_builder.build_base_model, which needs the fields as an argument
+    # to inputters.collect_feature_vocabs, which it uses so that it can
+    # have access to the feature vocabularies.
     vocab = dict(vocab)
     n_src_features = len(collect_features(vocab, 'src'))
     n_tgt_features = len(collect_features(vocab, 'tgt'))
@@ -162,6 +177,7 @@ def fields_to_vocab(fields):
     returns: a list of 2-tuples whose first items are keys of the fields dict
              and whose values are the vocabs of the corresponding Fields.
     """
+    # this is used in model_saver.py and preprocess.py
     return [(k, f.vocab) for k, f in fields.items()
             if f is not None and 'vocab' in f.__dict__]
 
@@ -177,6 +193,7 @@ def merge_vocabs(vocabs, vocab_size=None):
     Return:
         `torchtext.vocab.Vocab`
     """
+    # this is used only in build_vocabs (and in the testing scripts)
     merged = sum([vocab.freqs for vocab in vocabs], Counter())
     return Vocab(
         merged, max_size=vocab_size,
@@ -194,6 +211,7 @@ def get_num_features(data_type, corpus_file, side):
     Returns:
         number of features on `side`.
     """
+    # used only in preprocess.py
     assert side in ["src", "tgt"]
     if data_type not in ['text', 'img', 'audio']:
         raise ValueError("Data type not implemented")
@@ -219,6 +237,7 @@ def make_features(batch, side, data_type='text'):
         A sequence of src/tgt tensors with optional feature tensors
         of size (len x batch).
     """
+    # used in trainer.py and translator.py
     # this should be a field issue
     assert side in ['src', 'tgt']
     if isinstance(batch.__dict__[side], tuple):
@@ -244,7 +263,7 @@ def collect_features(fields, side="src"):
     side: src or tgt
     returns: list of the string names of the features on the given side
     """
-    # this is currently not used outside of inputter.py
+    # used only in inputter.py in load_fields_from_vocab and in train_single.py
     assert side in ["src", "tgt"]
     feats = []
     for j in count():
@@ -257,8 +276,12 @@ def collect_features(fields, side="src"):
 
 def collect_feature_vocabs(fields, side):
     """
-    Collect feature Vocab objects from Field object.
+    fields: dict from strings to Field objects
+    side: src or tgt
+    returns: a list containing the Vocab objects belonging to feature fields
+        on the given side
     """
+    # used only in model_builder.py, in the build_base_model function
     assert side in ['src', 'tgt']
     feature_vocabs = []
     for j in count():
@@ -280,6 +303,7 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
     Build src/tgt examples iterator from corpus files, also extract
     number of features.
     """
+    # used in preprocess.py and translator.py
     src_data_classes = {'text': TextDataset, 'img': ImageDataset,
                         'audio': AudioDataset}
     assert data_type in src_data_classes
@@ -331,6 +355,8 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
 
 
 def filtered_vocab(vocab, wordset):
+    # used only in build_vocabs in the case where src or tgt vocab is
+    # predetermined
     counts = Counter({k: v for k, v in vocab.freqs.items() if k in wordset})
     return Vocab(counts, specials=[UNK_WORD, PAD_WORD, BOS_WORD, EOS_WORD])
 
@@ -356,6 +382,7 @@ def build_vocabs(datasets, data_type, share_vocab,
     Returns:
         fields, but after .build_vocab has been called for each field
     """
+    # used only in preprocess.py
 
     src_vocab = load_vocabulary(src_vocab_path, tag="source")
     tgt_vocab = load_vocabulary(tgt_vocab_path, tag="target")
@@ -408,6 +435,7 @@ def load_vocabulary(vocab_path, tag=""):
     :param tag: tag for vocabulary (only used for logging)
     :return: vocabulary or None if path is null
     """
+    # used only in build_vocabs, immediately above
     if vocab_path:
         logger.info("Loading {} vocabulary from {}".format(tag, vocab_path))
 
@@ -509,6 +537,9 @@ def build_dataset_iter(datasets, fields, opt, is_train=True):
     to iterate over. We implement simple ordered iterator strategy here,
     but more sophisticated strategy like curriculum learning is ok too.
     """
+    # used only in train_single.py in the return of the train_iter_fct
+    # and valid_iter_fct functions, which uses lazily_load_dataset() as
+    # the first argument.
     batch_size = opt.batch_size if is_train else opt.valid_batch_size
     if is_train and opt.batch_type == "tokens":
         def batch_size_fn(new, count, sofar):
@@ -576,10 +607,3 @@ def load_fields(dataset, data_type, opt, checkpoint):
                     (len(fields['tgt'].vocab)))
 
     return fields
-
-
-def collect_report_features(fields):
-    src_features = collect_features(fields, side='src')
-    tgt_features = collect_features(fields, side='tgt')
-
-    return src_features, tgt_features

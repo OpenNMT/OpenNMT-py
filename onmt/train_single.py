@@ -12,7 +12,7 @@ import torch
 import onmt.opts as opts
 
 from onmt.inputters.inputter import build_dataset_iter, lazily_load_dataset, \
-    load_fields, collect_report_features
+    load_fields, collect_features
 from onmt.model_builder import build_model
 from onmt.utils.optimizers import build_optim
 from onmt.trainer import build_trainer
@@ -92,7 +92,8 @@ def main(opt):
 
     # Report src/tgt features.
 
-    src_features, tgt_features = collect_report_features(fields)
+    src_features = collect_features(fields, 'src')
+    tgt_features = collect_features(fields, 'tgt')
     for j, feat in enumerate(src_features):
         logger.info(' * src feature %d size = %d'
                     % (j, len(fields[feat].vocab)))
