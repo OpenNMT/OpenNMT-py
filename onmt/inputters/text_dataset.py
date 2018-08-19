@@ -145,7 +145,8 @@ class TextDataset(DatasetBase):
         return scores
 
     @classmethod
-    def make_examples_nfeats_tpl(cls, text_iter, text_path, truncate, side):
+    def make_examples_nfeats_tpl(cls, iterator, path,
+                                 truncate, side, **kwargs):
         """
         Args:
             text_iter(iterator): an iterator (or None) that we can loop over
@@ -161,13 +162,12 @@ class TextDataset(DatasetBase):
         """
         assert side in ['src', 'tgt']
 
-        if text_iter is None:
-            if text_path is not None:
-                text_iter = cls.make_iterator_from_file(text_path)
-            else:
-                return None, 0
+        if iterator is None and path is None:
+            return None, 0
+        if path is not None:
+            iterator = cls.make_iterator_from_file(path)
 
-        examples_nfeats_iter = cls.make_examples(text_iter, truncate, side)
+        examples_nfeats_iter = cls.make_examples(iterator, truncate, side)
         _, num_feats = cls._peek(examples_nfeats_iter)
         examples_iter = (ex for ex, nfeats in examples_nfeats_iter)
 
@@ -184,6 +184,9 @@ class TextDataset(DatasetBase):
         Yields:
             (word, features, nfeat) triples for each line.
         """
+        # doesn't make examples.
+        # this and the analogous methods in the other datasets are
+        # used only in the make_examples_nfeats_tpl methods
         for i, line in enumerate(text_iter):
             line = line.strip().split()
             if truncate:

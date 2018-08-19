@@ -280,20 +280,32 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
     Build src/tgt examples iterator from corpus files, also extract
     number of features.
     """
-    assert data_type in ['text', 'img', 'audio']
+    src_data_classes = {'text': TextDataset, 'img': ImageDataset,
+                        'audio': AudioDataset}
+    assert data_type in src_data_classes
+    # check for value of src_data_iter no longer checked for AudioDatasets:
+    # it will be disregarded silently, no need to raise an error.
 
     # text is the choice on the target side
     tgt_examples_iter, num_tgt_feats = \
         TextDataset.make_examples_nfeats_tpl(
             tgt_data_iter, tgt_path, tgt_seq_length_trunc, "tgt")
 
+    src_data_cls = src_data_classes(data_type)
+    # discussion: since make_examples_nfeats_tpl is used only here, why not
+    # move it into the constructor of the dataset?
+    src_examples_iter, num_src_feats = src_data_cls.make_examples_nfeats_tpl(
+        iterator=src_data_iter, path=src_path,
+        truncate=src_seq_length_trunc,
+        side="src", directory=src_dir,
+        sample_rate=sample_rate, window_size=window_size,
+        window_stride=window_stride, window=window,
+        normalize_audio=normalize_audio)
+
     # TODO: refactor so if/elses like this are not necessary: they make it
     # difficult to extend to new data types and are completely against the
-    # spirit of even several dataset classes that inherit from a common base
+    # spirit of having several dataset classes that inherit from a common base
     if data_type == 'text':
-        src_examples_iter, num_src_feats = \
-            TextDataset.make_examples_nfeats_tpl(
-                src_data_iter, src_path, src_seq_length_trunc, "src")
         dataset = TextDataset(fields, src_examples_iter, tgt_examples_iter,
                               num_src_feats, num_tgt_feats,
                               src_seq_length=src_seq_length,
@@ -301,23 +313,11 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
                               dynamic_dict=dynamic_dict,
                               use_filter_pred=use_filter_pred)
     elif data_type == 'img':
-        src_examples_iter, num_src_feats = \
-            ImageDataset.make_examples_nfeats_tpl(
-                src_data_iter, src_path, src_dir)
         dataset = ImageDataset(fields, src_examples_iter, tgt_examples_iter,
                                num_src_feats, num_tgt_feats,
                                tgt_seq_length=tgt_seq_length,
                                use_filter_pred=use_filter_pred)
     else:
-        if src_data_iter:
-            raise ValueError("Data iterator for audio is not implemented")
-        if src_path is None:
-            raise ValueError("AudioDataset requires a non None path")
-        src_examples_iter, num_src_feats = \
-            AudioDataset.make_examples_nfeats_tpl(
-                src_path, src_dir, sample_rate,
-                window_size, window_stride, window,
-                normalize_audio)
         dataset = AudioDataset(fields, src_examples_iter, tgt_examples_iter,
                                num_src_feats, num_tgt_feats,
                                tgt_seq_length=tgt_seq_length,

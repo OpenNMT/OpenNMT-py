@@ -66,7 +66,7 @@ class ImageDataset(DatasetBase):
         return ex.src.size(2), ex.src.size(1)
 
     @classmethod
-    def make_examples_nfeats_tpl(cls, img_iter, img_path, img_dir):
+    def make_examples_nfeats_tpl(cls, iterator, path, directory, **kwargs):
         """
         Note: one of img_iter and img_path must be not None
         Args:
@@ -79,12 +79,12 @@ class ImageDataset(DatasetBase):
         Returns:
             (example_dict iterator, num_feats) tuple
         """
-        # this method disregards one of its arguments...
-        if img_iter is None and img_path is None:
-            raise ValueError("'img_iter' and 'img_path' must not both be None")
+        # This method disregards one of its arguments. This should not be.
+        if iterator is None and path is None:
+            raise ValueError("'iterator' and 'path' must not both be None")
 
-        img_iter = cls.make_iterator_from_file(img_path, img_dir)
-        examples_iter = cls.make_examples(img_iter, img_dir, 'src')
+        iterator = cls.make_iterator_from_file(path, directory)
+        examples_iter = cls.make_examples(iterator, directory, 'src')
 
         return examples_iter, 0
 
