@@ -280,70 +280,44 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
     Build src/tgt examples iterator from corpus files, also extract
     number of features.
     """
-    # what is the justification for the nested function definition?
-    def _make_examples_nfeats_tpl(data_type, src_data_iter, src_path, src_dir,
-                                  src_seq_length_trunc, sample_rate,
-                                  window_size, window_stride,
-                                  window, normalize_audio):
-        """
-        Process the corpus into (example_dict iterator, num_feats) tuple
-        on source side for different 'data_type'.
-        """
+    assert data_type in ['text', 'img', 'audio']
 
-        # TODO: refactor so redundant-looking if/elses like this are not
-        # necessary
-        if data_type == 'text':
-            src_examples_iter, num_src_feats = \
-                TextDataset.make_examples_nfeats_tpl(
-                    src_data_iter, src_path, src_seq_length_trunc, "src")
-
-        elif data_type == 'img':
-            src_examples_iter, num_src_feats = \
-                ImageDataset.make_examples_nfeats_tpl(
-                    src_data_iter, src_path, src_dir)
-
-        elif data_type == 'audio':
-            if src_data_iter:
-                raise ValueError("""Data iterator for AudioDataset isn't
-                                    implemented""")
-
-            if src_path is None:
-                raise ValueError("AudioDataset requires a non None path")
-            src_examples_iter, num_src_feats = \
-                AudioDataset.make_examples_nfeats_tpl(
-                    src_path, src_dir, sample_rate,
-                    window_size, window_stride, window,
-                    normalize_audio)
-        # what happens if the data_type is something else?
-
-        return src_examples_iter, num_src_feats
-
-    src_examples_iter, num_src_feats = \
-        _make_examples_nfeats_tpl(data_type, src_data_iter, src_path, src_dir,
-                                  src_seq_length_trunc, sample_rate,
-                                  window_size, window_stride,
-                                  window, normalize_audio)
-
-    # For all data types, the tgt side corpus is in form of text.
+    # text is the choice on the target side
     tgt_examples_iter, num_tgt_feats = \
         TextDataset.make_examples_nfeats_tpl(
             tgt_data_iter, tgt_path, tgt_seq_length_trunc, "tgt")
 
+    # TODO: refactor so if/elses like this are not necessary: they make it
+    # difficult to extend to new data types and are completely against the
+    # spirit of even several dataset classes that inherit from a common base
     if data_type == 'text':
+        src_examples_iter, num_src_feats = \
+            TextDataset.make_examples_nfeats_tpl(
+                src_data_iter, src_path, src_seq_length_trunc, "src")
         dataset = TextDataset(fields, src_examples_iter, tgt_examples_iter,
                               num_src_feats, num_tgt_feats,
                               src_seq_length=src_seq_length,
                               tgt_seq_length=tgt_seq_length,
                               dynamic_dict=dynamic_dict,
                               use_filter_pred=use_filter_pred)
-
     elif data_type == 'img':
+        src_examples_iter, num_src_feats = \
+            ImageDataset.make_examples_nfeats_tpl(
+                src_data_iter, src_path, src_dir)
         dataset = ImageDataset(fields, src_examples_iter, tgt_examples_iter,
                                num_src_feats, num_tgt_feats,
                                tgt_seq_length=tgt_seq_length,
                                use_filter_pred=use_filter_pred)
-
-    elif data_type == 'audio':
+    else:
+        if src_data_iter:
+            raise ValueError("Data iterator for audio is not implemented")
+        if src_path is None:
+            raise ValueError("AudioDataset requires a non None path")
+        src_examples_iter, num_src_feats = \
+            AudioDataset.make_examples_nfeats_tpl(
+                src_path, src_dir, sample_rate,
+                window_size, window_stride, window,
+                normalize_audio)
         dataset = AudioDataset(fields, src_examples_iter, tgt_examples_iter,
                                num_src_feats, num_tgt_feats,
                                tgt_seq_length=tgt_seq_length,
@@ -353,8 +327,6 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
                                window=window,
                                normalize_audio=normalize_audio,
                                use_filter_pred=use_filter_pred)
-    # what happens if the data_type is something else?
-
     return dataset
 
 
@@ -562,10 +534,7 @@ def build_dataset_iter(datasets, fields, opt, is_train=True):
         batch_size_fn = None
     # device = opt.device_id if opt.gpuid else -1
     # breaking change torchtext 0.3
-    if opt.gpuid:
-        device = "cuda"
-    else:
-        device = "cpu"
+    device = "cuda" if opt.gpuid else "cpu"
 
     return DatasetLazyIter(datasets, fields, batch_size, batch_size_fn,
                            device, is_train)
