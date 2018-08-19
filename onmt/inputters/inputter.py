@@ -558,7 +558,7 @@ def lazily_load_dataset(corpus_type, path):
         yield dataset
 
 
-def _load_fields(dataset, data_type, opt, checkpoint):
+def load_fields(dataset, data_type, opt, checkpoint):
     if checkpoint is not None:
         logger.info('Loading vocab from checkpoint at %s.' % opt.train_from)
         fields = load_fields_from_vocab(checkpoint['vocab'], data_type)
@@ -578,7 +578,7 @@ def _load_fields(dataset, data_type, opt, checkpoint):
     return fields
 
 
-def _collect_report_features(fields):
+def collect_report_features(fields):
     src_features = collect_features(fields, side='src')
     tgt_features = collect_features(fields, side='tgt')
 
