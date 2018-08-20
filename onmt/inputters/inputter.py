@@ -263,7 +263,7 @@ def collect_features(fields, side="src"):
     side: src or tgt
     returns: list of the string names of the features on the given side
     """
-    # used only in inputter.py in load_fields_from_vocab and in train_single.py
+    # used only in inputter.py in load_fields_from_vocab
     assert side in ["src", "tgt"]
     feats = []
     for j in count():
@@ -281,7 +281,9 @@ def collect_feature_vocabs(fields, side):
     returns: a list containing the Vocab objects belonging to feature fields
         on the given side
     """
-    # used only in model_builder.py, in the build_base_model function
+    # used in train_single.py so that the model can build correct-sized
+    # embedding matrices and in model_builder.py in load_test_model (for the
+    # same reason, but at translation time)
     assert side in ['src', 'tgt']
     feature_vocabs = []
     for j in count():
@@ -315,7 +317,7 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
         TextDataset.make_examples_nfeats_tpl(
             tgt_data_iter, tgt_path, tgt_seq_length_trunc, "tgt")
 
-    src_data_cls = src_data_classes(data_type)
+    src_data_cls = src_data_classes[data_type]
     # discussion: since make_examples_nfeats_tpl is used only here, why not
     # move it into the constructor of the dataset?
     src_examples_iter, num_src_feats = src_data_cls.make_examples_nfeats_tpl(
@@ -384,8 +386,8 @@ def build_vocabs(datasets, data_type, share_vocab,
     """
     # used only in preprocess.py
 
-    src_vocab = load_vocabulary(src_vocab_path, tag="source")
-    tgt_vocab = load_vocabulary(tgt_vocab_path, tag="target")
+    src_vocab = _load_vocabulary(src_vocab_path, tag="source")
+    tgt_vocab = _load_vocabulary(tgt_vocab_path, tag="target")
 
     fields = datasets[0].fields
     for name, field in fields.items():
@@ -428,7 +430,7 @@ def build_vocabs(datasets, data_type, share_vocab,
     return fields
 
 
-def load_vocabulary(vocab_path, tag=""):
+def _load_vocabulary(vocab_path, tag=""):
     """
     Loads a vocabulary from the given path.
     :param vocabulary_path: path to load vocabulary from
@@ -436,16 +438,14 @@ def load_vocabulary(vocab_path, tag=""):
     :return: vocabulary or None if path is null
     """
     # used only in build_vocabs, immediately above
-    if vocab_path:
-        logger.info("Loading {} vocabulary from {}".format(tag, vocab_path))
-
-        if not os.path.exists(vocab_path):
-            raise RuntimeError(
-                "{} vocabulary not found at {}!".format(tag, vocab_path))
-        with open(vocab_path) as f:
-            return {line.strip().split()[0]
-                    for line in f if len(line.strip()) > 0}
-    return None
+    if not vocab_path:
+        return None
+    if not os.path.exists(vocab_path):
+        raise RuntimeError(
+            "{} vocabulary not found at {}!".format(tag, vocab_path))
+    logger.info("Loading {} vocabulary from {}".format(tag, vocab_path))
+    with open(vocab_path) as f:
+        return {line.strip().split()[0] for line in f if len(line.strip()) > 0}
 
 
 class OrderedIterator(torchtext.data.Iterator):
@@ -540,6 +540,7 @@ def build_dataset_iter(datasets, fields, opt, is_train=True):
     # used only in train_single.py in the return of the train_iter_fct
     # and valid_iter_fct functions, which uses lazily_load_dataset() as
     # the first argument.
+    # actual use of the thing this function returns:
     batch_size = opt.batch_size if is_train else opt.valid_batch_size
     if is_train and opt.batch_type == "tokens":
         def batch_size_fn(new, count, sofar):
@@ -580,8 +581,7 @@ def lazily_load_dataset(corpus_type, path):
     """
     assert corpus_type in ["train", "valid"]
 
-    # This is a lexicographic sort, so data.train.11.pt is before
-    # data.train.2.pt
+    # This is a lexicographic sort: data.train.11.pt is before data.train.2.pt
     for pt in sorted(glob.glob(path + '.' + corpus_type + '*.pt')):
         dataset = torch.load(pt)
         logger.info('Loading %s dataset from %s, number of examples: %d' %
@@ -590,6 +590,10 @@ def lazily_load_dataset(corpus_type, path):
 
 
 def load_fields(dataset, data_type, opt, checkpoint):
+    # used only in train_single.py, because the dataset loaded from the file
+    # doesn't have fields anymore.
+    # idea: since rebuilding datasets is such a hassle, write a dataset
+    # classmethod that takes care of it.
     if checkpoint is not None:
         logger.info('Loading vocab from checkpoint at %s.' % opt.train_from)
         fields = load_fields_from_vocab(checkpoint['vocab'], data_type)

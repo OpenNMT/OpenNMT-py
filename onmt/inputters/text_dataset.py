@@ -202,7 +202,7 @@ class TextDataset(DatasetBase):
             yield example_dict, n_feats
 
     @classmethod
-    def make_iterator_from_file(path):
+    def make_iterator_from_file(cls, path):
         with codecs.open(path, "r", "utf-8") as corpus_file:
             for line in corpus_file:
                 yield line
