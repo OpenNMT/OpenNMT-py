@@ -389,6 +389,7 @@ def build_vocabs(datasets, data_type, share_vocab,
 
     fields = datasets[0].fields
     for name, field in fields.items():
+        # beware of a case where field is None
         if name == 'src':
             field.build_vocab(
                 *datasets, max_size=src_vocab_size,
@@ -533,7 +534,7 @@ def build_dataset_iter(datasets, opt, is_train=True):
     # used only in train_single.py in the return of the train_iter_fct
     # and valid_iter_fct functions, which uses lazily_load_dataset() as
     # the first argument.
-    # actual use of the thing this function returns:
+    # In no case in the current code is is_train set to False
     batch_size = opt.batch_size if is_train else opt.valid_batch_size
     if is_train and opt.batch_type == "tokens":
         def batch_size_fn(new, count, sofar):
