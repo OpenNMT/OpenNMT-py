@@ -145,8 +145,6 @@ def load_fields_from_vocab(vocab, data_type="text"):
         values are fields created by a call to get_fields.
     """
     # this function is used:
-    # 1) elsewhere in inputter.py (in load_fields, which
-    # is used to create the data in train_single.py)
     # 2) in dataset_base.py, in the class method DatasetBase.load_fields, which
     # is used in a .md and a jupyter notebook but not in the actual codebase
     # 3) in model_builder.py, in the function load_test_model, which is used
@@ -481,10 +479,8 @@ class DatasetLazyIter(object):
         is_train (bool): train or valid?
     """
 
-    def __init__(self, datasets, fields, batch_size, batch_size_fn,
-                 device, is_train):
+    def __init__(self, datasets, batch_size, batch_size_fn, device, is_train):
         self.datasets = datasets
-        self.fields = fields
         self.batch_size = batch_size
         self.batch_size_fn = batch_size_fn
         self.device = device
@@ -518,9 +514,6 @@ class DatasetLazyIter(object):
         except StopIteration:
             return None
 
-        # We clear `fields` when saving, restore when loading.
-        self.cur_dataset.fields = self.fields
-
         # Sort batch by decreasing lengths of sentence required by pytorch.
         # sort=False means "Use dataset's sortkey instead of iterator's".
         return OrderedIterator(
@@ -531,7 +524,7 @@ class DatasetLazyIter(object):
             repeat=False)
 
 
-def build_dataset_iter(datasets, fields, opt, is_train=True):
+def build_dataset_iter(datasets, opt, is_train=True):
     """
     This returns user-defined train/validate data iterator for the trainer
     to iterate over. We implement simple ordered iterator strategy here,
@@ -568,7 +561,7 @@ def build_dataset_iter(datasets, fields, opt, is_train=True):
     # breaking change torchtext 0.3
     device = "cuda" if opt.gpuid else "cpu"
 
-    return DatasetLazyIter(datasets, fields, batch_size, batch_size_fn,
+    return DatasetLazyIter(datasets, batch_size, batch_size_fn,
                            device, is_train)
 
 

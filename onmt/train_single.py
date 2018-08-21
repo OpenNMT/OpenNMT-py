@@ -131,10 +131,10 @@ def main(opt):
         opt, model, fields, optim, data_type, model_saver=model_saver)
 
     def train_iter_fct(): return build_dataset_iter(
-        lazily_load_dataset("train", opt.data), fields, opt)
+        lazily_load_dataset("train", opt.data), opt)
 
     def valid_iter_fct(): return build_dataset_iter(
-        lazily_load_dataset("valid", opt.data), fields, opt)
+        lazily_load_dataset("valid", opt.data), opt)
 
     # Do training.
     trainer.train(train_iter_fct, valid_iter_fct, opt.train_steps,
