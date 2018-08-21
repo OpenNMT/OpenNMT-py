@@ -28,7 +28,6 @@ def check_existing_pt_files(opt):
 
 
 def parse_args():
-    """ Parsing arguments """
     parser = argparse.ArgumentParser(
         description='preprocess.py',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -61,9 +60,9 @@ def build_sharded_datasets(src_corpus, tgt_corpus, fields, corpus_type, opt):
     file is of size 2 * `max_shard_size` bytes.
     """
     corpus_size = os.path.getsize(src_corpus)
-    if corpus_size > 10 * (1024 ** 2) and opt.max_shard_size == 0:
+    if corpus_size > 10 * 1024 ** 2 and opt.max_shard_size == 0:
         logger.info("Warning. The corpus %s is larger than 10M bytes, "
-                    "you can set '-max_shard_size' to process it by "
+                    "you can set '-max_shard_size' to process it in "
                     "small shards to use less memory." % src_corpus)
 
     if opt.max_shard_size != 0:
