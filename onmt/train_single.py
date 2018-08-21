@@ -90,7 +90,7 @@ def main(opt):
     fields = load_fields(first_dataset, data_type, opt, checkpoint)
 
     if model_opt.model_type == 'text':
-        # is model_opt.model_type the same as data_type
+        # is model_opt.model_type the same as data_type?
         src_dict = fields["src"].vocab
         src_feat_vocabs = collect_feature_vocabs(fields, 'src')
     else:

@@ -67,8 +67,6 @@ class TextDataset(DatasetBase):
                  src_seq_length=0, tgt_seq_length=0,
                  dynamic_dict=True, use_filter_pred=True):
         # self.src_vocabs: mutated in dynamic_dict, used in translation.py
-        # at translation time, this is 1 shorter than it is in master, causing
-        # an indexing error
         self.src_vocabs = []
 
         self.n_src_feats = num_src_feats
@@ -98,15 +96,6 @@ class TextDataset(DatasetBase):
         example_values = ([ex[k] for k in keys] for ex in examples_iter)
 
         examples = [Example.fromlist(ev, fields) for ev in example_values]
-        # the examples list for validation is one shorter at test time than
-        # at preprocessing time
-        # test and validation data are handled differently, I suspect, and this
-        # has consequences.
-        # at preprocessing time, inputters.build_dataset is never called in the
-        # text case.
-        # the iter arguments passed also originate in different places and have
-        # different types
-        # print(len(self.src_vocabs))
 
         def filter_pred(ex):
             """ ? """

@@ -318,8 +318,7 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
             tgt_data_iter, tgt_path, tgt_seq_length_trunc, "tgt")
 
     src_data_cls = src_data_classes[data_type]
-    # discussion: since make_examples_nfeats_tpl is used only here, why not
-    # move it into the constructor of the dataset?
+
     src_examples_iter, num_src_feats = src_data_cls.make_examples_nfeats_tpl(
         iterator=src_data_iter, path=src_path,
         truncate=src_seq_length_trunc,
