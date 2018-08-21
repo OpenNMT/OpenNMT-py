@@ -66,11 +66,15 @@ class TextDataset(DatasetBase):
                  num_src_feats=0, num_tgt_feats=0,
                  src_seq_length=0, tgt_seq_length=0,
                  dynamic_dict=True, use_filter_pred=True):
-        # self.src_vocabs: mutated in dynamic_dict, used in Translator.py
+        # self.src_vocabs: mutated in dynamic_dict, used in translation.py
+        # at translation time, this is 1 shorter than it is in master, causing
+        # an indexing error
         self.src_vocabs = []
 
         self.n_src_feats = num_src_feats
         self.n_tgt_feats = num_tgt_feats
+        # another question: why is the Dataset constructor used in preprocess
+        # and translate but not train?
 
         # Each element of an example is a dictionary whose keys represents
         # at minimum the src tokens and their indices and potentially also
@@ -94,6 +98,15 @@ class TextDataset(DatasetBase):
         example_values = ([ex[k] for k in keys] for ex in examples_iter)
 
         examples = [Example.fromlist(ev, fields) for ev in example_values]
+        # the examples list for validation is one shorter at test time than
+        # at preprocessing time
+        # test and validation data are handled differently, I suspect, and this
+        # has consequences.
+        # at preprocessing time, inputters.build_dataset is never called in the
+        # text case.
+        # the iter arguments passed also originate in different places and have
+        # different types
+        # print(len(self.src_vocabs))
 
         def filter_pred(ex):
             """ ? """
@@ -168,7 +181,7 @@ class TextDataset(DatasetBase):
             iterator = cls.make_iterator_from_file(path)
 
         examples_nfeats_iter = cls.make_examples(iterator, truncate, side)
-        _, num_feats = cls._peek(examples_nfeats_iter)
+        (_, num_feats), examples_nfeats_iter = cls._peek(examples_nfeats_iter)
         examples_iter = (ex for ex, nfeats in examples_nfeats_iter)
 
         return examples_iter, num_feats
@@ -182,7 +195,8 @@ class TextDataset(DatasetBase):
             side (str): "src" or "tgt".
 
         Yields:
-            (word, features, nfeat) triples for each line.
+            dict, int pairs where the dict is example stuff and the int is
+            the number of features
         """
         # doesn't make examples.
         # this and the analogous methods in the other datasets are
