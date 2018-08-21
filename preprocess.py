@@ -43,7 +43,7 @@ def parse_args():
     return opt
 
 
-def build_sharded_datasets(src_corpus, tgt_corpus, fields, corpus_type, opt):
+def build_sharded_datasets(src_corpus, tgt_corpus, fields, opt):
     """
     Supported only if data_type == 'text'
     A large corpus is represented as a sequence of `shard` datasets: the
@@ -102,9 +102,7 @@ def build_datasets(corpus_type, fields, opt):
 
     # Currently preprocess sharding is only supported for data_type=='text'
     if opt.data_type == 'text':
-        return build_sharded_datasets(
-            src_corpus, tgt_corpus, fields,
-            corpus_type, opt)
+        return build_sharded_datasets(src_corpus, tgt_corpus, fields, opt)
 
     # For data_type == 'img' or 'audio', preprocess sharding is not supported.
     # But since the interfaces are uniform, it should not be not hard to
@@ -159,7 +157,8 @@ def main():
     logger.info(" * number of target features: %d." % tgt_nfeats)
 
     logger.info("Building `Fields` object...")
-    fields = inputters.get_fields(opt.data_type, src_nfeats, tgt_nfeats)
+    fields = inputters.get_fields(
+        opt.data_type, src_nfeats, tgt_nfeats, opt.dynamic_dict)
 
     logger.info("Building training data and vocabulary...")
 
