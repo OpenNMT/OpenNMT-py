@@ -12,7 +12,7 @@ import torch
 import onmt.opts as opts
 
 from onmt.inputters.inputter import build_dataset_iter, lazily_load_dataset, \
-    load_fields, collect_feature_vocabs
+    collect_feature_vocabs
 from onmt.model_builder import build_model
 from onmt.utils.optimizers import build_optim
 from onmt.trainer import build_trainer
@@ -86,8 +86,13 @@ def main(opt):
     # (All datasets have the same data_type).
     first_dataset = next(lazily_load_dataset("train", opt.data))
     data_type = first_dataset.data_type
-
-    fields = load_fields(first_dataset, data_type, opt, checkpoint)
+    fields = first_dataset.fields
+    if data_type == 'text':
+        logger.info(' * vocabulary size. source = %d; target = %d' %
+                    (len(fields['src'].vocab), len(fields['tgt'].vocab)))
+    else:
+        logger.info(' * vocabulary size. target = %d' %
+                    len(fields['tgt'].vocab))
 
     if model_opt.model_type == 'text':
         # is model_opt.model_type the same as data_type?

@@ -126,8 +126,6 @@ def build_datasets(corpus_type, fields, opt):
 
 def save_datasets(datasets, corpus_type, save_data):
     for i, dataset in enumerate(datasets, 1):
-        dataset.fields = []  # fields probably CAN be saved, actually!
-
         if len(datasets) > 1:
             pt_file = "{:s}.{:s}.{:d}.pt".format(save_data, corpus_type, i)
         else:

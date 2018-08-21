@@ -587,27 +587,3 @@ def lazily_load_dataset(corpus_type, path):
         logger.info('Loading %s dataset from %s, number of examples: %d' %
                     (corpus_type, pt, len(dataset)))
         yield dataset
-
-
-def load_fields(dataset, data_type, opt, checkpoint):
-    # used only in train_single.py, because the dataset loaded from the file
-    # doesn't have fields anymore.
-    # idea: since rebuilding datasets is such a hassle, write a dataset
-    # classmethod that takes care of it.
-    if checkpoint is not None:
-        logger.info('Loading vocab from checkpoint at %s.' % opt.train_from)
-        fields = load_fields_from_vocab(checkpoint['vocab'], data_type)
-    else:
-        fields = load_fields_from_vocab(
-            torch.load(opt.data + '.vocab.pt'), data_type)
-    fields = dict([(k, f) for (k, f) in fields.items()
-                   if k in dataset.examples[0].__dict__])
-
-    if data_type == 'text':
-        logger.info(' * vocabulary size. source = %d; target = %d' %
-                    (len(fields['src'].vocab), len(fields['tgt'].vocab)))
-    else:
-        logger.info(' * vocabulary size. target = %d' %
-                    (len(fields['tgt'].vocab)))
-
-    return fields
