@@ -175,7 +175,6 @@ class Translator(object):
 
         if batch_size is None:
             raise ValueError("batch_size must be set")
-        # this invariably uses dynamic dict, which seems like a clear problem
         data = inputters.build_dataset(self.fields,
                                        self.data_type,
                                        src_path=src_path,
@@ -190,10 +189,7 @@ class Translator(object):
                                        use_filter_pred=self.use_filter_pred,
                                        dynamic_dict=dynamic_dict)
 
-        if self.cuda:
-            cur_device = "cuda"
-        else:
-            cur_device = "cpu"
+        cur_device = "cuda" if self.cuda else "cpu"
 
         data_iter = inputters.OrderedIterator(
             dataset=data, device=cur_device,
@@ -201,8 +197,7 @@ class Translator(object):
             sort_within_batch=True, shuffle=False)
 
         builder = onmt.translate.TranslationBuilder(
-            data, self.fields,
-            self.n_best, self.replace_unk, tgt_path)
+            data, self.n_best, self.replace_unk, tgt_path)
 
         # Statistics
         counter = count(1)
