@@ -83,7 +83,7 @@ class AudioDataset(DatasetBase):
         return ex.src.size(1)
 
     @classmethod
-    def make_examples_nfeats_tpl(cls, path, audio_dir, sample_rate,
+    def make_examples_nfeats_tpl(cls, path, directory, sample_rate,
                                  window_size, window_stride, window,
                                  normalize_audio, truncate=None, **kwargs):
         """
