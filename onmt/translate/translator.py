@@ -144,7 +144,8 @@ class Translator(object):
                   tgt_data_iter=None,
                   src_dir=None,
                   batch_size=None,
-                  attn_debug=False):
+                  attn_debug=False,
+                  dynamic_dict=False):
         """
         Translate content of `src_data_iter` (if not None) or `src_path`
         and get gold scores if one of `tgt_data_iter` or `tgt_path` is set.
@@ -186,7 +187,8 @@ class Translator(object):
                                        window_size=self.window_size,
                                        window_stride=self.window_stride,
                                        window=self.window,
-                                       use_filter_pred=self.use_filter_pred)
+                                       use_filter_pred=self.use_filter_pred,
+                                       dynamic_dict=dynamic_dict)
 
         if self.cuda:
             cur_device = "cuda"
