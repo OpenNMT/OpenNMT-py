@@ -75,7 +75,7 @@ def make_audio(data, vocab):
     return sounds
 
 
-def get_fields(data_type, n_src_features, n_tgt_features):
+def get_fields(data_type, n_src_features, n_tgt_features, dynamic_dict=False):
     """
     Args:
         data_type: type of the source input. Options are [text|img|audio].
@@ -125,13 +125,14 @@ def get_fields(data_type, n_src_features, n_tgt_features):
         use_vocab=False, dtype=torch.long,
         sequential=False, tokenize=str.split)
 
-    fields["src_map"] = torchtext.data.Field(
-        use_vocab=False, dtype=torch.float,
-        postprocessing=make_src, sequential=False, tokenize=str.split)
+    if dynamic_dict:
+        fields["src_map"] = torchtext.data.Field(
+            use_vocab=False, dtype=torch.float,
+            postprocessing=make_src, sequential=False, tokenize=str.split)
 
-    fields["alignment"] = torchtext.data.Field(
-        use_vocab=False, dtype=torch.long,
-        postprocessing=make_tgt, sequential=False, tokenize=str.split)
+        fields["alignment"] = torchtext.data.Field(
+            use_vocab=False, dtype=torch.long,
+            postprocessing=make_tgt, sequential=False, tokenize=str.split)
 
     return fields
 
@@ -402,7 +403,7 @@ def build_vocabs(datasets, data_type, share_vocab,
                 min_freq=tgt_words_min_frequency)
             if tgt_vocab is not None:
                 field.vocab = filtered_vocab(field.vocab, tgt_vocab)
-        else:
+        elif field.use_vocab:
             field.build_vocab(*datasets)
 
     if data_type == 'text':
