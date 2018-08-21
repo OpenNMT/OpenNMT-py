@@ -12,7 +12,7 @@ import torch
 import onmt.opts as opts
 
 from onmt.inputters.inputter import build_dataset_iter, lazily_load_dataset, \
-    load_fields, collect_features
+    load_fields, collect_feature_vocabs
 from onmt.model_builder import build_model
 from onmt.utils.optimizers import build_optim
 from onmt.trainer import build_trainer
@@ -87,22 +87,29 @@ def main(opt):
     first_dataset = next(lazily_load_dataset("train", opt.data))
     data_type = first_dataset.data_type
 
-    # Load fields generated from preprocess phase.
     fields = load_fields(first_dataset, data_type, opt, checkpoint)
 
-    # Report src/tgt features.
+    if model_opt.model_type == 'text':
+        # is model_opt.model_type the same as data_type
+        src_dict = fields["src"].vocab
+        src_feat_vocabs = collect_feature_vocabs(fields, 'src')
+    else:
+        src_dict = None
+        src_feat_vocabs = []
 
-    src_features = collect_features(fields, 'src')
-    tgt_features = collect_features(fields, 'tgt')
-    for j, feat in enumerate(src_features):
-        logger.info(' * src feature %d size = %d'
-                    % (j, len(fields[feat].vocab)))
-    for j, feat in enumerate(tgt_features):
-        logger.info(' * tgt feature %d size = %d'
-                    % (j, len(fields[feat].vocab)))
+    tgt_dict = fields["tgt"].vocab
+    tgt_feat_vocabs = collect_feature_vocabs(fields, 'tgt')
+
+    # Report src/tgt features.
+    for j, src_feat_vocab in enumerate(src_feat_vocabs):
+        logger.info(' * src feature %d size = %d' % (j, len(src_feat_vocab)))
+    for j, tgt_feat_vocab in enumerate(tgt_feat_vocabs):
+        logger.info(' * tgt feature %d size = %d' % (j, len(tgt_feat_vocab)))
 
     # Build model.
-    model = build_model(model_opt, opt, fields, checkpoint)
+    # why does building the model also do data loading stuff?
+    model = build_model(model_opt, opt, src_dict, src_feat_vocabs,
+                        tgt_dict, tgt_feat_vocabs, checkpoint)
     n_params, enc, dec = _tally_parameters(model)
     logger.info('encoder: %d' % enc)
     logger.info('decoder: %d' % dec)

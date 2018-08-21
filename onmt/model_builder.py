@@ -128,24 +128,36 @@ def load_test_model(opt, dummy_opt):
     """ Load model for Inference """
     checkpoint = torch.load(opt.model,
                             map_location=lambda storage, loc: storage)
+
     fields = inputters.load_fields_from_vocab(
         checkpoint['vocab'], data_type=opt.data_type)
+    if opt.data_type == 'text':
+        # is model_opt.model_type the same as data_type?
+        src_dict = fields["src"].vocab
+        src_feat_vocabs = inputters.collect_feature_vocabs(fields, 'src')
+    else:
+        src_dict = None
+        src_feat_vocabs = []
+    tgt_dict = fields["tgt"].vocab
+    tgt_feat_vocabs = inputters.collect_feature_vocabs(fields, 'tgt')
 
     model_opt = checkpoint['opt']
     for arg in dummy_opt:
         if arg not in model_opt:
             model_opt.__dict__[arg] = dummy_opt[arg]
-    model = build_base_model(model_opt, fields, use_gpu(opt), checkpoint)
+    model = build_base_model(model_opt, src_dict, src_feat_vocabs, tgt_dict,
+                             tgt_feat_vocabs, use_gpu(opt), checkpoint)
     model.eval()
     model.generator.eval()
     return fields, model, model_opt
 
 
-def build_base_model(model_opt, fields, gpu, checkpoint=None):
+def build_base_model(model_opt, src_dict, src_feat_dicts,
+                     tgt_dict, tgt_feat_dicts, gpu, checkpoint=None):
     """
     Args:
         model_opt: the option loaded from checkpoint.
-        fields: `Field` objects for the model.
+        *_dict and *_feat_dicts: torchtext.data.Vocab objects
         gpu(bool): whether to use gpu.
         checkpoint: the model gnerated by train phase, or a resumed snapshot
                     model from a stopped training.
@@ -153,13 +165,11 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
         the NMTModel.
     """
     assert model_opt.model_type in ["text", "img", "audio"], \
-        ("Unsupported model type %s" % (model_opt.model_type))
+        "Unsupported model type %s" % model_opt.model_type
 
     # Build encoder.
     if model_opt.model_type == "text":
-        src_dict = fields["src"].vocab
-        feature_dicts = inputters.collect_feature_vocabs(fields, 'src')
-        src_embeddings = build_embeddings(model_opt, src_dict, feature_dicts)
+        src_embeddings = build_embeddings(model_opt, src_dict, src_feat_dicts)
         encoder = build_encoder(model_opt, src_embeddings)
     elif model_opt.model_type == "img":
         encoder = ImageEncoder(model_opt.enc_layers,
@@ -175,10 +185,8 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
                                model_opt.window_size)
 
     # Build decoder.
-    tgt_dict = fields["tgt"].vocab
-    feature_dicts = inputters.collect_feature_vocabs(fields, 'tgt')
     tgt_embeddings = build_embeddings(model_opt, tgt_dict,
-                                      feature_dicts, for_encoder=False)
+                                      tgt_feat_dicts, for_encoder=False)
 
     # Share the embedding matrix - preprocess with share_vocab required.
     if model_opt.share_embeddings:
@@ -199,13 +207,12 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
     # Build Generator.
     if not model_opt.copy_attn:
         generator = nn.Sequential(
-            nn.Linear(model_opt.rnn_size, len(fields["tgt"].vocab)),
+            nn.Linear(model_opt.rnn_size, len(tgt_dict)),
             nn.LogSoftmax(dim=-1))
         if model_opt.share_decoder_embeddings:
             generator[0].weight = decoder.embeddings.word_lut.weight
     else:
-        generator = CopyGenerator(model_opt.rnn_size,
-                                  fields["tgt"].vocab)
+        generator = CopyGenerator(model_opt.rnn_size, tgt_dict)
 
     # Load the model states from checkpoint or initialize them.
     if checkpoint is not None:
@@ -232,17 +239,17 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
             model.decoder.embeddings.load_pretrained_vectors(
                 model_opt.pre_word_vecs_dec, model_opt.fix_word_vecs_dec)
 
-    # Add generator to model (this registers it as parameter of model).
+    # this registers the generator as a parameter of the model
     model.generator = generator
     model.to(device)
 
     return model
 
 
-def build_model(model_opt, opt, fields, checkpoint):
-    """ Build the Model """
+def build_model(model_opt, opt, src_dict, src_feat_dicts,
+                tgt_dict, tgt_feat_dicts, checkpoint):
     logger.info('Building model...')
-    model = build_base_model(model_opt, fields,
-                             use_gpu(opt), checkpoint)
+    model = build_base_model(model_opt, src_dict, src_feat_dicts, tgt_dict,
+                             tgt_feat_dicts, use_gpu(opt), checkpoint)
     logger.info(model)
     return model
