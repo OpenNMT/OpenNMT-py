@@ -247,7 +247,7 @@ class ServerModel:
                     mode = None
                 for key, value in self.tokenizer_opt["params"].items():
                     if key.endswith("path"):
-                        self.tokenizer_opt["params"][key]= os.path.join(
+                        self.tokenizer_opt["params"][key] = os.path.join(
                             self.model_root, value)
                 tokenizer = pyonmttok.Tokenizer(mode,
                                                 **self.tokenizer_opt["params"])
