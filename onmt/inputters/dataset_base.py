@@ -54,14 +54,8 @@ class DatasetBase(Dataset):
         if dynamic_dict:
             examples_iter = (self._dynamic_dict(ex) for ex in examples_iter)
 
-        # Peek at the first to see which fields are used.
-        ex, examples_iter = self._peek(examples_iter)
-        keys = ex.keys()
-
-        # why are the fields in the examples_iter different from the ones
-        # in the fields argument?
-        fields = [(k, fields[k]) if k in fields else (k, None) for k in keys]
-        example_values = ([ex[k] for k in keys] for ex in examples_iter)
+        fields = list(fields.items())
+        example_values = ([ex[k] for k, v in fields] for ex in examples_iter)
 
         examples = [Example.fromlist(ev, fields) for ev in example_values]
 
