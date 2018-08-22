@@ -102,6 +102,7 @@ def build_datasets(corpus_type, fields, opt):
 
     # Currently preprocess sharding is only supported for data_type=='text'
     if opt.data_type == 'text':
+        # TODO: the dataset is built in a different way in this method. Unify.
         return build_sharded_datasets(src_corpus, tgt_corpus, fields, opt)
 
     # For data_type == 'img' or 'audio', preprocess sharding is not supported.

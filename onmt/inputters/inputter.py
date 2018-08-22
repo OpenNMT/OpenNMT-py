@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
-"""
-    Defining general functions for inputters
-"""
+
 import glob
 import os
 import codecs
 from collections import Counter, defaultdict
 from itertools import count
+from functools import partial
 
 import torch
 import torchtext.data
@@ -30,6 +29,18 @@ def _setstate(self, state):
 
 Vocab.__getstate__ = _getstate
 Vocab.__setstate__ = _setstate
+
+
+def filter_pred(ex, use_src_len, use_tgt_len, min_src_len, max_src_len,
+                min_tgt_len, max_tgt_len):
+    """
+    A generalized function for filtering examples based on the length of their
+    src or tgt values. Rather than being used by itself as the filter_pred
+    argument to a dataset, it should be partially evaluated with everything
+    specified except the value of the example.
+    """
+    return (not use_src_len or min_src_len < len(ex.src) <= max_src_len) and \
+        (not use_tgt_len or min_tgt_len < len(ex.tgt) <= max_tgt_len)
 
 
 # below: postprocessing functions for fields. Their usage is not
@@ -305,6 +316,7 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
     number of features.
     """
     # used in preprocess.py and translator.py
+    # seems like further simplification should be possible
     src_data_classes = {'text': TextDataset, 'img': ImageDataset,
                         'audio': AudioDataset}
     assert data_type in src_data_classes
@@ -326,31 +338,25 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
         window_stride=window_stride, window=window,
         normalize_audio=normalize_audio)
 
-    # TODO: refactor so if/elses like this are not necessary: they make it
-    # difficult to extend to new data types and are completely against the
-    # spirit of having several dataset classes that inherit from a common base
-    if data_type == 'text':
-        dataset = TextDataset(fields, src_examples_iter, tgt_examples_iter,
-                              num_src_feats, num_tgt_feats,
-                              src_seq_length=src_seq_length,
-                              tgt_seq_length=tgt_seq_length,
-                              dynamic_dict=dynamic_dict,
-                              use_filter_pred=use_filter_pred)
-    elif data_type == 'img':
-        dataset = ImageDataset(fields, src_examples_iter, tgt_examples_iter,
-                               num_src_feats, num_tgt_feats,
-                               tgt_seq_length=tgt_seq_length,
-                               use_filter_pred=use_filter_pred)
+    if use_filter_pred:
+        # quick hack for now: in the future, it should be whether the src field
+        # is sequential
+        use_src_len = data_type == 'text'
+        fp = partial(
+            filter_pred, use_src_len=use_src_len, use_tgt_len=True,
+            min_src_len=0, max_src_len=src_seq_length,
+            min_tgt_len=0, max_tgt_len=tgt_seq_length)
     else:
-        dataset = AudioDataset(fields, src_examples_iter, tgt_examples_iter,
-                               num_src_feats, num_tgt_feats,
-                               tgt_seq_length=tgt_seq_length,
-                               sample_rate=sample_rate,
-                               window_size=window_size,
-                               window_stride=window_stride,
-                               window=window,
-                               normalize_audio=normalize_audio,
-                               use_filter_pred=use_filter_pred)
+        fp = None
+
+    dataset = src_data_cls(
+        fields, src_examples_iter, tgt_examples_iter,
+        num_src_feats, num_tgt_feats,
+        src_seq_length=src_seq_length,
+        tgt_seq_length=tgt_seq_length,
+        dynamic_dict=dynamic_dict,
+        filter_pred=fp)
+
     return dataset
 
 

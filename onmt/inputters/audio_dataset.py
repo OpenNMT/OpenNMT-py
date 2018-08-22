@@ -6,7 +6,6 @@ import codecs
 import os
 
 import torch
-from torchtext.data import Example
 
 from onmt.inputters.dataset_base import DatasetBase
 
@@ -35,47 +34,7 @@ class AudioDataset(DatasetBase):
             use_filter_pred (bool): use a custom filter predicate to filter
                 out examples?
     """
-
     data_type = 'audio'
-
-    def __init__(self, fields, src_examples_iter, tgt_examples_iter,
-                 num_src_feats=0, num_tgt_feats=0,
-                 tgt_seq_length=0, sample_rate=0,
-                 window_size=0.0, window_stride=0.0, window=None,
-                 normalize_audio=True, use_filter_pred=True):
-        self.sample_rate = sample_rate
-        self.window_size = window_size
-        self.window_stride = window_stride
-        self.window = window
-        self.normalize_audio = normalize_audio
-
-        self.n_src_feats = num_src_feats
-        self.n_tgt_feats = num_tgt_feats
-
-        if tgt_examples_iter is not None:
-            examples_iter = (self._join_dicts(src, tgt) for src, tgt in
-                             zip(src_examples_iter, tgt_examples_iter))
-        else:
-            examples_iter = src_examples_iter
-
-        # Peek at the first to see which fields are used.
-        ex, examples_iter = self._peek(examples_iter)
-        keys = ex.keys()
-
-        fields = [(k, fields[k]) if k in fields else (k, None) for k in keys]
-        example_values = ([ex[k] for k in keys] for ex in examples_iter)
-        examples = [Example.fromlist(ev, fields) for ev in example_values]
-
-        def filter_pred(example):
-            """    ?    """
-            if tgt_examples_iter is not None:
-                return 0 < len(example.tgt) <= tgt_seq_length
-            else:
-                return True
-
-        filter_pred = filter_pred if use_filter_pred else None
-
-        super(AudioDataset, self).__init__(examples, fields, filter_pred)
 
     @staticmethod
     def sort_key(ex):

@@ -1,16 +1,13 @@
 # -*- coding: utf-8 -*-
 """Define word-based embedders."""
 
-from collections import Counter
 import io
 import codecs
 import sys
 
 import torch
-from torchtext.vocab import Vocab
-from torchtext.data import Example
 
-from onmt.inputters.dataset_base import DatasetBase, UNK_WORD, PAD_WORD
+from onmt.inputters.dataset_base import DatasetBase
 from onmt.utils.misc import aeq
 
 
@@ -59,52 +56,7 @@ class TextDataset(DatasetBase):
             use_filter_pred (bool): use a custom filter predicate to filter
                 out examples?
     """
-
     data_type = 'text'
-
-    def __init__(self, fields, src_examples_iter, tgt_examples_iter,
-                 num_src_feats=0, num_tgt_feats=0,
-                 src_seq_length=0, tgt_seq_length=0,
-                 dynamic_dict=False, use_filter_pred=True):
-        # self.src_vocabs: mutated in dynamic_dict, used in translation.py
-        self.src_vocabs = []
-
-        self.n_src_feats = num_src_feats
-        self.n_tgt_feats = num_tgt_feats
-        # another question: why is the Dataset constructor used in preprocess
-        # and translate but not train?
-
-        # Each element of an example is a dictionary whose keys represents
-        # at minimum the src tokens and their indices and potentially also
-        # the src and tgt features and alignment information.
-        if tgt_examples_iter is not None:
-            examples_iter = (self._join_dicts(src, tgt) for src, tgt in
-                             zip(src_examples_iter, tgt_examples_iter))
-        else:
-            examples_iter = src_examples_iter
-
-        if dynamic_dict:
-            examples_iter = (self._dynamic_dict(ex) for ex in examples_iter)
-
-        # Peek at the first to see which fields are used.
-        ex, examples_iter = self._peek(examples_iter)
-        keys = ex.keys()
-
-        # why are the fields in the examples_iter different from the ones
-        # in the fields argument?
-        fields = [(k, fields[k]) if k in fields else (k, None) for k in keys]
-        example_values = ([ex[k] for k in keys] for ex in examples_iter)
-
-        examples = [Example.fromlist(ev, fields) for ev in example_values]
-
-        def filter_pred(ex):
-            """ ? """
-            return 0 < len(ex.src) <= src_seq_length \
-                and 0 < len(ex.tgt) <= tgt_seq_length
-
-        filter_pred = filter_pred if use_filter_pred else None
-
-        super(TextDataset, self).__init__(examples, fields, filter_pred)
 
     @staticmethod
     def sort_key(ex):
@@ -209,30 +161,6 @@ class TextDataset(DatasetBase):
         with codecs.open(path, "r", "utf-8") as corpus_file:
             for line in corpus_file:
                 yield line
-
-    # Below are helper functions for intra-class use only.
-    def _dynamic_dict(self, example):
-        """
-        examples_iter: (self._join_dicts(src, tgt) for src, tgt in
-                        zip(src_examples_iter, tgt_examples_iter))
-        yields: dicts.
-        """
-        # this basically says that if you're using dynamic dict, you're
-        # going to need some extra fields, and they get created in a
-        # different way from other fields.
-        src = example["src"]
-        src_vocab = Vocab(Counter(src), specials=[UNK_WORD, PAD_WORD])
-        self.src_vocabs.append(src_vocab)
-        # Mapping source tokens to indices in the dynamic dict.
-        src_map = torch.LongTensor([src_vocab.stoi[w] for w in src])
-        example["src_map"] = src_map
-
-        if "tgt" in example:
-            tgt = example["tgt"]
-            mask = torch.LongTensor(
-                [0] + [src_vocab.stoi[w] for w in tgt] + [0])
-            example["alignment"] = mask
-        return example
 
 
 class ShardedTextCorpusIterator(object):

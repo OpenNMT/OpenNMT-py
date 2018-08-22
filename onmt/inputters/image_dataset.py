@@ -1,12 +1,7 @@
 # -*- coding: utf-8 -*-
-"""
-    ImageDataset
-"""
 
 import codecs
 import os
-
-from torchtext.data import Example
 
 from onmt.inputters.dataset_base import DatasetBase
 
@@ -31,34 +26,6 @@ class ImageDataset(DatasetBase):
     """
 
     data_type = 'img'
-
-    def __init__(self, fields, src_examples_iter, tgt_examples_iter,
-                 num_src_feats=0, num_tgt_feats=0,
-                 tgt_seq_length=0, use_filter_pred=True):
-        self.n_src_feats = num_src_feats
-        self.n_tgt_feats = num_tgt_feats
-
-        if tgt_examples_iter is not None:
-            examples_iter = (self._join_dicts(src, tgt) for src, tgt in
-                             zip(src_examples_iter, tgt_examples_iter))
-        else:
-            examples_iter = src_examples_iter
-
-        # Peek at the first to see which fields are used.
-        ex, examples_iter = self._peek(examples_iter)
-        keys = ex.keys()
-
-        fields = [(k, fields[k]) if k in fields else (k, None) for k in keys]
-        example_values = ([ex[k] for k in keys] for ex in examples_iter)
-        examples = [Example.fromlist(ev, fields) for ev in example_values]
-
-        def filter_pred(ex):
-            return 0 < len(ex.tgt) <= tgt_seq_length
-
-        filter_pred = filter_pred if use_filter_pred \
-            and tgt_examples_iter is not None else None
-
-        super(ImageDataset, self).__init__(examples, fields, filter_pred)
 
     @staticmethod
     def sort_key(ex):
