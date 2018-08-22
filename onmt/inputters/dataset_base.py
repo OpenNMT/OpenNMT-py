@@ -29,16 +29,11 @@ class DatasetBase(Dataset):
         objects, and not necessarily having the same keys as the input fields.
     """
     def __init__(self, fields, src_examples_iter, tgt_examples_iter,
-                 num_src_feats=0, num_tgt_feats=0,
                  src_seq_length=0, tgt_seq_length=0,
                  dynamic_dict=False, filter_pred=None):
         # self.src_vocabs: mutated in dynamic_dict, used in translation.py
         self.src_vocabs = []
 
-        # shouldn't need to pass either of these things because it should be
-        # clear from the fields. Not obvious you NEED these attributes, though
-        self.n_src_feats = num_src_feats
-        self.n_tgt_feats = num_tgt_feats
         # another question: why is the Dataset constructor used in preprocess
         # and translate but not train?
 

@@ -81,7 +81,6 @@ def build_sharded_datasets(src_corpus, tgt_corpus, fields, opt):
     while not src_iter.hit_end():
         dataset = inputters.TextDataset(
             fields, src_iter, tgt_iter,
-            src_iter.num_feats, tgt_iter.num_feats,
             src_seq_length=opt.src_seq_length,
             tgt_seq_length=opt.tgt_seq_length,
             dynamic_dict=opt.dynamic_dict)

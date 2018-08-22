@@ -324,13 +324,14 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
     # it will be disregarded silently, no need to raise an error.
 
     # text is the choice on the target side
-    tgt_examples_iter, num_tgt_feats = \
+    # TODO: look at make_examples_nfeats_tpl because nfeats isn't necessary
+    tgt_examples_iter, _ = \
         TextDataset.make_examples_nfeats_tpl(
             tgt_data_iter, tgt_path, tgt_seq_length_trunc, "tgt")
 
     src_data_cls = src_data_classes[data_type]
 
-    src_examples_iter, num_src_feats = src_data_cls.make_examples_nfeats_tpl(
+    src_examples_iter, _ = src_data_cls.make_examples_nfeats_tpl(
         iterator=src_data_iter, path=src_path,
         truncate=src_seq_length_trunc,
         side="src", directory=src_dir,
@@ -351,7 +352,6 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
 
     dataset = src_data_cls(
         fields, src_examples_iter, tgt_examples_iter,
-        num_src_feats, num_tgt_feats,
         src_seq_length=src_seq_length,
         tgt_seq_length=tgt_seq_length,
         dynamic_dict=dynamic_dict,
@@ -416,12 +416,12 @@ def build_vocabs(datasets, data_type, share_vocab,
         logger.info(" * src vocab size: %d." % len(fields["src"].vocab))
     logger.info(" * tgt vocab size: %d." % len(fields["tgt"].vocab))
 
-    for j in range(datasets[0].n_src_feats):
-        key = "src_feat_" + str(j)
-        logger.info(" * %s vocab size: %d." % (key, len(fields[key].vocab)))
-    for j in range(datasets[0].n_tgt_feats):
-        key = "tgt_feat_" + str(j)
-        logger.info(" * %s vocab size: %d." % (key, len(fields[key].vocab)))
+    src_feats = sorted(name for name in fields if "src_feat_" in name)
+    tgt_feats = sorted(name for name in fields if "tgt_feat_" in name)
+    for i, feat in enumerate(src_feats, 1):
+        logger.info(" * %s vocab size: %d." % (feat, len(fields[feat].vocab)))
+    for i, feat in enumerate(tgt_feats, 1):
+        logger.info(" * %s vocab size: %d." % (feat, len(fields[feat].vocab)))
 
     if data_type == 'text' and share_vocab:
         # Merge the input and output vocabularies.
