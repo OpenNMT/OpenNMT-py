@@ -390,20 +390,21 @@ def build_vocabs(datasets, data_type, share_vocab,
     fields = datasets[0].fields
     for name, field in fields.items():
         # beware of a case where field is None
-        if name == 'src':
-            field.build_vocab(
-                *datasets, max_size=src_vocab_size,
-                min_freq=src_words_min_frequency)
-            if src_vocab is not None:
-                field.vocab = filtered_vocab(field.vocab, src_vocab)
-        elif name == 'tgt':
-            field.build_vocab(
-                *datasets, max_size=tgt_vocab_size,
-                min_freq=tgt_words_min_frequency)
-            if tgt_vocab is not None:
-                field.vocab = filtered_vocab(field.vocab, tgt_vocab)
-        elif field.use_vocab:
-            field.build_vocab(*datasets)
+        if field.use_vocab:
+            if name == 'src':
+                field.build_vocab(
+                    *datasets, max_size=src_vocab_size,
+                    min_freq=src_words_min_frequency)
+                if src_vocab is not None:
+                    field.vocab = filtered_vocab(field.vocab, src_vocab)
+            elif name == 'tgt':
+                field.build_vocab(
+                    *datasets, max_size=tgt_vocab_size,
+                    min_freq=tgt_words_min_frequency)
+                if tgt_vocab is not None:
+                    field.vocab = filtered_vocab(field.vocab, tgt_vocab)
+            else:
+                field.build_vocab(*datasets)
 
     if data_type == 'text':
         logger.info(" * src vocab size: %d." % len(fields["src"].vocab))
