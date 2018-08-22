@@ -104,7 +104,7 @@ class AudioDataset(DatasetBase):
         if path is None:
             raise ValueError("AudioDataset requires a non None path")
         examples_iter = cls.read_audio_file(
-            path, audio_dir, "src", sample_rate,
+            path, directory, "src", sample_rate,
             window_size, window_stride, window,
             normalize_audio, truncate)
 
