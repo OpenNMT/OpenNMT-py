@@ -117,15 +117,13 @@ class TextDataset(DatasetBase):
         assert side in ['src', 'tgt']
 
         if iterator is None and path is None:
-            return None, 0
+            return None
         if path is not None:
             iterator = cls.make_iterator_from_file(path)
 
-        examples_nfeats_iter = cls.make_examples(iterator, truncate, side)
-        (_, num_feats), examples_nfeats_iter = cls._peek(examples_nfeats_iter)
-        examples_iter = (ex for ex, nfeats in examples_nfeats_iter)
+        examples_iter = cls.make_examples(iterator, truncate, side)
 
-        return examples_iter, num_feats
+        return examples_iter
 
     @classmethod
     def make_examples(cls, text_iter, truncate, side):
@@ -147,14 +145,14 @@ class TextDataset(DatasetBase):
             if truncate:
                 line = line[:truncate]
 
-            words, feats, n_feats = extract_text_features(line)
+            words, feats, _ = extract_text_features(line)
 
             example_dict = {side: words, "indices": i}
             if feats:
                 prefix = side + "_feat_"
                 example_dict.update((prefix + str(j), f)
                                     for j, f in enumerate(feats))
-            yield example_dict, n_feats
+            yield example_dict
 
     @classmethod
     def make_iterator_from_file(cls, path):

@@ -67,7 +67,7 @@ class AudioDataset(DatasetBase):
             window_size, window_stride, window,
             normalize_audio, truncate)
 
-        return examples_iter, 0
+        return examples_iter
 
     @classmethod
     def read_audio_file(cls, path, src_dir, side, sample_rate, window_size,

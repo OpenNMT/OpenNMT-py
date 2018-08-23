@@ -44,7 +44,7 @@ class ImageDataset(DatasetBase):
             src_dir (str): location of source images
 
         Returns:
-            (example_dict iterator, num_feats) tuple
+            example_dict iterator
         """
         # This method disregards one of its arguments. This should not be.
         if iterator is None and path is None:
@@ -53,7 +53,7 @@ class ImageDataset(DatasetBase):
         iterator = cls.make_iterator_from_file(path, directory)
         examples_iter = cls.make_examples(iterator, directory, 'src')
 
-        return examples_iter, 0
+        return examples_iter
 
     @classmethod
     def make_examples(cls, img_iter, src_dir, side, truncate=None):

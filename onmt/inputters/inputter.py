@@ -156,8 +156,6 @@ def load_fields_from_vocab(vocab, data_type="text"):
         values are fields created by a call to get_fields.
     """
     # this function is used:
-    # 2) in dataset_base.py, in the class method DatasetBase.load_fields, which
-    # is used in a .md and a jupyter notebook but not in the actual codebase
     # 3) in model_builder.py, in the function load_test_model, which is used
     # in translator.py.
     # 4) in extract_embeddings.py, in order to build the model whose embeddings
@@ -315,23 +313,21 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
     Build src/tgt examples iterator from corpus files, also extract
     number of features.
     """
+    # "also" is not good in functions
     # used in preprocess.py and translator.py
-    # seems like further simplification should be possible
     src_data_classes = {'text': TextDataset, 'img': ImageDataset,
                         'audio': AudioDataset}
     assert data_type in src_data_classes
-    # check for value of src_data_iter no longer checked for AudioDatasets:
-    # it will be disregarded silently, no need to raise an error.
 
+    # make_examples_nfeats_tpl is used only in this function
     # text is the choice on the target side
-    # TODO: look at make_examples_nfeats_tpl because nfeats isn't necessary
-    tgt_examples_iter, _ = \
-        TextDataset.make_examples_nfeats_tpl(
+    tgt_examples_iter = TextDataset.make_examples_nfeats_tpl(
             tgt_data_iter, tgt_path, tgt_seq_length_trunc, "tgt")
 
     src_data_cls = src_data_classes[data_type]
 
-    src_examples_iter, _ = src_data_cls.make_examples_nfeats_tpl(
+    # why are a path and an iterator both required?
+    src_examples_iter = src_data_cls.make_examples_nfeats_tpl(
         iterator=src_data_iter, path=src_path,
         truncate=src_seq_length_trunc,
         side="src", directory=src_dir,
@@ -395,7 +391,6 @@ def build_vocabs(datasets, data_type, share_vocab,
 
     fields = datasets[0].fields
     for name, field in fields.items():
-        # beware of a case where field is None
         if field.use_vocab:
             if name == 'src':
                 field.build_vocab(
