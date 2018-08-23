@@ -163,19 +163,16 @@ def load_fields_from_vocab(vocab, data_type="text"):
     # model_builder.build_base_model, which needs the fields as an argument
     # to inputters.collect_feature_vocabs, which it uses so that it can
     # have access to the feature vocabularies.
-    vocab = dict(vocab)
-    n_src_features = len([name for name in vocab if 'src_feat' in name])
-    n_tgt_features = len([name for name in vocab if 'tgt_feat' in name])
+    n_src_features = len([name for name, v in vocab if 'src_feat' in name])
+    n_tgt_features = len([name for name, v in vocab if 'tgt_feat' in name])
     fields = get_fields(data_type, n_src_features, n_tgt_features)
-    # why turn vocab from a sequence of tuples into a dict and then back into
-    # a sequence of tuples? It might make sense if the vocab arg might have a
-    # different type
-    for k, v in vocab.items():
+
+    for name, v in vocab:
         # Hack. Can't pickle defaultdict :(
         # bp: this isn't true, you can pickle a defaultdict if the callable
         # is defined at the top level of the class. You can't pickle lambdas.
         v.stoi = defaultdict(lambda: 0, v.stoi)
-        fields[k].vocab = v
+        fields[name].vocab = v
     return fields
 
 
