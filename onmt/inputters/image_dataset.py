@@ -33,7 +33,7 @@ class ImageDataset(DatasetBase):
         return ex.src.size(2), ex.src.size(1)
 
     @classmethod
-    def make_examples_nfeats_tpl(cls, iterator, path, directory, **kwargs):
+    def make_examples(cls, iterator, path, directory, **kwargs):
         """
         Note: one of img_iter and img_path must be not None
         Args:
@@ -51,12 +51,12 @@ class ImageDataset(DatasetBase):
             raise ValueError("'iterator' and 'path' must not both be None")
 
         iterator = cls.make_iterator_from_file(path, directory)
-        examples_iter = cls.make_examples(iterator, directory, 'src')
+        examples_iter = cls._make_examples(iterator, directory, 'src')
 
         return examples_iter
 
     @classmethod
-    def make_examples(cls, img_iter, src_dir, side, truncate=None):
+    def _make_examples(cls, img_iter, src_dir, side, truncate=None):
         """
         Args:
             path (str): location of a src file containing image paths

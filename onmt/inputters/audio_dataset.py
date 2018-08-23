@@ -42,9 +42,9 @@ class AudioDataset(DatasetBase):
         return ex.src.size(1)
 
     @classmethod
-    def make_examples_nfeats_tpl(cls, path, directory, sample_rate,
-                                 window_size, window_stride, window,
-                                 normalize_audio, truncate=None, **kwargs):
+    def make_examples(cls, path, directory, sample_rate,
+                      window_size, window_stride, window,
+                      normalize_audio, truncate=None, **kwargs):
         """
         Args:
             path (str): location of a src file containing audio paths.
@@ -62,7 +62,7 @@ class AudioDataset(DatasetBase):
         """
         if path is None:
             raise ValueError("AudioDataset requires a non None path")
-        examples_iter = cls.read_audio_file(
+        examples_iter = cls.make_iterator_from_file(
             path, directory, "src", sample_rate,
             window_size, window_stride, window,
             normalize_audio, truncate)
@@ -70,9 +70,9 @@ class AudioDataset(DatasetBase):
         return examples_iter
 
     @classmethod
-    def read_audio_file(cls, path, src_dir, side, sample_rate, window_size,
-                        window_stride, window, normalize_audio,
-                        truncate=None):
+    def make_iterator_from_file(
+        cls, path, src_dir, side, sample_rate, window_size,
+        window_stride, window, normalize_audio, truncate=None):
         """
         Args:
             path (str): location of a src file containing audio paths.

@@ -99,8 +99,7 @@ class TextDataset(DatasetBase):
         return scores
 
     @classmethod
-    def make_examples_nfeats_tpl(cls, iterator, path,
-                                 truncate, side, **kwargs):
+    def make_examples(cls, iterator, path, truncate, side, **kwargs):
         """
         Args:
             text_iter(iterator): an iterator (or None) that we can loop over
@@ -121,12 +120,12 @@ class TextDataset(DatasetBase):
         if path is not None:
             iterator = cls.make_iterator_from_file(path)
 
-        examples_iter = cls.make_examples(iterator, truncate, side)
+        examples_iter = cls._make_examples(iterator, truncate, side)
 
         return examples_iter
 
     @classmethod
-    def make_examples(cls, text_iter, truncate, side):
+    def _make_examples(cls, text_iter, truncate, side):
         """
         Args:
             text_iter (iterator): iterator of text sequences

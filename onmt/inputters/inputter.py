@@ -321,13 +321,13 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
 
     # make_examples_nfeats_tpl is used only in this function
     # text is the choice on the target side
-    tgt_examples_iter = TextDataset.make_examples_nfeats_tpl(
+    tgt_examples_iter = TextDataset.make_examples(
             tgt_data_iter, tgt_path, tgt_seq_length_trunc, "tgt")
 
     src_data_cls = src_data_classes[data_type]
 
     # why are a path and an iterator both required?
-    src_examples_iter = src_data_cls.make_examples_nfeats_tpl(
+    src_examples_iter = src_data_cls.make_examples(
         iterator=src_data_iter, path=src_path,
         truncate=src_seq_length_trunc,
         side="src", directory=src_dir,
