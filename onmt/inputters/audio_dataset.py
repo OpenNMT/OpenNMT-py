@@ -42,55 +42,15 @@ class AudioDataset(DatasetBase):
         return ex.src.size(1)
 
     @classmethod
-    def make_examples(cls, path, directory, sample_rate,
-                      window_size, window_stride, window,
-                      normalize_audio, truncate=None, **kwargs):
-        """
-        Args:
-            path (str): location of a src file containing audio paths.
-            audio_dir (str): location of source audio files.
-            sample_rate (int): sample_rate.
-            window_size (float) : window size for spectrogram in seconds.
-            window_stride (float): window stride for spectrogram in seconds.
-            window (str): window type for spectrogram generation.
-            normalize_audio (bool): subtract spectrogram by mean and divide
-                by std or not.
-            truncate (int): maximum audio length (0 or None for unlimited).
-
-        Returns:
-            (example_dict iterator, num_feats) tuple
-        """
-        if path is None:
-            raise ValueError("AudioDataset requires a non None path")
-        examples_iter = cls.make_iterator_from_file(
-            path, directory, "src", sample_rate,
-            window_size, window_stride, window,
-            normalize_audio, truncate)
-
-        return examples_iter
+    def _make_examples(cls, iterator, **kwargs):
+        for i, (spect, line) in enumerate(iterator):
+            yield {'src': spect, 'src_path': line.strip(), 'indices': i}
 
     @classmethod
-    def make_iterator_from_file(
-        cls, path, src_dir, side, sample_rate, window_size,
-        window_stride, window, normalize_audio, truncate=None):
-        """
-        Args:
-            path (str): location of a src file containing audio paths.
-            src_dir (str): location of source audio files.
-            side (str): 'src' or 'tgt'.
-            sample_rate (int): sample_rate.
-            window_size (float) : window size for spectrogram in seconds.
-            window_stride (float): window stride for spectrogram in seconds.
-            window (str): window type for spectrogram generation.
-            normalize_audio (bool): subtract spectrogram by mean and divide
-                by std or not.
-            truncate (int): maximum audio length (0 or None for unlimited).
-
-        Yields:
-            a dictionary containing audio data for each line.
-        """
-        # might be the case that this needs to be an instance method
-        assert src_dir is not None and os.path.exists(src_dir), \
+    def _make_iterator_from_file(
+            cls, path, directory, sample_rate, window_size, window_stride,
+            window, normalize_audio, truncate=None, **kwargs):
+        assert directory is not None and os.path.exists(directory), \
             "src_dir must be a valid directory if data_type is audio"
 
         import torchaudio
@@ -98,14 +58,13 @@ class AudioDataset(DatasetBase):
         import numpy as np
 
         with codecs.open(path, "r", "utf-8") as corpus_file:
-            index = 0
             for line in corpus_file:
-                audio_path = os.path.join(src_dir, line.strip())
+                audio_path = os.path.join(directory, line.strip())
                 if not os.path.exists(audio_path):
                     audio_path = line
 
                 assert os.path.exists(audio_path), \
-                    'audio path %s not found' % (line.strip())
+                    'audio path %s not found' % line.strip()
 
                 sound, sample_rate = torchaudio.load(audio_path)
                 if truncate and truncate > 0:
@@ -139,9 +98,4 @@ class AudioDataset(DatasetBase):
                     spect.add_(-mean)
                     spect.div_(std)
 
-                example_dict = {side: spect,
-                                side + '_path': line.strip(),
-                                'indices': index}
-                index += 1
-
-                yield example_dict
+                yield spect, line.strip()

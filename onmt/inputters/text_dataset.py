@@ -99,33 +99,7 @@ class TextDataset(DatasetBase):
         return scores
 
     @classmethod
-    def make_examples(cls, iterator, path, truncate, side, **kwargs):
-        """
-        Args:
-            text_iter(iterator): an iterator (or None) that we can loop over
-                to read examples.
-                It may be an openned file, a string list etc...
-            text_path(str): path to file or None
-            path (str): location of a src or tgt file.
-            truncate (int): maximum sequence length (0 for unlimited).
-            side (str): "src" or "tgt".
-
-        Returns:
-            (example_dict iterator, num_feats) tuple.
-        """
-        assert side in ['src', 'tgt']
-
-        if iterator is None and path is None:
-            return None
-        if path is not None:
-            iterator = cls.make_iterator_from_file(path)
-
-        examples_iter = cls._make_examples(iterator, truncate, side)
-
-        return examples_iter
-
-    @classmethod
-    def _make_examples(cls, text_iter, truncate, side):
+    def _make_examples(cls, iterator, truncate, side, **kwargs):
         """
         Args:
             text_iter (iterator): iterator of text sequences
@@ -136,10 +110,8 @@ class TextDataset(DatasetBase):
             dict, int pairs where the dict is example stuff and the int is
             the number of features
         """
-        # doesn't make examples.
-        # this and the analogous methods in the other datasets are
-        # used only in the make_examples_nfeats_tpl methods
-        for i, line in enumerate(text_iter):
+        assert side in ['src', 'tgt']
+        for i, line in enumerate(iterator):
             line = line.strip().split()
             if truncate:
                 line = line[:truncate]
@@ -154,7 +126,7 @@ class TextDataset(DatasetBase):
             yield example_dict
 
     @classmethod
-    def make_iterator_from_file(cls, path):
+    def _make_iterator_from_file(cls, path, **kwargs):
         with codecs.open(path, "r", "utf-8") as corpus_file:
             for line in corpus_file:
                 yield line

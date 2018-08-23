@@ -33,30 +33,7 @@ class ImageDataset(DatasetBase):
         return ex.src.size(2), ex.src.size(1)
 
     @classmethod
-    def make_examples(cls, iterator, path, directory, **kwargs):
-        """
-        Note: one of img_iter and img_path must be not None
-        Args:
-            img_iter(iterator): an iterator that yields pairs (img, filename)
-                or None
-            img_path(str): location of a src file containing image paths
-                or None
-            src_dir (str): location of source images
-
-        Returns:
-            example_dict iterator
-        """
-        # This method disregards one of its arguments. This should not be.
-        if iterator is None and path is None:
-            raise ValueError("'iterator' and 'path' must not both be None")
-
-        iterator = cls.make_iterator_from_file(path, directory)
-        examples_iter = cls._make_examples(iterator, directory, 'src')
-
-        return examples_iter
-
-    @classmethod
-    def _make_examples(cls, img_iter, src_dir, side, truncate=None):
+    def _make_examples(cls, iterator, truncate=None, **kwargs):
         """
         Args:
             path (str): location of a src file containing image paths
@@ -67,11 +44,7 @@ class ImageDataset(DatasetBase):
         Yields:
             a dictionary containing image data, path and index for each line.
         """
-        assert src_dir is not None and os.path.exists(src_dir), \
-            'src_dir must be a valid directory if data_type is {}'.format(
-            cls.data_type)
-
-        for index, (img, filename) in enumerate(img_iter):
+        for i, (img, filename) in enumerate(iterator):
             if truncate and truncate != (0, 0):
                 if not (img.size(1) <= truncate[0]
                         and img.size(2) <= truncate[1]):
@@ -79,13 +52,10 @@ class ImageDataset(DatasetBase):
 
             # if the continue statement is reached, then the outputs of this
             # function will have missing indices
-            example_dict = {side: img,
-                            side + '_path': filename,
-                            'indices': index}
-            yield example_dict
+            yield {'src': img, 'src_path': filename, 'indices': i}
 
     @classmethod
-    def make_iterator_from_file(cls, path, src_dir):
+    def _make_iterator_from_file(cls, path, directory, **kwargs):
         """
         Args:
             path(str):
@@ -95,13 +65,17 @@ class ImageDataset(DatasetBase):
             img: and image tensor
             filename(str): the image filename
         """
+        assert directory is not None and os.path.exists(directory), \
+            'src_dir must be a valid directory if data_type is {}'.format(
+            cls.data_type)
+
         from PIL import Image
         from torchvision import transforms
 
         with codecs.open(path, "r", "utf-8") as corpus_file:
             for line in corpus_file:
                 filename = line.strip()
-                img_path = os.path.join(src_dir, filename)
+                img_path = os.path.join(directory, filename)
                 if not os.path.exists(img_path):
                     img_path = line
 

@@ -56,6 +56,28 @@ class DatasetBase(Dataset):
 
         super(DatasetBase, self).__init__(examples, fields, filter_pred)
 
+    @classmethod
+    def make_examples(cls, iterator, path, **kwargs):
+        """
+        TODO: fix documentation
+        """
+        if iterator is None and path is None:
+            raise ValueError("'iterator' and 'path' must not both be None")
+        if path is not None:
+            iterator = cls._make_iterator_from_file(path, **kwargs)
+
+        examples_iter = cls._make_examples(iterator, **kwargs)
+
+        return examples_iter
+
+    @classmethod
+    def _make_iterator_from_file(cls, path, **kwargs):
+        return NotImplemented
+
+    @classmethod
+    def _make_examples(cls, *args, **kwargs):
+        return NotImplemented
+
     def __getstate__(self):
         return self.__dict__
 
@@ -109,17 +131,3 @@ class DatasetBase(Dataset):
                 [0] + [src_vocab.stoi[w] for w in tgt] + [0])
             example["alignment"] = mask
         return example
-
-    @classmethod
-    def _peek(cls, seq):
-        """
-        Args:
-            seq: an iterator.
-
-        Returns:
-            the first thing returned by calling next() on the iterator
-            and an iterator created by re-chaining that value to the beginning
-            of the iterator.
-        """
-        first = next(seq)
-        return first, chain([first], seq)
