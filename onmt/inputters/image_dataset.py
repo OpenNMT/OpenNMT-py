@@ -45,6 +45,8 @@ class ImageDataset(DatasetBase):
             a dictionary containing image data, path and index for each line.
         """
         for i, (img, filename) in enumerate(iterator):
+            # problem is that the value of truncate getting passed is an int,
+            # which is not subscriptable
             if truncate and truncate != (0, 0):
                 if not (img.size(1) <= truncate[0]
                         and img.size(2) <= truncate[1]):
