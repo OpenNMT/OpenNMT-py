@@ -43,8 +43,9 @@ class AverageAttention(nn.Module):
             * A Tensor of shape `[batch_size x input_len x input_len]`
         """
 
-        triangle = torch.tril(torch.ones((inputs_len, inputs_len)))
-        weights = torch.ones((1, inputs_len)) / torch.arange(1, inputs_len + 1)
+        triangle = torch.tril(torch.ones(inputs_len, inputs_len))
+        weights = torch.ones(1, inputs_len) / torch.arange(
+            1, inputs_len + 1, dtype=torch.float)
         mask = triangle * weights.transpose(0, 1)
 
         return mask.unsqueeze(0).expand(batch_size, inputs_len, inputs_len)
