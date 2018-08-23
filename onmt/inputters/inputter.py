@@ -164,8 +164,8 @@ def load_fields_from_vocab(vocab, data_type="text"):
     # to inputters.collect_feature_vocabs, which it uses so that it can
     # have access to the feature vocabularies.
     vocab = dict(vocab)
-    n_src_features = len(collect_features(vocab, 'src'))
-    n_tgt_features = len(collect_features(vocab, 'tgt'))
+    n_src_features = len([name for name in vocab if 'src_feat' in name])
+    n_tgt_features = len([name for name in vocab if 'tgt_feat' in name])
     fields = get_fields(data_type, n_src_features, n_tgt_features)
     # why turn vocab from a sequence of tuples into a dict and then back into
     # a sequence of tuples? It might make sense if the vocab arg might have a
@@ -262,24 +262,6 @@ def make_features(batch, side, data_type='text'):
         return torch.cat([level.unsqueeze(2) for level in levels], 2)
     else:
         return levels[0]
-
-
-def collect_features(fields, side="src"):
-    """
-    Collect features from a diction object.
-    fields: a dict whose keys are strings and whose values are Field objects.
-    side: src or tgt
-    returns: list of the string names of the features on the given side
-    """
-    # used only in inputter.py in load_fields_from_vocab
-    assert side in ["src", "tgt"]
-    feats = []
-    for j in count():
-        key = side + "_feat_" + str(j)
-        if key not in fields:
-            break
-        feats.append(key)
-    return feats
 
 
 def collect_feature_vocabs(fields, side):
