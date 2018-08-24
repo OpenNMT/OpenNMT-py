@@ -310,7 +310,8 @@ class ServerModel:
         if len(texts_to_translate) > 0:
             try:
                 scores, predictions = self.translator.translate(
-                    src_data_iter=texts_to_translate, batch_size=self.opt.batch_size)
+                    src_data_iter=texts_to_translate,
+                    batch_size=self.opt.batch_size)
             except RuntimeError as e:
                 raise ServerModelError("Runtime Error: %s" % str(e))
 
@@ -329,7 +330,7 @@ class ServerModel:
                   for score_tensor in flatten_list(scores)]
 
         results = [self.maybe_detokenize(item)
-                       for item in results]
+                   for item in results]
 
         # build back results with empty texts
         for i in empty_indices:
