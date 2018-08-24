@@ -81,7 +81,7 @@ class AudioEncoder(nn.Module):
 
         batch_size, _, nfft, t = src.size()
         src = src.transpose(0, 1).transpose(0, 3).contiguous() \
-                     .view(t, batch_size, nfft)
+                 .view(t, batch_size, nfft)
         orig_lengths = lengths
         lengths = lengths.view(-1).tolist()
 

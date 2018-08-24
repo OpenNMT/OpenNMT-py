@@ -160,11 +160,11 @@ def build_save_audio_dataset_in_shards(src_corpus, tgt_corpus, fields,
               '(shard_size = %d lines).' % opt.max_shard_size)
 
     ret_list = []
-    src_iter = onmt.io.ShardedAudioCorpusIterator(
+    src_iter = inputters.ShardedAudioCorpusIterator(
         opt.src_dir, src_corpus, opt.src_seq_length_trunc, "src",
         opt.max_shard_size, opt.sample_rate, opt.window_size,
         opt.window_stride, opt.window)
-    tgt_iter = onmt.io.ShardedTextCorpusIterator(
+    tgt_iter = inputters.ShardedTextCorpusIterator(
         tgt_corpus, opt.tgt_seq_length_trunc,
         "tgt", opt.max_shard_size,
         assoc_iter=src_iter)
@@ -172,8 +172,8 @@ def build_save_audio_dataset_in_shards(src_corpus, tgt_corpus, fields,
     index = 0
     while not src_iter.hit_end():
         index += 1
-        dataset = onmt.io.AudioDataset(fields, src_iter, tgt_iter,
-                                       tgt_seq_length=opt.tgt_seq_length)
+        dataset = inputters.AudioDataset(fields, src_iter, tgt_iter,
+                                         tgt_seq_length=opt.tgt_seq_length)
 
         # We save fields in vocab.pt seperately, so make it empty.
         dataset.fields = []

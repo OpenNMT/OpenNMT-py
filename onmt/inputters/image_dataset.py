@@ -199,7 +199,6 @@ class ImageDataset(DatasetBase):
                 torchtext.data.Field(init_token=BOS_WORD, eos_token=EOS_WORD,
                                      pad_token=PAD_WORD)
 
-
         fields["indices"] = torchtext.data.Field(
             use_vocab=False, dtype=torch.long,
             sequential=False)
