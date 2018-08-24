@@ -1,9 +1,12 @@
 """ Audio encoder """
 import math
+
 import torch.nn as nn
+
 from torch.nn.utils.rnn import pack_padded_sequence as pack
 from torch.nn.utils.rnn import pad_packed_sequence as unpack
-from onmt.Models import rnn_factory
+
+from onmt.utils.rnn_factory import rnn_factory
 
 
 class AudioEncoder(nn.Module):
@@ -71,10 +74,6 @@ class AudioEncoder(nn.Module):
             setattr(self, 'pool_%d' % (l + 1),
                     nn.MaxPool1d(enc_pooling[l + 1]))
             setattr(self, 'batchnorm_%d' % (l + 1), batchnorm)
-
-    def load_pretrained_vectors(self, opt):
-        """ Pass in needed options only when modify function definition."""
-        pass
 
     def forward(self, src, lengths=None):
         "See :obj:`onmt.encoders.encoder.EncoderBase.forward()`"
