@@ -46,7 +46,7 @@ def model_opts(parser):
                        embedding sizes will be set to N^feat_vec_exponent
                        where N is the number of values the feature takes.""")
 
-    # Encoder-Deocder Options
+    # Encoder-Decoder Options
     group = parser.add_argument_group('Model- Encoder-Decoder')
     group.add_argument('-model_type', default='text',
                        help="""Type of source model to use. Allows
