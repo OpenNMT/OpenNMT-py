@@ -227,12 +227,15 @@ class ServerModel:
         timer.tick("model_loading")
         if self.tokenizer_opt is not None:
             self.logger.info("Loading tokenizer")
-            mandatory = ["type", "model"]
-            for m in mandatory:
-                if m not in self.tokenizer_opt:
-                    raise ValueError("Missing mandatory tokenizer option '%s'"
-                                     % m)
+
+            if "type" not in self.tokenizer_opt:
+                raise ValueError(
+                    "Missing mandatory tokenizer option 'type'")
+
             if self.tokenizer_opt['type'] == 'sentencepiece':
+                if "model" not in self.tokenizer_opt:
+                    raise ValueError(
+                        "Missing mandatory tokenizer option 'model'")
                 import sentencepiece as spm
                 sp = spm.SentencePieceProcessor()
                 model_path = os.path.join(self.model_root,
@@ -240,6 +243,9 @@ class ServerModel:
                 sp.Load(model_path)
                 self.tokenizer = sp
             elif self.tokenizer_opt['type'] == 'pyonmttok':
+                if "params" not in self.tokenizer_opt:
+                    raise ValueError(
+                        "Missing mandatory tokenizer option 'params'")
                 import pyonmttok
                 if self.tokenizer_opt["mode"] is not None:
                     mode = self.tokenizer_opt["mode"]
