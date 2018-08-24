@@ -250,13 +250,7 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
 
     elif data_type == 'audio':
         dataset = AudioDataset(fields, src_examples_iter, tgt_examples_iter,
-                               num_src_feats, num_tgt_feats,
                                tgt_seq_length=tgt_seq_length,
-                               sample_rate=sample_rate,
-                               window_size=window_size,
-                               window_stride=window_stride,
-                               window=window,
-                               normalize_audio=normalize_audio,
                                use_filter_pred=use_filter_pred)
 
     return dataset
@@ -305,8 +299,8 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
         for ex in dataset.examples:
             for k in fields:
                 val = getattr(ex, k, None)
-                if val is not None and not fields[k].sequential:
-                    val = [val]
+                if not fields[k].sequential:
+                    continue
                 elif k == 'src' and src_vocab:
                     val = [item for item in val if item in src_vocab]
                 elif k == 'tgt' and tgt_vocab:

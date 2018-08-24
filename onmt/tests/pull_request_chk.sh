@@ -35,7 +35,7 @@ environment_prepare()
   head /tmp/im2text/src-val.txt > /tmp/im2text/src-val-head.txt
   head /tmp/im2text/tgt-val.txt > /tmp/im2text/tgt-val-head.txt
 
-  wget -q -O /tmp/test_model_speech.pt http://lstm.seas.harvard.edu/latex/test_model_speech.pt
+  wget -q -O /tmp/test_model_speech.pt http://lstm.seas.harvard.edu/latex/test_model_speech_11june18.pt
 
   # Download speech2text corpus
   wget -q -O /tmp/speech.tgz http://lstm.seas.harvard.edu/latex/speech.tgz

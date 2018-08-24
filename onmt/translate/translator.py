@@ -23,6 +23,9 @@ def build_translator(opt, report_score=True, logger=None, out_file=None):
 
     if opt.gpu > -1:
         torch.cuda.set_device(opt.gpu)
+        device = torch.device('cuda')
+    else:
+        device = torch.device('cpu')
 
     dummy_parser = argparse.ArgumentParser(description='train.py')
     opts.model_opts(dummy_parser)
@@ -40,9 +43,11 @@ def build_translator(opt, report_score=True, logger=None, out_file=None):
               for k in ["beam_size", "n_best", "max_length", "min_length",
                         "stepwise_penalty", "block_ngram_repeat",
                         "ignore_when_blocking", "dump_beam", "report_bleu",
-                        "data_type", "replace_unk", "gpu", "verbose", "fast"]}
+                        "data_type", "replace_unk", "gpu", "verbose", "fast",
+                        "sample_rate", "window_size", "window_stride",
+                        "window"]}
 
-    translator = Translator(model, fields, global_scorer=scorer,
+    translator = Translator(model, fields, global_scorer=scorer, device=device,
                             out_file=out_file, report_score=report_score,
                             copy_attn=model_opt.copy_attn, logger=logger,
                             **kwargs)
@@ -79,12 +84,13 @@ class Translator(object):
                  copy_attn=False,
                  logger=None,
                  gpu=False,
+                 device=None,
                  dump_beam="",
                  min_length=0,
                  stepwise_penalty=False,
                  block_ngram_repeat=0,
                  ignore_when_blocking=[],
-                 sample_rate='16000',
+                 sample_rate=16000,
                  window_size=.02,
                  window_stride=.01,
                  window='hamming',
@@ -102,6 +108,7 @@ class Translator(object):
         self.cuda = gpu > -1
 
         self.model = model
+        self.device = device
         self.fields = fields
         self.n_best = n_best
         self.max_length = max_length
@@ -241,9 +248,10 @@ class Translator(object):
                     preds = trans.pred_sents[0]
                     preds.append('</s>')
                     attns = trans.attns[0].tolist()
+                    srcs = [str(item) for item in range(len(attns[0]))]
                     header_format = "{:>10.10} " + "{:>10.7} " * len(srcs)
                     row_format = "{:>10.10} " + "{:>10.7f} " * len(srcs)
-                    output = header_format.format("", *trans.src_raw) + '\n'
+                    output = header_format.format("", *srcs) + '\n'
                     for word, row in zip(preds, attns):
                         max_index = row.index(max(row))
                         row_format = row_format.replace(
@@ -516,8 +524,13 @@ class Translator(object):
         src_lengths = None
         if data_type == 'text':
             _, src_lengths = batch.src
-
-        enc_states, memory_bank = self.model.encoder(src, src_lengths)
+        elif data_type == 'audio':
+            src_lengths = batch.src_lengths
+        if data_type == 'audio':
+            enc_states, memory_bank, src_lengths \
+                    = self.model.encoder(src, src_lengths)
+        else:
+            enc_states, memory_bank = self.model.encoder(src, src_lengths)
         dec_states = self.model.decoder.init_decoder_state(
             src, memory_bank, enc_states)
 
@@ -617,13 +630,19 @@ class Translator(object):
         data_type = data.data_type
         if data_type == 'text':
             _, src_lengths = batch.src
+        elif data_type == 'audio':
+            src_lengths = batch.src_lengths
         else:
             src_lengths = None
         src = inputters.make_features(batch, 'src', data_type)
         tgt_in = inputters.make_features(batch, 'tgt')[:-1]
 
         #  (1) run the encoder on the src
-        enc_states, memory_bank = self.model.encoder(src, src_lengths)
+        if data_type == 'audio':
+            enc_states, memory_bank, src_lengths \
+                    = self.model.encoder(src, src_lengths)
+        else:
+            enc_states, memory_bank = self.model.encoder(src, src_lengths)
         dec_states = \
             self.model.decoder.init_decoder_state(src, memory_bank, enc_states)
 
