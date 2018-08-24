@@ -27,15 +27,7 @@ class AudioDataset(DatasetBase):
                 dictionary iterator.
             tgt_examples_iter (dict iter): preprocessed target example
                 dictionary iterator.
-            num_src_feats (int): number of source side features.
-            num_tgt_feats (int): number of target side features.
             tgt_seq_length (int): maximum target sequence length.
-            sample_rate (int): sample rate.
-            window_size (float): window size for spectrogram in seconds.
-            window_stride (float): window stride for spectrogram in seconds.
-            window (str): window type for spectrogram generation.
-            normalize_audio (bool): subtract spectrogram by mean and divide
-                by std or not.
             use_filter_pred (bool): use a custom filter predicate to filter
                 out examples?
     """
@@ -288,10 +280,17 @@ class ShardedAudioCorpusIterator(object):
                  window, normalize_audio=True, assoc_iter=None):
         """
         Args:
-            corpus_path: the corpus file path.
-            truncate: .
+            src_dir: the directory containing audio files
+            corpus_path: the path containing audio file names
+            truncate: maximum audio length (0 or None for unlimited).
             side: "src" or "tgt".
             shard_size: the shard size, 0 means not sharding the file.
+            sample_rate (int): sample_rate.
+            window_size (float) : window size for spectrogram in seconds.
+            window_stride (float): window stride for spectrogram in seconds.
+            window (str): window type for spectrogram generation.
+            normalize_audio (bool): subtract spectrogram by mean and divide
+                by std or not.
             assoc_iter: if not None, it is the associate iterator that
                         this iterator should align its step with.
         """
@@ -346,11 +345,6 @@ class ShardedAudioCorpusIterator(object):
             self.corpus.seek(self.last_pos)
             while True:
                 if self.shard_size != 0 and self.line_index % 64 == 0:
-                    # This part of check is time consuming on Py2 (but
-                    # it is quite fast on Py3, weird!). So we don't bother
-                    # to check for very line. Instead we chekc every 64
-                    # lines. Thus we are not dividing exactly per
-                    # `shard_size`, but it is not too much difference.
                     cur_pos = self.corpus.tell()
                     if self.line_index \
                             >= self.last_line_index + self.shard_size:
