@@ -227,29 +227,38 @@ class ServerModel:
         timer.tick("model_loading")
         if self.tokenizer_opt is not None:
             self.logger.info("Loading tokenizer")
-            mandatory = ["type", "model"]
-            for m in mandatory:
-                if m not in self.tokenizer_opt:
-                    raise ValueError("Missing mandatory tokenizer option '%s'"
-                                     % m)
+
+            if "type" not in self.tokenizer_opt:
+                raise ValueError(
+                    "Missing mandatory tokenizer option 'type'")
+
             if self.tokenizer_opt['type'] == 'sentencepiece':
+                if "model" not in self.tokenizer_opt:
+                    raise ValueError(
+                        "Missing mandatory tokenizer option 'model'")
                 import sentencepiece as spm
                 sp = spm.SentencePieceProcessor()
                 model_path = os.path.join(self.model_root,
                                           self.tokenizer_opt['model'])
                 sp.Load(model_path)
                 self.tokenizer = sp
-            elif self.tokenizer_opt['type'] == 'bpe_onmt_tokenizer':
+            elif self.tokenizer_opt['type'] == 'pyonmttok':
+                if "params" not in self.tokenizer_opt:
+                    raise ValueError(
+                        "Missing mandatory tokenizer option 'params'")
                 import pyonmttok
-                model_path = os.path.join(self.model_root,
-                                          self.tokenizer_opt['model'])
-                tokenizer = pyonmttok.Tokenizer(
-                    "aggressive",
-                    bpe_model_path=model_path,
-                    joiner_annotate=True,
-                    joiner_new=True,
-                    preserve_placeholders=True)
+                if self.tokenizer_opt["mode"] is not None:
+                    mode = self.tokenizer_opt["mode"]
+                else:
+                    mode = None
+                for key, value in self.tokenizer_opt["params"].items():
+                    if key.endswith("path"):
+                        self.tokenizer_opt["params"][key] = os.path.join(
+                            self.model_root, value)
+                tokenizer = pyonmttok.Tokenizer(mode,
+                                                **self.tokenizer_opt["params"])
                 self.tokenizer = tokenizer
+
             else:
                 raise ValueError("Invalid value for tokenizer type")
 
@@ -422,7 +431,7 @@ class ServerModel:
         if self.tokenizer_opt["type"] == "sentencepiece":
             tok = self.tokenizer.EncodeAsPieces(sequence)
             tok = " ".join(tok)
-        elif self.tokenizer_opt["type"] == "bpe_onmt_tokenizer":
+        elif self.tokenizer_opt["type"] == "pyonmttok":
             tok, _ = self.tokenizer.tokenize(sequence)
             tok = " ".join(tok)
         return tok
@@ -446,7 +455,7 @@ class ServerModel:
 
         if self.tokenizer_opt["type"] == "sentencepiece":
             detok = self.tokenizer.DecodePieces(sequence.split())
-        elif self.tokenizer_opt["type"] == "bpe_onmt_tokenizer":
+        elif self.tokenizer_opt["type"] == "pyonmttok":
             detok = self.tokenizer.detokenize(sequence.split())
 
         return detok
