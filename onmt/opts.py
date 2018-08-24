@@ -71,13 +71,16 @@ def model_opts(parser):
     group.add_argument('-dec_layers', type=int, default=2,
                        help='Number of layers in the decoder')
     group.add_argument('-rnn_size', type=int, default=-1,
-                       help='Size of rnn hidden states')
+                       help="""Size of rnn hidden states. Overwrites
+                       enc_rnn_size and dec_rnn_size""")
     group.add_argument('-enc_rnn_size', type=int, default=500,
-                       help="""Size of rnn hidden states of audio encoder.
-                       ONLY supported for speech-to-text model now.""")
+                       help="""Size of encoder rnn hidden states.
+                       Must be equal to dec_rnn_size except for
+                       speech-to-text.""")
     group.add_argument('-dec_rnn_size', type=int, default=500,
-                       help="""Size of rnn hidden states of audio decoder.
-                       ONLY supported for speech-to-text model now.""")
+                       help="""Size of decoder rnn hidden states.
+                       Must be equal to enc_rnn_size except for
+                       speech-to-text.""")
     group.add_argument('-audio_enc_pooling', type=str, default='1',
                        help="""The amount of pooling of audio encoder,
                        either the same amount of pooling across all layers

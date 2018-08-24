@@ -38,6 +38,9 @@ Create dynamic dictionaries
 Share source and target vocabulary
 
 ### **Beam**:
+* **-fast []** 
+Use fast beam search (some features may not be supported!)
+
 * **-beam_size [5]** 
 Beam size
 
@@ -82,6 +85,9 @@ source token
 ### **Logging**:
 * **-verbose []** 
 Print scores and predictions for each sentence
+
+* **-log_file []** 
+Output logs to a file under this path.
 
 * **-attn_debug []** 
 Print best attn for each word

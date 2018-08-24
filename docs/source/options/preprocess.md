@@ -29,7 +29,8 @@ Output file for the prepared data
 * **-max_shard_size []** 
 For text corpus of large volume, it will be divided into shards of this size to
 preprocess. If 0, the data will be handled as a whole. The unit is in bytes.
-Optimal value should be multiples of 64 bytes.
+Optimal value should be multiples of 64 bytes. A commonly used sharding value is
+131072000. It is recommended to ensure the corpus is shuffled before sharding.
 
 ### **Vocab**:
 * **-src_vocab []** 
@@ -83,6 +84,9 @@ Random seed
 ### **Logging**:
 * **-report_every [100000]** 
 Report status every this many sentences
+
+* **-log_file []** 
+Output logs to a file under this path.
 
 ### **Speech**:
 * **-sample_rate [16000]** 
