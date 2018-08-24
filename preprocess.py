@@ -120,6 +120,74 @@ def build_save_in_shards(src_corpus, tgt_corpus, fields,
     return ret_list
 
 
+def build_save_audio_dataset_in_shards(src_corpus, tgt_corpus, fields,
+                                       corpus_type, opt):
+    '''
+    Divide the big corpus into shards, and build dataset separately.
+    This is currently only for data_type=='text' or data_type=='audio'.
+
+    The reason we do this is to avoid taking up too much memory due
+    to sucking in a huge corpus file.
+
+    To tackle this, we only read in part of the corpus file of size
+    `max_shard_size`(actually it is multiples of 64 bytes that equals
+    or is slightly larger than this size), and process it into dataset,
+    then write it to disk along the way. By doing this, we only focus on
+    part of the corpus at any moment, thus effectively reducing memory use.
+    According to test, this method can reduce memory footprint by ~50%.
+
+    Note! As we process along the shards, previous shards might still
+    stay in memory, but since we are done with them, and no more
+    reference to them, if there is memory tight situation, the OS could
+    easily reclaim these memory.
+
+    If `max_shard_size` is 0 or is larger than the corpus size, it is
+    effectively preprocessed into one dataset, i.e. no sharding.
+
+    NOTE! `max_shard_size` is measuring the input corpus size, not the
+    output pt file size. So a shard pt file consists of examples of size
+    2 * `max_shard_size`(source + target).
+    '''
+
+    corpus_size = sum([1 for l in open(src_corpus)])
+    if corpus_size > 2000 and opt.max_shard_size == 0:
+        print("Warning. The corpus %s contains more than 2000 files, you can "
+              "set '-max_shard_size' to process it by small shards "
+              "to use less memory." % src_corpus)
+
+    if opt.max_shard_size != 0:
+        print(' * divide corpus into shards and build dataset separately'
+              '(shard_size = %d lines).' % opt.max_shard_size)
+
+    ret_list = []
+    src_iter = inputters.ShardedAudioCorpusIterator(
+        opt.src_dir, src_corpus, opt.src_seq_length_trunc, "src",
+        opt.max_shard_size, opt.sample_rate, opt.window_size,
+        opt.window_stride, opt.window)
+    tgt_iter = inputters.ShardedTextCorpusIterator(
+        tgt_corpus, opt.tgt_seq_length_trunc,
+        "tgt", opt.max_shard_size,
+        assoc_iter=src_iter)
+
+    index = 0
+    while not src_iter.hit_end():
+        index += 1
+        dataset = inputters.AudioDataset(fields, src_iter, tgt_iter,
+                                         tgt_seq_length=opt.tgt_seq_length)
+
+        # We save fields in vocab.pt seperately, so make it empty.
+        dataset.fields = []
+
+        pt_file = "{:s}.{:s}.{:d}.pt".format(
+            opt.save_data, corpus_type, index)
+        print(" * saving %s data shard to %s." % (corpus_type, pt_file))
+        torch.save(dataset, pt_file)
+
+        ret_list.append(pt_file)
+
+    return ret_list
+
+
 def build_save_dataset(corpus_type, fields, opt):
     """ Building and saving the dataset """
     assert corpus_type in ['train', 'valid']
@@ -136,8 +204,12 @@ def build_save_dataset(corpus_type, fields, opt):
         return build_save_in_shards(
             src_corpus, tgt_corpus, fields,
             corpus_type, opt)
+    elif opt.data_type == 'audio':
+        return build_save_audio_dataset_in_shards(
+            src_corpus, tgt_corpus, fields,
+            corpus_type, opt)
 
-    # For data_type == 'img' or 'audio', currently we don't do
+    # For data_type == 'img', currently we don't do
     # preprocess sharding. We only build a monolithic dataset.
     # But since the interfaces are uniform, it would be not hard
     # to do this should users need this feature.
