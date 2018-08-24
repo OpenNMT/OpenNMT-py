@@ -51,7 +51,7 @@ python train.py -model_type img -data data/im2text/demo -save_model demo-model -
 
 ```
 python translate.py -data_type img -model demo-model_acc_x_ppl_x_e13.pt -src_dir data/im2text/images \
-					-src data/im2text/src-test.txt -output pred.txt -beam_size 5 -gpu 0 -verbose
+					-src data/im2text/src-test.txt -output pred.txt -max_length 150 -gpu 0 -verbose
 ```
 
 The above dataset is sampled from the [im2latex-100k-dataset](http://lstm.seas.harvard.edu/latex/im2text.tgz). We provide a trained model [[link]](http://lstm.seas.harvard.edu/latex/py-model.pt) on this dataset.
