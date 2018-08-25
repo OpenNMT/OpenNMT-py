@@ -144,10 +144,9 @@ def main():
     init_logger(opt.log_file)
 
     logger.info("Extracting features...")
-    src_nfeats = inputters.get_num_features(
-        opt.data_type, opt.train_src, 'src')
-    tgt_nfeats = inputters.get_num_features(
-        opt.data_type, opt.train_tgt, 'tgt')
+    src_nfeats = inputters.num_features(opt.train_src) \
+        if opt.data_type == 'text' else 0
+    tgt_nfeats = inputters.num_features(opt.train_tgt)
     logger.info(" * number of source features: %d." % src_nfeats)
     logger.info(" * number of target features: %d." % tgt_nfeats)
 

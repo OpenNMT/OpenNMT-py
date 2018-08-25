@@ -204,29 +204,17 @@ def merge_vocabs(vocabs, vocab_size=None):
         specials=[UNK_WORD, PAD_WORD, BOS_WORD, EOS_WORD])
 
 
-def get_num_features(data_type, corpus_file, side):
+def num_features(corpus_file):
     """
-    Args:
-        data_type (str): type of the source input.
-            Options are [text|img|audio].
-        corpus_file (str): file path to get the features.
-        side (str): for source or for target.
-
-    Returns:
-        number of features on `side`.
+    corpus_file (str): file path to get the features.
+    returns the number of features for which to make fields
     """
     # used only in preprocess.py
-    assert side in ["src", "tgt"]
-    if data_type not in ['text', 'img', 'audio']:
-        raise ValueError("Data type not implemented")
-    if side == 'src' and data_type != 'text':
-        num_feats = 0
-    else:
-        # in the long run tokenization (including for the features) should be
-        # a field issue.
-        with codecs.open(corpus_file, "r", "utf-8") as cf:
-            f_line = cf.readline().strip().split()
-            _, _, num_feats = extract_text_features(f_line)
+    # in the long run tokenization (including for the features) should be
+    # a field issue.
+    with codecs.open(corpus_file, "r", "utf-8") as cf:
+        f_line = cf.readline().strip().split()
+        _, _, num_feats = extract_text_features(f_line)
     return num_feats
 
 
@@ -305,8 +293,7 @@ def build_dataset(fields, data_type, src_path, tgt_path, src_dir=None,
                         'audio': AudioDataset}
     assert data_type in src_data_classes
 
-    # you can have a None tgt_path because you can translate without a gold
-    # target
+    # you can have a None tgt_path because you can translate without a gold tgt
     # make_examples is used only in this function
     if tgt_path is not None:
         tgt_examples_iter = TextDataset.make_examples(
@@ -421,7 +408,6 @@ def _load_vocabulary(vocab_path, tag=""):
     :param tag: tag for vocabulary (only used for logging)
     :return: vocabulary or None if path is null
     """
-    # used only in build_vocabs above
     if not vocab_path:
         return None
     if not os.path.exists(vocab_path):
@@ -484,14 +470,11 @@ class DatasetLazyIter(object):
             self.cur_iter = self._next_dataset_iterator(dataset_iter)
 
     def __len__(self):
-        # We return the len of cur_dataset, otherwise we need to load
-        # all datasets to determine the real len, which loses the benefit
-        # of lazy loading.
+        # length of only the current dataset because this is lazy
         assert self.cur_iter is not None
         return len(self.cur_iter)
 
     def get_cur_dataset(self):
-        """ Return the current dataset settings """
         return self.cur_dataset
 
     def _next_dataset_iterator(self, dataset_iter):
