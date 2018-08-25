@@ -8,7 +8,7 @@ import argparse
 import os
 import glob
 import sys
-
+import gc
 import torch
 
 from onmt.utils.logging import init_logger, logger
@@ -119,6 +119,83 @@ def build_save_in_shards(src_corpus, tgt_corpus, fields,
 
     return ret_list
 
+def build_save_in_shards_for_image_input(src_corpus, tgt_corpus, fields,
+                         corpus_type, opt):
+    """
+    You must divide images src_corpus and tgt_corpus into smaller multiples
+    src_copus and tgt corpus files
+    This is currently only for data_type=='img'.
+
+    The reason we do this is to avoid taking up too much memory due
+    to sucking in a huge corpus file.
+
+    Format of new src_corpus:
+    src-train.0.txt
+    src-train.1.txt
+    ...
+
+    Format of new tgt_corpus:
+    tgt-train.0.txt
+    tgt-train.1.txt
+    ....
+
+    """
+
+    logger.info("Detecting_multiple src %s" % src_corpus)
+
+    import glob
+    src_corpus = "".join(src_corpus.split(".")[:-1])
+    tgt_corpus = "".join(tgt_corpus.split(".")[:-1])
+
+    if corpus_type == 'train':
+        src_list = sorted(glob.glob(src_corpus + '.*'))
+        tgt_list = sorted(glob.glob(tgt_corpus + '.*'))
+    else:
+        src_list = sorted(glob.glob(src_corpus + '.*'))
+        tgt_list = sorted(glob.glob(tgt_corpus + '.*'))
+
+    ret_list = []
+
+    for index, src in enumerate(src_list):
+        logger.info("Wordking with {0}th shard {1} {2}".format(index, src, tgt_list[index]))
+        dataset = inputters.build_dataset(
+            fields, opt.data_type,
+            src_path=src,
+            tgt_path=tgt_list[index],
+            src_dir=opt.src_dir,
+            src_seq_length=opt.src_seq_length,
+            tgt_seq_length=opt.tgt_seq_length,
+            src_seq_length_trunc=opt.src_seq_length_trunc,
+            tgt_seq_length_trunc=opt.tgt_seq_length_trunc,
+            dynamic_dict=opt.dynamic_dict,
+            sample_rate=opt.sample_rate,
+            window_size=opt.window_size,
+            window_stride=opt.window_stride,
+            window=opt.window,
+            use_gray=opt.use_gray)
+
+        if corpus_type == "train":
+            pt_file = "{:s}.{:s}.{:d}.pt".format(
+                opt.save_data, corpus_type, index)
+        else:
+            pt_file = "{:s}.{:s}.pt".format(
+                opt.save_data, corpus_type)
+
+        # We save fields in vocab.pt seperately, so make it empty.
+        dataset.fields = []
+
+        logger.info(" * saving %s %s data image shard to %s."
+                    % (index, corpus_type, pt_file))
+        torch.save(dataset, pt_file)
+
+        ret_list.append(pt_file)
+
+        del dataset.examples
+        gc.collect()
+        del dataset
+        gc.collect()
+
+    return ret_list
 
 def build_save_dataset(corpus_type, fields, opt):
     """ Building and saving the dataset """
@@ -136,6 +213,11 @@ def build_save_dataset(corpus_type, fields, opt):
         return build_save_in_shards(
             src_corpus, tgt_corpus, fields,
             corpus_type, opt)
+
+
+    if opt.data_type == "img" and opt.use_image_shards:
+        return build_save_in_shards_for_image_input(src_corpus, tgt_corpus, fields,
+                         corpus_type, opt)
 
     # For data_type == 'img' or 'audio', currently we don't do
     # preprocess sharding. We only build a monolithic dataset.

@@ -163,7 +163,8 @@ class TestModel(unittest.TestCase):
         enc = ImageEncoder(opt.enc_layers,
                            opt.brnn,
                            opt.rnn_size,
-                           opt.dropout)
+                           opt.dropout,
+                           opt.use_gray)
 
         embeddings = build_embeddings(opt, word_dict, feature_dicts,
                                       for_encoder=False)

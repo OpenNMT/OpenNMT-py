@@ -18,6 +18,8 @@ from onmt.utils.optimizers import build_optim
 from onmt.trainer import build_trainer
 from onmt.models import build_model_saver
 from onmt.utils.logging import init_logger, logger
+import gc
+import copy
 
 
 def _check_save_model_path(opt):
@@ -85,13 +87,14 @@ def main(opt):
     # Peek the first dataset to determine the data_type.
     # (All datasets have the same data_type).
     first_dataset = next(lazily_load_dataset("train", opt))
+
+    # Deep copy for deleting in the under
     data_type = first_dataset.data_type
 
     # Load fields generated from preprocess phase.
     fields = _load_fields(first_dataset, data_type, opt, checkpoint)
 
     # Report src/tgt features.
-
     src_features, tgt_features = _collect_report_features(fields)
     for j, feat in enumerate(src_features):
         logger.info(' * src feature %d size = %d'
@@ -117,11 +120,13 @@ def main(opt):
     trainer = build_trainer(
         opt, model, fields, optim, data_type, model_saver=model_saver)
 
-    def train_iter_fct(): return build_dataset_iter(
-        lazily_load_dataset("train", opt), fields, opt)
+    def train_iter_fct():
+        return build_dataset_iter(
+            lazily_load_dataset("train", opt), fields, opt)
 
-    def valid_iter_fct(): return build_dataset_iter(
-        lazily_load_dataset("valid", opt), fields, opt)
+    def valid_iter_fct():
+        return build_dataset_iter(
+            lazily_load_dataset("valid", opt), fields, opt)
 
     # Do training.
     trainer.train(train_iter_fct, valid_iter_fct, opt.train_steps,

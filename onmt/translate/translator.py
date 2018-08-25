@@ -96,7 +96,8 @@ class Translator(object):
                  report_rouge=False,
                  verbose=False,
                  out_file=None,
-                 fast=False):
+                 fast=False,
+                 use_gray=False):
         self.logger = logger
         self.gpu = gpu
         self.cuda = gpu > -1
@@ -126,6 +127,7 @@ class Translator(object):
         self.report_bleu = report_bleu
         self.report_rouge = report_rouge
         self.fast = fast
+        self.use_gray=use_gray
 
         # for debugging
         self.beam_trace = self.dump_beam != ""
@@ -185,7 +187,8 @@ class Translator(object):
                                        window_size=self.window_size,
                                        window_stride=self.window_stride,
                                        window=self.window,
-                                       use_filter_pred=self.use_filter_pred)
+                                       use_filter_pred=self.use_filter_pred,
+                                       use_gray=self.use_gray)
 
         if self.cuda:
             cur_device = "cuda"
