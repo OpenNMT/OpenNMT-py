@@ -280,43 +280,43 @@ def collect_feature_vocabs(fields, side):
     return feature_vocabs
 
 
-def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
-                  src_dir=None, tgt_data_iter=None, tgt_path=None,
+def build_dataset(fields, data_type, src_path, tgt_path, src_dir=None,
                   src_seq_length=0, tgt_seq_length=0,
                   src_seq_length_trunc=0, tgt_seq_length_trunc=0,
                   dynamic_dict=True, sample_rate=0,
                   window_size=0, window_stride=0, window=None,
                   normalize_audio=True, use_filter_pred=True):
     """
-    A quasi-constructor for a Dataset.
+    A quasi-constructor for a Dataset. Give it a pair of paths and some kwargs,
+    it'll make a Dataset object. Would it be better if this were a @classmethod
+    alternate constructor for a Dataset class? Probably, but this is about
+    incremental progress.
     """
     # used in preprocess.py and translator.py
     # in preprocess.py, it is called if you are not doing sharding, currently
-    # meaning if you are not using text. The src_path and tgt_path should not
-    # be None is this case. src_data_iter and tgt_data_iter are not specified
-    # so will be None.
-    # in translator.py, both the path and iter arguments are passed to
+    # meaning if you are not using text.
+    # in translator.py, path and iter arguments are passed to
     # build_dataset, but when it's actually called in translate.py the iter
     # arguments are also unspecified and thus None.
-    assert src_data_iter is not None or src_path is not None
-    assert src_data_iter is None or src_path is None
-
-    assert tgt_data_iter is not None or tgt_path is not None
-    assert tgt_data_iter is None or tgt_path is None
+    if src_path is None:
+        raise ValueError("You must specify a path for src data")
 
     src_data_classes = {'text': TextDataset, 'img': ImageDataset,
                         'audio': AudioDataset}
     assert data_type in src_data_classes
 
+    # you can have a None tgt_path because you can translate without a gold
+    # target
     # make_examples is used only in this function
-    tgt_examples_iter = TextDataset.make_examples(
-            tgt_data_iter, tgt_path, truncate=tgt_seq_length_trunc, side="tgt")
+    if tgt_path is not None:
+        tgt_examples_iter = TextDataset.make_examples(
+                tgt_path, truncate=tgt_seq_length_trunc, side="tgt")
+    else:
+        tgt_examples_iter = None
 
     src_data_cls = src_data_classes[data_type]
-
-    # why are a path and an iterator both required?
     src_examples_iter = src_data_cls.make_examples(
-        iterator=src_data_iter, path=src_path,
+        src_path,
         truncate=src_seq_length_trunc,
         side="src", directory=src_dir,
         sample_rate=sample_rate, window_size=window_size,

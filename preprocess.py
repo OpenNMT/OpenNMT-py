@@ -107,9 +107,7 @@ def build_datasets(corpus_type, fields, opt):
     # But since the interfaces are uniform, it should not be not hard to
     # implement this
     dataset = inputters.build_dataset(
-        fields, opt.data_type,
-        src_path=src_corpus,
-        tgt_path=tgt_corpus,
+        fields, opt.data_type, src_corpus, tgt_corpus,
         src_dir=opt.src_dir,
         src_seq_length=opt.src_seq_length,
         tgt_seq_length=opt.tgt_seq_length,

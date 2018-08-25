@@ -47,6 +47,8 @@ class DatasetBase(Dataset):
             examples_iter = (self._dynamic_dict(ex) for ex in examples_iter)
 
         fields = list(fields.items())
+        # there's a problem here if the dataset doesn't have a tgt at
+        # translation time
         example_values = ([ex[k] for k, v in fields] for ex in examples_iter)
 
         examples = [Example.fromlist(ev, fields) for ev in example_values]
@@ -54,17 +56,16 @@ class DatasetBase(Dataset):
         super(DatasetBase, self).__init__(examples, fields, filter_pred)
 
     @classmethod
-    def make_examples(cls, iterator, path, **kwargs):
+    def make_examples(cls, path, **kwargs):
         """
-        TODO: fix documentation
+        path: location of a corpus file
+        remaining arguments are passed to _make_iterator_from_file and
+        _make_examples
+        returns an iterator of dictionaries, one for each example in the corpus
+        file
         """
-        if iterator is None and path is None:
-            raise ValueError("'iterator' and 'path' must not both be None")
-        if path is not None:
-            iterator = cls._make_iterator_from_file(path, **kwargs)
-
+        iterator = cls._make_iterator_from_file(path, **kwargs)
         examples_iter = cls._make_examples(iterator, **kwargs)
-
         return examples_iter
 
     @classmethod
