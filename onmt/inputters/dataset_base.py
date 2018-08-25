@@ -64,16 +64,17 @@ class DatasetBase(Dataset):
         returns an iterator of dictionaries, one for each example in the corpus
         file
         """
-        iterator = cls._make_iterator_from_file(path, **kwargs)
-        examples_iter = cls._make_examples(iterator, **kwargs)
-        return examples_iter
+        for i, line in enumerate(cls._make_iterator_from_file(path, **kwargs)):
+            example = cls._make_example(line, **kwargs)
+            example['indices'] = i
+            yield example
 
     @classmethod
     def _make_iterator_from_file(cls, path, **kwargs):
         return NotImplemented
 
     @classmethod
-    def _make_examples(cls, *args, **kwargs):
+    def _make_example(cls, *args, **kwargs):
         return NotImplemented
 
     def __getstate__(self):

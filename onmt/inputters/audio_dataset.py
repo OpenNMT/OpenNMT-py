@@ -42,9 +42,9 @@ class AudioDataset(DatasetBase):
         return ex.src.size(1)
 
     @classmethod
-    def _make_examples(cls, iterator, **kwargs):
-        for i, (spect, line) in enumerate(iterator):
-            yield {'src': spect, 'src_path': line.strip(), 'indices': i}
+    def _make_example(cls, pair, **kwargs):
+        spect, line = pair
+        return {'src': spect, 'src_path': line.strip()}
 
     @classmethod
     def _make_iterator_from_file(

@@ -33,7 +33,7 @@ class ImageDataset(DatasetBase):
         return ex.src.size(2), ex.src.size(1)
 
     @classmethod
-    def _make_examples(cls, iterator, truncate=None, **kwargs):
+    def _make_example(cls, pair, truncate=None, **kwargs):
         """
         Args:
             path (str): location of a src file containing image paths
@@ -44,17 +44,19 @@ class ImageDataset(DatasetBase):
         Yields:
             a dictionary containing image data, path and index for each line.
         """
-        for i, (img, filename) in enumerate(iterator):
-            # problem is that the value of truncate getting passed is an int,
-            # which is not subscriptable
-            if truncate and truncate != (0, 0):
-                if not (img.size(1) <= truncate[0]
-                        and img.size(2) <= truncate[1]):
-                    continue
-
-            # if the continue statement is reached, then the outputs of this
-            # function will have missing indices
-            yield {'src': img, 'src_path': filename, 'indices': i}
+        img, filename = pair
+        # problem is that the value of truncate getting passed is an int,
+        # which is not subscriptable
+        # gonna ignore the image truncating logic for now...
+        # truncating doesn't really appear to truncate for images, it
+        # filters out images that are too big.
+        """
+        if truncate and truncate != (0, 0):
+            if not (img.size(1) <= truncate[0]
+                    and img.size(2) <= truncate[1]):
+                continue
+        """
+        return {'src': img, 'src_path': filename}
 
     @classmethod
     def _make_iterator_from_file(cls, path, directory, **kwargs):

@@ -543,8 +543,6 @@ def build_dataset_iter(datasets, opt, is_train=True):
             return max(src_elements, tgt_elements)
     else:
         batch_size_fn = None
-    # device = opt.device_id if opt.gpuid else -1
-    # breaking change torchtext 0.3
     device = "cuda" if opt.gpuid else "cpu"
 
     return DatasetLazyIter(datasets, batch_size, batch_size_fn,

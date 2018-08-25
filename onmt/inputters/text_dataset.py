@@ -99,31 +99,19 @@ class TextDataset(DatasetBase):
         return scores
 
     @classmethod
-    def _make_examples(cls, iterator, truncate, side, **kwargs):
-        """
-        Args:
-            text_iter (iterator): iterator of text sequences
-            truncate (int): maximum sequence length (0 for unlimited).
-            side (str): "src" or "tgt".
+    def _make_example(cls, line, truncate, side, **kwargs):
+        line = line.strip().split()
+        if truncate:
+            line = line[:truncate]
 
-        Yields:
-            dict, int pairs where the dict is example stuff and the int is
-            the number of features
-        """
-        assert side in ['src', 'tgt']
-        for i, line in enumerate(iterator):
-            line = line.strip().split()
-            if truncate:
-                line = line[:truncate]
+        words, feats, _ = extract_text_features(line)
 
-            words, feats, _ = extract_text_features(line)
-
-            example_dict = {side: words, "indices": i}
-            if feats:
-                prefix = side + "_feat_"
-                example_dict.update((prefix + str(j), f)
-                                    for j, f in enumerate(feats))
-            yield example_dict
+        example_dict = {side: words}
+        if feats:
+            prefix = side + "_feat_"
+            example_dict.update((prefix + str(j), f)
+                                for j, f in enumerate(feats))
+        return example_dict
 
     @classmethod
     def _make_iterator_from_file(cls, path, **kwargs):
