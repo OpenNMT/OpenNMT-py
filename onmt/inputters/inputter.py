@@ -43,9 +43,8 @@ def filter_pred(ex, use_src_len, use_tgt_len, min_src_len, max_src_len,
         (not use_tgt_len or min_tgt_len < len(ex.tgt) <= max_tgt_len)
 
 
-# below: postprocessing functions for fields. Their usage is not
-# well-understood
-def make_src(data, vocab):
+# below: postprocessing functions for fields. What are they for?
+def make_src_map(data, vocab):
     """ ? """
     src_size = max([t.size(0) for t in data])
     src_vocab_size = max([t.max() for t in data]) + 1
@@ -139,7 +138,7 @@ def get_fields(data_type, n_src_features, n_tgt_features, dynamic_dict=False):
     if dynamic_dict:
         fields["src_map"] = torchtext.data.Field(
             use_vocab=False, dtype=torch.float,
-            postprocessing=make_src, sequential=False, tokenize=str.split)
+            postprocessing=make_src_map, sequential=False, tokenize=str.split)
 
         fields["alignment"] = torchtext.data.Field(
             use_vocab=False, dtype=torch.long,
@@ -148,7 +147,7 @@ def get_fields(data_type, n_src_features, n_tgt_features, dynamic_dict=False):
     return fields
 
 
-def load_fields_from_vocab(vocab, data_type="text"):
+def vocab_to_fields(vocab, data_type="text"):
     """
     vocab: a list of (str, torchtext.vocab.Vocab) tuples (always?)
     data_type: text, img, or audio
@@ -156,9 +155,9 @@ def load_fields_from_vocab(vocab, data_type="text"):
         values are fields created by a call to get_fields.
     """
     # this function is used:
-    # 3) in model_builder.py, in the function load_test_model, which is used
+    # 1) in model_builder.py, in the function load_test_model, which is used
     # in translator.py.
-    # 4) in extract_embeddings.py, in order to build the model whose embeddings
+    # 2) in extract_embeddings.py, in order to build the model whose embeddings
     # will get extracted (this through a call to
     # model_builder.build_base_model, which needs the fields as an argument
     # to inputters.collect_feature_vocabs, which it uses so that it can
@@ -170,7 +169,7 @@ def load_fields_from_vocab(vocab, data_type="text"):
     for name, v in vocab:
         # Hack. Can't pickle defaultdict :(
         # bp: this isn't true, you can pickle a defaultdict if the callable
-        # is defined at the top level of the class. You can't pickle lambdas.
+        # is defined at the top level of the module. You can't pickle lambdas.
         v.stoi = defaultdict(lambda: 0, v.stoi)
         fields[name].vocab = v
     return fields
@@ -292,14 +291,12 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
     Build src/tgt examples iterator from corpus files, also extract
     number of features.
     """
-    # "also" is not good in functions
     # used in preprocess.py and translator.py
     src_data_classes = {'text': TextDataset, 'img': ImageDataset,
                         'audio': AudioDataset}
     assert data_type in src_data_classes
 
-    # make_examples_nfeats_tpl is used only in this function
-    # text is the choice on the target side
+    # make_examples is used only in this function
     tgt_examples_iter = TextDataset.make_examples(
             tgt_data_iter, tgt_path, truncate=tgt_seq_length_trunc, side="tgt")
 
@@ -315,8 +312,7 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
         normalize_audio=normalize_audio)
 
     if use_filter_pred:
-        # quick hack for now: in the future, it should be whether the src field
-        # is sequential
+        # hack: better way is to check whether the src field is sequential
         use_src_len = data_type == 'text'
         fp = partial(
             filter_pred, use_src_len=use_src_len, use_tgt_len=True,
@@ -333,13 +329,6 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
         filter_pred=fp)
 
     return dataset
-
-
-def filtered_vocab(vocab, wordset):
-    # used only in build_vocabs in the case where src or tgt vocab is
-    # predetermined
-    counts = Counter({k: v for k, v in vocab.freqs.items() if k in wordset})
-    return Vocab(counts, specials=[UNK_WORD, PAD_WORD, BOS_WORD, EOS_WORD])
 
 
 def build_vocabs(datasets, data_type, share_vocab,
@@ -376,13 +365,13 @@ def build_vocabs(datasets, data_type, share_vocab,
                     *datasets, max_size=src_vocab_size,
                     min_freq=src_words_min_frequency)
                 if src_vocab is not None:
-                    field.vocab = filtered_vocab(field.vocab, src_vocab)
+                    field.vocab = _filtered_vocab(field.vocab, src_vocab)
             elif name == 'tgt':
                 field.build_vocab(
                     *datasets, max_size=tgt_vocab_size,
                     min_freq=tgt_words_min_frequency)
                 if tgt_vocab is not None:
-                    field.vocab = filtered_vocab(field.vocab, tgt_vocab)
+                    field.vocab = _filtered_vocab(field.vocab, tgt_vocab)
             else:
                 field.build_vocab(*datasets)
 
@@ -410,6 +399,12 @@ def build_vocabs(datasets, data_type, share_vocab,
     return fields
 
 
+def _filtered_vocab(vocab, wordset):
+    # used only in build_vocabs above when src or tgt vocab is predetermined
+    counts = Counter({k: v for k, v in vocab.freqs.items() if k in wordset})
+    return Vocab(counts, specials=[UNK_WORD, PAD_WORD, BOS_WORD, EOS_WORD])
+
+
 def _load_vocabulary(vocab_path, tag=""):
     """
     Loads a vocabulary from the given path.
@@ -417,7 +412,7 @@ def _load_vocabulary(vocab_path, tag=""):
     :param tag: tag for vocabulary (only used for logging)
     :return: vocabulary or None if path is null
     """
-    # used only in build_vocabs, immediately above
+    # used only in build_vocabs above
     if not vocab_path:
         return None
     if not os.path.exists(vocab_path):

@@ -129,7 +129,7 @@ def load_test_model(opt, dummy_opt):
     checkpoint = torch.load(opt.model,
                             map_location=lambda storage, loc: storage)
 
-    fields = inputters.load_fields_from_vocab(
+    fields = inputters.vocab_to_fields(
         checkpoint['vocab'], data_type=opt.data_type)
     if opt.data_type == 'text':
         # is model_opt.model_type the same as data_type?

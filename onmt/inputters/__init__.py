@@ -5,7 +5,7 @@ e.g., from a line of text to a sequence of embeddings.
 """
 from onmt.inputters.inputter import collect_feature_vocabs, make_features, \
     get_num_features, \
-    load_fields_from_vocab, get_fields, \
+    get_fields, vocab_to_fields, \
     fields_to_vocab, build_dataset, \
     build_vocabs, merge_vocabs, OrderedIterator
 from onmt.inputters.dataset_base import DatasetBase, PAD_WORD, BOS_WORD, \
@@ -18,7 +18,7 @@ from onmt.inputters.audio_dataset import AudioDataset
 __all__ = ['PAD_WORD', 'BOS_WORD', 'EOS_WORD', 'UNK', 'DatasetBase',
            'collect_feature_vocabs', 'make_features',
            'get_num_features',
-           'load_fields_from_vocab', 'get_fields',
+           'get_fields', 'vocab_to_fields',
            'fields_to_vocab', 'build_dataset',
            'build_vocabs', 'merge_vocabs', 'OrderedIterator',
            'TextDataset', 'ImageDataset', 'AudioDataset',

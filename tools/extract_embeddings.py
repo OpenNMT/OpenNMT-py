@@ -44,7 +44,7 @@ def main():
     src_dict = checkpoint['vocab'][1][1]
     tgt_dict = checkpoint['vocab'][0][1]
 
-    fields = onmt.inputters.load_fields_from_vocab(checkpoint['vocab'])
+    fields = onmt.inputters.vocab_to_fields(checkpoint['vocab'])
 
     model_opt = checkpoint['opt']
     for arg in dummy_opt.__dict__:
