@@ -13,6 +13,14 @@ BOS_WORD = '<s>'
 EOS_WORD = '</s>'
 
 
+def _join_dicts(*args):
+    """
+    args: dictionaries with disjoint keys.
+    returns a single dictionary that has the union of these keys.
+    """
+    return dict(chain(*[d.items() for d in args]))
+
+
 class DatasetBase(Dataset):
     """
     A dataset basically supports iteration over all the examples
@@ -34,11 +42,8 @@ class DatasetBase(Dataset):
         # another question: why is the Dataset constructor used in preprocess
         # and translate but not train?
 
-        # Each element of an example is a dictionary whose keys represents
-        # at minimum the src tokens and their indices and potentially also
-        # the src and tgt features and alignment information.
         if tgt_examples_iter is not None:
-            examples_iter = (self._join_dicts(src, tgt) for src, tgt in
+            examples_iter = (_join_dicts(src, tgt) for src, tgt in
                              zip(src_examples_iter, tgt_examples_iter))
         else:
             examples_iter = src_examples_iter
@@ -87,25 +92,14 @@ class DatasetBase(Dataset):
         "This is a hack. Something is broken with torch pickle."
         return super(DatasetBase, self).__reduce_ex__()
 
-    def _join_dicts(self, *args):
-        """
-        Args:
-            dictionaries with disjoint keys.
-
-        Returns:
-            a single dictionary that has the union of these keys.
-        """
-        return dict(chain(*[d.items() for d in args]))
-
     def _dynamic_dict(self, example):
         """
-        examples_iter: (self._join_dicts(src, tgt) for src, tgt in
-                        zip(src_examples_iter, tgt_examples_iter))
-        yields: dicts.
+        returns an updated version of the example with "src_map" and
+        "alignment" values.
+        This method also mutates the instance's self.src_vocabs attribute.
         """
-        # this basically says that if you're using dynamic dict, you're
-        # going to need some extra fields, and they get created in a
-        # different way from other fields.
+        # if using dynamic dict, extra fields are created.
+        # All the processing happens in this method, but it shouldn't.
         src = example["src"]
         src_vocab = Vocab(Counter(src), specials=[UNK_WORD, PAD_WORD])
         self.src_vocabs.append(src_vocab)
@@ -114,8 +108,7 @@ class DatasetBase(Dataset):
         example["src_map"] = src_map
 
         if "tgt" in example:
-            tgt = example["tgt"]
             mask = torch.LongTensor(
-                [0] + [src_vocab.stoi[w] for w in tgt] + [0])
+                [0] + [src_vocab.stoi[w] for w in example["tgt"]] + [0])
             example["alignment"] = mask
         return example
