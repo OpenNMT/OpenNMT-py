@@ -6,8 +6,6 @@ import torch
 from torchtext.vocab import Vocab
 from torchtext.data import Example, Dataset
 
-import onmt
-
 PAD_WORD = '<blank>'
 UNK_WORD = '<unk>'
 UNK = 0
@@ -29,7 +27,6 @@ class DatasetBase(Dataset):
         objects, and not necessarily having the same keys as the input fields.
     """
     def __init__(self, fields, src_examples_iter, tgt_examples_iter,
-                 src_seq_length=0, tgt_seq_length=0,
                  dynamic_dict=False, filter_pred=None):
         # self.src_vocabs: mutated in dynamic_dict, used in translation.py
         self.src_vocabs = []

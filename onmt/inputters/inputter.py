@@ -323,10 +323,7 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
 
     dataset = src_data_cls(
         fields, src_examples_iter, tgt_examples_iter,
-        src_seq_length=src_seq_length,
-        tgt_seq_length=tgt_seq_length,
-        dynamic_dict=dynamic_dict,
-        filter_pred=fp)
+        dynamic_dict=dynamic_dict, filter_pred=fp)
 
     return dataset
 

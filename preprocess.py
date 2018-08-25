@@ -79,10 +79,9 @@ def build_sharded_datasets(src_corpus, tgt_corpus, fields, opt):
 
     ret_list = []
     while not src_iter.hit_end():
+        # problem here: can't use filter pred at the moment
         dataset = inputters.TextDataset(
             fields, src_iter, tgt_iter,
-            src_seq_length=opt.src_seq_length,
-            tgt_seq_length=opt.tgt_seq_length,
             dynamic_dict=opt.dynamic_dict)
         ret_list.append(dataset)
 
