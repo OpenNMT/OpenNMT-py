@@ -288,7 +288,7 @@ number of values of feature takes.</li>
 <h2>Attention<a class="headerlink" href="#attention" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.modules.GlobalAttention">
-<em class="property">class </em><code class="descclassname">onmt.modules.</code><code class="descname">GlobalAttention</code><span class="sig-paren">(</span><em>dim</em>, <em>coverage=False</em>, <em>attn_type='dot'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/modules/global_attention.html#GlobalAttention"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.modules.GlobalAttention" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.modules.</code><code class="descname">GlobalAttention</code><span class="sig-paren">(</span><em>dim</em>, <em>coverage=False</em>, <em>attn_type='dot'</em>, <em>attn_func='softmax'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/modules/global_attention.html#GlobalAttention"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.modules.GlobalAttention" title="Permalink to this definition">¶</a></dt>
 <dd><p>Global attention takes a matrix and a query vector. It
 then computes a parameterized convex combination of the matrix
 based on the input query.</p>
