@@ -213,7 +213,7 @@ def build_base_model(model_opt, src_dict, src_feat_dicts,
         else:
             gen_func = nn.LogSoftmax(dim=-1)
         generator = nn.Sequential(
-            nn.Linear(model_opt.rnn_size, len(fields["tgt"].vocab)), gen_func
+            nn.Linear(model_opt.rnn_size, len(tgt_dict)), gen_func
         )
         if model_opt.share_decoder_embeddings:
             generator[0].weight = decoder.embeddings.word_lut.weight
