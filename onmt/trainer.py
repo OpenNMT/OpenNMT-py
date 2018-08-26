@@ -153,9 +153,9 @@ class Trainer(object):
                     if self.norm_method == "tokens":
                         num_tokens = batch.tgt[1:].ne(
                             self.train_loss.padding_idx).sum()
-                        normalization += num_tokens
+                        normalization += num_tokens.cpu()
                     else:
-                        normalization += batch.batch_size
+                        normalization += batch.batch_size.cpu()
 
                     accum += 1
                     if accum == self.grad_accum_count:
