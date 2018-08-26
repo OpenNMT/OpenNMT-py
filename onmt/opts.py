@@ -104,6 +104,8 @@ def model_opts(parser):
                        choices=['dot', 'general', 'mlp'],
                        help="""The attention type to use:
                        dotprod or general (Luong) or MLP (Bahdanau)""")
+    group.add_argument('-global_attention_function', type=str,
+                       default="softmax", choices=["softmax", "sparsemax"])
     group.add_argument('-self_attn_type', type=str, default="scaled-dot",
                        help="""Self attention type in Transformer decoder
                        layer -- currently "scaled-dot" or "average" """)
@@ -112,9 +114,14 @@ def model_opts(parser):
     group.add_argument('-transformer_ff', type=int, default=2048,
                        help='Size of hidden transformer feed-forward')
 
-    # Genenerator and loss options.
+    # Generator and loss options.
     group.add_argument('-copy_attn', action="store_true",
                        help='Train copy attention layer.')
+    group.add_argument('-generator_function', default="log_softmax",
+                       choices=["log_softmax", "sparsemax"],
+                       help="""Which function to use for generating
+                       probabilities over the target vocabulary (choices:
+                       log_softmax, sparsemax)""")
     group.add_argument('-copy_attn_force', action="store_true",
                        help='When available, train to copy.')
     group.add_argument('-reuse_copy_attn', action="store_true",

@@ -7,9 +7,11 @@ This includes: LossComputeBase and the standard NMTLossCompute, and
 from __future__ import division
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 import onmt
 import onmt.inputters as inputters
+from onmt.modules.sparse_losses import SparsemaxLoss
 
 
 def build_loss_compute(model, tgt_vocab, opt, train=True):
@@ -172,6 +174,36 @@ class LossComputeBase(nn.Module):
         return _v.view(-1, batch_size, _v.size(1))
 
 
+class LabelSmoothingLoss(nn.Module):
+    """
+    With label smoothing,
+    KL-divergence between q_{smoothed ground truth prob.}(w)
+    and p_{prob. computed by model}(w) is minimized.
+    """
+    def __init__(self, label_smoothing, tgt_vocab_size, ignore_index=-100):
+        assert 0.0 < label_smoothing <= 1.0
+        self.padding_idx = ignore_index
+        super(LabelSmoothingLoss, self).__init__()
+
+        smoothing_value = label_smoothing / (tgt_vocab_size - 2)
+        one_hot = torch.full((tgt_vocab_size,), smoothing_value)
+        one_hot[self.padding_idx] = 0
+        self.register_buffer('one_hot', one_hot.unsqueeze(0))
+
+        self.confidence = 1.0 - label_smoothing
+
+    def forward(self, output, target):
+        """
+        output (FloatTensor): batch_size x n_classes
+        target (LongTensor): batch_size
+        """
+        model_prob = self.one_hot.repeat(target.size(0), 1)
+        model_prob.scatter_(1, target.unsqueeze(1), self.confidence)
+        model_prob.masked_fill_((target == self.padding_idx).unsqueeze(1), 0)
+
+        return F.kl_div(output, model_prob, size_average=False)
+
+
 class NMTLossCompute(LossComputeBase):
     """
     Standard NMT Loss Computation.
@@ -180,24 +212,19 @@ class NMTLossCompute(LossComputeBase):
     def __init__(self, generator, tgt_vocab, normalization="sents",
                  label_smoothing=0.0):
         super(NMTLossCompute, self).__init__(generator, tgt_vocab)
-        assert 0.0 <= label_smoothing <= 1.0
+        self.sparse = not isinstance(generator[1], nn.LogSoftmax)
         if label_smoothing > 0:
-            # When label smoothing is turned on,
-            # KL-divergence between q_{smoothed ground truth prob.}(w)
-            # and p_{prob. computed by model}(w) is minimized.
-            # If label smoothing value is set to zero, the loss
-            # is equivalent to NLLLoss or CrossEntropyLoss.
-            # All non-true labels are uniformly set to low-confidence.
-            self.criterion = nn.KLDivLoss(size_average=False)
-            one_hot = torch.randn(1, len(tgt_vocab))
-            one_hot.fill_(label_smoothing / (len(tgt_vocab) - 2))
-            one_hot[0][self.padding_idx] = 0
-            self.register_buffer('one_hot', one_hot)
+            self.criterion = LabelSmoothingLoss(
+                label_smoothing, len(tgt_vocab), ignore_index=self.padding_idx
+            )
+        elif self.sparse:
+            self.criterion = SparsemaxLoss(
+                ignore_index=self.padding_idx, size_average=False
+            )
         else:
-            weight = torch.ones(len(tgt_vocab))
-            weight[self.padding_idx] = 0
-            self.criterion = nn.NLLLoss(weight, size_average=False)
-        self.confidence = 1.0 - label_smoothing
+            self.criterion = nn.NLLLoss(
+                ignore_index=self.padding_idx, size_average=False
+            )
 
     def _make_shard_state(self, batch, output, range_, attns=None):
         return {
@@ -206,27 +233,18 @@ class NMTLossCompute(LossComputeBase):
         }
 
     def _compute_loss(self, batch, output, target):
-        scores = self.generator(self._bottle(output))
-
-        gtruth = target.view(-1)
-        if self.confidence < 1:
-            tdata = gtruth.data
-            mask = torch.nonzero(tdata.eq(self.padding_idx)).squeeze(-1)
-            # log_likelihood = torch.gather(scores.data, 1, tdata.unsqueeze(1))
-            tmp_ = self.one_hot.repeat(gtruth.size(0), 1)
-            tmp_.scatter_(1, tdata.unsqueeze(1), self.confidence)
-            if mask.size(0) > 0:
-                tmp_.index_fill_(0, mask, 0)
-            gtruth = tmp_
-        loss = self.criterion(scores, gtruth)
-        if self.confidence < 1:
-            # Default: report smoothed ppl.
-            # loss_data = -log_likelihood.sum(0)
-            loss_data = loss.data.clone()
+        bottled_output = self._bottle(output)
+        if self.sparse:
+            # for sparsemax loss, the loss function operates on the raw output
+            # vector, not a probability vector. Hence it's only necessary to
+            # apply the first part of the generator here.
+            scores = self.generator[0](bottled_output)
         else:
-            loss_data = loss.data.clone()
+            scores = self.generator(bottled_output)
+        gtruth = target.view(-1)
 
-        stats = self._stats(loss_data, scores.data, target.view(-1).data)
+        loss = self.criterion(scores, gtruth)
+        stats = self._stats(loss.clone(), scores, gtruth)
 
         return loss, stats
 
