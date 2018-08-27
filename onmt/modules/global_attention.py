@@ -131,7 +131,7 @@ class GlobalAttention(nn.Module):
             uh = uh.expand(src_batch, tgt_len, src_len, dim)
 
             # (batch, t_len, s_len, d)
-            wquh = F.tanh(wq + uh)
+            wquh = torch.tanh(wq + uh)
 
             return self.v(wquh.view(-1, dim)).view(tgt_batch, tgt_len, src_len)
 
@@ -172,7 +172,7 @@ class GlobalAttention(nn.Module):
         if coverage is not None:
             cover = coverage.view(-1).unsqueeze(1)
             memory_bank += self.linear_cover(cover).view_as(memory_bank)
-            memory_bank = F.tanh(memory_bank)
+            memory_bank = torch.tanh(memory_bank)
 
         # compute attention scores, as in Luong et al.
         align = self.score(source, memory_bank)
@@ -197,7 +197,7 @@ class GlobalAttention(nn.Module):
         concat_c = torch.cat([c, source], 2).view(batch*target_l, dim*2)
         attn_h = self.linear_out(concat_c).view(batch, target_l, dim)
         if self.attn_type in ["general", "dot"]:
-            attn_h = F.tanh(attn_h)
+            attn_h = torch.tanh(attn_h)
 
         if one_step:
             attn_h = attn_h.squeeze(1)
