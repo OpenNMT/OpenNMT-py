@@ -82,7 +82,7 @@ def main(opt):
         checkpoint = None
         model_opt = opt
 
-    # Peek the fisrt dataset to determine the data_type.
+    # Peek the first dataset to determine the data_type.
     # (All datasets have the same data_type).
     first_dataset = next(lazily_load_dataset("train", opt))
     data_type = first_dataset.data_type
