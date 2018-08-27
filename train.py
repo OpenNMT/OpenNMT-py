@@ -19,7 +19,7 @@ def main(opt):
         raise AssertionError("-epochs is deprecated please use -train_steps.")
 
     if opt.truncated_decoder > 0 and opt.accum_count > 1:
-        raise AssertionError("BPTT is not compatible with gradient accumulation over several steps")
+        raise AssertionError("BPTT is not compatible with -accum > 1")
 
     if len(opt.gpuid) > 1:
         multi_main(opt)

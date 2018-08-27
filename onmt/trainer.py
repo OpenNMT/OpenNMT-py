@@ -302,7 +302,8 @@ class Trainer(object):
                 if dec_state is not None:
                     dec_state.detach()
 
-        # in case of multi step gradient accumulation, update only after accum batches
+        # in case of multi step gradient accumulation,
+        # update only after accum batches
         if self.grad_accum_count > 1:
             if self.n_gpu > 1:
                 grads = [p.grad.data for p in self.model.parameters()
