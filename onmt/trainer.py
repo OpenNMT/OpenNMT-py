@@ -156,7 +156,6 @@ class Trainer(object):
                         normalization += num_tokens
                     else:
                         normalization += batch.batch_size
-
                     accum += 1
                     if accum == self.grad_accum_count:
                         reduce_counter += 1
@@ -168,7 +167,7 @@ class Trainer(object):
                         if self.n_gpu > 1:
                             normalization = sum(onmt.utils.distributed
                                                 .all_gather_list
-                                                (normalization))
+                                                (normalization.cpu()))
 
                         self._gradient_accumulation(
                             true_batchs, normalization, total_stats,
