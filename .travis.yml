@@ -14,6 +14,7 @@ before_install:
   - hash -r
   - conda config --set always_yes yes --set changeps1 no
   - conda update -q conda
+  - conda install -c anaconda cudatoolkit==9.0
   # Useful for debugging any issues with conda
   - conda info -a
   # freeze the supported pytorch version for consistency
