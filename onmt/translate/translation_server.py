@@ -7,6 +7,7 @@ import argparse
 import time
 import json
 import threading
+import re
 
 import torch
 import onmt.opts
@@ -287,39 +288,45 @@ class ServerModel:
             timer.tick(name="to_gpu")
 
         texts = []
-        whitespace_segments = {}
-        subsegment = {}
-        sscount = 0
+        head_spaces = []
+        tail_spaces = []
         sslength = []
-        for (i, inp) in enumerate(inputs):
+        for i, inp in enumerate(inputs):
             src = inp['src']
-            lines = src.split("\n")
-            subsegment[i] = slice(sscount, sscount + len(lines))
-            for line in lines:
-                tok = self.maybe_tokenize(line)
-                if len(''.join(line.split())) == 0:
-                    whitespace_segments[sscount] = line
-                    sscount += 1
-                else:
-                    texts += [tok]
-                    sslength += [len(tok.split())]
-                    sscount += 1
+            if src.strip() == "":
+                head_spaces.append(src)
+                texts.append("")
+                tail_spaces.append("")
+            else:
+                whitespaces_before, whitespaces_after = "", ""
+                match_before = re.search(r'^\s+', src)
+                match_after = re.search(r'\s+$', src)
+                if match_before is not None:
+                    whitespaces_before = match_before.group(0)
+                if match_after is not None:
+                    whitespaces_after = match_after.group(0)
+                head_spaces.append(whitespaces_before)
+                tok = self.maybe_tokenize(src.strip())
+                texts.append(tok)
+                sslength.append(len(tok.split()))
+                tail_spaces.append(whitespaces_after)
 
-        timer.tick(name="writing")
+        empty_indices = [i for i, x in enumerate(texts) if x == ""]
+        texts_to_translate = [x for x in texts if x != ""]
 
         scores = []
         predictions = []
-        if sscount > 0:
+        if len(texts_to_translate) > 0:
             try:
                 scores, predictions = self.translator.translate(
-                    src_data_iter=texts, batch_size=self.opt.batch_size)
+                    src_data_iter=texts_to_translate,
+                    batch_size=self.opt.batch_size)
             except RuntimeError as e:
                 raise ServerModelError("Runtime Error: %s" % str(e))
 
         timer.tick(name="translation")
-        self.logger.info("""Using model #%d\t%d inputs (%d subsegment)
-               \ttranslation time: %f""" % (self.model_id, len(subsegment),
-                                            sscount,
+        self.logger.info("""Using model #%d\t%d inputs
+               \ttranslation time: %f""" % (self.model_id, len(texts),
                                             timer.times['translation']))
         self.reset_unload_timer()
 
@@ -331,26 +338,20 @@ class ServerModel:
         scores = [score_tensor.item()
                   for score_tensor in flatten_list(scores)]
 
+        results = [self.maybe_detokenize(item)
+                   for item in results]
+
+        # build back results with empty texts
+        for i in empty_indices:
+            results.insert(i, "")
+            scores.insert(i, 0)
+
+        results = ["".join(items)
+                   for items in zip(head_spaces, results, tail_spaces)]
+
         self.logger.info("Translation Results: %d", len(results))
-        if len(whitespace_segments) > 0:
-            self.logger.info("Whitespace segments: %d"
-                             % len(whitespace_segments))
 
-        for k in sorted(whitespace_segments.keys()):
-            results.insert(k, whitespace_segments[k])
-            scores.insert(k, 0.0)
-
-        results = ['\n'.join([self.maybe_detokenize(_)
-                              for _ in results[subsegment[i]]])
-                   for i in sorted(subsegment.keys())]
-
-        avg_scores = [sum([s * l for s, l in zip(scores[sub], sslength[sub])])
-                      / sum(sslength[sub])
-                      if sum(sslength[sub]) != 0 else 0.0
-                      for k, sub
-                      in sorted(subsegment.items(), key=lambda x: x[0])]
-
-        return results, avg_scores, self.opt.n_best, timer.times
+        return results, scores, self.opt.n_best, timer.times
 
     def do_timeout(self):
         """Timeout function that free GPU memory by moving the model to CPU
