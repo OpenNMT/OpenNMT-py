@@ -41,7 +41,7 @@ def main():
     checkpoint = torch.load(opt.model,
                             map_location=lambda storage, loc: storage)
     model_opt = checkpoint['opt']
-    
+
     src_dict, tgt_dict = None, None
 
     # the vocab object is a list of tuple (name, torchtext.Vocab)
