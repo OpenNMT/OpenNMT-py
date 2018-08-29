@@ -51,7 +51,7 @@ def main():
             src_dict = vocab[1]
         if vocab[0] == 'tgt':
             tgt_dict = vocab[1]
-    assert type(None) not in [type(src_dict), type(tgt_dict)]
+    assert src_dict is not None and tgt_dict is not None
 
     fields = onmt.inputters.load_fields_from_vocab(checkpoint['vocab'])
 
