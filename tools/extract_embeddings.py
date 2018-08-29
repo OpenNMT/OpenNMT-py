@@ -42,7 +42,7 @@ def main():
                             map_location=lambda storage, loc: storage)
     model_opt = checkpoint['opt']
     
-    enc_vocab, dec_vocab = None, None
+    src_dict, tgt_dict = None, None
 
     # the vocab object is a list of tuple (name, torchtext.Vocab)
     # we iterate over this list and associate vocabularies based on the name
