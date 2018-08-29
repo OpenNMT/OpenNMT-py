@@ -41,8 +41,17 @@ def main():
     checkpoint = torch.load(opt.model,
                             map_location=lambda storage, loc: storage)
     model_opt = checkpoint['opt']
-    src_dict = checkpoint['vocab'][1][1]
-    tgt_dict = checkpoint['vocab'][0][1]
+    
+    enc_vocab, dec_vocab = None, None
+
+    # the vocab object is a list of tuple (name, torchtext.Vocab)
+    # we iterate over this list and associate vocabularies based on the name
+    for vocab in checkpoint['vocab']:
+        if vocab[0] == 'src':
+            src_dict = vocab[1]
+        if vocab[0] == 'tgt':
+            tgt_dict = vocab[1]
+    assert type(None) not in [type(src_dict), type(tgt_dict)]
 
     fields = onmt.inputters.load_fields_from_vocab(checkpoint['vocab'])
 
