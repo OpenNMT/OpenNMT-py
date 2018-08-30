@@ -106,6 +106,7 @@ def build_decoder(opt, embeddings):
         return InputFeedRNNDecoder(opt.rnn_type, opt.brnn,
                                    opt.dec_layers, opt.rnn_size,
                                    opt.global_attention,
+                                   opt.global_attention_function,
                                    opt.coverage_attn,
                                    opt.context_gate,
                                    opt.copy_attn,
@@ -116,6 +117,7 @@ def build_decoder(opt, embeddings):
         return StdRNNDecoder(opt.rnn_type, opt.brnn,
                              opt.dec_layers, opt.rnn_size,
                              opt.global_attention,
+                             opt.global_attention_function,
                              opt.coverage_attn,
                              opt.context_gate,
                              opt.copy_attn,
@@ -199,9 +201,13 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
 
     # Build Generator.
     if not model_opt.copy_attn:
+        if model_opt.generator_function == "sparsemax":
+            gen_func = onmt.modules.sparse_activations.LogSparsemax(dim=-1)
+        else:
+            gen_func = nn.LogSoftmax(dim=-1)
         generator = nn.Sequential(
-            nn.Linear(model_opt.rnn_size, len(fields["tgt"].vocab)),
-            nn.LogSoftmax(dim=-1))
+            nn.Linear(model_opt.rnn_size, len(fields["tgt"].vocab)), gen_func
+        )
         if model_opt.share_decoder_embeddings:
             generator[0].weight = decoder.embeddings.word_lut.weight
     else:
