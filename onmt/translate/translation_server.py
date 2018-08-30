@@ -177,6 +177,8 @@ class ServerModel:
         self.user_opt = opt
         self.tokenizer = None
         self.logger = init_logger(self.opt.log_file)
+        self.loading_lock = threading.Event()
+        self.loading_lock.set()
 
         if load:
             self.load()
@@ -214,6 +216,8 @@ class ServerModel:
         return hasattr(self, 'translator')
 
     def load(self):
+        self.loading_lock.clear()
+
         timer = Timer()
         self.logger.info("Loading model %d" % self.model_id)
         timer.start()
@@ -265,6 +269,7 @@ class ServerModel:
 
         self.load_time = timer.tick()
         self.reset_unload_timer()
+        self.loading_lock.set()
 
     def run(self, inputs):
         """Translate `inputs` using this model
@@ -276,16 +281,27 @@ class ServerModel:
                 result: (list) translations
                 times: (dict) containing times
         """
-        timer = Timer()
-        self.logger.info("\nRunning translation using %d" % self.model_id)
+        self.stop_unload_timer()
 
+        timer = Timer()
         timer.start()
-        if not self.loaded:
-            self.load()
-            timer.tick(name="load")
-        elif self.opt.cuda:
-            self.to_gpu()
-            timer.tick(name="to_gpu")
+        self.logger.info("Running translation using %d" % self.model_id)
+
+        if not self.loading_lock.is_set():
+            self.logger.info(
+                "Model #%d is being loaded by another thread, waiting"
+                % self.model_id)
+            if not self.loading_lock.wait(timeout=30):
+                raise ServerModelError("Model %d loading timeout"
+                                       % self.model_id)
+
+        else:
+            if not self.loaded:
+                self.load()
+                timer.tick(name="load")
+            elif self.opt.cuda:
+                self.to_gpu()
+                timer.tick(name="to_gpu")
 
         texts = []
         head_spaces = []
@@ -372,12 +388,15 @@ class ServerModel:
             torch.cuda.empty_cache()
         self.unload_timer = None
 
+    def stop_unload_timer(self):
+        if self.unload_timer is not None:
+            self.unload_timer.cancel()
+
     def reset_unload_timer(self):
         if self.timeout < 0:
             return
 
-        if self.unload_timer is not None:
-            self.unload_timer.cancel()
+        self.stop_unload_timer()
         self.unload_timer = threading.Timer(self.timeout, self.do_timeout)
         self.unload_timer.start()
 
