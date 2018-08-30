@@ -284,6 +284,7 @@ class ServerModel:
         self.stop_unload_timer()
 
         timer = Timer()
+        timer.start()
         self.logger.info("Running translation using %d" % self.model_id)
 
         if not self.loading_lock.is_set():
@@ -295,7 +296,6 @@ class ServerModel:
                                        % self.model_id)
 
         else:
-            timer.start()
             if not self.loaded:
                 self.load()
                 timer.tick(name="load")
