@@ -404,16 +404,14 @@ def train_opts(parser):
                        help="Window size for spectrogram in seconds.")
 
 
-def translate_opts(parser, use_ensemble=False):
+def translate_opts(parser):
     """ Translation / inference options """
     group = parser.add_argument_group('Model')
-    if use_ensemble:
-        group.add_argument('-model', dest='models', action='append',
-                           required=True,
-                           help='Path to model .pt file. Use repeatedly.')
-    else:
-        group.add_argument('-model', required=True,
-                           help='Path to model .pt file')
+    group.add_argument('-model', dest='models', action='append',
+                       metavar='MODEL', required=True,
+                       help='Path to model .pt file. '
+                       'Can be used repeatedly, '
+                       'to specify multiple models for ensemble decoding.')
 
     group = parser.add_argument_group('Data')
     group.add_argument('-data_type', default="text",

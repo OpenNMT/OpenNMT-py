@@ -108,6 +108,7 @@ class EnsembleGenerator(nn.Module):
     """
     def __init__(self, model_generators):
         self.model_generators = tuple(model_generators)
+        super(EnsembleGenerator, self).__init__()
 
     def forward(self, hidden):
         """

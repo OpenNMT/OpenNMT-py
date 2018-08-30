@@ -18,8 +18,7 @@ import onmt.opts as opts
 import onmt.decoders.ensemble
 
 
-def build_translator(opt, report_score=True, logger=None, out_file=None,
-                     use_ensemble=False):
+def build_translator(opt, report_score=True, logger=None, out_file=None):
     if out_file is None:
         out_file = codecs.open(opt.output, 'w+', 'utf-8')
 
@@ -30,7 +29,8 @@ def build_translator(opt, report_score=True, logger=None, out_file=None,
     opts.model_opts(dummy_parser)
     dummy_opt = dummy_parser.parse_known_args([])[0]
 
-    if use_ensemble:
+    if len(opt.models) > 1:
+        # use ensemble decoding if more than one model is specified
         fields, model, model_opt = \
             onmt.decoders.ensemble.load_test_model(opt, dummy_opt.__dict__)
     else:
