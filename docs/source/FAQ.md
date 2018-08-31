@@ -70,13 +70,13 @@ setup. We have confirmed the following command can replicate their WMT results.
 
 ```
 python  train.py -data /tmp/de2/data -save_model /tmp/extra -gpuid 1 \
-        -layers 6 -rnn_size 512 -word_vec_size 512   \
+        -layers 6 -rnn_size 512 -word_vec_size 512 -transformer_ff 2048 -heads 8  \
         -encoder_type transformer -decoder_type transformer -position_encoding \
-        -train_steps 100000  -max_generator_batches 32 -dropout 0.1 \
-        -batch_size 4096 -batch_type tokens -normalization tokens  -accum_count 4 \
+        -train_steps 200000  -max_generator_batches 2 -dropout 0.1 \
+        -batch_size 4096 -batch_type tokens -normalization tokens  -accum_count 2 \
         -optim adam -adam_beta2 0.998 -decay_method noam -warmup_steps 8000 -learning_rate 2 \
         -max_grad_norm 0 -param_init 0  -param_init_glorot \
-        -label_smoothing 0.1  
+        -label_smoothing 0.1 -valid_steps 10000 -save_checkpoint_steps 10000 -gpuid 0 1 2 3 
 ```
 
 Here are what each of the parameters mean:
@@ -87,9 +87,20 @@ Here are what each of the parameters mean:
 * `batch_type tokens`, `normalization tokens`, `accum_count 4`: batch and normalize based on number of tokens and not sentences. Compute gradients based on four batches. 
 - `label_smoothing 0.1`: use label smoothing loss. 
 
+* `gpuid 0 1 2 3 accum_count 2`: This will use 4 GPU and accumulate over 2 batches before updating parameters, this will emulate using 8 GPUS.
+
 
 ## Do you support multi-gpu?
 
-Currently our system does not support multi-gpu. It will be coming soon. 
+Yes !
+First you need to make sure you export CUDA_VISIBLE_DEVICES=0,1,2,3
+Then use -gpuid 0 1 2 3
+If you want to use GPU id 1 and 3 of your OS, you will need to export CUDA_VISIBLE_DEVICES=1,3
+then use -gpuid 0 1
+
+## How can I ensemble Models at inference?
+
+You can specify several models in the translate.py command line: -model model1_seed1 model2_seed2
+Bear in mind that your models must share the same traget vocabulary.
 
 

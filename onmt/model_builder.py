@@ -126,9 +126,10 @@ def build_decoder(opt, embeddings):
                              opt.reuse_copy_attn)
 
 
-def load_test_model(opt, dummy_opt):
-    """ Load model for Inference """
-    checkpoint = torch.load(opt.model,
+def load_test_model(opt, dummy_opt, model_path=None):
+    if model_path is None:
+        model_path = opt.models[0]
+    checkpoint = torch.load(model_path,
                             map_location=lambda storage, loc: storage)
 
     fields = inputters.vocab_to_fields(
