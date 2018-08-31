@@ -207,8 +207,8 @@ class ServerModel:
 
         for (k, v) in opt.items():
             if k == 'models':
-                for model in v:
-                    sys.argv += ['-model', str(model)]
+                sys.argv += ['-model']
+                sys.argv += [str(model) for model in v]
             elif type(v) == bool:
                 sys.argv += ['-%s' % k]
             else:
