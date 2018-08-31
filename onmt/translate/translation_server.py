@@ -60,9 +60,13 @@ class TranslationServer():
 
         self.models_root = self.confs.get('models_root', './available_models')
         for i, conf in enumerate(self.confs["models"]):
-            if "model" not in conf:
-                raise ValueError("""Incorrect config file: missing 'model'
-                                    parameter for model #%d""" % i)
+            if "models" not in conf:
+                if "model" in conf:
+                    # backwards compatibility for confs
+                    conf["models"] = [conf["model"]]
+                else:
+                    raise ValueError("""Incorrect config file: missing 'models'
+                                        parameter for model #%d""" % i)
             kwargs = {'timeout': conf.get('timeout', None),
                       'load': conf.get('load', None),
                       'tokenizer_opt': conf.get('tokenizer', None),
@@ -72,7 +76,7 @@ class TranslationServer():
             kwargs = {k: v for (k, v) in kwargs.items() if v is not None}
             model_id = conf.get("id", None)
             opt = conf["opt"]
-            opt["model"] = conf["model"]
+            opt["models"] = conf["models"]
             self.preload_model(opt, model_id=model_id, **kwargs)
 
     def clone_model(self, model_id, opt, timeout=-1):
@@ -83,7 +87,7 @@ class TranslationServer():
         if model_id in self.models:
             if opt is None:
                 opt = self.models[model_id].user_opt
-            opt["model"] = self.models[model_id].opt.model
+            opt["models"] = self.models[model_id].opt.models
             return self.load_model(opt, timeout)
         else:
             raise ServerModelError("No such model '%s'" % str(model_id))
@@ -196,11 +200,18 @@ class ServerModel:
         parser = argparse.ArgumentParser()
         onmt.opts.translate_opts(parser)
 
-        opt['model'] = os.path.join(self.model_root, opt['model'])
+        models = opt['models']
+        if not isinstance(models, (list, tuple)):
+            models = [models]
+        opt['models'] = [os.path.join(self.model_root, model)
+                         for model in models]
         opt['src'] = "dummy_src"
 
         for (k, v) in opt.items():
-            if type(v) == bool:
+            if k == 'models':
+                sys.argv += ['-model']
+                sys.argv += [str(model) for model in v]
+            elif type(v) == bool:
                 sys.argv += ['-%s' % k]
             else:
                 sys.argv += ['-%s' % k, str(v)]
@@ -263,7 +274,6 @@ class ServerModel:
                 tokenizer = pyonmttok.Tokenizer(mode,
                                                 **self.tokenizer_opt["params"])
                 self.tokenizer = tokenizer
-
             else:
                 raise ValueError("Invalid value for tokenizer type")
 
@@ -401,11 +411,11 @@ class ServerModel:
         self.unload_timer.start()
 
     def to_dict(self):
-        hide_opt = ["model", "src"]
+        hide_opt = ["models", "src"]
         d = {"model_id": self.model_id,
              "opt": {k: self.user_opt[k] for k in self.user_opt.keys()
                      if k not in hide_opt},
-             "model": self.user_opt["model"],
+             "models": self.user_opt["models"],
              "loaded": self.loaded,
              "timeout": self.timeout,
              }

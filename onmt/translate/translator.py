@@ -15,6 +15,7 @@ import onmt.model_builder
 import onmt.translate.beam
 import onmt.inputters as inputters
 import onmt.opts as opts
+import onmt.decoders.ensemble
 
 
 def build_translator(opt, report_score=True, logger=None, out_file=None):
@@ -28,8 +29,13 @@ def build_translator(opt, report_score=True, logger=None, out_file=None):
     opts.model_opts(dummy_parser)
     dummy_opt = dummy_parser.parse_known_args([])[0]
 
-    fields, model, model_opt = \
-        onmt.model_builder.load_test_model(opt, dummy_opt.__dict__)
+    if len(opt.models) > 1:
+        # use ensemble decoding if more than one model is specified
+        fields, model, model_opt = \
+            onmt.decoders.ensemble.load_test_model(opt, dummy_opt.__dict__)
+    else:
+        fields, model, model_opt = \
+            onmt.model_builder.load_test_model(opt, dummy_opt.__dict__)
 
     scorer = onmt.translate.GNMTGlobalScorer(opt.alpha,
                                              opt.beta,
@@ -522,6 +528,8 @@ class Translator(object):
             src, memory_bank, enc_states)
 
         if src_lengths is None:
+            assert not isinstance(memory_bank, tuple), \
+                'Ensemble decoding only supported for text data'
             src_lengths = torch.Tensor(batch_size).type_as(memory_bank.data)\
                                                   .long()\
                                                   .fill_(memory_bank.size(0))
@@ -529,7 +537,10 @@ class Translator(object):
         # (2) Repeat src objects `beam_size` times.
         src_map = rvar(batch.src_map.data) \
             if data_type == 'text' and self.copy_attn else None
-        memory_bank = rvar(memory_bank.data)
+        if isinstance(memory_bank, tuple):
+            memory_bank = tuple(rvar(x.data) for x in memory_bank)
+        else:
+            memory_bank = rvar(memory_bank.data)
         memory_lengths = src_lengths.repeat(beam_size)
         dec_states.repeat_beam_size_times(beam_size)
 
@@ -645,9 +656,12 @@ class Translator(object):
         return gold_scores
 
     def _report_score(self, name, score_total, words_total):
-        msg = ("%s AVG SCORE: %.4f, %s PPL: %.4f" % (
-            name, score_total / words_total,
-            name, math.exp(-score_total / words_total)))
+        if words_total == 0:
+            msg = "%s No words predicted" % (name,)
+        else:
+            msg = ("%s AVG SCORE: %.4f, %s PPL: %.4f" % (
+                name, score_total / words_total,
+                name, math.exp(-score_total / words_total)))
         return msg
 
     def _report_bleu(self, tgt_path):
