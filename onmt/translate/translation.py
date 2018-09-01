@@ -22,16 +22,14 @@ class TranslationBuilder(object):
        has_tgt (bool): will the batch have gold targets
     """
 
-    def __init__(self, data, fields, n_best=1, replace_unk=False,
-                 has_tgt=False):
+    def __init__(self, data, n_best=1, replace_unk=False, has_tgt=False):
         self.data = data
-        self.fields = fields
         self.n_best = n_best
         self.replace_unk = replace_unk
         self.has_tgt = has_tgt
 
     def _build_target_tokens(self, src, src_vocab, src_raw, pred, attn):
-        vocab = self.fields["tgt"].vocab
+        vocab = self.data.fields["tgt"].vocab
         tokens = []
         for tok in pred:
             if tok < len(vocab):
@@ -43,7 +41,7 @@ class TranslationBuilder(object):
                 break
         if self.replace_unk and (attn is not None) and (src is not None):
             for i in range(len(tokens)):
-                if tokens[i] == vocab.itos[inputters.UNK]:
+                if tokens[i] == inputters.UNK_WORD:
                     _, max_index = attn[i].max(0)
                     tokens[i] = src_raw[max_index[0]]
         return tokens

@@ -53,7 +53,7 @@ def main():
             tgt_dict = vocab[1]
     assert src_dict is not None and tgt_dict is not None
 
-    fields = onmt.inputters.load_fields_from_vocab(checkpoint['vocab'])
+    fields = onmt.inputters.vocab_to_fields(checkpoint['vocab'])
 
     model_opt = checkpoint['opt']
     for arg in dummy_opt.__dict__:
