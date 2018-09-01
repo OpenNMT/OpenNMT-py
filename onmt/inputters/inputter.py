@@ -2,7 +2,7 @@
 
 import glob
 import os
-import codecs
+import io
 from collections import Counter, defaultdict
 from itertools import count
 from functools import partial
@@ -212,9 +212,9 @@ def num_features(corpus_file):
     # used only in preprocess.py
     # in the long run tokenization (including for the features) should be
     # a field issue.
-    with codecs.open(corpus_file, "r", "utf-8") as cf:
-        f_line = cf.readline().strip().split()
-        _, _, num_feats = extract_text_features(f_line)
+    with io.open(corpus_file, "r", encoding="utf-8") as f:
+        feature_line = f.readline().strip().split()
+        _, _, num_feats = extract_text_features(feature_line)
     return num_feats
 
 
@@ -268,8 +268,10 @@ def collect_feature_vocabs(fields, side):
     return feature_vocabs
 
 
-def build_dataset(fields, data_type, src_path, tgt_path, src_dir=None,
-                  src_seq_length=0, tgt_seq_length=0,
+def build_dataset(fields, data_type,
+                  src_path=None, tgt_path=None,
+                  src_lines=None, tgt_lines=None,
+                  src_dir=None, src_seq_length=0, tgt_seq_length=0,
                   src_seq_length_trunc=0, tgt_seq_length_trunc=0,
                   dynamic_dict=True, sample_rate=0,
                   window_size=0, window_stride=0, window=None,
@@ -281,29 +283,32 @@ def build_dataset(fields, data_type, src_path, tgt_path, src_dir=None,
     incremental progress.
     """
     # used in preprocess.py and translator.py
-    # in preprocess.py, it is called if you are not doing sharding, currently
-    # meaning if you are not using text.
     # in translator.py, path and iter arguments are passed to
     # build_dataset, but when it's actually called in translate.py the iter
     # arguments are also unspecified and thus None.
-    if src_path is None:
-        raise ValueError("You must specify a path for src data")
 
     src_data_classes = {'text': TextDataset, 'img': ImageDataset,
                         'audio': AudioDataset}
     assert data_type in src_data_classes
 
+    assert src_path is not None or src_lines is not None
+    assert src_path is None or src_lines is None
+
+    assert tgt_path is None or tgt_lines is None
+
     # you can have a None tgt_path because you can translate without a gold tgt
     # make_examples is used only in this function
-    if tgt_path is not None:
-        tgt_examples_iter = TextDataset.make_examples(
-                tgt_path, truncate=tgt_seq_length_trunc, side="tgt")
+    if tgt_path or tgt_lines:
+        tgt_examples = TextDataset.make_examples(
+                path=tgt_path, lines=tgt_lines,
+                truncate=tgt_seq_length_trunc, side="tgt")
     else:
-        tgt_examples_iter = None
+        tgt_examples = None
 
     src_data_cls = src_data_classes[data_type]
-    src_examples_iter = src_data_cls.make_examples(
-        src_path,
+    src_examples = src_data_cls.make_examples(
+        path=src_path,
+        lines=src_lines,
         truncate=src_seq_length_trunc,
         side="src", directory=src_dir,
         sample_rate=sample_rate, window_size=window_size,
@@ -321,7 +326,7 @@ def build_dataset(fields, data_type, src_path, tgt_path, src_dir=None,
         fp = None
 
     dataset = src_data_cls(
-        fields, src_examples_iter, tgt_examples_iter,
+        fields, src_examples, tgt_examples,
         dynamic_dict=dynamic_dict, filter_pred=fp)
 
     return dataset
@@ -547,3 +552,23 @@ def lazily_load_dataset(corpus_type, path):
         logger.info('Loading %s dataset from %s, number of examples: %d' %
                     (corpus_type, pt, len(dataset)))
         yield dataset
+
+
+def shard_corpus(src_corpus, tgt_corpus, shard_size):
+    """
+    src_corpus: location of the corpus file which will be broken by shard_size
+    tgt_corpus: location of the corpus file which will be broken into shards
+        that are the same number of lines as the shards
+    shard_size: size of each shard in bytes
+    yields pairs of lists of lines where the first is approximately shard_size
+        bytes and the second has the same number of lines as the first
+    """
+    assert shard_size != 0
+    with io.open(src_corpus, "r", encoding="utf-8") as src_f, \
+            io.open(tgt_corpus, "r", encoding="utf-8") as tgt_f:
+        while True:
+            src_shard = src_f.readlines(shard_size)
+            if not src_shard:
+                return
+            tgt_shard = [next(tgt_f) for line in src_shard]
+            yield src_shard, tgt_shard

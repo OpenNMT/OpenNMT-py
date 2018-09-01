@@ -43,51 +43,6 @@ def parse_args():
     return opt
 
 
-def build_sharded_datasets(src_corpus, tgt_corpus, fields, opt):
-    """
-    Supported only if data_type == 'text'
-    A large corpus is represented as a sequence of `shard` datasets: the
-    corpus is read in small pieces of a size that is a multiple of 64 bytes
-    >= `max_shard_size`. This can reduce the memory footprint by ~50%.
-
-    Note! Previous shards may still remain in memory until they
-    stay in memory, but since we are done with them, and no more
-    reference to them, if there is memory tight situation, the OS could
-    easily reclaim these memory.
-    If `max_shard_size` is 0 or larger than the corpus size, no sharding is
-    performed.
-    NOTE! Because a dataset contains both source and target, a sharded output
-    file is of size 2 * `max_shard_size` bytes.
-    """
-    corpus_size = os.path.getsize(src_corpus)
-    if corpus_size > 10 * 1024 ** 2 and opt.max_shard_size == 0:
-        logger.info("Warning. The corpus %s is larger than 10M bytes, "
-                    "you can set '-max_shard_size' to process it in "
-                    "small shards to use less memory." % src_corpus)
-
-    if opt.max_shard_size != 0:
-        logger.info(' * divide corpus into shards and build dataset '
-                    'separately (shard_size = %d bytes).' % opt.max_shard_size)
-
-    src_iter = inputters.ShardedTextCorpusIterator(
-        src_corpus, opt.src_seq_length_trunc,
-        "src", opt.max_shard_size)
-    tgt_iter = inputters.ShardedTextCorpusIterator(
-        tgt_corpus, opt.tgt_seq_length_trunc,
-        "tgt", opt.max_shard_size,
-        assoc_iter=src_iter)
-
-    ret_list = []
-    while not src_iter.hit_end():
-        # problem here: can't use filter pred at the moment
-        dataset = inputters.TextDataset(
-            fields, src_iter, tgt_iter,
-            dynamic_dict=opt.dynamic_dict)
-        ret_list.append(dataset)
-
-    return ret_list
-
-
 def build_datasets(corpus_type, fields, opt):
     assert corpus_type in ['train', 'valid']
 
@@ -98,27 +53,36 @@ def build_datasets(corpus_type, fields, opt):
         src_corpus = opt.valid_src
         tgt_corpus = opt.valid_tgt
 
-    # Currently preprocess sharding is only supported for data_type=='text'
-    if opt.data_type == 'text':
-        # TODO: the dataset is built in a different way in this method. Unify.
-        return build_sharded_datasets(src_corpus, tgt_corpus, fields, opt)
+    shard_size = opt.max_shard_size if corpus_type == 'train' else -1
+    corpus_size = os.path.getsize(src_corpus)
+    if corpus_type == 'train' and corpus_size > 10 * 1024 ** 2 \
+            and shard_size == -1:
+        logger.info("Warning. The corpus %s is larger than 10M bytes, "
+                    "you can set '-max_shard_size' to process it in "
+                    "small shards to use less memory." % src_corpus)
 
-    # For data_type == 'img' or 'audio', preprocess sharding is not supported.
-    # But since the interfaces are uniform, it should not be not hard to
-    # implement this
-    dataset = inputters.build_dataset(
-        fields, opt.data_type, src_corpus, tgt_corpus,
-        src_dir=opt.src_dir,
-        src_seq_length=opt.src_seq_length,
-        tgt_seq_length=opt.tgt_seq_length,
-        src_seq_length_trunc=opt.src_seq_length_trunc,
-        tgt_seq_length_trunc=opt.tgt_seq_length_trunc,
-        dynamic_dict=opt.dynamic_dict,
-        sample_rate=opt.sample_rate,
-        window_size=opt.window_size,
-        window_stride=opt.window_stride,
-        window=opt.window)
-    return [dataset]
+    if shard_size > 0:
+        logger.info(' * divide corpus into shards and build dataset '
+                    'separately (shard_size = %d bytes).' % shard_size)
+    shards = inputters.shard_corpus(src_corpus, tgt_corpus, shard_size)
+
+    ret_list = []
+    for src_shard, tgt_shard in shards:
+        dataset = inputters.build_dataset(
+            fields, opt.data_type,
+            src_lines=src_shard, tgt_lines=tgt_shard,
+            src_dir=opt.src_dir,
+            src_seq_length=opt.src_seq_length,
+            tgt_seq_length=opt.tgt_seq_length,
+            src_seq_length_trunc=opt.src_seq_length_trunc,
+            tgt_seq_length_trunc=opt.tgt_seq_length_trunc,
+            dynamic_dict=opt.dynamic_dict,
+            sample_rate=opt.sample_rate,
+            window_size=opt.window_size,
+            window_stride=opt.window_stride,
+            window=opt.window)
+        ret_list.append(dataset)
+    return ret_list
 
 
 def save_datasets(datasets, corpus_type, save_data):

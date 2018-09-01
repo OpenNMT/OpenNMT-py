@@ -178,7 +178,7 @@ class Translator(object):
             raise ValueError("batch_size must be set")
         data = inputters.build_dataset(
             self.fields, self.data_type,
-            src_path, tgt_path,
+            src_path=src_path, tgt_path=tgt_path,
             src_dir=src_dir,
             sample_rate=self.sample_rate,
             window_size=self.window_size,

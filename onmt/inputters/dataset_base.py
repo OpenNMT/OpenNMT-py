@@ -60,7 +60,7 @@ class DatasetBase(Dataset):
         super(DatasetBase, self).__init__(examples, fields, filter_pred)
 
     @classmethod
-    def make_examples(cls, path, **kwargs):
+    def make_examples(cls, path=None, lines=None, **kwargs):
         """
         path: location of a corpus file
         remaining arguments are passed to _make_iterator_from_file and
@@ -68,7 +68,11 @@ class DatasetBase(Dataset):
         returns an iterator of dictionaries, one for each example in the corpus
         file
         """
-        for i, line in enumerate(cls._make_iterator_from_file(path, **kwargs)):
+        assert (path is not None or lines is not None) \
+            and (path is None or lines is None)
+        if path is not None:
+            lines = cls._make_iterator_from_file(path, **kwargs)
+        for i, line in enumerate(lines):
             example = cls._make_example(line, **kwargs)
             example['indices'] = i
             yield example
