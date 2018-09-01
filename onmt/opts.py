@@ -157,12 +157,12 @@ def preprocess_opts(parser):
     group.add_argument('-save_data', required=True,
                        help="Output file for the prepared data")
 
-    group.add_argument('-max_shard_size', type=int, default=0,
-                       help="""For text corpus of large volume, it will
-                       be divided into shards of this size to preprocess.
-                       If 0, the data will be handled as a whole. The unit
-                       is in bytes. Optimal value should be multiples of
-                       64 bytes. A commonly used sharding value is 131072000.
+    group.add_argument('-max_shard_size', type=int, default=-1,
+                       help="""Data is preprocessed in pieces of approximately
+                       this many bytes in order to reduce memory usage. If
+                       unspecified, the data is preprocessed all at once.
+                       Optimal values should be multiples of 64 bytes.
+                       A commonly used sharding value is 131072000.
                        It is recommended to ensure the corpus is shuffled
                        before sharding.""")
 
