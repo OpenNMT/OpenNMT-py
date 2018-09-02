@@ -375,13 +375,13 @@ class ShardedTextCorpusIterator(object):
                     cur_pos = self.corpus.tell()
                     if cur_pos >= self.last_pos + self.shard_size:
                         self.last_pos = cur_pos
-                        raise StopIteration
+                        return
 
                 line = self.corpus.readline()
                 if line == '':
                     self.eof = True
                     self.corpus.close()
-                    raise StopIteration
+                    return
 
                 self.line_index += 1
                 iteration_index += 1

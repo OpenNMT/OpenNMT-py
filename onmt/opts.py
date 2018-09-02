@@ -46,7 +46,7 @@ def model_opts(parser):
                        embedding sizes will be set to N^feat_vec_exponent
                        where N is the number of values the feature takes.""")
 
-    # Encoder-Deocder Options
+    # Encoder-Decoder Options
     group = parser.add_argument_group('Model- Encoder-Decoder')
     group.add_argument('-model_type', default='text',
                        help="""Type of source model to use. Allows
@@ -104,6 +104,8 @@ def model_opts(parser):
                        choices=['dot', 'general', 'mlp'],
                        help="""The attention type to use:
                        dotprod or general (Luong) or MLP (Bahdanau)""")
+    group.add_argument('-global_attention_function', type=str,
+                       default="softmax", choices=["softmax", "sparsemax"])
     group.add_argument('-self_attn_type', type=str, default="scaled-dot",
                        help="""Self attention type in Transformer decoder
                        layer -- currently "scaled-dot" or "average" """)
@@ -112,9 +114,14 @@ def model_opts(parser):
     group.add_argument('-transformer_ff', type=int, default=2048,
                        help='Size of hidden transformer feed-forward')
 
-    # Genenerator and loss options.
+    # Generator and loss options.
     group.add_argument('-copy_attn', action="store_true",
                        help='Train copy attention layer.')
+    group.add_argument('-generator_function', default="log_softmax",
+                       choices=["log_softmax", "sparsemax"],
+                       help="""Which function to use for generating
+                       probabilities over the target vocabulary (choices:
+                       log_softmax, sparsemax)""")
     group.add_argument('-copy_attn_force', action="store_true",
                        help='When available, train to copy.')
     group.add_argument('-reuse_copy_attn', action="store_true",
@@ -407,8 +414,11 @@ def train_opts(parser):
 def translate_opts(parser):
     """ Translation / inference options """
     group = parser.add_argument_group('Model')
-    group.add_argument('-model', required=True,
-                       help='Path to model .pt file')
+    group.add_argument('-model', dest='models', metavar='MODEL',
+                       nargs='+', type=str, default=[], required=True,
+                       help='Path to model .pt file(s). '
+                       'Multiple models can be specified, '
+                       'for ensemble decoding.')
 
     group = parser.add_argument_group('Data')
     group.add_argument('-data_type', default="text",

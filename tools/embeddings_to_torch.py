@@ -22,7 +22,7 @@ def get_vocabs(dict_file):
             enc_vocab = vocab[1]
         if vocab[0] == 'tgt':
             dec_vocab = vocab[1]
-    assert type(None) not in [type(enc_vocab), type(dec_vocab)]
+    assert enc_vocab is not None and dec_vocab is not None
 
     logger.info("From: %s" % dict_file)
     logger.info("\t* source vocab: %d words" % len(enc_vocab))

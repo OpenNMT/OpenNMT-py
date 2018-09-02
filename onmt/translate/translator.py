@@ -15,6 +15,7 @@ import onmt.model_builder
 import onmt.translate.beam
 import onmt.inputters as inputters
 import onmt.opts as opts
+import onmt.decoders.ensemble
 
 
 def build_translator(opt, report_score=True, logger=None, out_file=None):
@@ -28,8 +29,13 @@ def build_translator(opt, report_score=True, logger=None, out_file=None):
     opts.model_opts(dummy_parser)
     dummy_opt = dummy_parser.parse_known_args([])[0]
 
-    fields, model, model_opt = \
-        onmt.model_builder.load_test_model(opt, dummy_opt.__dict__)
+    if len(opt.models) > 1:
+        # use ensemble decoding if more than one model is specified
+        fields, model, model_opt = \
+            onmt.decoders.ensemble.load_test_model(opt, dummy_opt.__dict__)
+    else:
+        fields, model, model_opt = \
+            onmt.model_builder.load_test_model(opt, dummy_opt.__dict__)
 
     scorer = onmt.translate.GNMTGlobalScorer(opt.alpha,
                                              opt.beta,
@@ -620,9 +626,12 @@ class Translator(object):
         return gold_scores
 
     def _report_score(self, name, score_total, words_total):
-        msg = ("%s AVG SCORE: %.4f, %s PPL: %.4f" % (
-            name, score_total / words_total,
-            name, math.exp(-score_total / words_total)))
+        if words_total == 0:
+            msg = "%s No words predicted" % (name,)
+        else:
+            msg = ("%s AVG SCORE: %.4f, %s PPL: %.4f" % (
+                name, score_total / words_total,
+                name, math.exp(-score_total / words_total)))
         return msg
 
     def _report_bleu(self, tgt_path):

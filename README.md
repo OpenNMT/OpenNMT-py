@@ -9,8 +9,8 @@ an open-source (MIT) neural machine translation system. It is designed to be res
 
 Codebase is relatively stable, but PyTorch is still evolving. We currently only support PyTorch 0.4 and recommend forking if you need to have stable code.
 
-OpenNMT-py is run as a collaborative open-source project. It is maintained by [Sasha Rush](http://github.com/srush) (Cambridge, MA), [Ben Peters](http://github.com/bpopeters) (Saarbrücken), and [Jianyu Zhan](http://github.com/jianyuzhan) (Shanghai). The original code was written by [Adam Lerer](http://github.com/adamlerer) (NYC).
-We love contributions. Please consult the Issues page for any [Contributions Welcome](https://github.com/OpenNMT/OpenNMT-py/issues?q=is%3Aissue+is%3Aopen+label%3A%22contributions+welcome%22) tagged post.
+OpenNMT-py is run as a collaborative open-source project. It is maintained by [Sasha Rush](http://github.com/srush) (Cambridge, MA), [Ben Peters](http://github.com/bpopeters) (Lisbon), and [Jianyu Zhan](http://github.com/jianyuzhan) (Shanghai). The original code was written by [Adam Lerer](http://github.com/adamlerer) (NYC). 
+We love contributions. Please consult the Issues page for any [Contributions Welcome](https://github.com/OpenNMT/OpenNMT-py/issues?q=is%3Aissue+is%3Aopen+label%3A%22contributions+welcome%22) tagged post. 
 
 <center style="padding: 40px"><img width="70%" src="http://opennmt.github.io/simple-attn.png" /></center>
 
@@ -41,17 +41,17 @@ The following OpenNMT features are implemented:
 - [data preprocessing](http://opennmt.net/OpenNMT-py/options/preprocess.html)
 - [Inference (translation) with batching and beam search](http://opennmt.net/OpenNMT-py/options/translate.html)
 - [Multiple source and target RNN (lstm/gru) types and attention (dotprod/mlp) types](http://opennmt.net/OpenNMT-py/options/train.html#model-encoder-decoder)
-- [TensorBoard/Crayon logging](http://opennmt.net/OpenNMT-py/options/train.html#logging)
+- [TensorBoard](http://opennmt.net/OpenNMT-py/options/train.html#logging)
 - [Source word features](http://opennmt.net/OpenNMT-py/options/train.html#model-embeddings)
 - [Pretrained Embeddings](http://opennmt.net/OpenNMT-py/FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove)
 - [Copy and Coverage Attention](http://opennmt.net/OpenNMT-py/options/train.html#model-attention)
 - [Image-to-text processing](http://opennmt.net/OpenNMT-py/im2text.html)
 - [Speech-to-text processing](http://opennmt.net/OpenNMT-py/speech2text.html)
 - ["Attention is all you need"](http://opennmt.net/OpenNMT-py/FAQ.html#how-do-i-use-the-transformer-model)
+- [Multi-GPU](http://opennmt.net/OpenNMT-py/FAQ.html##do-you-support-multi-gpu)
 - Inference time loss functions.
 
 Beta Features (committed):
-- multi-GPU
 - Structured attention
 - [Conv2Conv convolution model]
 - SRU "RNNs faster than CNN" paper
@@ -130,6 +130,9 @@ http://opennmt.net/Models-py/
 
 
 ## Citation
+
+[OpenNMT: Neural Machine Translation Toolkit](https://arxiv.org/pdf/1805.11462)
+
 
 [OpenNMT technical report](https://doi.org/10.18653/v1/P17-4012)
 
