@@ -230,7 +230,7 @@ transformer(){
                     -dropout 0.1 \
                     -normalization tokens \
                     -max_grad_norm 0 \
-                    -optim sparseadam \
+                    -optim adam \
                     -decay_method noam \
                     -learning_rate 2 \
                     -position_encoding \
