@@ -312,7 +312,7 @@
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">norm_method</span> <span class="o">==</span> <span class="s2">&quot;tokens&quot;</span><span class="p">:</span>
                         <span class="n">num_tokens</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">tgt</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">ne</span><span class="p">(</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">train_loss</span><span class="o">.</span><span class="n">padding_idx</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-                        <span class="n">normalization</span> <span class="o">+=</span> <span class="n">num_tokens</span>
+                        <span class="n">normalization</span> <span class="o">+=</span> <span class="n">num_tokens</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="n">normalization</span> <span class="o">+=</span> <span class="n">batch</span><span class="o">.</span><span class="n">batch_size</span>
                     <span class="n">accum</span> <span class="o">+=</span> <span class="mi">1</span>
@@ -326,7 +326,7 @@
                         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_gpu</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
                             <span class="n">normalization</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">distributed</span>
                                                 <span class="o">.</span><span class="n">all_gather_list</span>
-                                                <span class="p">(</span><span class="n">normalization</span><span class="o">.</span><span class="n">cpu</span><span class="p">()))</span>
+                                                <span class="p">(</span><span class="n">normalization</span><span class="p">))</span>
 
                         <span class="bp">self</span><span class="o">.</span><span class="n">_gradient_accumulation</span><span class="p">(</span>
                             <span class="n">true_batchs</span><span class="p">,</span> <span class="n">normalization</span><span class="p">,</span> <span class="n">total_stats</span><span class="p">,</span>
