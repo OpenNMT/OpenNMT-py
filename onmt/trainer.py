@@ -145,8 +145,6 @@ class Trainer(object):
                     if self.gpu_verbose_level > 1:
                         logger.info("GpuRank %d: index: %d accum: %d"
                                     % (self.gpu_rank, i, accum))
-                    cur_dataset = train_iter.get_cur_dataset()
-                    self.train_loss.cur_dataset = cur_dataset
 
                     true_batchs.append(batch)
 
@@ -221,9 +219,6 @@ class Trainer(object):
         stats = onmt.utils.Statistics()
 
         for batch in valid_iter:
-            cur_dataset = valid_iter.get_cur_dataset()
-            self.valid_loss.cur_dataset = cur_dataset
-
             src = inputters.make_features(batch, 'src', self.data_type)
             if self.data_type == 'text':
                 _, src_lengths = batch.src
