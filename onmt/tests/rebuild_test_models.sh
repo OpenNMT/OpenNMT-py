@@ -50,7 +50,7 @@ $my_python preprocess.py -train_src data/src-train.txt -train_tgt data/tgt-train
 $my_python train.py -data data/data -save_model /tmp/tmp -batch_type tokens -batch_size 1024 -accum_count 4 \
  -layers 4 -rnn_size 256 -word_vec_size 256 -encoder_type transformer -decoder_type transformer -share_embedding \
  -train_steps 10000 -gpuid 0 -max_generator_batches 4 -dropout 0.1 -normalization tokens \
- -max_grad_norm 0 -optim sparseadam -decay_method noam -learning_rate 2 -label_smoothing 0.1 \
+ -max_grad_norm 0 -optim adam -decay_method noam -learning_rate 2 -label_smoothing 0.1 \
  -position_encoding -param_init 0 -warmup_steps 100 -param_init_glorot -adam_beta2 0.998
 #
 mv /tmp/tmp*e10.pt onmt/tests/test_model.pt
