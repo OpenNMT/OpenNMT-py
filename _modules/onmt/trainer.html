@@ -304,8 +304,6 @@
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpu_verbose_level</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
                         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;GpuRank </span><span class="si">%d</span><span class="s2">: index: </span><span class="si">%d</span><span class="s2"> accum: </span><span class="si">%d</span><span class="s2">&quot;</span>
                                     <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gpu_rank</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">accum</span><span class="p">))</span>
-                    <span class="n">cur_dataset</span> <span class="o">=</span> <span class="n">train_iter</span><span class="o">.</span><span class="n">get_cur_dataset</span><span class="p">()</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">train_loss</span><span class="o">.</span><span class="n">cur_dataset</span> <span class="o">=</span> <span class="n">cur_dataset</span>
 
                     <span class="n">true_batchs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
 
@@ -380,9 +378,6 @@
         <span class="n">stats</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">Statistics</span><span class="p">()</span>
 
         <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">valid_iter</span><span class="p">:</span>
-            <span class="n">cur_dataset</span> <span class="o">=</span> <span class="n">valid_iter</span><span class="o">.</span><span class="n">get_cur_dataset</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">valid_loss</span><span class="o">.</span><span class="n">cur_dataset</span> <span class="o">=</span> <span class="n">cur_dataset</span>
-
             <span class="n">src</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">make_features</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="s1">&#39;src&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span><span class="p">)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span> <span class="o">==</span> <span class="s1">&#39;text&#39;</span><span class="p">:</span>
                 <span class="n">_</span><span class="p">,</span> <span class="n">src_lengths</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">src</span>
