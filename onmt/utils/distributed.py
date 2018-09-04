@@ -7,6 +7,7 @@
 from __future__ import print_function
 
 import math
+import random
 import pickle
 import torch.distributed
 
@@ -20,7 +21,8 @@ def is_master(opt):
 def multi_init(opt):
     if len(opt.gpuid) == 1:
         raise ValueError('Cannot initialize multiprocess with one gpu only')
-    dist_init_method = 'tcp://localhost:10000'
+    dist_init_method = 'tcp://localhost:{port}'.format(
+        port=random.randint(10000, 20000))
     dist_world_size = len(opt.gpuid)
     torch.distributed.init_process_group(
         backend=opt.gpu_backend, init_method=dist_init_method,
