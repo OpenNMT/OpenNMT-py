@@ -108,7 +108,8 @@ class Beam(object):
 
         finished_sents = self.current_state == self._eos
         if finished_sents.any():
-            indices = torch.arange(0, self.width, dtype=torch.long)
+            indices = torch.arange(
+                0, self.width, dtype=torch.long, device=finished_sents.device)
             seq_len = len(self.next_ys) - 1
 
             global_scores = self.compute_global_score()
