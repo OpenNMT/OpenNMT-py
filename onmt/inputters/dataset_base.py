@@ -71,7 +71,7 @@ class DatasetBase(torchtext.data.Dataset):
                         "Dataset cannot contain Special Tokens"
 
             if split_token[0]:
-                words += [split_token[0]]
+                words += split_token[0]
                 features += [split_token[1:]]
 
                 if n_feats is None:
@@ -80,7 +80,7 @@ class DatasetBase(torchtext.data.Dataset):
                     assert len(split_token) == n_feats, \
                         "all words must have the same number of features"
 
-        return words, features, n_feats - 1
+        return tuple(words), features, n_feats - 1
 
     # Below are helper functions for intra-class use only.
 
