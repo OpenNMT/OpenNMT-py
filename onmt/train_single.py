@@ -121,7 +121,7 @@ def main(opt):
         lazily_load_dataset("train", opt), fields, opt)
 
     def valid_iter_fct(): return build_dataset_iter(
-        lazily_load_dataset("valid", opt), fields, opt)
+        lazily_load_dataset("valid", opt), fields, opt, is_train=False)
 
     # Do training.
     trainer.train(train_iter_fct, valid_iter_fct, opt.train_steps,
