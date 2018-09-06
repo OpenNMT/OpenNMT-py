@@ -375,14 +375,15 @@ class Translator(object):
             torch.tensor([0.0] + [float("-inf")] * (beam_size - 1),
                          device=memory_bank.device).repeat(batch_size))
 
+        # Structure that holds finished hypotheses.
+        hypotheses = [[] for _ in range(batch_size)]  # noqa: F812
+
         results = {}
         results["predictions"] = [[] for _ in range(batch_size)]  # noqa: F812
         results["scores"] = [[] for _ in range(batch_size)]  # noqa: F812
         results["attention"] = [[] for _ in range(batch_size)]  # noqa: F812
         results["gold_score"] = [0] * batch_size
         results["batch"] = batch
-
-        max_length += 1
 
         for step in range(max_length):
             decoder_input = alive_seq[:, -1].view(1, -1, 1)
@@ -424,53 +425,12 @@ class Translator(object):
             batch_index = (
                 topk_beam_index
                 + beam_offset[:topk_beam_index.size(0)].unsqueeze(1))
-
-            # End condition is the top beam reached end_token.
-            end_condition = topk_ids[:, 0].eq(end_token)
-            if step + 1 == max_length:
-                end_condition.fill_(1)
-            finished = end_condition.nonzero().view(-1)
-
-            # Save result of finished sentences.
-            if len(finished) > 0:
-                predictions = alive_seq.view(-1, beam_size, alive_seq.size(-1))
-                scores = topk_scores.view(-1, beam_size)
-                attention = None
-                if alive_attn is not None:
-                    attention = alive_attn.view(
-                        alive_attn.size(0), -1, beam_size, alive_attn.size(-1))
-                for i in finished:
-                    b = batch_offset[i]
-                    for n in range(n_best):
-                        results["predictions"][b].append(predictions[i, n, 1:])
-                        results["scores"][b].append(scores[i, n])
-                        if attention is None:
-                            results["attention"][b].append([])
-                        else:
-                            results["attention"][b].append(
-                                attention[:, i, n, :memory_lengths[i]])
-                non_finished = end_condition.eq(0).nonzero().view(-1)
-                # If all sentences are translated, no need to go further.
-                if len(non_finished) == 0:
-                    break
-                # Remove finished batches for the next step.
-                topk_log_probs = topk_log_probs.index_select(
-                    0, non_finished.to(topk_log_probs.device))
-                topk_ids = topk_ids.index_select(0, non_finished)
-                batch_index = batch_index.index_select(0, non_finished)
-                batch_offset = batch_offset.index_select(0, non_finished)
-
-            # Select and reorder alive batches.
             select_indices = batch_index.view(-1)
-            alive_seq = alive_seq.index_select(0, select_indices)
-            memory_bank = memory_bank.index_select(1, select_indices)
-            memory_lengths = memory_lengths.index_select(0, select_indices)
-            dec_states.map_batch_fn(
-                lambda state, dim: state.index_select(dim, select_indices))
 
             # Append last prediction.
-            alive_seq = torch.cat([alive_seq, topk_ids.view(-1, 1)], -1)
-
+            alive_seq = torch.cat(
+                [alive_seq.index_select(0, select_indices),
+                 topk_ids.view(-1, 1)], -1)
             if return_attention:
                 current_attn = attn["std"].index_select(1, select_indices)
                 if alive_attn is None:
@@ -478,6 +438,64 @@ class Translator(object):
                 else:
                     alive_attn = alive_attn.index_select(1, select_indices)
                     alive_attn = torch.cat([alive_attn, current_attn], 0)
+
+            is_finished = topk_ids.eq(end_token)
+            if step + 1 == max_length:
+                is_finished.fill_(1)
+            # End condition is top beam is finished.
+            end_condition = is_finished[:, 0].eq(1)
+
+            # Save finished hypotheses.
+            if is_finished.any():
+                predictions = alive_seq.view(-1, beam_size, alive_seq.size(-1))
+                attention = (
+                    alive_attn.view(
+                        alive_attn.size(0), -1, beam_size, alive_attn.size(-1))
+                    if alive_attn is not None else None)
+                for i in range(is_finished.size(0)):
+                    b = batch_offset[i]
+                    if end_condition[i]:
+                        is_finished[i].fill_(1)
+                    finished_hyp = is_finished[i].nonzero().view(-1)
+                    # Store finished hypotheses for this batch.
+                    for j in finished_hyp:
+                        hypotheses[b].append((
+                            topk_scores[i, j],
+                            predictions[i, j, 1:],  # Ignore start_token.
+                            attention[:, i, j, :memory_lengths[i]]
+                            if attention is not None else None))
+                    # If the batch reached the end, save the n_best hypotheses.
+                    if end_condition[i]:
+                        best_hyp = sorted(
+                            hypotheses[b], key=lambda x: x[0], reverse=True)
+                        for n, (score, pred, attn) in enumerate(best_hyp):
+                            if n >= n_best:
+                                break
+                            results["scores"][b].append(score)
+                            results["predictions"][b].append(pred)
+                            results["attention"][b].append(
+                                attn if attn is not None else [])
+                non_finished = end_condition.eq(0).nonzero().view(-1)
+                # If all sentences are translated, no need to go further.
+                if len(non_finished) == 0:
+                    break
+                # Remove finished batches for the next step.
+                topk_log_probs = topk_log_probs.index_select(0, non_finished)
+                batch_index = batch_index.index_select(0, non_finished)
+                batch_offset = batch_offset.index_select(0, non_finished)
+                alive_seq = predictions.index_select(0, non_finished) \
+                                       .view(-1, alive_seq.size(-1))
+                if alive_attn is not None:
+                    alive_attn = attention.index_select(1, non_finished) \
+                                          .view(alive_attn.size(0),
+                                                -1, alive_attn.size(-1))
+
+            # Reorder states.
+            select_indices = batch_index.view(-1)
+            memory_bank = memory_bank.index_select(1, select_indices)
+            memory_lengths = memory_lengths.index_select(0, select_indices)
+            dec_states.map_batch_fn(
+                lambda state, dim: state.index_select(dim, select_indices))
 
         return results
 
