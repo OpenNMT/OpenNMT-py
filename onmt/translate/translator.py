@@ -362,8 +362,7 @@ class Translator(object):
         memory_bank = tile(memory_bank, beam_size, dim=1)
         memory_lengths = tile(src_lengths, beam_size)
 
-        batch_offset = torch.arange(
-            batch_size, dtype=torch.long, device=memory_bank.device)
+        batch_offset = torch.arange(batch_size, dtype=torch.long)
         beam_offset = torch.arange(
             0,
             batch_size * beam_size,
@@ -446,7 +445,7 @@ class Translator(object):
                     alive_attn = alive_attn.index_select(1, select_indices)
                     alive_attn = torch.cat([alive_attn, current_attn], 0)
 
-            is_finished = topk_ids.eq(end_token)
+            is_finished = topk_ids.to('cpu').eq(end_token)
             if step + 1 == max_length:
                 is_finished.fill_(1)
             # End condition is top beam is finished.
@@ -487,9 +486,11 @@ class Translator(object):
                 if len(non_finished) == 0:
                     break
                 # Remove finished batches for the next step.
+                batch_offset = batch_offset.index_select(0, non_finished)
+                non_finished = non_finished.to(topk_ids.device)
                 topk_log_probs = topk_log_probs.index_select(0, non_finished)
                 batch_index = batch_index.index_select(0, non_finished)
-                batch_offset = batch_offset.index_select(0, non_finished)
+                select_indices = batch_index.view(-1)
                 alive_seq = predictions.index_select(0, non_finished) \
                     .view(-1, alive_seq.size(-1))
                 if alive_attn is not None:
@@ -498,7 +499,6 @@ class Translator(object):
                               -1, alive_attn.size(-1))
 
             # Reorder states.
-            select_indices = batch_index.view(-1)
             memory_bank = memory_bank.index_select(1, select_indices)
             memory_lengths = memory_lengths.index_select(0, select_indices)
             dec_states.map_batch_fn(
