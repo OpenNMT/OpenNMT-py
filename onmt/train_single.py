@@ -8,7 +8,6 @@ import argparse
 import os
 import random
 import torch
-import numpy as np
 
 import onmt.opts as opts
 
@@ -59,7 +58,6 @@ def training_opt_postprocessing(opt):
 
     if opt.seed > 0:
         torch.manual_seed(opt.seed)
-        np.random.seed(opt.seed)
         # this one is needed for torchtext random call (shuffled iterator)
         # in multi gpu it ensures datasets are read in the same order
         random.seed(opt.seed)
