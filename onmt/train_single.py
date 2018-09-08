@@ -56,14 +56,19 @@ def training_opt_postprocessing(opt):
     if torch.cuda.is_available() and not opt.gpuid:
         logger.info("WARNING: You have a CUDA device, should run with -gpuid")
 
+    if opt.seed > 0:
+        torch.manual_seed(opt.seed)
+        # this one is needed for torchtext random call (shuffled iterator)
+        # in multi gpu it ensures datasets are read in the same order
+        random.seed(opt.seed)
+        # some cudnn methods can be random even after fixing the seed
+        # unless you tell it to be deterministic
+        torch.backends.cudnn.deterministic = True
+
     if opt.gpuid:
         torch.cuda.set_device(opt.device_id)
         if opt.seed > 0:
-            # this one is needed for torchtext random call (shuffled iterator)
-            # in multi gpu it ensures datasets are read in the same order
-            random.seed(opt.seed)
             # These ensure same initialization in multi gpu mode
-            torch.manual_seed(opt.seed)
             torch.cuda.manual_seed(opt.seed)
 
     return opt
