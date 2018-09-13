@@ -60,9 +60,13 @@ class TranslationServer():
 
         self.models_root = self.confs.get('models_root', './available_models')
         for i, conf in enumerate(self.confs["models"]):
-            if "model" not in conf:
-                raise ValueError("""Incorrect config file: missing 'model'
-                                    parameter for model #%d""" % i)
+            if "models" not in conf:
+                if "model" in conf:
+                    # backwards compatibility for confs
+                    conf["models"] = [conf["model"]]
+                else:
+                    raise ValueError("""Incorrect config file: missing 'models'
+                                        parameter for model #%d""" % i)
             kwargs = {'timeout': conf.get('timeout', None),
                       'load': conf.get('load', None),
                       'tokenizer_opt': conf.get('tokenizer', None),
@@ -72,7 +76,7 @@ class TranslationServer():
             kwargs = {k: v for (k, v) in kwargs.items() if v is not None}
             model_id = conf.get("id", None)
             opt = conf["opt"]
-            opt["model"] = conf["model"]
+            opt["models"] = conf["models"]
             self.preload_model(opt, model_id=model_id, **kwargs)
 
     def clone_model(self, model_id, opt, timeout=-1):
@@ -83,7 +87,7 @@ class TranslationServer():
         if model_id in self.models:
             if opt is None:
                 opt = self.models[model_id].user_opt
-            opt["model"] = self.models[model_id].opt.model
+            opt["models"] = self.models[model_id].opt.models
             return self.load_model(opt, timeout)
         else:
             raise ServerModelError("No such model '%s'" % str(model_id))
@@ -177,6 +181,8 @@ class ServerModel:
         self.user_opt = opt
         self.tokenizer = None
         self.logger = init_logger(self.opt.log_file)
+        self.loading_lock = threading.Event()
+        self.loading_lock.set()
 
         if load:
             self.load()
@@ -194,11 +200,18 @@ class ServerModel:
         parser = argparse.ArgumentParser()
         onmt.opts.translate_opts(parser)
 
-        opt['model'] = os.path.join(self.model_root, opt['model'])
+        models = opt['models']
+        if not isinstance(models, (list, tuple)):
+            models = [models]
+        opt['models'] = [os.path.join(self.model_root, model)
+                         for model in models]
         opt['src'] = "dummy_src"
 
         for (k, v) in opt.items():
-            if type(v) == bool:
+            if k == 'models':
+                sys.argv += ['-model']
+                sys.argv += [str(model) for model in v]
+            elif type(v) == bool:
                 sys.argv += ['-%s' % k]
             else:
                 sys.argv += ['-%s' % k, str(v)]
@@ -214,6 +227,8 @@ class ServerModel:
         return hasattr(self, 'translator')
 
     def load(self):
+        self.loading_lock.clear()
+
         timer = Timer()
         self.logger.info("Loading model %d" % self.model_id)
         timer.start()
@@ -264,6 +279,7 @@ class ServerModel:
 
         self.load_time = timer.tick()
         self.reset_unload_timer()
+        self.loading_lock.set()
 
     def run(self, inputs):
         """Translate `inputs` using this model
@@ -275,16 +291,27 @@ class ServerModel:
                 result: (list) translations
                 times: (dict) containing times
         """
-        timer = Timer()
-        self.logger.info("\nRunning translation using %d" % self.model_id)
+        self.stop_unload_timer()
 
+        timer = Timer()
         timer.start()
-        if not self.loaded:
-            self.load()
-            timer.tick(name="load")
-        elif self.opt.cuda:
-            self.to_gpu()
-            timer.tick(name="to_gpu")
+        self.logger.info("Running translation using %d" % self.model_id)
+
+        if not self.loading_lock.is_set():
+            self.logger.info(
+                "Model #%d is being loaded by another thread, waiting"
+                % self.model_id)
+            if not self.loading_lock.wait(timeout=30):
+                raise ServerModelError("Model %d loading timeout"
+                                       % self.model_id)
+
+        else:
+            if not self.loaded:
+                self.load()
+                timer.tick(name="load")
+            elif self.opt.cuda:
+                self.to_gpu()
+                timer.tick(name="to_gpu")
 
         texts = []
         head_spaces = []
@@ -371,21 +398,24 @@ class ServerModel:
             torch.cuda.empty_cache()
         self.unload_timer = None
 
+    def stop_unload_timer(self):
+        if self.unload_timer is not None:
+            self.unload_timer.cancel()
+
     def reset_unload_timer(self):
         if self.timeout < 0:
             return
 
-        if self.unload_timer is not None:
-            self.unload_timer.cancel()
+        self.stop_unload_timer()
         self.unload_timer = threading.Timer(self.timeout, self.do_timeout)
         self.unload_timer.start()
 
     def to_dict(self):
-        hide_opt = ["model", "src"]
+        hide_opt = ["models", "src"]
         d = {"model_id": self.model_id,
              "opt": {k: self.user_opt[k] for k in self.user_opt.keys()
                      if k not in hide_opt},
-             "model": self.user_opt["model"],
+             "models": self.user_opt["models"],
              "loaded": self.loaded,
              "timeout": self.timeout,
              }

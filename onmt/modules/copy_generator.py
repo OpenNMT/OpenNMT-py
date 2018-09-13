@@ -153,10 +153,6 @@ class CopyGeneratorLossCompute(loss.LossComputeBase):
                  eps=1e-20):
         super(CopyGeneratorLossCompute, self).__init__(
             generator, tgt_vocab)
-
-        # We lazily load datasets when there are more than one, so postpone
-        # the setting of cur_dataset.
-        self.cur_dataset = None
         self.force_copy = force_copy
         self.normalize_by_length = normalize_by_length
         self.criterion = CopyGeneratorCriterion(len(tgt_vocab), force_copy,
@@ -194,7 +190,7 @@ class CopyGeneratorLossCompute(loss.LossComputeBase):
         scores_data = scores.data.clone()
         scores_data = inputters.TextDataset.collapse_copy_scores(
             self._unbottle(scores_data, batch.batch_size),
-            batch, self.tgt_vocab, self.cur_dataset.src_vocabs)
+            batch, self.tgt_vocab, batch.dataset.src_vocabs)
         scores_data = self._bottle(scores_data)
 
         # Correct target copy token instead of <unk>

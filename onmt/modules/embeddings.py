@@ -101,6 +101,8 @@ class Embeddings(nn.Module):
             feat_padding_idx = []
         self.word_padding_idx = word_padding_idx
 
+        self.word_vec_size = word_vec_size
+
         # Dimensions and padding for constructing the word embedding matrix
         vocab_sizes = [word_vocab_size]
         emb_dims = [word_vec_size]
@@ -173,7 +175,14 @@ class Embeddings(nn.Module):
         """
         if emb_file:
             pretrained = torch.load(emb_file)
-            self.word_lut.weight.data.copy_(pretrained)
+            pretrained_vec_size = pretrained.size(1)
+            if self.word_vec_size > pretrained_vec_size:
+                self.word_lut.weight.data[:, :pretrained_vec_size] = pretrained
+            elif self.word_vec_size < pretrained_vec_size:
+                self.word_lut.weight.data \
+                    .copy_(pretrained[:, :self.word_vec_size])
+            else:
+                self.word_lut.weight.data.copy_(pretrained)
             if fixed:
                 self.word_lut.weight.requires_grad = False
 
