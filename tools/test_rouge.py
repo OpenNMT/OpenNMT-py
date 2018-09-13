@@ -66,5 +66,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if args.c.upper() == "STDIN":
         args.c = sys.stdin
-    results_dict = test_rouge(args.c, args.r)
+    else:
+        candidates = open(args.c)
+    references = open(args.r)
+
+    results_dict = test_rouge(candidates, references)
     logger.info(rouge_results_to_str(results_dict))
