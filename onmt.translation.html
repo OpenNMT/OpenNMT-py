@@ -176,43 +176,99 @@
 <dl class="attribute">
 <dt id="onmt.translate.Translation.src">
 <code class="descname">src</code><a class="headerlink" href="#onmt.translate.Translation.src" title="Permalink to this definition">¶</a></dt>
-<dd><p><cite>LongTensor</cite> – src word ids</p>
+<dd><p>src word ids</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">LongTensor</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="onmt.translate.Translation.src_raw">
 <code class="descname">src_raw</code><a class="headerlink" href="#onmt.translate.Translation.src_raw" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>[str]</em> – raw src words</p>
+<dd><p>raw src words</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">[str]</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="onmt.translate.Translation.pred_sents">
 <code class="descname">pred_sents</code><a class="headerlink" href="#onmt.translate.Translation.pred_sents" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>[[str]]</em> – words from the n-best translations</p>
+<dd><p>words from the n-best translations</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">[[str]]</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="onmt.translate.Translation.pred_scores">
 <code class="descname">pred_scores</code><a class="headerlink" href="#onmt.translate.Translation.pred_scores" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>[[float]]</em> – log-probs of n-best translations</p>
+<dd><p>log-probs of n-best translations</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">[[float]]</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="onmt.translate.Translation.attns">
 <code class="descname">attns</code><a class="headerlink" href="#onmt.translate.Translation.attns" title="Permalink to this definition">¶</a></dt>
-<dd><p>[<cite>FloatTensor</cite>] – attention dist for each translation</p>
+<dd><p>attention dist for each translation</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">[</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="onmt.translate.Translation.gold_sent">
 <code class="descname">gold_sent</code><a class="headerlink" href="#onmt.translate.Translation.gold_sent" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>[str]</em> – words from gold translation</p>
+<dd><p>words from gold translation</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">[str]</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="onmt.translate.Translation.gold_score">
 <code class="descname">gold_score</code><a class="headerlink" href="#onmt.translate.Translation.gold_score" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>[float]</em> – log-prob of gold translation</p>
+<dd><p>log-prob of gold translation</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">[float]</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -341,7 +397,7 @@ Problem in Neural Machine Translation” <a class="reference internal" href="ref
 <h2>Beam Search<a class="headerlink" href="#beam-search" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.translate.Beam">
-<em class="property">class </em><code class="descclassname">onmt.translate.</code><code class="descname">Beam</code><span class="sig-paren">(</span><em>size</em>, <em>pad</em>, <em>bos</em>, <em>eos</em>, <em>n_best=1</em>, <em>cuda=False</em>, <em>global_scorer=None</em>, <em>min_length=0</em>, <em>stepwise_penalty=False</em>, <em>block_ngram_repeat=0</em>, <em>exclusion_tokens=set()</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam.html#Beam"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Beam" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.translate.</code><code class="descname">Beam</code><span class="sig-paren">(</span><em>size</em>, <em>pad</em>, <em>bos</em>, <em>eos</em>, <em>n_best=1</em>, <em>cuda=False</em>, <em>global_scorer=None</em>, <em>min_length=0</em>, <em>stepwise_penalty=False</em>, <em>block_ngram_repeat=0</em>, <em>exclusion_tokens={}</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam.html#Beam"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Beam" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class for managing the internals of the beam search process.</p>
 <p>Takes care of beams, back pointers, and scores.</p>
 <table class="docutils field-list" frame="void" rules="none">
