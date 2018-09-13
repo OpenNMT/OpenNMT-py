@@ -183,20 +183,20 @@ class Translator(object):
 
         if batch_size is None:
             raise ValueError("batch_size must be set")
-        data = inputters.build_dataset(self.fields,
-                                       self.data_type,
-                                       src_path=src_path,
-                                       src_data_iter=src_data_iter,
-                                       tgt_path=tgt_path,
-                                       tgt_data_iter=tgt_data_iter,
-                                       src_dir=src_dir,
-                                       sample_rate=self.sample_rate,
-                                       window_size=self.window_size,
-                                       window_stride=self.window_stride,
-                                       window=self.window,
-                                       use_filter_pred=self.use_filter_pred,
-                                       image_channel_size=
-                                       self.image_channel_size)
+        data = inputters. \
+            build_dataset(self.fields,
+                          self.data_type,
+                          src_path=src_path,
+                          src_data_iter=src_data_iter,
+                          tgt_path=tgt_path,
+                          tgt_data_iter=tgt_data_iter,
+                          src_dir=src_dir,
+                          sample_rate=self.sample_rate,
+                          window_size=self.window_size,
+                          window_stride=self.window_stride,
+                          window=self.window,
+                          use_filter_pred=self.use_filter_pred,
+                          image_channel_size=self.image_channel_size)
 
         if self.cuda:
             cur_device = "cuda"
