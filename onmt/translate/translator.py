@@ -46,7 +46,7 @@ def build_translator(opt, report_score=True, logger=None, out_file=None):
               for k in ["beam_size", "n_best", "max_length", "min_length",
                         "stepwise_penalty", "block_ngram_repeat",
                         "ignore_when_blocking", "dump_beam", "report_bleu",
-                        "data_type", "replace_unk", "gpu", "verbose", "fast", "image_chanel_size"]}
+                        "data_type", "replace_unk", "gpu", "verbose", "fast", "image_channel_size"]}
 
     translator = Translator(model, fields, global_scorer=scorer,
                             out_file=out_file, report_score=report_score,
@@ -103,7 +103,7 @@ class Translator(object):
                  verbose=False,
                  out_file=None,
                  fast=False,
-                 image_chanel_size=3):
+                 image_channel_size=3):
         self.logger = logger
         self.gpu = gpu
         self.cuda = gpu > -1
@@ -133,7 +133,7 @@ class Translator(object):
         self.report_bleu = report_bleu
         self.report_rouge = report_rouge
         self.fast = fast
-        self.image_chanel_size= image_chanel_size
+        self.image_channel_size= image_channel_size
 
         # for debugging
         self.beam_trace = self.dump_beam != ""
@@ -194,7 +194,7 @@ class Translator(object):
                                        window_stride=self.window_stride,
                                        window=self.window,
                                        use_filter_pred=self.use_filter_pred,
-                                       image_chanel_size=self.image_chanel_size)
+                                       image_channel_size=self.image_channel_size)
 
         if self.cuda:
             cur_device = "cuda"
