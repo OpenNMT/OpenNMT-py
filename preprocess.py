@@ -146,7 +146,7 @@ def build_save_in_shards_using_shards_size(src_corpus, tgt_corpus, fields,
     ret_list = []
 
     for index, src in enumerate(src_list):
-        logger.info("Working with {0}th shard {1} {2}".format(index, src, tgt_list[index]))
+        # logger.info("Working with {0}th shard {1} {2}".format(index, src, tgt_list[index]))
         dataset = inputters.build_dataset(
             fields, opt.data_type,
             src_path=src,
@@ -164,17 +164,13 @@ def build_save_in_shards_using_shards_size(src_corpus, tgt_corpus, fields,
             image_chanel_size=opt.image_chanel_size
             )
 
-        if corpus_type == "train":
-            pt_file = "{:s}.{:s}.{:d}.pt".format(
-                opt.save_data, corpus_type, index)
-        else:
-            pt_file = "{:s}.{:s}.pt".format(
-                opt.save_data, corpus_type)
+        pt_file = "{:s}.{:s}.{:d}.pt".format(
+            opt.save_data, corpus_type, index)
 
         # We save fields in vocab.pt seperately, so make it empty.
         dataset.fields = []
 
-        logger.info(" * saving %s %s data image shard to %s."
+        logger.info(" * saving %sth %s data image shard to %s."
                     % (index, corpus_type, pt_file))
         torch.save(dataset, pt_file)
 
@@ -272,11 +268,11 @@ def main():
     logger.info("Building & saving training data...")
     train_dataset_files = build_save_dataset('train', fields, opt)
 
-    logger.info("Building & saving vocabulary...")
-    build_save_vocab(train_dataset_files, fields, opt)
-
     logger.info("Building & saving validation data...")
-    build_save_dataset('valid', fields, opt)
+    valid_dataset_files = build_save_dataset('valid', fields, opt)
+
+    logger.info("Building & saving vocabulary...")
+    build_save_vocab(train_dataset_files + valid_dataset_files, fields, opt)
 
 
 if __name__ == "__main__":

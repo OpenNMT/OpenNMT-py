@@ -35,12 +35,13 @@ class ImageDataset(DatasetBase):
 
     def __init__(self, fields, src_examples_iter, tgt_examples_iter,
                  num_src_feats=0, num_tgt_feats=0,
-                 tgt_seq_length=0, use_filter_pred=True):
+                 tgt_seq_length=0, use_filter_pred=True, image_chanel_size=3):
         self.data_type = 'img'
 
         self.n_src_feats = num_src_feats
         self.n_tgt_feats = num_tgt_feats
 
+        self.image_chanel_size = image_chanel_size
         if tgt_examples_iter is not None:
             examples_iter = (self._join_dicts(src, tgt) for src, tgt in
                              zip(src_examples_iter, tgt_examples_iter))

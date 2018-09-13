@@ -222,6 +222,10 @@ def preprocess_opts(parser):
     group.add_argument('-window', default='hamming',
                        help="Window type for spectrogram generation.")
 
+    # Option most relevant to image input
+    group.add_argument('-image_chanel_size', type=int, default=3,
+                       choices=[3, 1],
+                       help='Using grayscale image can training OCR model faster and smaller')
 
 def train_opts(parser):
     """ Training and saving options """
