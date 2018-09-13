@@ -133,11 +133,6 @@ def model_opts(parser):
     group.add_argument('-lambda_coverage', type=float, default=1,
                        help='Lambda value for coverage.')
 
-    # Option most relevant to image input
-    group.add_argument('-image_channel_size', type=int, default=3,
-                       choices=[3, 1],
-                       help='Using grayscale image can training OCR model faster and smaller')
-
 def preprocess_opts(parser):
     """ Pre-procesing options """
     # Data options
@@ -426,7 +421,6 @@ def train_opts(parser):
                        help="Sample rate.")
     group.add_argument('-window_size', type=float, default=.02,
                        help="Window size for spectrogram in seconds.")
-
 
     # Option most relevant to image input
     group.add_argument('-image_channel_size', type=int, default=3,
