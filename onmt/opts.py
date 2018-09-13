@@ -167,9 +167,9 @@ def preprocess_opts(parser):
                        before sharding.""")
 
     group.add_argument('-shard_size', type=int, default=0,
-                       help="""Divide src_corpus and tgt_corpus into 
-                       smaller multiple src_copus and tgt corpus files, then 
-                       build shards, each shard will have 
+                       help="""Divide src_corpus and tgt_corpus into
+                       smaller multiple src_copus and tgt corpus files, then
+                       build shards, each shard will have
                        opt.shard_size samples except last shard.
                        shard_size=0 means no segmentation
                        shard_size>0 means segment dataset into multiple shards,
@@ -238,7 +238,7 @@ def preprocess_opts(parser):
     # Option most relevant to image input
     group.add_argument('-image_channel_size', type=int, default=3,
                        choices=[3, 1],
-                       help="""Using grayscale image can training 
+                       help="""Using grayscale image can training
                        OCR model faster and smaller""")
 
 
@@ -428,7 +428,7 @@ def train_opts(parser):
     # Option most relevant to image input
     group.add_argument('-image_channel_size', type=int, default=3,
                        choices=[3, 1],
-                       help="""Using grayscale image can training 
+                       help="""Using grayscale image can training
                        OCR model faster and smaller""")
 
 
@@ -545,7 +545,7 @@ def translate_opts(parser):
     # Option most relevant to image input
     group.add_argument('-image_channel_size', type=int, default=3,
                        choices=[3, 1],
-                       help="""Using grayscale image can training 
+                       help="""Using grayscale image can training
                        OCR model faster and smaller""")
 
 

@@ -195,7 +195,8 @@ class Translator(object):
                                        window_stride=self.window_stride,
                                        window=self.window,
                                        use_filter_pred=self.use_filter_pred,
-                                image_channel_size=self.image_channel_size)
+                                       image_channel_size=
+                                       self.image_channel_size)
 
         if self.cuda:
             cur_device = "cuda"

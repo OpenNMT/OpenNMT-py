@@ -98,9 +98,11 @@ class ImageDataset(DatasetBase):
         """
         if img_iter is None:
             if img_path is not None:
-                img_iter = ImageDataset.make_img_iterator_from_file(img_path,
-                                                                    img_dir,
-                                                        image_channel_size)
+                img_iter = \
+                    ImageDataset\
+                        .make_img_iterator_from_file(img_path,
+                                                     img_dir,
+                                                     image_channel_size)
             else:
                 raise ValueError("""One of 'img_iter' and 'img_path'
                                     must be not None""")
