@@ -16,7 +16,8 @@ class ImageEncoder(nn.Module):
         dropout (float): dropout probablity.
     """
 
-    def __init__(self, num_layers, bidirectional, rnn_size, dropout, image_chanel_size=3):
+    def __init__(self, num_layers, bidirectional, rnn_size, dropout,
+                 image_chanel_size=3):
         super(ImageEncoder, self).__init__()
         self.num_layers = num_layers
         self.num_directions = 2 if bidirectional else 1

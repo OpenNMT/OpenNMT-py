@@ -35,7 +35,8 @@ class ImageDataset(DatasetBase):
 
     def __init__(self, fields, src_examples_iter, tgt_examples_iter,
                  num_src_feats=0, num_tgt_feats=0,
-                 tgt_seq_length=0, use_filter_pred=True, image_channel_size=3):
+                 tgt_seq_length=0, use_filter_pred=True,
+                 image_channel_size=3):
         self.data_type = 'img'
 
         self.n_src_feats = num_src_feats
@@ -81,7 +82,8 @@ class ImageDataset(DatasetBase):
         return (ex.src.size(2), ex.src.size(1))
 
     @staticmethod
-    def make_image_examples_nfeats_tpl(img_iter, img_path, img_dir, image_channel_size=3):
+    def make_image_examples_nfeats_tpl(img_iter, img_path, img_dir,
+                                       image_channel_size=3):
         """
         Note: one of img_iter and img_path must be not None
         Args:
@@ -98,7 +100,7 @@ class ImageDataset(DatasetBase):
             if img_path is not None:
                 img_iter = ImageDataset.make_img_iterator_from_file(img_path,
                                                                     img_dir,
-                                                                    image_channel_size)
+                                                        image_channel_size)
             else:
                 raise ValueError("""One of 'img_iter' and 'img_path'
                                     must be not None""")
@@ -158,7 +160,8 @@ class ImageDataset(DatasetBase):
                     'img path %s not found' % (line.strip())
 
                 if (image_channel_size == 1):
-                    img = transforms.ToTensor()(Image.fromarray(cv2.imread(img_path, 0)))
+                    img = transforms.ToTensor()(
+                        Image.fromarray(cv2.imread(img_path, 0)))
                 else:
                     img = transforms.ToTensor()(Image.open(img_path))
 

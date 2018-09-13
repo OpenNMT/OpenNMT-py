@@ -137,9 +137,11 @@ def build_save_in_shards_using_shards_size(src_corpus, tgt_corpus, fields,
     tgt_corpus = "".join(tgt_corpus.split(".")[:-1])
 
     for x in range(int(len(src_data) / opt.shard_size)):
-        open(src_corpus + ".{0}.txt".format(x), "w", encoding="utf-8").writelines(
+        open(src_corpus + ".{0}.txt".format(x), "w",
+             encoding="utf-8").writelines(
             src_data[x * opt.shard_size: (x + 1) * opt.shard_size])
-        open(tgt_corpus + ".{0}.txt".format(x), "w", encoding="utf-8").writelines(
+        open(tgt_corpus + ".{0}.txt".format(x), "w",
+             encoding="utf-8").writelines(
             tgt_data[x * opt.shard_size: (x + 1) * opt.shard_size])
 
     src_list = sorted(glob.glob(src_corpus + '.*.txt'))
@@ -148,7 +150,6 @@ def build_save_in_shards_using_shards_size(src_corpus, tgt_corpus, fields,
     ret_list = []
 
     for index, src in enumerate(src_list):
-        # logger.info("Working with {0}th shard {1} {2}".format(index, src, tgt_list[index]))
         dataset = inputters.build_dataset(
             fields, opt.data_type,
             src_path=src,
@@ -204,8 +205,11 @@ def build_save_dataset(corpus_type, fields, opt):
             corpus_type, opt)
 
     if (opt.shard_size > 0):
-        return build_save_in_shards_using_shards_size(src_corpus, tgt_corpus, fields,
-                                                      corpus_type, opt)
+        return build_save_in_shards_using_shards_size(src_corpus,
+                                                      tgt_corpus,
+                                                      fields,
+                                                      corpus_type,
+                                                      opt)
 
     # For data_type == 'img' or 'audio', currently we don't do
     # preprocess sharding. We only build a monolithic dataset.

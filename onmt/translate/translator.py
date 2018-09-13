@@ -46,7 +46,8 @@ def build_translator(opt, report_score=True, logger=None, out_file=None):
               for k in ["beam_size", "n_best", "max_length", "min_length",
                         "stepwise_penalty", "block_ngram_repeat",
                         "ignore_when_blocking", "dump_beam", "report_bleu",
-                        "data_type", "replace_unk", "gpu", "verbose", "fast", "image_channel_size"]}
+                        "data_type", "replace_unk", "gpu", "verbose", "fast",
+                        "image_channel_size"]}
 
     translator = Translator(model, fields, global_scorer=scorer,
                             out_file=out_file, report_score=report_score,
@@ -194,7 +195,7 @@ class Translator(object):
                                        window_stride=self.window_stride,
                                        window=self.window,
                                        use_filter_pred=self.use_filter_pred,
-                                       image_channel_size=self.image_channel_size)
+                                image_channel_size=self.image_channel_size)
 
         if self.cuda:
             cur_device = "cuda"

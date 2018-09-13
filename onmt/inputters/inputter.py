@@ -186,7 +186,8 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
                   src_seq_length_trunc=0, tgt_seq_length_trunc=0,
                   dynamic_dict=True, sample_rate=0,
                   window_size=0, window_stride=0, window=None,
-                  normalize_audio=True, use_filter_pred=True, image_channel_size=3):
+                  normalize_audio=True, use_filter_pred=True,
+                  image_channel_size=3):
     """
     Build src/tgt examples iterator from corpus files, also extract
     number of features.
@@ -195,7 +196,8 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
     def _make_examples_nfeats_tpl(data_type, src_data_iter, src_path, src_dir,
                                   src_seq_length_trunc, sample_rate,
                                   window_size, window_stride,
-                                  window, normalize_audio, image_channel_size=3):
+                                  window, normalize_audio,
+                                  image_channel_size=3):
         """
         Process the corpus into (example_dict iterator, num_feats) tuple
         on source side for different 'data_type'.
