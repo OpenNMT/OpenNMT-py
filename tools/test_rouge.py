@@ -65,7 +65,7 @@ if __name__ == "__main__":
                         help='reference file')
     args = parser.parse_args()
     if args.c.upper() == "STDIN":
-        args.c = sys.stdin
+        candidates = sys.stdin
     else:
         candidates = open(args.c)
     references = open(args.r)
