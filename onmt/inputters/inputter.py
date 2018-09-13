@@ -17,6 +17,7 @@ from onmt.inputters.image_dataset import ImageDataset
 from onmt.inputters.audio_dataset import AudioDataset
 from onmt.utils.logging import logger
 
+import gc
 
 def _getstate(self):
     return dict(self.__dict__, stoi=dict(self.stoi))
@@ -184,7 +185,7 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
                   src_seq_length_trunc=0, tgt_seq_length_trunc=0,
                   dynamic_dict=True, sample_rate=0,
                   window_size=0, window_stride=0, window=None,
-                  normalize_audio=True, use_filter_pred=True):
+                  normalize_audio=True, use_filter_pred=True, image_chanel_size=3):
     """
     Build src/tgt examples iterator from corpus files, also extract
     number of features.
@@ -192,7 +193,7 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
     def _make_examples_nfeats_tpl(data_type, src_data_iter, src_path, src_dir,
                                   src_seq_length_trunc, sample_rate,
                                   window_size, window_stride,
-                                  window, normalize_audio):
+                                  window, normalize_audio, image_chanel_size=3):
         """
         Process the corpus into (example_dict iterator, num_feats) tuple
         on source side for different 'data_type'.
@@ -206,7 +207,7 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
         elif data_type == 'img':
             src_examples_iter, num_src_feats = \
                 ImageDataset.make_image_examples_nfeats_tpl(
-                    src_data_iter, src_path, src_dir)
+                    src_data_iter, src_path, src_dir, image_chanel_size)
 
         elif data_type == 'audio':
             if src_data_iter:
@@ -246,7 +247,8 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
         dataset = ImageDataset(fields, src_examples_iter, tgt_examples_iter,
                                num_src_feats, num_tgt_feats,
                                tgt_seq_length=tgt_seq_length,
-                               use_filter_pred=use_filter_pred)
+                               use_filter_pred=use_filter_pred,
+                               image_chanel_size=image_chanel_size)
 
     elif data_type == 'audio':
         dataset = AudioDataset(fields, src_examples_iter, tgt_examples_iter,
@@ -292,6 +294,11 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
         Dict of Fields
     """
     counter = {}
+
+    # Prop src from field to get lower memory using when training with image
+    if data_type == 'img':
+        fields.pop("src")
+
     for k in fields:
         counter[k] = Counter()
 
@@ -299,7 +306,7 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
     src_vocab = load_vocabulary(src_vocab_path, tag="source")
     tgt_vocab = load_vocabulary(tgt_vocab_path, tag="target")
 
-    for path in train_dataset_files:
+    for index, path in enumerate(train_dataset_files):
         dataset = torch.load(path)
         logger.info(" * reloading %s." % path)
         for ex in dataset.examples:
@@ -312,6 +319,15 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
                 elif k == 'tgt' and tgt_vocab:
                     val = [item for item in val if item in tgt_vocab]
                 counter[k].update(val)
+
+        # Drop the none-using from memory but keep the last
+        if (index < len(train_dataset_files) - 1):
+            dataset.examples = None
+            gc.collect()
+            del dataset.examples
+            gc.collect()
+            del dataset
+            gc.collect()
 
     _build_field_vocab(fields["tgt"], counter["tgt"],
                        max_size=tgt_vocab_size,
@@ -442,6 +458,12 @@ class DatasetLazyIter(object):
 
     def _next_dataset_iterator(self, dataset_iter):
         try:
+            # Drop the current dataset for decreasing memory
+            self.cur_dataset = None
+            gc.collect()
+            del self.cur_dataset
+            gc.collect()
+
             cur_dataset = next(dataset_iter)
         except StopIteration:
             return None

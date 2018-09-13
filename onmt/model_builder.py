@@ -168,7 +168,8 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
         encoder = ImageEncoder(model_opt.enc_layers,
                                model_opt.brnn,
                                model_opt.rnn_size,
-                               model_opt.dropout)
+                               model_opt.dropout,
+                               model_opt.image_chanel_size)
     elif model_opt.model_type == "audio":
         encoder = AudioEncoder(model_opt.enc_layers,
                                model_opt.brnn,

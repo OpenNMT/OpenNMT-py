@@ -16,13 +16,13 @@ class ImageEncoder(nn.Module):
         dropout (float): dropout probablity.
     """
 
-    def __init__(self, num_layers, bidirectional, rnn_size, dropout):
+    def __init__(self, num_layers, bidirectional, rnn_size, dropout, image_chanel_size=3):
         super(ImageEncoder, self).__init__()
         self.num_layers = num_layers
         self.num_directions = 2 if bidirectional else 1
         self.hidden_size = rnn_size
 
-        self.layer1 = nn.Conv2d(3, 64, kernel_size=(3, 3),
+        self.layer1 = nn.Conv2d(image_chanel_size, 64, kernel_size=(3, 3),
                                 padding=(1, 1), stride=(1, 1))
         self.layer2 = nn.Conv2d(64, 128, kernel_size=(3, 3),
                                 padding=(1, 1), stride=(1, 1))
@@ -40,7 +40,7 @@ class ImageEncoder(nn.Module):
         self.batch_norm3 = nn.BatchNorm2d(512)
 
         src_size = 512
-        self.rnn = nn.LSTM(src_size, rnn_size,
+        self.rnn = nn.LSTM(src_size, int(rnn_size/self.num_directions),
                            num_layers=num_layers,
                            dropout=dropout,
                            bidirectional=bidirectional)
