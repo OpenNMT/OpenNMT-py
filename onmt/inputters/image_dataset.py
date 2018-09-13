@@ -119,7 +119,7 @@ class ImageDataset(DatasetBase):
         Yields:
             a dictionary containing image data, path and index for each line.
         """
-        assert (src_dir is not None) and os.path.exists(src_dir),\
+        assert (src_dir is not None) and os.path.exists(src_dir), \
             'src_dir must be a valid directory if data_type is img'
 
         for index, (img, filename) in enumerate(img_iter):
@@ -129,7 +129,7 @@ class ImageDataset(DatasetBase):
                     continue
 
             example_dict = {side: img,
-                            side+'_path': filename,
+                            side + '_path': filename,
                             'indices': index}
             yield example_dict
 
@@ -158,7 +158,7 @@ class ImageDataset(DatasetBase):
                     'img path %s not found' % (line.strip())
 
                 if (image_channel_size == 1):
-                    img = transforms.ToTensor()(Image.fromarray(cv2.imread(img_path,0)))
+                    img = transforms.ToTensor()(Image.fromarray(cv2.imread(img_path, 0)))
                 else:
                     img = transforms.ToTensor()(Image.open(img_path))
 

@@ -133,6 +133,7 @@ def model_opts(parser):
     group.add_argument('-lambda_coverage', type=float, default=1,
                        help='Lambda value for coverage.')
 
+
 def preprocess_opts(parser):
     """ Pre-procesing options """
     # Data options
@@ -238,6 +239,7 @@ def preprocess_opts(parser):
     group.add_argument('-image_channel_size', type=int, default=3,
                        choices=[3, 1],
                        help='Using grayscale image can training OCR model faster and smaller')
+
 
 def train_opts(parser):
     """ Training and saving options """
@@ -427,14 +429,15 @@ def train_opts(parser):
                        choices=[3, 1],
                        help='Using grayscale image can training OCR model faster and smaller')
 
+
 def translate_opts(parser):
     """ Translation / inference options """
     group = parser.add_argument_group('Model')
     group.add_argument('-model', dest='models', metavar='MODEL',
                        nargs='+', type=str, default=[], required=True,
                        help='Path to model .pt file(s). '
-                       'Multiple models can be specified, '
-                       'for ensemble decoding.')
+                            'Multiple models can be specified, '
+                            'for ensemble decoding.')
 
     group = parser.add_argument_group('Data')
     group.add_argument('-data_type', default="text",
@@ -542,6 +545,7 @@ def translate_opts(parser):
                        choices=[3, 1],
                        help='Using grayscale image can training OCR model faster and smaller')
 
+
 def add_md_help_argument(parser):
     """ md help parser """
     parser.add_argument('-md', action=MarkdownHelpAction,
@@ -573,7 +577,7 @@ class MarkdownHelpFormatter(argparse.HelpFormatter):
         return super(MarkdownHelpFormatter, self).format_help()
 
     def start_section(self, heading):
-        super(MarkdownHelpFormatter, self)\
+        super(MarkdownHelpFormatter, self) \
             .start_section('### **%s**' % heading)
 
     def _format_action(self, action):

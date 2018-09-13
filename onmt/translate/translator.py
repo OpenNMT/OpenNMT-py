@@ -133,7 +133,7 @@ class Translator(object):
         self.report_bleu = report_bleu
         self.report_rouge = report_rouge
         self.fast = fast
-        self.image_channel_size= image_channel_size
+        self.image_channel_size = image_channel_size
 
         # for debugging
         self.beam_trace = self.dump_beam != ""
@@ -426,8 +426,8 @@ class Translator(object):
 
             # Map beam_index to batch_index in the flat representation.
             batch_index = (
-                topk_beam_index
-                + beam_offset[:topk_beam_index.size(0)].unsqueeze(1))
+                    topk_beam_index
+                    + beam_offset[:topk_beam_index.size(0)].unsqueeze(1))
             select_indices = batch_index.view(-1)
 
             # Append last prediction.
@@ -487,11 +487,11 @@ class Translator(object):
                 batch_index = batch_index.index_select(0, non_finished)
                 batch_offset = batch_offset.index_select(0, non_finished)
                 alive_seq = predictions.index_select(0, non_finished) \
-                                       .view(-1, alive_seq.size(-1))
+                    .view(-1, alive_seq.size(-1))
                 if alive_attn is not None:
                     alive_attn = attention.index_select(1, non_finished) \
-                                          .view(alive_attn.size(0),
-                                                -1, alive_attn.size(-1))
+                        .view(alive_attn.size(0),
+                              -1, alive_attn.size(-1))
 
             # Reorder states.
             select_indices = batch_index.view(-1)
@@ -528,9 +528,11 @@ class Translator(object):
                 for __ in range(batch_size)]
 
         # Help functions for working with beams and batches
-        def var(a): return torch.tensor(a, requires_grad=False)
+        def var(a):
+            return torch.tensor(a, requires_grad=False)
 
-        def rvar(a): return var(a.repeat(1, beam_size, 1))
+        def rvar(a):
+            return var(a.repeat(1, beam_size, 1))
 
         def bottle(m):
             return m.view(batch_size * beam_size, -1)
@@ -551,9 +553,9 @@ class Translator(object):
         if src_lengths is None:
             assert not isinstance(memory_bank, tuple), \
                 'Ensemble decoding only supported for text data'
-            src_lengths = torch.Tensor(batch_size).type_as(memory_bank.data)\
-                                                  .long()\
-                                                  .fill_(memory_bank.size(0))
+            src_lengths = torch.Tensor(batch_size).type_as(memory_bank.data) \
+                .long() \
+                .fill_(memory_bank.size(0))
 
         # (2) Repeat src objects `beam_size` times.
         src_map = rvar(batch.src_map.data) \

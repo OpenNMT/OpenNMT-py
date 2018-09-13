@@ -10,7 +10,6 @@ import glob
 import sys
 import gc
 import torch
-import codecs
 from onmt.utils.logging import init_logger, logger
 
 import onmt.inputters as inputters
@@ -119,8 +118,9 @@ def build_save_in_shards(src_corpus, tgt_corpus, fields,
 
     return ret_list
 
+
 def build_save_in_shards_using_shards_size(src_corpus, tgt_corpus, fields,
-                         corpus_type, opt):
+                                           corpus_type, opt):
     """
     Divide src_corpus and tgt_corpus into smaller multiples
     src_copus and tgt corpus files, then build shards, each
@@ -137,8 +137,10 @@ def build_save_in_shards_using_shards_size(src_corpus, tgt_corpus, fields,
     tgt_corpus = "".join(tgt_corpus.split(".")[:-1])
 
     for x in range(int(len(src_data) / opt.shard_size)):
-        open(src_corpus + ".{0}.txt".format(x), "w", encoding="utf-8").writelines(src_data[x * opt.shard_size: (x + 1) * opt.shard_size])
-        open(tgt_corpus + ".{0}.txt".format(x), "w", encoding="utf-8").writelines(tgt_data[x * opt.shard_size: (x + 1) * opt.shard_size])
+        open(src_corpus + ".{0}.txt".format(x), "w", encoding="utf-8").writelines(
+            src_data[x * opt.shard_size: (x + 1) * opt.shard_size])
+        open(tgt_corpus + ".{0}.txt".format(x), "w", encoding="utf-8").writelines(
+            tgt_data[x * opt.shard_size: (x + 1) * opt.shard_size])
 
     src_list = sorted(glob.glob(src_corpus + '.*.txt'))
     tgt_list = sorted(glob.glob(tgt_corpus + '.*.txt'))
@@ -162,7 +164,7 @@ def build_save_in_shards_using_shards_size(src_corpus, tgt_corpus, fields,
             window_stride=opt.window_stride,
             window=opt.window,
             image_channel_size=opt.image_channel_size
-            )
+        )
 
         pt_file = "{:s}.{:s}.{:d}.pt".format(
             opt.save_data, corpus_type, index)
@@ -183,6 +185,7 @@ def build_save_in_shards_using_shards_size(src_corpus, tgt_corpus, fields,
 
     return ret_list
 
+
 def build_save_dataset(corpus_type, fields, opt):
     """ Building and saving the dataset """
     assert corpus_type in ['train', 'valid']
@@ -202,7 +205,7 @@ def build_save_dataset(corpus_type, fields, opt):
 
     if (opt.shard_size > 0):
         return build_save_in_shards_using_shards_size(src_corpus, tgt_corpus, fields,
-                                                    corpus_type, opt)
+                                                      corpus_type, opt)
 
     # For data_type == 'img' or 'audio', currently we don't do
     # preprocess sharding. We only build a monolithic dataset.
