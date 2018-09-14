@@ -464,22 +464,22 @@ class DatasetLazyIter(object):
     def _next_dataset_iterator(self, dataset_iter):
         try:
             # Drop the current dataset for decreasing memory
-            self.cur_dataset = None
+            self.cur_dataset.examples = None
             gc.collect()
             del self.cur_dataset
             gc.collect()
 
-            cur_dataset = next(dataset_iter)
+            self.cur_dataset = next(dataset_iter)
         except StopIteration:
             return None
 
         # We clear `fields` when saving, restore when loading.
-        cur_dataset.fields = self.fields
+        self.cur_dataset.fields = self.fields
 
         # Sort batch by decreasing lengths of sentence required by pytorch.
         # sort=False means "Use dataset's sortkey instead of iterator's".
         return OrderedIterator(
-            dataset=cur_dataset, batch_size=self.batch_size,
+            dataset=self.cur_dataset, batch_size=self.batch_size,
             batch_size_fn=self.batch_size_fn,
             device=self.device, train=self.is_train,
             sort=False, sort_within_batch=True,
