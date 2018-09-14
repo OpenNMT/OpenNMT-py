@@ -464,10 +464,13 @@ class DatasetLazyIter(object):
     def _next_dataset_iterator(self, dataset_iter):
         try:
             # Drop the current dataset for decreasing memory
-            self.cur_dataset = None
-            gc.collect()
-            del self.cur_dataset
-            gc.collect()
+            try:
+                self.cur_dataset.examples = None
+                gc.collect()
+                del self.cur_dataset
+                gc.collect()
+            except:
+                pass
 
             self.cur_dataset = next(dataset_iter)
         except StopIteration:
