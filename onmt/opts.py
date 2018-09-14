@@ -290,7 +290,7 @@ def train_opts(parser):
                        help="Fix word embeddings on the encoder side.")
     group.add_argument('-fix_word_vecs_dec',
                        action='store_true',
-                       help="Fix word embeddings on the encoder side.")
+                       help="Fix word embeddings on the decoder side.")
 
     # Optimization options
     group = parser.add_argument_group('Optimization- Type')
