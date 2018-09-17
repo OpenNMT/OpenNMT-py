@@ -3,11 +3,15 @@
     Main training workflow
 """
 from __future__ import division
-
 import argparse
+import os
+import signal
+import torch
 
 import onmt.opts as opts
-from onmt.train_multi import main as multi_main
+import onmt.utils.distributed
+
+from onmt.utils.logging import logger
 from onmt.train_single import main as single_main
 
 
@@ -57,7 +61,7 @@ def run(opt, device_id, error_queue):
     except Exception:
         # propagate exception to parent process, keeping original traceback
         import traceback
-        error_queue.put((gpu_rank, traceback.format_exc()))
+        error_queue.put((gpu_ranks[device_id], traceback.format_exc()))
 
 
 class ErrorHandler(object):

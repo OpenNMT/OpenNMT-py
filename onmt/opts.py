@@ -250,12 +250,16 @@ def train_opts(parser):
                        help="Deprecated see world_size and gpu_ranks.")
     group.add_argument('-gpu_ranks', default=[], nargs='+', type=int,
                        help="list of ranks of each process.")
-    group.add_argument('-world_size', default=0, nargs='+', type=int,
+    group.add_argument('-world_size', default=0, type=int,
                        help="total number of distributed processes.")
     group.add_argument('-gpu_backend', default='nccl', nargs='+', type=str,
                        help="Type of torch distributed backend")
     group.add_argument('-gpu_verbose_level', default=0, type=int,
                        help="Gives more info on each process per GPU.")
+    group.add_argument('-master_ip', default="localhost", type=str,
+                       help="IP of master for torch.distributed training.")
+    group.add_argument('-master_port', default=10000, type=int,
+                       help="Port of master for torch.distributed training.")
 
     group.add_argument('-seed', type=int, default=-1,
                        help="""Random seed used for the experiments
