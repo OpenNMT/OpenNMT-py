@@ -247,11 +247,11 @@ def train_opts(parser):
 
     # GPU
     group.add_argument('-gpuid', default=[], nargs='+', type=int,
-                       help="Use CUDA on the listed devices.")
-    group.add_argument('-gpu_rank', default=0, nargs='+', type=int,
-                       help="Rank the current gpu device.")
-    group.add_argument('-device_id', default=0, nargs='+', type=int,
-                       help="Rank the current gpu device.")
+                       help="Deprecated see world_size and gpu_ranks.")
+    group.add_argument('-gpu_ranks', default=[], nargs='+', type=int,
+                       help="list of ranks of each process.")
+    group.add_argument('-world_size', default=0, nargs='+', type=int,
+                       help="total number of distributed processes.")
     group.add_argument('-gpu_backend', default='nccl', nargs='+', type=str,
                        help="Type of torch distributed backend")
     group.add_argument('-gpu_verbose_level', default=0, type=int,
