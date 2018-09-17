@@ -490,7 +490,7 @@ def build_dataset_iter(datasets, fields, opt, is_train=True):
         batch_size_fn = None
     # device = opt.device_id if opt.gpuid else -1
     # breaking change torchtext 0.3
-    if opt.gpuid:
+    if opt.gpu_ranks:
         device = "cuda"
     else:
         device = "cpu"
