@@ -5,6 +5,7 @@ import time
 import pyrouge
 import shutil
 import sys
+import codecs
 
 from onmt.utils.logging import init_logger, logger
 
@@ -65,6 +66,10 @@ if __name__ == "__main__":
                         help='reference file')
     args = parser.parse_args()
     if args.c.upper() == "STDIN":
-        args.c = sys.stdin
-    results_dict = test_rouge(args.c, args.r)
+        candidates = sys.stdin
+    else:
+        candidates = codecs.open(args.c, encoding="utf-8")
+    references = codecs.open(args.r, encoding="utf-8")
+
+    results_dict = test_rouge(candidates, references)
     logger.info(rouge_results_to_str(results_dict))

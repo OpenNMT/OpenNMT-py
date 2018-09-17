@@ -145,15 +145,13 @@ class Trainer(object):
                     if self.gpu_verbose_level > 1:
                         logger.info("GpuRank %d: index: %d accum: %d"
                                     % (self.gpu_rank, i, accum))
-                    cur_dataset = train_iter.get_cur_dataset()
-                    self.train_loss.cur_dataset = cur_dataset
 
                     true_batchs.append(batch)
 
                     if self.norm_method == "tokens":
                         num_tokens = batch.tgt[1:].ne(
                             self.train_loss.padding_idx).sum()
-                        normalization += num_tokens
+                        normalization += num_tokens.item()
                     else:
                         normalization += batch.batch_size
                     accum += 1
@@ -167,7 +165,7 @@ class Trainer(object):
                         if self.n_gpu > 1:
                             normalization = sum(onmt.utils.distributed
                                                 .all_gather_list
-                                                (normalization.cpu()))
+                                                (normalization))
 
                         self._gradient_accumulation(
                             true_batchs, normalization, total_stats,
@@ -221,9 +219,6 @@ class Trainer(object):
         stats = onmt.utils.Statistics()
 
         for batch in valid_iter:
-            cur_dataset = valid_iter.get_cur_dataset()
-            self.valid_loss.cur_dataset = cur_dataset
-
             src = inputters.make_features(batch, 'src', self.data_type)
             if self.data_type == 'text':
                 _, src_lengths = batch.src
