@@ -30,7 +30,7 @@ def main(opt):
 
     nb_gpu = len(opt.gpu_ranks)
 
-    if nb_gpu:
+    if opt.world_size > 1:
         mp = torch.multiprocessing.get_context('spawn')
         # Create a thread to listen for errors in the child processes.
         error_queue = mp.SimpleQueue()
@@ -45,7 +45,10 @@ def main(opt):
             error_handler.add_child(procs[device_id].pid)
         for p in procs:
             p.join()
-    else:
+
+    elif nb_gpu == 1: # case 1 GPU only
+        single_main(opt, 0)
+    else:   # case only CPU
         single_main(opt, -1)
 
 def run(opt, device_id, error_queue):
