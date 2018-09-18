@@ -26,7 +26,8 @@ def main(opt):
         raise AssertionError("BPTT is not compatible with -accum > 1")
 
     if len(opt.gpuid) > 1:
-        raise AssertionError("gpuid is deprecated see world_size and gpu_ranks")
+        raise AssertionError("gpuid is deprecated \
+              see world_size and gpu_ranks")
 
     nb_gpu = len(opt.gpu_ranks)
 
@@ -46,22 +47,26 @@ def main(opt):
         for p in procs:
             p.join()
 
-    elif nb_gpu == 1: # case 1 GPU only
+    elif nb_gpu == 1:  # case 1 GPU only
         single_main(opt, 0)
     else:   # case only CPU
         single_main(opt, -1)
+
 
 def run(opt, device_id, error_queue):
     """ run process """
     try:
         gpu_rank = onmt.utils.distributed.multi_init(opt, device_id)
+        if gpu_rank != opt.gpu_ranks[device_id]:
+            raise AssertionError("An error occurred in \
+                  Distributed initialization")
         single_main(opt, device_id)
     except KeyboardInterrupt:
         pass  # killed by parent, do nothing
     except Exception:
         # propagate exception to parent process, keeping original traceback
         import traceback
-        error_queue.put((gpu_ranks[device_id], traceback.format_exc()))
+        error_queue.put((opt.gpu_ranks[device_id], traceback.format_exc()))
 
 
 class ErrorHandler(object):
@@ -111,4 +116,3 @@ if __name__ == "__main__":
 
     opt = parser.parse_args()
     main(opt)
-
