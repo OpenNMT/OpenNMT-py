@@ -110,7 +110,7 @@ python $ONMT/preprocess.py \
 echo "Step 2: Train"
 GPU_OPTS=""
 if [[ ! -z $GPUARG ]]; then
-    GPU_OPTS="-gpuid $GPUARG"
+    GPU_OPTS="-gpu_ranks $GPUARG"
 fi
 CMD="python $ONMT/train.py -data $OUT/data/processed -save_model $OUT/models/$NAME $GPU_OPTS"
 echo "Training command :: $CMD"

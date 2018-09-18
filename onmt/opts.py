@@ -250,7 +250,7 @@ def train_opts(parser):
                        help="Deprecated see world_size and gpu_ranks.")
     group.add_argument('-gpu_ranks', default=[], nargs='+', type=int,
                        help="list of ranks of each process.")
-    group.add_argument('-world_size', default=0, type=int,
+    group.add_argument('-world_size', default=1, type=int,
                        help="total number of distributed processes.")
     group.add_argument('-gpu_backend', default='nccl', nargs='+', type=str,
                        help="Type of torch distributed backend")

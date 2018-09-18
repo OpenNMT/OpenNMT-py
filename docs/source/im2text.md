@@ -43,7 +43,7 @@ python preprocess.py -data_type img -src_dir data/im2text/images/ -train_src dat
 2) Train the model.
 
 ```
-python train.py -model_type img -data data/im2text/demo -save_model demo-model -gpuid 0 -batch_size 20 \
+python train.py -model_type img -data data/im2text/demo -save_model demo-model -gpu_ranks 0 -batch_size 20 \
 				-max_grad_norm 20 -learning_rate 0.1 -word_vec_size 80 -encoder_type brnn
 ```
 

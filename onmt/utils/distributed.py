@@ -18,9 +18,6 @@ def is_master(opt, device_id):
 
 
 def multi_init(opt, device_id):
-    # if len(opt.gpuid) == 1:
-    #   raise ValueError('Cannot initialize multiprocess with one gpu only')
-    # dist_init_method = 'tcp://localhost:10000'
     dist_init_method = 'tcp://{master_ip}:{master_port}'.format(
         master_ip=opt.master_ip,
         master_port=opt.master_port)

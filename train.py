@@ -16,8 +16,8 @@ from onmt.train_single import main as single_main
 
 
 def main(opt):
-    if opt.rnn_type == "SRU" and not opt.gpuid:
-        raise AssertionError("Using SRU requires -gpuid set.")
+    if opt.rnn_type == "SRU" and not opt.gpu_ranks:
+        raise AssertionError("Using SRU requires -gpu_ranks set.")
 
     if opt.epochs:
         raise AssertionError("-epochs is deprecated please use -train_steps.")
@@ -29,27 +29,24 @@ def main(opt):
         raise AssertionError("gpuid is deprecated see world_size and gpu_ranks")
 
     nb_gpu = len(opt.gpu_ranks)
-    mp = torch.multiprocessing.get_context('spawn')
 
-    # Create a thread to listen for errors in the child processes.
-    error_queue = mp.SimpleQueue()
-    error_handler = ErrorHandler(error_queue)
-
-    # Train with multiprocessing.
-    procs = []
-    # TODO case if no gpu
-    for i in range(nb_gpu):
-        gpu_rank = opt.gpu_ranks[i]
-        device_id = i
-
-        procs.append(mp.Process(target=run, args=(
-            opt, device_id, error_queue, ), daemon=True))
-        procs[i].start()
-        logger.info(" Starting process pid: %d  " % procs[i].pid)
-        error_handler.add_child(procs[i].pid)
-    for p in procs:
-        p.join()
-
+    if nb_gpu:
+        mp = torch.multiprocessing.get_context('spawn')
+        # Create a thread to listen for errors in the child processes.
+        error_queue = mp.SimpleQueue()
+        error_handler = ErrorHandler(error_queue)
+        # Train with multiprocessing.
+        procs = []
+        for device_id in range(nb_gpu):
+            procs.append(mp.Process(target=run, args=(
+                opt, device_id, error_queue, ), daemon=True))
+            procs[device_id].start()
+            logger.info(" Starting process pid: %d  " % procs[device_id].pid)
+            error_handler.add_child(procs[device_id].pid)
+        for p in procs:
+            p.join()
+    else:
+        single_main(opt, -1)
 
 def run(opt, device_id, error_queue):
     """ run process """

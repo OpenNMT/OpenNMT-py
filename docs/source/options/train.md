@@ -116,15 +116,18 @@ Path prefix to the ".train.pt" and ".valid.pt" file path from preprocess.py
 Model filename (the model will be saved as <save_model>_epochN_PPL.pt where PPL
 is the validation perplexity
 
-* **-gpuid []** 
-Use CUDA on the listed devices.
+* **-world_size [1]** 
+Total number of GPU processes accross several nodes.
+
+* **-gpu_ranks []** 
+Indices in the total number of procsses accross several nodes.
 
 * **-seed [-1]** 
 Random seed used for the experiments reproducibility.
 
 ### **Initialization**:
-* **-start_epoch [1]** 
-The epoch from which to start
+* **-train_steps [100000]** 
+Number of iterations (parameters update) for training
 
 * **-param_init [0.1]** 
 Parameters are initialized over uniform distribution with support (-param_init,
@@ -169,12 +172,12 @@ batch_size * accum_count batches at once. Recommended for Transformer.
 * **-valid_batch_size [32]** 
 Maximum batch size for validation
 
+* **-valid_steps [10000]** 
+Run a validation every these steps
+
 * **-max_generator_batches [32]** 
 Maximum batches of words in a sequence to run the generator on in parallel.
 Higher is faster, but uses more memory.
-
-* **-epochs [13]** 
-Number of training epochs
 
 * **-optim [sgd]** 
 Optimization method.
@@ -222,11 +225,17 @@ Starting learning rate. Recommended settings: sgd = 1, adagrad = 0.1, adadelta =
 If update_learning_rate, decay learning rate by this much if (i) perplexity does
 not decrease on the validation set or (ii) epoch has gone past start_decay_at
 
-* **-start_decay_at [8]** 
-Start decaying every epoch after and including this epoch
+* **-start_decay_steps [50000]** 
+Start decaying after these steps
 
-* **-start_checkpoint_at []** 
-Start checkpointing every epoch after and including this epoch
+* **-decay_steps [10000]** 
+Decay every these steps (after the start_decay_steps)
+
+* **-save_checkpoint_steps [5000]** 
+Save a checkpoint every these steps
+
+* **-keep_checkpoint [-1]** 
+Keep N last checkpoints. -1 = keep all.
 
 * **-decay_method []** 
 Use a custom decay rate.

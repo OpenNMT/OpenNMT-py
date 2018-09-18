@@ -41,8 +41,11 @@ def build_trainer(opt, device_id, model, fields, optim, data_type, model_saver=N
     norm_method = opt.normalization
     grad_accum_count = opt.accum_count
     n_gpu = opt.world_size
-    # TODO if no GPU device_id = -1
-    gpu_rank = opt.gpu_ranks[device_id]
+    if device_id >= 0:
+        gpu_rank = opt.gpu_ranks[device_id]
+    else:
+        gpu_rank = 0
+        n_gpu = 0
     gpu_verbose_level = opt.gpu_verbose_level
 
     report_manager = onmt.utils.build_report_manager(opt)
