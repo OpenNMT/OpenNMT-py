@@ -267,12 +267,14 @@ class ServerModel:
                     mode = self.tokenizer_opt["mode"]
                 else:
                     mode = None
+                # load can be called multiple times: modify copy
+                tokenizer_params = dict(self.tokenizer_opt["params"])
                 for key, value in self.tokenizer_opt["params"].items():
                     if key.endswith("path"):
-                        self.tokenizer_opt["params"][key] = os.path.join(
+                        tokenizer_params[key] = os.path.join(
                             self.model_root, value)
                 tokenizer = pyonmttok.Tokenizer(mode,
-                                                **self.tokenizer_opt["params"])
+                                                **tokenizer_params)
                 self.tokenizer = tokenizer
             else:
                 raise ValueError("Invalid value for tokenizer type")
