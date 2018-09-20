@@ -58,7 +58,7 @@ Now we set up the optimizer. This could be a core torch optim class, or our wrap
 
 
 ```python
-optim = onmt.utils.optimizers.Optimizer(method="sgd", lr=1, max_grad_norm=2)
+optim = onmt.utils.optimizers.Optimizer(method="sgd", learning_rate=1, max_grad_norm=2)
 optim.set_parameters(model.named_parameters())
 ```
 
