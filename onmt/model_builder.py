@@ -165,10 +165,16 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
         src_embeddings = build_embeddings(model_opt, src_dict, feature_dicts)
         encoder = build_encoder(model_opt, src_embeddings)
     elif model_opt.model_type == "img":
+        if ("image_channel_size" not in model_opt.__dict__):
+            image_channel_size = 3
+        else:
+            image_channel_size = model_opt.image_channel_size
+
         encoder = ImageEncoder(model_opt.enc_layers,
                                model_opt.brnn,
                                model_opt.rnn_size,
-                               model_opt.dropout)
+                               model_opt.dropout,
+                               image_channel_size)
     elif model_opt.model_type == "audio":
         encoder = AudioEncoder(model_opt.enc_layers,
                                model_opt.brnn,

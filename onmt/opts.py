@@ -166,6 +166,15 @@ def preprocess_opts(parser):
                        It is recommended to ensure the corpus is shuffled
                        before sharding.""")
 
+    group.add_argument('-shard_size', type=int, default=0,
+                       help="""Divide src_corpus and tgt_corpus into
+                       smaller multiple src_copus and tgt corpus files, then
+                       build shards, each shard will have
+                       opt.shard_size samples except last shard.
+                       shard_size=0 means no segmentation
+                       shard_size>0 means segment dataset into multiple shards,
+                       each shard has shard_size samples""")
+
     # Dictionary options, for text corpus
 
     group = parser.add_argument_group('Vocab')
@@ -225,6 +234,12 @@ def preprocess_opts(parser):
                        help="Window stride for spectrogram in seconds.")
     group.add_argument('-window', default='hamming',
                        help="Window type for spectrogram generation.")
+
+    # Option most relevant to image input
+    group.add_argument('-image_channel_size', type=int, default=3,
+                       choices=[3, 1],
+                       help="""Using grayscale image can training
+                       model faster and smaller""")
 
 
 def train_opts(parser):
@@ -410,6 +425,12 @@ def train_opts(parser):
     group.add_argument('-window_size', type=float, default=.02,
                        help="Window size for spectrogram in seconds.")
 
+    # Option most relevant to image input
+    group.add_argument('-image_channel_size', type=int, default=3,
+                       choices=[3, 1],
+                       help="""Using grayscale image can training
+                       model faster and smaller""")
+
 
 def translate_opts(parser):
     """ Translation / inference options """
@@ -417,8 +438,8 @@ def translate_opts(parser):
     group.add_argument('-model', dest='models', metavar='MODEL',
                        nargs='+', type=str, default=[], required=True,
                        help='Path to model .pt file(s). '
-                       'Multiple models can be specified, '
-                       'for ensemble decoding.')
+                            'Multiple models can be specified, '
+                            'for ensemble decoding.')
 
     group = parser.add_argument_group('Data')
     group.add_argument('-data_type', default="text",
@@ -521,6 +542,12 @@ def translate_opts(parser):
     group.add_argument('-window', default='hamming',
                        help='Window type for spectrogram generation')
 
+    # Option most relevant to image input
+    group.add_argument('-image_channel_size', type=int, default=3,
+                       choices=[3, 1],
+                       help="""Using grayscale image can training
+                       model faster and smaller""")
+
 
 def add_md_help_argument(parser):
     """ md help parser """
@@ -553,7 +580,7 @@ class MarkdownHelpFormatter(argparse.HelpFormatter):
         return super(MarkdownHelpFormatter, self).format_help()
 
     def start_section(self, heading):
-        super(MarkdownHelpFormatter, self)\
+        super(MarkdownHelpFormatter, self) \
             .start_section('### **%s**' % heading)
 
     def _format_action(self, action):
