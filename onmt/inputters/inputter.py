@@ -232,7 +232,8 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
         _make_examples_nfeats_tpl(data_type, src_data_iter, src_path, src_dir,
                                   src_seq_length_trunc, sample_rate,
                                   window_size, window_stride,
-                                  window, normalize_audio)
+                                  window, normalize_audio,
+                                  image_channel_size=image_channel_size)
 
     # For all data types, the tgt side corpus is in form of text.
     tgt_examples_iter, num_tgt_feats = \

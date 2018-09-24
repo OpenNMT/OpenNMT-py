@@ -239,7 +239,7 @@ def preprocess_opts(parser):
     group.add_argument('-image_channel_size', type=int, default=3,
                        choices=[3, 1],
                        help="""Using grayscale image can training
-                       OCR model faster and smaller""")
+                       model faster and smaller""")
 
 
 def train_opts(parser):
@@ -429,7 +429,7 @@ def train_opts(parser):
     group.add_argument('-image_channel_size', type=int, default=3,
                        choices=[3, 1],
                        help="""Using grayscale image can training
-                       OCR model faster and smaller""")
+                       model faster and smaller""")
 
 
 def translate_opts(parser):
@@ -546,7 +546,7 @@ def translate_opts(parser):
     group.add_argument('-image_channel_size', type=int, default=3,
                        choices=[3, 1],
                        help="""Using grayscale image can training
-                       OCR model faster and smaller""")
+                       model faster and smaller""")
 
 
 def add_md_help_argument(parser):

@@ -111,3 +111,7 @@ Window stride for spectrogram in seconds
 
 * **-window [hamming]** 
 Window type for spectrogram generation
+
+### **Image**:
+* **-image_channel_size [3]** 
+Using grayscale image can training model faster and smaller.
