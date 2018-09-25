@@ -257,3 +257,7 @@ Sample rate.
 
 * **-window_size [0.02]** 
 Window size for spectrogram in seconds.
+
+### **Image**:
+* **-image_channel_size [3]** 
+Using grayscale image can training model faster and smaller.
