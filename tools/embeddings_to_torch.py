@@ -127,8 +127,8 @@ def main():
                    match_percent[1]))
 
     logger.info("\nFiltered embeddings:")
-    logger.info("\t* enc: ", filtered_enc_embeddings.size())
-    logger.info("\t* dec: ", filtered_dec_embeddings.size())
+    logger.info("\t* enc: %s" % str(filtered_enc_embeddings.size()))
+    logger.info("\t* dec: %s" % str(filtered_dec_embeddings.size()))
 
     enc_output_file = opt.output_file + ".enc.pt"
     dec_output_file = opt.output_file + ".dec.pt"
