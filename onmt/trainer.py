@@ -17,7 +17,8 @@ import onmt.utils
 from onmt.utils.logging import logger
 
 
-def build_trainer(opt, model, fields, optim, data_type, model_saver=None):
+def build_trainer(opt, device_id, model, fields,
+                  optim, data_type, model_saver=None):
     """
     Simplify `Trainer` creation based on user `opt`s*
 
@@ -40,8 +41,12 @@ def build_trainer(opt, model, fields, optim, data_type, model_saver=None):
     shard_size = opt.max_generator_batches
     norm_method = opt.normalization
     grad_accum_count = opt.accum_count
-    n_gpu = len(opt.gpuid)
-    gpu_rank = opt.gpu_rank
+    n_gpu = opt.world_size
+    if device_id >= 0:
+        gpu_rank = opt.gpu_ranks[device_id]
+    else:
+        gpu_rank = 0
+        n_gpu = 0
     gpu_verbose_level = opt.gpu_verbose_level
 
     report_manager = onmt.utils.build_report_manager(opt)
