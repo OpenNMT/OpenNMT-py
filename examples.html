@@ -185,8 +185,11 @@
 <span class="pre">`</span></code></p>
 <p>The main train command is quite simple. Minimally it takes a data file
 and a save file.  This will run the default model, which consists of a
-2-layer LSTM with 500 hidden units on both the encoder/decoder. You
-can also add <cite>-gpuid 1</cite> to use (say) GPU 1.</p>
+2-layer LSTM with 500 hidden units on both the encoder/decoder.
+If you want to train on GPU, you need to set, as an example:
+CUDA_VISIBLE_DEVICES=1,3
+<cite>-world_size 2 -gpu_ranks 0 1</cite> to use (say) GPU 1 and 3 on this node only.
+To know more about distributed training on single or multi nodes, read the FAQ section.</p>
 <p>### Step 3: Translate</p>
 <p><code class="docutils literal notranslate"><span class="pre">`bash</span>
 <span class="pre">python</span> <span class="pre">translate.py</span> <span class="pre">-model</span> <span class="pre">demo-model_XYZ.pt</span> <span class="pre">-src</span> <span class="pre">data/src-test.txt</span> <span class="pre">-output</span> <span class="pre">pred.txt</span> <span class="pre">-replace_unk</span> <span class="pre">-verbose</span>
@@ -211,7 +214,7 @@ can also add <cite>-gpuid 1</cite> to use (say) GPU 1.</p>
 <span class="pre">`</span></code></p>
 <p>Step 2. Train the model.</p>
 <p><code class="docutils literal notranslate"><span class="pre">`bash</span>
-<span class="pre">python</span> <span class="pre">train.py</span> <span class="pre">-data</span> <span class="pre">data/multi30k.atok.low</span> <span class="pre">-save_model</span> <span class="pre">multi30k_model</span> <span class="pre">-gpuid</span> <span class="pre">0</span>
+<span class="pre">python</span> <span class="pre">train.py</span> <span class="pre">-data</span> <span class="pre">data/multi30k.atok.low</span> <span class="pre">-save_model</span> <span class="pre">multi30k_model</span> <span class="pre">-gpu_ranks</span> <span class="pre">0</span>
 <span class="pre">`</span></code></p>
 <p>Step 3. Translate sentences.</p>
 <p><code class="docutils literal notranslate"><span class="pre">`bash</span>

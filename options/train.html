@@ -275,8 +275,10 @@ Path prefix to the “.train.pt” and “.valid.pt” file path from preprocess
 <li><strong>-save_model [model]</strong>
 Model filename (the model will be saved as &lt;save_model&gt;_epochN_PPL.pt where PPL
 is the validation perplexity</li>
-<li><strong>-gpuid []</strong>
-Use CUDA on the listed devices.</li>
+<li><strong>-world_size [1]</strong>
+Total number of GPU processes accross several nodes.</li>
+<li><strong>-gpu_ranks []</strong>
+Indices in the total number of procsses accross several nodes.</li>
 <li><strong>-seed [-1]</strong>
 Random seed used for the experiments reproducibility.</li>
 </ul>
@@ -284,8 +286,8 @@ Random seed used for the experiments reproducibility.</li>
 <div class="section" id="initialization">
 <span id="initialization"></span><h2><strong>Initialization</strong>:<a class="headerlink" href="#initialization" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li><strong>-start_epoch [1]</strong>
-The epoch from which to start</li>
+<li><strong>-train_steps [100000]</strong>
+Number of iterations (parameters update) for training</li>
 <li><strong>-param_init [0.1]</strong>
 Parameters are initialized over uniform distribution with support (-param_init,
 param_init). Use 0 to not use initialization</li>
@@ -321,11 +323,11 @@ Accumulate gradient this many times. Approximately equivalent to updating
 batch_size * accum_count batches at once. Recommended for Transformer.</li>
 <li><strong>-valid_batch_size [32]</strong>
 Maximum batch size for validation</li>
+<li><strong>-valid_steps [10000]</strong>
+Run a validation every these steps</li>
 <li><strong>-max_generator_batches [32]</strong>
 Maximum batches of words in a sequence to run the generator on in parallel.
 Higher is faster, but uses more memory.</li>
-<li><strong>-epochs [13]</strong>
-Number of training epochs</li>
 <li><strong>-optim [sgd]</strong>
 Optimization method.</li>
 <li><strong>-adagrad_accumulator_init []</strong>
@@ -366,10 +368,14 @@ Starting learning rate. Recommended settings: sgd = 1, adagrad = 0.1, adadelta =
 <li><strong>-learning_rate_decay [0.5]</strong>
 If update_learning_rate, decay learning rate by this much if (i) perplexity does
 not decrease on the validation set or (ii) epoch has gone past start_decay_at</li>
-<li><strong>-start_decay_at [8]</strong>
-Start decaying every epoch after and including this epoch</li>
-<li><strong>-start_checkpoint_at []</strong>
-Start checkpointing every epoch after and including this epoch</li>
+<li><strong>-start_decay_steps [50000]</strong>
+Start decaying after these steps</li>
+<li><strong>-decay_steps [10000]</strong>
+Decay every these steps (after the start_decay_steps)</li>
+<li><strong>-save_checkpoint_steps [5000]</strong>
+Save a checkpoint every these steps</li>
+<li><strong>-keep_checkpoint [-1]</strong>
+Keep N last checkpoints. -1 = keep all.</li>
 <li><strong>-decay_method []</strong>
 Use a custom decay rate.</li>
 <li><strong>-warmup_steps [4000]</strong>

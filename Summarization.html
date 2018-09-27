@@ -256,7 +256,8 @@ We additionally set the maximum norm of the gradient to 2, and renormalize if th
                 <span class="o">-</span><span class="n">copy_loss_by_seqlength</span> \
                 <span class="o">-</span><span class="n">bridge</span> \
                 <span class="o">-</span><span class="n">seed</span> <span class="mi">777</span> \
-                <span class="o">-</span><span class="n">gpuid</span> <span class="n">X</span>
+                <span class="o">-</span><span class="n">world_size</span> <span class="mi">2</span> \
+                <span class="o">-</span><span class="n">gpu_ranks</span> <span class="mi">0</span> <span class="mi">1</span>
 </pre></div>
 </div>
 <p>(2) CNNDM Transformer</p>
@@ -288,7 +289,8 @@ We additionally set the maximum norm of the gradient to 2, and renormalize if th
                    <span class="o">-</span><span class="n">share_embeddings</span> \
                    <span class="o">-</span><span class="n">copy_attn</span> \
                    <span class="o">-</span><span class="n">param_init_glorot</span> \
-                   <span class="o">-</span><span class="n">gpuid</span> <span class="mi">3</span>
+                   <span class="o">-</span><span class="n">world_size</span> <span class="mi">2</span> \
+                   <span class="o">-</span><span class="n">gpu_ranks</span> <span class="mi">0</span> <span class="mi">1</span>
 </pre></div>
 </div>
 <p>(3) Gigaword</p>

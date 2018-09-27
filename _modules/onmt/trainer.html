@@ -176,7 +176,8 @@
 <span class="kn">from</span> <span class="nn">onmt.utils.logging</span> <span class="k">import</span> <span class="n">logger</span>
 
 
-<span class="k">def</span> <span class="nf">build_trainer</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">optim</span><span class="p">,</span> <span class="n">data_type</span><span class="p">,</span> <span class="n">model_saver</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">build_trainer</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">device_id</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span>
+                  <span class="n">optim</span><span class="p">,</span> <span class="n">data_type</span><span class="p">,</span> <span class="n">model_saver</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Simplify `Trainer` creation based on user `opt`s*</span>
 
@@ -199,8 +200,12 @@
     <span class="n">shard_size</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">max_generator_batches</span>
     <span class="n">norm_method</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">normalization</span>
     <span class="n">grad_accum_count</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">accum_count</span>
-    <span class="n">n_gpu</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">gpuid</span><span class="p">)</span>
-    <span class="n">gpu_rank</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">gpu_rank</span>
+    <span class="n">n_gpu</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">world_size</span>
+    <span class="k">if</span> <span class="n">device_id</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">gpu_rank</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">gpu_ranks</span><span class="p">[</span><span class="n">device_id</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">gpu_rank</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">n_gpu</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">gpu_verbose_level</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">gpu_verbose_level</span>
 
     <span class="n">report_manager</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">build_report_manager</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
