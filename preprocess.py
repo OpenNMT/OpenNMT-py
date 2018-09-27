@@ -8,9 +8,8 @@ import argparse
 import os
 import glob
 import sys
-
+import gc
 import torch
-
 from onmt.utils.logging import init_logger, logger
 
 import onmt.inputters as inputters
@@ -120,6 +119,74 @@ def build_save_in_shards(src_corpus, tgt_corpus, fields,
     return ret_list
 
 
+def build_save_in_shards_using_shards_size(src_corpus, tgt_corpus, fields,
+                                           corpus_type, opt):
+    """
+    Divide src_corpus and tgt_corpus into smaller multiples
+    src_copus and tgt corpus files, then build shards, each
+    shard will have opt.shard_size samples except last shard.
+
+    The reason we do this is to avoid taking up too much memory due
+    to sucking in a huge corpus file.
+    """
+
+    src_data = open(src_corpus, "r", encoding="utf-8").readlines()
+    tgt_data = open(tgt_corpus, "r", encoding="utf-8").readlines()
+
+    src_corpus = "".join(src_corpus.split(".")[:-1])
+    tgt_corpus = "".join(tgt_corpus.split(".")[:-1])
+
+    for x in range(int(len(src_data) / opt.shard_size)):
+        open(src_corpus + ".{0}.txt".format(x), "w",
+             encoding="utf-8").writelines(
+            src_data[x * opt.shard_size: (x + 1) * opt.shard_size])
+        open(tgt_corpus + ".{0}.txt".format(x), "w",
+             encoding="utf-8").writelines(
+            tgt_data[x * opt.shard_size: (x + 1) * opt.shard_size])
+
+    src_list = sorted(glob.glob(src_corpus + '.*.txt'))
+    tgt_list = sorted(glob.glob(tgt_corpus + '.*.txt'))
+
+    ret_list = []
+
+    for index, src in enumerate(src_list):
+        dataset = inputters.build_dataset(
+            fields, opt.data_type,
+            src_path=src,
+            tgt_path=tgt_list[index],
+            src_dir=opt.src_dir,
+            src_seq_length=opt.src_seq_length,
+            tgt_seq_length=opt.tgt_seq_length,
+            src_seq_length_trunc=opt.src_seq_length_trunc,
+            tgt_seq_length_trunc=opt.tgt_seq_length_trunc,
+            dynamic_dict=opt.dynamic_dict,
+            sample_rate=opt.sample_rate,
+            window_size=opt.window_size,
+            window_stride=opt.window_stride,
+            window=opt.window,
+            image_channel_size=opt.image_channel_size
+        )
+
+        pt_file = "{:s}.{:s}.{:d}.pt".format(
+            opt.save_data, corpus_type, index)
+
+        # We save fields in vocab.pt seperately, so make it empty.
+        dataset.fields = []
+
+        logger.info(" * saving %sth %s data image shard to %s."
+                    % (index, corpus_type, pt_file))
+        torch.save(dataset, pt_file)
+
+        ret_list.append(pt_file)
+
+        del dataset.examples
+        gc.collect()
+        del dataset
+        gc.collect()
+
+    return ret_list
+
+
 def build_save_dataset(corpus_type, fields, opt):
     """ Building and saving the dataset """
     assert corpus_type in ['train', 'valid']
@@ -136,6 +203,13 @@ def build_save_dataset(corpus_type, fields, opt):
         return build_save_in_shards(
             src_corpus, tgt_corpus, fields,
             corpus_type, opt)
+
+    if (opt.shard_size > 0):
+        return build_save_in_shards_using_shards_size(src_corpus,
+                                                      tgt_corpus,
+                                                      fields,
+                                                      corpus_type,
+                                                      opt)
 
     # For data_type == 'img' or 'audio', currently we don't do
     # preprocess sharding. We only build a monolithic dataset.
@@ -154,7 +228,8 @@ def build_save_dataset(corpus_type, fields, opt):
         sample_rate=opt.sample_rate,
         window_size=opt.window_size,
         window_stride=opt.window_stride,
-        window=opt.window)
+        window=opt.window,
+        image_channel_size=opt.image_channel_size)
 
     # We save fields in vocab.pt seperately, so make it empty.
     dataset.fields = []
@@ -200,11 +275,11 @@ def main():
     logger.info("Building & saving training data...")
     train_dataset_files = build_save_dataset('train', fields, opt)
 
-    logger.info("Building & saving vocabulary...")
-    build_save_vocab(train_dataset_files, fields, opt)
-
     logger.info("Building & saving validation data...")
-    build_save_dataset('valid', fields, opt)
+    valid_dataset_files = build_save_dataset('valid', fields, opt)
+
+    logger.info("Building & saving vocabulary...")
+    build_save_vocab(train_dataset_files + valid_dataset_files, fields, opt)
 
 
 if __name__ == "__main__":
