@@ -254,11 +254,13 @@ class Translator(object):
 
                 # Debug attention.
                 if attn_debug:
-                    srcs = trans.src_raw
                     preds = trans.pred_sents[0]
                     preds.append('</s>')
                     attns = trans.attns[0].tolist()
-                    srcs = [str(item) for item in range(len(attns[0]))]
+                    if self.data_type == 'text':
+                        srcs = trans.src_raw
+                    else:
+                        srcs = [str(item) for item in range(len(attns[0]))]
                     header_format = "{:>10.10} " + "{:>10.7} " * len(srcs)
                     row_format = "{:>10.10} " + "{:>10.7f} " * len(srcs)
                     output = header_format.format("", *srcs) + '\n'
