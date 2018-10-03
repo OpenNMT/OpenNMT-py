@@ -5,3 +5,4 @@ librosa==0.6.0
 Pillow
 git+https://github.com/pytorch/audio
 pyrouge
+opencv-python

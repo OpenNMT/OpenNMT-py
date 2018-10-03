@@ -100,6 +100,8 @@ Type of context gate to use. Do not select for no context gate.
 * **-global_attention [general]** 
 The attention type to use: dotprod or general (Luong) or MLP (Bahdanau)
 
+* **-global_attention_function [softmax]** 
+
 * **-self_attn_type [scaled-dot]** 
 Self attention type in Transformer decoder layer -- currently "scaled-dot" or
 "average"
@@ -112,6 +114,10 @@ Size of hidden transformer feed-forward
 
 * **-copy_attn []** 
 Train copy attention layer.
+
+* **-generator_function [log_softmax]** 
+Which function to use for generating probabilities over the target vocabulary
+(choices: log_softmax, sparsemax)
 
 * **-copy_attn_force []** 
 When available, train to copy.
@@ -142,17 +148,14 @@ Save a checkpoint every X steps
 * **-keep_checkpoint [-1]** 
 Keep X checkpoints (negative: keep all)
 
-* **-world_size [1]** 
-Total number of GPU processes accross several nodes.
+* **-gpuid []** 
+Deprecated see world_size and gpu_ranks.
 
 * **-gpu_ranks []** 
-Indices in the total number of procsses accross several nodes.
+list of ranks of each process.
 
-* **-gpu_rank []** 
-Rank the current gpu device.
-
-* **-device_id []** 
-Rank the current gpu device.
+* **-world_size [1]** 
+total number of distributed processes.
 
 * **-gpu_backend [nccl]** 
 Type of torch distributed backend
@@ -160,13 +163,16 @@ Type of torch distributed backend
 * **-gpu_verbose_level []** 
 Gives more info on each process per GPU.
 
+* **-master_ip [localhost]** 
+IP of master for torch.distributed training.
+
+* **-master_port [10000]** 
+Port of master for torch.distributed training.
+
 * **-seed [-1]** 
 Random seed used for the experiments reproducibility.
 
 ### **Initialization**:
-* **-train_steps [100000]** 
-Number of iterations (parameters update) for training
-
 * **-param_init [0.1]** 
 Parameters are initialized over uniform distribution with support (-param_init,
 param_init). Use 0 to not use initialization
@@ -190,7 +196,7 @@ the decoder side. See README for specific formatting instructions.
 Fix word embeddings on the encoder side.
 
 * **-fix_word_vecs_dec []** 
-Fix word embeddings on the encoder side.
+Fix word embeddings on the decoder side.
 
 ### **Optimization- Type**:
 * **-batch_size [64]** 
@@ -213,12 +219,15 @@ Perfom validation every X steps
 * **-valid_batch_size [32]** 
 Maximum batch size for validation
 
-* **-valid_steps [10000]** 
-Run a validation every these steps
-
 * **-max_generator_batches [32]** 
 Maximum batches of words in a sequence to run the generator on in parallel.
 Higher is faster, but uses more memory.
+
+* **-train_steps [100000]** 
+Number of training steps
+
+* **-epochs []** 
+Deprecated epochs see train_steps
 
 * **-optim [sgd]** 
 Optimization method.
@@ -268,16 +277,10 @@ not decrease on the validation set or (ii) steps have gone past
 start_decay_steps
 
 * **-start_decay_steps [50000]** 
-Start decaying after these steps
+Start decaying every decay_steps after start_decay_steps
 
 * **-decay_steps [10000]** 
-Decay every these steps (after the start_decay_steps)
-
-* **-save_checkpoint_steps [5000]** 
-Save a checkpoint every these steps
-
-* **-keep_checkpoint [-1]** 
-Keep N last checkpoints. -1 = keep all.
+Decay every decay_steps
 
 * **-decay_method []** 
 Use a custom decay rate.
@@ -312,6 +315,5 @@ Sample rate.
 * **-window_size [0.02]** 
 Window size for spectrogram in seconds.
 
-### **Image**:
 * **-image_channel_size [3]** 
-Using grayscale image can training model faster and smaller.
+Using grayscale image can training model faster and smaller

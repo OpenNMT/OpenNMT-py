@@ -5,8 +5,9 @@ translate.py
 translate.py
 
 ### **Model**:
-* **-model []** 
-Path to model .pt file
+* **-models []** 
+Path to model .pt file(s). Multiple models can be specified, for ensemble
+decoding.
 
 ### **Data**:
 * **-data_type [text]** 
@@ -118,6 +119,5 @@ Window stride for spectrogram in seconds
 * **-window [hamming]** 
 Window type for spectrogram generation
 
-### **Image**:
 * **-image_channel_size [3]** 
-Using grayscale image can training model faster and smaller.
+Using grayscale image can training model faster and smaller

@@ -215,7 +215,8 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
         else:
             gen_func = nn.LogSoftmax(dim=-1)
         generator = nn.Sequential(
-            nn.Linear(model_opt.rnn_size, len(fields["tgt"].vocab)), gen_func
+            nn.Linear(model_opt.dec_rnn_size, len(fields["tgt"].vocab)),
+            gen_func
         )
         if model_opt.share_decoder_embeddings:
             generator[0].weight = decoder.embeddings.word_lut.weight
