@@ -226,7 +226,6 @@ def build_save_dataset(corpus_type, fields, opt):
             src_corpus, tgt_corpus, fields,
             corpus_type, opt, opt.data_type)
 
-
     if (opt.shard_size > 0):
         return build_save_in_shards_using_shards_size(src_corpus,
                                                       tgt_corpus,
