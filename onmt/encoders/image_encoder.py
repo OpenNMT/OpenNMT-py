@@ -16,14 +16,12 @@ class ImageEncoder(nn.Module):
         dropout (float): dropout probablity.
     """
 
-
     def __init__(self, num_layers, bidirectional, rnn_size, dropout,
                  image_chanel_size=3):
         super(ImageEncoder, self).__init__()
-
-        num_directions = 2 if bidirectional else 1
-        assert hidden_size % num_directions == 0
-        hidden_size = hidden_size // num_directions
+        self.num_layers = num_layers
+        self.num_directions = 2 if bidirectional else 1
+        self.hidden_size = rnn_size
 
         self.layer1 = nn.Conv2d(image_chanel_size, 64, kernel_size=(3, 3),
                                 padding=(1, 1), stride=(1, 1))
