@@ -17,7 +17,8 @@ import onmt.utils
 from onmt.utils.logging import logger
 
 
-def build_trainer(opt, model, fields, optim, data_type, model_saver=None):
+def build_trainer(opt, device_id, model, fields,
+                  optim, data_type, model_saver=None):
     """
     Simplify `Trainer` creation based on user `opt`s*
 
@@ -40,8 +41,12 @@ def build_trainer(opt, model, fields, optim, data_type, model_saver=None):
     shard_size = opt.max_generator_batches
     norm_method = opt.normalization
     grad_accum_count = opt.accum_count
-    n_gpu = len(opt.gpuid)
-    gpu_rank = opt.gpu_rank
+    n_gpu = opt.world_size
+    if device_id >= 0:
+        gpu_rank = opt.gpu_ranks[device_id]
+    else:
+        gpu_rank = 0
+        n_gpu = 0
     gpu_verbose_level = opt.gpu_verbose_level
 
     report_manager = onmt.utils.build_report_manager(opt)
@@ -145,18 +150,15 @@ class Trainer(object):
                     if self.gpu_verbose_level > 1:
                         logger.info("GpuRank %d: index: %d accum: %d"
                                     % (self.gpu_rank, i, accum))
-                    cur_dataset = train_iter.get_cur_dataset()
-                    self.train_loss.cur_dataset = cur_dataset
 
                     true_batchs.append(batch)
 
                     if self.norm_method == "tokens":
-                        num_tokens = batch.tgt[1:].data.view(-1) \
-                                     .ne(self.train_loss.padding_idx).sum()
-                        normalization += num_tokens
+                        num_tokens = batch.tgt[1:].ne(
+                            self.train_loss.padding_idx).sum()
+                        normalization += num_tokens.item()
                     else:
                         normalization += batch.batch_size
-
                     accum += 1
                     if accum == self.grad_accum_count:
                         reduce_counter += 1
@@ -222,9 +224,6 @@ class Trainer(object):
         stats = onmt.utils.Statistics()
 
         for batch in valid_iter:
-            cur_dataset = valid_iter.get_cur_dataset()
-            self.valid_loss.cur_dataset = cur_dataset
-
             src = inputters.make_features(batch, 'src', self.data_type)
             if self.data_type == 'text':
                 _, src_lengths = batch.src
@@ -257,7 +256,7 @@ class Trainer(object):
 
         for batch in true_batchs:
             target_size = batch.tgt.size(0)
-            # Truncated BPTT
+            # Truncated BPTT: reminder not compatible with accum > 1
             if self.trunc_size:
                 trunc_size = self.trunc_size
             else:
@@ -292,20 +291,31 @@ class Trainer(object):
                 total_stats.update(batch_stats)
                 report_stats.update(batch_stats)
 
+                # 4. Update the parameters and statistics.
+                if self.grad_accum_count == 1:
+                    # Multi GPU gradient gather
+                    if self.n_gpu > 1:
+                        grads = [p.grad.data for p in self.model.parameters()
+                                 if p.requires_grad
+                                 and p.grad is not None]
+                        onmt.utils.distributed.all_reduce_and_rescale_tensors(
+                            grads, float(1))
+                    self.optim.step()
+
                 # If truncated, don't backprop fully.
                 if dec_state is not None:
                     dec_state.detach()
 
-        # 3.bis Multi GPU gradient gather
-        if self.n_gpu > 1:
-            grads = [p.grad.data for p in self.model.parameters()
-                     if p.requires_grad
-                     and p.grad is not None]
-            onmt.utils.distributed.all_reduce_and_rescale_tensors(
-                grads, float(1))
-
-        # 4. Update the parameters and statistics.
-        self.optim.step()
+        # in case of multi step gradient accumulation,
+        # update only after accum batches
+        if self.grad_accum_count > 1:
+            if self.n_gpu > 1:
+                grads = [p.grad.data for p in self.model.parameters()
+                         if p.requires_grad
+                         and p.grad is not None]
+                onmt.utils.distributed.all_reduce_and_rescale_tensors(
+                    grads, float(1))
+            self.optim.step()
 
     def _start_report_manager(self, start_time=None):
         """

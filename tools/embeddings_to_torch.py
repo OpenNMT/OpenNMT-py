@@ -22,7 +22,7 @@ def get_vocabs(dict_file):
             enc_vocab = vocab[1]
         if vocab[0] == 'tgt':
             dec_vocab = vocab[1]
-    assert type(None) not in [type(enc_vocab), type(dec_vocab)]
+    assert enc_vocab is not None and dec_vocab is not None
 
     logger.info("From: %s" % dict_file)
     logger.info("\t* source vocab: %d words" % len(enc_vocab))
@@ -127,8 +127,8 @@ def main():
                    match_percent[1]))
 
     logger.info("\nFiltered embeddings:")
-    logger.info("\t* enc: ", filtered_enc_embeddings.size())
-    logger.info("\t* dec: ", filtered_dec_embeddings.size())
+    logger.info("\t* enc: %s" % str(filtered_enc_embeddings.size()))
+    logger.info("\t* dec: %s" % str(filtered_dec_embeddings.size()))
 
     enc_output_file = opt.output_file + ".enc.pt"
     dec_output_file = opt.output_file + ".dec.pt"

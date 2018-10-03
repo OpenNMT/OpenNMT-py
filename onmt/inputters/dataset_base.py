@@ -61,17 +61,26 @@ class DatasetBase(torchtext.data.Dataset):
         if not tokens:
             return [], [], -1
 
-        split_tokens = [token.split(u"￨") for token in tokens]
-        split_tokens = [token for token in split_tokens if token[0]]
-        token_size = len(split_tokens[0])
+        specials = [PAD_WORD, UNK_WORD, BOS_WORD, EOS_WORD]
+        words = []
+        features = []
+        n_feats = None
+        for token in tokens:
+            split_token = token.split(u"￨")
+            assert all([special != split_token[0] for special in specials]), \
+                "Dataset cannot contain Special Tokens"
 
-        assert all(len(token) == token_size for token in split_tokens), \
-            "all words must have the same number of features"
-        words_and_features = list(zip(*split_tokens))
-        words = words_and_features[0]
-        features = words_and_features[1:]
+            if split_token[0]:
+                words += [split_token[0]]
+                features += [split_token[1:]]
 
-        return words, features, token_size - 1
+                if n_feats is None:
+                    n_feats = len(split_token)
+                else:
+                    assert len(split_token) == n_feats, \
+                        "all words must have the same number of features"
+        features = list(zip(*features))
+        return tuple(words), features, n_feats - 1
 
     # Below are helper functions for intra-class use only.
 

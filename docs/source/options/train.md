@@ -142,8 +142,11 @@ Save a checkpoint every X steps
 * **-keep_checkpoint [-1]** 
 Keep X checkpoints (negative: keep all)
 
-* **-gpuid []** 
-Use CUDA on the listed devices.
+* **-world_size [1]** 
+Total number of GPU processes accross several nodes.
+
+* **-gpu_ranks []** 
+Indices in the total number of procsses accross several nodes.
 
 * **-gpu_rank []** 
 Rank the current gpu device.
@@ -161,6 +164,9 @@ Gives more info on each process per GPU.
 Random seed used for the experiments reproducibility.
 
 ### **Initialization**:
+* **-train_steps [100000]** 
+Number of iterations (parameters update) for training
+
 * **-param_init [0.1]** 
 Parameters are initialized over uniform distribution with support (-param_init,
 param_init). Use 0 to not use initialization
@@ -207,15 +213,12 @@ Perfom validation every X steps
 * **-valid_batch_size [32]** 
 Maximum batch size for validation
 
+* **-valid_steps [10000]** 
+Run a validation every these steps
+
 * **-max_generator_batches [32]** 
 Maximum batches of words in a sequence to run the generator on in parallel.
 Higher is faster, but uses more memory.
-
-* **-train_steps [100000]** 
-Number of training steps
-
-* **-epochs []** 
-Deprecated epochs see train_steps
 
 * **-optim [sgd]** 
 Optimization method.
@@ -265,10 +268,16 @@ not decrease on the validation set or (ii) steps have gone past
 start_decay_steps
 
 * **-start_decay_steps [50000]** 
-Start decaying every decay_steps after start_decay_steps
+Start decaying after these steps
 
 * **-decay_steps [10000]** 
-Decay every decay_steps
+Decay every these steps (after the start_decay_steps)
+
+* **-save_checkpoint_steps [5000]** 
+Save a checkpoint every these steps
+
+* **-keep_checkpoint [-1]** 
+Keep N last checkpoints. -1 = keep all.
 
 * **-decay_method []** 
 Use a custom decay rate.
@@ -302,3 +311,7 @@ Sample rate.
 
 * **-window_size [0.02]** 
 Window size for spectrogram in seconds.
+
+### **Image**:
+* **-image_channel_size [3]** 
+Using grayscale image can training model faster and smaller.

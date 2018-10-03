@@ -99,7 +99,8 @@ def start(config_file,
         out['status'] = STATUS_OK
         return jsonify(out)
 
-    app.run(debug=debug, host=host, port=port, use_reloader=False)
+    app.run(debug=debug, host=host, port=port, use_reloader=False,
+            threaded=True)
 
 
 if __name__ == '__main__':

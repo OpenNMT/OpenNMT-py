@@ -118,6 +118,8 @@ def model_opts(parser):
                        choices=['dot', 'general', 'mlp'],
                        help="""The attention type to use:
                        dotprod or general (Luong) or MLP (Bahdanau)""")
+    group.add_argument('-global_attention_function', type=str,
+                       default="softmax", choices=["softmax", "sparsemax"])
     group.add_argument('-self_attn_type', type=str, default="scaled-dot",
                        help="""Self attention type in Transformer decoder
                        layer -- currently "scaled-dot" or "average" """)
@@ -126,9 +128,14 @@ def model_opts(parser):
     group.add_argument('-transformer_ff', type=int, default=2048,
                        help='Size of hidden transformer feed-forward')
 
-    # Genenerator and loss options.
+    # Generator and loss options.
     group.add_argument('-copy_attn', action="store_true",
                        help='Train copy attention layer.')
+    group.add_argument('-generator_function', default="log_softmax",
+                       choices=["log_softmax", "sparsemax"],
+                       help="""Which function to use for generating
+                       probabilities over the target vocabulary (choices:
+                       log_softmax, sparsemax)""")
     group.add_argument('-copy_attn_force', action="store_true",
                        help='When available, train to copy.')
     group.add_argument('-reuse_copy_attn', action="store_true",
@@ -172,6 +179,15 @@ def preprocess_opts(parser):
                        64 bytes. A commonly used sharding value is 131072000.
                        It is recommended to ensure the corpus is shuffled
                        before sharding.""")
+
+    group.add_argument('-shard_size', type=int, default=0,
+                       help="""Divide src_corpus and tgt_corpus into
+                       smaller multiple src_copus and tgt corpus files, then
+                       build shards, each shard will have
+                       opt.shard_size samples except last shard.
+                       shard_size=0 means no segmentation
+                       shard_size>0 means segment dataset into multiple shards,
+                       each shard has shard_size samples""")
 
     # Dictionary options, for text corpus
 
@@ -233,6 +249,12 @@ def preprocess_opts(parser):
     group.add_argument('-window', default='hamming',
                        help="Window type for spectrogram generation.")
 
+    # Option most relevant to image input
+    group.add_argument('-image_channel_size', type=int, default=3,
+                       choices=[3, 1],
+                       help="""Using grayscale image can training
+                       model faster and smaller""")
+
 
 def train_opts(parser):
     """ Training and saving options """
@@ -254,15 +276,19 @@ def train_opts(parser):
 
     # GPU
     group.add_argument('-gpuid', default=[], nargs='+', type=int,
-                       help="Use CUDA on the listed devices.")
-    group.add_argument('-gpu_rank', default=0, nargs='+', type=int,
-                       help="Rank the current gpu device.")
-    group.add_argument('-device_id', default=0, nargs='+', type=int,
-                       help="Rank the current gpu device.")
+                       help="Deprecated see world_size and gpu_ranks.")
+    group.add_argument('-gpu_ranks', default=[], nargs='+', type=int,
+                       help="list of ranks of each process.")
+    group.add_argument('-world_size', default=1, type=int,
+                       help="total number of distributed processes.")
     group.add_argument('-gpu_backend', default='nccl', nargs='+', type=str,
                        help="Type of torch distributed backend")
     group.add_argument('-gpu_verbose_level', default=0, type=int,
                        help="Gives more info on each process per GPU.")
+    group.add_argument('-master_ip', default="localhost", type=str,
+                       help="IP of master for torch.distributed training.")
+    group.add_argument('-master_port', default=10000, type=int,
+                       help="Port of master for torch.distributed training.")
 
     group.add_argument('-seed', type=int, default=-1,
                        help="""Random seed used for the experiments
@@ -297,7 +323,7 @@ def train_opts(parser):
                        help="Fix word embeddings on the encoder side.")
     group.add_argument('-fix_word_vecs_dec',
                        action='store_true',
-                       help="Fix word embeddings on the encoder side.")
+                       help="Fix word embeddings on the decoder side.")
 
     # Optimization options
     group = parser.add_argument_group('Optimization- Type')
@@ -417,12 +443,21 @@ def train_opts(parser):
     group.add_argument('-window_size', type=float, default=.02,
                        help="Window size for spectrogram in seconds.")
 
+    # Option most relevant to image input
+    group.add_argument('-image_channel_size', type=int, default=3,
+                       choices=[3, 1],
+                       help="""Using grayscale image can training
+                       model faster and smaller""")
+
 
 def translate_opts(parser):
     """ Translation / inference options """
     group = parser.add_argument_group('Model')
-    group.add_argument('-model', required=True,
-                       help='Path to model .pt file')
+    group.add_argument('-model', dest='models', metavar='MODEL',
+                       nargs='+', type=str, default=[], required=True,
+                       help='Path to model .pt file(s). '
+                            'Multiple models can be specified, '
+                            'for ensemble decoding.')
 
     group = parser.add_argument_group('Data')
     group.add_argument('-data_type', default="text",
@@ -525,6 +560,12 @@ def translate_opts(parser):
     group.add_argument('-window', default='hamming',
                        help='Window type for spectrogram generation')
 
+    # Option most relevant to image input
+    group.add_argument('-image_channel_size', type=int, default=3,
+                       choices=[3, 1],
+                       help="""Using grayscale image can training
+                       model faster and smaller""")
+
 
 def add_md_help_argument(parser):
     """ md help parser """
@@ -557,7 +598,7 @@ class MarkdownHelpFormatter(argparse.HelpFormatter):
         return super(MarkdownHelpFormatter, self).format_help()
 
     def start_section(self, heading):
-        super(MarkdownHelpFormatter, self)\
+        super(MarkdownHelpFormatter, self) \
             .start_section('### **%s**' % heading)
 
     def _format_action(self, action):
