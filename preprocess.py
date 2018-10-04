@@ -9,6 +9,7 @@ import os
 import glob
 import sys
 import gc
+import codecs
 import torch
 from onmt.utils.logging import init_logger, logger
 
@@ -130,8 +131,8 @@ def build_save_in_shards_using_shards_size(src_corpus, tgt_corpus, fields,
     to sucking in a huge corpus file.
     """
 
-    with open(src_corpus, "r", encoding="utf-8") as fsrc:
-        with open(tgt_corpus, "r", encoding="utf-8") as ftgt:
+    with codecs.open(src_corpus, "r", encoding="utf-8") as fsrc:
+        with codecs.open(tgt_corpus, "r", encoding="utf-8") as ftgt:
             src_data = fsrc.readlines()
             tgt_data = ftgt.readlines()
 
@@ -140,25 +141,25 @@ def build_save_in_shards_using_shards_size(src_corpus, tgt_corpus, fields,
 
             num_shards = int(len(src_data) / opt.shard_size)
             for x in range(num_shards):
-                f = open(src_corpus + ".{0}.txt".format(x), "w",
-                         encoding="utf-8")
+                f = codecs.open(src_corpus + ".{0}.txt".format(x), "w",
+                                encoding="utf-8")
                 f.writelines(
                         src_data[x * opt.shard_size: (x + 1) * opt.shard_size])
                 f.close()
-                f = open(tgt_corpus + ".{0}.txt".format(x), "w",
-                         encoding="utf-8")
+                f = codecs.open(tgt_corpus + ".{0}.txt".format(x), "w",
+                                encoding="utf-8")
                 f.writelines(
                         tgt_data[x * opt.shard_size: (x + 1) * opt.shard_size])
                 f.close()
             num_written = num_shards * opt.shard_size
             if len(src_data) > num_written:
-                f = open(src_corpus + ".{0}.txt".format(num_shards), "w",
-                         encoding="utf-8")
+                f = codecs.open(src_corpus + ".{0}.txt".format(num_shards),
+                                'w', encoding="utf-8")
                 f.writelines(
                         src_data[num_shards * opt.shard_size:])
                 f.close()
-                f = open(tgt_corpus + ".{0}.txt".format(num_shards), "w",
-                         encoding="utf-8")
+                f = codecs.open(tgt_corpus + ".{0}.txt".format(num_shards),
+                                'w', encoding="utf-8")
                 f.writelines(
                         tgt_data[num_shards * opt.shard_size:])
                 f.close()
