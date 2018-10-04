@@ -22,12 +22,6 @@ def build_translator(opt, report_score=True, logger=None, out_file=None):
     if out_file is None:
         out_file = codecs.open(opt.output, 'w+', 'utf-8')
 
-    if opt.gpu > -1:
-        torch.cuda.set_device(opt.gpu)
-        device = torch.device('cuda')
-    else:
-        device = torch.device('cpu')
-
     dummy_parser = argparse.ArgumentParser(description='train.py')
     opts.model_opts(dummy_parser)
     dummy_opt = dummy_parser.parse_known_args([])[0]
@@ -53,7 +47,7 @@ def build_translator(opt, report_score=True, logger=None, out_file=None):
                         "sample_rate", "window_size", "window_stride",
                         "window", "image_channel_size"]}
 
-    translator = Translator(model, fields, global_scorer=scorer, device=device,
+    translator = Translator(model, fields, global_scorer=scorer,
                             out_file=out_file, report_score=report_score,
                             copy_attn=model_opt.copy_attn, logger=logger,
                             **kwargs)
@@ -90,7 +84,6 @@ class Translator(object):
                  copy_attn=False,
                  logger=None,
                  gpu=False,
-                 device=None,
                  dump_beam="",
                  min_length=0,
                  stepwise_penalty=False,
@@ -115,7 +108,6 @@ class Translator(object):
         self.cuda = gpu > -1
 
         self.model = model
-        self.device = device
         self.fields = fields
         self.n_best = n_best
         self.max_length = max_length
@@ -558,11 +550,8 @@ class Translator(object):
             _, src_lengths = batch.src
         elif data_type == 'audio':
             src_lengths = batch.src_lengths
-        if data_type == 'audio':
-            enc_states, memory_bank, src_lengths \
-                    = self.model.encoder(src, src_lengths)
-        else:
-            enc_states, memory_bank = self.model.encoder(src, src_lengths)
+        enc_states, memory_bank, src_lengths \
+            = self.model.encoder(src, src_lengths)
         dec_states = self.model.decoder.init_decoder_state(
             src, memory_bank, enc_states)
 
@@ -675,11 +664,8 @@ class Translator(object):
         tgt_in = inputters.make_features(batch, 'tgt')[:-1]
 
         #  (1) run the encoder on the src
-        if data_type == 'audio':
-            enc_states, memory_bank, src_lengths \
-                    = self.model.encoder(src, src_lengths)
-        else:
-            enc_states, memory_bank = self.model.encoder(src, src_lengths)
+        enc_states, memory_bank, src_lengths \
+            = self.model.encoder(src, src_lengths)
         dec_states = \
             self.model.decoder.init_decoder_state(src, memory_bank, enc_states)
 

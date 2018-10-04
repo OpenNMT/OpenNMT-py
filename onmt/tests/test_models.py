@@ -101,7 +101,7 @@ class TestModel(unittest.TestCase):
         test_src, test_tgt, test_length = self.get_batch(source_l=source_l,
                                                          bsize=bsize)
 
-        hidden_t, outputs = enc(test_src, test_length)
+        hidden_t, outputs, test_length = enc(test_src, test_length)
 
         # Initialize vectors to compare size with
         test_hid = torch.zeros(self.opt.enc_layers, bsize, opt.enc_rnn_size)
@@ -213,7 +213,7 @@ class TestModel(unittest.TestCase):
                                       for_encoder=False)
         dec = build_decoder(opt, embeddings)
 
-        model = onmt.models.model.NMTModel(enc, dec, 'audio')
+        model = onmt.models.model.NMTModel(enc, dec)
 
         test_src, test_tgt, test_length = self.get_batch_audio(
             bsize=bsize,
