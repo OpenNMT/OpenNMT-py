@@ -23,7 +23,7 @@ wget -O data/speech.tgz http://lstm.seas.harvard.edu/latex/speech.tgz; tar zxf d
 1) Preprocess the data.
 
 ```
-python preprocess.py -data_type audio -src_dir data/speech/an4_dataset -train_src data/speech/src-train.txt -train_tgt data/speech/tgt-train.txt -valid_src data/speech/src-val.txt -valid_tgt data/speech/tgt-val.txt -save_data data/speech/demo
+python preprocess.py -data_type audio -src_dir data/speech/an4_dataset -train_src data/speech/src-train.txt -train_tgt data/speech/tgt-train.txt -valid_src data/speech/src-val.txt -valid_tgt data/speech/tgt-val.txt -shard_size 300 -save_data data/speech/demo
 ```
 
 2) Train the model.
