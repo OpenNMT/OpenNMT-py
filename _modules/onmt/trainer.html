@@ -386,6 +386,8 @@
             <span class="n">src</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">make_features</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="s1">&#39;src&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span><span class="p">)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span> <span class="o">==</span> <span class="s1">&#39;text&#39;</span><span class="p">:</span>
                 <span class="n">_</span><span class="p">,</span> <span class="n">src_lengths</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">src</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span> <span class="o">==</span> <span class="s1">&#39;audio&#39;</span><span class="p">:</span>
+                <span class="n">src_lengths</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">src_lengths</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">src_lengths</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -424,6 +426,8 @@
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span> <span class="o">==</span> <span class="s1">&#39;text&#39;</span><span class="p">:</span>
                 <span class="n">_</span><span class="p">,</span> <span class="n">src_lengths</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">src</span>
                 <span class="n">report_stats</span><span class="o">.</span><span class="n">n_src_words</span> <span class="o">+=</span> <span class="n">src_lengths</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span> <span class="o">==</span> <span class="s1">&#39;audio&#39;</span><span class="p">:</span>
+                <span class="n">src_lengths</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">src_lengths</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">src_lengths</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -537,7 +541,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, srush.
+        &copy; Copyright 2017, srush
 
     </p>
   </div>
@@ -556,22 +560,15 @@
 
   
 
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'../../',
-            VERSION:'',
-            LANGUAGE:'None',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="../../_static/jquery.js"></script>
-      <script type="text/javascript" src="../../_static/underscore.js"></script>
-      <script type="text/javascript" src="../../_static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-      <script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script>
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script>
+    
 
   
 

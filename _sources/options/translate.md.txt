@@ -5,8 +5,9 @@ translate.py
 translate.py
 
 ### **Model**:
-* **-model []** 
-Path to model .pt file
+* **-models []** 
+Path to model .pt file(s). Multiple models can be specified, for ensemble
+decoding.
 
 ### **Data**:
 * **-data_type [text]** 
@@ -38,6 +39,9 @@ Create dynamic dictionaries
 Share source and target vocabulary
 
 ### **Beam**:
+* **-fast []** 
+Use fast beam search (some features may not be supported!)
+
 * **-beam_size [5]** 
 Beam size
 
@@ -83,6 +87,9 @@ source token
 * **-verbose []** 
 Print scores and predictions for each sentence
 
+* **-log_file []** 
+Output logs to a file under this path.
+
 * **-attn_debug []** 
 Print best attn for each word
 
@@ -112,6 +119,5 @@ Window stride for spectrogram in seconds
 * **-window [hamming]** 
 Window type for spectrogram generation
 
-### **Image**:
 * **-image_channel_size [3]** 
-Using grayscale image can training model faster and smaller.
+Using grayscale image can training model faster and smaller

@@ -98,7 +98,6 @@
 <li class="toctree-l2"><a class="reference internal" href="#optimization-rate"><strong>Optimization- Rate</strong>:</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#logging"><strong>Logging</strong>:</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#speech"><strong>Speech</strong>:</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#image"><strong>Image</strong>:</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="translate.html">Options: translate.py:</a></li>
@@ -227,8 +226,18 @@ Number of layers in enc/dec.</li>
 Number of layers in the encoder</li>
 <li><strong>-dec_layers [2]</strong>
 Number of layers in the decoder</li>
-<li><strong>-rnn_size [500]</strong>
-Size of rnn hidden states</li>
+<li><strong>-rnn_size [-1]</strong>
+Size of rnn hidden states. Overwrites enc_rnn_size and dec_rnn_size</li>
+<li><strong>-enc_rnn_size [500]</strong>
+Size of encoder rnn hidden states. Must be equal to dec_rnn_size except for
+speech-to-text.</li>
+<li><strong>-dec_rnn_size [500]</strong>
+Size of decoder rnn hidden states. Must be equal to enc_rnn_size except for
+speech-to-text.</li>
+<li><strong>-audio_enc_pooling [1]</strong>
+The amount of pooling of audio encoder, either the same amount of pooling across
+all layers indicated by a single number, or different amounts of pooling per
+layer separated by comma.</li>
 <li><strong>-cnn_kernel_width [3]</strong>
 Size of windows in the cnn, the kernel_size is (cnn_kernel_width, 1) in conv
 layer</li>
@@ -242,8 +251,6 @@ state</li>
 The gate type to use in the RNNs</li>
 <li><strong>-brnn []</strong>
 Deprecated, use <code class="docutils literal notranslate"><span class="pre">encoder_type</span></code>.</li>
-<li><strong>-brnn_merge [concat]</strong>
-Merge action for the bidir hidden states</li>
 <li><strong>-context_gate []</strong>
 Type of context gate to use. Do not select for no context gate.</li>
 </ul>
@@ -253,8 +260,19 @@ Type of context gate to use. Do not select for no context gate.</li>
 <ul class="simple">
 <li><strong>-global_attention [general]</strong>
 The attention type to use: dotprod or general (Luong) or MLP (Bahdanau)</li>
+<li><strong>-global_attention_function [softmax]</strong></li>
+<li><strong>-self_attn_type [scaled-dot]</strong>
+Self attention type in Transformer decoder layer – currently “scaled-dot” or
+“average”</li>
+<li><strong>-heads [8]</strong>
+Number of heads for transformer self-attention</li>
+<li><strong>-transformer_ff [2048]</strong>
+Size of hidden transformer feed-forward</li>
 <li><strong>-copy_attn []</strong>
 Train copy attention layer.</li>
+<li><strong>-generator_function [log_softmax]</strong>
+Which function to use for generating probabilities over the target vocabulary
+(choices: log_softmax, sparsemax)</li>
 <li><strong>-copy_attn_force []</strong>
 When available, train to copy.</li>
 <li><strong>-reuse_copy_attn []</strong>
@@ -273,12 +291,26 @@ Lambda value for coverage.</li>
 <li><strong>-data []</strong>
 Path prefix to the “.train.pt” and “.valid.pt” file path from preprocess.py</li>
 <li><strong>-save_model [model]</strong>
-Model filename (the model will be saved as &lt;save_model&gt;_epochN_PPL.pt where PPL
-is the validation perplexity</li>
-<li><strong>-world_size [1]</strong>
-Total number of GPU processes accross several nodes.</li>
+Model filename (the model will be saved as &lt;save_model&gt;_N.pt where N is the
+number of steps</li>
+<li><strong>-save_checkpoint_steps [5000]</strong>
+Save a checkpoint every X steps</li>
+<li><strong>-keep_checkpoint [-1]</strong>
+Keep X checkpoints (negative: keep all)</li>
+<li><strong>-gpuid []</strong>
+Deprecated see world_size and gpu_ranks.</li>
 <li><strong>-gpu_ranks []</strong>
-Indices in the total number of procsses accross several nodes.</li>
+list of ranks of each process.</li>
+<li><strong>-world_size [1]</strong>
+total number of distributed processes.</li>
+<li><strong>-gpu_backend [nccl]</strong>
+Type of torch distributed backend</li>
+<li><strong>-gpu_verbose_level []</strong>
+Gives more info on each process per GPU.</li>
+<li><strong>-master_ip [localhost]</strong>
+IP of master for torch.distributed training.</li>
+<li><strong>-master_port [10000]</strong>
+Port of master for torch.distributed training.</li>
 <li><strong>-seed [-1]</strong>
 Random seed used for the experiments reproducibility.</li>
 </ul>
@@ -286,8 +318,6 @@ Random seed used for the experiments reproducibility.</li>
 <div class="section" id="initialization">
 <span id="initialization"></span><h2><strong>Initialization</strong>:<a class="headerlink" href="#initialization" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li><strong>-train_steps [100000]</strong>
-Number of iterations (parameters update) for training</li>
 <li><strong>-param_init [0.1]</strong>
 Parameters are initialized over uniform distribution with support (-param_init,
 param_init). Use 0 to not use initialization</li>
@@ -305,7 +335,7 @@ the decoder side. See README for specific formatting instructions.</li>
 <li><strong>-fix_word_vecs_enc []</strong>
 Fix word embeddings on the encoder side.</li>
 <li><strong>-fix_word_vecs_dec []</strong>
-Fix word embeddings on the encoder side.</li>
+Fix word embeddings on the decoder side.</li>
 </ul>
 </div>
 <div class="section" id="optimization-type">
@@ -321,13 +351,17 @@ Normalization method of the gradient.</li>
 <li><strong>-accum_count [1]</strong>
 Accumulate gradient this many times. Approximately equivalent to updating
 batch_size * accum_count batches at once. Recommended for Transformer.</li>
+<li><strong>-valid_steps [10000]</strong>
+Perfom validation every X steps</li>
 <li><strong>-valid_batch_size [32]</strong>
 Maximum batch size for validation</li>
-<li><strong>-valid_steps [10000]</strong>
-Run a validation every these steps</li>
 <li><strong>-max_generator_batches [32]</strong>
 Maximum batches of words in a sequence to run the generator on in parallel.
 Higher is faster, but uses more memory.</li>
+<li><strong>-train_steps [100000]</strong>
+Number of training steps</li>
+<li><strong>-epochs []</strong>
+Deprecated epochs see train_steps</li>
 <li><strong>-optim [sgd]</strong>
 Optimization method.</li>
 <li><strong>-adagrad_accumulator_init []</strong>
@@ -367,15 +401,12 @@ Starting learning rate. Recommended settings: sgd = 1, adagrad = 0.1, adadelta =
 1, adam = 0.001</li>
 <li><strong>-learning_rate_decay [0.5]</strong>
 If update_learning_rate, decay learning rate by this much if (i) perplexity does
-not decrease on the validation set or (ii) epoch has gone past start_decay_at</li>
+not decrease on the validation set or (ii) steps have gone past
+start_decay_steps</li>
 <li><strong>-start_decay_steps [50000]</strong>
-Start decaying after these steps</li>
+Start decaying every decay_steps after start_decay_steps</li>
 <li><strong>-decay_steps [10000]</strong>
-Decay every these steps (after the start_decay_steps)</li>
-<li><strong>-save_checkpoint_steps [5000]</strong>
-Save a checkpoint every these steps</li>
-<li><strong>-keep_checkpoint [-1]</strong>
-Keep N last checkpoints. -1 = keep all.</li>
+Decay every decay_steps</li>
 <li><strong>-decay_method []</strong>
 Use a custom decay rate.</li>
 <li><strong>-warmup_steps [4000]</strong>
@@ -387,6 +418,8 @@ Number of warmup steps for custom decay.</li>
 <ul class="simple">
 <li><strong>-report_every [50]</strong>
 Print stats at this interval.</li>
+<li><strong>-log_file []</strong>
+Output logs to a file under this path.</li>
 <li><strong>-exp_host []</strong>
 Send logs to this crayon server.</li>
 <li><strong>-exp []</strong>
@@ -405,13 +438,8 @@ Log directory for Tensorboard. This is also the name of the run.</li>
 Sample rate.</li>
 <li><strong>-window_size [0.02]</strong>
 Window size for spectrogram in seconds.</li>
-</ul>
-</div>
-<div class="section" id="image">
-<span id="image"></span><h2><strong>Image</strong>:<a class="headerlink" href="#image" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
 <li><strong>-image_channel_size [3]</strong>
-Using grayscale image can training model faster and smaller.</li>
+Using grayscale image can training model faster and smaller</li>
 </ul>
 </div>
 </div>
@@ -436,7 +464,7 @@ Using grayscale image can training model faster and smaller.</li>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, srush.
+        &copy; Copyright 2017, srush
 
     </p>
   </div>
@@ -455,22 +483,15 @@ Using grayscale image can training model faster and smaller.</li>
 
   
 
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'../',
-            VERSION:'',
-            LANGUAGE:'None',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="../_static/jquery.js"></script>
-      <script type="text/javascript" src="../_static/underscore.js"></script>
-      <script type="text/javascript" src="../_static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-      <script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script>
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script>
+    
 
   
 

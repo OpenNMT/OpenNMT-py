@@ -93,7 +93,6 @@
 <li class="toctree-l2"><a class="reference internal" href="#random"><strong>Random</strong>:</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#logging"><strong>Logging</strong>:</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#speech"><strong>Speech</strong>:</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#image"><strong>Image</strong>:</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="train.html">Options: train.py:</a></li>
@@ -193,15 +192,17 @@ Output file for the prepared data</li>
 <li><strong>-max_shard_size []</strong>
 For text corpus of large volume, it will be divided into shards of this size to
 preprocess. If 0, the data will be handled as a whole. The unit is in bytes.
-Optimal value should be multiples of 64 bytes.</li>
+Optimal value should be multiples of 64 bytes. A commonly used sharding value is</li>
+</ul>
+<ol class="simple">
+<li>It is recommended to ensure the corpus is shuffled before sharding.</li>
+</ol>
+<ul class="simple">
 <li><strong>-shard_size []</strong>
-Divide src_corpus and tgt_corpus into
-smaller multiple src_copus and tgt corpus files, then
-build shards, each shard will have
-opt.shard_size samples except last shard.
-shard_size=0 means no segmentation
-shard_size&gt;0 means segment dataset into multiple shards,
-each shard has shard_size samples.</li>
+Divide src_corpus and tgt_corpus into smaller multiple src_copus and tgt corpus
+files, then build shards, each shard will have opt.shard_size samples except
+last shard. shard_size=0 means no segmentation shard_size&gt;0 means segment
+dataset into multiple shards, each shard has shard_size samples</li>
 </ul>
 </div>
 <div class="section" id="vocab">
@@ -254,6 +255,8 @@ Random seed</li>
 <ul class="simple">
 <li><strong>-report_every [100000]</strong>
 Report status every this many sentences</li>
+<li><strong>-log_file []</strong>
+Output logs to a file under this path.</li>
 </ul>
 </div>
 <div class="section" id="speech">
@@ -267,13 +270,8 @@ Window size for spectrogram in seconds.</li>
 Window stride for spectrogram in seconds.</li>
 <li><strong>-window [hamming]</strong>
 Window type for spectrogram generation.</li>
-</ul>
-</div>
-<div class="section" id="image">
-<span id="image"></span><h2><strong>Image</strong>:<a class="headerlink" href="#image" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
 <li><strong>-image_channel_size [3]</strong>
-Using grayscale image can training model faster and smaller.</li>
+Using grayscale image can training model faster and smaller</li>
 </ul>
 </div>
 </div>
@@ -298,7 +296,7 @@ Using grayscale image can training model faster and smaller.</li>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, srush.
+        &copy; Copyright 2017, srush
 
     </p>
   </div>
@@ -317,22 +315,15 @@ Using grayscale image can training model faster and smaller.</li>
 
   
 
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'../',
-            VERSION:'',
-            LANGUAGE:'None',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="../_static/jquery.js"></script>
-      <script type="text/javascript" src="../_static/underscore.js"></script>
-      <script type="text/javascript" src="../_static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-      <script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script>
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script>
+    
 
   
 

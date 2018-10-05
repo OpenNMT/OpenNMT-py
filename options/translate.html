@@ -95,7 +95,6 @@
 <li class="toctree-l2"><a class="reference internal" href="#logging"><strong>Logging</strong>:</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#efficiency"><strong>Efficiency</strong>:</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#speech"><strong>Speech</strong>:</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#image"><strong>Image</strong>:</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../extended.html">Example: Translation</a></li>
@@ -176,8 +175,9 @@
 <div class="section" id="model">
 <span id="model"></span><h2><strong>Model</strong>:<a class="headerlink" href="#model" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li><strong>-model []</strong>
-Path to model .pt file</li>
+<li><strong>-models []</strong>
+Path to model .pt file(s). Multiple models can be specified, for ensemble
+decoding.</li>
 </ul>
 </div>
 <div class="section" id="data">
@@ -207,6 +207,8 @@ Share source and target vocabulary</li>
 <div class="section" id="beam">
 <span id="beam"></span><h2><strong>Beam</strong>:<a class="headerlink" href="#beam" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
+<li><strong>-fast []</strong>
+Use fast beam search (some features may not be supported!)</li>
 <li><strong>-beam_size [5]</strong>
 Beam size</li>
 <li><strong>-min_length []</strong>
@@ -243,6 +245,8 @@ source token</li>
 <ul class="simple">
 <li><strong>-verbose []</strong>
 Print scores and predictions for each sentence</li>
+<li><strong>-log_file []</strong>
+Output logs to a file under this path.</li>
 <li><strong>-attn_debug []</strong>
 Print best attn for each word</li>
 <li><strong>-dump_beam []</strong>
@@ -271,13 +275,8 @@ Window size for spectrogram in seconds</li>
 Window stride for spectrogram in seconds</li>
 <li><strong>-window [hamming]</strong>
 Window type for spectrogram generation</li>
-</ul>
-</div>
-<div class="section" id="image">
-<span id="image"></span><h2><strong>Image</strong>:<a class="headerlink" href="#image" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
 <li><strong>-image_channel_size [3]</strong>
-Using grayscale image can training model faster and smaller.</li>
+Using grayscale image can training model faster and smaller</li>
 </ul>
 </div>
 </div>
@@ -302,7 +301,7 @@ Using grayscale image can training model faster and smaller.</li>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, srush.
+        &copy; Copyright 2017, srush
 
     </p>
   </div>
@@ -321,22 +320,15 @@ Using grayscale image can training model faster and smaller.</li>
 
   
 
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'../',
-            VERSION:'',
-            LANGUAGE:'None',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="../_static/jquery.js"></script>
-      <script type="text/javascript" src="../_static/underscore.js"></script>
-      <script type="text/javascript" src="../_static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-      <script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script>
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script>
+    
 
   
 
