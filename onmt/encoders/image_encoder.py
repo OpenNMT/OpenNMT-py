@@ -106,4 +106,4 @@ class ImageEncoder(nn.Module):
             all_outputs.append(outputs)
         out = torch.cat(all_outputs, 0)
 
-        return hidden_t, out
+        return hidden_t, out, lengths

@@ -48,6 +48,13 @@ def training_opt_postprocessing(opt, device_id):
         opt.enc_layers = opt.layers
         opt.dec_layers = opt.layers
 
+    if opt.rnn_size != -1:
+        opt.enc_rnn_size = opt.rnn_size
+        opt.dec_rnn_size = opt.rnn_size
+        if opt.model_type == 'text' and opt.enc_rnn_size != opt.dec_rnn_size:
+            raise AssertionError("""We do not support different encoder and
+                                 decoder rnn sizes for translation now.""")
+
     opt.brnn = (opt.encoder_type == "brnn")
 
     if opt.rnn_type == "SRU" and not opt.gpu_ranks:

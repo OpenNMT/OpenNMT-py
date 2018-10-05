@@ -4,6 +4,9 @@
 """
 import codecs
 import os
+import sys
+import io
+from tqdm import tqdm
 
 import torch
 import torchtext
@@ -24,34 +27,16 @@ class AudioDataset(DatasetBase):
                 dictionary iterator.
             tgt_examples_iter (dict iter): preprocessed target example
                 dictionary iterator.
-            num_src_feats (int): number of source side features.
-            num_tgt_feats (int): number of target side features.
             tgt_seq_length (int): maximum target sequence length.
-            sample_rate (int): sample rate.
-            window_size (float): window size for spectrogram in seconds.
-            window_stride (float): window stride for spectrogram in seconds.
-            window (str): window type for spectrogram generation.
-            normalize_audio (bool): subtract spectrogram by mean and divide
-                by std or not.
             use_filter_pred (bool): use a custom filter predicate to filter
                 out examples?
     """
 
     def __init__(self, fields, src_examples_iter, tgt_examples_iter,
-                 num_src_feats=0, num_tgt_feats=0,
-                 tgt_seq_length=0, sample_rate=0,
-                 window_size=0.0, window_stride=0.0, window=None,
-                 normalize_audio=True, use_filter_pred=True):
+                 tgt_seq_length=0, use_filter_pred=True):
         self.data_type = 'audio'
-
-        self.sample_rate = sample_rate
-        self.window_size = window_size
-        self.window_stride = window_stride
-        self.window = window
-        self.normalize_audio = normalize_audio
-
-        self.n_src_feats = num_src_feats
-        self.n_tgt_feats = num_tgt_feats
+        self.n_src_feats = 0
+        self.n_tgt_feats = 0
 
         if tgt_examples_iter is not None:
             examples_iter = (self._join_dicts(src, tgt) for src, tgt in
@@ -120,6 +105,46 @@ class AudioDataset(DatasetBase):
         return (examples_iter, num_feats)
 
     @staticmethod
+    def extract_features(audio_path, sample_rate, truncate, window_size,
+                         window_stride, window, normalize_audio):
+        global torchaudio, librosa, np
+        import torchaudio
+        import librosa
+        import numpy as np
+
+        sound, sample_rate_ = torchaudio.load(audio_path)
+        if truncate and truncate > 0:
+            if sound.size(0) > truncate:
+                sound = sound[:truncate]
+
+        assert sample_rate_ == sample_rate, \
+            'Sample rate of %s != -sample_rate (%d vs %d)' \
+            % (audio_path, sample_rate_, sample_rate)
+
+        sound = sound.numpy()
+        if len(sound.shape) > 1:
+            if sound.shape[1] == 1:
+                sound = sound.squeeze()
+            else:
+                sound = sound.mean(axis=1)  # average multiple channels
+
+        n_fft = int(sample_rate * window_size)
+        win_length = n_fft
+        hop_length = int(sample_rate * window_stride)
+        # STFT
+        d = librosa.stft(sound, n_fft=n_fft, hop_length=hop_length,
+                         win_length=win_length, window=window)
+        spect, _ = librosa.magphase(d)
+        spect = np.log1p(spect)
+        spect = torch.FloatTensor(spect)
+        if normalize_audio:
+            mean = spect.mean()
+            std = spect.std()
+            spect.add_(-mean)
+            spect.div_(std)
+        return spect
+
+    @staticmethod
     def read_audio_file(path, src_dir, side, sample_rate, window_size,
                         window_stride, window, normalize_audio,
                         truncate=None):
@@ -142,53 +167,25 @@ class AudioDataset(DatasetBase):
         assert (src_dir is not None) and os.path.exists(src_dir),\
             "src_dir must be a valid directory if data_type is audio"
 
-        import torchaudio
-        import librosa
-        import numpy as np
-
         with codecs.open(path, "r", "utf-8") as corpus_file:
             index = 0
-            for line in corpus_file:
+            for line in tqdm(corpus_file):
                 audio_path = os.path.join(src_dir, line.strip())
                 if not os.path.exists(audio_path):
-                    audio_path = line
+                    audio_path = line.strip()
 
                 assert os.path.exists(audio_path), \
                     'audio path %s not found' % (line.strip())
 
-                sound, sample_rate = torchaudio.load(audio_path)
-                if truncate and truncate > 0:
-                    if sound.size(0) > truncate:
-                        continue
-
-                assert sample_rate == sample_rate, \
-                    'Sample rate of %s != -sample_rate (%d vs %d)' \
-                    % (audio_path, sample_rate, sample_rate)
-
-                sound = sound.numpy()
-                if len(sound.shape) > 1:
-                    if sound.shape[1] == 1:
-                        sound = sound.squeeze()
-                    else:
-                        sound = sound.mean(axis=1)  # average multiple channels
-
-                n_fft = int(sample_rate * window_size)
-                win_length = n_fft
-                hop_length = int(sample_rate * window_stride)
-                # STFT
-                d = librosa.stft(sound, n_fft=n_fft, hop_length=hop_length,
-                                 win_length=win_length, window=window)
-                spect, _ = librosa.magphase(d)
-                spect = np.log1p(spect)
-                spect = torch.FloatTensor(spect)
-                if normalize_audio:
-                    mean = spect.mean()
-                    std = spect.std()
-                    spect.add_(-mean)
-                    spect.div_(std)
+                spect = AudioDataset.extract_features(audio_path,
+                                                      sample_rate,
+                                                      truncate, window_size,
+                                                      window_stride, window,
+                                                      normalize_audio)
 
                 example_dict = {side: spect,
                                 side + '_path': line.strip(),
+                                side + '_lengths': spect.size(1),
                                 'indices': index}
                 index += 1
 
@@ -210,7 +207,7 @@ class AudioDataset(DatasetBase):
         fields = {}
 
         def make_audio(data, vocab):
-            """ ? """
+            """ batch audio data """
             nfft = data[0].size(0)
             t = max([t.size(1) for t in data])
             sounds = torch.zeros(len(data), 1, nfft, t)
@@ -221,6 +218,10 @@ class AudioDataset(DatasetBase):
         fields["src"] = torchtext.data.Field(
             use_vocab=False, dtype=torch.float,
             postprocessing=make_audio, sequential=False)
+
+        fields["src_lengths"] = torchtext.data.Field(
+            use_vocab=False, dtype=torch.long,
+            sequential=False)
 
         for j in range(n_src_features):
             fields["src_feat_" + str(j)] = \
@@ -234,32 +235,6 @@ class AudioDataset(DatasetBase):
             fields["tgt_feat_" + str(j)] = \
                 torchtext.data.Field(init_token=BOS_WORD, eos_token=EOS_WORD,
                                      pad_token=PAD_WORD)
-
-        def make_src(data, vocab):
-            """ ? """
-            src_size = max([t.size(0) for t in data])
-            src_vocab_size = max([t.max() for t in data]) + 1
-            alignment = torch.zeros(src_size, len(data), src_vocab_size)
-            for i, sent in enumerate(data):
-                for j, t in enumerate(sent):
-                    alignment[j, i, t] = 1
-            return alignment
-
-        fields["src_map"] = torchtext.data.Field(
-            use_vocab=False, dtype=torch.float,
-            postprocessing=make_src, sequential=False)
-
-        def make_tgt(data, vocab):
-            """ ? """
-            tgt_size = max([t.size(0) for t in data])
-            alignment = torch.zeros(tgt_size, len(data)).long()
-            for i, sent in enumerate(data):
-                alignment[:sent.size(0), i] = sent
-            return alignment
-
-        fields["alignment"] = torchtext.data.Field(
-            use_vocab=False, dtype=torch.long,
-            postprocessing=make_tgt, sequential=False)
 
         fields["indices"] = torchtext.data.Field(
             use_vocab=False, dtype=torch.long,
@@ -289,3 +264,124 @@ class AudioDataset(DatasetBase):
                 _, _, num_feats = AudioDataset.extract_text_features(f_line)
 
         return num_feats
+
+
+class ShardedAudioCorpusIterator(object):
+    """
+    This is the iterator for audio corpus, used for sharding large audio
+    corpus into small shards, to avoid hogging memory.
+
+    Inside this iterator, it automatically divides the audio files into
+    shards of size `shard_size`. Then, for each shard, it processes
+    into (example_dict, n_features) tuples when iterates.
+    """
+    def __init__(self, src_dir, corpus_path, truncate, side, shard_size,
+                 sample_rate, window_size, window_stride,
+                 window, normalize_audio=True, assoc_iter=None):
+        """
+        Args:
+            src_dir: the directory containing audio files
+            corpus_path: the path containing audio file names
+            truncate: maximum audio length (0 or None for unlimited).
+            side: "src" or "tgt".
+            shard_size: the shard size, 0 means not sharding the file.
+            sample_rate (int): sample_rate.
+            window_size (float) : window size for spectrogram in seconds.
+            window_stride (float): window stride for spectrogram in seconds.
+            window (str): window type for spectrogram generation.
+            normalize_audio (bool): subtract spectrogram by mean and divide
+                by std or not.
+            assoc_iter: if not None, it is the associate iterator that
+                        this iterator should align its step with.
+        """
+        try:
+            # The codecs module seems to have bugs with seek()/tell(),
+            # so we use io.open().
+            self.corpus = io.open(corpus_path, "r", encoding="utf-8")
+        except IOError:
+            sys.stderr.write("Failed to open corpus file: %s" % corpus_path)
+            sys.exit(1)
+
+        self.side = side
+        self.src_dir = src_dir
+        self.shard_size = shard_size
+        self.sample_rate = sample_rate
+        self.truncate = truncate
+        self.window_size = window_size
+        self.window_stride = window_stride
+        self.window = window
+        self.normalize_audio = normalize_audio
+        self.assoc_iter = assoc_iter
+        self.last_pos = 0
+        self.last_line_index = -1
+        self.line_index = -1
+        self.eof = False
+
+    def __iter__(self):
+        """
+        Iterator of (example_dict, nfeats).
+        On each call, it iterates over as many (example_dict, nfeats) tuples
+        until this shard's size equals to or approximates `self.shard_size`.
+        """
+        iteration_index = -1
+        if self.assoc_iter is not None:
+            # We have associate iterator, just yields tuples
+            # util we run parallel with it.
+            while self.line_index < self.assoc_iter.line_index:
+                line = self.corpus.readline()
+                if line == '':
+                    raise AssertionError(
+                        "Two corpuses must have same number of lines!")
+
+                self.line_index += 1
+                iteration_index += 1
+                yield self._example_dict_iter(line, iteration_index)
+
+            if self.assoc_iter.eof:
+                self.eof = True
+                self.corpus.close()
+        else:
+            # Yield tuples util this shard's size reaches the threshold.
+            self.corpus.seek(self.last_pos)
+            while True:
+                if self.shard_size != 0 and self.line_index % 64 == 0:
+                    cur_pos = self.corpus.tell()
+                    if self.line_index \
+                            >= self.last_line_index + self.shard_size:
+                        self.last_pos = cur_pos
+                        self.last_line_index = self.line_index
+                        raise StopIteration
+
+                line = self.corpus.readline()
+                if line == '':
+                    self.eof = True
+                    self.corpus.close()
+                    raise StopIteration
+
+                self.line_index += 1
+                iteration_index += 1
+                yield self._example_dict_iter(line, iteration_index)
+
+    def hit_end(self):
+        return self.eof
+
+    def _example_dict_iter(self, line, index):
+        audio_path = os.path.join(self.src_dir, line.strip())
+        if not os.path.exists(audio_path):
+            audio_path = line.strip()
+
+        assert os.path.exists(audio_path), \
+            'audio path %s not found' % (line.strip())
+
+        spect = AudioDataset.extract_features(audio_path,
+                                              self.sample_rate,
+                                              self.truncate,
+                                              self.window_size,
+                                              self.window_stride,
+                                              self.window,
+                                              self.normalize_audio)
+        example_dict = {self.side: spect,
+                        self.side + '_path': line.strip(),
+                        self.side + '_lengths': spect.size(1),
+                        'indices': index}
+        return example_dict

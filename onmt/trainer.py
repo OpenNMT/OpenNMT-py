@@ -227,6 +227,8 @@ class Trainer(object):
             src = inputters.make_features(batch, 'src', self.data_type)
             if self.data_type == 'text':
                 _, src_lengths = batch.src
+            elif self.data_type == 'audio':
+                src_lengths = batch.src_lengths
             else:
                 src_lengths = None
 
@@ -265,6 +267,8 @@ class Trainer(object):
             if self.data_type == 'text':
                 _, src_lengths = batch.src
                 report_stats.n_src_words += src_lengths.sum().item()
+            elif self.data_type == 'audio':
+                src_lengths = batch.src_lengths
             else:
                 src_lengths = None
 

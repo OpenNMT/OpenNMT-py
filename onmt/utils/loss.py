@@ -145,7 +145,6 @@ class LossComputeBase(nn.Module):
             loss, stats = self._compute_loss(batch, **shard)
             loss.div(float(normalization)).backward()
             batch_stats.update(stats)
-
         return batch_stats
 
     def _stats(self, loss, scores, target):

@@ -22,9 +22,6 @@ def build_translator(opt, report_score=True, logger=None, out_file=None):
     if out_file is None:
         out_file = codecs.open(opt.output, 'w+', 'utf-8')
 
-    if opt.gpu > -1:
-        torch.cuda.set_device(opt.gpu)
-
     dummy_parser = argparse.ArgumentParser(description='train.py')
     opts.model_opts(dummy_parser)
     dummy_opt = dummy_parser.parse_known_args([])[0]
@@ -47,7 +44,8 @@ def build_translator(opt, report_score=True, logger=None, out_file=None):
                         "stepwise_penalty", "block_ngram_repeat",
                         "ignore_when_blocking", "dump_beam", "report_bleu",
                         "data_type", "replace_unk", "gpu", "verbose", "fast",
-                        "image_channel_size"]}
+                        "sample_rate", "window_size", "window_stride",
+                        "window", "image_channel_size"]}
 
     translator = Translator(model, fields, global_scorer=scorer,
                             out_file=out_file, report_score=report_score,
@@ -91,7 +89,7 @@ class Translator(object):
                  stepwise_penalty=False,
                  block_ngram_repeat=0,
                  ignore_when_blocking=[],
-                 sample_rate='16000',
+                 sample_rate=16000,
                  window_size=.02,
                  window_stride=.01,
                  window='hamming',
@@ -248,13 +246,16 @@ class Translator(object):
 
                 # Debug attention.
                 if attn_debug:
-                    srcs = trans.src_raw
                     preds = trans.pred_sents[0]
                     preds.append('</s>')
                     attns = trans.attns[0].tolist()
+                    if self.data_type == 'text':
+                        srcs = trans.src_raw
+                    else:
+                        srcs = [str(item) for item in range(len(attns[0]))]
                     header_format = "{:>10.10} " + "{:>10.7} " * len(srcs)
                     row_format = "{:>10.10} " + "{:>10.7f} " * len(srcs)
-                    output = header_format.format("", *trans.src_raw) + '\n'
+                    output = header_format.format("", *srcs) + '\n'
                     for word, row in zip(preds, attns):
                         max_index = row.index(max(row))
                         row_format = row_format.replace(
@@ -547,8 +548,10 @@ class Translator(object):
         src_lengths = None
         if data_type == 'text':
             _, src_lengths = batch.src
-
-        enc_states, memory_bank = self.model.encoder(src, src_lengths)
+        elif data_type == 'audio':
+            src_lengths = batch.src_lengths
+        enc_states, memory_bank, src_lengths \
+            = self.model.encoder(src, src_lengths)
         dec_states = self.model.decoder.init_decoder_state(
             src, memory_bank, enc_states)
 
@@ -653,13 +656,16 @@ class Translator(object):
         data_type = data.data_type
         if data_type == 'text':
             _, src_lengths = batch.src
+        elif data_type == 'audio':
+            src_lengths = batch.src_lengths
         else:
             src_lengths = None
         src = inputters.make_features(batch, 'src', data_type)
         tgt_in = inputters.make_features(batch, 'tgt')[:-1]
 
         #  (1) run the encoder on the src
-        enc_states, memory_bank = self.model.encoder(src, src_lengths)
+        enc_states, memory_bank, src_lengths \
+            = self.model.encoder(src, src_lengths)
         dec_states = \
             self.model.decoder.init_decoder_state(src, memory_bank, enc_states)
 

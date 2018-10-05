@@ -59,8 +59,21 @@ Number of layers in the encoder
 * **-dec_layers [2]** 
 Number of layers in the decoder
 
-* **-rnn_size [500]** 
-Size of rnn hidden states
+* **-rnn_size [-1]** 
+Size of rnn hidden states. Overwrites enc_rnn_size and dec_rnn_size
+
+* **-enc_rnn_size [500]** 
+Size of encoder rnn hidden states. Must be equal to dec_rnn_size except for
+speech-to-text.
+
+* **-dec_rnn_size [500]** 
+Size of decoder rnn hidden states. Must be equal to enc_rnn_size except for
+speech-to-text.
+
+* **-audio_enc_pooling [1]** 
+The amount of pooling of audio encoder, either the same amount of pooling across
+all layers indicated by a single number, or different amounts of pooling per
+layer separated by comma.
 
 * **-cnn_kernel_width [3]** 
 Size of windows in the cnn, the kernel_size is (cnn_kernel_width, 1) in conv
@@ -80,9 +93,6 @@ The gate type to use in the RNNs
 * **-brnn []** 
 Deprecated, use `encoder_type`.
 
-* **-brnn_merge [concat]** 
-Merge action for the bidir hidden states
-
 * **-context_gate []** 
 Type of context gate to use. Do not select for no context gate.
 
@@ -90,8 +100,24 @@ Type of context gate to use. Do not select for no context gate.
 * **-global_attention [general]** 
 The attention type to use: dotprod or general (Luong) or MLP (Bahdanau)
 
+* **-global_attention_function [softmax]** 
+
+* **-self_attn_type [scaled-dot]** 
+Self attention type in Transformer decoder layer -- currently "scaled-dot" or
+"average"
+
+* **-heads [8]** 
+Number of heads for transformer self-attention
+
+* **-transformer_ff [2048]** 
+Size of hidden transformer feed-forward
+
 * **-copy_attn []** 
 Train copy attention layer.
+
+* **-generator_function [log_softmax]** 
+Which function to use for generating probabilities over the target vocabulary
+(choices: log_softmax, sparsemax)
 
 * **-copy_attn_force []** 
 When available, train to copy.
@@ -113,22 +139,40 @@ Lambda value for coverage.
 Path prefix to the ".train.pt" and ".valid.pt" file path from preprocess.py
 
 * **-save_model [model]** 
-Model filename (the model will be saved as <save_model>_epochN_PPL.pt where PPL
-is the validation perplexity
+Model filename (the model will be saved as <save_model>_N.pt where N is the
+number of steps
 
-* **-world_size [1]** 
-Total number of GPU processes accross several nodes.
+* **-save_checkpoint_steps [5000]** 
+Save a checkpoint every X steps
+
+* **-keep_checkpoint [-1]** 
+Keep X checkpoints (negative: keep all)
+
+* **-gpuid []** 
+Deprecated see world_size and gpu_ranks.
 
 * **-gpu_ranks []** 
-Indices in the total number of procsses accross several nodes.
+list of ranks of each process.
+
+* **-world_size [1]** 
+total number of distributed processes.
+
+* **-gpu_backend [nccl]** 
+Type of torch distributed backend
+
+* **-gpu_verbose_level []** 
+Gives more info on each process per GPU.
+
+* **-master_ip [localhost]** 
+IP of master for torch.distributed training.
+
+* **-master_port [10000]** 
+Port of master for torch.distributed training.
 
 * **-seed [-1]** 
 Random seed used for the experiments reproducibility.
 
 ### **Initialization**:
-* **-train_steps [100000]** 
-Number of iterations (parameters update) for training
-
 * **-param_init [0.1]** 
 Parameters are initialized over uniform distribution with support (-param_init,
 param_init). Use 0 to not use initialization
@@ -152,7 +196,7 @@ the decoder side. See README for specific formatting instructions.
 Fix word embeddings on the encoder side.
 
 * **-fix_word_vecs_dec []** 
-Fix word embeddings on the encoder side.
+Fix word embeddings on the decoder side.
 
 ### **Optimization- Type**:
 * **-batch_size [64]** 
@@ -169,15 +213,21 @@ Normalization method of the gradient.
 Accumulate gradient this many times. Approximately equivalent to updating
 batch_size * accum_count batches at once. Recommended for Transformer.
 
+* **-valid_steps [10000]** 
+Perfom validation every X steps
+
 * **-valid_batch_size [32]** 
 Maximum batch size for validation
-
-* **-valid_steps [10000]** 
-Run a validation every these steps
 
 * **-max_generator_batches [32]** 
 Maximum batches of words in a sequence to run the generator on in parallel.
 Higher is faster, but uses more memory.
+
+* **-train_steps [100000]** 
+Number of training steps
+
+* **-epochs []** 
+Deprecated epochs see train_steps
 
 * **-optim [sgd]** 
 Optimization method.
@@ -223,19 +273,14 @@ Starting learning rate. Recommended settings: sgd = 1, adagrad = 0.1, adadelta =
 
 * **-learning_rate_decay [0.5]** 
 If update_learning_rate, decay learning rate by this much if (i) perplexity does
-not decrease on the validation set or (ii) epoch has gone past start_decay_at
+not decrease on the validation set or (ii) steps have gone past
+start_decay_steps
 
 * **-start_decay_steps [50000]** 
-Start decaying after these steps
+Start decaying every decay_steps after start_decay_steps
 
 * **-decay_steps [10000]** 
-Decay every these steps (after the start_decay_steps)
-
-* **-save_checkpoint_steps [5000]** 
-Save a checkpoint every these steps
-
-* **-keep_checkpoint [-1]** 
-Keep N last checkpoints. -1 = keep all.
+Decay every decay_steps
 
 * **-decay_method []** 
 Use a custom decay rate.
@@ -246,6 +291,9 @@ Number of warmup steps for custom decay.
 ### **Logging**:
 * **-report_every [50]** 
 Print stats at this interval.
+
+* **-log_file []** 
+Output logs to a file under this path.
 
 * **-exp_host []** 
 Send logs to this crayon server.
@@ -267,6 +315,5 @@ Sample rate.
 * **-window_size [0.02]** 
 Window size for spectrogram in seconds.
 
-### **Image**:
 * **-image_channel_size [3]** 
-Using grayscale image can training model faster and smaller.
+Using grayscale image can training model faster and smaller

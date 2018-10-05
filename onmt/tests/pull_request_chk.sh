@@ -35,7 +35,7 @@ environment_prepare()
   head /tmp/im2text/src-val.txt > /tmp/im2text/src-val-head.txt
   head /tmp/im2text/tgt-val.txt > /tmp/im2text/tgt-val-head.txt
 
-  wget -q -O /tmp/test_model_speech.pt http://lstm.seas.harvard.edu/latex/test_model_speech.pt
+  wget -q -O /tmp/test_model_speech.pt http://lstm.seas.harvard.edu/latex/model_step_2760.pt
 
   # Download speech2text corpus
   wget -q -O /tmp/speech.tgz http://lstm.seas.harvard.edu/latex/speech.tgz
@@ -195,7 +195,7 @@ ${PYTHON} train.py -data /tmp/q -rnn_size 2 -batch_size 10 \
 echo "Succeeded" | tee -a ${LOG_FILE}
 
 
-echo -n "[+] Doing im2text {preprocess + train} test..."
+echo -n "[+] Doing im2text {preprocess w/sharding + train} test..."
 head /tmp/im2text/src-val.txt > /tmp/im2text/src-val-head.txt
 head /tmp/im2text/tgt-val.txt > /tmp/im2text/tgt-val-head.txt
 rm -rf /tmp/im2text/q*pt
@@ -205,6 +205,7 @@ ${PYTHON} preprocess.py -data_type img \
 		     -train_tgt /tmp/im2text/tgt-val-head.txt \
 		     -valid_src /tmp/im2text/src-val-head.txt \
 		     -valid_tgt /tmp/im2text/tgt-val-head.txt \
+             -shard_size 5 \
 		     -save_data /tmp/im2text/q  >> ${LOG_FILE} 2>&1
 ${PYTHON} train.py -model_type img \
 	        -data /tmp/im2text/q -rnn_size 2 -batch_size 10 \
@@ -223,6 +224,7 @@ ${PYTHON} preprocess.py -data_type audio \
 		     -train_tgt /tmp/speech/tgt-val-head.txt \
 		     -valid_src /tmp/speech/src-val-head.txt \
 		     -valid_tgt /tmp/speech/tgt-val-head.txt \
+             -shard_size 50 \
 		     -save_data /tmp/speech/q  >> ${LOG_FILE} 2>&1
 ${PYTHON} train.py -model_type audio \
 	        -data /tmp/speech/q -rnn_size 2 -batch_size 10 \

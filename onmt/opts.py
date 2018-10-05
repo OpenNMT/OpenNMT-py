@@ -70,8 +70,22 @@ def model_opts(parser):
                        help='Number of layers in the encoder')
     group.add_argument('-dec_layers', type=int, default=2,
                        help='Number of layers in the decoder')
-    group.add_argument('-rnn_size', type=int, default=500,
-                       help='Size of rnn hidden states')
+    group.add_argument('-rnn_size', type=int, default=-1,
+                       help="""Size of rnn hidden states. Overwrites
+                       enc_rnn_size and dec_rnn_size""")
+    group.add_argument('-enc_rnn_size', type=int, default=500,
+                       help="""Size of encoder rnn hidden states.
+                       Must be equal to dec_rnn_size except for
+                       speech-to-text.""")
+    group.add_argument('-dec_rnn_size', type=int, default=500,
+                       help="""Size of decoder rnn hidden states.
+                       Must be equal to enc_rnn_size except for
+                       speech-to-text.""")
+    group.add_argument('-audio_enc_pooling', type=str, default='1',
+                       help="""The amount of pooling of audio encoder,
+                       either the same amount of pooling across all layers
+                       indicated by a single number, or different amounts of
+                       pooling per layer separated by comma.""")
     group.add_argument('-cnn_kernel_width', type=int, default=3,
                        help="""Size of windows in the cnn, the kernel_size is
                        (cnn_kernel_width, 1) in conv layer""")

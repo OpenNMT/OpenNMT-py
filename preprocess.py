@@ -9,6 +9,7 @@ import os
 import glob
 import sys
 import gc
+import codecs
 import torch
 from onmt.utils.logging import init_logger, logger
 
@@ -130,19 +131,38 @@ def build_save_in_shards_using_shards_size(src_corpus, tgt_corpus, fields,
     to sucking in a huge corpus file.
     """
 
-    src_data = open(src_corpus, "r", encoding="utf-8").readlines()
-    tgt_data = open(tgt_corpus, "r", encoding="utf-8").readlines()
+    with codecs.open(src_corpus, "r", encoding="utf-8") as fsrc:
+        with codecs.open(tgt_corpus, "r", encoding="utf-8") as ftgt:
+            src_data = fsrc.readlines()
+            tgt_data = ftgt.readlines()
 
-    src_corpus = "".join(src_corpus.split(".")[:-1])
-    tgt_corpus = "".join(tgt_corpus.split(".")[:-1])
+            src_corpus = "".join(src_corpus.split(".")[:-1])
+            tgt_corpus = "".join(tgt_corpus.split(".")[:-1])
 
-    for x in range(int(len(src_data) / opt.shard_size)):
-        open(src_corpus + ".{0}.txt".format(x), "w",
-             encoding="utf-8").writelines(
-            src_data[x * opt.shard_size: (x + 1) * opt.shard_size])
-        open(tgt_corpus + ".{0}.txt".format(x), "w",
-             encoding="utf-8").writelines(
-            tgt_data[x * opt.shard_size: (x + 1) * opt.shard_size])
+            num_shards = int(len(src_data) / opt.shard_size)
+            for x in range(num_shards):
+                f = codecs.open(src_corpus + ".{0}.txt".format(x), "w",
+                                encoding="utf-8")
+                f.writelines(
+                        src_data[x * opt.shard_size: (x + 1) * opt.shard_size])
+                f.close()
+                f = codecs.open(tgt_corpus + ".{0}.txt".format(x), "w",
+                                encoding="utf-8")
+                f.writelines(
+                        tgt_data[x * opt.shard_size: (x + 1) * opt.shard_size])
+                f.close()
+            num_written = num_shards * opt.shard_size
+            if len(src_data) > num_written:
+                f = codecs.open(src_corpus + ".{0}.txt".format(num_shards),
+                                'w', encoding="utf-8")
+                f.writelines(
+                        src_data[num_shards * opt.shard_size:])
+                f.close()
+                f = codecs.open(tgt_corpus + ".{0}.txt".format(num_shards),
+                                'w', encoding="utf-8")
+                f.writelines(
+                        tgt_data[num_shards * opt.shard_size:])
+                f.close()
 
     src_list = sorted(glob.glob(src_corpus + '.*.txt'))
     tgt_list = sorted(glob.glob(tgt_corpus + '.*.txt'))
@@ -173,7 +193,7 @@ def build_save_in_shards_using_shards_size(src_corpus, tgt_corpus, fields,
         # We save fields in vocab.pt seperately, so make it empty.
         dataset.fields = []
 
-        logger.info(" * saving %sth %s data image shard to %s."
+        logger.info(" * saving %sth %s data shard to %s."
                     % (index, corpus_type, pt_file))
         torch.save(dataset, pt_file)
 
