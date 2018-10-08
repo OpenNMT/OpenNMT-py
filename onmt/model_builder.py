@@ -138,9 +138,10 @@ def load_test_model(opt, dummy_opt, model_path=None):
     if model_opt.rnn_size != -1:
         model_opt.enc_rnn_size = model_opt.rnn_size
         model_opt.dec_rnn_size = model_opt.rnn_size
-        if model_opt.model_type == 'text' and model_opt.enc_rnn_size != model_opt.dec_rnn_size:
-            raise AssertionError("""We do not support different encoder and
-                                 decoder rnn sizes for translation now.""")
+        if model_opt.model_type == 'text' and \
+           model_opt.enc_rnn_size != model_opt.dec_rnn_size:
+                raise AssertionError("""We do not support different encoder and
+                                     decoder rnn sizes for translation now.""")
     for arg in dummy_opt:
         if arg not in model_opt:
             model_opt.__dict__[arg] = dummy_opt[arg]
