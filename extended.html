@@ -181,11 +181,11 @@ python preprocess.py -train_src data/multi30k/train.en.atok -train_tgt data/mult
 </pre></div>
 </div>
 <p>Step 3. Translate sentences.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python translate.py -gpu <span class="m">0</span> -model multi30k_model_*_e13.pt -src data/multi30k/test.en.atok -tgt data/multi30k/test.de.atok -replace_unk -verbose -output multi30k.test.pred.atok
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python translate.py -gpu <span class="m">0</span> -model multi30k_model_*_e13.pt -src data/multi30k/test2016.en.atok -tgt data/multi30k/test2016.de.atok -replace_unk -verbose -output multi30k.test.pred.atok
 </pre></div>
 </div>
 <p>And evaluate</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>perl tools/multi-bleu.perl data/multi30k/test.de.atok &lt; multi30k.test.pred.atok
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>perl tools/multi-bleu.perl data/multi30k/test2016.de.atok &lt; multi30k.test.pred.atok
 </pre></div>
 </div>
 </div>

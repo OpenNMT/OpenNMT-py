@@ -218,11 +218,11 @@ To know more about distributed training on single or multi nodes, read the FAQ s
 <span class="pre">`</span></code></p>
 <p>Step 3. Translate sentences.</p>
 <p><code class="docutils literal notranslate"><span class="pre">`bash</span>
-<span class="pre">python</span> <span class="pre">translate.py</span> <span class="pre">-gpu</span> <span class="pre">0</span> <span class="pre">-model</span> <span class="pre">multi30k_model_*_e13.pt</span> <span class="pre">-src</span> <span class="pre">data/multi30k/test.en.atok</span> <span class="pre">-tgt</span> <span class="pre">data/multi30k/test.de.atok</span> <span class="pre">-replace_unk</span> <span class="pre">-verbose</span> <span class="pre">-output</span> <span class="pre">multi30k.test.pred.atok</span>
+<span class="pre">python</span> <span class="pre">translate.py</span> <span class="pre">-gpu</span> <span class="pre">0</span> <span class="pre">-model</span> <span class="pre">multi30k_model_*_e13.pt</span> <span class="pre">-src</span> <span class="pre">data/multi30k/test2016.en.atok</span> <span class="pre">-tgt</span> <span class="pre">data/multi30k/test2016.de.atok</span> <span class="pre">-replace_unk</span> <span class="pre">-verbose</span> <span class="pre">-output</span> <span class="pre">multi30k.test.pred.atok</span>
 <span class="pre">`</span></code></p>
 <p>And evaluate</p>
 <p><code class="docutils literal notranslate"><span class="pre">`bash</span>
-<span class="pre">perl</span> <span class="pre">tools/multi-bleu.perl</span> <span class="pre">data/multi30k/test.de.atok</span> <span class="pre">&lt;</span> <span class="pre">multi30k.test.pred.atok</span>
+<span class="pre">perl</span> <span class="pre">tools/multi-bleu.perl</span> <span class="pre">data/multi30k/test2016.de.atok</span> <span class="pre">&lt;</span> <span class="pre">multi30k.test.pred.atok</span>
 <span class="pre">`</span></code></p>
 
 
