@@ -8,6 +8,9 @@
 
 ### Fixes and improvements
 
+## [0.4.1](https://github.com/OpenNMT/OpenNMT-py/tree/v0.4.1) (2018-10-11)
+* Fixed preprocessing files names, cleaning intermediary files.
+
 ## [0.4.0](https://github.com/OpenNMT/OpenNMT-py/tree/v0.4.0) (2018-10-08)
 * Fixed Speech2Text training (thanks Yuntian)
 
