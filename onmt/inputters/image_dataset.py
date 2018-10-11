@@ -8,7 +8,6 @@ import os
 
 import torch
 import torchtext
-import cv2
 
 from onmt.inputters.dataset_base import DatasetBase, PAD_WORD, BOS_WORD, \
     EOS_WORD
@@ -149,6 +148,7 @@ class ImageDataset(DatasetBase):
         """
         from PIL import Image
         from torchvision import transforms
+        import cv2
 
         with codecs.open(path, "r", "utf-8") as corpus_file:
             for line in corpus_file:
