@@ -8,6 +8,7 @@ import argparse
 import glob
 import sys
 import gc
+import os
 import codecs
 import torch
 from onmt.utils.logging import init_logger, logger
@@ -59,14 +60,14 @@ def build_save_in_shards_using_shards_size(src_corpus, tgt_corpus, fields,
 
     with codecs.open(src_corpus, "r", encoding="utf-8") as fsrc:
         with codecs.open(tgt_corpus, "r", encoding="utf-8") as ftgt:
+            logger.info("Reading source and target files: %s %s."
+                        % (src_corpus, tgt_corpus))
             src_data = fsrc.readlines()
             tgt_data = ftgt.readlines()
 
-            src_corpus = "".join(src_corpus.split(".")[:-1])
-            tgt_corpus = "".join(tgt_corpus.split(".")[:-1])
-
             num_shards = int(len(src_data) / opt.shard_size)
             for x in range(num_shards):
+                logger.info("Splitting shard %d." % x)
                 f = codecs.open(src_corpus + ".{0}.txt".format(x), "w",
                                 encoding="utf-8")
                 f.writelines(
@@ -79,6 +80,7 @@ def build_save_in_shards_using_shards_size(src_corpus, tgt_corpus, fields,
                 f.close()
             num_written = num_shards * opt.shard_size
             if len(src_data) > num_written:
+                logger.info("Splitting shard %d." % num_shards)
                 f = codecs.open(src_corpus + ".{0}.txt".format(num_shards),
                                 'w', encoding="utf-8")
                 f.writelines(
@@ -96,6 +98,7 @@ def build_save_in_shards_using_shards_size(src_corpus, tgt_corpus, fields,
     ret_list = []
 
     for index, src in enumerate(src_list):
+        logger.info("Building shard %d." % index)
         dataset = inputters.build_dataset(
             fields, opt.data_type,
             src_path=src,
@@ -124,7 +127,8 @@ def build_save_in_shards_using_shards_size(src_corpus, tgt_corpus, fields,
         torch.save(dataset, pt_file)
 
         ret_list.append(pt_file)
-
+        os.remove(src)
+        os.remove(tgt_list[index])
         del dataset.examples
         gc.collect()
         del dataset
