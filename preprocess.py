@@ -225,10 +225,10 @@ def main():
     train_dataset_files = build_save_dataset('train', fields, opt)
 
     logger.info("Building & saving validation data...")
-    valid_dataset_files = build_save_dataset('valid', fields, opt)
+    build_save_dataset('valid', fields, opt)
 
     logger.info("Building & saving vocabulary...")
-    build_save_vocab(train_dataset_files + valid_dataset_files, fields, opt)
+    build_save_vocab(train_dataset_files, fields, opt)
 
 
 if __name__ == "__main__":
