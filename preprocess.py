@@ -60,8 +60,8 @@ def build_save_in_shards_using_shards_size(src_corpus, tgt_corpus, fields,
 
     with codecs.open(src_corpus, "r", encoding="utf-8") as fsrc:
         with codecs.open(tgt_corpus, "r", encoding="utf-8") as ftgt:
-            logger.info("Reading source and target files: %s %s." \
-                        % (src_corpus,tgt_corpus))
+            logger.info("Reading source and target files: %s %s."
+                        % (src_corpus, tgt_corpus))
             src_data = fsrc.readlines()
             tgt_data = ftgt.readlines()
 
