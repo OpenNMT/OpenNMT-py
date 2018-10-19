@@ -304,20 +304,20 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
 
     # Load vocabulary
     src_vocab = load_vocabulary(src_vocab_path, tag="source")
-
-    src_vocab_size = len(src_vocab)
-    logger.info('Loaded source vocab has %d tokens.' % src_vocab_size)
-    for i, token in enumerate(src_vocab):
-        # keep the order of tokens specified in the vocab file by
-        # adding them to the counter with decreasing vounting values
-        counter['src'][token] = src_vocab_size - i
+    if src_vocab is not None:
+        src_vocab_size = len(src_vocab)
+        logger.info('Loaded source vocab has %d tokens.' % src_vocab_size)
+        for i, token in enumerate(src_vocab):
+            # keep the order of tokens specified in the vocab file by
+            # adding them to the counter with decreasing vounting values
+            counter['src'][token] = src_vocab_size - i
 
     tgt_vocab = load_vocabulary(tgt_vocab_path, tag="target")
-
-    tgt_vocab_size = len(tgt_vocab)
-    logger.info('Loaded source vocab has %d tokens.' % tgt_vocab_size)
-    for i, token in enumerate(tgt_vocab):
-        counter['tgt'][token] = tgt_vocab_size - i
+    if tgt_vocab is not None:
+        tgt_vocab_size = len(tgt_vocab)
+        logger.info('Loaded source vocab has %d tokens.' % tgt_vocab_size)
+        for i, token in enumerate(tgt_vocab):
+            counter['tgt'][token] = tgt_vocab_size - i
 
     for index, path in enumerate(train_dataset_files):
         dataset = torch.load(path)
