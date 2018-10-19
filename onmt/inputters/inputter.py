@@ -308,6 +308,8 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
     src_vocab_size = len(src_vocab)
     logger.info('Loaded source vocab has %d tokens.' % src_vocab_size)
     for i, token in enumerate(src_vocab):
+        # keep the order of tokens specified in the vocab file by
+        # adding them to the counter with decreasing vounting values
         counter['src'][token] = src_vocab_size - i
 
     tgt_vocab = load_vocabulary(tgt_vocab_path, tag="target")
