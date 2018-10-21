@@ -54,33 +54,31 @@ class EnsembleEncoder(EncoderBase):
     """ Dummy Encoder that delegates to individual real Encoders """
     def __init__(self, model_encoders):
         super(EnsembleEncoder, self).__init__()
-        self.model_encoders = nn.ModuleList(list(model_encoders))
+        self.model_encoders = nn.ModuleList(model_encoders)
 
     def forward(self, src, lengths=None):
-        enc_hidden, memory_bank = zip(*[
-            model_encoder.forward(src, lengths)
+        enc_hidden, memory_bank, _ = zip(*[
+            model_encoder(src, lengths)
             for model_encoder in self.model_encoders])
-        return enc_hidden, memory_bank
+        return enc_hidden, memory_bank, lengths
 
 
 class EnsembleDecoder(nn.Module):
     """ Dummy Decoder that delegates to individual real Decoders """
     def __init__(self, model_decoders):
         super(EnsembleDecoder, self).__init__()
-        self.model_decoders = nn.ModuleList(list(model_decoders))
+        self.model_decoders = nn.ModuleList(model_decoders)
 
-    def forward(self, tgt, memory_bank, state, memory_lengths=None,
-                step=None):
+    def forward(self, tgt, memory_bank, state, memory_lengths=None, step=None):
         """ See :obj:`RNNDecoderBase.forward()` """
         # Memory_lengths is a single tensor shared between all models.
         # This assumption will not hold if Translator is modified
         # to calculate memory_lengths as something other than the length
         # of the input.
         outputs, states, attns = zip(*[
-            model_decoder.forward(
+            model_decoder(
                 tgt, memory_bank[i], state[i], memory_lengths, step=step)
-            for (i, model_decoder)
-            in enumerate(self.model_decoders)])
+            for i, model_decoder in enumerate(self.model_decoders)])
         mean_attns = self.combine_attns(attns)
         return (EnsembleDecoderOutput(outputs),
                 EnsembleDecoderState(states),
@@ -98,7 +96,7 @@ class EnsembleDecoder(nn.Module):
             [model_decoder.init_decoder_state(src,
                                               memory_bank[i],
                                               enc_hidden[i])
-             for (i, model_decoder) in enumerate(self.model_decoders)])
+             for i, model_decoder in enumerate(self.model_decoders)])
 
 
 class EnsembleGenerator(nn.Module):
@@ -116,8 +114,8 @@ class EnsembleGenerator(nn.Module):
         by averaging distributions from models in the ensemble.
         All models in the ensemble must share a target vocabulary.
         """
-        distributions = [model_generator.forward(hidden[i])
-                         for (i, model_generator)
+        distributions = [model_generator(hidden[i])
+                         for i, model_generator
                          in enumerate(self.model_generators)]
         return torch.stack(distributions).mean(0)
 
