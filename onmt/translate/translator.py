@@ -605,18 +605,17 @@ class Translator(object):
 
             # (b) Compute a vector of batch x beam word scores.
             if not self.copy_attn:
-                out = self.model.generator.forward(dec_out).data
-                out = unbottle(out)
+                out = unbottle(self.model.generator(dec_out))
+
                 # beam x tgt_vocab
                 beam_attn = unbottle(attn["std"])
             else:
-                out = self.model.generator.forward(dec_out,
-                                                   attn["copy"].squeeze(0),
-                                                   src_map)
+                out = self.model.generator(
+                    dec_out, attn["copy"].squeeze(0), src_map)
                 # beam x (tgt_vocab + extra_vocab)
                 out = data.collapse_copy_scores(
-                    unbottle(out.data),
-                    batch, self.fields["tgt"].vocab, data.src_vocabs)
+                    unbottle(out), batch,
+                    self.fields["tgt"].vocab, data.src_vocabs)
                 # beam x tgt_vocab
                 out = out.log()
                 beam_attn = unbottle(attn["copy"])
@@ -672,19 +671,15 @@ class Translator(object):
 
         #  (2) if a target is specified, compute the 'goldScore'
         #  (i.e. log likelihood) of the target under the model
-        tt = torch.cuda if self.cuda else torch
-        gold_scores = tt.FloatTensor(batch.batch_size).fill_(0)
         dec_out, _, _ = self.model.decoder(
             tgt_in, memory_bank, dec_states, memory_lengths=src_lengths)
 
         tgt_pad = self.fields["tgt"].vocab.stoi[inputters.PAD_WORD]
-        for dec, tgt in zip(dec_out, batch.tgt[1:].data):
-            # Log prob of each word.
-            out = self.model.generator.forward(dec)
-            tgt = tgt.unsqueeze(1)
-            scores = out.data.gather(1, tgt)
-            scores.masked_fill_(tgt.eq(tgt_pad), 0)
-            gold_scores += scores.view(-1)
+        predicted = self.model.generator(dec_out)
+        predicted[:, :, tgt_pad] = 0
+        gold = batch.tgt[1:].unsqueeze(2)
+        gold_scores = predicted.gather(2, gold)
+        gold_scores = gold_scores.sum(dim=0).view(-1)
         return gold_scores
 
     def _report_score(self, name, score_total, words_total):
