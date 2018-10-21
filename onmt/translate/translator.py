@@ -26,13 +26,9 @@ def build_translator(opt, report_score=True, logger=None, out_file=None):
     opts.model_opts(dummy_parser)
     dummy_opt = dummy_parser.parse_known_args([])[0]
 
-    if len(opt.models) > 1:
-        # use ensemble decoding if more than one model is specified
-        fields, model, model_opt = \
-            onmt.decoders.ensemble.load_test_model(opt, dummy_opt.__dict__)
-    else:
-        fields, model, model_opt = \
-            onmt.model_builder.load_test_model(opt, dummy_opt.__dict__)
+    load_test_model = onmt.decoders.ensemble.load_test_model \
+        if len(opt.models) > 1 else onmt.decoders.ensemble.load_test_model
+    fields, model, model_opt = load_test_model(opt, dummy_opt.__dict__)
 
     scorer = onmt.translate.GNMTGlobalScorer(opt.alpha,
                                              opt.beta,
