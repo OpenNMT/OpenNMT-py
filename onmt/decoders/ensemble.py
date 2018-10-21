@@ -104,9 +104,10 @@ class EnsembleGenerator(nn.Module):
     Dummy Generator that delegates to individual real Generators,
     and then averages the resulting target distributions.
     """
-    def __init__(self, model_generators):
-        self.model_generators = tuple(model_generators)
+    def __init__(self, model_generators, raw_probs=False):
         super(EnsembleGenerator, self).__init__()
+        self.model_generators = nn.ModuleList(model_generators)
+        self._raw_probs = raw_probs
 
     def forward(self, hidden):
         """
@@ -114,19 +115,27 @@ class EnsembleGenerator(nn.Module):
         by averaging distributions from models in the ensemble.
         All models in the ensemble must share a target vocabulary.
         """
-        distributions = [model_generator(hidden[i])
-                         for i, model_generator
-                         in enumerate(self.model_generators)]
-        return torch.stack(distributions).mean(0)
+        hidden = torch.stack(hidden.model_outputs)
+        # this is the essential behavior of the Elementwise module, but
+        # its code is still fairly specific to embeddings and needs to
+        # be rewritten to work right
+        distributions = torch.stack(
+            [mg(h) for h, mg in zip(hidden, self.model_generators)]
+        )
+        if self._raw_probs:
+            return torch.log(torch.exp(distributions).mean(0))
+        else:
+            return distributions.mean(0)
 
 
 class EnsembleModel(NMTModel):
     """ Dummy NMTModel wrapping individual real NMTModels """
-    def __init__(self, models):
+    def __init__(self, models, raw_probs=False):
         encoder = EnsembleEncoder(model.encoder for model in models)
         decoder = EnsembleDecoder(model.decoder for model in models)
         super(EnsembleModel, self).__init__(encoder, decoder)
-        self.generator = EnsembleGenerator(model.generator for model in models)
+        self.generator = EnsembleGenerator(
+            [model.generator for model in models], raw_probs)
         self.models = nn.ModuleList(models)
 
 
@@ -150,5 +159,6 @@ def load_test_model(opt, dummy_opt):
         models.append(model)
         if shared_model_opt is None:
             shared_model_opt = model_opt
-    ensemble_model = EnsembleModel(models)
+    print(opt.avg_raw_probs)
+    ensemble_model = EnsembleModel(models, opt.avg_raw_probs)
     return shared_fields, ensemble_model, shared_model_opt
