@@ -27,7 +27,7 @@ def build_translator(opt, report_score=True, logger=None, out_file=None):
     dummy_opt = dummy_parser.parse_known_args([])[0]
 
     load_test_model = onmt.decoders.ensemble.load_test_model \
-        if len(opt.models) > 1 else onmt.decoders.ensemble.load_test_model
+        if len(opt.models) > 1 else onmt.model_builder.load_test_model
     fields, model, model_opt = load_test_model(opt, dummy_opt.__dict__)
 
     scorer = onmt.translate.GNMTGlobalScorer(opt.alpha,
