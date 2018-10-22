@@ -159,6 +159,5 @@ def load_test_model(opt, dummy_opt):
         models.append(model)
         if shared_model_opt is None:
             shared_model_opt = model_opt
-    print(opt.avg_raw_probs)
     ensemble_model = EnsembleModel(models, opt.avg_raw_probs)
     return shared_fields, ensemble_model, shared_model_opt
