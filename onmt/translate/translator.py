@@ -362,8 +362,8 @@ class Translator(object):
         memory_bank = tile(memory_bank, beam_size, dim=1)
         memory_lengths = tile(src_lengths, beam_size)
 
-        batch_offset = torch.arange(
-            batch_size, dtype=torch.long, device=memory_bank.device)
+        top_beam_finished = torch.zeros([batch_size], dtype=torch.uint8)
+        batch_offset = torch.arange(batch_size, dtype=torch.long)
         beam_offset = torch.arange(
             0,
             batch_size * beam_size,
@@ -446,11 +446,10 @@ class Translator(object):
                     alive_attn = alive_attn.index_select(1, select_indices)
                     alive_attn = torch.cat([alive_attn, current_attn], 0)
 
-            is_finished = topk_ids.eq(end_token)
+            is_finished = topk_ids.to('cpu').eq(end_token)
             if step + 1 == max_length:
                 is_finished.fill_(1)
-            # End condition is top beam is finished.
-            end_condition = is_finished[:, 0].eq(1)
+            top_beam_finished |= is_finished[:, 0].eq(1)
 
             # Save finished hypotheses.
             if is_finished.any():
@@ -459,10 +458,9 @@ class Translator(object):
                     alive_attn.view(
                         alive_attn.size(0), -1, beam_size, alive_attn.size(-1))
                     if alive_attn is not None else None)
+                non_finished_batch = []
                 for i in range(is_finished.size(0)):
                     b = batch_offset[i]
-                    if end_condition[i]:
-                        is_finished[i].fill_(1)
                     finished_hyp = is_finished[i].nonzero().view(-1)
                     # Store finished hypotheses for this batch.
                     for j in finished_hyp:
@@ -471,8 +469,9 @@ class Translator(object):
                             predictions[i, j, 1:],  # Ignore start_token.
                             attention[:, i, j, :memory_lengths[i]]
                             if attention is not None else None))
-                    # If the batch reached the end, save the n_best hypotheses.
-                    if end_condition[i]:
+                    # End condition is the top beam finished and we can return
+                    # n_best hypotheses.
+                    if top_beam_finished[i] and len(hypotheses[b]) >= n_best:
                         best_hyp = sorted(
                             hypotheses[b], key=lambda x: x[0], reverse=True)
                         for n, (score, pred, attn) in enumerate(best_hyp):
@@ -482,14 +481,20 @@ class Translator(object):
                             results["predictions"][b].append(pred)
                             results["attention"][b].append(
                                 attn if attn is not None else [])
-                non_finished = end_condition.eq(0).nonzero().view(-1)
+                    else:
+                        non_finished_batch.append(i)
+                non_finished = torch.tensor(non_finished_batch)
                 # If all sentences are translated, no need to go further.
                 if len(non_finished) == 0:
                     break
                 # Remove finished batches for the next step.
+                top_beam_finished = top_beam_finished.index_select(
+                    0, non_finished)
+                batch_offset = batch_offset.index_select(0, non_finished)
+                non_finished = non_finished.to(topk_ids.device)
                 topk_log_probs = topk_log_probs.index_select(0, non_finished)
                 batch_index = batch_index.index_select(0, non_finished)
-                batch_offset = batch_offset.index_select(0, non_finished)
+                select_indices = batch_index.view(-1)
                 alive_seq = predictions.index_select(0, non_finished) \
                     .view(-1, alive_seq.size(-1))
                 if alive_attn is not None:
@@ -498,7 +503,6 @@ class Translator(object):
                               -1, alive_attn.size(-1))
 
             # Reorder states.
-            select_indices = batch_index.view(-1)
             memory_bank = memory_bank.index_select(1, select_indices)
             memory_lengths = memory_lengths.index_select(0, select_indices)
             dec_states.map_batch_fn(
