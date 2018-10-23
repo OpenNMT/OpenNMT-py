@@ -20,15 +20,15 @@ def build_optim(model, opt, checkpoint):
         if opt.reset_optim != 'states':
             saved_optimizer_state_dict = optim.optimizer.state_dict()
             if opt.reset_optim == 'keep_states':
-                optim.method = opt.method
+                optim.method = opt.optim
                 optim.learning_rate = opt.learning_rate
                 optim.original_lr = opt.learning_rate
                 optim.max_grad_norm = opt.max_grad_norm
-                optim.lr_decay = opt.lr_decay
+                optim.lr_decay = opt.learning_rate_decay
                 optim.start_decay_steps = opt.start_decay_steps
                 optim.decay_steps = opt.decay_steps
-                optim.betas = [opt.beta1, opt.beta2]
-                optim.adagrad_accum = opt.adagrad_accum
+                optim.betas = [opt.adam_beta1, opt.adam_beta2]
+                optim.adagrad_accum = opt.adagrad_accumulator_init
                 optim.decay_method = opt.decay_method
                 optim.warmup_steps = opt.warmup_steps
                 optim.model_size = opt.rnn_size
@@ -54,7 +54,7 @@ def build_optim(model, opt, checkpoint):
     # parameters from the model.
     optim.set_parameters(model.named_parameters())
 
-    if opt.train_from and (opt.reset_optim in ['none', 'keep_state']):
+    if opt.train_from and (opt.reset_optim in ['none', 'keep_states']):
         # Stage 2: In this stage, which is only performed when loading an
         # optimizer from a checkpoint, we load the saved_optimizer_state_dict
         # into the re-created optimizer, to set the optim.optimizer.state
