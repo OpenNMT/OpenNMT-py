@@ -38,7 +38,7 @@ def test_rouge(cand, ref):
         r.model_dir = tmp_dir + "/reference/"
         r.system_dir = tmp_dir + "/candidate/"
         r.model_filename_pattern = 'ref.#ID#.txt'
-        r.system_filename_pattern = 'cand.(\d+).txt'
+        r.system_filename_pattern = r'cand.(\d+).txt'
         rouge_results = r.convert_and_evaluate()
         results_dict = r.output_to_dict(rouge_results)
         return results_dict
