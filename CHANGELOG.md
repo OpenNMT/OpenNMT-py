@@ -8,6 +8,12 @@
 
 ### Fixes and improvements
 
+## [0.5.0](https://github.com/OpenNMT/OpenNMT-py/tree/v0.5.0) (2018-10-24)
+* Fixed advance n_best beam in translate_batch_fast
+* Fixed remove valid set vocab from total vocab
+* New: Ability to reset optimizer when using train_from
+* New: create_vocabulary tool + fix when loading existing vocab.
+
 ## [0.4.1](https://github.com/OpenNMT/OpenNMT-py/tree/v0.4.1) (2018-10-11)
 * Fixed preprocessing files names, cleaning intermediary files.
 

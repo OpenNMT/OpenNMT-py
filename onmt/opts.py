@@ -221,7 +221,7 @@ def preprocess_opts(parser):
 
     # Data processing options
     group = parser.add_argument_group('Random')
-    group.add_argument('-shuffle', type=int, default=1,
+    group.add_argument('-shuffle', type=int, default=0,
                        help="Shuffle data")
     group.add_argument('-seed', type=int, default=3435,
                        help="Random seed")

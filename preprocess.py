@@ -207,6 +207,9 @@ def main():
     if (opt.max_shard_size > 0):
         raise AssertionError("-max_shard_size is deprecated, please use \
                              -shard_size (number of examples) instead.")
+    if (opt.shuffle > 0):
+        raise AssertionError("-shuffle is not implemented, please make sure \
+                             you shuffle your data before pre-processing.")
 
     init_logger(opt.log_file)
     logger.info("Extracting features...")
