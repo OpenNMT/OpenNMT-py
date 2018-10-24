@@ -169,14 +169,28 @@
     <span class="sd">&quot;&quot;&quot; Build optimizer &quot;&quot;&quot;</span>
     <span class="n">saved_optimizer_state_dict</span> <span class="o">=</span> <span class="kc">None</span>
 
-    <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">train_from</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">train_from</span> <span class="ow">and</span> <span class="n">opt</span><span class="o">.</span><span class="n">reset_optim</span> <span class="o">!=</span> <span class="s1">&#39;all&#39;</span><span class="p">:</span>
         <span class="n">optim</span> <span class="o">=</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s1">&#39;optim&#39;</span><span class="p">]</span>
         <span class="c1"># We need to save a copy of optim.optimizer.state_dict() for setting</span>
         <span class="c1"># the, optimizer state later on in Stage 2 in this method, since</span>
         <span class="c1"># the method optim.set_parameters(model.parameters()) will overwrite</span>
         <span class="c1"># optim.optimizer, and with ith the values stored in</span>
         <span class="c1"># optim.optimizer.state_dict()</span>
-        <span class="n">saved_optimizer_state_dict</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">optimizer</span><span class="o">.</span><span class="n">state_dict</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">reset_optim</span> <span class="o">!=</span> <span class="s1">&#39;states&#39;</span><span class="p">:</span>
+            <span class="n">saved_optimizer_state_dict</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">optimizer</span><span class="o">.</span><span class="n">state_dict</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">reset_optim</span> <span class="o">==</span> <span class="s1">&#39;keep_states&#39;</span><span class="p">:</span>
+                <span class="n">optim</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">optim</span>
+                <span class="n">optim</span><span class="o">.</span><span class="n">learning_rate</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">learning_rate</span>
+                <span class="n">optim</span><span class="o">.</span><span class="n">original_lr</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">learning_rate</span>
+                <span class="n">optim</span><span class="o">.</span><span class="n">max_grad_norm</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">max_grad_norm</span>
+                <span class="n">optim</span><span class="o">.</span><span class="n">lr_decay</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">learning_rate_decay</span>
+                <span class="n">optim</span><span class="o">.</span><span class="n">start_decay_steps</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">start_decay_steps</span>
+                <span class="n">optim</span><span class="o">.</span><span class="n">decay_steps</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">decay_steps</span>
+                <span class="n">optim</span><span class="o">.</span><span class="n">betas</span> <span class="o">=</span> <span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">adam_beta1</span><span class="p">,</span> <span class="n">opt</span><span class="o">.</span><span class="n">adam_beta2</span><span class="p">]</span>
+                <span class="n">optim</span><span class="o">.</span><span class="n">adagrad_accum</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">adagrad_accumulator_init</span>
+                <span class="n">optim</span><span class="o">.</span><span class="n">decay_method</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">decay_method</span>
+                <span class="n">optim</span><span class="o">.</span><span class="n">warmup_steps</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">warmup_steps</span>
+                <span class="n">optim</span><span class="o">.</span><span class="n">model_size</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">rnn_size</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">optim</span> <span class="o">=</span> <span class="n">Optimizer</span><span class="p">(</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">optim</span><span class="p">,</span> <span class="n">opt</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span> <span class="n">opt</span><span class="o">.</span><span class="n">max_grad_norm</span><span class="p">,</span>
@@ -199,7 +213,7 @@
     <span class="c1"># parameters from the model.</span>
     <span class="n">optim</span><span class="o">.</span><span class="n">set_parameters</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">())</span>
 
-    <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">train_from</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">train_from</span> <span class="ow">and</span> <span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">reset_optim</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="s1">&#39;keep_states&#39;</span><span class="p">]):</span>
         <span class="c1"># Stage 2: In this stage, which is only performed when loading an</span>
         <span class="c1"># optimizer from a checkpoint, we load the saved_optimizer_state_dict</span>
         <span class="c1"># into the re-created optimizer, to set the optim.optimizer.state</span>
