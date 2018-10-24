@@ -304,7 +304,20 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
 
     # Load vocabulary
     src_vocab = load_vocabulary(src_vocab_path, tag="source")
+    if src_vocab is not None:
+        src_vocab_size = len(src_vocab)
+        logger.info('Loaded source vocab has %d tokens.' % src_vocab_size)
+        for i, token in enumerate(src_vocab):
+            # keep the order of tokens specified in the vocab file by
+            # adding them to the counter with decreasing counting values
+            counter['src'][token] = src_vocab_size - i
+
     tgt_vocab = load_vocabulary(tgt_vocab_path, tag="target")
+    if tgt_vocab is not None:
+        tgt_vocab_size = len(tgt_vocab)
+        logger.info('Loaded source vocab has %d tokens.' % tgt_vocab_size)
+        for i, token in enumerate(tgt_vocab):
+            counter['tgt'][token] = tgt_vocab_size - i
 
     for index, path in enumerate(train_dataset_files):
         dataset = torch.load(path)
@@ -315,9 +328,9 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
                 if not fields[k].sequential:
                     continue
                 elif k == 'src' and src_vocab:
-                    val = [item for item in val if item in src_vocab]
+                    continue
                 elif k == 'tgt' and tgt_vocab:
-                    val = [item for item in val if item in tgt_vocab]
+                    continue
                 counter[k].update(val)
 
         # Drop the none-using from memory but keep the last
@@ -378,7 +391,7 @@ def load_vocabulary(vocabulary_path, tag=""):
     """
     vocabulary = None
     if vocabulary_path:
-        vocabulary = set([])
+        vocabulary = []
         logger.info("Loading {} vocabulary from {}".format(tag,
                                                            vocabulary_path))
 
@@ -391,7 +404,7 @@ def load_vocabulary(vocabulary_path, tag=""):
                     if len(line.strip()) == 0:
                         continue
                     word = line.strip().split()[0]
-                    vocabulary.add(word)
+                    vocabulary.append(word)
     return vocabulary
 
 
