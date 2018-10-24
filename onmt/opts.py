@@ -301,6 +301,9 @@ def train_opts(parser):
     group.add_argument('-train_from', default='', type=str,
                        help="""If training from a checkpoint then this is the
                        path to the pretrained model's state_dict.""")
+    group.add_argument('-reset_optim', default='none',
+                       choices=['none', 'all', 'states', 'keep_states'],
+                       help="""Optimization resetter when train_from.""")
 
     # Pretrained word vectors
     group.add_argument('-pre_word_vecs_enc',
