@@ -13,8 +13,7 @@ class NMTModel(nn.Module):
       multi<gpu (bool): setup for multigpu support
     """
 
-    def __init__(self, encoder, decoder, multigpu=False):
-        self.multigpu = multigpu
+    def __init__(self, encoder, decoder):
         super(NMTModel, self).__init__()
         self.encoder = encoder
         self.decoder = decoder
@@ -50,8 +49,5 @@ class NMTModel(nn.Module):
                          enc_state if dec_state is None
                          else dec_state,
                          memory_lengths=lengths)
-        if self.multigpu:
-            # Not yet supported on multi-gpu
-            dec_state = None
-            attns = None
+
         return decoder_outputs, attns, dec_state
