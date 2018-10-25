@@ -325,6 +325,24 @@ class Translator(object):
             else:
                 return self._translate_batch(batch, data)
 
+    def _run_encoder(self, batch, data_type):
+        src = inputters.make_features(batch, 'src', data_type)
+        src_lengths = None
+        if data_type == 'text':
+            _, src_lengths = batch.src
+        elif data_type == 'audio':
+            src_lengths = batch.src_lengths
+        enc_states, memory_bank, src_lengths = self.model.encoder(
+            src, src_lengths)
+        if src_lengths is None:
+            assert not isinstance(memory_bank, tuple), \
+                'Ensemble decoding only supported for text data'
+            src_lengths = torch.Tensor(batch.batch_size) \
+                               .type_as(memory_bank) \
+                               .long() \
+                               .fill_(memory_bank.size(0))
+        return src, enc_states, memory_bank, src_lengths
+
     def _fast_translate_batch(self,
                               batch,
                               data,
@@ -335,7 +353,6 @@ class Translator(object):
         # TODO: faster code path for beam_size == 1.
 
         # TODO: support these blacklisted features.
-        assert data.data_type == 'text'
         assert not self.copy_attn
         assert not self.dump_beam
         assert not self.use_filter_pred
@@ -349,10 +366,8 @@ class Translator(object):
         end_token = vocab.stoi[inputters.EOS_WORD]
 
         # Encoder forward.
-        src = inputters.make_features(batch, 'src', data.data_type)
-        _, src_lengths = batch.src
-        enc_states, memory_bank, src_lengths \
-            = self.model.encoder(src, src_lengths)
+        src, enc_states, memory_bank, src_lengths = self._run_encoder(
+            batch, data.data_type)
         dec_states = self.model.decoder.init_decoder_state(
             src, memory_bank, enc_states, with_cache=True)
 
@@ -552,23 +567,10 @@ class Translator(object):
             return m.view(beam_size, batch_size, -1)
 
         # (1) Run the encoder on the src.
-        src = inputters.make_features(batch, 'src', data_type)
-        src_lengths = None
-        if data_type == 'text':
-            _, src_lengths = batch.src
-        elif data_type == 'audio':
-            src_lengths = batch.src_lengths
-        enc_states, memory_bank, src_lengths \
-            = self.model.encoder(src, src_lengths)
+        src, enc_states, memory_bank, src_lengths = self._run_encoder(
+            batch, data_type)
         dec_states = self.model.decoder.init_decoder_state(
             src, memory_bank, enc_states)
-
-        if src_lengths is None:
-            assert not isinstance(memory_bank, tuple), \
-                'Ensemble decoding only supported for text data'
-            src_lengths = torch.Tensor(batch_size).type_as(memory_bank.data) \
-                .long() \
-                .fill_(memory_bank.size(0))
 
         # (2) Repeat src objects `beam_size` times.
         src_map = rvar(batch.src_map.data) \
