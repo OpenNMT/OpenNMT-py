@@ -377,7 +377,8 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
             logger.info(" * merging src and tgt vocab...")
             merged_vocab = merge_vocabs(
                 [fields["src"].vocab, fields["tgt"].vocab],
-                vocab_size=src_vocab_size, min_frequency=src_words_min_frequency)
+                vocab_size=src_vocab_size,
+                min_frequency=src_words_min_frequency)
             fields["src"].vocab = merged_vocab
             fields["tgt"].vocab = merged_vocab
 
