@@ -4,6 +4,7 @@
 """
 import glob
 import os
+import codecs
 
 from collections import Counter, defaultdict, OrderedDict
 from itertools import count
@@ -399,7 +400,7 @@ def load_vocabulary(vocabulary_path, tag=""):
             raise RuntimeError(
                 "{} vocabulary not found at {}!".format(tag, vocabulary_path))
         else:
-            with open(vocabulary_path) as f:
+            with codecs.open(vocabulary_path, 'r', 'utf-8') as f:
                 for line in f:
                     if len(line.strip()) == 0:
                         continue
