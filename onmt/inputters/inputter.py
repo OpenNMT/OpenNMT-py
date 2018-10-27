@@ -84,7 +84,7 @@ def save_fields_to_vocab(fields):
     return vocab
 
 
-def merge_vocabs(vocabs, vocab_size=None, min_frequency=None):
+def merge_vocabs(vocabs, vocab_size=None, min_frequency=1):
     """
     Merge individual vocabularies (assumed to be generated from disjoint
     documents) into a larger vocabulary.
