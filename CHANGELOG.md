@@ -8,23 +8,23 @@
 
 ### Fixes and improvements
 
-## [0.5.0](https://github.com/OpenNMT/OpenNMT-py/tree/v0.5.0) (2018-10-24)
+## [0.5.0](https://github.com/OpenNMT/OpenNMT-py/tree/0.5.0) (2018-10-24)
 * Fixed advance n_best beam in translate_batch_fast
 * Fixed remove valid set vocab from total vocab
 * New: Ability to reset optimizer when using train_from
 * New: create_vocabulary tool + fix when loading existing vocab.
 
-## [0.4.1](https://github.com/OpenNMT/OpenNMT-py/tree/v0.4.1) (2018-10-11)
+## [0.4.1](https://github.com/OpenNMT/OpenNMT-py/tree/0.4.1) (2018-10-11)
 * Fixed preprocessing files names, cleaning intermediary files.
 
-## [0.4.0](https://github.com/OpenNMT/OpenNMT-py/tree/v0.4.0) (2018-10-08)
+## [0.4.0](https://github.com/OpenNMT/OpenNMT-py/tree/0.4.0) (2018-10-08)
 * Fixed Speech2Text training (thanks Yuntian)
 
 * Removed -max_shard_size, replaced by -shard_size = number of examples in a shard.
   Default value = 1M which works fine in most Text dataset cases. (will avoid Ram OOM in most cases)
 
 
-## [0.3.0](https://github.com/OpenNMT/OpenNMT-py/tree/v0.3.0) (2018-09-27)
+## [0.3.0](https://github.com/OpenNMT/OpenNMT-py/tree/0.3.0) (2018-09-27)
 * Now requires Pytorch 0.4.1
 
 * Multi-node Multi-GPU with Torch Distributed
@@ -45,7 +45,7 @@ See examples in https://github.com/OpenNMT/OpenNMT-py/blob/master/docs/source/FA
 * Fixes to avoid 0.4.1 deprecated functions.
 
 
-## [0.2.1](https://github.com/OpenNMT/OpenNMT-py/tree/v0.2.1) (2018-08-31)
+## [0.2.1](https://github.com/OpenNMT/OpenNMT-py/tree/0.2.1) (2018-08-31)
 
 ### Fixes and improvements
 
