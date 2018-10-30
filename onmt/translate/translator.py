@@ -368,11 +368,11 @@ class Translator(object):
         # Encoder forward.
         src, enc_states, memory_bank, src_lengths = self._run_encoder(
             batch, data.data_type)
-        dec_states = self.model.decoder.init_decoder_state(
+        self.model.decoder.init_decoder_state(
             src, memory_bank, enc_states, with_cache=True)
 
         # Tile states and memory beam_size times.
-        dec_states.map_batch_fn(
+        self.model.decoder.map_batch_fn(
             lambda state, dim: tile(state, beam_size, dim=dim))
         memory_bank = tile(memory_bank, beam_size, dim=1)
         memory_lengths = tile(src_lengths, beam_size)
@@ -411,10 +411,9 @@ class Translator(object):
             decoder_input = alive_seq[:, -1].view(1, -1, 1)
 
             # Decoder forward.
-            dec_out, dec_states, attn = self.model.decoder(
+            dec_out, attn = self.model.decoder(
                 decoder_input,
                 memory_bank,
-                dec_states,
                 memory_lengths=memory_lengths,
                 step=step)
 
@@ -523,7 +522,7 @@ class Translator(object):
             # Reorder states.
             memory_bank = memory_bank.index_select(1, select_indices)
             memory_lengths = memory_lengths.index_select(0, select_indices)
-            dec_states.map_batch_fn(
+            self.model.decoder.map_batch_fn(
                 lambda state, dim: state.index_select(dim, select_indices))
 
         return results
