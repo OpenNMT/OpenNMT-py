@@ -6,7 +6,6 @@ import torch
 import torch.nn as nn
 
 import onmt.modules
-from onmt.decoders.decoder import DecoderState
 from onmt.utils.misc import aeq
 from onmt.utils.cnn_factory import shape_transform, GatedConv
 
@@ -128,7 +127,7 @@ class CNNDecoder(nn.Module):
         return CNNDecoderState(memory_bank, enc_hidden)
 
 
-class CNNDecoderState(DecoderState):
+class CNNDecoderState(object):
     """
     Init CNN decoder state.
     """

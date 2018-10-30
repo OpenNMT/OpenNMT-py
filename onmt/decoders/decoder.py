@@ -71,6 +71,13 @@ class RNNDecoderBase(nn.Module):
         self.embeddings = embeddings
         self.dropout = nn.Dropout(dropout)
 
+        # Decoder state
+        #if not isinstance(rnnstate, tuple):
+        #    self.hidden = (rnnstate,)
+        #else:
+        #    self.hidden = rnnstate
+        self.state = {}
+
         # Build the RNN.
         self.rnn = self._build_rnn(rnn_type,
                                    input_size=self._input_size,
@@ -103,7 +110,16 @@ class RNNDecoderBase(nn.Module):
             self._copy = True
         self._reuse_copy_attn = reuse_copy_attn
 
-    def forward(self, tgt, memory_bank, state, memory_lengths=None,
+    def update_state(self, rnnstate, input_feed, coverage):
+        """ Update decoder state """
+        if not isinstance(rnnstate, tuple):
+            self.state["hidden"] = (rnnstate,)
+        else:
+            self.state["hidden"] = rnnstate
+        self.state["input_feed"] = input_feed
+        self.state["coverage"] = coverage
+
+    def forward(self, tgt, memory_bank, memory_lengths=None,
                 step=None):
         """
         Args:
@@ -123,8 +139,6 @@ class RNNDecoderBase(nn.Module):
                 * attns: distribution over src at each tgt
                         `[tgt_len x batch x src_len]`.
         """
-        # Check
-        assert isinstance(state, RNNDecoderState)
         # tgt.size() returns tgt length and batch
         _, tgt_batch, _ = tgt.size()
         _, memory_batch, _ = memory_bank.size()
@@ -133,14 +147,14 @@ class RNNDecoderBase(nn.Module):
 
         # Run the forward pass of the RNN.
         decoder_final, decoder_outputs, attns = self._run_forward_pass(
-            tgt, memory_bank, state, memory_lengths=memory_lengths)
+            tgt, memory_bank, self.state, memory_lengths=memory_lengths)
 
         # Update the state with the result.
         final_output = decoder_outputs[-1]
         coverage = None
         if "coverage" in attns:
             coverage = attns["coverage"][-1].unsqueeze(0)
-        state.update_state(decoder_final, final_output.unsqueeze(0), coverage)
+        self.update_state(decoder_final, final_output.unsqueeze(0), coverage)
 
         # Concatenates sequence of tensors along a new dimension.
         # NOTE: v0.3 to 0.4: decoder_outputs / attns[*] may not be list
@@ -154,7 +168,7 @@ class RNNDecoderBase(nn.Module):
                 if type(attns[k]) == list:
                     attns[k] = torch.stack(attns[k])
 
-        return decoder_outputs, state, attns
+        return decoder_outputs, attns
 
     def init_decoder_state(self, src, memory_bank, encoder_final,
                            with_cache=False):
@@ -168,13 +182,27 @@ class RNNDecoderBase(nn.Module):
             return hidden
 
         if isinstance(encoder_final, tuple):  # LSTM
-            return RNNDecoderState(self.hidden_size,
-                                   tuple([_fix_enc_hidden(enc_hid)
-                                          for enc_hid in encoder_final]))
+            self.state["hidden"] = tuple([_fix_enc_hidden(enc_hid) \
+                                          for enc_hid in encoder_final])
         else:  # GRU
-            return RNNDecoderState(self.hidden_size,
-                                   _fix_enc_hidden(encoder_final))
+            self.state["hidden"] = _fix_enc_hidden(encoder_final)
 
+        # Init the input feed.
+        batch_size = self.state["hidden"][0].size(1)
+        h_size = (batch_size, self.hidden_size)
+        self.state["input_feed"] = self.state["hidden"][0].data.new(*h_size).zero_() \
+                                   .unsqueeze(0)
+        self.state["coverage"] = None
+
+
+    def map_batch_fn(self, fn):
+        self.state["hidden"] = tuple(map(lambda x: fn(x, 1), self.state["hidden"]))
+        self.state["input_feed"] = fn(self.state["input_feed"], 1)
+
+    def detach(self):
+        """ Need to document this """
+        self.state["hidden"] = tuple([_.detach() for _ in self.state["hidden"]])
+        self.state["input_feed"] = self.state["input_feed"].detach()
 
 class StdRNNDecoder(RNNDecoderBase):
     """
@@ -221,9 +249,9 @@ class StdRNNDecoder(RNNDecoderBase):
 
         # Run the forward pass of the RNN.
         if isinstance(self.rnn, nn.GRU):
-            rnn_output, decoder_final = self.rnn(emb, state.hidden[0])
+            rnn_output, decoder_final = self.rnn(emb, state["hidden"][0])
         else:
-            rnn_output, decoder_final = self.rnn(emb, state.hidden)
+            rnn_output, decoder_final = self.rnn(emb, state["hidden"])
 
         # Check
         tgt_len, tgt_batch, _ = tgt.size()
@@ -298,7 +326,7 @@ class InputFeedRNNDecoder(RNNDecoderBase):
         of arguments and return values.
         """
         # Additional args check.
-        input_feed = state.input_feed.squeeze(0)
+        input_feed = state["input_feed"].squeeze(0)
         input_feed_batch, _ = input_feed.size()
         _, tgt_batch, _ = tgt.size()
         aeq(tgt_batch, input_feed_batch)
@@ -315,9 +343,9 @@ class InputFeedRNNDecoder(RNNDecoderBase):
         emb = self.embeddings(tgt)
         assert emb.dim() == 3  # len x batch x embedding_dim
 
-        hidden = state.hidden
-        coverage = state.coverage.squeeze(0) \
-            if state.coverage is not None else None
+        hidden = state["hidden"]
+        coverage = state["coverage"].squeeze(0) \
+            if state["coverage"] is not None else None
 
         # Input feed concatenates hidden state with
         # input at every time step.
@@ -377,54 +405,3 @@ class InputFeedRNNDecoder(RNNDecoderBase):
         return self.embeddings.embedding_size + self.hidden_size
 
 
-class DecoderState(object):
-    """Interface for grouping together the current state of a recurrent
-    decoder. In the simplest case just represents the hidden state of
-    the model.  But can also be used for implementing various forms of
-    input_feeding and non-recurrent models.
-
-    Modules need to implement this to utilize beam search decoding.
-    """
-    def detach(self):
-        """ Need to document this """
-        self.hidden = tuple([_.detach() for _ in self.hidden])
-        self.input_feed = self.input_feed.detach()
-
-    def map_batch_fn(self, fn):
-        raise NotImplementedError()
-
-
-class RNNDecoderState(DecoderState):
-    """ Base class for RNN decoder state """
-
-    def __init__(self, hidden_size, rnnstate):
-        """
-        Args:
-            hidden_size (int): the size of hidden layer of the decoder.
-            rnnstate: final hidden state from the encoder.
-                transformed to shape: layers x batch x (directions*dim).
-        """
-        if not isinstance(rnnstate, tuple):
-            self.hidden = (rnnstate,)
-        else:
-            self.hidden = rnnstate
-        self.coverage = None
-
-        # Init the input feed.
-        batch_size = self.hidden[0].size(1)
-        h_size = (batch_size, hidden_size)
-        self.input_feed = self.hidden[0].data.new(*h_size).zero_() \
-                              .unsqueeze(0)
-
-    def update_state(self, rnnstate, input_feed, coverage):
-        """ Update decoder state """
-        if not isinstance(rnnstate, tuple):
-            self.hidden = (rnnstate,)
-        else:
-            self.hidden = rnnstate
-        self.input_feed = input_feed
-        self.coverage = coverage
-
-    def map_batch_fn(self, fn):
-        self.hidden = tuple(map(lambda x: fn(x, 1), self.hidden))
-        self.input_feed = fn(self.input_feed, 1)

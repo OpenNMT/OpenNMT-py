@@ -9,13 +9,12 @@ All models in the ensemble must share a target vocabulary.
 import torch
 import torch.nn as nn
 
-from onmt.decoders.decoder import DecoderState
 from onmt.encoders.encoder import EncoderBase
 from onmt.models import NMTModel
 import onmt.model_builder
 
 
-class EnsembleDecoderState(DecoderState):
+class EnsembleDecoderState(object):
     """ Dummy DecoderState that wraps a tuple of real DecoderStates """
     def __init__(self, model_decoder_states):
         self.model_decoder_states = tuple(model_decoder_states)
