@@ -566,6 +566,11 @@ class Translator(object):
         def unbottle(m):
             return m.view(beam_size, batch_size, -1)
 
+        def _repeat_beam_size_times(x, dim):
+            repeats = [1] * x.dim()
+            repeats[dim] = beam_size
+            return x.repeat(*repeats)
+
         # (1) Run the encoder on the src.
         src, enc_states, memory_bank, src_lengths = self._run_encoder(
             batch, data_type)
@@ -580,7 +585,7 @@ class Translator(object):
         else:
             memory_bank = rvar(memory_bank.data)
         memory_lengths = src_lengths.repeat(beam_size)
-        dec_states.repeat_beam_size_times(beam_size)
+        dec_states.map_batch_fn(_repeat_beam_size_times)
 
         # (3) run the decoder to generate sentences, using beam search.
         for i in range(self.max_length):
@@ -631,10 +636,19 @@ class Translator(object):
                 beam_attn = unbottle(attn["copy"])
 
             # (c) Advance each beam.
+            select_indices_array = []
             for j, b in enumerate(beam):
                 b.advance(out[:, j],
                           beam_attn.data[:, j, :memory_lengths[j]])
-                dec_states.beam_update(j, b.get_current_origin(), beam_size)
+                select_indices_array.append(
+                    b.get_current_origin() * batch_size + j)
+            select_indices = torch.cat(select_indices_array) \
+                                  .view(batch_size, beam_size) \
+                                  .transpose(0, 1) \
+                                  .contiguous() \
+                                  .view(-1)
+            dec_states.map_batch_fn(
+                lambda state, dim: state.index_select(dim, select_indices))
 
         # (4) Extract sentences from beam.
         ret = self._from_beam(beam)

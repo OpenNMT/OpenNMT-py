@@ -137,13 +137,6 @@ class CNNDecoderState(DecoderState):
         self.init_src = (memory_bank + enc_hidden) * SCALE_WEIGHT
         self.previous_input = None
 
-    @property
-    def _all(self):
-        """
-        Contains attributes that need to be updated in self.beam_update().
-        """
-        return (self.previous_input,)
-
     def detach(self):
         self.previous_input = self.previous_input.detach()
 
@@ -151,6 +144,7 @@ class CNNDecoderState(DecoderState):
         """ Called for every decoder forward pass. """
         self.previous_input = new_input
 
-    def repeat_beam_size_times(self, beam_size):
-        """ Repeat beam_size times along batch dimension. """
-        self.init_src = self.init_src.data.repeat(1, beam_size, 1)
+    def map_batch_fn(self, fn):
+        self.init_src = fn(self.init_src, 1)
+        if self.previous_input is not None:
+            self.previous_input = fn(self.previous_input, 1)
