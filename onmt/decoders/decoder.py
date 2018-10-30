@@ -390,23 +390,6 @@ class DecoderState(object):
         self.hidden = tuple([_.detach() for _ in self.hidden])
         self.input_feed = self.input_feed.detach()
 
-    def beam_update(self, idx, positions, beam_size):
-        """ Need to document this """
-        for e in self._all:
-            sizes = e.size()
-            br = sizes[1]
-            if len(sizes) == 3:
-                sent_states = e.view(sizes[0], beam_size, br // beam_size,
-                                     sizes[2])[:, :, idx]
-            else:
-                sent_states = e.view(sizes[0], beam_size,
-                                     br // beam_size,
-                                     sizes[2],
-                                     sizes[3])[:, :, idx]
-
-            sent_states.data.copy_(
-                sent_states.data.index_select(1, positions))
-
     def map_batch_fn(self, fn):
         raise NotImplementedError()
 
@@ -433,10 +416,6 @@ class RNNDecoderState(DecoderState):
         self.input_feed = self.hidden[0].data.new(*h_size).zero_() \
                               .unsqueeze(0)
 
-    @property
-    def _all(self):
-        return self.hidden + (self.input_feed,)
-
     def update_state(self, rnnstate, input_feed, coverage):
         """ Update decoder state """
         if not isinstance(rnnstate, tuple):
@@ -445,13 +424,6 @@ class RNNDecoderState(DecoderState):
             self.hidden = rnnstate
         self.input_feed = input_feed
         self.coverage = coverage
-
-    def repeat_beam_size_times(self, beam_size):
-        """ Repeat beam_size times along batch dimension. """
-        vars = [e.data.repeat(1, beam_size, 1)
-                for e in self._all]
-        self.hidden = tuple(vars[:-1])
-        self.input_feed = vars[-1]
 
     def map_batch_fn(self, fn):
         self.hidden = tuple(map(lambda x: fn(x, 1), self.hidden))

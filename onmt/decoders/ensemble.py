@@ -20,14 +20,9 @@ class EnsembleDecoderState(DecoderState):
     def __init__(self, model_decoder_states):
         self.model_decoder_states = tuple(model_decoder_states)
 
-    def beam_update(self, idx, positions, beam_size):
+    def map_batch_fn(self, fn):
         for model_state in self.model_decoder_states:
-            model_state.beam_update(idx, positions, beam_size)
-
-    def repeat_beam_size_times(self, beam_size):
-        """ Repeat beam_size times along batch dimension. """
-        for model_state in self.model_decoder_states:
-            model_state.repeat_beam_size_times(beam_size)
+            model_state.map_batch_fn(fn)
 
     def __getitem__(self, index):
         return self.model_decoder_states[index]

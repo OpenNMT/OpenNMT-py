@@ -260,19 +260,6 @@ class TransformerDecoderState(DecoderState):
         self.previous_layer_inputs = None
         self.cache = None
 
-    @property
-    def _all(self):
-        """
-        Contains attributes that need to be updated in self.beam_update().
-        """
-        if (self.previous_input is not None
-                and self.previous_layer_inputs is not None):
-            return (self.previous_input,
-                    self.previous_layer_inputs,
-                    self.src)
-        else:
-            return (self.src,)
-
     def detach(self):
         if self.previous_input is not None:
             self.previous_input = self.previous_input.detach()
@@ -306,10 +293,6 @@ class TransformerDecoderState(DecoderState):
                 layer_cache["self_values"] = None
             self.cache["layer_{}".format(l)] = layer_cache
 
-    def repeat_beam_size_times(self, beam_size):
-        """ Repeat beam_size times along batch dimension. """
-        self.src = self.src.data.repeat(1, beam_size, 1)
-
     def map_batch_fn(self, fn):
         def _recursive_map(struct, batch_dim=0):
             for k, v in struct.items():
@@ -320,5 +303,9 @@ class TransformerDecoderState(DecoderState):
                         struct[k] = fn(v, batch_dim)
 
         self.src = fn(self.src, 1)
+        if self.previous_input is not None:
+            self.previous_input = fn(self.previous_input, 1)
+        if self.previous_layer_inputs is not None:
+            self.previous_layer_inputs = fn(self.previous_layer_inputs, 1)
         if self.cache is not None:
             _recursive_map(self.cache)
