@@ -235,7 +235,7 @@ class Trainer(object):
             tgt = inputters.make_features(batch, 'tgt')
 
             # F-prop through the model.
-            outputs, attns, _ = self.model(src, tgt, src_lengths)
+            outputs, attns = self.model(src, tgt, src_lengths)
 
             # Compute loss.
             batch_stats = self.valid_loss.monolithic_compute_loss(
