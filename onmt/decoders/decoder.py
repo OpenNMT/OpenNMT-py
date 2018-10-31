@@ -172,7 +172,7 @@ class RNNDecoderBase(nn.Module):
             self.state["hidden"] = tuple([_fix_enc_hidden(enc_hid)
                                           for enc_hid in encoder_final])
         else:  # GRU
-            self.state["hidden"] = _fix_enc_hidden(encoder_final)
+            self.state["hidden"] = (_fix_enc_hidden(encoder_final), )
 
         # Init the input feed.
         batch_size = self.state["hidden"][0].size(1)
