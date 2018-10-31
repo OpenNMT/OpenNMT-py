@@ -172,7 +172,7 @@ class RNNDecoderBase(nn.Module):
             self.state["hidden"] = tuple([_fix_enc_hidden(enc_hid)
                                           for enc_hid in encoder_final])
         else:  # GRU
-            self.state["hidden"] = tuple(_fix_enc_hidden(encoder_final),)
+            self.state["hidden"] = (encoder_final, )
 
         # Init the input feed.
         batch_size = self.state["hidden"][0].size(1)
@@ -318,7 +318,6 @@ class InputFeedRNNDecoder(RNNDecoderBase):
         input_feed = self.state["input_feed"].squeeze(0)
         input_feed_batch, _ = input_feed.size()
         _, tgt_batch, _ = tgt.size()
-        print(tgt_batch, input_feed.size())
         aeq(tgt_batch, input_feed_batch)
         # END Additional args check.
 

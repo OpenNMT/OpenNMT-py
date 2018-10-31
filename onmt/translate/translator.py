@@ -576,8 +576,6 @@ class Translator(object):
         self.model.decoder.init_decoder_state(
             src, memory_bank, enc_states)
 
-
-
         # (2) Repeat src objects `beam_size` times.
         src_map = rvar(batch.src_map.data) \
             if data_type == 'text' and self.copy_attn else None
