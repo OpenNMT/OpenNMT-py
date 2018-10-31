@@ -134,7 +134,7 @@ class RNNDecoderBase(nn.Module):
         """
         # Run the forward pass of the RNN.
         dec_state, dec_outs, attns = self._run_forward_pass(
-            tgt, attn_context, self.state, memory_lengths=memory_lengths)
+            tgt, attn_context, memory_lengths=memory_lengths)
 
         # Update the state with the result.
         output = dec_outs[-1]
@@ -172,7 +172,7 @@ class RNNDecoderBase(nn.Module):
             self.state["hidden"] = tuple([_fix_enc_hidden(enc_hid)
                                           for enc_hid in encoder_final])
         else:  # GRU
-            self.state["hidden"] = _fix_enc_hidden(encoder_final)
+            self.state["hidden"] = tuple(_fix_enc_hidden(encoder_final),)
 
         # Init the input feed.
         batch_size = self.state["hidden"][0].size(1)
@@ -209,7 +209,7 @@ class StdRNNDecoder(RNNDecoderBase):
     or `copy_attn` support.
     """
 
-    def _run_forward_pass(self, tgt, attn_context, state, memory_lengths=None):
+    def _run_forward_pass(self, tgt, attn_context, memory_lengths=None):
         """
         Private helper for running the specific RNN forward pass.
         Must be overriden by all subclasses.
@@ -238,9 +238,9 @@ class StdRNNDecoder(RNNDecoderBase):
 
         # Run the forward pass of the RNN.
         if isinstance(self.rnn, nn.GRU):
-            rnn_output, dec_state = self.rnn(emb, state["hidden"][0])
+            rnn_output, dec_state = self.rnn(emb, self.state["hidden"][0])
         else:
-            rnn_output, dec_state = self.rnn(emb, state["hidden"])
+            rnn_output, dec_state = self.rnn(emb, self.state["hidden"])
 
         # Check
         tgt_len, tgt_batch, _ = tgt.size()
@@ -309,15 +309,16 @@ class InputFeedRNNDecoder(RNNDecoderBase):
           G --> H
     """
 
-    def _run_forward_pass(self, tgt, attn_context, state, memory_lengths=None):
+    def _run_forward_pass(self, tgt, attn_context, memory_lengths=None):
         """
         See StdRNNDecoder._run_forward_pass() for description
         of arguments and return values.
         """
         # Additional args check.
-        input_feed = state["input_feed"].squeeze(0)
+        input_feed = self.state["input_feed"].squeeze(0)
         input_feed_batch, _ = input_feed.size()
         _, tgt_batch, _ = tgt.size()
+        print(tgt_batch, input_feed.size())
         aeq(tgt_batch, input_feed_batch)
         # END Additional args check.
 
@@ -332,16 +333,16 @@ class InputFeedRNNDecoder(RNNDecoderBase):
         emb = self.embeddings(tgt)
         assert emb.dim() == 3  # len x batch x embedding_dim
 
-        dec_state = state["hidden"]
-        coverage = state["coverage"].squeeze(0) \
-            if state["coverage"] is not None else None
+        dec_state = self.state["hidden"]
+        coverage = self.state["coverage"].squeeze(0) \
+            if self.state["coverage"] is not None else None
 
         # Input feed concatenates hidden state with
         # input at every time step.
         for _, emb_t in enumerate(emb.split(1)):
             emb_t = emb_t.squeeze(0)
             decoder_input = torch.cat([emb_t, input_feed], 1)
-
+            print(decoder_input.size(), dec_state[0].size())
             rnn_output, dec_state = self.rnn(decoder_input, dec_state)
             decoder_output, p_attn = self.attn(
                 rnn_output,
