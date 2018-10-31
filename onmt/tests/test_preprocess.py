@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 
-import argparse
+import configargparse
 import copy
 import unittest
 import glob
@@ -18,7 +18,7 @@ import onmt.opts
 import preprocess
 
 
-parser = argparse.ArgumentParser(description='preprocess.py')
+parser = configargparse.ArgumentParser(description='preprocess.py')
 onmt.opts.preprocess_opts(parser)
 
 SAVE_DATA_PREFIX = 'data/test_preprocess'

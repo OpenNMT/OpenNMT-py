@@ -1,4 +1,4 @@
-import argparse
+import configargparse
 import copy
 import unittest
 import math
@@ -13,7 +13,7 @@ from onmt.model_builder import build_embeddings, \
 from onmt.encoders.image_encoder import ImageEncoder
 from onmt.encoders.audio_encoder import AudioEncoder
 
-parser = argparse.ArgumentParser(description='train.py')
+parser = configargparse.ArgumentParser(description='train.py')
 onmt.opts.model_opts(parser)
 onmt.opts.train_opts(parser)
 

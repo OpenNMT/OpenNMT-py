@@ -4,7 +4,7 @@
 """
 from __future__ import division
 
-import argparse
+import configargparse
 import os
 import random
 import torch
@@ -145,9 +145,9 @@ def main(opt, device_id):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
+    parser = configargparse.ArgumentParser(
         description='train.py',
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        formatter_class=configargparse.ArgumentDefaultsHelpFormatter)
 
     opts.add_md_help_argument(parser)
     opts.model_opts(parser)

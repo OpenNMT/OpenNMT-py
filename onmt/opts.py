@@ -1,8 +1,16 @@
 """ Implementation of all available options """
 from __future__ import print_function
 
-import argparse
+import configargparse
 from onmt.models.sru import CheckSRU
+
+
+def config_opts(parser):
+    parser.add('-config', '--config', required=False,
+               is_config_file_arg=True, help='config file path')
+    parser.add('-save_config', '--save_config', required=False,
+               is_write_out_config_file_arg=True,
+               help='config file save path')
 
 
 def model_opts(parser):
@@ -575,15 +583,17 @@ def add_md_help_argument(parser):
 # Copyright 2016 The Chromium Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
-class MarkdownHelpFormatter(argparse.HelpFormatter):
-    """A really bare-bones argparse help formatter that generates valid markdown.
-    This will generate something like:
-    usage
-    # **section heading**:
-    ## **--argument-one**
-    ```
-    argument-one help text
-    ```
+class MarkdownHelpFormatter(configargparse.HelpFormatter):
+    """A really bare-bones configargparse help formatter that generates valid
+       markdown.
+
+       This will generate something like:
+       usage
+       # **section heading**:
+       ## **--argument-one**
+       ```
+       argument-one help text
+       ```
     """
 
     def _format_usage(self, usage, actions, groups, prefix):
@@ -612,11 +622,11 @@ class MarkdownHelpFormatter(argparse.HelpFormatter):
         return '\n'.join(lines)
 
 
-class MarkdownHelpAction(argparse.Action):
+class MarkdownHelpAction(configargparse.Action):
     """ MD help action """
 
     def __init__(self, option_strings,
-                 dest=argparse.SUPPRESS, default=argparse.SUPPRESS,
+                 dest=configargparse.SUPPRESS, default=configargparse.SUPPRESS,
                  **kwargs):
         super(MarkdownHelpAction, self).__init__(
             option_strings=option_strings,
@@ -631,7 +641,7 @@ class MarkdownHelpAction(argparse.Action):
         parser.exit()
 
 
-class DeprecateAction(argparse.Action):
+class DeprecateAction(configargparse.Action):
     """ Deprecate action """
 
     def __init__(self, option_strings, dest, help=None, **kwargs):
@@ -641,4 +651,4 @@ class DeprecateAction(argparse.Action):
     def __call__(self, parser, namespace, values, flag_name):
         help = self.help if self.mdhelp is not None else ""
         msg = "Flag '%s' is deprecated. %s" % (flag_name, help)
-        raise argparse.ArgumentTypeError(msg)
+        raise configargparse.ArgumentTypeError(msg)

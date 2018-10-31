@@ -4,7 +4,7 @@
     Pre-process Data / features files and build vocabulary
 """
 
-import argparse
+import configargparse
 import glob
 import sys
 import gc
@@ -32,10 +32,11 @@ def check_existing_pt_files(opt):
 
 def parse_args():
     """ Parsing arguments """
-    parser = argparse.ArgumentParser(
+    parser = configargparse.ArgumentParser(
         description='preprocess.py',
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        formatter_class=configargparse.ArgumentDefaultsHelpFormatter)
 
+    opts.config_opts(parser)
     opts.add_md_help_argument(parser)
     opts.preprocess_opts(parser)
 

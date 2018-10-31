@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """ Translator Class and builder """
 from __future__ import print_function
-import argparse
+import configargparse
 import codecs
 import os
 import math
@@ -22,7 +22,7 @@ def build_translator(opt, report_score=True, logger=None, out_file=None):
     if out_file is None:
         out_file = codecs.open(opt.output, 'w+', 'utf-8')
 
-    dummy_parser = argparse.ArgumentParser(description='train.py')
+    dummy_parser = configargparse.ArgumentParser(description='train.py')
     opts.model_opts(dummy_parser)
     dummy_opt = dummy_parser.parse_known_args([])[0]
 
