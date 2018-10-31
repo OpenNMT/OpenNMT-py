@@ -31,20 +31,18 @@ class NMTModel(nn.Module):
             tgt (:obj:`LongTensor`):
                  a target sequence of size `[tgt_len x batch]`.
             lengths(:obj:`LongTensor`): the src lengths, pre-padding `[batch]`.
-            dec_state (:obj:`DecoderState`, optional): initial decoder state
+
         Returns:
             (:obj:`FloatTensor`, `dict`, :obj:`onmt.Models.DecoderState`):
 
                  * decoder output `[tgt_len x batch x hidden]`
                  * dictionary attention dists of `[tgt_len x batch x src_len]`
-                 * final decoder state
         """
         tgt = tgt[:-1]  # exclude last target from inputs
 
-        enc_final, memory_bank, lengths = self.encoder(src, lengths)
-        self.decoder.init_decoder_state(src, memory_bank, enc_final)
-        decoder_outputs, attns = \
-            self.decoder(tgt, memory_bank,
-                         memory_lengths=lengths)
+        enc_out, attn_context, lengths = self.encoder(src, lengths)
+        self.decoder.init_decoder_state(src, attn_context, enc_out)
+        dec_out, attns = self.decoder(tgt, attn_context,
+                                      memory_lengths=lengths)
 
-        return decoder_outputs, attns
+        return dec_out, attns

@@ -303,7 +303,8 @@ class Trainer(object):
                     self.optim.step()
 
                 # If truncated, don't backprop fully.
-                #if dec_state is not None:
+                # TODO
+                # if dec_state is not None:
                 #    dec_state.detach()
 
         # in case of multi step gradient accumulation,
