@@ -573,8 +573,10 @@ class Translator(object):
         # (1) Run the encoder on the src.
         src, enc_states, memory_bank, src_lengths = self._run_encoder(
             batch, data_type)
-        dec_states = self.model.decoder.init_decoder_state(
+        self.model.decoder.init_decoder_state(
             src, memory_bank, enc_states)
+
+
 
         # (2) Repeat src objects `beam_size` times.
         src_map = rvar(batch.src_map.data) \
@@ -584,7 +586,7 @@ class Translator(object):
         else:
             memory_bank = rvar(memory_bank.data)
         memory_lengths = src_lengths.repeat(beam_size)
-        dec_states.map_batch_fn(_repeat_beam_size_times)
+        self.model.decoder.map_batch_fn(_repeat_beam_size_times)
 
         # (3) run the decoder to generate sentences, using beam search.
         for i in range(self.max_length):
@@ -607,8 +609,8 @@ class Translator(object):
             inp = inp.unsqueeze(2)
 
             # Run one step.
-            dec_out, dec_states, attn = self.model.decoder(
-                inp, memory_bank, dec_states,
+            dec_out, attn = self.model.decoder(
+                inp, memory_bank,
                 memory_lengths=memory_lengths,
                 step=i)
 
@@ -646,7 +648,7 @@ class Translator(object):
                                   .transpose(0, 1) \
                                   .contiguous() \
                                   .view(-1)
-            dec_states.map_batch_fn(
+            self.model.decoder.map_batch_fn(
                 lambda state, dim: state.index_select(dim, select_indices))
 
         # (4) Extract sentences from beam.
@@ -689,15 +691,14 @@ class Translator(object):
         #  (1) run the encoder on the src
         enc_states, memory_bank, src_lengths \
             = self.model.encoder(src, src_lengths)
-        dec_states = \
-            self.model.decoder.init_decoder_state(src, memory_bank, enc_states)
+        self.model.decoder.init_decoder_state(src, memory_bank, enc_states)
 
         #  (2) if a target is specified, compute the 'goldScore'
         #  (i.e. log likelihood) of the target under the model
         tt = torch.cuda if self.cuda else torch
         gold_scores = tt.FloatTensor(batch.batch_size).fill_(0)
-        dec_out, _, _ = self.model.decoder(
-            tgt_in, memory_bank, dec_states, memory_lengths=src_lengths)
+        dec_out, _ = self.model.decoder(
+            tgt_in, memory_bank, memory_lengths=src_lengths)
 
         tgt_pad = self.fields["tgt"].vocab.stoi[inputters.PAD_WORD]
         for dec, tgt in zip(dec_out, batch.tgt[1:].data):
