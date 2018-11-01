@@ -302,7 +302,7 @@ class InputFeedRNNDecoder(RNNDecoderBase):
     """
     def init_state(self, src, memory_bank, encoder_final, with_cache=False):
         """ Init decoder state with last state of the encoder """
-        super().init_state(self, src, memory_bank, encoder_final)
+        super(InputFeedRNNDecoder, self).init_state(src, memory_bank, encoder_final)
 
         # Init the input feed.
         batch_size = self.state["hidden"][0].size(1)
