@@ -122,6 +122,13 @@ class RNNDecoderBase(nn.Module):
         else:  # GRU
             self.state["hidden"] = (_fix_enc_hidden(encoder_final), )
 
+        # Init the input feed.
+        batch_size = self.state["hidden"][0].size(1)
+        h_size = (batch_size, self.hidden_size)
+        self.state["input_feed"] = \
+            self.state["hidden"][0].data.new(*h_size).zero_().unsqueeze(0)
+        self.state["coverage"] = None
+
     def update_state(self, rnnstate, input_feed, coverage):
         """ Update decoder state """
         if not isinstance(rnnstate, tuple):
@@ -300,16 +307,6 @@ class InputFeedRNNDecoder(RNNDecoderBase):
           E --> H
           G --> H
     """
-    def init_state(self, src, memory_bank, encoder_final, with_cache=False):
-        """ Init decoder state with last state of the encoder """
-        super(InputFeedRNNDecoder, self).init_state(src, memory_bank, encoder_final)
-
-        # Init the input feed.
-        batch_size = self.state["hidden"][0].size(1)
-        h_size = (batch_size, self.hidden_size)
-        self.state["input_feed"] = \
-            self.state["hidden"][0].data.new(*h_size).zero_().unsqueeze(0)
-        self.state["coverage"] = None
 
     def _run_forward_pass(self, tgt, memory_bank, memory_lengths=None):
         """
