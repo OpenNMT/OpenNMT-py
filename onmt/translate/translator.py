@@ -368,11 +368,11 @@ class Translator(object):
         # Encoder forward.
         src, enc_states, memory_bank, src_lengths = self._run_encoder(
             batch, data.data_type)
-        self.model.decoder.init_decoder_state(
+        self.model.decoder.init_state(
             src, memory_bank, enc_states, with_cache=True)
 
         # Tile states and memory beam_size times.
-        self.model.decoder.map_batch_fn(
+        self.model.decoder.map_state(
             lambda state, dim: tile(state, beam_size, dim=dim))
         memory_bank = tile(memory_bank, beam_size, dim=1)
         memory_lengths = tile(src_lengths, beam_size)
@@ -522,7 +522,7 @@ class Translator(object):
             # Reorder states.
             memory_bank = memory_bank.index_select(1, select_indices)
             memory_lengths = memory_lengths.index_select(0, select_indices)
-            self.model.decoder.map_batch_fn(
+            self.model.decoder.map_state(
                 lambda state, dim: state.index_select(dim, select_indices))
 
         return results
@@ -573,7 +573,7 @@ class Translator(object):
         # (1) Run the encoder on the src.
         src, enc_states, memory_bank, src_lengths = self._run_encoder(
             batch, data_type)
-        self.model.decoder.init_decoder_state(
+        self.model.decoder.init_state(
             src, memory_bank, enc_states)
 
         # (2) Repeat src objects `beam_size` times.
@@ -584,7 +584,7 @@ class Translator(object):
         else:
             memory_bank = rvar(memory_bank.data)
         memory_lengths = src_lengths.repeat(beam_size)
-        self.model.decoder.map_batch_fn(_repeat_beam_size_times)
+        self.model.decoder.map_state(_repeat_beam_size_times)
 
         # (3) run the decoder to generate sentences, using beam search.
         for i in range(self.max_length):
@@ -646,7 +646,7 @@ class Translator(object):
                                   .transpose(0, 1) \
                                   .contiguous() \
                                   .view(-1)
-            self.model.decoder.map_batch_fn(
+            self.model.decoder.map_state(
                 lambda state, dim: state.index_select(dim, select_indices))
 
         # (4) Extract sentences from beam.
@@ -689,7 +689,7 @@ class Translator(object):
         #  (1) run the encoder on the src
         enc_states, memory_bank, src_lengths \
             = self.model.encoder(src, src_lengths)
-        self.model.decoder.init_decoder_state(src, memory_bank, enc_states)
+        self.model.decoder.init_state(src, memory_bank, enc_states)
 
         #  (2) if a target is specified, compute the 'goldScore'
         #  (i.e. log likelihood) of the target under the model

@@ -40,9 +40,9 @@ class NMTModel(nn.Module):
         """
         tgt = tgt[:-1]  # exclude last target from inputs
 
-        enc_out, attn_context, lengths = self.encoder(src, lengths)
-        self.decoder.init_decoder_state(src, attn_context, enc_out)
-        dec_out, attns = self.decoder(tgt, attn_context,
+        enc_state, memory_bank, lengths = self.encoder(src, lengths)
+        self.decoder.init_state(src, memory_bank, enc_state)
+        dec_out, attns = self.decoder(tgt, memory_bank,
                                       memory_lengths=lengths)
 
         return dec_out, attns

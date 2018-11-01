@@ -38,10 +38,10 @@ class EnsembleEncoder(EncoderBase):
         self.model_encoders = nn.ModuleList(model_encoders)
 
     def forward(self, src, lengths=None):
-        enc_hidden, attn_context, _ = zip(*[
+        enc_hidden, memory_bank, _ = zip(*[
             model_encoder(src, lengths)
             for model_encoder in self.model_encoders])
-        return enc_hidden, attn_context, lengths
+        return enc_hidden, memory_bank, lengths
 
 
 class EnsembleDecoder(nn.Module):
@@ -50,7 +50,7 @@ class EnsembleDecoder(nn.Module):
         super(EnsembleDecoder, self).__init__()
         self.model_decoders = nn.ModuleList(model_decoders)
 
-    def forward(self, tgt, attn_context, memory_lengths=None, step=None):
+    def forward(self, tgt, memory_bank, memory_lengths=None, step=None):
         """ See :obj:`RNNDecoderBase.forward()` """
         # Memory_lengths is a single tensor shared between all models.
         # This assumption will not hold if Translator is modified
@@ -58,7 +58,7 @@ class EnsembleDecoder(nn.Module):
         # of the input.
         dec_outs, states, attns = zip(*[
             model_decoder(
-                tgt, attn_context[i], memory_lengths, step=step)
+                tgt, memory_bank[i], memory_lengths, step=step)
             for i, model_decoder in enumerate(self.model_decoders)])
         mean_attns = self.combine_attns(attns)
         return dec_outs, mean_attns
@@ -69,16 +69,15 @@ class EnsembleDecoder(nn.Module):
             result[key] = torch.stack([attn[key] for attn in attns]).mean(0)
         return result
 
-    def init_decoder_state(self, src, attn_context, enc_hidden):
-        """ See :obj:`RNNDecoderBase.init_decoder_state()` """
+    def init_state(self, src, memory_bank, enc_hidden):
+        """ See :obj:`RNNDecoderBase.init_state()` """
         for i, model_decoder in enumerate(self.model_decoders):
-            model_decoder.init_decoder_state(src,
-                                             attn_context[i],
-                                             enc_hidden[i])
+            model_decoder.init_state(src, memory_bank[i],
+                                     enc_hidden[i])
 
-    def map_batch_fn(self, fn):
+    def map_state(self, fn):
         for model_decoder in self.model_decoders:
-            model_decoder.map_batch_fn(fn)
+            model_decoder.map_state(fn)
 
 
 class EnsembleGenerator(nn.Module):

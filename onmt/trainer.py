@@ -307,7 +307,7 @@ class Trainer(object):
                 # if dec_state is not None:
                 #    dec_state.detach()
                 if self.model.decoder.state is not None:
-                    self.model.decoder.detach()
+                    self.model.decoder.detach_state()
 
         # in case of multi step gradient accumulation,
         # update only after accum batches
