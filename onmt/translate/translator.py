@@ -380,6 +380,8 @@ class Translator(object):
         if "tgt" in batch.__dict__:
             results["gold_score"] = self._score_target(
                 batch, copy.deepcopy(memory_bank, src_lengths))
+            self.model.decoder.init_state(
+                src, memory_bank, enc_states, with_cache=True)
         else:
             results["gold_score"] = [0] * batch_size
 
@@ -578,8 +580,7 @@ class Translator(object):
         # (1) Run the encoder on the src.
         src, enc_states, memory_bank, src_lengths = self._run_encoder(
             batch, data_type)
-        self.model.decoder.init_state(
-            src, memory_bank, enc_states)
+        self.model.decoder.init_state(src, memory_bank, enc_states)
 
         # (2) Repeat src objects `beam_size` times.
         src_map = rvar(batch.src_map.data) \
@@ -612,10 +613,9 @@ class Translator(object):
             inp = inp.unsqueeze(2)
 
             # Run one step.
-            dec_out, attn = self.model.decoder(
-                inp, memory_bank,
-                memory_lengths=memory_lengths,
-                step=i)
+            dec_out, attn = self.model.decoder(inp, memory_bank,
+                                               memory_lengths=memory_lengths,
+                                               step=i)
 
             dec_out = dec_out.squeeze(0)
 
