@@ -56,12 +56,12 @@ class EnsembleDecoder(nn.Module):
         # This assumption will not hold if Translator is modified
         # to calculate memory_lengths as something other than the length
         # of the input.
-        dec_outs, states, attns = zip(*[
+        dec_outs, attns = zip(*[
             model_decoder(
                 tgt, memory_bank[i], memory_lengths, step=step)
             for i, model_decoder in enumerate(self.model_decoders)])
         mean_attns = self.combine_attns(attns)
-        return dec_outs, mean_attns
+        return EnsembleDecoderOutput(dec_outs), mean_attns
 
     def combine_attns(self, attns):
         result = {}
@@ -69,11 +69,11 @@ class EnsembleDecoder(nn.Module):
             result[key] = torch.stack([attn[key] for attn in attns]).mean(0)
         return result
 
-    def init_state(self, src, memory_bank, enc_hidden):
+    def init_state(self, src, memory_bank, enc_hidden, with_cache=False):
         """ See :obj:`RNNDecoderBase.init_state()` """
         for i, model_decoder in enumerate(self.model_decoders):
             model_decoder.init_state(src, memory_bank[i],
-                                     enc_hidden[i])
+                                     enc_hidden[i], with_cache)
 
     def map_state(self, fn):
         for model_decoder in self.model_decoders:

@@ -252,7 +252,7 @@ class TransformerDecoder(nn.Module):
             prev_layer_input = None
             if self.state["cache"] is None:
                 if self.state["previous_input"] is not None:
-                    prev_layer_input = self.state["previous_input"][i]
+                    prev_layer_input = self.state["previous_layer_inputs"][i]
             output, attn, all_input \
                 = self.transformer_layers[i](
                     output, src_memory_bank,
