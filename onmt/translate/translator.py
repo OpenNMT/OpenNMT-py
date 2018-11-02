@@ -614,7 +614,8 @@ class Translator(object):
 
             # Run one step.
             dec_out, attn = self.model.decoder(inp, memory_bank,
-                memory_lengths=memory_lengths, step=i)
+                                               memory_lengths=memory_lengths,
+                                               step=i)
 
             dec_out = dec_out.squeeze(0)
 
