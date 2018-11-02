@@ -18,7 +18,7 @@ class NMTModel(nn.Module):
         self.encoder = encoder
         self.decoder = decoder
 
-    def forward(self, src, tgt, lengths, dec_state=None):
+    def forward(self, src, tgt, lengths):
         """Forward propagate a `src` and `tgt` pair for training.
         Possible initialized with a beginning decoder state.
 
@@ -31,23 +31,18 @@ class NMTModel(nn.Module):
             tgt (:obj:`LongTensor`):
                  a target sequence of size `[tgt_len x batch]`.
             lengths(:obj:`LongTensor`): the src lengths, pre-padding `[batch]`.
-            dec_state (:obj:`DecoderState`, optional): initial decoder state
+
         Returns:
             (:obj:`FloatTensor`, `dict`, :obj:`onmt.Models.DecoderState`):
 
                  * decoder output `[tgt_len x batch x hidden]`
                  * dictionary attention dists of `[tgt_len x batch x src_len]`
-                 * final decoder state
         """
         tgt = tgt[:-1]  # exclude last target from inputs
 
-        enc_final, memory_bank, lengths = self.encoder(src, lengths)
-        enc_state = \
-            self.decoder.init_decoder_state(src, memory_bank, enc_final)
-        decoder_outputs, dec_state, attns = \
-            self.decoder(tgt, memory_bank,
-                         enc_state if dec_state is None
-                         else dec_state,
-                         memory_lengths=lengths)
+        enc_state, memory_bank, lengths = self.encoder(src, lengths)
+        self.decoder.init_state(src, memory_bank, enc_state)
+        dec_out, attns = self.decoder(tgt, memory_bank,
+                                      memory_lengths=lengths)
 
-        return decoder_outputs, attns, dec_state
+        return dec_out, attns

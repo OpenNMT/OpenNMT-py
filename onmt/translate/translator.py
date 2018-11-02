@@ -5,6 +5,7 @@ import argparse
 import codecs
 import os
 import math
+import copy
 
 import torch
 
@@ -367,11 +368,22 @@ class Translator(object):
         # Encoder forward.
         src, enc_states, memory_bank, src_lengths = self._run_encoder(
             batch, data.data_type)
-        dec_states = self.model.decoder.init_decoder_state(
+        self.model.decoder.init_state(
             src, memory_bank, enc_states, with_cache=True)
 
+        results = {}
+        results["predictions"] = [[] for _ in range(batch_size)]  # noqa: F812
+        results["scores"] = [[] for _ in range(batch_size)]  # noqa: F812
+        results["attention"] = [[] for _ in range(batch_size)]  # noqa: F812
+        results["batch"] = batch
+        if "tgt" in batch.__dict__:
+            results["gold_score"] = self._score_target(
+                batch, copy.deepcopy(memory_bank, src_lengths))
+        else:
+            results["gold_score"] = [0] * batch_size
+
         # Tile states and memory beam_size times.
-        dec_states.map_batch_fn(
+        self.model.decoder.map_state(
             lambda state, dim: tile(state, beam_size, dim=dim))
         memory_bank = tile(memory_bank, beam_size, dim=1)
         memory_lengths = tile(src_lengths, beam_size)
@@ -401,13 +413,6 @@ class Translator(object):
         # Structure that holds finished hypotheses.
         hypotheses = [[] for _ in range(batch_size)]  # noqa: F812
 
-        results = {}
-        results["predictions"] = [[] for _ in range(batch_size)]  # noqa: F812
-        results["scores"] = [[] for _ in range(batch_size)]  # noqa: F812
-        results["attention"] = [[] for _ in range(batch_size)]  # noqa: F812
-        results["gold_score"] = [0] * batch_size
-        results["batch"] = batch
-
         for step in range(max_length):
             decoder_input = alive_seq[:, -1].view(1, -1, 1)
             if self.copy_attn:
@@ -416,10 +421,9 @@ class Translator(object):
                     decoder_input.gt(len(vocab) - 1), 0)
 
             # Decoder forward.
-            dec_out, dec_states, dec_attn = self.model.decoder(
+            dec_out, dec_attn = self.model.decoder(
                 decoder_input,
                 memory_bank,
-                dec_states,
                 memory_lengths=memory_lengths,
                 step=step)
             dec_out = dec_out.squeeze(0)
@@ -544,7 +548,7 @@ class Translator(object):
             # Reorder states.
             memory_bank = memory_bank.index_select(1, select_indices)
             memory_lengths = memory_lengths.index_select(0, select_indices)
-            dec_states.map_batch_fn(
+            self.model.decoder.map_state(
                 lambda state, dim: state.index_select(dim, select_indices))
             if src_map is not None:
                 src_map = src_map.index_select(1, select_indices)
@@ -589,10 +593,15 @@ class Translator(object):
         def unbottle(m):
             return m.view(beam_size, batch_size, -1)
 
+        def _repeat_beam_size_times(x, dim):
+            repeats = [1] * x.dim()
+            repeats[dim] = beam_size
+            return x.repeat(*repeats)
+
         # (1) Run the encoder on the src.
         src, enc_states, memory_bank, src_lengths = self._run_encoder(
             batch, data_type)
-        dec_states = self.model.decoder.init_decoder_state(
+        self.model.decoder.init_state(
             src, memory_bank, enc_states)
 
         # (2) Repeat src objects `beam_size` times.
@@ -603,7 +612,7 @@ class Translator(object):
         else:
             memory_bank = rvar(memory_bank.data)
         memory_lengths = src_lengths.repeat(beam_size)
-        dec_states.repeat_beam_size_times(beam_size)
+        self.model.decoder.map_state(_repeat_beam_size_times)
 
         # (3) run the decoder to generate sentences, using beam search.
         for i in range(self.max_length):
@@ -626,8 +635,8 @@ class Translator(object):
             inp = inp.unsqueeze(2)
 
             # Run one step.
-            dec_out, dec_states, attn = self.model.decoder(
-                inp, memory_bank, dec_states,
+            dec_out, attn = self.model.decoder(
+                inp, memory_bank,
                 memory_lengths=memory_lengths,
                 step=i)
 
@@ -654,10 +663,19 @@ class Translator(object):
                 beam_attn = unbottle(attn["copy"])
 
             # (c) Advance each beam.
+            select_indices_array = []
             for j, b in enumerate(beam):
                 b.advance(out[:, j],
                           beam_attn.data[:, j, :memory_lengths[j]])
-                dec_states.beam_update(j, b.get_current_origin(), beam_size)
+                select_indices_array.append(
+                    b.get_current_origin() * batch_size + j)
+            select_indices = torch.cat(select_indices_array) \
+                                  .view(batch_size, beam_size) \
+                                  .transpose(0, 1) \
+                                  .contiguous() \
+                                  .view(-1)
+            self.model.decoder.map_state(
+                lambda state, dim: state.index_select(dim, select_indices))
 
         # (4) Extract sentences from beam.
         ret = self._from_beam(beam)
@@ -694,20 +712,22 @@ class Translator(object):
         else:
             src_lengths = None
         src = inputters.make_features(batch, 'src', data_type)
-        tgt_in = inputters.make_features(batch, 'tgt')[:-1]
 
         #  (1) run the encoder on the src
         enc_states, memory_bank, src_lengths \
             = self.model.encoder(src, src_lengths)
-        dec_states = \
-            self.model.decoder.init_decoder_state(src, memory_bank, enc_states)
+        self.model.decoder.init_state(src, memory_bank, enc_states)
 
         #  (2) if a target is specified, compute the 'goldScore'
         #  (i.e. log likelihood) of the target under the model
+        return self._score_target(batch, memory_bank, src_lengths)
+
+    def _score_target(self, batch, memory_bank, src_lengths):
+        tgt_in = inputters.make_features(batch, 'tgt')[:-1]
         tt = torch.cuda if self.cuda else torch
         gold_scores = tt.FloatTensor(batch.batch_size).fill_(0)
-        dec_out, _, _ = self.model.decoder(
-            tgt_in, memory_bank, dec_states, memory_lengths=src_lengths)
+        dec_out, _ = self.model.decoder(
+            tgt_in, memory_bank, memory_lengths=src_lengths)
 
         tgt_pad = self.fields["tgt"].vocab.stoi[inputters.PAD_WORD]
         for dec, tgt in zip(dec_out, batch.tgt[1:].data):
