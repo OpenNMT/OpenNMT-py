@@ -56,12 +56,12 @@ class EnsembleDecoder(nn.Module):
         # This assumption will not hold if Translator is modified
         # to calculate memory_lengths as something other than the length
         # of the input.
-        dec_outs, states, attns = zip(*[
+        dec_outs, attns = zip(*[
             model_decoder(
                 tgt, memory_bank[i], memory_lengths, step=step)
             for i, model_decoder in enumerate(self.model_decoders)])
         mean_attns = self.combine_attns(attns)
-        return dec_outs, mean_attns
+        return EnsembleDecoderOutput(dec_outs), mean_attns
 
     def combine_attns(self, attns):
         result = {}
