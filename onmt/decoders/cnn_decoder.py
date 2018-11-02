@@ -6,8 +6,6 @@ import torch
 import torch.nn as nn
 
 import onmt.modules
-from onmt.decoders.decoder import DecoderState
-from onmt.utils.misc import aeq
 from onmt.utils.cnn_factory import shape_transform, GatedConv
 
 SCALE_WEIGHT = 0.5 ** 0.5
@@ -33,6 +31,9 @@ class CNNDecoder(nn.Module):
         self.embeddings = embeddings
         self.dropout = dropout
 
+        # Decoder State
+        self.state = {}
+
         # Build the CNN.
         input_size = self.embeddings.embedding_size
         self.linear = nn.Linear(input_size, self.hidden_size)
@@ -55,22 +56,35 @@ class CNNDecoder(nn.Module):
                 hidden_size, attn_type=attn_type)
             self._copy = True
 
-    def forward(self, tgt, memory_bank, state, memory_lengths=None, step=None):
+    def init_state(self, _, memory_bank, enc_hidden, with_cache=False):
+        """
+        Init decoder state.
+        """
+        self.state["src"] = (memory_bank + enc_hidden) * SCALE_WEIGHT
+        self.state["previous_input"] = None
+
+    def update_state(self, new_input):
+        """ Called for every decoder forward pass. """
+        self.state["previous_input"] = new_input
+
+    def map_state(self, fn):
+        self.state["src"] = fn(self.state["src"], 1)
+        if self.state["previous_input"] is not None:
+            self.state["previous_input"] = fn(self.state["previous_input"], 1)
+
+    def detach_state(self):
+        self.state["previous_input"] = self.state["previous_input"].detach()
+
+    def forward(self, tgt, memory_bank, memory_lengths=None, step=None):
         """ See :obj:`onmt.modules.RNNDecoderBase.forward()`"""
         # NOTE: memory_lengths is only here for compatibility reasons
         #       with onmt.modules.RNNDecoderBase.forward()
-        # CHECKS
-        assert isinstance(state, CNNDecoderState)
-        _, tgt_batch, _ = tgt.size()
-        _, contxt_batch, _ = memory_bank.size()
-        aeq(tgt_batch, contxt_batch)
-        # END CHECKS
 
-        if state.previous_input is not None:
-            tgt = torch.cat([state.previous_input, tgt], 0)
+        if self.state["previous_input"] is not None:
+            tgt = torch.cat([self.state["previous_input"], tgt], 0)
 
         # Initialize return variables.
-        outputs = []
+        dec_outs = []
         attns = {"std": []}
         assert not self._copy, "Copy mechanism not yet tested in conv2conv"
         if self._copy:
@@ -83,7 +97,7 @@ class CNNDecoder(nn.Module):
         # The output of CNNEncoder.
         src_memory_bank_t = memory_bank.transpose(0, 1).contiguous()
         # The combination of output of CNNEncoder and source embeddings.
-        src_memory_bank_c = state.init_src.transpose(0, 1).contiguous()
+        src_memory_bank_c = self.state["src"].transpose(0, 1).contiguous()
 
         # Run the forward pass of the CNNDecoder.
         emb_reshape = tgt_emb.contiguous().view(
@@ -107,44 +121,16 @@ class CNNDecoder(nn.Module):
         output = x.squeeze(3).transpose(1, 2)
 
         # Process the result and update the attentions.
-        outputs = output.transpose(0, 1).contiguous()
-        if state.previous_input is not None:
-            outputs = outputs[state.previous_input.size(0):]
-            attn = attn[:, state.previous_input.size(0):].squeeze()
+        dec_outs = output.transpose(0, 1).contiguous()
+        if self.state["previous_input"] is not None:
+            dec_outs = dec_outs[self.state["previous_input"].size(0):]
+            attn = attn[:, self.state["previous_input"].size(0):].squeeze()
             attn = torch.stack([attn])
         attns["std"] = attn
         if self._copy:
             attns["copy"] = attn
 
         # Update the state.
-        state.update_state(tgt)
-
-        return outputs, state, attns
-
-    def init_decoder_state(self, _, memory_bank, enc_hidden, with_cache=False):
-        """
-        Init decoder state.
-        """
-        return CNNDecoderState(memory_bank, enc_hidden)
-
-
-class CNNDecoderState(DecoderState):
-    """
-    Init CNN decoder state.
-    """
-
-    def __init__(self, memory_bank, enc_hidden):
-        self.init_src = (memory_bank + enc_hidden) * SCALE_WEIGHT
-        self.previous_input = None
-
-    def detach(self):
-        self.previous_input = self.previous_input.detach()
-
-    def update_state(self, new_input):
-        """ Called for every decoder forward pass. """
-        self.previous_input = new_input
-
-    def map_batch_fn(self, fn):
-        self.init_src = fn(self.init_src, 1)
-        if self.previous_input is not None:
-            self.previous_input = fn(self.previous_input, 1)
+        self.update_state(tgt)
+        # TODO change the way attns is returned dict => list or tuple (onnx)
+        return dec_outs, attns

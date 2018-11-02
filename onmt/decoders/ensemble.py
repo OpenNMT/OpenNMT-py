@@ -9,29 +9,15 @@ All models in the ensemble must share a target vocabulary.
 import torch
 import torch.nn as nn
 
-from onmt.decoders.decoder import DecoderState
 from onmt.encoders.encoder import EncoderBase
 from onmt.models import NMTModel
 import onmt.model_builder
 
 
-class EnsembleDecoderState(DecoderState):
-    """ Dummy DecoderState that wraps a tuple of real DecoderStates """
-    def __init__(self, model_decoder_states):
-        self.model_decoder_states = tuple(model_decoder_states)
-
-    def map_batch_fn(self, fn):
-        for model_state in self.model_decoder_states:
-            model_state.map_batch_fn(fn)
-
-    def __getitem__(self, index):
-        return self.model_decoder_states[index]
-
-
 class EnsembleDecoderOutput(object):
     """ Wrapper around multiple decoder final hidden states """
-    def __init__(self, model_outputs):
-        self.model_outputs = tuple(model_outputs)
+    def __init__(self, model_dec_outs):
+        self.model_dec_outs = tuple(model_dec_outs)
 
     def squeeze(self, dim=None):
         """
@@ -39,10 +25,10 @@ class EnsembleDecoderOutput(object):
         :obj:`Translator.translate_batch()`
         """
         return EnsembleDecoderOutput([
-            x.squeeze(dim) for x in self.model_outputs])
+            x.squeeze(dim) for x in self.model_dec_outs])
 
     def __getitem__(self, index):
-        return self.model_outputs[index]
+        return self.model_dec_outs[index]
 
 
 class EnsembleEncoder(EncoderBase):
@@ -64,20 +50,18 @@ class EnsembleDecoder(nn.Module):
         super(EnsembleDecoder, self).__init__()
         self.model_decoders = nn.ModuleList(model_decoders)
 
-    def forward(self, tgt, memory_bank, state, memory_lengths=None, step=None):
+    def forward(self, tgt, memory_bank, memory_lengths=None, step=None):
         """ See :obj:`RNNDecoderBase.forward()` """
         # Memory_lengths is a single tensor shared between all models.
         # This assumption will not hold if Translator is modified
         # to calculate memory_lengths as something other than the length
         # of the input.
-        outputs, states, attns = zip(*[
+        dec_outs, states, attns = zip(*[
             model_decoder(
-                tgt, memory_bank[i], state[i], memory_lengths, step=step)
+                tgt, memory_bank[i], memory_lengths, step=step)
             for i, model_decoder in enumerate(self.model_decoders)])
         mean_attns = self.combine_attns(attns)
-        return (EnsembleDecoderOutput(outputs),
-                EnsembleDecoderState(states),
-                mean_attns)
+        return dec_outs, mean_attns
 
     def combine_attns(self, attns):
         result = {}
@@ -85,13 +69,15 @@ class EnsembleDecoder(nn.Module):
             result[key] = torch.stack([attn[key] for attn in attns]).mean(0)
         return result
 
-    def init_decoder_state(self, src, memory_bank, enc_hidden):
-        """ See :obj:`RNNDecoderBase.init_decoder_state()` """
-        return EnsembleDecoderState(
-            [model_decoder.init_decoder_state(src,
-                                              memory_bank[i],
-                                              enc_hidden[i])
-             for i, model_decoder in enumerate(self.model_decoders)])
+    def init_state(self, src, memory_bank, enc_hidden):
+        """ See :obj:`RNNDecoderBase.init_state()` """
+        for i, model_decoder in enumerate(self.model_decoders):
+            model_decoder.init_state(src, memory_bank[i],
+                                     enc_hidden[i])
+
+    def map_state(self, fn):
+        for model_decoder in self.model_decoders:
+            model_decoder.map_state(fn)
 
 
 class EnsembleGenerator(nn.Module):

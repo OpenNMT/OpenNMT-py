@@ -7,7 +7,6 @@ import torch.nn as nn
 import numpy as np
 
 import onmt
-from onmt.decoders.decoder import DecoderState
 from onmt.modules.position_ffn import PositionwiseFeedForward
 
 MAX_SIZE = 5000
@@ -70,6 +69,7 @@ class TransformerDecoderLayer(nn.Module):
         dec_mask = torch.gt(tgt_pad_mask +
                             self.mask[:, :tgt_pad_mask.size(1),
                                       :tgt_pad_mask.size(1)], 0)
+        dec_mask = None
         input_norm = self.layer_norm_1(inputs)
         all_input = input_norm
         if previous_input is not None:
@@ -154,6 +154,9 @@ class TransformerDecoder(nn.Module):
         self.embeddings = embeddings
         self.self_attn_type = self_attn_type
 
+        # Decoder State
+        self.state = {}
+
         # Build TransformerDecoder.
         self.transformer_layers = nn.ModuleList(
             [TransformerDecoderLayer(d_model, heads, d_ff, dropout,
@@ -169,19 +172,62 @@ class TransformerDecoder(nn.Module):
             self._copy = True
         self.layer_norm = onmt.modules.LayerNorm(d_model)
 
-    def forward(self, tgt, memory_bank, state, memory_lengths=None,
+    def init_state(self, src, memory_bank, enc_hidden, with_cache=False):
+        """ Init decoder state """
+        self.state["src"] = src
+        self.state["previous_input"] = None
+        self.state["previous_layer_inputs"] = None
+        self.state["cache"] = None
+
+        if with_cache:
+            self._init_cache(memory_bank, self.num_layers,
+                             self.self_attn_type)
+
+    def update_state(self, new_input, previous_layer_inputs):
+
+        self.state["previous_input"] = new_input
+        self.state["previous_layer_inputs"] = previous_layer_inputs
+
+    def map_state(self, fn):
+        def _recursive_map(struct, batch_dim=0):
+            for k, v in struct.items():
+                if v is not None:
+                    if isinstance(v, dict):
+                        _recursive_map(v)
+                    else:
+                        struct[k] = fn(v, batch_dim)
+
+        self.state["src"] = fn(self.state["src"], 1)
+        if self.state["previous_input"] is not None:
+            self.state["previous_input"] = fn(self.state["previous_input"], 1)
+        if self.state["previous_layer_inputs"] is not None:
+            self.state["previous_layer_inputs"] = \
+                fn(self.state["previous_layer_inputs"], 1)
+        if self.state["cache"] is not None:
+            _recursive_map(self.state["cache"])
+
+    def detach_state(self):
+        if self.state["previous_input"] is not None:
+            self.state["previous_input"] = \
+                self.state["previous_input"].detach()
+        if self.state["previous_layer_inputs"] is not None:
+            self.state["previous_layer_inputs"] = \
+                self.state["previous_layer_inputs"].detach()
+        self.state["src"] = self.state["src"].detach()
+
+    def forward(self, tgt, memory_bank, memory_lengths=None,
                 step=None, cache=None):
         """
         See :obj:`onmt.modules.RNNDecoderBase.forward()`
         """
-        src = state.src
+        src = self.state["src"]
         src_words = src[:, :, 0].transpose(0, 1)
         tgt_words = tgt[:, :, 0].transpose(0, 1)
         src_batch, src_len = src_words.size()
         tgt_batch, tgt_len = tgt_words.size()
 
         # Initialize return variables.
-        outputs = []
+        dec_outs = []
         attns = {"std": []}
         if self._copy:
             attns["copy"] = []
@@ -199,82 +245,46 @@ class TransformerDecoder(nn.Module):
         tgt_pad_mask = tgt_words.data.eq(padding_idx).unsqueeze(1) \
             .expand(tgt_batch, tgt_len, tgt_len)
 
-        if state.cache is None:
+        if self.state["cache"] is None:
             saved_inputs = []
 
         for i in range(self.num_layers):
             prev_layer_input = None
-            if state.cache is None:
-                if state.previous_input is not None:
-                    prev_layer_input = state.previous_layer_inputs[i]
+            if self.state["cache"] is None:
+                if self.state["previous_input"] is not None:
+                    prev_layer_input = self.state["previous_input"][i]
             output, attn, all_input \
                 = self.transformer_layers[i](
                     output, src_memory_bank,
                     src_pad_mask, tgt_pad_mask,
                     previous_input=prev_layer_input,
-                    layer_cache=state.cache["layer_{}".format(i)]
-                    if state.cache is not None else None,
+                    layer_cache=self.state["cache"]["layer_{}".format(i)]
+                    if self.state["cache"] is not None else None,
                     step=step)
-            if state.cache is None:
+            if self.state["cache"] is None:
                 saved_inputs.append(all_input)
 
-        if state.cache is None:
+        if self.state["cache"] is None:
             saved_inputs = torch.stack(saved_inputs)
 
         output = self.layer_norm(output)
 
         # Process the result and update the attentions.
-        outputs = output.transpose(0, 1).contiguous()
+        dec_outs = output.transpose(0, 1).contiguous()
         attn = attn.transpose(0, 1).contiguous()
 
         attns["std"] = attn
         if self._copy:
             attns["copy"] = attn
+        attns = attn
 
-        if state.cache is None:
-            state = state.update_state(tgt, saved_inputs)
-
-        return outputs, state, attns
-
-    def init_decoder_state(self, src, memory_bank, enc_hidden,
-                           with_cache=False):
-        """ Init decoder state """
-        state = TransformerDecoderState(src)
-        if with_cache:
-            state._init_cache(memory_bank, self.num_layers,
-                              self.self_attn_type)
-        return state
-
-
-class TransformerDecoderState(DecoderState):
-    """ Transformer Decoder state base class """
-
-    def __init__(self, src):
-        """
-        Args:
-            src (FloatTensor): a sequence of source words tensors
-                    with optional feature tensors, of size (len x batch).
-        """
-        self.src = src
-        self.previous_input = None
-        self.previous_layer_inputs = None
-        self.cache = None
-
-    def detach(self):
-        if self.previous_input is not None:
-            self.previous_input = self.previous_input.detach()
-        if self.previous_layer_inputs is not None:
-            self.previous_layer_inputs = self.previous_layer_inputs.detach()
-        self.src = self.src.detach()
-
-    def update_state(self, new_input, previous_layer_inputs):
-        state = TransformerDecoderState(self.src)
-        state.previous_input = new_input
-        state.previous_layer_inputs = previous_layer_inputs
-        return state
+        if self.state["cache"] is None:
+            self.update_state(tgt, saved_inputs)
+        # TODO change the way attns is returned dict => list or tuple (onnx)
+        return dec_outs, attns
 
     def _init_cache(self, memory_bank, num_layers, self_attn_type):
-        self.cache = {}
+        self.state["cache"] = {}
         batch_size = memory_bank.size(1)
         depth = memory_bank.size(-1)
 
@@ -291,21 +301,4 @@ class TransformerDecoderState(DecoderState):
             else:
                 layer_cache["self_keys"] = None
                 layer_cache["self_values"] = None
-            self.cache["layer_{}".format(l)] = layer_cache
-
-    def map_batch_fn(self, fn):
-        def _recursive_map(struct, batch_dim=0):
-            for k, v in struct.items():
-                if v is not None:
-                    if isinstance(v, dict):
-                        _recursive_map(v)
-                    else:
-                        struct[k] = fn(v, batch_dim)
-
-        self.src = fn(self.src, 1)
-        if self.previous_input is not None:
-            self.previous_input = fn(self.previous_input, 1)
-        if self.previous_layer_inputs is not None:
-            self.previous_layer_inputs = fn(self.previous_layer_inputs, 1)
-        if self.cache is not None:
-            _recursive_map(self.cache)
+            self.state["cache"]["layer_{}".format(l)] = layer_cache
