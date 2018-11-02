@@ -276,7 +276,6 @@ class TransformerDecoder(nn.Module):
         attns["std"] = attn
         if self._copy:
             attns["copy"] = attn
-        attns = attn
 
         if self.state["cache"] is None:
             self.update_state(tgt, saved_inputs)
