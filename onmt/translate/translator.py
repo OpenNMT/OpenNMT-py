@@ -5,6 +5,7 @@ import argparse
 import codecs
 import os
 import math
+import copy
 
 import torch
 
@@ -371,6 +372,17 @@ class Translator(object):
         self.model.decoder.init_state(
             src, memory_bank, enc_states, with_cache=True)
 
+        results = {}
+        results["predictions"] = [[] for _ in range(batch_size)]  # noqa: F812
+        results["scores"] = [[] for _ in range(batch_size)]  # noqa: F812
+        results["attention"] = [[] for _ in range(batch_size)]  # noqa: F812
+        results["batch"] = batch
+        if "tgt" in batch.__dict__:
+            results["gold_score"] = self._score_target(
+                batch, copy.deepcopy(dec_states), memory_bank, src_lengths)
+        else:
+            results["gold_score"] = [0] * batch_size
+
         # Tile states and memory beam_size times.
         self.model.decoder.map_state(
             lambda state, dim: tile(state, beam_size, dim=dim))
@@ -399,13 +411,6 @@ class Translator(object):
 
         # Structure that holds finished hypotheses.
         hypotheses = [[] for _ in range(batch_size)]  # noqa: F812
-
-        results = {}
-        results["predictions"] = [[] for _ in range(batch_size)]  # noqa: F812
-        results["scores"] = [[] for _ in range(batch_size)]  # noqa: F812
-        results["attention"] = [[] for _ in range(batch_size)]  # noqa: F812
-        results["gold_score"] = [0] * batch_size
-        results["batch"] = batch
 
         for step in range(max_length):
             decoder_input = alive_seq[:, -1].view(1, -1, 1)
@@ -684,7 +689,6 @@ class Translator(object):
         else:
             src_lengths = None
         src = inputters.make_features(batch, 'src', data_type)
-        tgt_in = inputters.make_features(batch, 'tgt')[:-1]
 
         #  (1) run the encoder on the src
         enc_states, memory_bank, src_lengths \
@@ -693,6 +697,10 @@ class Translator(object):
 
         #  (2) if a target is specified, compute the 'goldScore'
         #  (i.e. log likelihood) of the target under the model
+        return self._score_target(batch, dec_states, memory_bank, src_lengths)
+
+    def _score_target(self, batch, dec_states, memory_bank, src_lengths):
+        tgt_in = inputters.make_features(batch, 'tgt')[:-1]
         tt = torch.cuda if self.cuda else torch
         gold_scores = tt.FloatTensor(batch.batch_size).fill_(0)
         dec_out, _ = self.model.decoder(
