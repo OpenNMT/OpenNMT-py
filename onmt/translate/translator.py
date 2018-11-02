@@ -379,7 +379,7 @@ class Translator(object):
         results["batch"] = batch
         if "tgt" in batch.__dict__:
             results["gold_score"] = self._score_target(
-                batch, copy.deepcopy(dec_states), memory_bank, src_lengths)
+                batch, copy.deepcopy(memory_bank, src_lengths))
         else:
             results["gold_score"] = [0] * batch_size
 
@@ -697,9 +697,9 @@ class Translator(object):
 
         #  (2) if a target is specified, compute the 'goldScore'
         #  (i.e. log likelihood) of the target under the model
-        return self._score_target(batch, dec_states, memory_bank, src_lengths)
+        return self._score_target(batch, memory_bank, src_lengths)
 
-    def _score_target(self, batch, dec_states, memory_bank, src_lengths):
+    def _score_target(self, batch, memory_bank, src_lengths):
         tgt_in = inputters.make_features(batch, 'tgt')[:-1]
         tt = torch.cuda if self.cuda else torch
         gold_scores = tt.FloatTensor(batch.batch_size).fill_(0)
