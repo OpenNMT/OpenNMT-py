@@ -354,7 +354,6 @@ class Translator(object):
         # TODO: faster code path for beam_size == 1.
 
         # TODO: support these blacklisted features.
-        assert not self.copy_attn
         assert not self.dump_beam
         assert not self.use_filter_pred
         assert self.block_ngram_repeat == 0
@@ -390,6 +389,8 @@ class Translator(object):
             lambda state, dim: tile(state, beam_size, dim=dim))
         memory_bank = tile(memory_bank, beam_size, dim=1)
         memory_lengths = tile(src_lengths, beam_size)
+        src_map = (tile(batch.src_map, beam_size, dim=1)
+                   if data.data_type == 'text' and self.copy_attn else None)
 
         top_beam_finished = torch.zeros([batch_size], dtype=torch.uint8)
         batch_offset = torch.arange(batch_size, dtype=torch.long)
@@ -416,16 +417,36 @@ class Translator(object):
 
         for step in range(max_length):
             decoder_input = alive_seq[:, -1].view(1, -1, 1)
+            if self.copy_attn:
+                # Turn any copied words to UNKs (index 0).
+                decoder_input = decoder_input.masked_fill(
+                    decoder_input.gt(len(vocab) - 1), 0)
 
             # Decoder forward.
-            dec_out, attn = self.model.decoder(
+            dec_out, dec_attn = self.model.decoder(
                 decoder_input,
                 memory_bank,
                 memory_lengths=memory_lengths,
                 step=step)
+            dec_out = dec_out.squeeze(0)
 
             # Generator forward.
-            log_probs = self.model.generator.forward(dec_out.squeeze(0))
+            if not self.copy_attn:
+                log_probs = self.model.generator.forward(dec_out)
+                attn = dec_attn["std"]
+            else:
+                scores = self.model.generator.forward(
+                    dec_out, dec_attn["copy"].squeeze(0), src_map)
+                scores = data.collapse_copy_scores(
+                    scores.view(-1, beam_size, scores.size(-1)),
+                    batch,
+                    vocab,
+                    data.src_vocabs,
+                    batch_dim=0,
+                    batch_offset=batch_offset)
+                log_probs = scores.view(-1, scores.size(-1)).log()
+                attn = dec_attn["copy"]
+
             vocab_size = log_probs.size(-1)
 
             if step < min_length:
@@ -460,7 +481,7 @@ class Translator(object):
                 [alive_seq.index_select(0, select_indices),
                  topk_ids.view(-1, 1)], -1)
             if return_attention:
-                current_attn = attn["std"].index_select(1, select_indices)
+                current_attn = attn.index_select(1, select_indices)
                 if alive_attn is None:
                     alive_attn = current_attn
                 else:
@@ -531,6 +552,8 @@ class Translator(object):
             memory_lengths = memory_lengths.index_select(0, select_indices)
             self.model.decoder.map_state(
                 lambda state, dim: state.index_select(dim, select_indices))
+            if src_map is not None:
+                src_map = src_map.index_select(1, select_indices)
 
         return results
 
