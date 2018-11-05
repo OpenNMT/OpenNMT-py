@@ -108,6 +108,7 @@ class ErrorHandler(object):
 if __name__ == "__main__":
     parser = configargparse.ArgumentParser(
         description='train.py',
+        config_file_parser_class=configargparse.YAMLConfigFileParser,
         formatter_class=configargparse.ArgumentDefaultsHelpFormatter)
 
     opts.config_opts(parser)

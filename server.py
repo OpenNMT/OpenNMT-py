@@ -107,6 +107,7 @@ def start(config_file,
 
 if __name__ == '__main__':
     parser = configargparse.ArgumentParser(
+        config_file_parser_class=configargparse.YAMLConfigFileParser,
         description="OpenNMT-py REST Server")
     parser.add_argument("--ip", type=str, default="0.0.0.0")
     parser.add_argument("--port", type=int, default="5000")

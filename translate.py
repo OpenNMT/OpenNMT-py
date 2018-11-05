@@ -22,6 +22,7 @@ def main(opt):
 if __name__ == "__main__":
     parser = configargparse.ArgumentParser(
         description='translate.py',
+        config_file_parser_class=configargparse.YAMLConfigFileParser,
         formatter_class=configargparse.ArgumentDefaultsHelpFormatter)
     opts.config_opts(parser)
     opts.add_md_help_argument(parser)

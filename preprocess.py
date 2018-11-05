@@ -34,6 +34,7 @@ def parse_args():
     """ Parsing arguments """
     parser = configargparse.ArgumentParser(
         description='preprocess.py',
+        config_file_parser_class=configargparse.YAMLConfigFileParser,
         formatter_class=configargparse.ArgumentDefaultsHelpFormatter)
 
     opts.config_opts(parser)

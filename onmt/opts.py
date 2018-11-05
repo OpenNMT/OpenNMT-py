@@ -291,9 +291,9 @@ def train_opts(parser):
               help="""Keep X checkpoints (negative: keep all)""")
 
     # GPU
-    group.add('--gpuid', '-gpuid', default=[], nargs='+', type=int,
+    group.add('--gpuid', '-gpuid', default=[], nargs='*', type=int,
               help="Deprecated see world_size and gpu_ranks.")
-    group.add('--gpu_ranks', '-gpu_ranks', default=[], nargs='+', type=int,
+    group.add('--gpu_ranks', '-gpu_ranks', default=[], nargs='*', type=int,
               help="list of ranks of each process.")
     group.add('--world_size', '-world_size', default=1, type=int,
               help="total number of distributed processes.")
@@ -436,8 +436,8 @@ def train_opts(parser):
     group.add('--decay_steps', '-decay_steps', type=int, default=10000,
               help="""Decay every decay_steps""")
 
-    group.add('--decay_method', '-decay_method', type=str, default="",
-              choices=['noam'], help="Use a custom decay rate.")
+    group.add('--decay_method', '-decay_method', type=str, default="none",
+              choices=['noam', 'none'], help="Use a custom decay rate.")
     group.add('--warmup_steps', '-warmup_steps', type=int, default=4000,
               help="""Number of warmup steps for custom decay.""")
 
