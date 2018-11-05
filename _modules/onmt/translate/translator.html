@@ -546,7 +546,13 @@
         <span class="c1"># Tile states and memory beam_size times.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">map_state</span><span class="p">(</span>
             <span class="k">lambda</span> <span class="n">state</span><span class="p">,</span> <span class="n">dim</span><span class="p">:</span> <span class="n">tile</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">))</span>
-        <span class="n">memory_bank</span> <span class="o">=</span> <span class="n">tile</span><span class="p">(</span><span class="n">memory_bank</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">memory_bank</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="n">memory_bank</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">tile</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">memory_bank</span><span class="p">)</span>
+            <span class="n">mb_device</span> <span class="o">=</span> <span class="n">memory_bank</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">device</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">memory_bank</span> <span class="o">=</span> <span class="n">tile</span><span class="p">(</span><span class="n">memory_bank</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">mb_device</span> <span class="o">=</span> <span class="n">memory_bank</span><span class="o">.</span><span class="n">device</span>
+
         <span class="n">memory_lengths</span> <span class="o">=</span> <span class="n">tile</span><span class="p">(</span><span class="n">src_lengths</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">)</span>
         <span class="n">src_map</span> <span class="o">=</span> <span class="p">(</span><span class="n">tile</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">src_map</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
                    <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">data_type</span> <span class="o">==</span> <span class="s1">&#39;text&#39;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
@@ -558,18 +564,18 @@
             <span class="n">batch_size</span> <span class="o">*</span> <span class="n">beam_size</span><span class="p">,</span>
             <span class="n">step</span><span class="o">=</span><span class="n">beam_size</span><span class="p">,</span>
             <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span>
-            <span class="n">device</span><span class="o">=</span><span class="n">memory_bank</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+            <span class="n">device</span><span class="o">=</span><span class="n">mb_device</span><span class="p">)</span>
         <span class="n">alive_seq</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">full</span><span class="p">(</span>
             <span class="p">[</span><span class="n">batch_size</span> <span class="o">*</span> <span class="n">beam_size</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
             <span class="n">start_token</span><span class="p">,</span>
             <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span>
-            <span class="n">device</span><span class="o">=</span><span class="n">memory_bank</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+            <span class="n">device</span><span class="o">=</span><span class="n">mb_device</span><span class="p">)</span>
         <span class="n">alive_attn</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="c1"># Give full probability to the first beam on the first step.</span>
         <span class="n">topk_log_probs</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">0.0</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;-inf&quot;</span><span class="p">)]</span> <span class="o">*</span> <span class="p">(</span><span class="n">beam_size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span>
-                         <span class="n">device</span><span class="o">=</span><span class="n">memory_bank</span><span class="o">.</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">batch_size</span><span class="p">))</span>
+                         <span class="n">device</span><span class="o">=</span><span class="n">mb_device</span><span class="p">)</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">batch_size</span><span class="p">))</span>
 
         <span class="c1"># Structure that holds finished hypotheses.</span>
         <span class="n">hypotheses</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)]</span>  <span class="c1"># noqa: F812</span>
@@ -707,7 +713,12 @@
                               <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">alive_attn</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
 
             <span class="c1"># Reorder states.</span>
-            <span class="n">memory_bank</span> <span class="o">=</span> <span class="n">memory_bank</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">select_indices</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">memory_bank</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+                <span class="n">memory_bank</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">select_indices</span><span class="p">)</span>
+                                    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">memory_bank</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">memory_bank</span> <span class="o">=</span> <span class="n">memory_bank</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">select_indices</span><span class="p">)</span>
+
             <span class="n">memory_lengths</span> <span class="o">=</span> <span class="n">memory_lengths</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">select_indices</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">map_state</span><span class="p">(</span>
                 <span class="k">lambda</span> <span class="n">state</span><span class="p">,</span> <span class="n">dim</span><span class="p">:</span> <span class="n">state</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">select_indices</span><span class="p">))</span>
