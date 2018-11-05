@@ -388,7 +388,8 @@ class Translator(object):
         self.model.decoder.map_state(
             lambda state, dim: tile(state, beam_size, dim=dim))
         if isinstance(memory_bank, tuple):
-            memory_bank = tuple(tile(x.data, beam_size, dim=1) for x in memory_bank)
+            memory_bank = tuple(tile(x.data, beam_size, dim=1)
+                                for x in memory_bank)
             mb_device = memory_bank[0].device
         else:
             memory_bank = tile(memory_bank, beam_size, dim=1)
@@ -555,10 +556,11 @@ class Translator(object):
 
             # Reorder states.
             if isinstance(memory_bank, tuple):
-                memory_bank = tuple(x.data.index_select(1, select_indices) for x in memory_bank)
+                memory_bank = tuple(x.data.index_select(1, select_indices)
+                                    for x in memory_bank)
             else:
                 memory_bank = memory_bank.index_select(1, select_indices)
-            
+
             memory_lengths = memory_lengths.index_select(0, select_indices)
             self.model.decoder.map_state(
                 lambda state, dim: state.index_select(dim, select_indices))

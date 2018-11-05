@@ -103,7 +103,7 @@ class EnsembleGenerator(nn.Module):
             distributions = [model_generator(hidden[i])
                              for i, model_generator
                              in enumerate(self.model_generators)]
- 
+
         return torch.stack(distributions).mean(0)
 
 
