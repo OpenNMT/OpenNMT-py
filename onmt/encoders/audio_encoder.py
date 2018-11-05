@@ -1,7 +1,12 @@
 """ Audio encoder """
 import math
+
 import torch.nn as nn
-import torch.nn.functional as F
+
+from torch.nn.utils.rnn import pack_padded_sequence as pack
+from torch.nn.utils.rnn import pad_packed_sequence as unpack
+
+from onmt.utils.rnn_factory import rnn_factory
 
 
 class AudioEncoder(nn.Module):
@@ -18,55 +23,97 @@ class AudioEncoder(nn.Module):
         window_size (int): input spec
 
     """
-
-    def __init__(self, num_layers, bidirectional, rnn_size, dropout,
+    def __init__(self, rnn_type, enc_layers, dec_layers, brnn,
+                 enc_rnn_size, dec_rnn_size, enc_pooling, dropout,
                  sample_rate, window_size):
         super(AudioEncoder, self).__init__()
-        self.num_layers = num_layers
-        self.num_directions = 2 if bidirectional else 1
-        self.hidden_size = rnn_size
-
-        self.layer1 = nn.Conv2d(1, 32, kernel_size=(41, 11),
-                                padding=(0, 10), stride=(2, 2))
-        self.batch_norm1 = nn.BatchNorm2d(32)
-        self.layer2 = nn.Conv2d(32, 32, kernel_size=(21, 11),
-                                padding=(0, 0), stride=(2, 1))
-        self.batch_norm2 = nn.BatchNorm2d(32)
-
+        self.enc_layers = enc_layers
+        self.rnn_type = rnn_type
+        self.dec_layers = dec_layers
+        num_directions = 2 if brnn else 1
+        self.num_directions = num_directions
+        assert enc_rnn_size % num_directions == 0
+        enc_rnn_size_real = enc_rnn_size // num_directions
+        assert dec_rnn_size % num_directions == 0
+        self.dec_rnn_size = dec_rnn_size
+        dec_rnn_size_real = dec_rnn_size // num_directions
+        self.dec_rnn_size_real = dec_rnn_size_real
+        self.dec_rnn_size = dec_rnn_size
         input_size = int(math.floor((sample_rate * window_size) / 2) + 1)
-        input_size = int(math.floor(input_size - 41) / 2 + 1)
-        input_size = int(math.floor(input_size - 21) / 2 + 1)
-        input_size *= 32
-        self.rnn = nn.LSTM(input_size, rnn_size,
-                           num_layers=num_layers,
-                           dropout=dropout,
-                           bidirectional=bidirectional)
+        enc_pooling = enc_pooling.split(',')
+        assert len(enc_pooling) == enc_layers or len(enc_pooling) == 1
+        if len(enc_pooling) == 1:
+            enc_pooling = enc_pooling * enc_layers
+        enc_pooling = [int(p) for p in enc_pooling]
+        self.enc_pooling = enc_pooling
 
-    def load_pretrained_vectors(self, opt):
-        """ Pass in needed options only when modify function definition."""
-        pass
+        if dropout > 0:
+            self.dropout = nn.Dropout(dropout)
+        else:
+            self.dropout = None
+        self.W = nn.Linear(enc_rnn_size, dec_rnn_size, bias=False)
+        self.batchnorm_0 = nn.BatchNorm1d(enc_rnn_size, affine=True)
+        self.rnn_0, self.no_pack_padded_seq = \
+            rnn_factory(rnn_type,
+                        input_size=input_size,
+                        hidden_size=enc_rnn_size_real,
+                        num_layers=1,
+                        dropout=dropout,
+                        bidirectional=brnn)
+        self.pool_0 = nn.MaxPool1d(enc_pooling[0])
+        for l in range(enc_layers - 1):
+            batchnorm = nn.BatchNorm1d(enc_rnn_size, affine=True)
+            rnn, _ = \
+                rnn_factory(rnn_type,
+                            input_size=enc_rnn_size,
+                            hidden_size=enc_rnn_size_real,
+                            num_layers=1,
+                            dropout=dropout,
+                            bidirectional=brnn)
+            setattr(self, 'rnn_%d' % (l + 1), rnn)
+            setattr(self, 'pool_%d' % (l + 1),
+                    nn.MaxPool1d(enc_pooling[l + 1]))
+            setattr(self, 'batchnorm_%d' % (l + 1), batchnorm)
 
     def forward(self, src, lengths=None):
         "See :obj:`onmt.encoders.encoder.EncoderBase.forward()`"
-        # (batch_size, 1, nfft, t)
-        # layer 1
-        src = self.batch_norm1(self.layer1(src[:, :, :, :]))
 
-        # (batch_size, 32, nfft/2, t/2)
-        src = F.hardtanh(src, 0, 20, inplace=True)
+        batch_size, _, nfft, t = src.size()
+        src = src.transpose(0, 1).transpose(0, 3).contiguous() \
+                 .view(t, batch_size, nfft)
+        orig_lengths = lengths
+        lengths = lengths.view(-1).tolist()
 
-        # (batch_size, 32, nfft/2/2, t/2)
-        # layer 2
-        src = self.batch_norm2(self.layer2(src))
+        for l in range(self.enc_layers):
+            rnn = getattr(self, 'rnn_%d' % l)
+            pool = getattr(self, 'pool_%d' % l)
+            batchnorm = getattr(self, 'batchnorm_%d' % l)
+            stride = self.enc_pooling[l]
+            packed_emb = pack(src, lengths)
+            memory_bank, tmp = rnn(packed_emb)
+            memory_bank = unpack(memory_bank)[0]
+            t, _, _ = memory_bank.size()
+            memory_bank = memory_bank.transpose(0, 2)
+            memory_bank = pool(memory_bank)
+            lengths = [int(math.floor((length - stride)/stride + 1))
+                       for length in lengths]
+            memory_bank = memory_bank.transpose(0, 2)
+            src = memory_bank
+            t, _, num_feat = src.size()
+            src = batchnorm(src.contiguous().view(-1, num_feat))
+            src = src.view(t, -1, num_feat)
+            if self.dropout and l + 1 != self.enc_layers:
+                src = self.dropout(src)
 
-        # (batch_size, 32, nfft/2/2, t/2)
-        src = F.hardtanh(src, 0, 20, inplace=True)
+        memory_bank = memory_bank.contiguous().view(-1, memory_bank.size(2))
+        memory_bank = self.W(memory_bank).view(-1, batch_size,
+                                               self.dec_rnn_size)
 
-        batch_size = src.size(0)
-        length = src.size(3)
-        src = src.view(batch_size, -1, length)
-        src = src.transpose(0, 2).transpose(1, 2)
-
-        output, hidden = self.rnn(src)
-
-        return hidden, output
+        state = memory_bank.new_full((self.dec_layers * self.num_directions,
+                                      batch_size, self.dec_rnn_size_real), 0)
+        if self.rnn_type == 'LSTM':
+            # The encoder hidden is  (layers*directions) x batch x dim.
+            encoder_final = (state, state)
+        else:
+            encoder_final = state
+        return encoder_final, memory_bank, orig_lengths.new_tensor(lengths)

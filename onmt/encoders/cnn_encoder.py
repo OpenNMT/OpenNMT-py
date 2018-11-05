@@ -40,4 +40,4 @@ class CNNEncoder(EncoderBase):
         out = self.cnn(emb_remap)
 
         return emb_remap.squeeze(3).transpose(0, 1).contiguous(), \
-            out.squeeze(3).transpose(0, 1).contiguous()
+            out.squeeze(3).transpose(0, 1).contiguous(), lengths

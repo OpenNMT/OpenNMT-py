@@ -13,23 +13,23 @@ import torch.distributed
 from onmt.utils.logging import logger
 
 
-def is_master(opt):
-    return opt.gpu_rank == 0
+def is_master(opt, device_id):
+    return opt.gpu_ranks[device_id] == 0
 
 
-def multi_init(opt):
-    if len(opt.gpuid) == 1:
-        raise ValueError('Cannot initialize multiprocess with one gpu only')
-    dist_init_method = 'tcp://localhost:10000'
-    dist_world_size = len(opt.gpuid)
+def multi_init(opt, device_id):
+    dist_init_method = 'tcp://{master_ip}:{master_port}'.format(
+        master_ip=opt.master_ip,
+        master_port=opt.master_port)
+    dist_world_size = opt.world_size
     torch.distributed.init_process_group(
         backend=opt.gpu_backend, init_method=dist_init_method,
-        world_size=dist_world_size, rank=opt.gpu_rank)
-    opt.gpu_rank = torch.distributed.get_rank()
-    if not is_master(opt):
+        world_size=dist_world_size, rank=opt.gpu_ranks[device_id])
+    gpu_rank = torch.distributed.get_rank()
+    if not is_master(opt, device_id):
         logger.disabled = True
 
-    return opt.gpu_rank
+    return gpu_rank
 
 
 def all_reduce_and_rescale_tensors(tensors, rescale_denom,

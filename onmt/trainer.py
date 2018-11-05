@@ -17,7 +17,8 @@ import onmt.utils
 from onmt.utils.logging import logger
 
 
-def build_trainer(opt, model, fields, optim, data_type, model_saver=None):
+def build_trainer(opt, device_id, model, fields,
+                  optim, data_type, model_saver=None):
     """
     Simplify `Trainer` creation based on user `opt`s*
 
@@ -40,8 +41,12 @@ def build_trainer(opt, model, fields, optim, data_type, model_saver=None):
     shard_size = opt.max_generator_batches
     norm_method = opt.normalization
     grad_accum_count = opt.accum_count
-    n_gpu = len(opt.gpuid)
-    gpu_rank = opt.gpu_rank
+    n_gpu = opt.world_size
+    if device_id >= 0:
+        gpu_rank = opt.gpu_ranks[device_id]
+    else:
+        gpu_rank = 0
+        n_gpu = 0
     gpu_verbose_level = opt.gpu_verbose_level
 
     report_manager = onmt.utils.build_report_manager(opt)
@@ -222,13 +227,15 @@ class Trainer(object):
             src = inputters.make_features(batch, 'src', self.data_type)
             if self.data_type == 'text':
                 _, src_lengths = batch.src
+            elif self.data_type == 'audio':
+                src_lengths = batch.src_lengths
             else:
                 src_lengths = None
 
             tgt = inputters.make_features(batch, 'tgt')
 
             # F-prop through the model.
-            outputs, attns, _ = self.model(src, tgt, src_lengths)
+            outputs, attns = self.model(src, tgt, src_lengths)
 
             # Compute loss.
             batch_stats = self.valid_loss.monolithic_compute_loss(
@@ -255,11 +262,13 @@ class Trainer(object):
             else:
                 trunc_size = target_size
 
-            dec_state = None
+            # dec_state = None
             src = inputters.make_features(batch, 'src', self.data_type)
             if self.data_type == 'text':
                 _, src_lengths = batch.src
                 report_stats.n_src_words += src_lengths.sum().item()
+            elif self.data_type == 'audio':
+                src_lengths = batch.src_lengths
             else:
                 src_lengths = None
 
@@ -272,8 +281,8 @@ class Trainer(object):
                 # 2. F-prop all but generator.
                 if self.grad_accum_count == 1:
                     self.model.zero_grad()
-                outputs, attns, dec_state = \
-                    self.model(src, tgt, src_lengths, dec_state)
+                outputs, attns = \
+                    self.model(src, tgt, src_lengths)
 
                 # 3. Compute loss in shards for memory efficiency.
                 batch_stats = self.train_loss.sharded_compute_loss(
@@ -294,8 +303,11 @@ class Trainer(object):
                     self.optim.step()
 
                 # If truncated, don't backprop fully.
-                if dec_state is not None:
-                    dec_state.detach()
+                # TO CHECK
+                # if dec_state is not None:
+                #    dec_state.detach()
+                if self.model.decoder.state is not None:
+                    self.model.decoder.detach_state()
 
         # in case of multi step gradient accumulation,
         # update only after accum batches

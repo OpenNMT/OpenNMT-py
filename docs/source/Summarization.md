@@ -94,7 +94,8 @@ python train.py -save_model models/cnndm \
                 -copy_loss_by_seqlength \
                 -bridge \
                 -seed 777 \
-                -gpuid X
+                -world_size 2 \
+                -gpu_ranks 0 1
 ```
 
 (2) CNNDM Transformer
@@ -129,7 +130,8 @@ python -u train.py -data data/cnndm/CNNDM \
                    -share_embeddings \
                    -copy_attn \
                    -param_init_glorot \
-                   -gpuid 3
+                   -world_size 2 \
+                   -gpu_ranks 0 1
 ```
 
 (3) Gigaword

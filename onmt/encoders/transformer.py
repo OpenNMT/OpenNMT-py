@@ -112,4 +112,4 @@ class TransformerEncoder(EncoderBase):
             out = self.transformer[i](out, mask)
         out = self.layer_norm(out)
 
-        return emb, out.transpose(0, 1).contiguous()
+        return emb, out.transpose(0, 1).contiguous(), lengths

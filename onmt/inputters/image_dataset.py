@@ -34,12 +34,14 @@ class ImageDataset(DatasetBase):
 
     def __init__(self, fields, src_examples_iter, tgt_examples_iter,
                  num_src_feats=0, num_tgt_feats=0,
-                 tgt_seq_length=0, use_filter_pred=True):
+                 tgt_seq_length=0, use_filter_pred=True,
+                 image_channel_size=3):
         self.data_type = 'img'
 
         self.n_src_feats = num_src_feats
         self.n_tgt_feats = num_tgt_feats
 
+        self.image_channel_size = image_channel_size
         if tgt_examples_iter is not None:
             examples_iter = (self._join_dicts(src, tgt) for src, tgt in
                              zip(src_examples_iter, tgt_examples_iter))
@@ -79,7 +81,8 @@ class ImageDataset(DatasetBase):
         return (ex.src.size(2), ex.src.size(1))
 
     @staticmethod
-    def make_image_examples_nfeats_tpl(img_iter, img_path, img_dir):
+    def make_image_examples_nfeats_tpl(img_iter, img_path, img_dir,
+                                       image_channel_size=3):
         """
         Note: one of img_iter and img_path must be not None
         Args:
@@ -94,8 +97,10 @@ class ImageDataset(DatasetBase):
         """
         if img_iter is None:
             if img_path is not None:
-                img_iter = ImageDataset.make_img_iterator_from_file(img_path,
-                                                                    img_dir)
+                img_iter = ImageDataset. \
+                    make_img_iterator_from_file(img_path,
+                                                img_dir,
+                                                image_channel_size)
             else:
                 raise ValueError("""One of 'img_iter' and 'img_path'
                                     must be not None""")
@@ -116,7 +121,7 @@ class ImageDataset(DatasetBase):
         Yields:
             a dictionary containing image data, path and index for each line.
         """
-        assert (src_dir is not None) and os.path.exists(src_dir),\
+        assert (src_dir is not None) and os.path.exists(src_dir), \
             'src_dir must be a valid directory if data_type is img'
 
         for index, (img, filename) in enumerate(img_iter):
@@ -126,12 +131,12 @@ class ImageDataset(DatasetBase):
                     continue
 
             example_dict = {side: img,
-                            side+'_path': filename,
+                            side + '_path': filename,
                             'indices': index}
             yield example_dict
 
     @staticmethod
-    def make_img_iterator_from_file(path, src_dir):
+    def make_img_iterator_from_file(path, src_dir, image_channel_size=3):
         """
         Args:
             path(str):
@@ -143,6 +148,7 @@ class ImageDataset(DatasetBase):
         """
         from PIL import Image
         from torchvision import transforms
+        import cv2
 
         with codecs.open(path, "r", "utf-8") as corpus_file:
             for line in corpus_file:
@@ -154,7 +160,12 @@ class ImageDataset(DatasetBase):
                 assert os.path.exists(img_path), \
                     'img path %s not found' % (line.strip())
 
-                img = transforms.ToTensor()(Image.open(img_path))
+                if (image_channel_size == 1):
+                    img = transforms.ToTensor()(
+                        Image.fromarray(cv2.imread(img_path, 0)))
+                else:
+                    img = transforms.ToTensor()(Image.open(img_path))
+
                 yield img, filename
 
     @staticmethod

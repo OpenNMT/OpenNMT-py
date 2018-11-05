@@ -132,25 +132,57 @@ for p in test_databuild:
     _add_test(p, 'dataset_build')
 
 # Test image preprocessing
-for p in copy.deepcopy(test_databuild):
-    p.append(('data_type', 'img'))
-    p.append(('src_dir', '/tmp/im2text/images'))
-    p.append(('train_src', '/tmp/im2text/src-train-head.txt'))
-    p.append(('train_tgt', '/tmp/im2text/tgt-train-head.txt'))
-    p.append(('valid_src', '/tmp/im2text/src-val-head.txt'))
-    p.append(('valid_tgt', '/tmp/im2text/tgt-val-head.txt'))
-    _add_test(p, 'dataset_build')
+test_databuild = [[],
+                  [('tgt_vocab_size', 1)],
+                  [('tgt_vocab_size', 10000)],
+                  [('tgt_seq_length', 1)],
+                  [('tgt_seq_length', 5000)],
+                  [('tgt_seq_length_trunc', 1)],
+                  [('tgt_seq_length_trunc', 5000)],
+                  [('shuffle', 0)],
+                  [('lower', True)],
+                  [('shard_size', 5)],
+                  [('shard_size', 50)],
+                  [('tgt_vocab', '/tmp/tgt_vocab.txt')],
+                  ]
+test_databuild_common = [('data_type', 'img'),
+                         ('src_dir', '/tmp/im2text/images'),
+                         ('train_src', '/tmp/im2text/src-train-head.txt'),
+                         ('train_tgt', '/tmp/im2text/tgt-train-head.txt'),
+                         ('valid_src', '/tmp/im2text/src-val-head.txt'),
+                         ('valid_tgt', '/tmp/im2text/tgt-val-head.txt'),
+                         ]
+for p in test_databuild:
+    _add_test(p + test_databuild_common, 'dataset_build')
 
 # Test audio preprocessing
-for p in copy.deepcopy(test_databuild):
-    p.append(('data_type', 'audio'))
-    p.append(('src_dir', '/tmp/speech/an4_dataset'))
-    p.append(('train_src', '/tmp/speech/src-train-head.txt'))
-    p.append(('train_tgt', '/tmp/speech/tgt-train-head.txt'))
-    p.append(('valid_src', '/tmp/speech/src-val-head.txt'))
-    p.append(('valid_tgt', '/tmp/speech/tgt-val-head.txt'))
-    p.append(('sample_rate', 16000))
-    p.append(('window_size', 0.04))
-    p.append(('window_stride', 0.02))
-    p.append(('window', 'hamming'))
-    _add_test(p, 'dataset_build')
+test_databuild = [[],
+                  [('tgt_vocab_size', 1)],
+                  [('tgt_vocab_size', 10000)],
+                  [('src_seq_length', 1)],
+                  [('src_seq_length', 5000)],
+                  [('src_seq_length_trunc', 3200)],
+                  [('src_seq_length_trunc', 5000)],
+                  [('tgt_seq_length', 1)],
+                  [('tgt_seq_length', 5000)],
+                  [('tgt_seq_length_trunc', 1)],
+                  [('tgt_seq_length_trunc', 5000)],
+                  [('shuffle', 0)],
+                  [('lower', True)],
+                  [('shard_size', 5)],
+                  [('shard_size', 50)],
+                  [('tgt_vocab', '/tmp/tgt_vocab.txt')],
+                  ]
+test_databuild_common = [('data_type', 'audio'),
+                         ('src_dir', '/tmp/speech/an4_dataset'),
+                         ('train_src', '/tmp/speech/src-train-head.txt'),
+                         ('train_tgt', '/tmp/speech/tgt-train-head.txt'),
+                         ('valid_src', '/tmp/speech/src-val-head.txt'),
+                         ('valid_tgt', '/tmp/speech/tgt-val-head.txt'),
+                         ('sample_rate', 16000),
+                         ('window_size', 0.04),
+                         ('window_stride', 0.02),
+                         ('window', 'hamming'),
+                         ]
+for p in test_databuild:
+    _add_test(p + test_databuild_common, 'dataset_build')

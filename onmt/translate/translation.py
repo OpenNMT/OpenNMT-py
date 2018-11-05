@@ -42,7 +42,7 @@ class TranslationBuilder(object):
             if self.replace_unk and attn is not None and src is not None:
                 if tok_str == vocab.itos[inputters.UNK]:
                     _, max_index = attn[i].max(0)
-                    tok_str = src_raw[max_index[0]]
+                    tok_str = src_raw[max_index.item()]
             tokens.append(tok_str)
         return tokens
 

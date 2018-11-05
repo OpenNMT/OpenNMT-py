@@ -12,8 +12,9 @@ import torch
 import torch.nn as nn
 
 import onmt
-import onmt.io
+import onmt.inputters
 import onmt.modules
+import onmt.utils
 ```
 
 We begin by loading in the vocabulary for the model of interest. This will let us check vocab size and to get the special ids for padding.
@@ -21,8 +22,8 @@ We begin by loading in the vocabulary for the model of interest. This will let u
 
 ```python
 vocab = dict(torch.load("../../data/data.vocab.pt"))
-src_padding = vocab["src"].stoi[onmt.io.PAD_WORD]
-tgt_padding = vocab["tgt"].stoi[onmt.io.PAD_WORD]
+src_padding = vocab["src"].stoi[onmt.inputters.PAD_WORD]
+tgt_padding = vocab["tgt"].stoi[onmt.inputters.PAD_WORD]
 ```
 
 Next we specify the core model itself. Here we will build a small model with an encoder and an attention based input feeding decoder. Both models will be RNNs and the encoder will be bidirectional
@@ -35,30 +36,30 @@ rnn_size = 6
 encoder_embeddings = onmt.modules.Embeddings(emb_size, len(vocab["src"]),
                                              word_padding_idx=src_padding)
 
-encoder = onmt.modules.RNNEncoder(hidden_size=rnn_size, num_layers=1,
+encoder = onmt.encoders.RNNEncoder(hidden_size=rnn_size, num_layers=1,
                                  rnn_type="LSTM", bidirectional=True,
                                  embeddings=encoder_embeddings)
 
 decoder_embeddings = onmt.modules.Embeddings(emb_size, len(vocab["tgt"]),
                                              word_padding_idx=tgt_padding)
-decoder = onmt.modules.InputFeedRNNDecoder(hidden_size=rnn_size, num_layers=1,
+decoder = onmt.decoders.decoder.InputFeedRNNDecoder(hidden_size=rnn_size, num_layers=1,
                                            bidirectional_encoder=True,
                                            rnn_type="LSTM", embeddings=decoder_embeddings)
-model = onmt.modules.NMTModel(encoder, decoder)
+model = onmt.models.model.NMTModel(encoder, decoder)
 
 # Specify the tgt word generator and loss computation module
 model.generator = nn.Sequential(
             nn.Linear(rnn_size, len(vocab["tgt"])),
             nn.LogSoftmax())
-loss = onmt.Loss.NMTLossCompute(model.generator, vocab["tgt"])
+loss = onmt.utils.loss.NMTLossCompute(model.generator, vocab["tgt"])
 ```
 
 Now we set up the optimizer. This could be a core torch optim class, or our wrapper which handles learning rate updates and gradient normalization automatically.
 
 
 ```python
-optim = onmt.Optim(method="sgd", lr=1, max_grad_norm=2)
-optim.set_parameters(model.parameters())
+optim = onmt.utils.optimizers.Optimizer(method="sgd", learning_rate=1, max_grad_norm=2)
+optim.set_parameters(model.named_parameters())
 ```
 
 Now we load the data from disk. Currently will need to call a function to load the fields into the data as well.
@@ -66,8 +67,8 @@ Now we load the data from disk. Currently will need to call a function to load t
 
 ```python
 # Load some data
-data = torch.load("../../data/data.train.pt")
-valid_data = torch.load("../../data/data.valid.pt")
+data = torch.load("../../data/data.train.1.pt")
+valid_data = torch.load("../../data/data.valid.1.pt")
 data.load_fields(vocab)
 valid_data.load_fields(vocab)
 data.examples = data.examples[:100]
@@ -77,11 +78,11 @@ To iterate through the data itself we use a torchtext iterator class. We specify
 
 
 ```python
-train_iter = onmt.io.OrderedIterator(
+train_iter = onmt.inputters.OrderedIterator(
                 dataset=data, batch_size=10,
                 device=-1,
                 repeat=False)
-valid_iter = onmt.io.OrderedIterator(
+valid_iter = onmt.inputters.OrderedIterator(
                 dataset=valid_data, batch_size=10,
                 device=-1,
                 train=False)
@@ -91,7 +92,7 @@ Finally we train.
 
 
 ```python
-trainer = onmt.Trainer(model, train_iter, valid_iter, loss, loss, optim)
+trainer = onmt.Trainer(model, loss, loss, optim)
 
 def report_func(*args):
     stats = args[-1]
