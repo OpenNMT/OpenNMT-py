@@ -89,15 +89,21 @@ class EnsembleGenerator(nn.Module):
         self.model_generators = tuple(model_generators)
         super(EnsembleGenerator, self).__init__()
 
-    def forward(self, hidden):
+    def forward(self, hidden, attn=None, src_map=None):
         """
         Compute a distribution over the target dictionary
         by averaging distributions from models in the ensemble.
         All models in the ensemble must share a target vocabulary.
         """
-        distributions = [model_generator(hidden[i])
-                         for i, model_generator
-                         in enumerate(self.model_generators)]
+        if attn:
+            distributions = [model_generator(hidden[i], attn, src_map)
+                             for i, model_generator
+                             in enumerate(self.model_generators)]
+        else:
+            distributions = [model_generator(hidden[i])
+                             for i, model_generator
+                             in enumerate(self.model_generators)]
+
         return torch.stack(distributions).mean(0)
 
 

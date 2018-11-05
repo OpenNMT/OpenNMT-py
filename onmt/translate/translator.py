@@ -387,7 +387,13 @@ class Translator(object):
         # Tile states and memory beam_size times.
         self.model.decoder.map_state(
             lambda state, dim: tile(state, beam_size, dim=dim))
-        memory_bank = tile(memory_bank, beam_size, dim=1)
+        if isinstance(memory_bank, tuple):
+            memory_bank = tuple(tile(x, beam_size, dim=1) for x in memory_bank)
+            mb_device = memory_bank[0].device
+        else:
+            memory_bank = tile(memory_bank, beam_size, dim=1)
+            mb_device = memory_bank.device
+
         memory_lengths = tile(src_lengths, beam_size)
         src_map = (tile(batch.src_map, beam_size, dim=1)
                    if data.data_type == 'text' and self.copy_attn else None)
@@ -399,18 +405,18 @@ class Translator(object):
             batch_size * beam_size,
             step=beam_size,
             dtype=torch.long,
-            device=memory_bank.device)
+            device=mb_device)
         alive_seq = torch.full(
             [batch_size * beam_size, 1],
             start_token,
             dtype=torch.long,
-            device=memory_bank.device)
+            device=mb_device)
         alive_attn = None
 
         # Give full probability to the first beam on the first step.
         topk_log_probs = (
             torch.tensor([0.0] + [float("-inf")] * (beam_size - 1),
-                         device=memory_bank.device).repeat(batch_size))
+                         device=mb_device).repeat(batch_size))
 
         # Structure that holds finished hypotheses.
         hypotheses = [[] for _ in range(batch_size)]  # noqa: F812
@@ -548,7 +554,12 @@ class Translator(object):
                               -1, alive_attn.size(-1))
 
             # Reorder states.
-            memory_bank = memory_bank.index_select(1, select_indices)
+            if isinstance(memory_bank, tuple):
+                memory_bank = tuple(x.index_select(1, select_indices)
+                                    for x in memory_bank)
+            else:
+                memory_bank = memory_bank.index_select(1, select_indices)
+
             memory_lengths = memory_lengths.index_select(0, select_indices)
             self.model.decoder.map_state(
                 lambda state, dim: state.index_select(dim, select_indices))
