@@ -95,7 +95,7 @@ class EnsembleGenerator(nn.Module):
         by averaging distributions from models in the ensemble.
         All models in the ensemble must share a target vocabulary.
         """
-        if attn:
+        if attn is not None:
             distributions = [model_generator(hidden[i], attn, src_map)
                              for i, model_generator
                              in enumerate(self.model_generators)]
