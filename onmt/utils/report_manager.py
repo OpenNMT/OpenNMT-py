@@ -72,7 +72,9 @@ class ReportMgrBase(object):
             self._report_training(
                 step, num_steps, learning_rate, report_stats)
             self.progress_step += 1
-        return onmt.utils.Statistics()
+            return onmt.utils.Statistics()
+        else:
+            return report_stats
 
     def _report_training(self, *args, **kwargs):
         """ To be overridden """
