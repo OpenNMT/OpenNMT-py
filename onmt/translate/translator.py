@@ -706,7 +706,7 @@ class Translator(object):
         tt = torch.cuda if self.cuda else torch
 
         gold_scores = tt.zeros(batch.batch_size)
-        dec_out, _, _ = self.model.decoder(
+        dec_out, _ = self.model.decoder(
             tgt_in, memory_bank, memory_lengths=src_lengths)
 
         tgt_pad = self.fields["tgt"].vocab.stoi[inputters.PAD_WORD]
