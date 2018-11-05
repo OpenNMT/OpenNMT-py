@@ -664,7 +664,7 @@ class Translator(object):
             for j, b in enumerate(beam):
                 b.advance(out[:, j], beam_attn[:, j, :memory_lengths[j]])
                 select_indices_array.append(
-                    b.backpointers() * batch_size + j)
+                    b.backpointers * batch_size + j)
             select_indices = torch.cat(select_indices_array) \
                                   .view(batch_size, beam_size) \
                                   .transpose(0, 1) \
@@ -690,7 +690,6 @@ class Translator(object):
             src_lengths = batch.src_lengths
         else:
             src_lengths = None
-            
         src = inputters.make_features(batch, 'src', data_type)
 
         #  (1) run the encoder on the src
