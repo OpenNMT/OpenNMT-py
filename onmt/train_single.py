@@ -90,7 +90,16 @@ def main(opt, device_id):
         logger.info('Loading checkpoint from %s' % opt.train_from)
         checkpoint = torch.load(opt.train_from,
                                 map_location=lambda storage, loc: storage)
-        model_opt = checkpoint['opt']
+
+        # Load default opts values then overwrite it with opts from
+        # the checkpoint. It's usefull in order to re-train a model
+        # after adding a new option (not set in checkpoint)
+        dummy_parser = configargparse.ArgumentParser()
+        opts.model_opts(dummy_parser)
+        default_opt = dummy_parser.parse_known_args([])[0]
+
+        model_opt = default_opt
+        model_opt.__dict__.update(checkpoint['opt'].__dict__)
     else:
         checkpoint = None
         model_opt = opt
