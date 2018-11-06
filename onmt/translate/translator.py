@@ -350,7 +350,7 @@ class Translator(object):
                 batch,
                 self.fields["tgt"].vocab,
                 data.src_vocabs,
-                batch_dim=0,
+                batch_dim=batch_dim,
                 batch_offset=batch_offset)
             log_probs = scores.view(-1, scores.size(-1)).log()
             attn = dec_attn["copy"]
@@ -642,7 +642,7 @@ class Translator(object):
             out, beam_attn = self._decode_and_generate(inp,
                                  memory_bank, self.copy_attn, batch, data,
                                  memory_lengths=memory_lengths, src_map=src_map,
-                                 step=i, batch_dim=1, batch_offset=None)
+                                 step=i)
             
             out = unbottle(out)
             beam_attn = unbottle(beam_attn)
@@ -684,9 +684,13 @@ class Translator(object):
         gold_scores = tt.FloatTensor(batch.batch_size).fill_(0)
 
         # my new code
-        log_probs, attn = self._decode_and_generate(tgt_in,
-                              memory_bank, self.copy_attn, batch, data,
-                              memory_lengths=src_lengths, src_map=src_map)
+        # log_probs, attn = self._decode_and_generate(tgt_in,
+        #                      memory_bank, self.copy_attn, batch, data,
+        #                      memory_lengths=src_lengths, src_map=src_map)
+        #
+        # But then I don't know how to output gold_scores
+
+
         # legacy code
         dec_out, attns = self.model.decoder(
             tgt_in, memory_bank, memory_lengths=src_lengths)
@@ -700,7 +704,6 @@ class Translator(object):
             scores.masked_fill_(tgt.eq(tgt_pad), 0)
             gold_scores += scores.view(-1)
 
-        print(gold_scores.size(), log_probs.size())
         return gold_scores
 
 
