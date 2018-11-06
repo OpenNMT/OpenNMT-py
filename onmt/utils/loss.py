@@ -14,7 +14,7 @@ import onmt.inputters as inputters
 from onmt.modules.sparse_losses import SparsemaxLoss
 
 
-def build_loss_compute(model, tgt_vocab, opt, train=True):
+def build_loss_compute(model, tgt_vocab, opt, model_opt, train=True):
     """
     This returns user-defined LossCompute object, which is used to
     compute loss in train/validate process. You can implement your
@@ -22,14 +22,14 @@ def build_loss_compute(model, tgt_vocab, opt, train=True):
     """
     device = torch.device("cuda" if onmt.utils.misc.use_gpu(opt) else "cpu")
 
-    if opt.copy_attn:
+    if model_opt.copy_attn:
         compute = onmt.modules.CopyGeneratorLossCompute(
-            model.generator, tgt_vocab, opt.copy_attn_force,
-            opt.copy_loss_by_seqlength)
+            model.generator, tgt_vocab, model_opt.copy_attn_force,
+            model_opt.copy_loss_by_seqlength)
     else:
         compute = NMTLossCompute(
             model.generator, tgt_vocab,
-            label_smoothing=opt.label_smoothing if train else 0.0)
+            label_smoothing=model_opt.label_smoothing if train else 0.0)
     compute.to(device)
 
     return compute

@@ -37,9 +37,9 @@ def build_translator(opt, report_score=True, logger=None, out_file=None):
 
     scorer = onmt.translate.GNMTGlobalScorer(opt)
 
-    translator = Translator(model, fields, opt, global_scorer=scorer,
-                            out_file=out_file, report_score=report_score,
-                            copy_attn=model_opt.copy_attn, logger=logger)
+    translator = Translator(model, fields, opt, model_opt,
+                            global_scorer=scorer, out_file=out_file,
+                            report_score=report_score, logger=logger)
 
     return translator
 
@@ -68,10 +68,10 @@ class Translator(object):
                  model,
                  fields,
                  opt,
+                 model_opt,
                  global_scorer=None,
                  out_file=None,
                  report_score=True,
-                 copy_attn=False,
                  logger=None):
 
         self.model = model
@@ -99,10 +99,11 @@ class Translator(object):
         self.report_rouge = opt.report_rouge
         self.fast = opt.fast
 
+        self.copy_attn = model_opt.copy_attn
+
         self.global_scorer = global_scorer
         self.out_file = out_file
         self.report_score = report_score
-        self.copy_attn = copy_attn
         self.logger = logger
 
         self.use_filter_pred = False
@@ -117,9 +118,8 @@ class Translator(object):
                 "scores": [],
                 "log_probs": []}
 
-        opt.copy_attn = copy_attn
         self.translate_loss = onmt.utils.loss.build_loss_compute(
-            model, fields["tgt"].vocab, opt, train=False)
+            model, fields["tgt"].vocab, opt, model_opt, train=False)
 
     def translate(self,
                   src_path=None,
@@ -320,6 +320,43 @@ class Translator(object):
                                .fill_(memory_bank.size(0))
         return src, enc_states, memory_bank, src_lengths
 
+    def _decode_and_generate(self, decoder_input, memory_bank,
+                             copy_attn, batch, data,
+                             memory_lengths, src_map=None,
+                             step=None, batch_dim=1, batch_offset=None):
+        
+        if copy_attn:
+            # Turn any copied words to UNKs (index 0).
+            decoder_input = decoder_input.masked_fill(
+                decoder_input.gt(len(self.fields["tgt"].vocab) - 1), 0)
+
+        # Decoder forward.
+        dec_out, dec_attn = self.model.decoder(
+            decoder_input,
+            memory_bank,
+            memory_lengths=memory_lengths,
+            step=step)
+        dec_out = dec_out.squeeze(0)
+
+        # Generator forward.
+        if not copy_attn:
+            log_probs = self.model.generator.forward(dec_out)
+            attn = dec_attn["std"]
+        else:
+            scores = self.model.generator.forward(
+                dec_out, dec_attn["copy"].squeeze(0), src_map)
+            scores = data.collapse_copy_scores(
+                scores.view(-1, self.beam_size, scores.size(-1)),
+                batch,
+                self.fields["tgt"].vocab,
+                data.src_vocabs,
+                batch_dim=0,
+                batch_offset=batch_offset)
+            log_probs = scores.view(-1, scores.size(-1)).log()
+            attn = dec_attn["copy"]
+
+        return log_probs, attn
+
     def _fast_translate_batch(self,
                               batch,
                               data,
@@ -354,7 +391,7 @@ class Translator(object):
         results["batch"] = batch
         if "tgt" in batch.__dict__:
             results["gold_score"] = self._score_target(
-                batch, copy.deepcopy(memory_bank, src_lengths))
+                batch, memory_bank, src_lengths, data, batch.src_map)
             self.model.decoder.init_state(
                 src, memory_bank, enc_states, with_cache=True)
         else:
@@ -399,35 +436,11 @@ class Translator(object):
 
         for step in range(max_length):
             decoder_input = alive_seq[:, -1].view(1, -1, 1)
-            if self.copy_attn:
-                # Turn any copied words to UNKs (index 0).
-                decoder_input = decoder_input.masked_fill(
-                    decoder_input.gt(len(vocab) - 1), 0)
 
-            # Decoder forward.
-            dec_out, dec_attn = self.model.decoder(
-                decoder_input,
-                memory_bank,
-                memory_lengths=memory_lengths,
-                step=step)
-            dec_out = dec_out.squeeze(0)
-
-            # Generator forward.
-            if not self.copy_attn:
-                log_probs = self.model.generator.forward(dec_out)
-                attn = dec_attn["std"]
-            else:
-                scores = self.model.generator.forward(
-                    dec_out, dec_attn["copy"].squeeze(0), src_map)
-                scores = data.collapse_copy_scores(
-                    scores.view(-1, beam_size, scores.size(-1)),
-                    batch,
-                    vocab,
-                    data.src_vocabs,
-                    batch_dim=0,
-                    batch_offset=batch_offset)
-                log_probs = scores.view(-1, scores.size(-1)).log()
-                attn = dec_attn["copy"]
+            log_probs, attn = self._decode_and_generate(decoder_input,
+                              memory_bank, self.copy_attn, batch, data,
+                              memory_lengths=memory_lengths, src_map=src_map,
+                              step=step, batch_dim=0, batch_offset=batch_offset)
 
             vocab_size = log_probs.size(-1)
 
@@ -592,6 +605,19 @@ class Translator(object):
             batch, data_type)
         self.model.decoder.init_state(src, memory_bank, enc_states)
 
+        results = {}
+        results["predictions"] = []
+        results["scores"] = []
+        results["attention"] = []
+        results["batch"] = batch
+        if "tgt" in batch.__dict__:
+            results["gold_score"] = self._score_target(
+                batch, memory_bank, src_lengths, data, batch.src_map)
+            self.model.decoder.init_state(
+                src, memory_bank, enc_states, with_cache=True)
+        else:
+            results["gold_score"] = [0] * batch_size
+
         # (2) Repeat src objects `beam_size` times.
         src_map = rvar(batch.src_map.data) \
             if data_type == 'text' and self.copy_attn else None
@@ -607,47 +633,19 @@ class Translator(object):
             if all((b.done() for b in beam)):
                 break
 
-            # Construct batch x beam_size nxt words.
-            # Get all the pending current beam words and arrange for forward.
-            inp = var(torch.stack([b.get_current_state() for b in beam])
-                      .t().contiguous().view(1, -1))
+            # (a) Construct batch x beam_size nxt words.
+            #     Get all the pending current beam words and arrange for forward.
+            inp = torch.stack([b.get_current_state() for b in beam])
+            inp = inp.t().contiguous().view(1, -1, 1)
 
-            # Turn any copied words to UNKs
-            # 0 is unk
-            if self.copy_attn:
-                inp = inp.masked_fill(
-                    inp.gt(len(self.fields["tgt"].vocab) - 1), 0)
-
-            # Temporary kludge solution to handle changed dim expectation
-            # in the decoder
-            inp = inp.unsqueeze(2)
-
-            # Run one step.
-            dec_out, attn = self.model.decoder(inp, memory_bank,
-                                               memory_lengths=memory_lengths,
-                                               step=i)
-
-            dec_out = dec_out.squeeze(0)
-
-            # dec_out: beam x rnn_size
-
-            # (b) Compute a vector of batch x beam word scores.
-            if not self.copy_attn:
-                out = self.model.generator.forward(dec_out).data
-                out = unbottle(out)
-                # beam x tgt_vocab
-                beam_attn = unbottle(attn["std"])
-            else:
-                out = self.model.generator.forward(dec_out,
-                                                   attn["copy"].squeeze(0),
-                                                   src_map)
-                # beam x (tgt_vocab + extra_vocab)
-                out = data.collapse_copy_scores(
-                    unbottle(out.data),
-                    batch, self.fields["tgt"].vocab, data.src_vocabs)
-                # beam x tgt_vocab
-                out = out.log()
-                beam_attn = unbottle(attn["copy"])
+            # (b) Decode and forward
+            out, beam_attn = self._decode_and_generate(inp,
+                                 memory_bank, self.copy_attn, batch, data,
+                                 memory_lengths=memory_lengths, src_map=src_map,
+                                 step=i, batch_dim=1, batch_offset=None)
+            
+            out = unbottle(out)
+            beam_attn = unbottle(beam_attn)
 
             # (c) Advance each beam.
             select_indices_array = []
@@ -665,18 +663,6 @@ class Translator(object):
                 lambda state, dim: state.index_select(dim, select_indices))
 
         # (4) Extract sentences from beam.
-        ret = self._from_beam(beam)
-        ret["gold_score"] = [0] * batch_size
-        if "tgt" in batch.__dict__:
-            ret["gold_score"] = self._run_target(batch, data)
-        ret["batch"] = batch
-
-        return ret
-
-    def _from_beam(self, beam):
-        ret = {"predictions": [],
-               "scores": [],
-               "attention": []}
         for b in beam:
             n_best = self.n_best
             scores, ks = b.sort_finished(minimum=n_best)
@@ -685,34 +671,23 @@ class Translator(object):
                 hyp, att = b.get_hyp(times, k)
                 hyps.append(hyp)
                 attn.append(att)
-            ret["predictions"].append(hyps)
-            ret["scores"].append(scores)
-            ret["attention"].append(attn)
-        return ret
+            results["predictions"].append(hyps)
+            results["scores"].append(scores)
+            results["attention"].append(attn)
 
-    def _run_target(self, batch, data):
-        data_type = data.data_type
-        if data_type == 'text':
-            _, src_lengths = batch.src
-        elif data_type == 'audio':
-            src_lengths = batch.src_lengths
-        else:
-            src_lengths = None
-        src = inputters.make_features(batch, 'src', data_type)
+        return results
 
-        #  (1) run the encoder on the src
-        enc_states, memory_bank, src_lengths \
-            = self.model.encoder(src, src_lengths)
-        self.model.decoder.init_state(src, memory_bank, enc_states)
 
-        #  (2) if a target is specified, compute the 'goldScore'
-        #  (i.e. log likelihood) of the target under the model
-        return self._score_target(batch, memory_bank, src_lengths)
-
-    def _score_target(self, batch, memory_bank, src_lengths):
+    def _score_target(self, batch, memory_bank, src_lengths, data, src_map):
         tgt_in = inputters.make_features(batch, 'tgt')[:-1]
         tt = torch.cuda if self.cuda else torch
         gold_scores = tt.FloatTensor(batch.batch_size).fill_(0)
+
+        # my new code
+        log_probs, attn = self._decode_and_generate(tgt_in,
+                              memory_bank, self.copy_attn, batch, data,
+                              memory_lengths=src_lengths, src_map=src_map)
+        # legacy code
         dec_out, attns = self.model.decoder(
             tgt_in, memory_bank, memory_lengths=src_lengths)
 
@@ -725,15 +700,9 @@ class Translator(object):
             scores.masked_fill_(tgt.eq(tgt_pad), 0)
             gold_scores += scores.view(-1)
 
-        loss, stats = self.translate_loss._compute_loss(
-            batch,
-            **self.translate_loss._make_shard_state(
-                batch,
-                dec_out,
-                (0, batch.tgt.size(0)),
-                attns))
-        print(loss, stats, gold_scores.sum())
+        print(gold_scores.size(), log_probs.size())
         return gold_scores
+
 
     def _report_score(self, name, score_total, words_total):
         if words_total == 0:
