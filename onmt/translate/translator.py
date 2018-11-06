@@ -35,23 +35,12 @@ def build_translator(opt, report_score=True, logger=None, out_file=None):
         fields, model, model_opt = \
             onmt.model_builder.load_test_model(opt, dummy_opt.__dict__)
 
-    scorer = onmt.translate.GNMTGlobalScorer(opt.alpha,
-                                             opt.beta,
-                                             opt.coverage_penalty,
-                                             opt.length_penalty)
+    scorer = onmt.translate.GNMTGlobalScorer(opt)
 
-    kwargs = {k: getattr(opt, k)
-              for k in ["beam_size", "n_best", "max_length", "min_length",
-                        "stepwise_penalty", "block_ngram_repeat",
-                        "ignore_when_blocking", "dump_beam", "report_bleu",
-                        "data_type", "replace_unk", "gpu", "verbose", "fast",
-                        "sample_rate", "window_size", "window_stride",
-                        "window", "image_channel_size"]}
-
-    translator = Translator(model, fields, global_scorer=scorer,
+    translator = Translator(model, fields, opt, global_scorer=scorer,
                             out_file=out_file, report_score=report_score,
-                            copy_attn=model_opt.copy_attn, logger=logger,
-                            **kwargs)
+                            copy_attn=model_opt.copy_attn, logger=logger)
+
     return translator
 
 
@@ -78,62 +67,45 @@ class Translator(object):
     def __init__(self,
                  model,
                  fields,
-                 beam_size,
-                 n_best=1,
-                 max_length=100,
+                 opt,
                  global_scorer=None,
-                 copy_attn=False,
-                 logger=None,
-                 gpu=False,
-                 dump_beam="",
-                 min_length=0,
-                 stepwise_penalty=False,
-                 block_ngram_repeat=0,
-                 ignore_when_blocking=[],
-                 sample_rate=16000,
-                 window_size=.02,
-                 window_stride=.01,
-                 window='hamming',
-                 use_filter_pred=False,
-                 data_type="text",
-                 replace_unk=False,
-                 report_score=True,
-                 report_bleu=False,
-                 report_rouge=False,
-                 verbose=False,
                  out_file=None,
-                 fast=False,
-                 image_channel_size=3):
-        self.logger = logger
-        self.gpu = gpu
-        self.cuda = gpu > -1
+                 report_score=True,
+                 copy_attn=False,
+                 logger=None):
 
         self.model = model
         self.fields = fields
-        self.n_best = n_best
-        self.max_length = max_length
+        self.gpu = opt.gpu
+        self.cuda = opt.gpu > -1
+
+        self.n_best = opt.n_best
+        self.max_length = opt.max_length
+        self.beam_size = opt.beam_size
+        self.min_length =opt. min_length
+        self.stepwise_penalty = opt.stepwise_penalty
+        self.dump_beam = opt.dump_beam
+        self.block_ngram_repeat = opt.block_ngram_repeat
+        self.ignore_when_blocking = set(opt.ignore_when_blocking)
+        self.sample_rate = opt.sample_rate
+        self.window_size = opt.window_size
+        self.window_stride = opt.window_stride
+        self.window = opt.window
+        self.image_channel_size = opt.image_channel_size
+        self.replace_unk = opt.replace_unk
+        self.data_type = opt.data_type
+        self.verbose = opt.verbose
+        self.report_bleu = opt.report_bleu
+        self.report_rouge = opt.report_rouge
+        self.fast = opt.fast
+
         self.global_scorer = global_scorer
-        self.copy_attn = copy_attn
-        self.beam_size = beam_size
-        self.min_length = min_length
-        self.stepwise_penalty = stepwise_penalty
-        self.dump_beam = dump_beam
-        self.block_ngram_repeat = block_ngram_repeat
-        self.ignore_when_blocking = set(ignore_when_blocking)
-        self.sample_rate = sample_rate
-        self.window_size = window_size
-        self.window_stride = window_stride
-        self.window = window
-        self.use_filter_pred = use_filter_pred
-        self.replace_unk = replace_unk
-        self.data_type = data_type
-        self.verbose = verbose
         self.out_file = out_file
         self.report_score = report_score
-        self.report_bleu = report_bleu
-        self.report_rouge = report_rouge
-        self.fast = fast
-        self.image_channel_size = image_channel_size
+        self.copy_attn = copy_attn
+        self.logger = logger
+
+        self.use_filter_pred = False
 
         # for debugging
         self.beam_trace = self.dump_beam != ""
@@ -144,6 +116,10 @@ class Translator(object):
                 "beam_parent_ids": [],
                 "scores": [],
                 "log_probs": []}
+
+        opt.copy_attn = copy_attn
+        self.translate_loss = onmt.utils.loss.build_loss_compute(
+            model, fields["tgt"].vocab, opt, train=False)
 
     def translate(self,
                   src_path=None,
@@ -737,7 +713,7 @@ class Translator(object):
         tgt_in = inputters.make_features(batch, 'tgt')[:-1]
         tt = torch.cuda if self.cuda else torch
         gold_scores = tt.FloatTensor(batch.batch_size).fill_(0)
-        dec_out, _ = self.model.decoder(
+        dec_out, attns = self.model.decoder(
             tgt_in, memory_bank, memory_lengths=src_lengths)
 
         tgt_pad = self.fields["tgt"].vocab.stoi[inputters.PAD_WORD]
@@ -748,6 +724,15 @@ class Translator(object):
             scores = out.data.gather(1, tgt)
             scores.masked_fill_(tgt.eq(tgt_pad), 0)
             gold_scores += scores.view(-1)
+
+        loss, stats = self.translate_loss._compute_loss(
+            batch,
+            **self.translate_loss._make_shard_state(
+                batch,
+                dec_out,
+                (0, batch.tgt.size(0)),
+                attns))
+        print(loss, stats, gold_scores.sum())
         return gold_scores
 
     def _report_score(self, name, score_total, words_total):
