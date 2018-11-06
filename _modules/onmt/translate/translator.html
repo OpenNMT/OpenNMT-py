@@ -164,7 +164,6 @@
 <span class="kn">import</span> <span class="nn">codecs</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">math</span>
-<span class="kn">import</span> <span class="nn">copy</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
 
@@ -537,7 +536,7 @@
         <span class="n">results</span><span class="p">[</span><span class="s2">&quot;batch&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">batch</span>
         <span class="k">if</span> <span class="s2">&quot;tgt&quot;</span> <span class="ow">in</span> <span class="n">batch</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">:</span>
             <span class="n">results</span><span class="p">[</span><span class="s2">&quot;gold_score&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_score_target</span><span class="p">(</span>
-                <span class="n">batch</span><span class="p">,</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">))</span>
+                <span class="n">batch</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">init_state</span><span class="p">(</span>
                 <span class="n">src</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">enc_states</span><span class="p">,</span> <span class="n">with_cache</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
