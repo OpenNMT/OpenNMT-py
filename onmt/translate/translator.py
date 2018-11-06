@@ -5,7 +5,6 @@ import argparse
 import codecs
 import os
 import math
-import copy
 
 import torch
 
@@ -378,7 +377,7 @@ class Translator(object):
         results["batch"] = batch
         if "tgt" in batch.__dict__:
             results["gold_score"] = self._score_target(
-                batch, copy.deepcopy(memory_bank, src_lengths))
+                batch, memory_bank, src_lengths)
             self.model.decoder.init_state(
                 src, memory_bank, enc_states, with_cache=True)
         else:
