@@ -344,12 +344,20 @@ class Translator(object):
         else:
             scores = self.model.generator.forward(
                 dec_out, dec_attn["copy"].squeeze(0), src_map)
+            print(scores.view(-1, self.beam_size, scores.size(-1)).size())
+            #scores = data.collapse_copy_scores(
+            #    scores.view(-1, self.beam_size, scores.size(-1)),
+            #    batch,
+            #    self.fields["tgt"].vocab,
+            #    data.src_vocabs,
+            #    batch_dim=0,
+            #    batch_offset=batch_offset)
             scores = data.collapse_copy_scores(
-                scores.view(-1, self.beam_size, scores.size(-1)),
+                scores.view(self.beam_size, batch.batch_size, -1),
                 batch,
                 self.fields["tgt"].vocab,
                 data.src_vocabs,
-                batch_dim=0,
+                batch_dim=1,
                 batch_offset=batch_offset)
             log_probs = scores.view(-1, scores.size(-1)).log()
             attn = dec_attn["copy"]
