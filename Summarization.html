@@ -95,12 +95,12 @@
 <li class="toctree-l2"><a class="reference internal" href="#training">Training</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#inference">Inference</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#evaluation">Evaluation</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#cnndm">CNNDM</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#cnn-dm">CNN-DM</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#gigaword">Gigaword</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#scores-and-models">Scores and Models</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#cnndm">CNNDM</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#cnn-dm">CNN-DM</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#gigaword">Gigaword</a></li>
 </ul>
 </li>
@@ -178,7 +178,17 @@
             
   <div class="section" id="example-summarization">
 <span id="example-summarization"></span><h1>Example: Summarization<a class="headerlink" href="#example-summarization" title="Permalink to this headline">¶</a></h1>
-<p>This document describes how to replicate summarization experiments on the CNNDM and gigaword datasets using OpenNMT-py.
+<p>Note: The process and results below are presented in our paper <code class="docutils literal notranslate"><span class="pre">Bottom-Up</span> <span class="pre">Abstractive</span> <span class="pre">Summarization</span></code>. Please consider citing it if you follow these instructions.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@inproceedings</span><span class="p">{</span><span class="n">gehrmann2018bottom</span><span class="p">,</span>
+  <span class="n">title</span><span class="o">=</span><span class="p">{</span><span class="n">Bottom</span><span class="o">-</span><span class="n">Up</span> <span class="n">Abstractive</span> <span class="n">Summarization</span><span class="p">},</span>
+  <span class="n">author</span><span class="o">=</span><span class="p">{</span><span class="n">Gehrmann</span><span class="p">,</span> <span class="n">Sebastian</span> <span class="ow">and</span> <span class="n">Deng</span><span class="p">,</span> <span class="n">Yuntian</span> <span class="ow">and</span> <span class="n">Rush</span><span class="p">,</span> <span class="n">Alexander</span><span class="p">},</span>
+  <span class="n">booktitle</span><span class="o">=</span><span class="p">{</span><span class="n">Proceedings</span> <span class="n">of</span> <span class="n">the</span> <span class="mi">2018</span> <span class="n">Conference</span> <span class="n">on</span> <span class="n">Empirical</span> <span class="n">Methods</span> <span class="ow">in</span> <span class="n">Natural</span> <span class="n">Language</span> <span class="n">Processing</span><span class="p">},</span>
+  <span class="n">pages</span><span class="o">=</span><span class="p">{</span><span class="mi">4098</span><span class="o">--</span><span class="mi">4109</span><span class="p">},</span>
+  <span class="n">year</span><span class="o">=</span><span class="p">{</span><span class="mi">2018</span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>This document describes how to replicate summarization experiments on the CNN-DM and gigaword datasets using OpenNMT-py.
 In the following, we assume access to a tokenized form of the corpus split into train/valid/test set. You can find the data <a class="reference external" href="https://github.com/harvardnlp/sent-summary">here</a>.</p>
 <p>An example article-title pair from Gigaword should look like this:</p>
 <p><strong>Input</strong>
@@ -189,9 +199,9 @@ In the following, we assume access to a tokenized form of the corpus split into 
 <span id="preprocessing-the-data"></span><h2>Preprocessing the data<a class="headerlink" href="#preprocessing-the-data" title="Permalink to this headline">¶</a></h2>
 <p>Since we are using copy-attention [1] in the model, we need to preprocess the dataset such that source and target are aligned and use the same dictionary. This is achieved by using the options <code class="docutils literal notranslate"><span class="pre">dynamic_dict</span></code> and <code class="docutils literal notranslate"><span class="pre">share_vocab</span></code>.
 We additionally turn off truncation of the source to ensure that inputs longer than 50 words are not truncated.
-For CNNDM we follow See et al. [2] and additionally truncate the source length at 400 tokens and the target at 100. We also note that in CNNDM, we found models to work better if the target surrounds sentences with tags such that a sentence looks like <code class="docutils literal notranslate"><span class="pre">&lt;t&gt;</span> <span class="pre">w1</span> <span class="pre">w2</span> <span class="pre">w3</span> <span class="pre">.</span> <span class="pre">&lt;/t&gt;</span></code>. If you use this formatting, you can remove the tags after the inference step with the commands <code class="docutils literal notranslate"><span class="pre">sed</span> <span class="pre">-i</span> <span class="pre">'s/</span> <span class="pre">&lt;\/t&gt;//g'</span> <span class="pre">FILE.txt</span></code> and <code class="docutils literal notranslate"><span class="pre">sed</span> <span class="pre">-i</span> <span class="pre">'s/&lt;t&gt;</span> <span class="pre">//g'</span> <span class="pre">FILE.txt</span></code>.</p>
+For CNN-DM we follow See et al. [2] and additionally truncate the source length at 400 tokens and the target at 100. We also note that in CNN-DM, we found models to work better if the target surrounds sentences with tags such that a sentence looks like <code class="docutils literal notranslate"><span class="pre">&lt;t&gt;</span> <span class="pre">w1</span> <span class="pre">w2</span> <span class="pre">w3</span> <span class="pre">.</span> <span class="pre">&lt;/t&gt;</span></code>. If you use this formatting, you can remove the tags after the inference step with the commands <code class="docutils literal notranslate"><span class="pre">sed</span> <span class="pre">-i</span> <span class="pre">'s/</span> <span class="pre">&lt;\/t&gt;//g'</span> <span class="pre">FILE.txt</span></code> and <code class="docutils literal notranslate"><span class="pre">sed</span> <span class="pre">-i</span> <span class="pre">'s/&lt;t&gt;</span> <span class="pre">//g'</span> <span class="pre">FILE.txt</span></code>.</p>
 <p><strong>Command used</strong>:</p>
-<p>(1) CNNDM</p>
+<p>(1) CNN-DM</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">preprocess</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">train_src</span> <span class="n">data</span><span class="o">/</span><span class="n">cnndm</span><span class="o">/</span><span class="n">train</span><span class="o">.</span><span class="n">txt</span><span class="o">.</span><span class="n">src</span> \
                      <span class="o">-</span><span class="n">train_tgt</span> <span class="n">data</span><span class="o">/</span><span class="n">cnndm</span><span class="o">/</span><span class="n">train</span><span class="o">.</span><span class="n">txt</span><span class="o">.</span><span class="n">tgt</span> \
                      <span class="o">-</span><span class="n">valid_src</span> <span class="n">data</span><span class="o">/</span><span class="n">cnndm</span><span class="o">/</span><span class="n">val</span><span class="o">.</span><span class="n">txt</span><span class="o">.</span><span class="n">src</span> \
@@ -236,7 +246,7 @@ For CNNDM we follow See et al. [2] and additionally truncate the source length a
 We also use OpenNMT’s default learning rate decay, which halves the learning rate after every epoch once the validation perplexity increased after an epoch (or after epoch 8).
 We additionally set the maximum norm of the gradient to 2, and renormalize if the gradient norm exceeds this value and do not use any dropout.</p>
 <p><strong>commands used</strong>:</p>
-<p>(1) CNNDM</p>
+<p>(1) CNN-DM</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">train</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">save_model</span> <span class="n">models</span><span class="o">/</span><span class="n">cnndm</span> \
                 <span class="o">-</span><span class="n">data</span> <span class="n">data</span><span class="o">/</span><span class="n">cnndm</span><span class="o">/</span><span class="n">CNNDM</span> \
                 <span class="o">-</span><span class="n">copy_attn</span> \
@@ -260,8 +270,8 @@ We additionally set the maximum norm of the gradient to 2, and renormalize if th
                 <span class="o">-</span><span class="n">gpu_ranks</span> <span class="mi">0</span> <span class="mi">1</span>
 </pre></div>
 </div>
-<p>(2) CNNDM Transformer</p>
-<p>The following script trains the transformer model on CNNDM</p>
+<p>(2) CNN-DM Transformer</p>
+<p>The following script trains the transformer model on CNN-DM</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="o">-</span><span class="n">u</span> <span class="n">train</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">data</span> <span class="n">data</span><span class="o">/</span><span class="n">cnndm</span><span class="o">/</span><span class="n">CNNDM</span> \
                    <span class="o">-</span><span class="n">save_model</span> <span class="n">models</span><span class="o">/</span><span class="n">cnndm</span> \
                    <span class="o">-</span><span class="n">layers</span> <span class="mi">4</span> \
@@ -316,7 +326,7 @@ We additionally set the maximum norm of the gradient to 2, and renormalize if th
 <li><code class="docutils literal notranslate"><span class="pre">ignore_when_blocking</span> <span class="pre">&quot;.&quot;</span> <span class="pre">&quot;&lt;/t&gt;&quot;</span> <span class="pre">&quot;&lt;t&gt;&quot;</span></code>: Allow the model to repeat trigrams with the sentence boundary tokens.</li>
 </ul>
 <p><strong>commands used</strong>:</p>
-<p>(1) CNNDM</p>
+<p>(1) CNN-DM</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">translate</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">gpu</span> <span class="n">X</span> \
                     <span class="o">-</span><span class="n">batch_size</span> <span class="mi">20</span> \
                     <span class="o">-</span><span class="n">beam_size</span> <span class="mi">5</span> \
@@ -338,9 +348,9 @@ We additionally set the maximum norm of the gradient to 2, and renormalize if th
 </div>
 <div class="section" id="evaluation">
 <span id="evaluation"></span><h2>Evaluation<a class="headerlink" href="#evaluation" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="cnndm">
-<span id="cnndm"></span><h3>CNNDM<a class="headerlink" href="#cnndm" title="Permalink to this headline">¶</a></h3>
-<p>To evaluate the ROUGE scores on CNNDM, we extended the pyrouge wrapper with additional evaluations such as the amount of repeated n-grams (typically found in models with copy attention), found <a class="reference external" href="https://github.com/sebastianGehrmann/rouge-baselines">here</a>. The repository includes a sub-repo called pyrouge. Make sure to clone the code with the <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">clone</span> <span class="pre">--recurse-submodules</span> <span class="pre">https://github.com/sebastianGehrmann/rouge-baselines</span></code> command to check this out as well and follow the installation instructions on the pyrouge repository before calling this script.
+<div class="section" id="cnn-dm">
+<span id="cnn-dm"></span><h3>CNN-DM<a class="headerlink" href="#cnn-dm" title="Permalink to this headline">¶</a></h3>
+<p>To evaluate the ROUGE scores on CNN-DM, we extended the pyrouge wrapper with additional evaluations such as the amount of repeated n-grams (typically found in models with copy attention), found <a class="reference external" href="https://github.com/sebastianGehrmann/rouge-baselines">here</a>. The repository includes a sub-repo called pyrouge. Make sure to clone the code with the <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">clone</span> <span class="pre">--recurse-submodules</span> <span class="pre">https://github.com/sebastianGehrmann/rouge-baselines</span></code> command to check this out as well and follow the installation instructions on the pyrouge repository before calling this script.
 The installation instructions can be found <a class="reference external" href="https://github.com/falcondai/pyrouge/tree/9cdbfbda8b8d96e7c2646ffd048743ddcf417ed9#installation">here</a>. Note that on MacOS, we found that the pointer to your perl installation in line 1 of <code class="docutils literal notranslate"><span class="pre">pyrouge/RELEASE-1.5.5/ROUGE-1.5.5.pl</span></code> might be different from the one you have installed. A simple fix is to change this line to <code class="docutils literal notranslate"><span class="pre">#!/usr/local/bin/perl</span> <span class="pre">-w</span></code> if it fails.</p>
 <p>It can be run with the following command:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">baseline</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">s</span> <span class="n">testout</span><span class="o">/</span><span class="n">cnndm</span><span class="o">.</span><span class="n">out</span> <span class="o">-</span><span class="n">t</span> <span class="n">data</span><span class="o">/</span><span class="n">cnndm</span><span class="o">/</span><span class="n">test</span><span class="o">.</span><span class="n">txt</span><span class="o">.</span><span class="n">tgt</span> <span class="o">-</span><span class="n">m</span> <span class="n">no_sent_tag</span> <span class="o">-</span><span class="n">r</span>
@@ -357,8 +367,9 @@ The installation instructions can be found <a class="reference external" href="h
 </div>
 <div class="section" id="scores-and-models">
 <span id="scores-and-models"></span><h2>Scores and Models<a class="headerlink" href="#scores-and-models" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="cnndm">
-<span id="id1"></span><h3>CNNDM<a class="headerlink" href="#cnndm" title="Permalink to this headline">¶</a></h3>
+<p>The website generator has trouble rendering tables, if you can’t read the results, please go <a class="reference external" href="https://github.com/OpenNMT/OpenNMT-py/blob/master/docs/source/Summarization.md">here</a> for correct format.</p>
+<div class="section" id="cnn-dm">
+<span id="id1"></span><h3>CNN-DM<a class="headerlink" href="#cnn-dm" title="Permalink to this headline">¶</a></h3>
 <p>| Model Type    | Model    | R1 R  | R1 P  | R1 F  | R2 R  | R2 P  | R2 F  | RL R  | RL P  | RL F  |
 | ————- |  ——– | —–:| —–:| —–:|——:| —–:| —–:|—–: | —–:| —–:|
 | Pointer-Generator + Coverage [2]     | <a class="reference external" href="https://github.com/abisee/pointer-generator">link</a>  | 39.05 | 43.02 | 39.53 | 17.16 | 18.77 | 17.28  | 35.98 | 39.56 | 36.38 |
