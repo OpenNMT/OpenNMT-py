@@ -23,17 +23,17 @@ python preprocess.py -train_src data/multi30k/train.en.atok -train_tgt data/mult
 Step 2. Train the model.
 
 ```bash
-python train.py -data data/multi30k.atok.low -save_model multi30k_model -gpuid 0
+python train.py -data data/multi30k.atok.low -save_model multi30k_model -gpu_ranks 0
 ```
 
 Step 3. Translate sentences.
 
 ```bash
-python translate.py -gpu 0 -model multi30k_model_*_e13.pt -src data/multi30k/test.en.atok -tgt data/multi30k/test.de.atok -replace_unk -verbose -output multi30k.test.pred.atok
+python translate.py -gpu 0 -model multi30k_model_*_e13.pt -src data/multi30k/test2016.en.atok -tgt data/multi30k/test2016.de.atok -replace_unk -verbose -output multi30k.test.pred.atok
 ```
 
 And evaluate
 
 ```bash
-perl tools/multi-bleu.perl data/multi30k/test.de.atok < multi30k.test.pred.atok
+perl tools/multi-bleu.perl data/multi30k/test2016.de.atok < multi30k.test.pred.atok
 ```

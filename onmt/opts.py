@@ -1,5 +1,8 @@
+""" Implementation of all available options """
+from __future__ import print_function
+
 import argparse
-from onmt.modules.SRU import CheckSRU
+from onmt.models.sru import CheckSRU
 
 
 def model_opts(parser):
@@ -43,7 +46,7 @@ def model_opts(parser):
                        embedding sizes will be set to N^feat_vec_exponent
                        where N is the number of values the feature takes.""")
 
-    # Encoder-Deocder Options
+    # Encoder-Decoder Options
     group = parser.add_argument_group('Model- Encoder-Decoder')
     group.add_argument('-model_type', default='text',
                        help="""Type of source model to use. Allows
@@ -67,8 +70,22 @@ def model_opts(parser):
                        help='Number of layers in the encoder')
     group.add_argument('-dec_layers', type=int, default=2,
                        help='Number of layers in the decoder')
-    group.add_argument('-rnn_size', type=int, default=500,
-                       help='Size of rnn hidden states')
+    group.add_argument('-rnn_size', type=int, default=-1,
+                       help="""Size of rnn hidden states. Overwrites
+                       enc_rnn_size and dec_rnn_size""")
+    group.add_argument('-enc_rnn_size', type=int, default=500,
+                       help="""Size of encoder rnn hidden states.
+                       Must be equal to dec_rnn_size except for
+                       speech-to-text.""")
+    group.add_argument('-dec_rnn_size', type=int, default=500,
+                       help="""Size of decoder rnn hidden states.
+                       Must be equal to enc_rnn_size except for
+                       speech-to-text.""")
+    group.add_argument('-audio_enc_pooling', type=str, default='1',
+                       help="""The amount of pooling of audio encoder,
+                       either the same amount of pooling across all layers
+                       indicated by a single number, or different amounts of
+                       pooling per layer separated by comma.""")
     group.add_argument('-cnn_kernel_width', type=int, default=3,
                        help="""Size of windows in the cnn, the kernel_size is
                        (cnn_kernel_width, 1) in conv layer""")
@@ -89,9 +106,6 @@ def model_opts(parser):
 
     group.add_argument('-brnn', action=DeprecateAction,
                        help="Deprecated, use `encoder_type`.")
-    group.add_argument('-brnn_merge', default='concat',
-                       choices=['concat', 'sum'],
-                       help="Merge action for the bidir hidden states")
 
     group.add_argument('-context_gate', type=str, default=None,
                        choices=['source', 'target', 'both'],
@@ -104,10 +118,24 @@ def model_opts(parser):
                        choices=['dot', 'general', 'mlp'],
                        help="""The attention type to use:
                        dotprod or general (Luong) or MLP (Bahdanau)""")
+    group.add_argument('-global_attention_function', type=str,
+                       default="softmax", choices=["softmax", "sparsemax"])
+    group.add_argument('-self_attn_type', type=str, default="scaled-dot",
+                       help="""Self attention type in Transformer decoder
+                       layer -- currently "scaled-dot" or "average" """)
+    group.add_argument('-heads', type=int, default=8,
+                       help='Number of heads for transformer self-attention')
+    group.add_argument('-transformer_ff', type=int, default=2048,
+                       help='Size of hidden transformer feed-forward')
 
-    # Genenerator and loss options.
+    # Generator and loss options.
     group.add_argument('-copy_attn', action="store_true",
                        help='Train copy attention layer.')
+    group.add_argument('-generator_function', default="log_softmax",
+                       choices=["log_softmax", "sparsemax"],
+                       help="""Which function to use for generating
+                       probabilities over the target vocabulary (choices:
+                       log_softmax, sparsemax)""")
     group.add_argument('-copy_attn_force', action="store_true",
                        help='When available, train to copy.')
     group.add_argument('-reuse_copy_attn', action="store_true",
@@ -121,6 +149,7 @@ def model_opts(parser):
 
 
 def preprocess_opts(parser):
+    """ Pre-procesing options """
     # Data options
     group = parser.add_argument_group('Data')
     group.add_argument('-data_type', default="text",
@@ -143,11 +172,16 @@ def preprocess_opts(parser):
                        help="Output file for the prepared data")
 
     group.add_argument('-max_shard_size', type=int, default=0,
-                       help="""For text corpus of large volume, it will
-                       be divided into shards of this size to preprocess.
-                       If 0, the data will be handled as a whole. The unit
-                       is in bytes. Optimal value should be multiples of
-                       64 bytes.""")
+                       help="""Deprecated use shard_size instead""")
+
+    group.add_argument('-shard_size', type=int, default=1000000,
+                       help="""Divide src_corpus and tgt_corpus into
+                       smaller multiple src_copus and tgt corpus files, then
+                       build shards, each shard will have
+                       opt.shard_size samples except last shard.
+                       shard_size=0 means no segmentation
+                       shard_size>0 means segment dataset into multiple shards,
+                       each shard has shard_size samples""")
 
     # Dictionary options, for text corpus
 
@@ -187,7 +221,7 @@ def preprocess_opts(parser):
 
     # Data processing options
     group = parser.add_argument_group('Random')
-    group.add_argument('-shuffle', type=int, default=1,
+    group.add_argument('-shuffle', type=int, default=0,
                        help="Shuffle data")
     group.add_argument('-seed', type=int, default=3435,
                        help="Random seed")
@@ -195,6 +229,8 @@ def preprocess_opts(parser):
     group = parser.add_argument_group('Logging')
     group.add_argument('-report_every', type=int, default=100000,
                        help="Report status every this many sentences")
+    group.add_argument('-log_file', type=str, default="",
+                       help="Output logs to a file under this path.")
 
     # Options most relevant to speech
     group = parser.add_argument_group('Speech')
@@ -207,9 +243,15 @@ def preprocess_opts(parser):
     group.add_argument('-window', default='hamming',
                        help="Window type for spectrogram generation.")
 
+    # Option most relevant to image input
+    group.add_argument('-image_channel_size', type=int, default=3,
+                       choices=[3, 1],
+                       help="""Using grayscale image can training
+                       model faster and smaller""")
+
 
 def train_opts(parser):
-    # Model loading/saving options
+    """ Training and saving options """
 
     group = parser.add_argument_group('General')
     group.add_argument('-data', required=True,
@@ -218,11 +260,29 @@ def train_opts(parser):
 
     group.add_argument('-save_model', default='model',
                        help="""Model filename (the model will be saved as
-                       <save_model>_epochN_PPL.pt where PPL is the
-                       validation perplexity""")
+                       <save_model>_N.pt where N is the number
+                       of steps""")
+
+    group.add_argument('-save_checkpoint_steps', type=int, default=5000,
+                       help="""Save a checkpoint every X steps""")
+    group.add_argument('-keep_checkpoint', type=int, default=-1,
+                       help="""Keep X checkpoints (negative: keep all)""")
+
     # GPU
     group.add_argument('-gpuid', default=[], nargs='+', type=int,
-                       help="Use CUDA on the listed devices.")
+                       help="Deprecated see world_size and gpu_ranks.")
+    group.add_argument('-gpu_ranks', default=[], nargs='+', type=int,
+                       help="list of ranks of each process.")
+    group.add_argument('-world_size', default=1, type=int,
+                       help="total number of distributed processes.")
+    group.add_argument('-gpu_backend', default='nccl', nargs='+', type=str,
+                       help="Type of torch distributed backend")
+    group.add_argument('-gpu_verbose_level', default=0, type=int,
+                       help="Gives more info on each process per GPU.")
+    group.add_argument('-master_ip', default="localhost", type=str,
+                       help="IP of master for torch.distributed training.")
+    group.add_argument('-master_port', default=10000, type=int,
+                       help="Port of master for torch.distributed training.")
 
     group.add_argument('-seed', type=int, default=-1,
                        help="""Random seed used for the experiments
@@ -230,8 +290,6 @@ def train_opts(parser):
 
     # Init options
     group = parser.add_argument_group('Initialization')
-    group.add_argument('-start_epoch', type=int, default=1,
-                       help='The epoch from which to start')
     group.add_argument('-param_init', type=float, default=0.1,
                        help="""Parameters are initialized over uniform distribution
                        with support (-param_init, param_init).
@@ -243,6 +301,9 @@ def train_opts(parser):
     group.add_argument('-train_from', default='', type=str,
                        help="""If training from a checkpoint then this is the
                        path to the pretrained model's state_dict.""")
+    group.add_argument('-reset_optim', default='none',
+                       choices=['none', 'all', 'states', 'keep_states'],
+                       help="""Optimization resetter when train_from.""")
 
     # Pretrained word vectors
     group.add_argument('-pre_word_vecs_enc',
@@ -259,7 +320,7 @@ def train_opts(parser):
                        help="Fix word embeddings on the encoder side.")
     group.add_argument('-fix_word_vecs_dec',
                        action='store_true',
-                       help="Fix word embeddings on the encoder side.")
+                       help="Fix word embeddings on the decoder side.")
 
     # Optimization options
     group = parser.add_argument_group('Optimization- Type')
@@ -277,14 +338,18 @@ def train_opts(parser):
                        Approximately equivalent to updating
                        batch_size * accum_count batches at once.
                        Recommended for Transformer.""")
+    group.add_argument('-valid_steps', type=int, default=10000,
+                       help='Perfom validation every X steps')
     group.add_argument('-valid_batch_size', type=int, default=32,
                        help='Maximum batch size for validation')
     group.add_argument('-max_generator_batches', type=int, default=32,
                        help="""Maximum batches of words in a sequence to run
                         the generator on in parallel. Higher is faster, but
                         uses more memory.""")
-    group.add_argument('-epochs', type=int, default=13,
-                       help='Number of training epochs')
+    group.add_argument('-train_steps', type=int, default=100000,
+                       help='Number of training steps')
+    group.add_argument('-epochs', type=int, default=0,
+                       help='Deprecated epochs see train_steps')
     group.add_argument('-optim', default='sgd',
                        choices=['sgd', 'adagrad', 'adadelta', 'adam',
                                 'sparseadam'],
@@ -336,14 +401,14 @@ def train_opts(parser):
     group.add_argument('-learning_rate_decay', type=float, default=0.5,
                        help="""If update_learning_rate, decay learning rate by
                        this much if (i) perplexity does not decrease on the
-                       validation set or (ii) epoch has gone past
-                       start_decay_at""")
-    group.add_argument('-start_decay_at', type=int, default=8,
-                       help="""Start decaying every epoch after and including this
-                       epoch""")
-    group.add_argument('-start_checkpoint_at', type=int, default=0,
-                       help="""Start checkpointing every epoch after and including
-                       this epoch""")
+                       validation set or (ii) steps have gone past
+                       start_decay_steps""")
+    group.add_argument('-start_decay_steps', type=int, default=50000,
+                       help="""Start decaying every decay_steps after
+                       start_decay_steps""")
+    group.add_argument('-decay_steps', type=int, default=10000,
+                       help="""Decay every decay_steps""")
+
     group.add_argument('-decay_method', type=str, default="",
                        choices=['noam'], help="Use a custom decay rate.")
     group.add_argument('-warmup_steps', type=int, default=4000,
@@ -352,6 +417,8 @@ def train_opts(parser):
     group = parser.add_argument_group('Logging')
     group.add_argument('-report_every', type=int, default=50,
                        help="Print stats at this interval.")
+    group.add_argument('-log_file', type=str, default="",
+                       help="Output logs to a file under this path.")
     group.add_argument('-exp_host', type=str, default="",
                        help="Send logs to this crayon server.")
     group.add_argument('-exp', type=str, default="",
@@ -373,20 +440,30 @@ def train_opts(parser):
     group.add_argument('-window_size', type=float, default=.02,
                        help="Window size for spectrogram in seconds.")
 
+    # Option most relevant to image input
+    group.add_argument('-image_channel_size', type=int, default=3,
+                       choices=[3, 1],
+                       help="""Using grayscale image can training
+                       model faster and smaller""")
+
 
 def translate_opts(parser):
+    """ Translation / inference options """
     group = parser.add_argument_group('Model')
-    group.add_argument('-model', required=True,
-                       help='Path to model .pt file')
+    group.add_argument('-model', dest='models', metavar='MODEL',
+                       nargs='+', type=str, default=[], required=True,
+                       help='Path to model .pt file(s). '
+                            'Multiple models can be specified, '
+                            'for ensemble decoding.')
 
     group = parser.add_argument_group('Data')
     group.add_argument('-data_type', default="text",
                        help="Type of the source input. Options: [text|img].")
 
-    group.add_argument('-src',   required=True,
+    group.add_argument('-src', required=True,
                        help="""Source sequence to decode (one line per
                        sequence)""")
-    group.add_argument('-src_dir',   default="",
+    group.add_argument('-src_dir', default="",
                        help='Source directory for image or audio files')
     group.add_argument('-tgt',
                        help='True target sequence (optional)')
@@ -407,7 +484,10 @@ def translate_opts(parser):
                        help="Share source and target vocabulary")
 
     group = parser.add_argument_group('Beam')
-    group.add_argument('-beam_size',  type=int, default=5,
+    group.add_argument('-fast', action="store_true",
+                       help="""Use fast beam search (some features may not be
+                       supported!)""")
+    group.add_argument('-beam_size', type=int, default=5,
                        help='Beam size')
     group.add_argument('-min_length', type=int, default=0,
                        help='Minimum prediction length')
@@ -450,6 +530,8 @@ def translate_opts(parser):
     group = parser.add_argument_group('Logging')
     group.add_argument('-verbose', action="store_true",
                        help='Print scores and predictions for each sentence')
+    group.add_argument('-log_file', type=str, default="",
+                       help="Output logs to a file under this path.")
     group.add_argument('-attn_debug', action="store_true",
                        help='Print best attn for each word')
     group.add_argument('-dump_beam', type=str, default="",
@@ -475,8 +557,15 @@ def translate_opts(parser):
     group.add_argument('-window', default='hamming',
                        help='Window type for spectrogram generation')
 
+    # Option most relevant to image input
+    group.add_argument('-image_channel_size', type=int, default=3,
+                       choices=[3, 1],
+                       help="""Using grayscale image can training
+                       model faster and smaller""")
+
 
 def add_md_help_argument(parser):
+    """ md help parser """
     parser.add_argument('-md', action=MarkdownHelpAction,
                         help='print Markdown-formatted help text and exit.')
 
@@ -506,7 +595,7 @@ class MarkdownHelpFormatter(argparse.HelpFormatter):
         return super(MarkdownHelpFormatter, self).format_help()
 
     def start_section(self, heading):
-        super(MarkdownHelpFormatter, self)\
+        super(MarkdownHelpFormatter, self) \
             .start_section('### **%s**' % heading)
 
     def _format_action(self, action):
@@ -524,6 +613,8 @@ class MarkdownHelpFormatter(argparse.HelpFormatter):
 
 
 class MarkdownHelpAction(argparse.Action):
+    """ MD help action """
+
     def __init__(self, option_strings,
                  dest=argparse.SUPPRESS, default=argparse.SUPPRESS,
                  **kwargs):
@@ -541,11 +632,13 @@ class MarkdownHelpAction(argparse.Action):
 
 
 class DeprecateAction(argparse.Action):
+    """ Deprecate action """
+
     def __init__(self, option_strings, dest, help=None, **kwargs):
         super(DeprecateAction, self).__init__(option_strings, dest, nargs=0,
                                               help=help, **kwargs)
 
     def __call__(self, parser, namespace, values, flag_name):
-        help = self.help if self.help is not None else ""
+        help = self.help if self.mdhelp is not None else ""
         msg = "Flag '%s' is deprecated. %s" % (flag_name, help)
         raise argparse.ArgumentTypeError(msg)

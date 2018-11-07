@@ -29,7 +29,14 @@ Output file for the prepared data
 * **-max_shard_size []** 
 For text corpus of large volume, it will be divided into shards of this size to
 preprocess. If 0, the data will be handled as a whole. The unit is in bytes.
-Optimal value should be multiples of 64 bytes.
+Optimal value should be multiples of 64 bytes. A commonly used sharding value is
+131072000. It is recommended to ensure the corpus is shuffled before sharding.
+
+* **-shard_size []** 
+Divide src_corpus and tgt_corpus into smaller multiple src_copus and tgt corpus
+files, then build shards, each shard will have opt.shard_size samples except
+last shard. shard_size=0 means no segmentation shard_size>0 means segment
+dataset into multiple shards, each shard has shard_size samples
 
 ### **Vocab**:
 * **-src_vocab []** 
@@ -84,6 +91,9 @@ Random seed
 * **-report_every [100000]** 
 Report status every this many sentences
 
+* **-log_file []** 
+Output logs to a file under this path.
+
 ### **Speech**:
 * **-sample_rate [16000]** 
 Sample rate.
@@ -96,3 +106,6 @@ Window stride for spectrogram in seconds.
 
 * **-window [hamming]** 
 Window type for spectrogram generation.
+
+* **-image_channel_size [3]** 
+Using grayscale image can training model faster and smaller

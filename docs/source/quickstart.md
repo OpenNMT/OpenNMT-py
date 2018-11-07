@@ -35,8 +35,11 @@ python train.py -data data/demo -save_model demo-model
 
 The main train command is quite simple. Minimally it takes a data file
 and a save file.  This will run the default model, which consists of a
-2-layer LSTM with 500 hidden units on both the encoder/decoder. You
-can also add `-gpuid 1` to use (say) GPU 1.
+2-layer LSTM with 500 hidden units on both the encoder/decoder.
+If you want to train on GPU, you need to set, as an example:
+CUDA_VISIBLE_DEVICES=1,3
+`-world_size 2 -gpu_ranks 0 1` to use (say) GPU 1 and 3 on this node only.
+To know more about distributed training on single or multi nodes, read the FAQ section.
 
 ### Step 3: Translate
 
