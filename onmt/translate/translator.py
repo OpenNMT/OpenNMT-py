@@ -323,7 +323,7 @@ class Translator(object):
     def _decode_and_generate(self, decoder_input, memory_bank,
                              copy_attn, batch, data,
                              memory_lengths, src_map=None,
-                             step=None, batch_dim=1, batch_offset=None):
+                             step=None, batch_offset=None):
         
         if copy_attn:
             # Turn any copied words to UNKs (index 0).
@@ -350,7 +350,7 @@ class Translator(object):
                 batch,
                 self.fields["tgt"].vocab,
                 data.src_vocabs,
-                batch_dim=batch_dim,
+                batch_dim=0,
                 batch_offset=batch_offset)
             log_probs = scores.view(-1, scores.size(-1)).log()
             attn = dec_attn["copy"]
@@ -440,7 +440,7 @@ class Translator(object):
             log_probs, attn = self._decode_and_generate(decoder_input,
                               memory_bank, self.copy_attn, batch, data,
                               memory_lengths=memory_lengths, src_map=src_map,
-                              step=step, batch_dim=0, batch_offset=batch_offset)
+                              step=step, batch_offset=batch_offset)
 
             vocab_size = log_probs.size(-1)
 
