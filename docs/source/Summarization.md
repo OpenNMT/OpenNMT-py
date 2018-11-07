@@ -1,5 +1,18 @@
 # Example: Summarization
 
+Note: The process and results below are presented in our paper `Bottom-Up Abstractive Summarization`. Please consider citing it if you follow these instructions. 
+
+```
+@inproceedings{gehrmann2018bottom,
+  title={Bottom-Up Abstractive Summarization},
+  author={Gehrmann, Sebastian and Deng, Yuntian and Rush, Alexander},
+  booktitle={Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing},
+  pages={4098--4109},
+  year={2018}
+}
+```
+
+
 This document describes how to replicate summarization experiments on the CNNDM and gigaword datasets using OpenNMT-py.
 In the following, we assume access to a tokenized form of the corpus split into train/valid/test set. You can find the data [here](https://github.com/harvardnlp/sent-summary).
 
