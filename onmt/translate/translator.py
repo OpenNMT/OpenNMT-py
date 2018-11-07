@@ -5,7 +5,6 @@ import argparse
 import codecs
 import os
 import math
-import copy
 
 import torch
 
