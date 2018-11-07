@@ -69,7 +69,7 @@ class TransformerDecoderLayer(nn.Module):
         dec_mask = torch.gt(tgt_pad_mask +
                             self.mask[:, :tgt_pad_mask.size(1),
                                       :tgt_pad_mask.size(1)], 0)
-        dec_mask = None
+
         input_norm = self.layer_norm_1(inputs)
         all_input = input_norm
         if previous_input is not None:
