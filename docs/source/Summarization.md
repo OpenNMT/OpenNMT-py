@@ -13,7 +13,7 @@ Note: The process and results below are presented in our paper `Bottom-Up Abstra
 ```
 
 
-This document describes how to replicate summarization experiments on the CNNDM and gigaword datasets using OpenNMT-py.
+This document describes how to replicate summarization experiments on the CNN-DM and gigaword datasets using OpenNMT-py.
 In the following, we assume access to a tokenized form of the corpus split into train/valid/test set. You can find the data [here](https://github.com/harvardnlp/sent-summary).
 
 An example article-title pair from Gigaword should look like this:
@@ -29,11 +29,11 @@ An example article-title pair from Gigaword should look like this:
 
 Since we are using copy-attention [1] in the model, we need to preprocess the dataset such that source and target are aligned and use the same dictionary. This is achieved by using the options `dynamic_dict` and `share_vocab`.
 We additionally turn off truncation of the source to ensure that inputs longer than 50 words are not truncated.
-For CNNDM we follow See et al. [2] and additionally truncate the source length at 400 tokens and the target at 100. We also note that in CNNDM, we found models to work better if the target surrounds sentences with tags such that a sentence looks like `<t> w1 w2 w3 . </t>`. If you use this formatting, you can remove the tags after the inference step with the commands `sed -i 's/ <\/t>//g' FILE.txt` and `sed -i 's/<t> //g' FILE.txt`.
+For CNN-DM we follow See et al. [2] and additionally truncate the source length at 400 tokens and the target at 100. We also note that in CNN-DM, we found models to work better if the target surrounds sentences with tags such that a sentence looks like `<t> w1 w2 w3 . </t>`. If you use this formatting, you can remove the tags after the inference step with the commands `sed -i 's/ <\/t>//g' FILE.txt` and `sed -i 's/<t> //g' FILE.txt`.
 
 **Command used**:
 
-(1) CNNDM
+(1) CNN-DM
 
 ```
 python preprocess.py -train_src data/cnndm/train.txt.src \
@@ -85,7 +85,7 @@ We additionally set the maximum norm of the gradient to 2, and renormalize if th
 
 **commands used**:
 
-(1) CNNDM
+(1) CNN-DM
 
 ```
 python train.py -save_model models/cnndm \
@@ -111,9 +111,9 @@ python train.py -save_model models/cnndm \
                 -gpu_ranks 0 1
 ```
 
-(2) CNNDM Transformer
+(2) CNN-DM Transformer
 
-The following script trains the transformer model on CNNDM
+The following script trains the transformer model on CNN-DM
 
 ```
 python -u train.py -data data/cnndm/CNNDM \
@@ -174,7 +174,7 @@ During inference, we use beam-search with a beam-size of 5. We also added specif
 
 **commands used**:
 
-(1) CNNDM
+(1) CNN-DM
 
 ```
 python translate.py -gpu X \
@@ -199,9 +199,9 @@ python translate.py -gpu X \
 
 ### Evaluation
 
-#### CNNDM
+#### CNN-DM
 
-To evaluate the ROUGE scores on CNNDM, we extended the pyrouge wrapper with additional evaluations such as the amount of repeated n-grams (typically found in models with copy attention), found [here](https://github.com/sebastianGehrmann/rouge-baselines). The repository includes a sub-repo called pyrouge. Make sure to clone the code with the `git clone --recurse-submodules https://github.com/sebastianGehrmann/rouge-baselines` command to check this out as well and follow the installation instructions on the pyrouge repository before calling this script.
+To evaluate the ROUGE scores on CNN-DM, we extended the pyrouge wrapper with additional evaluations such as the amount of repeated n-grams (typically found in models with copy attention), found [here](https://github.com/sebastianGehrmann/rouge-baselines). The repository includes a sub-repo called pyrouge. Make sure to clone the code with the `git clone --recurse-submodules https://github.com/sebastianGehrmann/rouge-baselines` command to check this out as well and follow the installation instructions on the pyrouge repository before calling this script.
 The installation instructions can be found [here](https://github.com/falcondai/pyrouge/tree/9cdbfbda8b8d96e7c2646ffd048743ddcf417ed9#installation). Note that on MacOS, we found that the pointer to your perl installation in line 1 of `pyrouge/RELEASE-1.5.5/ROUGE-1.5.5.pl` might be different from the one you have installed. A simple fix is to change this line to `#!/usr/local/bin/perl -w` if it fails.
 
 It can be run with the following command:
@@ -221,7 +221,9 @@ For evaluation of large test sets such as Gigaword, we use the a parallel python
 
 ### Scores and Models
 
-#### CNNDM
+The website generator has trouble rendering tables, if you can't read the results, please go [here](https://github.com/OpenNMT/OpenNMT-py/blob/master/docs/source/Summarization.md) for correct format.
+
+#### CNN-DM
 
 | Model Type    | Model    | R1 R  | R1 P  | R1 F  | R2 R  | R2 P  | R2 F  | RL R  | RL P  | RL F  |
 | ------------- |  -------- | -----:| -----:| -----:|------:| -----:| -----:|-----: | -----:| -----:|
