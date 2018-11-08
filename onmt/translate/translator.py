@@ -341,20 +341,13 @@ class Translator(object):
         else:
             scores = self.model.generator.forward(
                 dec_out, dec_attn["copy"].squeeze(0), src_map)
-            if batch_offset is not None:
-                scores = scores.view(-1, self.beam_size, scores.size(-1))
-            else:
-                scores = scores.view(self.beam_size,
-                                     batch.batch_size, -1).transpose(0, 1)
             scores = data.collapse_copy_scores(
-                scores,
+                scores.view(-1, self.beam_size, scores.size(-1)),
                 batch,
                 self.fields["tgt"].vocab,
                 data.src_vocabs,
                 batch_dim=0,
                 batch_offset=batch_offset)
-            if batch_offset is None:
-                scores = scores.transpose(0, 1)
             log_probs = scores.view(-1, scores.size(-1)).log()
             attn = dec_attn["copy"]
 
@@ -394,8 +387,8 @@ class Translator(object):
         results["batch"] = batch
         if "tgt" in batch.__dict__:
             results["gold_score"] = self._score_target(
-                batch, memory_bank, src_lengths, data, batch.src_map \
-                if data_type == 'text' and self.copy_attn else None)
+                batch, memory_bank, src_lengths, data, batch.src_map
+                if data.data_type == 'text' and self.copy_attn else None)
             self.model.decoder.init_state(
                 src, memory_bank, enc_states, with_cache=True)
         else:
@@ -590,24 +583,6 @@ class Translator(object):
                                     exclusion_tokens=exclusion_tokens)
                 for __ in range(batch_size)]
 
-        # Help functions for working with beams and batches
-        def var(a):
-            return torch.tensor(a, requires_grad=False)
-
-        def rvar(a):
-            return var(a.repeat(1, beam_size, 1))
-
-        def bottle(m):
-            return m.view(batch_size * beam_size, -1)
-
-        def unbottle(m):
-            return m.view(beam_size, batch_size, -1)
-
-        def _repeat_beam_size_times(x, dim):
-            repeats = [1] * x.dim()
-            repeats[dim] = beam_size
-            return x.repeat(*repeats)
-
         # (1) Run the encoder on the src.
         src, enc_states, memory_bank, src_lengths = self._run_encoder(
             batch, data_type)
@@ -620,7 +595,7 @@ class Translator(object):
         results["batch"] = batch
         if "tgt" in batch.__dict__:
             results["gold_score"] = self._score_target(
-                batch, memory_bank, src_lengths, data, batch.src_map \
+                batch, memory_bank, src_lengths, data, batch.src_map
                 if data_type == 'text' and self.copy_attn else None)
             self.model.decoder.init_state(
                 src, memory_bank, enc_states, with_cache=True)
@@ -628,14 +603,17 @@ class Translator(object):
             results["gold_score"] = [0] * batch_size
 
         # (2) Repeat src objects `beam_size` times.
-        src_map = rvar(batch.src_map.data) \
-            if data_type == 'text' and self.copy_attn else None
+        # We use now  batch_size x beam_size (same as fast mode)
+        src_map = (tile(batch.src_map, beam_size, dim=1)
+                   if data.data_type == 'text' and self.copy_attn else None)
+        self.model.decoder.map_state(
+            lambda state, dim: tile(state, beam_size, dim=dim))
+
         if isinstance(memory_bank, tuple):
-            memory_bank = tuple(rvar(x.data) for x in memory_bank)
+            memory_bank = tuple(tile(x, beam_size, dim=1) for x in memory_bank)
         else:
-            memory_bank = rvar(memory_bank.data)
-        memory_lengths = src_lengths.repeat(beam_size)
-        self.model.decoder.map_state(_repeat_beam_size_times)
+            memory_bank = tile(memory_bank, beam_size, dim=1)
+        memory_lengths = tile(src_lengths, beam_size)
 
         # (3) run the decoder to generate sentences, using beam search.
         for i in range(self.max_length):
@@ -645,7 +623,7 @@ class Translator(object):
             # (a) Construct batch x beam_size nxt words.
             # Get all the pending current beam words and arrange for forward.
             inp = torch.stack([b.get_current_state() for b in beam])
-            inp = inp.t().contiguous().view(1, -1, 1)
+            inp = inp.view(1, -1, 1)
 
             # (b) Decode and forward
             out, beam_attn = \
@@ -654,21 +632,19 @@ class Translator(object):
                                           memory_lengths=memory_lengths,
                                           src_map=src_map, step=i)
 
-            out = unbottle(out)
-            beam_attn = unbottle(beam_attn)
+            out = out.view(batch_size, beam_size, -1)
+            beam_attn = beam_attn.view(batch_size, beam_size, -1)
 
             # (c) Advance each beam.
             select_indices_array = []
+            # Loop over the batch_size number of beam
             for j, b in enumerate(beam):
-                b.advance(out[:, j],
-                          beam_attn.data[:, j, :memory_lengths[j]])
+                b.advance(out[j, :],
+                          beam_attn.data[j, :, :memory_lengths[j]])
                 select_indices_array.append(
-                    b.get_current_origin() * batch_size + j)
-            select_indices = torch.cat(select_indices_array) \
-                                  .view(batch_size, beam_size) \
-                                  .transpose(0, 1) \
-                                  .contiguous() \
-                                  .view(-1)
+                    b.get_current_origin() + j * beam_size)
+            select_indices = torch.cat(select_indices_array)
+
             self.model.decoder.map_state(
                 lambda state, dim: state.index_select(dim, select_indices))
 
