@@ -96,14 +96,10 @@ class EnsembleGenerator(nn.Module):
         by averaging distributions from models in the ensemble.
         All models in the ensemble must share a target vocabulary.
         """
-        if attn is not None:
-            distributions = [model_generator(hidden[i], attn, src_map)
-                             for i, model_generator
-                             in enumerate(self.model_generators)]
-        else:
-            distributions = [model_generator(hidden[i])
-                             for i, model_generator
-                             in enumerate(self.model_generators)]
+        distributions = torch.stack(
+                [mg(h) if attn is None else mg(h, attn, src_map)
+                 for h, mg in zip(hidden, self.model_generators)]
+            )
         if self._raw_probs:
             return torch.log(torch.exp(distributions).mean(0))
         else:
