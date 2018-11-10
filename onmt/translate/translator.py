@@ -729,8 +729,6 @@ class Translator(object):
 
     def _score_target(self, batch, memory_bank, src_lengths):
         tgt_in = inputters.make_features(batch, 'tgt')[:-1]
-        tt = torch.cuda if self.cuda else torch
-        gold_scores = tt.FloatTensor(batch.batch_size).fill_(0)
         dec_out, _ = self.model.decoder(
             tgt_in, memory_bank, memory_lengths=src_lengths)
 
