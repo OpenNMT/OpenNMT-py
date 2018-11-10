@@ -4,6 +4,7 @@
 """
 import glob
 import os
+import codecs
 
 from collections import Counter, defaultdict, OrderedDict
 from itertools import count
@@ -84,7 +85,7 @@ def save_fields_to_vocab(fields):
     return vocab
 
 
-def merge_vocabs(vocabs, vocab_size=None):
+def merge_vocabs(vocabs, vocab_size=None, min_frequency=1):
     """
     Merge individual vocabularies (assumed to be generated from disjoint
     documents) into a larger vocabulary.
@@ -92,6 +93,7 @@ def merge_vocabs(vocabs, vocab_size=None):
     Args:
         vocabs: `torchtext.vocab.Vocab` vocabularies to be merged
         vocab_size: `int` the final vocabulary size. `None` for no limit.
+        min_frequency: `int` minimum frequency for word to be retained.
     Return:
         `torchtext.vocab.Vocab`
     """
@@ -99,7 +101,8 @@ def merge_vocabs(vocabs, vocab_size=None):
     return torchtext.vocab.Vocab(merged,
                                  specials=[UNK_WORD, PAD_WORD,
                                            BOS_WORD, EOS_WORD],
-                                 max_size=vocab_size)
+                                 max_size=vocab_size,
+                                 min_freq=min_frequency)
 
 
 def get_num_features(data_type, corpus_file, side):
@@ -304,7 +307,20 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
 
     # Load vocabulary
     src_vocab = load_vocabulary(src_vocab_path, tag="source")
+    if src_vocab is not None:
+        src_vocab_size = len(src_vocab)
+        logger.info('Loaded source vocab has %d tokens.' % src_vocab_size)
+        for i, token in enumerate(src_vocab):
+            # keep the order of tokens specified in the vocab file by
+            # adding them to the counter with decreasing counting values
+            counter['src'][token] = src_vocab_size - i
+
     tgt_vocab = load_vocabulary(tgt_vocab_path, tag="target")
+    if tgt_vocab is not None:
+        tgt_vocab_size = len(tgt_vocab)
+        logger.info('Loaded source vocab has %d tokens.' % tgt_vocab_size)
+        for i, token in enumerate(tgt_vocab):
+            counter['tgt'][token] = tgt_vocab_size - i
 
     for index, path in enumerate(train_dataset_files):
         dataset = torch.load(path)
@@ -315,9 +331,9 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
                 if not fields[k].sequential:
                     continue
                 elif k == 'src' and src_vocab:
-                    val = [item for item in val if item in src_vocab]
+                    continue
                 elif k == 'tgt' and tgt_vocab:
-                    val = [item for item in val if item in tgt_vocab]
+                    continue
                 counter[k].update(val)
 
         # Drop the none-using from memory but keep the last
@@ -362,7 +378,8 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
             logger.info(" * merging src and tgt vocab...")
             merged_vocab = merge_vocabs(
                 [fields["src"].vocab, fields["tgt"].vocab],
-                vocab_size=src_vocab_size)
+                vocab_size=src_vocab_size,
+                min_frequency=src_words_min_frequency)
             fields["src"].vocab = merged_vocab
             fields["tgt"].vocab = merged_vocab
 
@@ -378,7 +395,7 @@ def load_vocabulary(vocabulary_path, tag=""):
     """
     vocabulary = None
     if vocabulary_path:
-        vocabulary = set([])
+        vocabulary = []
         logger.info("Loading {} vocabulary from {}".format(tag,
                                                            vocabulary_path))
 
@@ -386,12 +403,12 @@ def load_vocabulary(vocabulary_path, tag=""):
             raise RuntimeError(
                 "{} vocabulary not found at {}!".format(tag, vocabulary_path))
         else:
-            with open(vocabulary_path) as f:
+            with codecs.open(vocabulary_path, 'r', 'utf-8') as f:
                 for line in f:
                     if len(line.strip()) == 0:
                         continue
                     word = line.strip().split()[0]
-                    vocabulary.add(word)
+                    vocabulary.append(word)
     return vocabulary
 
 
