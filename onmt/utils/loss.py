@@ -23,28 +23,31 @@ def build_loss_compute(model, tgt_vocab, opt, train=True):
     """
     device = torch.device("cuda" if onmt.utils.misc.use_gpu(opt) else "cpu")
 
+    padding_idx = tgt_vocab.stoi[inputters.PAD_WORD]
+    if opt.copy_attn:
+        criterion = onmt.modules.CopyGeneratorLoss(
+            len(tgt_vocab), opt.copy_attn_force, padding_idx
+        )
+    elif opt.label_smoothing > 0 and train:
+        criterion = LabelSmoothingLoss(
+            opt.label_smoothing, len(tgt_vocab), ignore_index=padding_idx
+        )
+    elif isinstance(model.generator[1], LogSparsemax):
+        criterion = SparsemaxLoss(ignore_index=padding_idx, reduction='sum')
+    else:
+        criterion = nn.NLLLoss(ignore_index=padding_idx, reduction='sum')
+
+    # if the loss function operates on vectors of raw logits instead of
+    # probabilities, only the first part of the generator needs to be
+    # passed to the NMTLossCompute. At the moment, the only supported
+    # loss function of this kind is the sparsemax loss.
+    use_raw_logits = isinstance(criterion, SparsemaxLoss)
+    loss_gen = model.generator[0] if use_raw_logits else model.generator
     if opt.copy_attn:
         compute = onmt.modules.CopyGeneratorLossCompute(
-            model.generator, tgt_vocab, opt.copy_attn_force,
-            opt.copy_loss_by_seqlength)
+            criterion, loss_gen, tgt_vocab, opt.copy_loss_by_seqlength
+        )
     else:
-        padding_idx = tgt_vocab.stoi[inputters.PAD_WORD]
-        if opt.label_smoothing > 0 and train:
-            criterion = LabelSmoothingLoss(
-                opt.label_smoothing, len(tgt_vocab), ignore_index=padding_idx
-            )
-        elif isinstance(model.generator[1], LogSparsemax):
-            criterion = SparsemaxLoss(
-                ignore_index=padding_idx, reduction='sum'
-            )
-        else:
-            criterion = nn.NLLLoss(ignore_index=padding_idx, reduction='sum')
-        # if the loss function operates on vectors of raw logits instead of
-        # probabilities, only the first part of the generator needs to be
-        # passed to the NMTLossCompute. At the moment, the only supported
-        # loss function of this kind is the sparsemax loss.
-        use_raw_logits = isinstance(criterion, SparsemaxLoss)
-        loss_gen = model.generator[0] if use_raw_logits else model.generator
         compute = NMTLossCompute(criterion, loss_gen)
     compute.to(device)
 

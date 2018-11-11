@@ -1,7 +1,7 @@
 """ Generator module """
-import torch.nn as nn
 import torch
-import torch.cuda
+import torch.nn as nn
+import torch.nn.functional as F
 
 import onmt.inputters as inputters
 from onmt.utils.misc import aeq
@@ -64,8 +64,6 @@ class CopyGenerator(nn.Module):
         self.linear = nn.Linear(input_size, len(tgt_dict))
         self.linear_copy = nn.Linear(input_size, 1)
         self.tgt_dict = tgt_dict
-        self.softmax = nn.Softmax(dim=1)
-        self.sigmoid = nn.Sigmoid()
 
     def forward(self, hidden, attn, src_map):
         """
@@ -91,30 +89,32 @@ class CopyGenerator(nn.Module):
         # Original probabilities.
         logits = self.linear(hidden)
         logits[:, self.tgt_dict.stoi[inputters.PAD_WORD]] = -float('inf')
-        prob = self.softmax(logits)
+        prob = F.softmax(logits, 1)
 
         # Probability of copying p(z=1) batch.
-        p_copy = self.sigmoid(self.linear_copy(hidden))
+        p_copy = F.sigmoid(self.linear_copy(hidden))
         # Probibility of not copying: p_{word}(w) * (1 - p(z))
         out_prob = torch.mul(prob, 1 - p_copy.expand_as(prob))
         mul_attn = torch.mul(attn, p_copy.expand_as(attn))
-        copy_prob = torch.bmm(mul_attn.view(-1, batch, slen)
-                              .transpose(0, 1),
-                              src_map.transpose(0, 1)).transpose(0, 1)
+        copy_prob = torch.bmm(
+            mul_attn.view(-1, batch, slen).transpose(0, 1),
+            src_map.transpose(0, 1)
+        ).transpose(0, 1)
         copy_prob = copy_prob.contiguous().view(-1, cvocab)
         return torch.cat([out_prob, copy_prob], 1)
 
 
-class CopyGeneratorCriterion(object):
+class CopyGeneratorLoss(nn.Module):
     """ Copy generator criterion """
 
     def __init__(self, vocab_size, force_copy, ignore_index=-100, eps=1e-20):
+        super(CopyGeneratorLoss, self).__init__()
         self.force_copy = force_copy
         self.eps = eps
         self.offset = vocab_size
         self.ignore_index = ignore_index
 
-    def __call__(self, scores, align, target):
+    def forward(self, scores, align, target):
         # Compute unks in align and target for readability
         align_unk = align.eq(0).float()
         align_not_unk = align.ne(0).float()
@@ -148,15 +148,10 @@ class CopyGeneratorLossCompute(loss.LossComputeBase):
     Copy Generator Loss Computation.
     """
 
-    def __init__(self, generator, tgt_vocab, force_copy,
+    def __init__(self, criterion, generator, tgt_vocab,
                  normalize_by_length, eps=1e-20):
-        padding_idx = tgt_vocab.stoi[inputters.PAD_WORD]
-        criterion = CopyGeneratorCriterion(
-            len(tgt_vocab), force_copy, padding_idx
-        )
         super(CopyGeneratorLossCompute, self).__init__(criterion, generator)
         self.tgt_vocab = tgt_vocab
-        self.force_copy = force_copy
         self.normalize_by_length = normalize_by_length
 
     def _make_shard_state(self, batch, output, range_, attns):
@@ -188,24 +183,26 @@ class CopyGeneratorLossCompute(loss.LossComputeBase):
                                 self._bottle(copy_attn),
                                 batch.src_map)
         loss = self.criterion(scores, align, target)
-        scores_data = scores.data.clone()
+
+        # this block here does not depend on the loss value computed above
         scores_data = inputters.TextDataset.collapse_copy_scores(
-            self._unbottle(scores_data, batch.batch_size),
+            self._unbottle(scores.clone(), batch.batch_size),
             batch, self.tgt_vocab, batch.dataset.src_vocabs)
         scores_data = self._bottle(scores_data)
 
         # Correct target copy token instead of <unk>
         # tgt[i] = align[i] + len(tgt_vocab)
         # for i such that tgt[i] == 0 and align[i] != 0
-        target_data = target.data.clone()
-        correct_mask = target_data.eq(0) * align.data.ne(0)
-        correct_copy = (align.data + len(self.tgt_vocab)) * correct_mask.long()
+        target_data = target.clone()
+        correct_mask = target_data.eq(0) * align.ne(0)
+        correct_copy = (align + len(self.tgt_vocab)) * correct_mask.long()
         target_data = target_data + correct_copy
 
         # Compute sum of perplexities for stats
-        loss_data = loss.sum().data.clone()
+        loss_data = loss.sum().clone()
         stats = self._stats(loss_data, scores_data, target_data)
 
+        # this part very clearly looks like it belongs in CopyGeneratorLoss
         if self.normalize_by_length:
             # Compute Loss as NLL divided by seq length
             # Compute Sequence Lengths
