@@ -1,6 +1,8 @@
 """
 An implementation of sparsemax (Martins & Astudillo, 2016). See
 https://arxiv.org/pdf/1602.02068 for detailed description.
+
+By Ben Peters and Vlad Niculae
 """
 
 import torch
@@ -8,48 +10,65 @@ from torch.autograd import Function
 import torch.nn as nn
 
 
-def threshold_and_support(z, dim=0):
-    """
-    z: any dimension
-    dim: dimension along which to apply the sparsemax
-    """
-    sorted_z, _ = torch.sort(z, descending=True, dim=dim)
-    z_sum = sorted_z.cumsum(dim) - 1  # sort of a misnomer
-    k = torch.arange(1, sorted_z.size(dim) + 1, device=z.device).float().view(
-        torch.Size([-1] + [1] * (z.dim() - 1))
-    ).transpose(0, dim)
-    support = k * sorted_z > z_sum
+def _make_ix_like(X, dim=0):
+    d = X.size(dim)
+    rho = torch.arange(1, d + 1, device=X.device, dtype=X.dtype)
+    view = [1] * X.dim()
+    view[0] = -1
+    return rho.view(view).transpose(0, dim)
 
-    k_z_indices = support.sum(dim=dim).unsqueeze(dim)
-    k_z = k_z_indices.float()
-    tau_z = z_sum.gather(dim, k_z_indices - 1) / k_z
-    return tau_z, k_z
+
+def _threshold_and_support(X, dim=0):
+    """
+    Sparsemax building block: compute the threshold
+    Parameters:
+        X: any dimension
+        dim: dimension along which to apply the sparsemax
+    Returns:
+        the threshold value
+    """
+    X_srt, _ = torch.sort(X, descending=True, dim=dim)
+    X_cumsum = X_srt.cumsum(dim) - 1
+    rhos = _make_ix_like(X, dim)
+    support = rhos * X_srt > X_cumsum
+
+    support_size = support.sum(dim=dim).unsqueeze(dim)
+    tau = X_cumsum.gather(dim, support_size - 1)
+    tau /= support_size.to(X.dtype)
+    return tau, support_size
 
 
 class SparsemaxFunction(Function):
 
     @staticmethod
-    def forward(ctx, input, dim=0):
+    def forward(ctx, X, dim=0):
         """
-        input (FloatTensor): any shape
-        returns (FloatTensor): same shape with sparsemax computed on given dim
+        sparsemax: normalizing sparse transform (a la softmax)
+        Parameters:
+            X (Tensor): any shape
+            dim: dimension along which to apply sparsemax
+        Returns:
+            Y (Tensor): same shape as X
         """
         ctx.dim = dim
-        tau_z, k_z = threshold_and_support(input, dim=dim)
-        output = torch.clamp(input - tau_z, min=0)
-        ctx.save_for_backward(k_z, output)
-        return output
+        max_val, _ = X.max(dim=dim, keepdim=True)
+        X = X - max_val  # same numerical stability trick as for softmax
+        tau, support_size = _threshold_and_support(X, dim=dim)
+        Y = torch.clamp(X - tau, min=0)
+        ctx.save_for_backward(support_size, Y)
+        return Y
 
     @staticmethod
-    def backward(ctx, grad_output):
-        k_z, output = ctx.saved_tensors
+    def backward(ctx, dY):
+        support_size, Y = ctx.saved_tensors
         dim = ctx.dim
-        grad_input = grad_output.clone()
-        grad_input[output == 0] = 0
+        dX = dY.clone()
+        dX[Y == 0] = 0
 
-        v_hat = (grad_input.sum(dim=dim) / k_z.squeeze()).unsqueeze(dim)
-        grad_input = torch.where(output != 0, grad_input - v_hat, grad_input)
-        return grad_input, None
+        v_hat = dX.sum(dim=dim) / support_size.to(Y.dtype).squeeze()
+        v_hat = v_hat.unsqueeze(dim)
+        dX = torch.where(Y != 0, dX - v_hat, dX)
+        return dX, None
 
 
 sparsemax = SparsemaxFunction.apply
