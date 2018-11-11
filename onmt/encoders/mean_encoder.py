@@ -1,6 +1,4 @@
 """Define a minimal encoder."""
-from __future__ import division
-
 from onmt.encoders.encoder import EncoderBase
 
 

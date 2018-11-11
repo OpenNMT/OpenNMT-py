@@ -1,6 +1,4 @@
 """Define RNN-based encoders."""
-from __future__ import division
-
 import torch.nn as nn
 import torch.nn.functional as F
 
