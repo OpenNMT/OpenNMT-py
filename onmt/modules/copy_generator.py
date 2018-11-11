@@ -108,11 +108,11 @@ class CopyGenerator(nn.Module):
 class CopyGeneratorCriterion(object):
     """ Copy generator criterion """
 
-    def __init__(self, vocab_size, force_copy, pad, eps=1e-20):
+    def __init__(self, vocab_size, force_copy, ignore_index=-100, eps=1e-20):
         self.force_copy = force_copy
         self.eps = eps
         self.offset = vocab_size
-        self.pad = pad
+        self.ignore_index = ignore_index
 
     def __call__(self, scores, align, target):
         # Compute unks in align and target for readability
@@ -139,7 +139,7 @@ class CopyGeneratorCriterion(object):
             out = out + tmp.mul(align_unk)
 
         # Drop padding.
-        loss = -out.log().mul(target.ne(self.pad).float())
+        loss = -out.log().mul(target.ne(self.ignore_index).float())
         return loss
 
 
@@ -148,15 +148,16 @@ class CopyGeneratorLossCompute(loss.LossComputeBase):
     Copy Generator Loss Computation.
     """
 
-    def __init__(self, generator, tgt_vocab,
-                 force_copy, normalize_by_length,
-                 eps=1e-20):
-        super(CopyGeneratorLossCompute, self).__init__(
-            generator, tgt_vocab)
+    def __init__(self, generator, tgt_vocab, force_copy,
+                 normalize_by_length, eps=1e-20):
+        padding_idx = tgt_vocab.stoi[inputters.PAD_WORD]
+        criterion = CopyGeneratorCriterion(
+            len(tgt_vocab), force_copy, padding_idx
+        )
+        super(CopyGeneratorLossCompute, self).__init__(criterion, generator)
+        self.tgt_vocab = tgt_vocab
         self.force_copy = force_copy
         self.normalize_by_length = normalize_by_length
-        self.criterion = CopyGeneratorCriterion(len(tgt_vocab), force_copy,
-                                                self.padding_idx)
 
     def _make_shard_state(self, batch, output, range_, attns):
         """ See base class for args description. """
