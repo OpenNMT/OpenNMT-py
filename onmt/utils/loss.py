@@ -218,7 +218,7 @@ class NMTLossCompute(LossComputeBase):
             )
         elif self.sparse:
             self.criterion = SparsemaxLoss(
-                ignore_index=self.padding_idx, size_average=False
+                ignore_index=self.padding_idx, reduction='sum'
             )
         else:
             self.criterion = nn.NLLLoss(

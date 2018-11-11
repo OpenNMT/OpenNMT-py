@@ -55,11 +55,11 @@ class SparsemaxLoss(nn.Module):
     """
 
     def __init__(self, weight=None, ignore_index=-100,
-                 reduce=True, size_average=True):
+                 reduction='elementwise_mean'):
+        assert reduction in ['elementwise_mean', 'sum', 'none']
+        self.reduction = reduction
         self.weight = weight
         self.ignore_index = ignore_index
-        self.reduce = reduce
-        self.size_average = size_average
         super(SparsemaxLoss, self).__init__()
 
     def forward(self, input, target):
@@ -70,8 +70,8 @@ class SparsemaxLoss(nn.Module):
             loss.masked_fill_(ignored_positions, 0.0)
         else:
             size = float(target.size(0))
-        if self.reduce:
+        if self.reduction == 'sum':
             loss = loss.sum()
-            if self.size_average:
-                loss = loss / size
+        elif self.reduction == 'elementwise_mean':
+            loss = loss.sum() / size
         return loss
