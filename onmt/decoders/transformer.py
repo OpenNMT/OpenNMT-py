@@ -40,8 +40,8 @@ class TransformerDecoderLayer(nn.Module):
         self.context_attn = onmt.modules.MultiHeadedAttention(
             heads, d_model, dropout=dropout)
         self.feed_forward = PositionwiseFeedForward(d_model, d_ff, dropout)
-        self.layer_norm_1 = onmt.modules.LayerNorm(d_model)
-        self.layer_norm_2 = onmt.modules.LayerNorm(d_model)
+        self.layer_norm_1 = nn.LayerNorm(d_model, eps=1e-6)
+        self.layer_norm_2 = nn.LayerNorm(d_model, eps=1e-6)
         self.dropout = dropout
         self.drop = nn.Dropout(dropout)
         mask = self._get_attn_subsequent_mask(MAX_SIZE)
@@ -170,7 +170,7 @@ class TransformerDecoder(nn.Module):
             self.copy_attn = onmt.modules.GlobalAttention(
                 d_model, attn_type=attn_type)
             self._copy = True
-        self.layer_norm = onmt.modules.LayerNorm(d_model)
+        self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
 
     def init_state(self, src, memory_bank, enc_hidden, with_cache=False):
         """ Init decoder state """
