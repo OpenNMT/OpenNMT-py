@@ -237,14 +237,17 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
     # Load the model states from checkpoint or initialize them.
     if checkpoint is not None:
         # This preserves backward-compat for models using customed layernorm
-        fix_bias = lambda s: re.sub(
-          r'(.*)\.layer_norm((_\d+)?)\.b_2', r'\1.layer_norm\2.bias', s)
-        fix_weight = lambda s: re.sub(
-          r'(.*)\.layer_norm((_\d+)?)\.a_2', r'\1.layer_norm\2.weight', s)
-        fix_key = lambda k: fix_weight(fix_bias(k))
+        def fix_key(s):
+            s = re.sub(r'(.*)\.layer_norm((_\d+)?)\.b_2',
+                       r'\1.layer_norm\2.bias', s)
+            s = re.sub(r'(.*)\.layer_norm((_\d+)?)\.a_2',
+                       r'\1.layer_norm\2.weight', s)
+            return s
+
+        checkpoint['model'] = \
+            {fix_key(k): v for (k, v) in checkpoint['model'].items()}
         # end of patch for backward compatibility
 
-        checkpoint['model'] = {fix_key(k): v for (k, v) in checkpoint['model'].items()}
         model.load_state_dict(checkpoint['model'], strict=False)
         generator.load_state_dict(checkpoint['generator'], strict=False)
     else:

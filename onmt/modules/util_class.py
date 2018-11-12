@@ -2,6 +2,7 @@
 import torch
 import torch.nn as nn
 
+
 # At the moment this class is only used by embeddings.Embeddings look-up tables
 class Elementwise(nn.ModuleList):
     """

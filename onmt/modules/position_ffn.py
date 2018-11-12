@@ -4,8 +4,6 @@ Position feed-forward network from "Attention is All You Need"
 
 import torch.nn as nn
 
-import onmt
-
 
 class PositionwiseFeedForward(nn.Module):
     """ A two-layer Feed-Forward-Network with residual layer norm.
