@@ -348,11 +348,11 @@
 <span class="sd">       beta (float):  coverage parameter</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">cov_penalty</span><span class="p">,</span> <span class="n">length_penalty</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">alpha</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">=</span> <span class="n">beta</span>
-        <span class="n">penalty_builder</span> <span class="o">=</span> <span class="n">penalties</span><span class="o">.</span><span class="n">PenaltyBuilder</span><span class="p">(</span><span class="n">cov_penalty</span><span class="p">,</span>
-                                                   <span class="n">length_penalty</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">opt</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">alpha</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">beta</span>
+        <span class="n">penalty_builder</span> <span class="o">=</span> <span class="n">penalties</span><span class="o">.</span><span class="n">PenaltyBuilder</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">coverage_penalty</span><span class="p">,</span>
+                                                   <span class="n">opt</span><span class="o">.</span><span class="n">length_penalty</span><span class="p">)</span>
         <span class="c1"># Term will be subtracted from probability</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cov_penalty</span> <span class="o">=</span> <span class="n">penalty_builder</span><span class="o">.</span><span class="n">coverage_penalty</span><span class="p">()</span>
         <span class="c1"># Probability will be divided by this</span>
