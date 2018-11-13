@@ -26,13 +26,9 @@ def build_translator(opt, report_score=True, logger=None, out_file=None):
     opts.model_opts(dummy_parser)
     dummy_opt = dummy_parser.parse_known_args([])[0]
 
-    if len(opt.models) > 1:
-        # use ensemble decoding if more than one model is specified
-        fields, model, model_opt = \
-            onmt.decoders.ensemble.load_test_model(opt, dummy_opt.__dict__)
-    else:
-        fields, model, model_opt = \
-            onmt.model_builder.load_test_model(opt, dummy_opt.__dict__)
+    load_test_model = onmt.decoders.ensemble.load_test_model \
+        if len(opt.models) > 1 else onmt.model_builder.load_test_model
+    fields, model, model_opt = load_test_model(opt, dummy_opt.__dict__)
 
     scorer = onmt.translate.GNMTGlobalScorer(opt)
 
@@ -633,6 +629,7 @@ class Translator(object):
 
             # (a) Construct batch x beam_size nxt words.
             # Get all the pending current beam words and arrange for forward.
+
             inp = torch.stack([b.get_current_state() for b in beam])
             inp = inp.view(1, -1, 1)
 
@@ -675,19 +672,17 @@ class Translator(object):
 
     def _score_target(self, batch, memory_bank, src_lengths, data, src_map):
         tgt_in = inputters.make_features(batch, 'tgt')[:-1]
-        tt = torch.cuda if self.cuda else torch
-        gold_scores = tt.FloatTensor(batch.batch_size).fill_(0)
 
         log_probs, attn = \
             self._decode_and_generate(tgt_in, memory_bank, batch, data,
                                       memory_lengths=src_lengths,
                                       src_map=src_map)
         tgt_pad = self.fields["tgt"].vocab.stoi[inputters.PAD_WORD]
-        for log_prob, tgt in zip(log_probs, batch.tgt[1:]):
-            tgt = tgt.unsqueeze(1)
-            scores = log_prob.gather(1, tgt)
-            scores.masked_fill_(tgt.eq(tgt_pad), 0)
-            gold_scores += scores.view(-1)
+
+        log_probs[:, :, tgt_pad] = 0
+        gold = batch.tgt[1:].unsqueeze(2)
+        gold_scores = log_probs.gather(2, gold)
+        gold_scores = gold_scores.sum(dim=0).view(-1)
 
         return gold_scores
 

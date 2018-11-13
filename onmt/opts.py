@@ -455,6 +455,13 @@ def translate_opts(parser):
                        help='Path to model .pt file(s). '
                             'Multiple models can be specified, '
                             'for ensemble decoding.')
+    group.add_argument('-avg_raw_probs', action='store_true',
+                       help="""If this is set, during ensembling scores from
+                       different models will be combined by averaging their
+                       raw probabilities and then taking the log. Otherwise,
+                       the log probabilities will be averaged directly.
+                       Necessary for models whose output layers can assign
+                       zero probability.""")
 
     group = parser.add_argument_group('Data')
     group.add_argument('-data_type', default="text",
