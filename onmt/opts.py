@@ -131,11 +131,11 @@ def model_opts(parser):
     # Generator and loss options.
     group.add_argument('-copy_attn', action="store_true",
                        help='Train copy attention layer.')
-    group.add_argument('-generator_function', default="log_softmax",
-                       choices=["log_softmax", "sparsemax"],
+    group.add_argument('-generator_function', default="softmax",
+                       choices=["softmax", "sparsemax"],
                        help="""Which function to use for generating
                        probabilities over the target vocabulary (choices:
-                       log_softmax, sparsemax)""")
+                       softmax, sparsemax)""")
     group.add_argument('-copy_attn_force', action="store_true",
                        help='When available, train to copy.')
     group.add_argument('-reuse_copy_attn', action="store_true",
