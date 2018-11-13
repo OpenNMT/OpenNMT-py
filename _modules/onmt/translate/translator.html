@@ -185,13 +185,9 @@
     <span class="n">opts</span><span class="o">.</span><span class="n">model_opts</span><span class="p">(</span><span class="n">dummy_parser</span><span class="p">)</span>
     <span class="n">dummy_opt</span> <span class="o">=</span> <span class="n">dummy_parser</span><span class="o">.</span><span class="n">parse_known_args</span><span class="p">([])[</span><span class="mi">0</span><span class="p">]</span>
 
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">models</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="c1"># use ensemble decoding if more than one model is specified</span>
-        <span class="n">fields</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">model_opt</span> <span class="o">=</span> \
-            <span class="n">onmt</span><span class="o">.</span><span class="n">decoders</span><span class="o">.</span><span class="n">ensemble</span><span class="o">.</span><span class="n">load_test_model</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">dummy_opt</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">fields</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">model_opt</span> <span class="o">=</span> \
-            <span class="n">onmt</span><span class="o">.</span><span class="n">model_builder</span><span class="o">.</span><span class="n">load_test_model</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">dummy_opt</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">)</span>
+    <span class="n">load_test_model</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">decoders</span><span class="o">.</span><span class="n">ensemble</span><span class="o">.</span><span class="n">load_test_model</span> \
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">models</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">onmt</span><span class="o">.</span><span class="n">model_builder</span><span class="o">.</span><span class="n">load_test_model</span>
+    <span class="n">fields</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">model_opt</span> <span class="o">=</span> <span class="n">load_test_model</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">dummy_opt</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">)</span>
 
     <span class="n">scorer</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">translate</span><span class="o">.</span><span class="n">GNMTGlobalScorer</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
 
@@ -792,6 +788,7 @@
 
             <span class="c1"># (a) Construct batch x beam_size nxt words.</span>
             <span class="c1"># Get all the pending current beam words and arrange for forward.</span>
+
             <span class="n">inp</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">b</span><span class="o">.</span><span class="n">get_current_state</span><span class="p">()</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">beam</span><span class="p">])</span>
             <span class="n">inp</span> <span class="o">=</span> <span class="n">inp</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 
@@ -834,19 +831,17 @@
 
     <span class="k">def</span> <span class="nf">_score_target</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">src_map</span><span class="p">):</span>
         <span class="n">tgt_in</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">make_features</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="s1">&#39;tgt&#39;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">tt</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cuda</span> <span class="k">else</span> <span class="n">torch</span>
-        <span class="n">gold_scores</span> <span class="o">=</span> <span class="n">tt</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">batch_size</span><span class="p">)</span><span class="o">.</span><span class="n">fill_</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
         <span class="n">log_probs</span><span class="p">,</span> <span class="n">attn</span> <span class="o">=</span> \
             <span class="bp">self</span><span class="o">.</span><span class="n">_decode_and_generate</span><span class="p">(</span><span class="n">tgt_in</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
                                       <span class="n">memory_lengths</span><span class="o">=</span><span class="n">src_lengths</span><span class="p">,</span>
                                       <span class="n">src_map</span><span class="o">=</span><span class="n">src_map</span><span class="p">)</span>
         <span class="n">tgt_pad</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">inputters</span><span class="o">.</span><span class="n">PAD_WORD</span><span class="p">]</span>
-        <span class="k">for</span> <span class="n">log_prob</span><span class="p">,</span> <span class="n">tgt</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">log_probs</span><span class="p">,</span> <span class="n">batch</span><span class="o">.</span><span class="n">tgt</span><span class="p">[</span><span class="mi">1</span><span class="p">:]):</span>
-            <span class="n">tgt</span> <span class="o">=</span> <span class="n">tgt</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-            <span class="n">scores</span> <span class="o">=</span> <span class="n">log_prob</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span>
-            <span class="n">scores</span><span class="o">.</span><span class="n">masked_fill_</span><span class="p">(</span><span class="n">tgt</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">tgt_pad</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
-            <span class="n">gold_scores</span> <span class="o">+=</span> <span class="n">scores</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">log_probs</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">tgt_pad</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">gold</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">tgt</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">gold_scores</span> <span class="o">=</span> <span class="n">log_probs</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">gold</span><span class="p">)</span>
+        <span class="n">gold_scores</span> <span class="o">=</span> <span class="n">gold_scores</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">gold_scores</span>
 
