@@ -115,18 +115,24 @@ class CopyGeneratorLoss(nn.Module):
         self.ignore_index = ignore_index
 
     def forward(self, scores, align, target):
+        """
+        scores (FloatTensor): (batch_size*tgt_len) x dynamic vocab size
+        align (LongTensor): (batch_size*tgt_len)
+        target (LongTensor): (batch_size*tgt_len)
+        """
         # Compute unks in align and target for readability
-        align_unk = align.eq(0).float()
-        align_not_unk = align.ne(0).float()
-        target_unk = target.eq(0).float()
-        target_not_unk = target.ne(0).float()
+        align_unk = align.eq(inputters.UNK).float()
+        align_not_unk = align.ne(inputters.UNK).float()
+
+        target_unk = target.eq(inputters.UNK).float()
+        target_not_unk = target.ne(inputters.UNK).float()
 
         # Copy probability of tokens in source
-        out = scores.gather(1, align.view(-1, 1) + self.offset).view(-1)
+        out = scores.gather(1, align.unsqueeze(1) + self.offset).squeeze()
         # Set scores for unk to 0 and add eps
         out = out.mul(align_not_unk) + self.eps
         # Get scores for tokens in target
-        tmp = scores.gather(1, target.view(-1, 1)).view(-1)
+        tmp = scores.gather(1, target.unsqueeze(1)).squeeze()
 
         # Regular prob (no unks and unks that can't be copied)
         if not self.force_copy:
@@ -199,15 +205,13 @@ class CopyGeneratorLossCompute(loss.LossComputeBase):
         target_data = target_data + correct_copy
 
         # Compute sum of perplexities for stats
-        loss_data = loss.sum().clone()
-        stats = self._stats(loss_data, scores_data, target_data)
+        stats = self._stats(loss.sum().clone(), scores_data, target_data)
 
-        # this part very clearly looks like it belongs in CopyGeneratorLoss
+        # this part looks like it belongs in CopyGeneratorLoss
         if self.normalize_by_length:
             # Compute Loss as NLL divided by seq length
             # Compute Sequence Lengths
-            pad_ix = batch.dataset.fields['tgt'].vocab.stoi[inputters.PAD_WORD]
-            tgt_lens = batch.tgt.ne(pad_ix).float().sum(0)
+            tgt_lens = batch.tgt.ne(self.padding_idx).sum(0).float()
             # Compute Total Loss per sequence in batch
             loss = loss.view(-1, batch.batch_size).sum(0)
             # Divide by length of each sequence and sum
