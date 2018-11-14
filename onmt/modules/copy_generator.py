@@ -111,7 +111,7 @@ class CopyGeneratorLoss(nn.Module):
         super(CopyGeneratorLoss, self).__init__()
         self.force_copy = force_copy
         self.eps = eps
-        self.offset = vocab_size
+        self.vocab_size = vocab_size
         self.ignore_index = ignore_index
 
     def forward(self, scores, align, target):
@@ -120,32 +120,28 @@ class CopyGeneratorLoss(nn.Module):
         align (LongTensor): (batch_size*tgt_len)
         target (LongTensor): (batch_size*tgt_len)
         """
-        # Compute unks in align and target for readability
-        align_unk = align.eq(inputters.UNK).float()
-        align_not_unk = align.ne(inputters.UNK).float()
+        # probabilities assigned by the model to the gold targets
+        vocab_probs = scores.gather(1, target.unsqueeze(1)).squeeze()
 
-        target_unk = target.eq(inputters.UNK).float()
-        target_not_unk = target.ne(inputters.UNK).float()
-
-        # Copy probability of tokens in source
-        out = scores.gather(1, align.unsqueeze(1) + self.offset).squeeze()
+        # probability of tokens copied from source
+        copy_ix = align.unsqueeze(1) + self.vocab_size
+        copy_tok_probs = scores.gather(1, copy_ix).squeeze()
         # Set scores for unk to 0 and add eps
-        out = out.mul(align_not_unk) + self.eps
-        # Get scores for tokens in target
-        tmp = scores.gather(1, target.unsqueeze(1)).squeeze()
+        copy_tok_probs[align == inputters.UNK] = 0
+        copy_tok_probs += self.eps  # to avoid -inf logs
 
-        # Regular prob (no unks and unks that can't be copied)
+        # find the indices in which you do not use the copy mechanism
+        non_copy = align == inputters.UNK
         if not self.force_copy:
-            # Add score for non-unks in target
-            out = out + tmp.mul(target_not_unk)
-            # Add score for when word is unk in both align and tgt
-            out = out + tmp.mul(align_unk).mul(target_unk)
-        else:
-            # Forced copy. Add only probability for not-copied tokens
-            out = out + tmp.mul(align_unk)
+            non_copy = non_copy | (target != inputters.UNK)
 
+        probs = torch.where(
+            non_copy, copy_tok_probs + vocab_probs, copy_tok_probs
+        )
+
+        loss = -probs.log()  # just NLLLoss; can the module be incorporated?
         # Drop padding.
-        loss = -out.log().mul(target.ne(self.ignore_index).float())
+        loss[target == self.ignore_index] = 0
         return loss
 
 
