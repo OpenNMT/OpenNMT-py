@@ -1,6 +1,4 @@
 """
-This file handles the details of the loss function during training.
-
 This includes: LossComputeBase and the standard NMTLossCompute, and
                sharded loss compute stuff.
 """
@@ -17,16 +15,22 @@ from onmt.modules.sparse_activations import LogSparsemax
 
 def build_loss_compute(model, tgt_vocab, opt, train=True):
     """
-    This returns user-defined LossCompute object, which is used to
-    compute loss in train/validate process. You can implement your
-    own *LossCompute class, by subclassing LossComputeBase.
+    Returns a LossCompute subclass which wraps around an nn.Module subclass
+    (such as nn.NLLLoss) which defines the loss criterion. The LossCompute
+    object allows this loss to be computed in shards and passes the relevant
+    data to a Statistics object which handles training/validation logging.
+    Currently, the NMTLossCompute class handles all loss computation except
+    for when using a copy mechanism. Despite their name, LossCompute objects
+    do not merely compute the loss but also perform the backward pass inside
+    their sharded_compute_loss method.
     """
     device = torch.device("cuda" if onmt.utils.misc.use_gpu(opt) else "cpu")
 
     padding_idx = tgt_vocab.stoi[inputters.PAD_WORD]
     if opt.copy_attn:
         criterion = onmt.modules.CopyGeneratorLoss(
-            len(tgt_vocab), opt.copy_attn_force, padding_idx
+            len(tgt_vocab), opt.copy_attn_force,
+            unk_index=inputters.UNK, ignore_index=padding_idx
         )
     elif opt.label_smoothing > 0 and train:
         criterion = LabelSmoothingLoss(
@@ -57,9 +61,8 @@ def build_loss_compute(model, tgt_vocab, opt, train=True):
 class LossComputeBase(nn.Module):
     """
     Class for managing efficient loss computation. Handles
-    sharding next step predictions and accumulating mutiple
+    sharding next step predictions and accumulating multiple
     loss computations
-
 
     Users can implement their own loss computation strategy by making
     subclass of this one.  Users need to implement the _compute_loss()

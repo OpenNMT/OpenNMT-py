@@ -5,7 +5,7 @@ import torch.nn.functional as F
 
 import onmt.inputters as inputters
 from onmt.utils.misc import aeq
-from onmt.utils import loss
+from onmt.utils.loss import LossComputeBase
 
 
 class CopyGenerator(nn.Module):
@@ -107,12 +107,14 @@ class CopyGenerator(nn.Module):
 class CopyGeneratorLoss(nn.Module):
     """ Copy generator criterion """
 
-    def __init__(self, vocab_size, force_copy, ignore_index=-100, eps=1e-20):
+    def __init__(self, vocab_size, force_copy, unk_index=0,
+                 ignore_index=-100, eps=1e-20):
         super(CopyGeneratorLoss, self).__init__()
         self.force_copy = force_copy
         self.eps = eps
         self.vocab_size = vocab_size
         self.ignore_index = ignore_index
+        self.unk_index = unk_index
 
     def forward(self, scores, align, target):
         """
@@ -127,13 +129,13 @@ class CopyGeneratorLoss(nn.Module):
         copy_ix = align.unsqueeze(1) + self.vocab_size
         copy_tok_probs = scores.gather(1, copy_ix).squeeze()
         # Set scores for unk to 0 and add eps
-        copy_tok_probs[align == inputters.UNK] = 0
+        copy_tok_probs[align == self.unk_index] = 0
         copy_tok_probs += self.eps  # to avoid -inf logs
 
         # find the indices in which you do not use the copy mechanism
-        non_copy = align == inputters.UNK
+        non_copy = align == self.unk_index
         if not self.force_copy:
-            non_copy = non_copy | (target != inputters.UNK)
+            non_copy = non_copy | (target != self.unk_index)
 
         probs = torch.where(
             non_copy, copy_tok_probs + vocab_probs, copy_tok_probs
@@ -145,13 +147,12 @@ class CopyGeneratorLoss(nn.Module):
         return loss
 
 
-class CopyGeneratorLossCompute(loss.LossComputeBase):
+class CopyGeneratorLossCompute(LossComputeBase):
     """
     Copy Generator Loss Computation.
     """
 
-    def __init__(self, criterion, generator, tgt_vocab,
-                 normalize_by_length, eps=1e-20):
+    def __init__(self, criterion, generator, tgt_vocab, normalize_by_length):
         super(CopyGeneratorLossCompute, self).__init__(criterion, generator)
         self.tgt_vocab = tgt_vocab
         self.normalize_by_length = normalize_by_length
@@ -186,19 +187,23 @@ class CopyGeneratorLossCompute(loss.LossComputeBase):
                                 batch.src_map)
         loss = self.criterion(scores, align, target)
 
-        # this block here does not depend on the loss value computed above
+        # this block does not depend on the loss value computed above
+        # and is used only for stats
         scores_data = inputters.TextDataset.collapse_copy_scores(
             self._unbottle(scores.clone(), batch.batch_size),
             batch, self.tgt_vocab, batch.dataset.src_vocabs)
         scores_data = self._bottle(scores_data)
 
+        # this block does not depend on the loss value computed above
+        # and is used only for stats
         # Correct target copy token instead of <unk>
         # tgt[i] = align[i] + len(tgt_vocab)
         # for i such that tgt[i] == 0 and align[i] != 0
         target_data = target.clone()
-        correct_mask = target_data.eq(0) * align.ne(0)
-        correct_copy = (align + len(self.tgt_vocab)) * correct_mask.long()
-        target_data = target_data + correct_copy
+        unk = self.criterion.unk_index
+        correct_mask = (target_data == unk) & (align != unk)
+        offset_align = align[correct_mask] + len(self.tgt_vocab)
+        target_data[correct_mask] += offset_align
 
         # Compute sum of perplexities for stats
         stats = self._stats(loss.sum().clone(), scores_data, target_data)
@@ -206,7 +211,6 @@ class CopyGeneratorLossCompute(loss.LossComputeBase):
         # this part looks like it belongs in CopyGeneratorLoss
         if self.normalize_by_length:
             # Compute Loss as NLL divided by seq length
-            # Compute Sequence Lengths
             tgt_lens = batch.tgt.ne(self.padding_idx).sum(0).float()
             # Compute Total Loss per sequence in batch
             loss = loss.view(-1, batch.batch_size).sum(0)
