@@ -9,8 +9,9 @@ from onmt.utils.loss import LossComputeBase
 
 
 class CopyGenerator(nn.Module):
-    """Generator module that additionally considers copying
-    words directly from the source.
+    """An implementation of pointer-generator networks (See et al., 2017)
+    (https://arxiv.org/abs/1704.04368), which consider copying words
+    directly from the source sequence.
 
     The main idea is that we have an extended "dynamic dictionary".
     It contains `|tgt_dict|` words plus an arbitrary number of
