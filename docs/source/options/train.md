@@ -115,9 +115,9 @@ Size of hidden transformer feed-forward
 * **-copy_attn []** 
 Train copy attention layer.
 
-* **-generator_function [log_softmax]** 
+* **-generator_function [softmax]** 
 Which function to use for generating probabilities over the target vocabulary
-(choices: log_softmax, sparsemax)
+(choices: softmax, sparsemax)
 
 * **-copy_attn_force []** 
 When available, train to copy.
