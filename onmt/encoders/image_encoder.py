@@ -16,13 +16,14 @@ class ImageEncoder(nn.Module):
         dropout (float): dropout probablity.
     """
 
-    def __init__(self, num_layers, bidirectional, rnn_size, dropout):
+    def __init__(self, num_layers, bidirectional, rnn_size, dropout,
+                 image_chanel_size=3):
         super(ImageEncoder, self).__init__()
         self.num_layers = num_layers
         self.num_directions = 2 if bidirectional else 1
         self.hidden_size = rnn_size
 
-        self.layer1 = nn.Conv2d(3, 64, kernel_size=(3, 3),
+        self.layer1 = nn.Conv2d(image_chanel_size, 64, kernel_size=(3, 3),
                                 padding=(1, 1), stride=(1, 1))
         self.layer2 = nn.Conv2d(64, 128, kernel_size=(3, 3),
                                 padding=(1, 1), stride=(1, 1))
@@ -40,7 +41,7 @@ class ImageEncoder(nn.Module):
         self.batch_norm3 = nn.BatchNorm2d(512)
 
         src_size = 512
-        self.rnn = nn.LSTM(src_size, rnn_size,
+        self.rnn = nn.LSTM(src_size, int(rnn_size / self.num_directions),
                            num_layers=num_layers,
                            dropout=dropout,
                            bidirectional=bidirectional)
@@ -56,7 +57,7 @@ class ImageEncoder(nn.Module):
         batch_size = src.size(0)
         # (batch_size, 64, imgH, imgW)
         # layer 1
-        src = F.relu(self.layer1(src[:, :, :, :]-0.5), True)
+        src = F.relu(self.layer1(src[:, :, :, :] - 0.5), True)
 
         # (batch_size, 64, imgH/2, imgW/2)
         src = F.max_pool2d(src, kernel_size=(2, 2), stride=(2, 2))
@@ -94,10 +95,10 @@ class ImageEncoder(nn.Module):
         # # (batch_size, 512, H, W)
         all_outputs = []
         for row in range(src.size(2)):
-            inp = src[:, :, row, :].transpose(0, 2)\
+            inp = src[:, :, row, :].transpose(0, 2) \
                 .transpose(1, 2)
-            row_vec = torch.Tensor(batch_size).type_as(inp.data)\
-                                              .long().fill_(row)
+            row_vec = torch.Tensor(batch_size).type_as(inp.data) \
+                .long().fill_(row)
             pos_emb = self.pos_lut(row_vec)
             with_pos = torch.cat(
                 (pos_emb.view(1, pos_emb.size(0), pos_emb.size(1)), inp), 0)
@@ -105,4 +106,4 @@ class ImageEncoder(nn.Module):
             all_outputs.append(outputs)
         out = torch.cat(all_outputs, 0)
 
-        return hidden_t, out
+        return hidden_t, out, lengths

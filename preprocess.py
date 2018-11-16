@@ -5,12 +5,12 @@
 """
 
 import argparse
-import os
 import glob
 import sys
-
+import gc
+import os
+import codecs
 import torch
-
 from onmt.utils.logging import init_logger, logger
 
 import onmt.inputters as inputters
@@ -47,75 +47,95 @@ def parse_args():
     return opt
 
 
-def build_save_in_shards(src_corpus, tgt_corpus, fields,
-                         corpus_type, opt):
+def build_save_in_shards_using_shards_size(src_corpus, tgt_corpus, fields,
+                                           corpus_type, opt):
     """
-    Divide the big corpus into shards, and build dataset separately.
-    This is currently only for data_type=='text'.
+    Divide src_corpus and tgt_corpus into smaller multiples
+    src_copus and tgt corpus files, then build shards, each
+    shard will have opt.shard_size samples except last shard.
 
     The reason we do this is to avoid taking up too much memory due
     to sucking in a huge corpus file.
-
-    To tackle this, we only read in part of the corpus file of size
-    `max_shard_size`(actually it is multiples of 64 bytes that equals
-    or is slightly larger than this size), and process it into dataset,
-    then write it to disk along the way. By doing this, we only focus on
-    part of the corpus at any moment, thus effectively reducing memory use.
-    According to test, this method can reduce memory footprint by ~50%.
-
-    Note! As we process along the shards, previous shards might still
-    stay in memory, but since we are done with them, and no more
-    reference to them, if there is memory tight situation, the OS could
-    easily reclaim these memory.
-
-    If `max_shard_size` is 0 or is larger than the corpus size, it is
-    effectively preprocessed into one dataset, i.e. no sharding.
-
-    NOTE! `max_shard_size` is measuring the input corpus size, not the
-    output pt file size. So a shard pt file consists of examples of size
-    2 * `max_shard_size`(source + target).
     """
 
-    corpus_size = os.path.getsize(src_corpus)
-    if corpus_size > 10 * (1024 ** 2) and opt.max_shard_size == 0:
-        logger.info("Warning. The corpus %s is larger than 10M bytes, "
-                    "you can set '-max_shard_size' to process it by "
-                    "small shards to use less memory." % src_corpus)
+    with codecs.open(src_corpus, "r", encoding="utf-8") as fsrc:
+        with codecs.open(tgt_corpus, "r", encoding="utf-8") as ftgt:
+            logger.info("Reading source and target files: %s %s."
+                        % (src_corpus, tgt_corpus))
+            src_data = fsrc.readlines()
+            tgt_data = ftgt.readlines()
+            if len(src_data) != len(tgt_data):
+                raise AssertionError("Source and Target should \
+                                     have the same length")
 
-    if opt.max_shard_size != 0:
-        logger.info(' * divide corpus into shards and build dataset '
-                    'separately (shard_size = %d bytes).'
-                    % opt.max_shard_size)
+            num_shards = int(len(src_data) / opt.shard_size)
+            for x in range(num_shards):
+                logger.info("Splitting shard %d." % x)
+                f = codecs.open(src_corpus + ".{0}.txt".format(x), "w",
+                                encoding="utf-8")
+                f.writelines(
+                        src_data[x * opt.shard_size: (x + 1) * opt.shard_size])
+                f.close()
+                f = codecs.open(tgt_corpus + ".{0}.txt".format(x), "w",
+                                encoding="utf-8")
+                f.writelines(
+                        tgt_data[x * opt.shard_size: (x + 1) * opt.shard_size])
+                f.close()
+            num_written = num_shards * opt.shard_size
+            if len(src_data) > num_written:
+                logger.info("Splitting shard %d." % num_shards)
+                f = codecs.open(src_corpus + ".{0}.txt".format(num_shards),
+                                'w', encoding="utf-8")
+                f.writelines(
+                        src_data[num_shards * opt.shard_size:])
+                f.close()
+                f = codecs.open(tgt_corpus + ".{0}.txt".format(num_shards),
+                                'w', encoding="utf-8")
+                f.writelines(
+                        tgt_data[num_shards * opt.shard_size:])
+                f.close()
+
+    src_list = sorted(glob.glob(src_corpus + '.*.txt'))
+    tgt_list = sorted(glob.glob(tgt_corpus + '.*.txt'))
 
     ret_list = []
-    src_iter = inputters.ShardedTextCorpusIterator(
-        src_corpus, opt.src_seq_length_trunc,
-        "src", opt.max_shard_size)
-    tgt_iter = inputters.ShardedTextCorpusIterator(
-        tgt_corpus, opt.tgt_seq_length_trunc,
-        "tgt", opt.max_shard_size,
-        assoc_iter=src_iter)
 
-    index = 0
-    while not src_iter.hit_end():
-        index += 1
-        dataset = inputters.TextDataset(
-            fields, src_iter, tgt_iter,
-            src_iter.num_feats, tgt_iter.num_feats,
+    for index, src in enumerate(src_list):
+        logger.info("Building shard %d." % index)
+        dataset = inputters.build_dataset(
+            fields, opt.data_type,
+            src_path=src,
+            tgt_path=tgt_list[index],
+            src_dir=opt.src_dir,
             src_seq_length=opt.src_seq_length,
             tgt_seq_length=opt.tgt_seq_length,
-            dynamic_dict=opt.dynamic_dict)
-
-        # We save fields in vocab.pt separately, so make it empty.
-        dataset.fields = []
+            src_seq_length_trunc=opt.src_seq_length_trunc,
+            tgt_seq_length_trunc=opt.tgt_seq_length_trunc,
+            dynamic_dict=opt.dynamic_dict,
+            sample_rate=opt.sample_rate,
+            window_size=opt.window_size,
+            window_stride=opt.window_stride,
+            window=opt.window,
+            image_channel_size=opt.image_channel_size
+        )
 
         pt_file = "{:s}.{:s}.{:d}.pt".format(
             opt.save_data, corpus_type, index)
-        logger.info(" * saving %s data shard to %s."
-                    % (corpus_type, pt_file))
+
+        # We save fields in vocab.pt seperately, so make it empty.
+        dataset.fields = []
+
+        logger.info(" * saving %sth %s data shard to %s."
+                    % (index, corpus_type, pt_file))
         torch.save(dataset, pt_file)
 
         ret_list.append(pt_file)
+        os.remove(src)
+        os.remove(tgt_list[index])
+        del dataset.examples
+        gc.collect()
+        del dataset
+        gc.collect()
 
     return ret_list
 
@@ -131,11 +151,12 @@ def build_save_dataset(corpus_type, fields, opt):
         src_corpus = opt.valid_src
         tgt_corpus = opt.valid_tgt
 
-    # Currently we only do preprocess sharding for corpus: data_type=='text'.
-    if opt.data_type == 'text':
-        return build_save_in_shards(
-            src_corpus, tgt_corpus, fields,
-            corpus_type, opt)
+    if (opt.shard_size > 0):
+        return build_save_in_shards_using_shards_size(src_corpus,
+                                                      tgt_corpus,
+                                                      fields,
+                                                      corpus_type,
+                                                      opt)
 
     # For data_type == 'img' or 'audio', currently we don't do
     # preprocess sharding. We only build a monolithic dataset.
@@ -154,7 +175,8 @@ def build_save_dataset(corpus_type, fields, opt):
         sample_rate=opt.sample_rate,
         window_size=opt.window_size,
         window_stride=opt.window_stride,
-        window=opt.window)
+        window=opt.window,
+        image_channel_size=opt.image_channel_size)
 
     # We save fields in vocab.pt seperately, so make it empty.
     dataset.fields = []
@@ -184,6 +206,14 @@ def build_save_vocab(train_dataset, fields, opt):
 
 def main():
     opt = parse_args()
+
+    if (opt.max_shard_size > 0):
+        raise AssertionError("-max_shard_size is deprecated, please use \
+                             -shard_size (number of examples) instead.")
+    if (opt.shuffle > 0):
+        raise AssertionError("-shuffle is not implemented, please make sure \
+                             you shuffle your data before pre-processing.")
+
     init_logger(opt.log_file)
     logger.info("Extracting features...")
 
@@ -200,11 +230,11 @@ def main():
     logger.info("Building & saving training data...")
     train_dataset_files = build_save_dataset('train', fields, opt)
 
-    logger.info("Building & saving vocabulary...")
-    build_save_vocab(train_dataset_files, fields, opt)
-
     logger.info("Building & saving validation data...")
     build_save_dataset('valid', fields, opt)
+
+    logger.info("Building & saving vocabulary...")
+    build_save_vocab(train_dataset_files, fields, opt)
 
 
 if __name__ == "__main__":

@@ -145,7 +145,6 @@ class LossComputeBase(nn.Module):
             loss, stats = self._compute_loss(batch, **shard)
             loss.div(float(normalization)).backward()
             batch_stats.update(stats)
-
         return batch_stats
 
     def _stats(self, loss, scores, target):
@@ -201,7 +200,7 @@ class LabelSmoothingLoss(nn.Module):
         model_prob.scatter_(1, target.unsqueeze(1), self.confidence)
         model_prob.masked_fill_((target == self.padding_idx).unsqueeze(1), 0)
 
-        return F.kl_div(output, model_prob, size_average=False)
+        return F.kl_div(output, model_prob, reduction='sum')
 
 
 class NMTLossCompute(LossComputeBase):
@@ -223,7 +222,7 @@ class NMTLossCompute(LossComputeBase):
             )
         else:
             self.criterion = nn.NLLLoss(
-                ignore_index=self.padding_idx, size_average=False
+                ignore_index=self.padding_idx, reduction='sum'
             )
 
     def _make_shard_state(self, batch, output, range_, attns=None):
