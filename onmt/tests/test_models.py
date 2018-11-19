@@ -137,7 +137,7 @@ class TestModel(unittest.TestCase):
                                       for_encoder=False)
         dec = build_decoder(opt, embeddings)
 
-        model = onmt.models.model.NMTModel(enc, dec)
+        model = onmt.models.model.NMTModel(enc, dec, 'text')
 
         test_src, test_tgt, test_length = self.get_batch(source_l=source_l,
                                                          bsize=bsize)
@@ -172,7 +172,7 @@ class TestModel(unittest.TestCase):
                                       for_encoder=False)
         dec = build_decoder(opt, embeddings)
 
-        model = onmt.models.model.NMTModel(enc, dec)
+        model = onmt.models.model.NMTModel(enc, dec, 'image')
 
         test_src, test_tgt, test_length = self.get_batch_image(
             h=h, w=w,
@@ -209,7 +209,7 @@ class TestModel(unittest.TestCase):
                                       for_encoder=False)
         dec = build_decoder(opt, embeddings)
 
-        model = onmt.models.model.NMTModel(enc, dec)
+        model = onmt.models.model.NMTModel(enc, dec, 'audio')
 
         test_src, test_tgt, test_length = self.get_batch_audio(
             bsize=bsize,

@@ -303,7 +303,7 @@ class Translator(object):
             src_lengths = batch.src_lengths
         enc_states, memory_bank = self.model.encoder(src)
         if data_type == 'audio':
-            src_lengths = self.encoder.pooled_lengths
+            src_lengths = self.model.encoder.pooled_lengths
 
         if src_lengths is None:
             assert not isinstance(memory_bank, tuple), \
