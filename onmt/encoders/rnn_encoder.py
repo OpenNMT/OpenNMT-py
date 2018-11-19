@@ -50,13 +50,12 @@ class RNNEncoder(EncoderBase):
                                     hidden_size,
                                     num_layers)
 
-    def forward(self, src, lengths=None):
+    def forward(self, src):
         "See :obj:`EncoderBase.forward()`"
-        self._check_args(src, lengths)
 
         emb = self.embeddings(src)
-        # s_len, batch, emb_dim = emb.size()
-
+        padding_idx = self.embeddings.word_padding_idx
+        lengths = src.ne(padding_idx).sum(0)
         packed_emb = emb
         if lengths is not None and not self.no_pack_padded_seq:
             # Lengths data is wrapped inside a Tensor.
@@ -70,7 +69,7 @@ class RNNEncoder(EncoderBase):
 
         if self.use_bridge:
             encoder_final = self._bridge(encoder_final)
-        return encoder_final, memory_bank, lengths
+        return encoder_final, memory_bank
 
     def _initialize_bridge(self, rnn_type,
                            hidden_size,

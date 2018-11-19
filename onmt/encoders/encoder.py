@@ -4,8 +4,6 @@ from __future__ import division
 
 import torch.nn as nn
 
-from onmt.utils.misc import aeq
-
 
 class EncoderBase(nn.Module):
     """
@@ -32,18 +30,11 @@ class EncoderBase(nn.Module):
           E-->G
     """
 
-    def _check_args(self, src, lengths=None, hidden=None):
-        _, n_batch, _ = src.size()
-        if lengths is not None:
-            n_batch_, = lengths.size()
-            aeq(n_batch, n_batch_)
-
-    def forward(self, src, lengths=None):
+    def forward(self, src):
         """
         Args:
             src (:obj:`LongTensor`):
                padded sequences of sparse indices `[src_len x batch x nfeat]`
-            lengths (:obj:`LongTensor`): length of each sequence `[batch]`
 
 
         Returns:

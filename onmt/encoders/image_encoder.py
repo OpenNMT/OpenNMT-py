@@ -2,9 +2,10 @@
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
+from onmt.encoders.encoder import EncoderBase
 
 
-class ImageEncoder(nn.Module):
+class ImageEncoder(EncoderBase):
     """
     A simple encoder convolutional -> recurrent neural network for
     image src.
@@ -51,7 +52,7 @@ class ImageEncoder(nn.Module):
         """ Pass in needed options only when modify function definition."""
         pass
 
-    def forward(self, src, lengths=None):
+    def forward(self, src):
         "See :obj:`onmt.encoders.encoder.EncoderBase.forward()`"
 
         batch_size = src.size(0)
@@ -106,4 +107,4 @@ class ImageEncoder(nn.Module):
             all_outputs.append(outputs)
         out = torch.cat(all_outputs, 0)
 
-        return hidden_t, out, lengths
+        return hidden_t, out

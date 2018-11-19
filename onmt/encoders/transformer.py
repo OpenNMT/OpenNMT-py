@@ -95,21 +95,19 @@ class TransformerEncoder(EncoderBase):
              for _ in range(num_layers)])
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
 
-    def forward(self, src, lengths=None):
+    def forward(self, src):
         """ See :obj:`EncoderBase.forward()`"""
-        self._check_args(src, lengths)
-
         emb = self.embeddings(src)
 
         out = emb.transpose(0, 1).contiguous()
         words = src[:, :, 0].transpose(0, 1)
         w_batch, w_len = words.size()
         padding_idx = self.embeddings.word_padding_idx
-        mask = words.data.eq(padding_idx).unsqueeze(1) \
+        mask = words.eq(padding_idx).unsqueeze(1) \
             .expand(w_batch, w_len, w_len)
         # Run the forward pass of every layer of the tranformer.
         for i in range(self.num_layers):
             out = self.transformer[i](out, mask)
         out = self.layer_norm(out)
 
-        return emb, out.transpose(0, 1).contiguous(), lengths
+        return emb, out.transpose(0, 1).contiguous()

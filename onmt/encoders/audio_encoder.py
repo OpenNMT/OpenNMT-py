@@ -1,6 +1,6 @@
 """ Audio encoder """
 import math
-
+import torch
 import torch.nn as nn
 
 from torch.nn.utils.rnn import pack_padded_sequence as pack
@@ -40,6 +40,7 @@ class AudioEncoder(nn.Module):
         self.dec_rnn_size_real = dec_rnn_size_real
         self.dec_rnn_size = dec_rnn_size
         input_size = int(math.floor((sample_rate * window_size) / 2) + 1)
+        self.pooled_lengths = None
         enc_pooling = enc_pooling.split(',')
         assert len(enc_pooling) == enc_layers or len(enc_pooling) == 1
         if len(enc_pooling) == 1:
@@ -75,14 +76,14 @@ class AudioEncoder(nn.Module):
                     nn.MaxPool1d(enc_pooling[l + 1]))
             setattr(self, 'batchnorm_%d' % (l + 1), batchnorm)
 
-    def forward(self, src, lengths=None):
+    def forward(self, src):
         "See :obj:`onmt.encoders.encoder.EncoderBase.forward()`"
 
         batch_size, _, nfft, t = src.size()
         src = src.transpose(0, 1).transpose(0, 3).contiguous() \
                  .view(t, batch_size, nfft)
-        orig_lengths = lengths
-        lengths = lengths.view(-1).tolist()
+
+        lengths = src.ne(0).sum(0)[:, 0].tolist()
 
         for l in range(self.enc_layers):
             rnn = getattr(self, 'rnn_%d' % l)
@@ -116,4 +117,7 @@ class AudioEncoder(nn.Module):
             encoder_final = (state, state)
         else:
             encoder_final = state
-        return encoder_final, memory_bank, orig_lengths.new_tensor(lengths)
+
+        self.pooled_lengths = torch.tensor(lengths)
+
+        return encoder_final, memory_bank

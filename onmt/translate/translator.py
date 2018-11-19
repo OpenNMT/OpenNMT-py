@@ -301,8 +301,10 @@ class Translator(object):
             _, src_lengths = batch.src
         elif data_type == 'audio':
             src_lengths = batch.src_lengths
-        enc_states, memory_bank, src_lengths = self.model.encoder(
-            src, src_lengths)
+        enc_states, memory_bank = self.model.encoder(src)
+        if data_type == 'audio':
+            src_lengths = self.encoder.pooled_lengths
+
         if src_lengths is None:
             assert not isinstance(memory_bank, tuple), \
                 'Ensemble decoding only supported for text data'

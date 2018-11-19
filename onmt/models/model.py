@@ -13,10 +13,11 @@ class NMTModel(nn.Module):
       multi<gpu (bool): setup for multigpu support
     """
 
-    def __init__(self, encoder, decoder):
+    def __init__(self, encoder, decoder, model_type):
         super(NMTModel, self).__init__()
         self.encoder = encoder
         self.decoder = decoder
+        self.model_type = model_type
 
     def forward(self, src, tgt, lengths):
         """Forward propagate a `src` and `tgt` pair for training.
@@ -39,8 +40,9 @@ class NMTModel(nn.Module):
                  * dictionary attention dists of `[tgt_len x batch x src_len]`
         """
         tgt = tgt[:-1]  # exclude last target from inputs
-
-        enc_state, memory_bank, lengths = self.encoder(src, lengths)
+        enc_state, memory_bank = self.encoder(src)
+        if self.model_type == 'audio':
+            lengths = self.encoder.pooled_lengths
         self.decoder.init_state(src, memory_bank, enc_state)
         dec_out, attns = self.decoder(tgt, memory_bank,
                                       memory_lengths=lengths)
