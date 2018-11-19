@@ -190,6 +190,7 @@ class ServerModel:
 
         self.loading_lock = threading.Event()
         self.loading_lock.set()
+        self.running_lock = threading.Semaphore(value=1)
 
         if load:
             self.load()
@@ -302,8 +303,13 @@ class ServerModel:
         """
         self.stop_unload_timer()
 
+        if not self.running_lock.acquire(blocking=True, timeout=120):
+            raise ServerModelError("Model %d running lock timeout"
+                                   % self.model_id)
+
         timer = Timer()
         timer.start()
+
         self.logger.info("Running translation using %d" % self.model_id)
 
         if not self.loading_lock.is_set():
@@ -392,7 +398,7 @@ class ServerModel:
                    for items in zip(head_spaces, results, tail_spaces)]
 
         self.logger.info("Translation Results: %d", len(results))
-
+        self.running_lock.release()
         return results, scores, self.opt.n_best, timer.times
 
     def do_timeout(self):
