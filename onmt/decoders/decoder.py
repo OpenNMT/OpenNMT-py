@@ -1,6 +1,5 @@
 """ Base Class and function for Decoders """
 
-from __future__ import division
 import torch
 import torch.nn as nn
 

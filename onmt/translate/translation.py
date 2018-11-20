@@ -1,6 +1,5 @@
 """ Translation main class """
-from __future__ import division, unicode_literals
-from __future__ import print_function
+from __future__ import unicode_literals, print_function
 
 import torch
 import onmt.inputters as inputters

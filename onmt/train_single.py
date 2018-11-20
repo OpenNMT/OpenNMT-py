@@ -2,8 +2,6 @@
 """
     Training on a single process
 """
-from __future__ import division
-
 import argparse
 import os
 import random

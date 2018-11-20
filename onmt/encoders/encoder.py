@@ -1,7 +1,5 @@
 """Base class for encoders and generic multi encoders."""
 
-from __future__ import division
-
 import torch.nn as nn
 
 from onmt.utils.misc import aeq

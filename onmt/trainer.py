@@ -9,8 +9,6 @@
           users of this library) for the strategy things we do.
 """
 
-from __future__ import division
-
 import onmt.inputters as inputters
 import onmt.utils
 
