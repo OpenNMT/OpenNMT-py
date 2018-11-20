@@ -17,6 +17,7 @@ def init_logger(log_file=None):
 
     if log_file and log_file != '':
         file_handler = logging.FileHandler(log_file)
+        file_handler.setLevel(logging.ERROR)
         file_handler.setFormatter(log_format)
         logger.addHandler(file_handler)
 
