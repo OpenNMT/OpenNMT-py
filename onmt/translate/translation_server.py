@@ -362,7 +362,7 @@ class ServerModel:
                 scores, predictions = self.translator.translate(
                     src_data_iter=texts_to_translate,
                     batch_size=self.opt.batch_size)
-            except RuntimeError, Exception as e:
+            except (RuntimeError, Exception) as e:
                 err = "Error: %s" % str(e)
                 self.logger.error(err)
                 self.logger.error("repr(text_to_translate): " + repr(texts_to_translate))
