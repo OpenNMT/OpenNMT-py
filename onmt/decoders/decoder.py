@@ -356,7 +356,7 @@ class InputFeedRNNDecoder(RNNDecoderBase):
             decoder_output = rnn_output
             p_attn = self._create_fake_align_vector(
                 memory_bank.transpose(0, 1))
-            
+
             if self.attn is not None:
                 decoder_output, p_attn = self.attn(
                     rnn_output,
