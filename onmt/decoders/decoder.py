@@ -190,14 +190,7 @@ class RNNDecoderBase(nn.Module):
 
             for k in attns:
                 if type(attns[k]) == list:
-                    try:
-                        #print(k)
-                        #print(attns[k])
-                        attns[k] = torch.stack(attns[k])
-                    except:
-                        print(k)
-                        print(attns[k])
-                        raise
+                    attns[k] = torch.stack(attns[k])
         # TODO change the way attns is returned dict => list or tuple (onnx)
         return dec_outs, attns
 
