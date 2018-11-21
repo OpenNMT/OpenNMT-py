@@ -58,10 +58,10 @@ Deprecated, use `-max_length` instead
 Apply penalty at every decoding step. Helpful for summary penalty.
 
 * **-length_penalty [none]** 
-Length Penalty to use.
+Length Penalty to use. Options are [wu | avg | none]
 
 * **-coverage_penalty [none]** 
-Coverage Penalty to use.
+Coverage Penalty to use. Options are [wu | summary | none]
 
 * **-alpha []** 
 Google NMT length penalty parameter (higher = longer generation)

@@ -66,6 +66,9 @@ def build_save_in_shards_using_shards_size(src_corpus, tgt_corpus, fields,
                         % (src_corpus, tgt_corpus))
             src_data = fsrc.readlines()
             tgt_data = ftgt.readlines()
+            if len(src_data) != len(tgt_data):
+                raise AssertionError("Source and Target should \
+                                     have the same length")
 
             num_shards = int(len(src_data) / opt.shard_size)
             for x in range(num_shards):

@@ -189,11 +189,11 @@ class GNMTGlobalScorer(object):
        beta (float):  coverage parameter
     """
 
-    def __init__(self, alpha, beta, cov_penalty, length_penalty):
-        self.alpha = alpha
-        self.beta = beta
-        penalty_builder = penalties.PenaltyBuilder(cov_penalty,
-                                                   length_penalty)
+    def __init__(self, opt):
+        self.alpha = opt.alpha
+        self.beta = opt.beta
+        penalty_builder = penalties.PenaltyBuilder(opt.coverage_penalty,
+                                                   opt.length_penalty)
         # Term will be subtracted from probability
         self.cov_penalty = penalty_builder.coverage_penalty()
         # Probability will be divided by this

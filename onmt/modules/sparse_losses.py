@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from torch.autograd import Function
-from onmt.modules.sparse_activations import threshold_and_support
+from onmt.modules.sparse_activations import _threshold_and_support
 from onmt.utils.misc import aeq
 
 
@@ -18,7 +18,7 @@ class SparsemaxLossFunction(Function):
         aeq(input_batch, target_batch)
 
         z_k = input.gather(1, target.unsqueeze(1)).squeeze()
-        tau_z, support_size = threshold_and_support(input, dim=1)
+        tau_z, support_size = _threshold_and_support(input, dim=1)
         support = input > tau_z
         x = torch.where(
             support, input**2 - tau_z**2,

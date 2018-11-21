@@ -85,7 +85,7 @@ def save_fields_to_vocab(fields):
     return vocab
 
 
-def merge_vocabs(vocabs, vocab_size=None):
+def merge_vocabs(vocabs, vocab_size=None, min_frequency=1):
     """
     Merge individual vocabularies (assumed to be generated from disjoint
     documents) into a larger vocabulary.
@@ -93,6 +93,7 @@ def merge_vocabs(vocabs, vocab_size=None):
     Args:
         vocabs: `torchtext.vocab.Vocab` vocabularies to be merged
         vocab_size: `int` the final vocabulary size. `None` for no limit.
+        min_frequency: `int` minimum frequency for word to be retained.
     Return:
         `torchtext.vocab.Vocab`
     """
@@ -100,7 +101,8 @@ def merge_vocabs(vocabs, vocab_size=None):
     return torchtext.vocab.Vocab(merged,
                                  specials=[UNK_WORD, PAD_WORD,
                                            BOS_WORD, EOS_WORD],
-                                 max_size=vocab_size)
+                                 max_size=vocab_size,
+                                 min_freq=min_frequency)
 
 
 def get_num_features(data_type, corpus_file, side):
@@ -376,7 +378,8 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
             logger.info(" * merging src and tgt vocab...")
             merged_vocab = merge_vocabs(
                 [fields["src"].vocab, fields["tgt"].vocab],
-                vocab_size=src_vocab_size)
+                vocab_size=src_vocab_size,
+                min_frequency=src_words_min_frequency)
             fields["src"].vocab = merged_vocab
             fields["tgt"].vocab = merged_vocab
 

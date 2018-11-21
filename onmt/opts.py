@@ -145,17 +145,16 @@ def model_opts(parser):
     # Generator and loss options.
     group.add('--copy_attn', '-copy_attn', action="store_true",
               help='Train copy attention layer.')
-    group.add('--generator_function', '-generator_function',
-              default="log_softmax", choices=["log_softmax", "sparsemax"],
+    group.add('--generator_function', '-generator_function', default="softmax",
+              choices=["softmax", "sparsemax"],
               help="""Which function to use for generating
-                       probabilities over the target vocabulary (choices:
-                       log_softmax, sparsemax)""")
+              probabilities over the target vocabulary (choices:
+              softmax, sparsemax)""")
     group.add('--copy_attn_force', '-copy_attn_force', action="store_true",
               help='When available, train to copy.')
     group.add('--reuse_copy_attn', '-reuse_copy_attn', action="store_true",
               help="Reuse standard attention for copy")
-    group.add('--copy_loss_by_seqlength', '-copy_loss_by_seqlength',
-              action="store_true",
+    group.add('--copy_loss_by_seqlength', '-copy_loss_by_seqlength', action="store_true",
               help="Divide copy loss by length of sequence")
     group.add('--coverage_attn', '-coverage_attn', action="store_true",
               help='Train a coverage attention layer.')
@@ -482,6 +481,13 @@ def translate_opts(parser):
               help='Path to model .pt file(s). '
               'Multiple models can be specified, '
               'for ensemble decoding.')
+    group.add('--avg_raw_probs', '-avg_raw_probs', action='store_true',
+              help="""If this is set, during ensembling scores from
+              different models will be combined by averaging their
+              raw probabilities and then taking the log. Otherwise,
+              the log probabilities will be averaged directly.
+              Necessary for models whose output layers can assign
+              zero probability.""")
 
     group = parser.add_argument_group('Data')
     group.add('--data_type', '-data_type', default="text",

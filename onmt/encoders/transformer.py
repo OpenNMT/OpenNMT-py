@@ -29,7 +29,7 @@ class TransformerEncoderLayer(nn.Module):
         self.self_attn = onmt.modules.MultiHeadedAttention(
             heads, d_model, dropout=dropout)
         self.feed_forward = PositionwiseFeedForward(d_model, d_ff, dropout)
-        self.layer_norm = onmt.modules.LayerNorm(d_model)
+        self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, inputs, mask):
@@ -93,7 +93,7 @@ class TransformerEncoder(EncoderBase):
         self.transformer = nn.ModuleList(
             [TransformerEncoderLayer(d_model, heads, d_ff, dropout)
              for _ in range(num_layers)])
-        self.layer_norm = onmt.modules.LayerNorm(d_model)
+        self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
 
     def forward(self, src, lengths=None):
         """ See :obj:`EncoderBase.forward()`"""

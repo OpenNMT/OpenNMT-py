@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from __future__ import division, unicode_literals
+
 import configargparse
+from __future__ import unicode_literals
 
 from onmt.utils.logging import init_logger
 from onmt.translate.translator import build_translator

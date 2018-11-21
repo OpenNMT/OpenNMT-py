@@ -2,9 +2,9 @@
 """
     Training on a single process
 """
-from __future__ import division
 
 import configargparse
+
 import os
 import random
 import torch
@@ -146,6 +146,10 @@ def main(opt, device_id):
         lazily_load_dataset("valid", opt), fields, opt, is_train=False)
 
     # Do training.
+    if len(opt.gpu_ranks):
+        logger.info('Starting training on GPU: %s' % opt.gpu_ranks)
+    else:
+        logger.info('Starting training on CPU, could be very slow')
     trainer.train(train_iter_fct, valid_iter_fct, opt.train_steps,
                   opt.valid_steps)
 

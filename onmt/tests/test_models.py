@@ -141,9 +141,7 @@ class TestModel(unittest.TestCase):
 
         test_src, test_tgt, test_length = self.get_batch(source_l=source_l,
                                                          bsize=bsize)
-        outputs, attn, _ = model(test_src,
-                                 test_tgt,
-                                 test_length)
+        outputs, attn = model(test_src, test_tgt, test_length)
         outputsize = torch.zeros(source_l - 1, bsize, opt.dec_rnn_size)
         # Make sure that output has the correct size and type
         self.assertEqual(outputs.size(), outputsize.size())
@@ -180,9 +178,7 @@ class TestModel(unittest.TestCase):
             h=h, w=w,
             bsize=bsize,
             tgt_l=tgt_l)
-        outputs, attn, _ = model(test_src,
-                                 test_tgt,
-                                 test_length)
+        outputs, attn = model(test_src, test_tgt, test_length)
         outputsize = torch.zeros(tgt_l - 1, bsize, opt.dec_rnn_size)
         # Make sure that output has the correct size and type
         self.assertEqual(outputs.size(), outputsize.size())
@@ -220,9 +216,7 @@ class TestModel(unittest.TestCase):
             sample_rate=opt.sample_rate,
             window_size=opt.window_size,
             t=t, tgt_l=tgt_l)
-        outputs, attn, _ = model(test_src,
-                                 test_tgt,
-                                 test_length)
+        outputs, attn = model(test_src, test_tgt, test_length)
         outputsize = torch.zeros(tgt_l - 1, bsize, opt.dec_rnn_size)
         # Make sure that output has the correct size and type
         self.assertEqual(outputs.size(), outputsize.size())

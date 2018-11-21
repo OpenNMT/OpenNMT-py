@@ -2,7 +2,7 @@
 """
     Main training workflow
 """
-from __future__ import division
+
 import configargparse
 import os
 import signal
@@ -25,7 +25,7 @@ def main(opt):
     if opt.truncated_decoder > 0 and opt.accum_count > 1:
         raise AssertionError("BPTT is not compatible with -accum > 1")
 
-    if len(opt.gpuid) > 1:
+    if opt.gpuid:
         raise AssertionError("gpuid is deprecated \
               see world_size and gpu_ranks")
 

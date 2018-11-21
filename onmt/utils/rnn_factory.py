@@ -1,8 +1,6 @@
 """
  RNN tools
 """
-from __future__ import division
-
 import torch.nn as nn
 import onmt.models
 
