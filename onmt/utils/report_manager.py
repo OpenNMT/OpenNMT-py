@@ -11,8 +11,12 @@ from onmt.utils.logging import logger
 def build_report_manager(opt):
     if opt.tensorboard:
         from tensorboardX import SummaryWriter
-        writer = SummaryWriter(opt.tensorboard_log_dir
-                               + datetime.now().strftime("/%b-%d_%H-%M-%S"),
+        tensorboard_log_dir = opt.tensorboard_log_dir
+
+        if not opt.train_from:
+            tensorboard_log_dir += datetime.now().strftime("/%b-%d_%H-%M-%S")
+
+        writer = SummaryWriter(tensorboard_log_dir,
                                comment="Unmt")
     else:
         writer = None
