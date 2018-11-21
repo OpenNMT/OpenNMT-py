@@ -154,7 +154,8 @@ def model_opts(parser):
               help='When available, train to copy.')
     group.add('--reuse_copy_attn', '-reuse_copy_attn', action="store_true",
               help="Reuse standard attention for copy")
-    group.add('--copy_loss_by_seqlength', '-copy_loss_by_seqlength', action="store_true",
+    group.add('--copy_loss_by_seqlength', '-copy_loss_by_seqlength',
+              action="store_true",
               help="Divide copy loss by length of sequence")
     group.add('--coverage_attn', '-coverage_attn', action="store_true",
               help='Train a coverage attention layer.')
