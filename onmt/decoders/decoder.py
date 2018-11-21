@@ -199,6 +199,7 @@ class RNNDecoderBase(nn.Module):
         p_attn = torch.zeros([batch, source_l], dtype=torch.float32)
         return p_attn
 
+
 class StdRNNDecoder(RNNDecoderBase):
     """
     Standard fully batched RNN decoder with attention.
@@ -255,7 +256,8 @@ class StdRNNDecoder(RNNDecoderBase):
         aeq(tgt_batch, output_batch)
         # END
 
-        # Calculate the attention. skip calculating attention if attention is not set
+        # Calculate the attention.
+        # skip calculating attention if attention is not set
         dec_outs = rnn_output
         p_attn = self._create_fake_align_vector(memory_bank.transpose(0, 1))
         if self.attn is not None:
@@ -352,7 +354,9 @@ class InputFeedRNNDecoder(RNNDecoderBase):
             rnn_output, dec_state = self.rnn(decoder_input, dec_state)
 
             decoder_output = rnn_output
-            p_attn = self._create_fake_align_vector(memory_bank.transpose(0, 1))
+            p_attn = self._create_fake_align_vector(
+                memory_bank.transpose(0, 1))
+            
             if self.attn is not None:
                 decoder_output, p_attn = self.attn(
                     rnn_output,
