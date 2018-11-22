@@ -251,6 +251,10 @@ def preprocess_opts(parser):
               help="Report status every this many sentences")
     group.add('--log_file', '-log_file', type=str, default="",
               help="Output logs to a file under this path.")
+    group.add('--log_file_level', '-log_file_level', type=str,
+              action=StoreLoggingLevelAction,
+              choices=StoreLoggingLevelAction.CHOICES,
+              default="0")
 
     # Options most relevant to speech
     group = parser.add_argument_group('Speech')
@@ -446,6 +450,10 @@ def train_opts(parser):
               help="Print stats at this interval.")
     group.add('--log_file', '-log_file', type=str, default="",
               help="Output logs to a file under this path.")
+    group.add('--log_file_level', '-log_file_level', type=str,
+              action=StoreLoggingLevelAction,
+              choices=StoreLoggingLevelAction.CHOICES,
+              default="0")
     group.add('--exp_host', '-exp_host', type=str, default="",
               help="Send logs to this crayon server.")
     group.add('--exp', '-exp', type=str, default="",
@@ -567,6 +575,10 @@ def translate_opts(parser):
               help='Print scores and predictions for each sentence')
     group.add('--log_file', '-log_file', type=str, default="",
               help="Output logs to a file under this path.")
+    group.add('--log_file_level', '-log_file_level', type=str,
+              action=StoreLoggingLevelAction,
+              choices=StoreLoggingLevelAction.CHOICES,
+              default="0")
     group.add('--attn_debug', '-attn_debug', action="store_true",
               help='Print best attn for each word')
     group.add('--dump_beam', '-dump_beam', type=str, default="",
@@ -666,6 +678,30 @@ class MarkdownHelpAction(configargparse.Action):
         parser.formatter_class = MarkdownHelpFormatter
         parser.print_help()
         parser.exit()
+
+
+class StoreLoggingLevelAction(configargparse.Action):
+    """ Convert string to logging level """
+    import logging
+    LEVELS = {
+        "CRITICAL": logging.CRITICAL,
+        "ERROR": logging.ERROR,
+        "WARNING": logging.WARNING,
+        "INFO": logging.INFO,
+        "DEBUG": logging.DEBUG,
+        "NOTSET": logging.NOTSET
+    }
+
+    CHOICES = list(LEVELS.keys()) + [str(_) for _ in LEVELS.values()]
+
+    def __init__(self, option_strings, dest, help=None, **kwargs):
+        super(StoreLoggingLevelAction, self).__init__(
+            option_strings, dest, help=help, **kwargs)
+
+    def __call__(self, parser, namespace, value, option_string=None):
+        # Get the key 'value' in the dict, or just use 'value'
+        level = StoreLoggingLevelAction.LEVELS.get(value, value)
+        setattr(namespace, self.dest, level)
 
 
 class DeprecateAction(configargparse.Action):
