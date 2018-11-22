@@ -298,7 +298,7 @@ def train_opts(parser):
     group.add('--world_size', '-world_size', default=1, type=int,
               help="total number of distributed processes.")
     group.add('--gpu_backend', '-gpu_backend',
-              default='nccl', nargs='+', type=str,
+              default="nccl", type=str,
               help="Type of torch distributed backend")
     group.add('--gpu_verbose_level', '-gpu_verbose_level', default=0, type=int,
               help="Gives more info on each process per GPU.")
