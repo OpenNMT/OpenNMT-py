@@ -1,5 +1,7 @@
 #!/usr/bin/env python
-import argparse
+import configargparse
+
+import onmt.opts as opts
 
 from flask import Flask, jsonify, request
 from onmt.translate import TranslationServer, ServerModelError
@@ -104,13 +106,17 @@ def start(config_file,
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="OpenNMT-py REST Server")
+    parser = configargparse.ArgumentParser(
+        config_file_parser_class=configargparse.YAMLConfigFileParser,
+        description="OpenNMT-py REST Server")
     parser.add_argument("--ip", type=str, default="0.0.0.0")
     parser.add_argument("--port", type=int, default="5000")
     parser.add_argument("--url_root", type=str, default="/translator")
     parser.add_argument("--debug", "-d", action="store_true")
     parser.add_argument("--config", "-c", type=str,
                         default="./available_models/conf.json")
+
+    opts.config_opts(parser)
     args = parser.parse_args()
     start(args.config, url_root=args.url_root, host=args.ip, port=args.port,
           debug=args.debug)

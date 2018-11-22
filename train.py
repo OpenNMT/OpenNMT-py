@@ -2,7 +2,8 @@
 """
     Main training workflow
 """
-import argparse
+
+import configargparse
 import os
 import signal
 import torch
@@ -105,10 +106,12 @@ class ErrorHandler(object):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
+    parser = configargparse.ArgumentParser(
         description='train.py',
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        config_file_parser_class=configargparse.YAMLConfigFileParser,
+        formatter_class=configargparse.ArgumentDefaultsHelpFormatter)
 
+    opts.config_opts(parser)
     opts.add_md_help_argument(parser)
     opts.model_opts(parser)
     opts.train_opts(parser)

@@ -3,7 +3,7 @@
 from __future__ import print_function
 import sys
 import os
-import argparse
+import configargparse
 import time
 import json
 import threading
@@ -205,7 +205,7 @@ class ServerModel:
         """
         prec_argv = sys.argv
         sys.argv = sys.argv[:1]
-        parser = argparse.ArgumentParser()
+        parser = configargparse.ArgumentParser()
         onmt.opts.translate_opts(parser)
 
         models = opt['models']
