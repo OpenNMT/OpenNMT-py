@@ -186,7 +186,8 @@ class ServerModel:
             log_file = os.path.join(model_root, self.opt.log_file)
         else:
             log_file = None
-        self.logger = init_logger(log_file=log_file)
+        self.logger = init_logger(log_file=log_file,
+                                  log_file_level=self.opt.log_file_level)
 
         self.loading_lock = threading.Event()
         self.loading_lock.set()
