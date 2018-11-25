@@ -295,6 +295,12 @@ Model filename (the model will be saved as &lt;save_model&gt;_N.pt where N is th
 number of steps</li>
 <li><strong>-save_checkpoint_steps [5000]</strong>
 Save a checkpoint every X steps</li>
+<li><strong>-reset_optim [none]</strong>
+Ability to reset optimizer. Options:
+“all”: reset completely the optimizer (train_steps, type of optim, ….),
+“states”: load everything from the checkpoint except Adam states,
+“keep_states”: load Adam states from the checkpoint but apply
+command line changes</li>
 <li><strong>-keep_checkpoint [-1]</strong>
 Keep X checkpoints (negative: keep all)</li>
 <li><strong>-gpuid []</strong>
