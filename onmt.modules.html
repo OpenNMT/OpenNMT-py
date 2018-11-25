@@ -598,8 +598,9 @@ which is the combination of base emb and top output of encode</li>
 <dl class="class">
 <dt id="onmt.modules.CopyGenerator">
 <em class="property">class </em><code class="descclassname">onmt.modules.</code><code class="descname">CopyGenerator</code><span class="sig-paren">(</span><em>input_size</em>, <em>tgt_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/modules/copy_generator.html#CopyGenerator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.modules.CopyGenerator" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generator module that additionally considers copying
-words directly from the source.</p>
+<dd><p>An implementation of pointer-generator networks (See et al., 2017)
+(<a class="reference external" href="https://arxiv.org/abs/1704.04368">https://arxiv.org/abs/1704.04368</a>), which consider copying words
+directly from the source sequence.</p>
 <p>The main idea is that we have an extended “dynamic dictionary”.
 It contains <cite>|tgt_dict|</cite> words plus an arbitrary number of
 additional words introduced by the source sentence.
