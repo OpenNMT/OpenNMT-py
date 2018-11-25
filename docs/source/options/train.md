@@ -145,6 +145,13 @@ number of steps
 * **-save_checkpoint_steps [5000]** 
 Save a checkpoint every X steps
 
+* **-reset_optim [none]** 
+Ability to reset optimizer. Options:
+"all": reset completely the optimizer (train_steps, type of optim, ....), 
+"states": load everything from the checkpoint except Adam states, 
+"keep_states": load Adam states from the checkpoint but apply
+command line changes
+
 * **-keep_checkpoint [-1]** 
 Keep X checkpoints (negative: keep all)
 
