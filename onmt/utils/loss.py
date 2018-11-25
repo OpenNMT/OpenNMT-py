@@ -1,6 +1,4 @@
 """
-This file handles the details of the loss function during training.
-
 This includes: LossComputeBase and the standard NMTLossCompute, and
                sharded loss compute stuff.
 """
@@ -12,24 +10,49 @@ import torch.nn.functional as F
 import onmt
 import onmt.inputters as inputters
 from onmt.modules.sparse_losses import SparsemaxLoss
+from onmt.modules.sparse_activations import LogSparsemax
 
 
 def build_loss_compute(model, tgt_vocab, opt, train=True):
     """
-    This returns user-defined LossCompute object, which is used to
-    compute loss in train/validate process. You can implement your
-    own *LossCompute class, by subclassing LossComputeBase.
+    Returns a LossCompute subclass which wraps around an nn.Module subclass
+    (such as nn.NLLLoss) which defines the loss criterion. The LossCompute
+    object allows this loss to be computed in shards and passes the relevant
+    data to a Statistics object which handles training/validation logging.
+    Currently, the NMTLossCompute class handles all loss computation except
+    for when using a copy mechanism. Despite their name, LossCompute objects
+    do not merely compute the loss but also perform the backward pass inside
+    their sharded_compute_loss method.
     """
     device = torch.device("cuda" if onmt.utils.misc.use_gpu(opt) else "cpu")
 
+    padding_idx = tgt_vocab.stoi[inputters.PAD_WORD]
+    if opt.copy_attn:
+        criterion = onmt.modules.CopyGeneratorLoss(
+            len(tgt_vocab), opt.copy_attn_force,
+            unk_index=inputters.UNK, ignore_index=padding_idx
+        )
+    elif opt.label_smoothing > 0 and train:
+        criterion = LabelSmoothingLoss(
+            opt.label_smoothing, len(tgt_vocab), ignore_index=padding_idx
+        )
+    elif isinstance(model.generator[1], LogSparsemax):
+        criterion = SparsemaxLoss(ignore_index=padding_idx, reduction='sum')
+    else:
+        criterion = nn.NLLLoss(ignore_index=padding_idx, reduction='sum')
+
+    # if the loss function operates on vectors of raw logits instead of
+    # probabilities, only the first part of the generator needs to be
+    # passed to the NMTLossCompute. At the moment, the only supported
+    # loss function of this kind is the sparsemax loss.
+    use_raw_logits = isinstance(criterion, SparsemaxLoss)
+    loss_gen = model.generator[0] if use_raw_logits else model.generator
     if opt.copy_attn:
         compute = onmt.modules.CopyGeneratorLossCompute(
-            model.generator, tgt_vocab, opt.copy_attn_force,
-            opt.copy_loss_by_seqlength)
+            criterion, loss_gen, tgt_vocab, opt.copy_loss_by_seqlength
+        )
     else:
-        compute = NMTLossCompute(
-            model.generator, tgt_vocab,
-            label_smoothing=opt.label_smoothing if train else 0.0)
+        compute = NMTLossCompute(criterion, loss_gen)
     compute.to(device)
 
     return compute
@@ -38,9 +61,8 @@ def build_loss_compute(model, tgt_vocab, opt, train=True):
 class LossComputeBase(nn.Module):
     """
     Class for managing efficient loss computation. Handles
-    sharding next step predictions and accumulating mutiple
+    sharding next step predictions and accumulating multiple
     loss computations
-
 
     Users can implement their own loss computation strategy by making
     subclass of this one.  Users need to implement the _compute_loss()
@@ -55,11 +77,14 @@ class LossComputeBase(nn.Module):
         normalzation (str): normalize by "sents" or "tokens"
     """
 
-    def __init__(self, generator, tgt_vocab):
+    def __init__(self, criterion, generator):
         super(LossComputeBase, self).__init__()
+        self.criterion = criterion
         self.generator = generator
-        self.tgt_vocab = tgt_vocab
-        self.padding_idx = tgt_vocab.stoi[inputters.PAD_WORD]
+
+    @property
+    def padding_idx(self):
+        return self.criterion.ignore_index
 
     def _make_shard_state(self, batch, output, range_, attns=None):
         """
@@ -159,10 +184,7 @@ class LossComputeBase(nn.Module):
         """
         pred = scores.max(1)[1]
         non_padding = target.ne(self.padding_idx)
-        num_correct = pred.eq(target) \
-                          .masked_select(non_padding) \
-                          .sum() \
-                          .item()
+        num_correct = pred.eq(target).masked_select(non_padding).sum().item()
         num_non_padding = non_padding.sum().item()
         return onmt.utils.Statistics(loss.item(), num_non_padding, num_correct)
 
@@ -181,12 +203,12 @@ class LabelSmoothingLoss(nn.Module):
     """
     def __init__(self, label_smoothing, tgt_vocab_size, ignore_index=-100):
         assert 0.0 < label_smoothing <= 1.0
-        self.padding_idx = ignore_index
+        self.ignore_index = ignore_index
         super(LabelSmoothingLoss, self).__init__()
 
         smoothing_value = label_smoothing / (tgt_vocab_size - 2)
         one_hot = torch.full((tgt_vocab_size,), smoothing_value)
-        one_hot[self.padding_idx] = 0
+        one_hot[self.ignore_index] = 0
         self.register_buffer('one_hot', one_hot.unsqueeze(0))
 
         self.confidence = 1.0 - label_smoothing
@@ -198,7 +220,7 @@ class LabelSmoothingLoss(nn.Module):
         """
         model_prob = self.one_hot.repeat(target.size(0), 1)
         model_prob.scatter_(1, target.unsqueeze(1), self.confidence)
-        model_prob.masked_fill_((target == self.padding_idx).unsqueeze(1), 0)
+        model_prob.masked_fill_((target == self.ignore_index).unsqueeze(1), 0)
 
         return F.kl_div(output, model_prob, reduction='sum')
 
@@ -208,22 +230,8 @@ class NMTLossCompute(LossComputeBase):
     Standard NMT Loss Computation.
     """
 
-    def __init__(self, generator, tgt_vocab, normalization="sents",
-                 label_smoothing=0.0):
-        super(NMTLossCompute, self).__init__(generator, tgt_vocab)
-        self.sparse = not isinstance(generator[1], nn.LogSoftmax)
-        if label_smoothing > 0:
-            self.criterion = LabelSmoothingLoss(
-                label_smoothing, len(tgt_vocab), ignore_index=self.padding_idx
-            )
-        elif self.sparse:
-            self.criterion = SparsemaxLoss(
-                ignore_index=self.padding_idx, size_average=False
-            )
-        else:
-            self.criterion = nn.NLLLoss(
-                ignore_index=self.padding_idx, reduction='sum'
-            )
+    def __init__(self, criterion, generator, normalization="sents"):
+        super(NMTLossCompute, self).__init__(criterion, generator)
 
     def _make_shard_state(self, batch, output, range_, attns=None):
         return {
@@ -233,13 +241,8 @@ class NMTLossCompute(LossComputeBase):
 
     def _compute_loss(self, batch, output, target):
         bottled_output = self._bottle(output)
-        if self.sparse:
-            # for sparsemax loss, the loss function operates on the raw output
-            # vector, not a probability vector. Hence it's only necessary to
-            # apply the first part of the generator here.
-            scores = self.generator[0](bottled_output)
-        else:
-            scores = self.generator(bottled_output)
+
+        scores = self.generator(bottled_output)
         gtruth = target.view(-1)
 
         loss = self.criterion(scores, gtruth)
@@ -249,7 +252,6 @@ class NMTLossCompute(LossComputeBase):
 
 
 def filter_shard_state(state, shard_size=None):
-    """ ? """
     for k, v in state.items():
         if shard_size is None:
             yield k, v
