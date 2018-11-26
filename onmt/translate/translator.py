@@ -289,8 +289,7 @@ class Translator(object):
                     data,
                     self.max_length,
                     min_length=self.min_length,
-                    n_best=self.n_best,
-                    return_attention=self.replace_unk)
+                    n_best=self.n_best)
             else:
                 return self._translate_batch(batch, data)
 
@@ -367,7 +366,7 @@ class Translator(object):
                               max_length,
                               min_length=0,
                               n_best=1,
-                              return_attention=False):
+                              return_attention=True):
         # TODO: faster code path for beam_size == 1.
 
         # TODO: support these blacklisted features.
