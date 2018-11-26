@@ -188,7 +188,8 @@ class Translator(object):
         all_predictions = []
 
         for batch in data_iter:
-            batch_data = self.translate_batch(batch, data, attn_debug, fast=self.fast)
+            batch_data = self.translate_batch(batch, data, attn_debug,
+                                              fast=self.fast)
             translations = builder.from_batch(batch_data)
 
             for trans in translations:
