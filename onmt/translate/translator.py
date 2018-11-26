@@ -188,7 +188,8 @@ class Translator(object):
         all_predictions = []
 
         for batch in data_iter:
-            batch_data = self.translate_batch(batch, data, fast=self.fast)
+            batch_data = self.translate_batch(batch, data, attn_debug,
+                                              fast=self.fast)
             translations = builder.from_batch(batch_data)
 
             for trans in translations:
@@ -268,7 +269,7 @@ class Translator(object):
                       codecs.open(self.dump_beam, 'w', 'utf-8'))
         return all_scores, all_predictions
 
-    def translate_batch(self, batch, data, fast=False):
+    def translate_batch(self, batch, data, attn_debug, fast=False):
         """
         Translate a batch of sentences.
 
@@ -290,7 +291,7 @@ class Translator(object):
                     self.max_length,
                     min_length=self.min_length,
                     n_best=self.n_best,
-                    return_attention=self.replace_unk)
+                    return_attention=attn_debug or self.replace_unk)
             else:
                 return self._translate_batch(batch, data)
 
