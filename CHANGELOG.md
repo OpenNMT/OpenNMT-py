@@ -8,6 +8,10 @@
 
 ### Fixes and improvements
 
+## [0.6.0](https://github.com/OpenNMT/OpenNMT-py/tree/0.6.0) (2018-11-28)
+* Many fixes and code improvements
+* New: Ability to load a yml config file. See examples in config folder.
+
 ## [0.5.0](https://github.com/OpenNMT/OpenNMT-py/tree/0.5.0) (2018-10-24)
 * Fixed advance n_best beam in translate_batch_fast
 * Fixed remove valid set vocab from total vocab
