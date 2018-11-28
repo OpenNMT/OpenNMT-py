@@ -213,7 +213,7 @@ For CNN-DM we follow See et al. [2] and additionally truncate the source length 
                      <span class="o">-</span><span class="n">tgt_seq_length_trunc</span> <span class="mi">100</span> \
                      <span class="o">-</span><span class="n">dynamic_dict</span> \
                      <span class="o">-</span><span class="n">share_vocab</span> \
-                     <span class="o">-</span><span class="n">max_shard_size</span> <span class="p">(</span><span class="mi">500</span> <span class="o">*</span> <span class="mi">1024</span> <span class="o">*</span> <span class="mi">1024</span><span class="p">)</span>
+                     <span class="o">-</span><span class="n">shard_size</span> <span class="mi">100000</span>
 </pre></div>
 </div>
 <p>(2) Gigaword</p>
@@ -225,7 +225,7 @@ For CNN-DM we follow See et al. [2] and additionally truncate the source length 
                      <span class="o">-</span><span class="n">src_seq_length</span> <span class="mi">10000</span> \
                      <span class="o">-</span><span class="n">dynamic_dict</span> \
                      <span class="o">-</span><span class="n">share_vocab</span> \
-                     <span class="o">-</span><span class="n">max_shard_size</span> <span class="p">(</span><span class="mi">500</span> <span class="o">*</span> <span class="mi">1024</span> <span class="o">*</span> <span class="mi">1024</span><span class="p">)</span>
+                     <span class="o">-</span><span class="n">shard_size</span> <span class="mi">100000</span>
 </pre></div>
 </div>
 </div>
@@ -242,9 +242,8 @@ For CNN-DM we follow See et al. [2] and additionally truncate the source length 
 <li><code class="docutils literal notranslate"><span class="pre">optim</span> <span class="pre">adagrad</span></code>: Adagrad outperforms SGD when coupled with the following option.</li>
 <li><code class="docutils literal notranslate"><span class="pre">adagrad_accumulator_init</span> <span class="pre">0.1</span></code>: PyTorch does not initialize the accumulator in adagrad with any values. To match the optimization algorithm with the Tensorflow version, this option needs to be added.</li>
 </ul>
-<p>We are using using a 128-dimensional word-embedding, and 512-dimensional 1 layer LSTM. On the encoder side, we use a bidirectional LSTM (<code class="docutils literal notranslate"><span class="pre">brnn</span></code>), which means that the 512 dimensions are split into 256 dimensions per direction.
-We also use OpenNMT’s default learning rate decay, which halves the learning rate after every epoch once the validation perplexity increased after an epoch (or after epoch 8).
-We additionally set the maximum norm of the gradient to 2, and renormalize if the gradient norm exceeds this value and do not use any dropout.</p>
+<p>We are using using a 128-dimensional word-embedding, and 512-dimensional 1 layer LSTM. On the encoder side, we use a bidirectional LSTM (<code class="docutils literal notranslate"><span class="pre">brnn</span></code>), which means that the 512 dimensions are split into 256 dimensions per direction.</p>
+<p>We additionally set the maximum norm of the gradient to 2, and renormalize if the gradient norm exceeds this value and do not use any dropout.</p>
 <p><strong>commands used</strong>:</p>
 <p>(1) CNN-DM</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">train</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">save_model</span> <span class="n">models</span><span class="o">/</span><span class="n">cnndm</span> \
@@ -255,7 +254,7 @@ We additionally set the maximum norm of the gradient to 2, and renormalize if th
                 <span class="o">-</span><span class="n">rnn_size</span> <span class="mi">512</span> \
                 <span class="o">-</span><span class="n">layers</span> <span class="mi">1</span> \
                 <span class="o">-</span><span class="n">encoder_type</span> <span class="n">brnn</span> \
-                <span class="o">-</span><span class="n">epochs</span> <span class="mi">20</span> \
+                <span class="o">-</span><span class="n">train_steps</span> <span class="mi">200000</span> \
                 <span class="o">-</span><span class="n">max_grad_norm</span> <span class="mi">2</span> \
                 <span class="o">-</span><span class="n">dropout</span> <span class="mf">0.</span> \
                 <span class="o">-</span><span class="n">batch_size</span> <span class="mi">16</span> \
@@ -293,7 +292,7 @@ We additionally set the maximum norm of the gradient to 2, and renormalize if th
                    <span class="o">-</span><span class="n">batch_type</span> <span class="n">tokens</span> \
                    <span class="o">-</span><span class="n">normalization</span> <span class="n">tokens</span> \
                    <span class="o">-</span><span class="n">max_generator_batches</span> <span class="mi">2</span> \
-                   <span class="o">-</span><span class="n">epochs</span> <span class="mi">25</span> \
+                   <span class="o">-</span><span class="n">train_steps</span> <span class="mi">200000</span> \
                    <span class="o">-</span><span class="n">start_checkpoint_at</span> <span class="mi">8</span> \
                    <span class="o">-</span><span class="n">accum_count</span> <span class="mi">4</span> \
                    <span class="o">-</span><span class="n">share_embeddings</span> \
@@ -309,7 +308,7 @@ We additionally set the maximum norm of the gradient to 2, and renormalize if th
                 <span class="o">-</span><span class="n">save_model</span> <span class="n">models</span><span class="o">/</span><span class="n">giga</span> \
                 <span class="o">-</span><span class="n">copy_attn</span> \
                 <span class="o">-</span><span class="n">reuse_copy_attn</span> \
-                <span class="o">-</span><span class="n">epochs</span> <span class="mi">20</span>
+                <span class="o">-</span><span class="n">train_steps</span> <span class="mi">200000</span>
 </pre></div>
 </div>
 </div>
