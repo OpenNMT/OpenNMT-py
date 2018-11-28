@@ -47,7 +47,7 @@ python preprocess.py -train_src data/cnndm/train.txt.src \
                      -tgt_seq_length_trunc 100 \
                      -dynamic_dict \
                      -share_vocab \
-                     -max_shard_size (500 * 1024 * 1024)
+                     -shard_size 100000
 ```
 
 (2) Gigaword
@@ -61,7 +61,7 @@ python preprocess.py -train_src data/giga/train.article.txt \
                      -src_seq_length 10000 \
                      -dynamic_dict \
                      -share_vocab \
-                     -max_shard_size (500 * 1024 * 1024)
+                     -shard_size 100000
 ```
 
 
@@ -80,7 +80,7 @@ The training procedure described in this section for the most part follows param
 
 
 We are using using a 128-dimensional word-embedding, and 512-dimensional 1 layer LSTM. On the encoder side, we use a bidirectional LSTM (`brnn`), which means that the 512 dimensions are split into 256 dimensions per direction.
-We also use OpenNMT's default learning rate decay, which halves the learning rate after every epoch once the validation perplexity increased after an epoch (or after epoch 8).
+
 We additionally set the maximum norm of the gradient to 2, and renormalize if the gradient norm exceeds this value and do not use any dropout.
 
 **commands used**:
@@ -96,7 +96,7 @@ python train.py -save_model models/cnndm \
                 -rnn_size 512 \
                 -layers 1 \
                 -encoder_type brnn \
-                -epochs 20 \
+                -train_steps 200000 \
                 -max_grad_norm 2 \
                 -dropout 0. \
                 -batch_size 16 \
@@ -137,7 +137,7 @@ python -u train.py -data data/cnndm/CNNDM \
                    -batch_type tokens \
                    -normalization tokens \
                    -max_generator_batches 2 \
-                   -epochs 25 \
+                   -train_steps 200000 \
                    -start_checkpoint_at 8 \
                    -accum_count 4 \
                    -share_embeddings \
@@ -156,7 +156,7 @@ python train.py -data data/giga/GIGA \
                 -save_model models/giga \
                 -copy_attn \
                 -reuse_copy_attn \
-                -epochs 20
+                -train_steps 200000
 ```
 
 

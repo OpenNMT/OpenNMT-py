@@ -5,14 +5,15 @@
 
 This is a [Pytorch](https://github.com/pytorch/pytorch)
 port of [OpenNMT](https://github.com/OpenNMT/OpenNMT),
-an open-source (MIT) neural machine translation system. It is designed to be research friendly to try out new ideas in translation, summary, image-to-text, morphology, and many other domains.
+an open-source (MIT) neural machine translation system. It is designed to be research friendly to try out new ideas in translation, summary, image-to-text, morphology, and many other domains. Some companies have proven the code to be production ready.
 
-Codebase is relatively stable, but PyTorch is still evolving. We currently only support PyTorch 0.4.1 and recommend forking if you need to have stable code.
-
-OpenNMT-py is run as a collaborative open-source project. It is maintained by [Sasha Rush](http://github.com/srush) (Cambridge, MA), [Ben Peters](http://github.com/bpopeters) (Lisbon), and [Jianyu Zhan](http://github.com/jianyuzhan) (Shanghai). The original code was written by [Adam Lerer](http://github.com/adamlerer) (NYC). 
 We love contributions. Please consult the Issues page for any [Contributions Welcome](https://github.com/OpenNMT/OpenNMT-py/issues?q=is%3Aissue+is%3Aopen+label%3A%22contributions+welcome%22) tagged post. 
 
 <center style="padding: 40px"><img width="70%" src="http://opennmt.github.io/simple-attn.png" /></center>
+
+Before raising an issue, make sure you read the requirements and the documentation examples.
+
+Unless there is a bug, please use the [Forum](http://forum.opennmt.net) or [Gitter](https://gitter.im/OpenNMT/OpenNMT-py) to ask questions.
 
 
 Table of Contents
@@ -22,6 +23,7 @@ Table of Contents
   * [Features](#features)
   * [Quickstart](#quickstart)
   * [Run on FloydHub](#run-on-floydhub)
+  * [Acknowledgements](#acknowledgements)
   * [Citation](#citation)
 
 ## Requirements
@@ -36,7 +38,7 @@ Note that we currently only support PyTorch 0.4.1
 
 ## Features
 
-The following OpenNMT features are implemented:
+Key features:
 
 - [data preprocessing](http://opennmt.net/OpenNMT-py/options/preprocess.html)
 - [Inference (translation) with batching and beam search](http://opennmt.net/OpenNMT-py/options/translate.html)
@@ -130,12 +132,28 @@ The following pretrained models can be downloaded and used with translate.py.
 
 http://opennmt.net/Models-py/
 
+## Acknowledgements
 
+OpenNMT-py is run as a collaborative open-source project.
+The original code was written by [Adam Lerer](http://github.com/adamlerer) (NYC) to reproduce OpenNMT-Lua using Pytorch.
+
+Major contributors are:
+[Sasha Rush](https://github.com/srush) (Cambridge, MA)
+[Vincent Nguyen]((https://github.com/vince62s) (Ubiqus)
+[Ben Peters](http://github.com/bpopeters) (Lisbon)
+[Sebastian Gehrmann](https://github.com/sebastianGehrmann) (Harvard NLP)
+[Yuntian Deng](https://github.com/da03) (Harvard NLP)
+[Guillaume Klein](https://github.com/guillaumekln) (Systran)
+[Paul Tardy](https://github.com/pltrdy) (Ubiqus / Lium)
+[François Hernandez](https://github.com/francoishernandez) (Ubiqus)
+[Jianyu Zhan](http://github.com/jianyuzhan) (Shanghai)
+and more !
+
+OpentNMT-py belongs to the OpenNMT project along with OpenNMT-Lua and OpenNMT-tf.
 
 ## Citation
 
 [OpenNMT: Neural Machine Translation Toolkit](https://arxiv.org/pdf/1805.11462)
-
 
 [OpenNMT technical report](https://doi.org/10.18653/v1/P17-4012)
 
