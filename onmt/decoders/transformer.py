@@ -67,8 +67,8 @@ class TransformerDecoderLayer(nn.Module):
 
         """
         dec_mask = torch.gt(tgt_pad_mask +
-                            self.mask[:, :tgt_pad_mask.size(1),
-                                      :tgt_pad_mask.size(1)], 0)
+                            self.mask[:, :tgt_pad_mask.size(-1),
+                                      :tgt_pad_mask.size(-1)], 0)
 
         input_norm = self.layer_norm_1(inputs)
         all_input = input_norm
@@ -239,11 +239,9 @@ class TransformerDecoder(nn.Module):
         output = emb.transpose(0, 1).contiguous()
         src_memory_bank = memory_bank.transpose(0, 1).contiguous()
 
-        padding_idx = self.embeddings.word_padding_idx
-        src_pad_mask = src_words.data.eq(padding_idx).unsqueeze(1) \
-            .expand(src_batch, tgt_len, src_len)
-        tgt_pad_mask = tgt_words.data.eq(padding_idx).unsqueeze(1) \
-            .expand(tgt_batch, tgt_len, tgt_len)
+        pad_idx = self.embeddings.word_padding_idx
+        src_pad_mask = src_words.data.eq(pad_idx).unsqueeze(1)  # [B, 1, T_src]
+        tgt_pad_mask = tgt_words.data.eq(pad_idx).unsqueeze(1)  # [B, 1, T_tgt]
 
         if self.state["cache"] is None:
             saved_inputs = []
