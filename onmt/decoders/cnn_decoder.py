@@ -56,7 +56,7 @@ class CNNDecoder(nn.Module):
                 hidden_size, attn_type=attn_type)
             self._copy = True
 
-    def init_state(self, _, memory_bank, enc_hidden, with_cache=False):
+    def init_state(self, _, memory_bank, enc_hidden):
         """
         Init decoder state.
         """

@@ -386,8 +386,7 @@ class Translator(object):
         # Encoder forward.
         src, enc_states, memory_bank, src_lengths = self._run_encoder(
             batch, data.data_type)
-        self.model.decoder.init_state(
-            src, memory_bank, enc_states, with_cache=True)
+        self.model.decoder.init_state(src, memory_bank, enc_states)
 
         results = {}
         results["predictions"] = [[] for _ in range(batch_size)]  # noqa: F812
@@ -398,8 +397,7 @@ class Translator(object):
             results["gold_score"] = self._score_target(
                 batch, memory_bank, src_lengths, data, batch.src_map
                 if data.data_type == 'text' and self.copy_attn else None)
-            self.model.decoder.init_state(
-                src, memory_bank, enc_states, with_cache=True)
+            self.model.decoder.init_state(src, memory_bank, enc_states)
         else:
             results["gold_score"] = [0] * batch_size
 
@@ -605,8 +603,7 @@ class Translator(object):
             results["gold_score"] = self._score_target(
                 batch, memory_bank, src_lengths, data, batch.src_map
                 if data_type == 'text' and self.copy_attn else None)
-            self.model.decoder.init_state(
-                src, memory_bank, enc_states, with_cache=True)
+            self.model.decoder.init_state(src, memory_bank, enc_states)
         else:
             results["gold_score"] = [0] * batch_size
 

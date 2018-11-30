@@ -50,7 +50,7 @@ class TransformerDecoderLayer(nn.Module):
         self.register_buffer('mask', mask)
 
     def forward(self, inputs, memory_bank, src_pad_mask, tgt_pad_mask,
-                previous_input=None, layer_cache=None, step=None):
+                layer_cache=None, step=None):
         """
         Args:
             inputs (`FloatTensor`): `[batch_size x 1 x model_dim]`
@@ -59,25 +59,22 @@ class TransformerDecoderLayer(nn.Module):
             tgt_pad_mask (`LongTensor`): `[batch_size x 1 x 1]`
 
         Returns:
-            (`FloatTensor`, `FloatTensor`, `FloatTensor`):
+            (`FloatTensor`, `FloatTensor`):
 
             * output `[batch_size x 1 x model_dim]`
             * attn `[batch_size x 1 x src_len]`
-            * all_input `[batch_size x current_step x model_dim]`
 
         """
-        dec_mask = torch.gt(tgt_pad_mask +
-                            self.mask[:, :tgt_pad_mask.size(-1),
-                                      :tgt_pad_mask.size(-1)], 0)
+        dec_mask = None
+        if step is None:
+            dec_mask = torch.gt(tgt_pad_mask +
+                                self.mask[:, :tgt_pad_mask.size(-1),
+                                          :tgt_pad_mask.size(-1)], 0)
 
         input_norm = self.layer_norm_1(inputs)
-        all_input = input_norm
-        if previous_input is not None:
-            all_input = torch.cat((previous_input, input_norm), dim=1)
-            dec_mask = None
 
         if self.self_attn_type == "scaled-dot":
-            query, attn = self.self_attn(all_input, all_input, input_norm,
+            query, attn = self.self_attn(input_norm, input_norm, input_norm,
                                          mask=dec_mask,
                                          layer_cache=layer_cache,
                                          type="self")
@@ -94,7 +91,7 @@ class TransformerDecoderLayer(nn.Module):
                                       type="context")
         output = self.feed_forward(self.drop(mid) + query)
 
-        return output, attn, all_input
+        return output, attn
 
     def _get_attn_subsequent_mask(self, size):
         """
@@ -172,21 +169,10 @@ class TransformerDecoder(nn.Module):
             self._copy = True
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
 
-    def init_state(self, src, memory_bank, enc_hidden, with_cache=False):
+    def init_state(self, src, memory_bank, enc_hidden):
         """ Init decoder state """
         self.state["src"] = src
-        self.state["previous_input"] = None
-        self.state["previous_layer_inputs"] = None
         self.state["cache"] = None
-
-        if with_cache:
-            self._init_cache(memory_bank, self.num_layers,
-                             self.self_attn_type)
-
-    def update_state(self, new_input, previous_layer_inputs):
-
-        self.state["previous_input"] = new_input
-        self.state["previous_layer_inputs"] = previous_layer_inputs
 
     def map_state(self, fn):
         def _recursive_map(struct, batch_dim=0):
@@ -198,28 +184,19 @@ class TransformerDecoder(nn.Module):
                         struct[k] = fn(v, batch_dim)
 
         self.state["src"] = fn(self.state["src"], 1)
-        if self.state["previous_input"] is not None:
-            self.state["previous_input"] = fn(self.state["previous_input"], 1)
-        if self.state["previous_layer_inputs"] is not None:
-            self.state["previous_layer_inputs"] = \
-                fn(self.state["previous_layer_inputs"], 1)
         if self.state["cache"] is not None:
             _recursive_map(self.state["cache"])
 
     def detach_state(self):
-        if self.state["previous_input"] is not None:
-            self.state["previous_input"] = \
-                self.state["previous_input"].detach()
-        if self.state["previous_layer_inputs"] is not None:
-            self.state["previous_layer_inputs"] = \
-                self.state["previous_layer_inputs"].detach()
         self.state["src"] = self.state["src"].detach()
 
-    def forward(self, tgt, memory_bank, memory_lengths=None,
-                step=None, cache=None):
+    def forward(self, tgt, memory_bank, memory_lengths=None, step=None):
         """
         See :obj:`onmt.modules.RNNDecoderBase.forward()`
         """
+        if step == 0:
+            self._init_cache(memory_bank, self.num_layers, self.self_attn_type)
+
         src = self.state["src"]
         src_words = src[:, :, 0].transpose(0, 1)
         tgt_words = tgt[:, :, 0].transpose(0, 1)
@@ -243,27 +220,16 @@ class TransformerDecoder(nn.Module):
         src_pad_mask = src_words.data.eq(pad_idx).unsqueeze(1)  # [B, 1, T_src]
         tgt_pad_mask = tgt_words.data.eq(pad_idx).unsqueeze(1)  # [B, 1, T_tgt]
 
-        if self.state["cache"] is None:
-            saved_inputs = []
-
         for i in range(self.num_layers):
-            prev_layer_input = None
-            if self.state["cache"] is None:
-                if self.state["previous_input"] is not None:
-                    prev_layer_input = self.state["previous_layer_inputs"][i]
-            output, attn, all_input \
-                = self.transformer_layers[i](
-                    output, src_memory_bank,
-                    src_pad_mask, tgt_pad_mask,
-                    previous_input=prev_layer_input,
-                    layer_cache=self.state["cache"]["layer_{}".format(i)]
-                    if self.state["cache"] is not None else None,
-                    step=step)
-            if self.state["cache"] is None:
-                saved_inputs.append(all_input)
-
-        if self.state["cache"] is None:
-            saved_inputs = torch.stack(saved_inputs)
+            output, attn = self.transformer_layers[i](
+                output,
+                src_memory_bank,
+                src_pad_mask,
+                tgt_pad_mask,
+                layer_cache=(
+                    self.state["cache"]["layer_{}".format(i)]
+                    if step is not None else None),
+                step=step)
 
         output = self.layer_norm(output)
 
@@ -275,8 +241,6 @@ class TransformerDecoder(nn.Module):
         if self._copy:
             attns["copy"] = attn
 
-        if self.state["cache"] is None:
-            self.update_state(tgt, saved_inputs)
         # TODO change the way attns is returned dict => list or tuple (onnx)
         return dec_outs, attns
 
