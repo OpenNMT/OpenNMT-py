@@ -69,11 +69,10 @@ class EnsembleDecoder(nn.Module):
             result[key] = torch.stack([attn[key] for attn in attns]).mean(0)
         return result
 
-    def init_state(self, src, memory_bank, enc_hidden, with_cache=False):
+    def init_state(self, src, memory_bank, enc_hidden):
         """ See :obj:`RNNDecoderBase.init_state()` """
         for i, model_decoder in enumerate(self.model_decoders):
-            model_decoder.init_state(src, memory_bank[i],
-                                     enc_hidden[i], with_cache)
+            model_decoder.init_state(src, memory_bank[i], enc_hidden[i])
 
     def map_state(self, fn):
         for model_decoder in self.model_decoders:
