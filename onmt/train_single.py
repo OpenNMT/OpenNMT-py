@@ -34,7 +34,7 @@ def _tally_parameters(model):
     for name, param in model.named_parameters():
         if 'encoder' in name:
             enc += param.nelement()
-        elif ('decoder' or 'generator') in name:
+        else:
             dec += param.nelement()
     return n_params, enc, dec
 
