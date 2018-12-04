@@ -100,6 +100,7 @@ python train.py -save_model models/cnndm \
                 -max_grad_norm 2 \
                 -dropout 0. \
                 -batch_size 16 \
+                -valid_batch_size 16 \
                 -optim adagrad \
                 -learning_rate 0.15 \
                 -adagrad_accumulator_init 0.1 \
