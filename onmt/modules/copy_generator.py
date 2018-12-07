@@ -123,11 +123,11 @@ class CopyGeneratorLoss(nn.Module):
         target (LongTensor): (batch_size*tgt_len)
         """
         # probabilities assigned by the model to the gold targets
-        vocab_probs = scores.gather(1, target.unsqueeze(1)).squeeze()
+        vocab_probs = scores.gather(1, target.unsqueeze(1)).squeeze(1)
 
         # probability of tokens copied from source
         copy_ix = align.unsqueeze(1) + self.vocab_size
-        copy_tok_probs = scores.gather(1, copy_ix).squeeze()
+        copy_tok_probs = scores.gather(1, copy_ix).squeeze(1)
         # Set scores for unk to 0 and add eps
         copy_tok_probs[align == self.unk_index] = 0
         copy_tok_probs += self.eps  # to avoid -inf logs
