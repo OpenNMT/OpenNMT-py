@@ -18,20 +18,17 @@ import onmt.opts as opts
 
 
 def check_existing_pt_files(opt):
-    """ Checking if there are existing .pt files to avoid tampering """
-    # We will use glob.glob() to find sharded {train|valid}.[0-9]*.pt
-    # when training, so check to avoid tampering with existing pt files
-    # or mixing them up.
+    """ Check if there are existing .pt files to avoid overwriting them """
+    pattern = opt.save_data + '.{}*.pt'
     for t in ['train', 'valid', 'vocab']:
-        pattern = opt.save_data + '.' + t + '*.pt'
-        if glob.glob(pattern):
-            sys.stderr.write("Please backup existing pt file: %s, "
-                             "to avoid tampering!\n" % pattern)
+        path = pattern.format(t)
+        if glob.glob(path):
+            sys.stderr.write("Please backup existing pt files: %s, "
+                             "to avoid ovewriting them!\n" % path)
             sys.exit(1)
 
 
 def parse_args():
-    """ Parsing arguments """
     parser = configargparse.ArgumentParser(
         description='preprocess.py',
         config_file_parser_class=configargparse.YAMLConfigFileParser,
@@ -58,12 +55,8 @@ def _write_shard(path, data, start, end=None):
 def build_save_in_shards_using_shards_size(src_corpus, tgt_corpus, fields,
                                            corpus_type, opt):
     """
-    Divide src_corpus and tgt_corpus into smaller multiples
-    src_copus and tgt corpus files, then build shards, each
-    shard will have opt.shard_size samples except last shard.
-
-    The reason we do this is to avoid taking up too much memory due
-    to sucking in a huge corpus file.
+    Divide src_corpus and tgt_corpus into smaller portions of opt.shard_size
+    samples (besides the last shard, which may be smaller).
     """
 
     # Does this actually shard in a memory-efficient way? The two readlines()
@@ -142,7 +135,6 @@ def build_save_in_shards_using_shards_size(src_corpus, tgt_corpus, fields,
 
 
 def build_save_dataset(corpus_type, fields, opt):
-    """ Building and saving the dataset """
     assert corpus_type in ['train', 'valid']
 
     if corpus_type == 'train':
@@ -156,10 +148,6 @@ def build_save_dataset(corpus_type, fields, opt):
         return build_save_in_shards_using_shards_size(
             src_corpus, tgt_corpus, fields, corpus_type, opt)
 
-    # For data_type == 'img' or 'audio', currently we don't do
-    # preprocess sharding. We only build a monolithic dataset.
-    # But since the interfaces are uniform, it would be not hard
-    # to do this should users need this feature.
     dataset = inputters.build_dataset(
         fields, opt.data_type,
         src_path=src_corpus,
@@ -184,14 +172,12 @@ def build_save_dataset(corpus_type, fields, opt):
 
 
 def build_save_vocab(train_dataset, fields, opt):
-    """ Building and saving the vocab """
     fields = inputters.build_vocab(
         train_dataset, fields, opt.data_type, opt.share_vocab,
         opt.src_vocab, opt.src_vocab_size, opt.src_words_min_frequency,
         opt.tgt_vocab, opt.tgt_vocab_size, opt.tgt_words_min_frequency
     )
 
-    # Can't save fields, so remove/reconstruct at training time.
     vocab_path = opt.save_data + '.vocab.pt'
     torch.save(inputters.save_fields_to_vocab(fields), vocab_path)
 
