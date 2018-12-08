@@ -63,10 +63,6 @@ class CNNDecoder(nn.Module):
         self.state["src"] = (memory_bank + enc_hidden) * SCALE_WEIGHT
         self.state["previous_input"] = None
 
-    def update_state(self, new_input):
-        """ Called for every decoder forward pass. """
-        self.state["previous_input"] = new_input
-
     def map_state(self, fn):
         self.state["src"] = fn(self.state["src"], 1)
         if self.state["previous_input"] is not None:
@@ -131,6 +127,6 @@ class CNNDecoder(nn.Module):
             attns["copy"] = attn
 
         # Update the state.
-        self.update_state(tgt)
+        self.state["previous_input"] = tgt
         # TODO change the way attns is returned dict => list or tuple (onnx)
         return dec_outs, attns

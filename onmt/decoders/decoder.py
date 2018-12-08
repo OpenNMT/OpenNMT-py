@@ -128,15 +128,6 @@ class RNNDecoderBase(nn.Module):
             self.state["hidden"][0].data.new(*h_size).zero_().unsqueeze(0)
         self.state["coverage"] = None
 
-    def update_state(self, rnnstate, input_feed, coverage):
-        """ Update decoder state """
-        if not isinstance(rnnstate, tuple):
-            self.state["hidden"] = (rnnstate,)
-        else:
-            self.state["hidden"] = rnnstate
-        self.state["input_feed"] = input_feed
-        self.state["coverage"] = coverage
-
     def map_state(self, fn):
         self.state["hidden"] = tuple(map(lambda x: fn(x, 1),
                                          self.state["hidden"]))
@@ -170,11 +161,13 @@ class RNNDecoderBase(nn.Module):
             tgt, memory_bank, memory_lengths=memory_lengths)
 
         # Update the state with the result.
-        output = dec_outs[-1]
-        coverage = None
+        if not isinstance(dec_state, tuple):
+            dec_state = (dec_state,)
+        self.state["hidden"] = dec_state
+        self.state["input_feed"] = dec_outs[-1].unsqueeze(0)
+        self.state["coverage"] = None
         if "coverage" in attns:
-            coverage = attns["coverage"][-1].unsqueeze(0)
-        self.update_state(dec_state, output.unsqueeze(0), coverage)
+            self.state["coverage"] = attns["coverage"][-1].unsqueeze(0)
 
         # Concatenates sequence of tensors along a new dimension.
         # NOTE: v0.3 to 0.4: dec_outs / attns[*] may not be list
