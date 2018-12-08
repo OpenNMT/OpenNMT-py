@@ -107,12 +107,12 @@ def build_save_in_shards_using_shards_size(src_corpus, tgt_corpus, fields,
 
     ret_list = []
 
-    for index, src in enumerate(src_list):
-        logger.info("Building shard %d." % index)
+    for i, src in enumerate(src_list):
+        logger.info("Building shard %d." % i)
         dataset = inputters.build_dataset(
             fields, opt.data_type,
             src_path=src,
-            tgt_path=tgt_list[index],
+            tgt_path=tgt_list[i],
             src_dir=opt.src_dir,
             src_seq_length=opt.src_seq_length,
             tgt_seq_length=opt.tgt_seq_length,
@@ -126,19 +126,15 @@ def build_save_in_shards_using_shards_size(src_corpus, tgt_corpus, fields,
             image_channel_size=opt.image_channel_size
         )
 
-        pt_file = "{:s}.{:s}.{:d}.pt".format(
-            opt.save_data, corpus_type, index)
-
-        # We save fields in vocab.pt seperately, so make it empty.
-        dataset.fields = []
+        pt_file = "{:s}.{:s}.{:d}.pt".format(opt.save_data, corpus_type, i)
 
         logger.info(" * saving %sth %s data shard to %s."
-                    % (index, corpus_type, pt_file))
-        torch.save(dataset, pt_file)
+                    % (i, corpus_type, pt_file))
+        dataset.save(pt_file)
 
         ret_list.append(pt_file)
         os.remove(src)
-        os.remove(tgt_list[index])
+        os.remove(tgt_list[i])
         del dataset.examples
         gc.collect()
         del dataset
@@ -182,12 +178,9 @@ def build_save_dataset(corpus_type, fields, opt):
         window=opt.window,
         image_channel_size=opt.image_channel_size)
 
-    # We save fields in vocab.pt separately, so make it empty.
-    dataset.fields = []
-
     pt_file = "{:s}.{:s}.pt".format(opt.save_data, corpus_type)
     logger.info(" * saving %s dataset to %s." % (corpus_type, pt_file))
-    torch.save(dataset, pt_file)
+    dataset.save(pt_file)
 
     return [pt_file]
 
