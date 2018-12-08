@@ -52,46 +52,44 @@ def _write_shard(path, data, start, end=None):
         f.writelines(shard)
 
 
-def build_save_in_shards_using_shards_size(src_corpus, tgt_corpus, fields,
-                                           corpus_type, opt):
+def _write_temp_shard_files(corpus, fields, corpus_type, opt):
+    # Does this actually shard in a memory-efficient way? The readlines()
+    # reads in the whole corpus. Shards should be efficient at training time,
+    # but in principle it should not be necessary to read everything at once
+    # when preprocessing either.
+    with codecs.open(corpus, "r", encoding="utf-8") as f:
+        data = f.readlines()
+        corpus_size = len(data)
+
+    num_shards = int(len(data) / opt.shard_size)
+    for i in range(num_shards):
+        logger.info("Splitting shard %d." % i)
+        start = i * opt.shard_size
+        end = start + opt.shard_size
+        shard_path = corpus + ".{}.txt".format(i)
+        _write_shard(shard_path, data, start, end)
+
+    num_written = num_shards * opt.shard_size
+    if len(data) > num_written:
+        logger.info("Splitting shard %d." % num_shards)
+        last_start = num_shards * opt.shard_size
+        last_shard_path = corpus + ".{}.txt".format(num_shards)
+        _write_shard(last_shard_path, data, last_start)
+    return corpus_size
+
+
+def build_save_in_shards(src_corpus, tgt_corpus, fields, corpus_type, opt):
     """
     Divide src_corpus and tgt_corpus into smaller portions of opt.shard_size
     samples (besides the last shard, which may be smaller).
     """
 
-    # Does this actually shard in a memory-efficient way? The two readlines()
-    # calls at the beginning each read in the whole corpus at once. The result
-    # should be efficient shards at training time, but we still need to read
-    # in everything at once when we preprocess
     logger.info("Reading source and target files: %s %s."
                 % (src_corpus, tgt_corpus))
-    with codecs.open(src_corpus, "r", encoding="utf-8") as fsrc:
-        src_data = fsrc.readlines()
-    with codecs.open(tgt_corpus, "r", encoding="utf-8") as ftgt:
-        tgt_data = ftgt.readlines()
-    assert len(src_data) == len(tgt_data), \
-        "Source and target should be the same length"
 
-    num_shards = int(len(src_data) / opt.shard_size)
-    for i in range(num_shards):
-        logger.info("Splitting shard %d." % i)
-        start = i * opt.shard_size
-        end = start + opt.shard_size
-        src_shard_path = src_corpus + ".{}.txt".format(i)
-        _write_shard(src_shard_path, src_data, start, end)
-
-        tgt_shard_path = tgt_corpus + ".{}.txt".format(i)
-        _write_shard(tgt_shard_path, tgt_data, start, end)
-
-    num_written = num_shards * opt.shard_size
-    if len(src_data) > num_written:
-        logger.info("Splitting shard %d." % num_shards)
-        last_start = num_shards * opt.shard_size
-        last_src_shard_path = src_corpus + ".{}.txt".format(num_shards)
-        _write_shard(last_src_shard_path, src_data, last_start)
-
-        last_tgt_shard_path = tgt_corpus + ".{}.txt".format(num_shards)
-        _write_shard(last_tgt_shard_path, tgt_data, last_start)
+    src_len = _write_temp_shard_files(src_corpus, fields, corpus_type, opt)
+    tgt_len = _write_temp_shard_files(tgt_corpus, fields, corpus_type, opt)
+    assert src_len == tgt_len, "Source and target should be the same length"
 
     src_list = sorted(glob.glob(src_corpus + '.*.txt'))
     tgt_list = sorted(glob.glob(tgt_corpus + '.*.txt'))
@@ -145,7 +143,7 @@ def build_save_dataset(corpus_type, fields, opt):
         tgt_corpus = opt.valid_tgt
 
     if opt.shard_size > 0:
-        return build_save_in_shards_using_shards_size(
+        return build_save_in_shards(
             src_corpus, tgt_corpus, fields, corpus_type, opt)
 
     dataset = inputters.build_dataset(
