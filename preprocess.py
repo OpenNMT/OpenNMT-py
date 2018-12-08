@@ -49,6 +49,14 @@ def parse_args():
     return opt
 
 
+def _write_shard(path, data, start, end=None):
+    with codecs.open(path, "w", encoding="utf-8") as f:
+        if end is not None:
+            f.writelines(data[start:end])
+        else:
+            f.writelines(data[start:])
+
+
 def build_save_in_shards_using_shards_size(src_corpus, tgt_corpus, fields,
                                            corpus_type, opt):
     """
@@ -60,42 +68,39 @@ def build_save_in_shards_using_shards_size(src_corpus, tgt_corpus, fields,
     to sucking in a huge corpus file.
     """
 
+    # Does this actually shard in a memory-efficient way? The two readlines()
+    # calls at the beginning each read in the whole corpus at once. The result
+    # should be efficient shards at training time, but we still need to read
+    # in everything at once when we preprocess
+    logger.info("Reading source and target files: %s %s."
+                % (src_corpus, tgt_corpus))
     with codecs.open(src_corpus, "r", encoding="utf-8") as fsrc:
-        with codecs.open(tgt_corpus, "r", encoding="utf-8") as ftgt:
-            logger.info("Reading source and target files: %s %s."
-                        % (src_corpus, tgt_corpus))
-            src_data = fsrc.readlines()
-            tgt_data = ftgt.readlines()
-            if len(src_data) != len(tgt_data):
-                raise AssertionError("Source and Target should \
-                                     have the same length")
+        src_data = fsrc.readlines()
+    with codecs.open(tgt_corpus, "r", encoding="utf-8") as ftgt:
+        tgt_data = ftgt.readlines()
+    assert len(src_data) == len(tgt_data), \
+        "Source and target should be the same length"
 
-            num_shards = int(len(src_data) / opt.shard_size)
-            for x in range(num_shards):
-                logger.info("Splitting shard %d." % x)
-                f = codecs.open(src_corpus + ".{0}.txt".format(x), "w",
-                                encoding="utf-8")
-                f.writelines(
-                        src_data[x * opt.shard_size: (x + 1) * opt.shard_size])
-                f.close()
-                f = codecs.open(tgt_corpus + ".{0}.txt".format(x), "w",
-                                encoding="utf-8")
-                f.writelines(
-                        tgt_data[x * opt.shard_size: (x + 1) * opt.shard_size])
-                f.close()
-            num_written = num_shards * opt.shard_size
-            if len(src_data) > num_written:
-                logger.info("Splitting shard %d." % num_shards)
-                f = codecs.open(src_corpus + ".{0}.txt".format(num_shards),
-                                'w', encoding="utf-8")
-                f.writelines(
-                        src_data[num_shards * opt.shard_size:])
-                f.close()
-                f = codecs.open(tgt_corpus + ".{0}.txt".format(num_shards),
-                                'w', encoding="utf-8")
-                f.writelines(
-                        tgt_data[num_shards * opt.shard_size:])
-                f.close()
+    num_shards = int(len(src_data) / opt.shard_size)
+    for i in range(num_shards):
+        logger.info("Splitting shard %d." % i)
+        start = i * opt.shard_size
+        end = start + opt.shard_size
+        src_shard_path = src_corpus + ".{}.txt".format(i)
+        _write_shard(src_shard_path, src_data, start, end)
+
+        tgt_shard_path = tgt_corpus + ".{}.txt".format(i)
+        _write_shard(tgt_shard_path, tgt_data, start, end)
+
+    num_written = num_shards * opt.shard_size
+    if len(src_data) > num_written:
+        logger.info("Splitting shard %d." % num_shards)
+        last_start = num_shards * opt.shard_size
+        last_src_shard_path = src_corpus + ".{}.txt".format(num_shards)
+        _write_shard(last_src_shard_path, src_data, last_start)
+
+        last_tgt_shard_path = tgt_corpus + ".{}.txt".format(num_shards)
+        _write_shard(last_tgt_shard_path, tgt_data, last_start)
 
     src_list = sorted(glob.glob(src_corpus + '.*.txt'))
     tgt_list = sorted(glob.glob(tgt_corpus + '.*.txt'))
@@ -153,12 +158,9 @@ def build_save_dataset(corpus_type, fields, opt):
         src_corpus = opt.valid_src
         tgt_corpus = opt.valid_tgt
 
-    if (opt.shard_size > 0):
-        return build_save_in_shards_using_shards_size(src_corpus,
-                                                      tgt_corpus,
-                                                      fields,
-                                                      corpus_type,
-                                                      opt)
+    if opt.shard_size > 0:
+        return build_save_in_shards_using_shards_size(
+            src_corpus, tgt_corpus, fields, corpus_type, opt)
 
     # For data_type == 'img' or 'audio', currently we don't do
     # preprocess sharding. We only build a monolithic dataset.
@@ -180,7 +182,7 @@ def build_save_dataset(corpus_type, fields, opt):
         window=opt.window,
         image_channel_size=opt.image_channel_size)
 
-    # We save fields in vocab.pt seperately, so make it empty.
+    # We save fields in vocab.pt separately, so make it empty.
     dataset.fields = []
 
     pt_file = "{:s}.{:s}.pt".format(opt.save_data, corpus_type)
@@ -192,29 +194,26 @@ def build_save_dataset(corpus_type, fields, opt):
 
 def build_save_vocab(train_dataset, fields, opt):
     """ Building and saving the vocab """
-    fields = inputters.build_vocab(train_dataset, fields, opt.data_type,
-                                   opt.share_vocab,
-                                   opt.src_vocab,
-                                   opt.src_vocab_size,
-                                   opt.src_words_min_frequency,
-                                   opt.tgt_vocab,
-                                   opt.tgt_vocab_size,
-                                   opt.tgt_words_min_frequency)
+    fields = inputters.build_vocab(
+        train_dataset, fields, opt.data_type, opt.share_vocab,
+        opt.src_vocab, opt.src_vocab_size, opt.src_words_min_frequency,
+        opt.tgt_vocab, opt.tgt_vocab_size, opt.tgt_words_min_frequency
+    )
 
     # Can't save fields, so remove/reconstruct at training time.
-    vocab_file = opt.save_data + '.vocab.pt'
-    torch.save(inputters.save_fields_to_vocab(fields), vocab_file)
+    vocab_path = opt.save_data + '.vocab.pt'
+    torch.save(inputters.save_fields_to_vocab(fields), vocab_path)
 
 
 def main():
     opt = parse_args()
 
-    if (opt.max_shard_size > 0):
-        raise AssertionError("-max_shard_size is deprecated, please use \
-                             -shard_size (number of examples) instead.")
-    if (opt.shuffle > 0):
-        raise AssertionError("-shuffle is not implemented, please make sure \
-                             you shuffle your data before pre-processing.")
+    assert opt.max_shard_size == 0, \
+        "-max_shard_size is deprecated. Please use \
+        -shard_size (number of examples) instead."
+    assert opt.shuffle == 0, \
+        "-shuffle is not implemented. Please shuffle \
+        your data before pre-processing."
 
     init_logger(opt.log_file)
     logger.info("Extracting features...")
