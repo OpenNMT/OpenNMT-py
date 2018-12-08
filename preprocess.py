@@ -51,10 +51,8 @@ def parse_args():
 
 def _write_shard(path, data, start, end=None):
     with codecs.open(path, "w", encoding="utf-8") as f:
-        if end is not None:
-            f.writelines(data[start:end])
-        else:
-            f.writelines(data[start:])
+        shard = data[start:end] if end is not None else data[start:]
+        f.writelines(shard)
 
 
 def build_save_in_shards_using_shards_size(src_corpus, tgt_corpus, fields,
