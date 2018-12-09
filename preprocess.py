@@ -61,20 +61,12 @@ def _write_temp_shard_files(corpus, fields, corpus_type, shard_size):
         data = f.readlines()
         corpus_size = len(data)
 
-    num_shards = len(data) // shard_size  # misnomer
-    for i in range(num_shards):
+    for i, start in enumerate(range(0, corpus_size, shard_size)):
         logger.info("Splitting shard %d." % i)
-        start = i * shard_size
         end = start + shard_size
         shard_path = corpus + ".{}.txt".format(i)
         _write_shard(shard_path, data, start, end)
 
-    num_written = num_shards * shard_size
-    if len(data) > num_written:
-        logger.info("Splitting shard %d." % num_shards)
-        last_start = num_shards * shard_size
-        last_shard_path = corpus + ".{}.txt".format(num_shards)
-        _write_shard(last_shard_path, data, last_start)
     return corpus_size
 
 
