@@ -134,22 +134,27 @@ def get_fields(src_data_type, n_src_features, n_tgt_features):
 
 def load_fields_from_vocab(vocab, data_type="text"):
     """
-    Load Field objects from `vocab.pt` file.
+    vocab: a list of (field name, torchtext.vocab.Vocab) pairs
+    data_type: text, img, or audio
+    returns: a dictionary whose keys are the field names and whose values
+             are field objects with the vocab set to the corresponding vocab
+             object from the input.
     """
     vocab = dict(vocab)
     n_src_features = len(collect_features(vocab, 'src'))
     n_tgt_features = len(collect_features(vocab, 'tgt'))
     fields = get_fields(data_type, n_src_features, n_tgt_features)
     for k, v in vocab.items():
-        # Hack. Can't pickle defaultdict :(
-        v.stoi = defaultdict(lambda: 0, v.stoi)
         fields[k].vocab = v
     return fields
 
 
 def save_fields_to_vocab(fields):
     """
-    Save Vocab objects in Field objects to `vocab.pt` file.
+    fields: a dictionary whose keys are field names and whose values are
+            Field objects
+    returns: a list of (field name, vocab) pairs for the fields that have a
+             vocabulary
     """
     vocab = []
     for k, f in fields.items():
@@ -487,7 +492,6 @@ def load_vocabulary(vocabulary_path, tag=""):
 
 
 class OrderedIterator(torchtext.data.Iterator):
-    """ Ordered Iterator Class """
 
     def create_batches(self):
         """ Create batches """
@@ -513,7 +517,7 @@ class DatasetLazyIter(object):
         and lazy loading.
 
     Args:
-        datsets (list): a list of datasets, which are lazily loaded.
+        datasets (list): a list of datasets, which are lazily loaded.
         fields (dict): fields dict for the datasets.
         batch_size (int): batch size.
         batch_size_fn: custom batch process function.
@@ -604,10 +608,7 @@ def build_dataset_iter(datasets, fields, opt, is_train=True):
     else:
         batch_size_fn = None
 
-    if opt.gpu_ranks:
-        device = "cuda"
-    else:
-        device = "cpu"
+    device = "cuda" if opt.gpu_ranks else "cpu"
 
     return DatasetLazyIter(datasets, fields, batch_size, batch_size_fn,
                            device, is_train)
@@ -642,7 +643,7 @@ def lazily_load_dataset(corpus_type, opt):
         yield _lazy_dataset_loader(pt, corpus_type)
 
 
-def _load_fields(dataset, data_type, opt, checkpoint):
+def load_fields(dataset, data_type, opt, checkpoint):
     if checkpoint is not None:
         logger.info('Loading vocab from checkpoint at %s.' % opt.train_from)
         fields = load_fields_from_vocab(

@@ -3,6 +3,8 @@
     Base dataset class and constants
 """
 from itertools import chain
+
+import torch
 import torchtext
 
 import onmt
@@ -37,6 +39,11 @@ class DatasetBase(torchtext.data.Dataset):
     def __reduce_ex__(self, proto):
         # This is a hack. Something is broken with torch pickle.
         return super(DatasetBase, self).__reduce_ex__()
+
+    def save(self, path, remove_fields=True):
+        if remove_fields:
+            self.fields = []
+        torch.save(self, path)
 
     def load_fields(self, vocab_dict):
         """ Load fields from vocab.pt, and set the `fields` attribute.

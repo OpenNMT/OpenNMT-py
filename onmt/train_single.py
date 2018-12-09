@@ -12,7 +12,7 @@ import torch
 import onmt.opts as opts
 
 from onmt.inputters.inputter import build_dataset_iter, lazily_load_dataset, \
-    _load_fields, _collect_report_features
+    load_fields, _collect_report_features
 from onmt.model_builder import build_model
 from onmt.utils.optimizers import build_optim
 from onmt.trainer import build_trainer
@@ -110,7 +110,7 @@ def main(opt, device_id):
     data_type = first_dataset.data_type
 
     # Load fields generated from preprocess phase.
-    fields = _load_fields(first_dataset, data_type, opt, checkpoint)
+    fields = load_fields(first_dataset, data_type, opt, checkpoint)
 
     # Report src/tgt features.
 
