@@ -52,7 +52,7 @@ def _write_shard(path, data, start, end=None):
         f.writelines(shard)
 
 
-def _write_temp_shard_files(corpus, fields, corpus_type, opt):
+def _write_temp_shard_files(corpus, fields, corpus_type, shard_size):
     # Does this actually shard in a memory-efficient way? The readlines()
     # reads in the whole corpus. Shards should be efficient at training time,
     # but in principle it should not be necessary to read everything at once
@@ -61,47 +61,49 @@ def _write_temp_shard_files(corpus, fields, corpus_type, opt):
         data = f.readlines()
         corpus_size = len(data)
 
-    num_shards = int(len(data) / opt.shard_size)
+    num_shards = len(data) // shard_size  # misnomer
     for i in range(num_shards):
         logger.info("Splitting shard %d." % i)
-        start = i * opt.shard_size
-        end = start + opt.shard_size
+        start = i * shard_size
+        end = start + shard_size
         shard_path = corpus + ".{}.txt".format(i)
         _write_shard(shard_path, data, start, end)
 
-    num_written = num_shards * opt.shard_size
+    num_written = num_shards * shard_size
     if len(data) > num_written:
         logger.info("Splitting shard %d." % num_shards)
-        last_start = num_shards * opt.shard_size
+        last_start = num_shards * shard_size
         last_shard_path = corpus + ".{}.txt".format(num_shards)
         _write_shard(last_shard_path, data, last_start)
     return corpus_size
 
 
-def build_save_in_shards(src_corpus, tgt_corpus, fields, corpus_type, opt):
-    """
-    Divide src_corpus and tgt_corpus into smaller portions of opt.shard_size
-    samples (besides the last shard, which may be smaller).
-    """
+def build_save_dataset(corpus_type, fields, opt):
+    assert corpus_type in ['train', 'valid']
 
-    logger.info("Reading source and target files: %s %s."
-                % (src_corpus, tgt_corpus))
+    if corpus_type == 'train':
+        src = opt.train_src
+        tgt = opt.train_tgt
+    else:
+        src = opt.valid_src
+        tgt = opt.valid_tgt
 
-    src_len = _write_temp_shard_files(src_corpus, fields, corpus_type, opt)
-    tgt_len = _write_temp_shard_files(tgt_corpus, fields, corpus_type, opt)
+    logger.info("Reading source and target files: %s %s." % (src, tgt))
+    src_len = _write_temp_shard_files(src, fields, corpus_type, opt.shard_size)
+    tgt_len = _write_temp_shard_files(tgt, fields, corpus_type, opt.shard_size)
     assert src_len == tgt_len, "Source and target should be the same length"
 
-    src_list = sorted(glob.glob(src_corpus + '.*.txt'))
-    tgt_list = sorted(glob.glob(tgt_corpus + '.*.txt'))
+    src_shards = sorted(glob.glob(src + '.*.txt'))
+    tgt_shards = sorted(glob.glob(tgt + '.*.txt'))
+    shard_pairs = zip(src_shards, tgt_shards)
+    dataset_paths = []
 
-    ret_list = []
-
-    for i, src in enumerate(src_list):
+    for i, (src_shard, tgt_shard) in enumerate(shard_pairs):
         logger.info("Building shard %d." % i)
         dataset = inputters.build_dataset(
             fields, opt.data_type,
-            src_path=src,
-            tgt_path=tgt_list[i],
+            src_path=src_shard,
+            tgt_path=tgt_shard,
             src_dir=opt.src_dir,
             src_seq_length=opt.src_seq_length,
             tgt_seq_length=opt.tgt_seq_length,
@@ -115,58 +117,22 @@ def build_save_in_shards(src_corpus, tgt_corpus, fields, corpus_type, opt):
             image_channel_size=opt.image_channel_size
         )
 
-        pt_file = "{:s}.{:s}.{:d}.pt".format(opt.save_data, corpus_type, i)
+        data_path = "{:s}.{:s}.{:d}.pt".format(opt.save_data, corpus_type, i)
+        dataset_paths.append(data_path)
 
         logger.info(" * saving %sth %s data shard to %s."
-                    % (i, corpus_type, pt_file))
-        dataset.save(pt_file)
+                    % (i, corpus_type, data_path))
 
-        ret_list.append(pt_file)
-        os.remove(src)
-        os.remove(tgt_list[i])
+        dataset.save(data_path)
+
+        os.remove(src_shard)
+        os.remove(tgt_shard)
         del dataset.examples
         gc.collect()
         del dataset
         gc.collect()
 
-    return ret_list
-
-
-def build_save_dataset(corpus_type, fields, opt):
-    assert corpus_type in ['train', 'valid']
-
-    if corpus_type == 'train':
-        src_corpus = opt.train_src
-        tgt_corpus = opt.train_tgt
-    else:
-        src_corpus = opt.valid_src
-        tgt_corpus = opt.valid_tgt
-
-    if opt.shard_size > 0:
-        return build_save_in_shards(
-            src_corpus, tgt_corpus, fields, corpus_type, opt)
-
-    dataset = inputters.build_dataset(
-        fields, opt.data_type,
-        src_path=src_corpus,
-        tgt_path=tgt_corpus,
-        src_dir=opt.src_dir,
-        src_seq_length=opt.src_seq_length,
-        tgt_seq_length=opt.tgt_seq_length,
-        src_seq_length_trunc=opt.src_seq_length_trunc,
-        tgt_seq_length_trunc=opt.tgt_seq_length_trunc,
-        dynamic_dict=opt.dynamic_dict,
-        sample_rate=opt.sample_rate,
-        window_size=opt.window_size,
-        window_stride=opt.window_stride,
-        window=opt.window,
-        image_channel_size=opt.image_channel_size)
-
-    pt_file = "{:s}.{:s}.pt".format(opt.save_data, corpus_type)
-    logger.info(" * saving %s dataset to %s." % (corpus_type, pt_file))
-    dataset.save(pt_file)
-
-    return [pt_file]
+    return dataset_paths
 
 
 def build_save_vocab(train_dataset, fields, opt):
