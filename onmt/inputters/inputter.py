@@ -11,6 +11,7 @@ from itertools import count
 
 import torch
 import torchtext.data
+from torchtext.data import Field
 import torchtext.vocab
 
 from onmt.inputters.dataset_base import UNK_WORD, PAD_WORD, BOS_WORD, EOS_WORD
@@ -35,10 +36,48 @@ torchtext.vocab.Vocab.__getstate__ = _getstate
 torchtext.vocab.Vocab.__setstate__ = _setstate
 
 
-def get_fields(data_type, n_src_features, n_tgt_features):
+def make_src(data, vocab):
+    src_size = max([t.size(0) for t in data])
+    src_vocab_size = max([t.max() for t in data]) + 1
+    alignment = torch.zeros(src_size, len(data), src_vocab_size)
+    for i, sent in enumerate(data):
+        for j, t in enumerate(sent):
+            alignment[j, i, t] = 1
+    return alignment
+
+
+def make_tgt(data, vocab):
+    tgt_size = max([t.size(0) for t in data])
+    alignment = torch.zeros(tgt_size, len(data)).long()
+    for i, sent in enumerate(data):
+        alignment[:sent.size(0), i] = sent
+    return alignment
+
+
+def make_img(data, vocab):
+    c = data[0].size(0)
+    h = max([t.size(1) for t in data])
+    w = max([t.size(2) for t in data])
+    imgs = torch.zeros(len(data), c, h, w).fill_(1)
+    for i, img in enumerate(data):
+        imgs[i, :, 0:img.size(1), 0:img.size(2)] = img
+    return imgs
+
+
+def make_audio(data, vocab):
+    """ batch audio data """
+    nfft = data[0].size(0)
+    t = max([t.size(1) for t in data])
+    sounds = torch.zeros(len(data), 1, nfft, t)
+    for i, spect in enumerate(data):
+        sounds[i, :, :, 0:spect.size(1)] = spect
+    return sounds
+
+
+def get_fields(src_data_type, n_src_features, n_tgt_features):
     """
     Args:
-        data_type: type of the source input. Options are [text|img|audio].
+        src_data_type: type of the source input. Options are [text|img|audio].
         n_src_features: the number of source features to
             create `torchtext.data.Field` for.
         n_tgt_features: the number of target features to
@@ -48,14 +87,49 @@ def get_fields(data_type, n_src_features, n_tgt_features):
         A dictionary whose keys are strings and whose values are the
         corresponding Field objects.
     """
-    if data_type == 'text':
-        return TextDataset.get_fields(n_src_features, n_tgt_features)
-    elif data_type == 'img':
-        return ImageDataset.get_fields(n_src_features, n_tgt_features)
-    elif data_type == 'audio':
-        return AudioDataset.get_fields(n_src_features, n_tgt_features)
+    assert src_data_type in ['text', 'img', 'audio'], \
+        "Data type not implemented"
+    fields = dict()
+
+    if src_data_type == 'text':
+        fields["src"] = Field(pad_token=PAD_WORD, include_lengths=True)
+        for i in range(n_src_features):
+            fields["src_feat_" + str(i)] = Field(pad_token=PAD_WORD)
+    elif src_data_type == 'img':
+        fields["src"] = Field(
+            use_vocab=False, dtype=torch.float,
+            postprocessing=make_img, sequential=False)
     else:
-        raise ValueError("Data type not implemented")
+        fields["src"] = Field(
+            use_vocab=False, dtype=torch.float,
+            postprocessing=make_audio, sequential=False)
+
+    if src_data_type == 'audio':
+        # only audio has src_lengths
+        fields["src_lengths"] = Field(
+            use_vocab=False, dtype=torch.long, sequential=False)
+    else:
+        # everything except audio has src_map and alignment
+        fields["src_map"] = Field(
+            use_vocab=False, dtype=torch.float,
+            postprocessing=make_src, sequential=False)
+
+        fields["alignment"] = Field(
+            use_vocab=False, dtype=torch.long,
+            postprocessing=make_tgt, sequential=False)
+
+    # below this: things defined for all source data types
+    fields["tgt"] = Field(
+        init_token=BOS_WORD, eos_token=EOS_WORD, pad_token=PAD_WORD)
+
+    for i in range(n_tgt_features):
+        fields["tgt_feat_" + str(i)] = Field(
+            init_token=BOS_WORD, eos_token=EOS_WORD, pad_token=PAD_WORD)
+
+    fields["indices"] = Field(
+        use_vocab=False, dtype=torch.long, sequential=False)
+
+    return fields
 
 
 def load_fields_from_vocab(vocab, data_type="text"):
