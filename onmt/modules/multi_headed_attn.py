@@ -126,40 +126,31 @@ class MultiHeadedAttention(nn.Module):
                 query, key, value = self.linear_query(query),\
                                     self.linear_keys(query),\
                                     self.linear_values(query)
-
                 key = shape(key)
                 value = shape(value)
-
-                if layer_cache is not None:
-                    device = key.device
-                    if layer_cache["self_keys"] is not None:
-                        key = torch.cat(
-                            (layer_cache["self_keys"].to(device), key),
-                            dim=2)
-                    if layer_cache["self_values"] is not None:
-                        value = torch.cat(
-                            (layer_cache["self_values"].to(device), value),
-                            dim=2)
-                    layer_cache["self_keys"] = key
-                    layer_cache["self_values"] = value
+                device = key.device
+                if layer_cache["self_keys"] is not None:
+                    key = torch.cat(
+                        (layer_cache["self_keys"].to(device), key),
+                        dim=2)
+                if layer_cache["self_values"] is not None:
+                    value = torch.cat(
+                        (layer_cache["self_values"].to(device), value),
+                        dim=2)
+                layer_cache["self_keys"] = key
+                layer_cache["self_values"] = value
             elif type == "context":
                 query = self.linear_query(query)
-                if layer_cache is not None:
-                    if layer_cache["memory_keys"] is None:
-                        key, value = self.linear_keys(key),\
-                                     self.linear_values(value)
-                        key = shape(key)
-                        value = shape(value)
-                    else:
-                        key, value = layer_cache["memory_keys"],\
-                                   layer_cache["memory_values"]
-                    layer_cache["memory_keys"] = key
-                    layer_cache["memory_values"] = value
-                else:
+                if layer_cache["memory_keys"] is None:
                     key, value = self.linear_keys(key),\
                                  self.linear_values(value)
                     key = shape(key)
                     value = shape(value)
+                else:
+                    key, value = layer_cache["memory_keys"],\
+                               layer_cache["memory_values"]
+                layer_cache["memory_keys"] = key
+                layer_cache["memory_values"] = value
         else:
             key = self.linear_keys(key)
             value = self.linear_values(value)
