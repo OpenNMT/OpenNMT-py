@@ -32,7 +32,7 @@ class AudioDataset(DatasetBase):
         return ex.src.size(1)
 
     def __init__(self, fields, src_examples_iter, tgt_examples_iter,
-                 tgt_seq_length=0, use_filter_pred=True):
+                 filter_pred=None):
         self.data_type = 'audio'
         self.n_src_feats = 0
         self.n_tgt_feats = 0
@@ -47,25 +47,12 @@ class AudioDataset(DatasetBase):
         ex, examples_iter = self._peek(examples_iter)
         keys = ex.keys()
 
-        out_fields = [(k, fields[k]) if k in fields else (k, None)
-                      for k in keys]
+        fields = [(k, fields[k]) if k in fields else (k, None) for k in keys]
         example_values = ([ex[k] for k in keys] for ex in examples_iter)
-        out_examples = (self._construct_example_fromlist(ex_values, out_fields)
-                        for ex_values in example_values)
+        examples = [self._construct_example_fromlist(ex_values, fields)
+                    for ex_values in example_values]
 
-        out_examples = list(out_examples)
-
-        def filter_pred(example):
-            if tgt_examples_iter is not None:
-                return 0 < len(example.tgt) <= tgt_seq_length
-            else:
-                return True
-
-        filter_pred = filter_pred if use_filter_pred else lambda x: True
-
-        super(AudioDataset, self).__init__(
-            out_examples, out_fields, filter_pred
-        )
+        super(AudioDataset, self).__init__(examples, fields, filter_pred)
 
     @staticmethod
     def make_audio_examples_nfeats_tpl(path, audio_dir,

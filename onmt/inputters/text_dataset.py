@@ -27,10 +27,7 @@ class TextDataset(DatasetBase):
             dictionary iterator.
         num_src_feats (int): number of source side features.
         num_tgt_feats (int): number of target side features.
-        src_seq_length (int): maximum source sequence length.
-        tgt_seq_length (int): maximum target sequence length.
         dynamic_dict (bool): create dynamic dictionaries?
-        use_filter_pred (bool): filter examples by length
     """
     @staticmethod
     def sort_key(ex):
@@ -40,8 +37,7 @@ class TextDataset(DatasetBase):
 
     def __init__(self, fields, src_examples_iter, tgt_examples_iter,
                  num_src_feats=0, num_tgt_feats=0,
-                 src_seq_length=0, tgt_seq_length=0,
-                 dynamic_dict=True, use_filter_pred=True):
+                 dynamic_dict=True, filter_pred=None):
         self.data_type = 'text'
 
         # self.src_vocabs: mutated in dynamic_dict, used in
@@ -67,24 +63,13 @@ class TextDataset(DatasetBase):
         ex, examples_iter = self._peek(examples_iter)
         keys = ex.keys()
 
-        out_fields = [(k, fields[k]) if k in fields else (k, None)
-                      for k in keys]
+        fields = [(k, fields[k]) if k in fields else (k, None) for k in keys]
         example_values = ([ex[k] for k in keys] for ex in examples_iter)
 
-        out_examples = []
-        for ex_values in example_values:
-            example = self._construct_example_fromlist(ex_values, out_fields)
-            out_examples.append(example)
+        examples = [self._construct_example_fromlist(ex_values, fields)
+                    for ex_values in example_values]
 
-        def filter_pred(example):
-            return 0 < len(example.src) <= src_seq_length \
-                and 0 < len(example.tgt) <= tgt_seq_length
-
-        filter_pred = filter_pred if use_filter_pred else lambda x: True
-
-        super(TextDataset, self).__init__(
-            out_examples, out_fields, filter_pred
-        )
+        super(TextDataset, self).__init__(examples, fields, filter_pred)
 
     @staticmethod
     def collapse_copy_scores(scores,
