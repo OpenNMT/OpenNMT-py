@@ -23,6 +23,10 @@ class ImageDataset(DatasetBase):
         use_filter_pred (bool): use a custom filter predicate to filter
             out examples?
     """
+    @staticmethod
+    def sort_key(ex):
+        """ Sort using the size of the image: (width, height)."""
+        return ex.src.size(2), ex.src.size(1)
 
     def __init__(self, fields, src_examples_iter, tgt_examples_iter,
                  num_src_feats=0, num_tgt_feats=0,
@@ -64,10 +68,6 @@ class ImageDataset(DatasetBase):
         super(ImageDataset, self).__init__(
             out_examples, out_fields, filter_pred
         )
-
-    def sort_key(self, ex):
-        """ Sort using the size of the image: (width, height)."""
-        return ex.src.size(2), ex.src.size(1)
 
     @staticmethod
     def make_image_examples_nfeats_tpl(img_iter, img_path, img_dir,

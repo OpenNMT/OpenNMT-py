@@ -26,6 +26,10 @@ class AudioDataset(DatasetBase):
             use_filter_pred (bool): use a custom filter predicate to filter
                 out examples?
     """
+    @staticmethod
+    def sort_key(ex):
+        """ Sort using duration time of the sound spectrogram. """
+        return ex.src.size(1)
 
     def __init__(self, fields, src_examples_iter, tgt_examples_iter,
                  tgt_seq_length=0, use_filter_pred=True):
@@ -62,10 +66,6 @@ class AudioDataset(DatasetBase):
         super(AudioDataset, self).__init__(
             out_examples, out_fields, filter_pred
         )
-
-    def sort_key(self, ex):
-        """ Sort using duration time of the sound spectrogram. """
-        return ex.src.size(1)
 
     @staticmethod
     def make_audio_examples_nfeats_tpl(path, audio_dir,

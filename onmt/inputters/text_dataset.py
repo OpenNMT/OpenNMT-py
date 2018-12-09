@@ -32,6 +32,11 @@ class TextDataset(DatasetBase):
         dynamic_dict (bool): create dynamic dictionaries?
         use_filter_pred (bool): filter examples by length
     """
+    @staticmethod
+    def sort_key(ex):
+        if hasattr(ex, "tgt"):
+            return len(ex.src), len(ex.tgt)
+        return len(ex.src)
 
     def __init__(self, fields, src_examples_iter, tgt_examples_iter,
                  num_src_feats=0, num_tgt_feats=0,
@@ -80,11 +85,6 @@ class TextDataset(DatasetBase):
         super(TextDataset, self).__init__(
             out_examples, out_fields, filter_pred
         )
-
-    def sort_key(self, ex):
-        if hasattr(ex, "tgt"):
-            return len(ex.src), len(ex.tgt)
-        return len(ex.src)
 
     @staticmethod
     def collapse_copy_scores(scores,
