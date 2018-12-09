@@ -61,6 +61,8 @@ def _write_temp_shard_files(corpus, fields, corpus_type, shard_size):
         data = f.readlines()
         corpus_size = len(data)
 
+    if shard_size <= 0:
+        shard_size = corpus_size
     for i, start in enumerate(range(0, corpus_size, shard_size)):
         logger.info("Splitting shard %d." % i)
         end = start + shard_size
