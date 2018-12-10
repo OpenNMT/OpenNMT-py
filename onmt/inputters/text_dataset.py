@@ -36,16 +36,12 @@ class TextDataset(DatasetBase):
         return len(ex.src)
 
     def __init__(self, fields, src_examples_iter, tgt_examples_iter,
-                 num_src_feats=0, num_tgt_feats=0,
                  dynamic_dict=True, filter_pred=None):
         self.data_type = 'text'
 
         # self.src_vocabs: mutated in dynamic_dict, used in
         # collapse_copy_scores and in Translator.py
         self.src_vocabs = []
-
-        self.n_src_feats = num_src_feats
-        self.n_tgt_feats = num_tgt_feats
 
         # Each element of an example is a dictionary whose keys represents
         # at minimum the src tokens and their indices and potentially also

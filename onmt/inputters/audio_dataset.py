@@ -34,8 +34,6 @@ class AudioDataset(DatasetBase):
     def __init__(self, fields, src_examples_iter, tgt_examples_iter,
                  filter_pred=None):
         self.data_type = 'audio'
-        self.n_src_feats = 0
-        self.n_tgt_feats = 0
 
         if tgt_examples_iter is not None:
             examples_iter = (self._join_dicts(src, tgt) for src, tgt in

@@ -29,12 +29,8 @@ class ImageDataset(DatasetBase):
         return ex.src.size(2), ex.src.size(1)
 
     def __init__(self, fields, src_examples_iter, tgt_examples_iter,
-                 num_src_feats=0, num_tgt_feats=0,
                  filter_pred=None, image_channel_size=3):
         self.data_type = 'img'
-
-        self.n_src_feats = num_src_feats
-        self.n_tgt_feats = num_tgt_feats
 
         self.image_channel_size = image_channel_size
         if tgt_examples_iter is not None:

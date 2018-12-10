@@ -360,20 +360,17 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
         filter_pred = None
 
     if data_type == 'text':
-        dataset = TextDataset(fields, src_examples_iter, tgt_examples_iter,
-                              num_src_feats, num_tgt_feats,
-                              dynamic_dict=dynamic_dict,
-                              filter_pred=filter_pred)
-
+        dataset = TextDataset(
+            fields, src_examples_iter, tgt_examples_iter,
+            dynamic_dict=dynamic_dict, filter_pred=filter_pred)
     elif data_type == 'img':
-        dataset = ImageDataset(fields, src_examples_iter, tgt_examples_iter,
-                               num_src_feats, num_tgt_feats,
-                               filter_pred=filter_pred,
-                               image_channel_size=image_channel_size)
-
+        dataset = ImageDataset(
+            fields, src_examples_iter, tgt_examples_iter,
+            filter_pred=filter_pred, image_channel_size=image_channel_size)
     elif data_type == 'audio':
-        dataset = AudioDataset(fields, src_examples_iter, tgt_examples_iter,
-                               filter_pred=filter_pred)
+        dataset = AudioDataset(
+            fields, src_examples_iter, tgt_examples_iter,
+            filter_pred=filter_pred)
 
     return dataset
 
@@ -407,14 +404,10 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
     Returns:
         Dict of Fields
     """
-    counter = {}
-
     # Prop src from field to get lower memory using when training with image
     if data_type == 'img' or data_type == 'audio':
         fields.pop("src")
-
-    for k in fields:
-        counter[k] = Counter()
+    counters = {k: Counter() for k in fields}
 
     # Load vocabulary
     src_vocab = load_vocabulary(src_vocab_path, tag="source")
@@ -424,31 +417,28 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
         for i, token in enumerate(src_vocab):
             # keep the order of tokens specified in the vocab file by
             # adding them to the counter with decreasing counting values
-            counter['src'][token] = src_vocab_size - i
+            counters['src'][token] = src_vocab_size - i
 
     tgt_vocab = load_vocabulary(tgt_vocab_path, tag="target")
     if tgt_vocab is not None:
         tgt_vocab_size = len(tgt_vocab)
         logger.info('Loaded source vocab has %d tokens.' % tgt_vocab_size)
         for i, token in enumerate(tgt_vocab):
-            counter['tgt'][token] = tgt_vocab_size - i
+            counters['tgt'][token] = tgt_vocab_size - i
 
-    for index, path in enumerate(train_dataset_files):
+    for i, path in enumerate(train_dataset_files):
         dataset = torch.load(path)
         logger.info(" * reloading %s." % path)
         for ex in dataset.examples:
             for k in fields:
-                val = getattr(ex, k, None)
-                if not fields[k].sequential:
-                    continue
-                elif k == 'src' and src_vocab:
-                    continue
-                elif k == 'tgt' and tgt_vocab:
-                    continue
-                counter[k].update(val)
+                has_vocab = (k == 'src' and src_vocab) or \
+                    (k == 'tgt' and tgt_vocab)
+                if fields[k].sequential and not has_vocab:
+                    val = getattr(ex, k, None)
+                    counters[k].update(val)
 
         # Drop the none-using from memory but keep the last
-        if (index < len(train_dataset_files) - 1):
+        if i < len(train_dataset_files) - 1:
             dataset.examples = None
             gc.collect()
             del dataset.examples
@@ -456,30 +446,31 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
             del dataset
             gc.collect()
 
-    _build_field_vocab(fields["tgt"], counter["tgt"],
-                       max_size=tgt_vocab_size,
-                       min_freq=tgt_words_min_frequency)
+    _build_field_vocab(
+        fields["tgt"], counters["tgt"],
+        max_size=tgt_vocab_size, min_freq=tgt_words_min_frequency)
     logger.info(" * tgt vocab size: %d." % len(fields["tgt"].vocab))
 
     # All datasets have same num of n_tgt_features,
     # getting the last one is OK.
-    for j in range(dataset.n_tgt_feats):
+    n_tgt_feats = sum('tgt_feat_' in k for k in fields)
+    for j in range(n_tgt_feats):
         key = "tgt_feat_" + str(j)
-        _build_field_vocab(fields[key], counter[key])
-        logger.info(" * %s vocab size: %d." % (key,
-                                               len(fields[key].vocab)))
+        _build_field_vocab(fields[key], counters[key])
+        logger.info(" * %s vocab size: %d." % (key, len(fields[key].vocab)))
 
     if data_type == 'text':
-        _build_field_vocab(fields["src"], counter["src"],
-                           max_size=src_vocab_size,
-                           min_freq=src_words_min_frequency)
+        _build_field_vocab(
+            fields["src"], counters["src"],
+            max_size=src_vocab_size, min_freq=src_words_min_frequency)
         logger.info(" * src vocab size: %d." % len(fields["src"].vocab))
 
         # All datasets have same num of n_src_features,
         # getting the last one is OK.
-        for j in range(dataset.n_src_feats):
+        n_src_feats = sum('src_feat_' in k for k in fields)
+        for j in range(n_src_feats):
             key = "src_feat_" + str(j)
-            _build_field_vocab(fields[key], counter[key])
+            _build_field_vocab(fields[key], counters[key])
             logger.info(" * %s vocab size: %d." %
                         (key, len(fields[key].vocab)))
 
