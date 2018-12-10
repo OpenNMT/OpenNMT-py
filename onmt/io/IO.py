@@ -2,6 +2,7 @@
 
 from collections import Counter, defaultdict, OrderedDict
 from itertools import count
+import copy
 
 import torch
 import torchtext.data
@@ -69,8 +70,9 @@ def save_fields_to_vocab(fields):
     vocab = []
     for k, f in fields.items():
         if f is not None and 'vocab' in f.__dict__:
-            f.vocab.stoi = dict(f.vocab.stoi)
-            vocab.append((k, f.vocab))
+            new_vocab = copy.copy(f.vocab)
+            new_vocab.stoi = dict(new_vocab.stoi)
+            vocab.append((k, new_vocab))
     return vocab
 
 

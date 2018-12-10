@@ -160,7 +160,6 @@ class DatasetLazyIter(object):
             self.cur_dataset = next(dataset_iter)
         except StopIteration:
             return None
-
         # We clear `fields` when saving, restore when loading.
         self.cur_dataset.fields = self.fields
 

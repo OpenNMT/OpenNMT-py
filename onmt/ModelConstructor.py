@@ -175,7 +175,7 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
     # Share the embedding matrix - preprocess with share_vocab required.
     if model_opt.share_embeddings:
         # src/tgt vocab should be the same if `-share_vocab` is specified.
-        if src_dict != tgt_dict:
+        if not (src_dict == tgt_dict):
             raise AssertionError('The `-share_vocab` should be set during '
                                  'preprocess if you use share_embeddings!')
 
