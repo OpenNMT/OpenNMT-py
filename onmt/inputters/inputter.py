@@ -368,13 +368,11 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
     elif data_type == 'img':
         dataset = ImageDataset(fields, src_examples_iter, tgt_examples_iter,
                                num_src_feats, num_tgt_feats,
-                               tgt_seq_length=tgt_seq_len,
                                filter_pred=filter_pred,
                                image_channel_size=image_channel_size)
 
     elif data_type == 'audio':
         dataset = AudioDataset(fields, src_examples_iter, tgt_examples_iter,
-                               tgt_seq_length=tgt_seq_len,
                                filter_pred=filter_pred)
 
     return dataset
