@@ -3,10 +3,10 @@
 import codecs
 import os
 
-from onmt.inputters.dataset_base import DatasetBase
+from onmt.inputters.dataset_base import AudioVisualDataset
 
 
-class ImageDataset(DatasetBase):
+class ImageDataset(AudioVisualDataset):
     """
     Build `Example` objects, `Field` objects, and filter_pred function
     from image corpus.
@@ -23,32 +23,12 @@ class ImageDataset(DatasetBase):
         use_filter_pred (bool): use a custom filter predicate to filter
             out examples?
     """
+    data_type = 'img'  # get rid of this class attribute asap
+
     @staticmethod
     def sort_key(ex):
         """ Sort using the size of the image: (width, height)."""
         return ex.src.size(2), ex.src.size(1)
-
-    def __init__(self, fields, src_examples_iter, tgt_examples_iter,
-                 filter_pred=None, image_channel_size=3):
-        self.data_type = 'img'
-
-        self.image_channel_size = image_channel_size
-        if tgt_examples_iter is not None:
-            examples_iter = (self._join_dicts(src, tgt) for src, tgt in
-                             zip(src_examples_iter, tgt_examples_iter))
-        else:
-            examples_iter = src_examples_iter
-
-        # Peek at the first to see which fields are used.
-        ex, examples_iter = self._peek(examples_iter)
-        keys = ex.keys()
-
-        fields = [(k, fields[k]) if k in fields else (k, None) for k in keys]
-        example_values = ([ex[k] for k in keys] for ex in examples_iter)
-        examples = [self._construct_example_fromlist(ex_values, fields)
-                    for ex_values in example_values]
-
-        super(ImageDataset, self).__init__(examples, fields, filter_pred)
 
     @staticmethod
     def make_image_examples(img_iter, img_path, img_dir, image_channel_size=3):

@@ -7,10 +7,10 @@ from tqdm import tqdm
 
 import torch
 
-from onmt.inputters.dataset_base import DatasetBase
+from onmt.inputters.dataset_base import AudioVisualDataset
 
 
-class AudioDataset(DatasetBase):
+class AudioDataset(AudioVisualDataset):
     """ Dataset for data_type=='audio'
 
         Build `Example` objects, `Field` objects, and filter_pred function
@@ -26,31 +26,12 @@ class AudioDataset(DatasetBase):
             use_filter_pred (bool): use a custom filter predicate to filter
                 out examples?
     """
+    data_type = 'audio'  # get rid of this class attribute asap
+
     @staticmethod
     def sort_key(ex):
         """ Sort using duration time of the sound spectrogram. """
         return ex.src.size(1)
-
-    def __init__(self, fields, src_examples_iter, tgt_examples_iter,
-                 filter_pred=None):
-        self.data_type = 'audio'
-
-        if tgt_examples_iter is not None:
-            examples_iter = (self._join_dicts(src, tgt) for src, tgt in
-                             zip(src_examples_iter, tgt_examples_iter))
-        else:
-            examples_iter = src_examples_iter
-
-        # Peek at the first to see which fields are used.
-        ex, examples_iter = self._peek(examples_iter)
-        keys = ex.keys()
-
-        fields = [(k, fields[k]) if k in fields else (k, None) for k in keys]
-        example_values = ([ex[k] for k in keys] for ex in examples_iter)
-        examples = [self._construct_example_fromlist(ex_values, fields)
-                    for ex_values in example_values]
-
-        super(AudioDataset, self).__init__(examples, fields, filter_pred)
 
     @staticmethod
     def make_audio_examples(path, audio_dir, sample_rate, window_size,

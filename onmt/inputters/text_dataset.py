@@ -28,6 +28,8 @@ class TextDataset(DatasetBase):
         num_tgt_feats (int): number of target side features.
         dynamic_dict (bool): create dynamic dictionaries?
     """
+    data_type = 'text'  # get rid of this class attribute asap
+
     @staticmethod
     def sort_key(ex):
         if hasattr(ex, "tgt"):
@@ -36,8 +38,6 @@ class TextDataset(DatasetBase):
 
     def __init__(self, fields, src_examples_iter, tgt_examples_iter,
                  dynamic_dict=True, filter_pred=None):
-        self.data_type = 'text'
-
         # self.src_vocabs: mutated in dynamic_dict, used in
         # collapse_copy_scores and in Translator.py
         self.src_vocabs = []
