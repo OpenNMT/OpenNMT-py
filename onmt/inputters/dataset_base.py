@@ -7,8 +7,6 @@ from itertools import chain
 import torch
 import torchtext
 
-import onmt
-
 PAD_WORD = '<blank>'
 UNK_WORD = '<unk>'
 UNK = 0
@@ -44,17 +42,6 @@ class DatasetBase(torchtext.data.Dataset):
         if remove_fields:
             self.fields = []
         torch.save(self, path)
-
-    def load_fields(self, vocab_dict):
-        """ Load fields from vocab.pt, and set the `fields` attribute.
-
-        Args:
-            vocab_dict (dict): a dict of loaded vocab from vocab.pt file.
-        """
-        fields = onmt.inputters.inputter.load_fields_from_vocab(
-            vocab_dict.items(), self.data_type)
-        self.fields = dict([(k, f) for (k, f) in fields.items()
-                            if k in self.examples[0].__dict__])
 
     @staticmethod
     def extract_text_features(tokens):
