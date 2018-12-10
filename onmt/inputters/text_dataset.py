@@ -24,9 +24,7 @@ class TextDataset(DatasetBase):
             dictionary iterator.
         tgt_examples_iter (dict iter): preprocessed target example
             dictionary iterator.
-        num_src_feats (int): number of source side features.
-        num_tgt_feats (int): number of target side features.
-        dynamic_dict (bool): create dynamic dictionaries?
+        dynamic_dict (bool)
     """
     data_type = 'text'  # get rid of this class attribute asap
 

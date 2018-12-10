@@ -7,22 +7,6 @@ from onmt.inputters.dataset_base import AudioVisualDataset
 
 
 class ImageDataset(AudioVisualDataset):
-    """
-    Build `Example` objects, `Field` objects, and filter_pred function
-    from image corpus.
-
-    Args:
-        fields (dict): a dictionary of `torchtext.data.Field`.
-        src_examples_iter (dict iter): preprocessed source example
-            dictionary iterator.
-        tgt_examples_iter (dict iter): preprocessed target example
-            dictionary iterator.
-        num_src_feats (int): number of source side features.
-        num_tgt_feats (int): number of target side features.
-        tgt_seq_length (int): maximum target sequence length.
-        use_filter_pred (bool): use a custom filter predicate to filter
-            out examples?
-    """
     data_type = 'img'  # get rid of this class attribute asap
 
     @staticmethod

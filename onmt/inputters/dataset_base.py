@@ -119,6 +119,15 @@ class DatasetBase(torchtext.data.Dataset):
 
 # this is just temporary until the TextDatabase can be unified with the others
 class AudioVisualDataset(DatasetBase):
+    """
+    Args:
+            fields (dict): a dictionary of `torchtext.data.Field`.
+            src_examples_iter (dict iter): preprocessed source example
+                dictionary iterator.
+            tgt_examples_iter (dict iter): preprocessed target example
+                dictionary iterator.
+            tgt_seq_length (int): maximum target sequence length.
+    """
     def __init__(self, fields, src_examples_iter, tgt_examples_iter,
                  filter_pred=None):
         if tgt_examples_iter is not None:
