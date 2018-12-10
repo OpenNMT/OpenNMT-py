@@ -185,27 +185,26 @@ def merge_vocabs(vocabs, vocab_size=None, min_frequency=1):
                                  min_freq=min_frequency)
 
 
-def get_num_features(data_type, corpus_file, side):
+def get_num_features(src_data_type, corpus_file, side):
     """
     Args:
-        data_type (str): type of the source input.
-            Options are [text|img|audio].
+        src_data_type (str): ['text'|'img'|'audio']
         corpus_file (str): file path to get the features.
-        side (str): for source or for target.
+        side (str): src or tgt
 
     Returns:
         number of features on `side`.
     """
     assert side in ["src", "tgt"]
-
-    if data_type == 'text':
-        return TextDataset.get_num_features(corpus_file, side)
-    elif data_type == 'img':
-        return ImageDataset.get_num_features(corpus_file, side)
-    elif data_type == 'audio':
-        return AudioDataset.get_num_features(corpus_file, side)
+    assert src_data_type in ['text', 'img', 'audio'], \
+        "Data type not implemented"
+    if side == 'src' and src_data_type != 'text':
+        return 0  # no features for non-text
     else:
-        raise ValueError("Data type not implemented")
+        with codecs.open(corpus_file, "r", "utf-8") as f:
+            line = f.readline().strip().split()
+            _, _, n_feats = TextDataset.extract_text_features(line)
+            return n_feats
 
 
 def make_features(batch, side, data_type='text'):

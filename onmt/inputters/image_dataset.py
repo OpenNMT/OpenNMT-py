@@ -62,7 +62,7 @@ class ImageDataset(DatasetBase):
             src_dir (str): location of source images
 
         Returns:
-            (example_dict iterator, num_feats) tuple
+            example_dict iterator
         """
         if img_iter is None and img_path is None:
             raise ValueError("Either img_iter or img_path must be non-None")
@@ -128,24 +128,3 @@ class ImageDataset(DatasetBase):
                     img = transforms.ToTensor()(Image.open(img_path))
 
                 yield img, filename
-
-    @staticmethod
-    def get_num_features(corpus_file, side):
-        """
-        For image corpus, source side is in form of image, thus
-        no feature; while target side is in form of text, thus
-        we can extract its text features.
-
-        Args:
-            corpus_file (str): file path to get the features.
-            side (str): 'src' or 'tgt'.
-
-        Returns:
-            number of features on `side`.
-        """
-        if side == 'src':
-            return 0
-        with codecs.open(corpus_file, "r", "utf-8") as cf:
-            f_line = cf.readline().strip().split()
-            _, _, num_feats = ImageDataset.extract_text_features(f_line)
-            return num_feats

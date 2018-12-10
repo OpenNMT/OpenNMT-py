@@ -108,7 +108,7 @@ class TextDataset(DatasetBase):
             side (str): "src" or "tgt".
 
         Returns:
-            (example_dict iterator, num_feats) tuple.
+            example_dict iterator
         """
         # this will probably be removed soon
         assert side in ['src', 'tgt']
@@ -139,7 +139,7 @@ class TextDataset(DatasetBase):
             if truncate:
                 line = line[:truncate]
 
-            words, feats, n_feats = TextDataset.extract_text_features(line)
+            words, feats, _ = TextDataset.extract_text_features(line)
 
             example_dict = {side: words, "indices": i}
             if feats:
@@ -153,27 +153,6 @@ class TextDataset(DatasetBase):
         with codecs.open(path, "r", "utf-8") as corpus_file:
             for line in corpus_file:
                 yield line
-
-    @staticmethod
-    def get_num_features(corpus_file, side):
-        """
-        Peek one line and get number of features of it.
-        (All lines must have same number of features).
-        For text corpus, both sides are in text form, thus
-        it works the same.
-
-        Args:
-            corpus_file (str): file path to get the features.
-            side (str): 'src' or 'tgt'.
-
-        Returns:
-            number of features on `side`.
-        """
-        with codecs.open(corpus_file, "r", "utf-8") as cf:
-            f_line = cf.readline().strip().split()
-            _, _, num_feats = TextDataset.extract_text_features(f_line)
-
-        return num_feats
 
     def _dynamic_dict(self, examples_iter):
         for example in examples_iter:

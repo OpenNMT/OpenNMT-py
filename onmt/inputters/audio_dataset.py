@@ -69,7 +69,7 @@ class AudioDataset(DatasetBase):
             truncate (int): maximum audio length (0 or None for unlimited).
 
         Returns:
-            (example_dict iterator, num_feats) tuple
+            example_dict iterator
         """
         examples_iter = AudioDataset.read_audio_file(
             path, audio_dir, "src", sample_rate,
@@ -157,27 +157,6 @@ class AudioDataset(DatasetBase):
 
                 yield {side: spect, side + '_path': line.strip(),
                        side + '_lengths': spect.size(1), 'indices': i}
-
-    @staticmethod
-    def get_num_features(corpus_file, side):
-        """
-        For audio corpus, source side is in form of audio, thus
-        no feature; while target side is in form of text, thus
-        we can extract its text features.
-
-        Args:
-            corpus_file (str): file path to get the features.
-            side (str): 'src' or 'tgt'.
-
-        Returns:
-            number of features on `side`.
-        """
-        if side == 'src':
-            return 0
-        with codecs.open(corpus_file, "r", "utf-8") as cf:
-            f_line = cf.readline().strip().split()
-            _, _, num_feats = AudioDataset.extract_text_features(f_line)
-            return num_feats
 
 
 class ShardedAudioCorpusIterator(object):
