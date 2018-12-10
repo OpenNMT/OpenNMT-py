@@ -51,8 +51,7 @@ class ImageDataset(DatasetBase):
         super(ImageDataset, self).__init__(examples, fields, filter_pred)
 
     @staticmethod
-    def make_image_examples_nfeats_tpl(img_iter, img_path, img_dir,
-                                       image_channel_size=3):
+    def make_image_examples(img_iter, img_path, img_dir, image_channel_size=3):
         """
         Note: one of img_iter and img_path must be not None
         Args:
@@ -74,7 +73,7 @@ class ImageDataset(DatasetBase):
 
         examples_iter = ImageDataset.make_examples(img_iter, img_dir, 'src')
 
-        return examples_iter, 0
+        return examples_iter
 
     @staticmethod
     def make_examples(img_iter, src_dir, side, truncate=None):

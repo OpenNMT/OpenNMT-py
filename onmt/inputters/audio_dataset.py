@@ -53,10 +53,9 @@ class AudioDataset(DatasetBase):
         super(AudioDataset, self).__init__(examples, fields, filter_pred)
 
     @staticmethod
-    def make_audio_examples_nfeats_tpl(path, audio_dir,
-                                       sample_rate, window_size,
-                                       window_stride, window,
-                                       normalize_audio, truncate=None):
+    def make_audio_examples(path, audio_dir, sample_rate, window_size,
+                            window_stride, window, normalize_audio,
+                            truncate=None):
         """
         Args:
             path (str): location of a src file containing audio paths.
@@ -77,7 +76,7 @@ class AudioDataset(DatasetBase):
             window_size, window_stride, window,
             normalize_audio, truncate)
 
-        return examples_iter, 0
+        return examples_iter
 
     @staticmethod
     def extract_features(audio_path, sample_rate, truncate, window_size,

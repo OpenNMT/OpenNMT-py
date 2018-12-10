@@ -1,7 +1,5 @@
 # coding: utf-8
-"""
-    Base dataset class and constants
-"""
+
 from itertools import chain
 
 import torch

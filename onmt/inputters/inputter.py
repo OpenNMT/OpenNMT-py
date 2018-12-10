@@ -303,52 +303,29 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
     number of features.
     """
 
-    def _make_examples_nfeats_tpl(data_type, src_data_iter, src_path, src_dir,
-                                  src_seq_length_trunc, sample_rate,
-                                  window_size, window_stride,
-                                  window, normalize_audio,
-                                  image_channel_size=3):
-        """
-        Process the corpus into (example_dict iterator, num_feats) tuple
-        on source side for different 'data_type'.
-        """
+    if data_type == 'text':
+        src_examples_iter = TextDataset.make_text_examples(
+            src_data_iter, src_path, src_seq_length_trunc, "src"
+        )
+    elif data_type == 'img':
+        src_examples_iter = ImageDataset.make_image_examples(
+            src_data_iter, src_path, src_dir, image_channel_size)
 
-        if data_type == 'text':
-            src_examples_iter, num_src_feats = \
-                TextDataset.make_text_examples_nfeats_tpl(
-                    src_data_iter, src_path, src_seq_length_trunc, "src")
-
-        elif data_type == 'img':
-            src_examples_iter, num_src_feats = \
-                ImageDataset.make_image_examples_nfeats_tpl(
-                    src_data_iter, src_path, src_dir, image_channel_size)
-
-        elif data_type == 'audio':
-            if src_data_iter:
-                raise ValueError("""Data iterator for AudioDataset isn't
-                                    implemented""")
-
-            if src_path is None:
-                raise ValueError("AudioDataset requires a non None path")
-            src_examples_iter, num_src_feats = \
-                AudioDataset.make_audio_examples_nfeats_tpl(
-                    src_path, src_dir, sample_rate,
-                    window_size, window_stride, window,
-                    normalize_audio)
-
-        return src_examples_iter, num_src_feats
-
-    src_examples_iter, num_src_feats = \
-        _make_examples_nfeats_tpl(data_type, src_data_iter, src_path, src_dir,
-                                  src_seq_length_trunc, sample_rate,
-                                  window_size, window_stride,
-                                  window, normalize_audio,
-                                  image_channel_size=image_channel_size)
+    elif data_type == 'audio':
+        if src_data_iter:
+            raise ValueError("""Data iterator for AudioDataset isn't
+                                implemented""")
+        if src_path is None:
+            raise ValueError("AudioDataset requires a non None path")
+        src_examples_iter = AudioDataset.make_audio_examples(
+            src_path, src_dir, sample_rate, window_size, window_stride,
+            window, normalize_audio
+        )
 
     # For all data types, the tgt side corpus is in form of text.
-    tgt_examples_iter, num_tgt_feats = \
-        TextDataset.make_text_examples_nfeats_tpl(
-            tgt_data_iter, tgt_path, tgt_seq_length_trunc, "tgt")
+    tgt_examples_iter = TextDataset.make_text_examples(
+        tgt_data_iter, tgt_path, tgt_seq_length_trunc, "tgt"
+    )
 
     # I'm not certain about the practical utility of the second part
     if use_filter_pred and tgt_examples_iter is not None:

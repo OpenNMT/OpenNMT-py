@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from collections import Counter
-from itertools import chain
 import io
 import codecs
 import sys
@@ -68,12 +67,8 @@ class TextDataset(DatasetBase):
         super(TextDataset, self).__init__(examples, fields, filter_pred)
 
     @staticmethod
-    def collapse_copy_scores(scores,
-                             batch,
-                             tgt_vocab,
-                             src_vocabs,
-                             batch_dim=1,
-                             batch_offset=None):
+    def collapse_copy_scores(scores, batch, tgt_vocab, src_vocabs,
+                             batch_dim=1, batch_offset=None):
         """
         Given scores from an expanded dictionary
         corresponeding to a batch, sums together copies,
@@ -101,7 +96,7 @@ class TextDataset(DatasetBase):
         return scores
 
     @staticmethod
-    def make_text_examples_nfeats_tpl(text_iter, text_path, truncate, side):
+    def make_text_examples(text_iter, text_path, truncate, side):
         """
         Args:
             text_iter(iterator): an iterator (or None) that we can loop over
@@ -115,25 +110,18 @@ class TextDataset(DatasetBase):
         Returns:
             (example_dict iterator, num_feats) tuple.
         """
+        # this will probably be removed soon
         assert side in ['src', 'tgt']
 
         if text_iter is None and text_path is None:
-            return None, 0
+            return None
 
         if text_iter is None:
             text_iter = TextDataset.make_text_iterator_from_file(text_path)
 
-        examples_nfeats_iter = \
-            TextDataset.make_examples(text_iter, truncate, side)
+        examples = TextDataset.make_examples(text_iter, truncate, side)
 
-        first_ex = next(examples_nfeats_iter)
-        num_feats = first_ex[1]
-
-        # Chain back the first element - we only want to peek at it.
-        examples_nfeats_iter = chain([first_ex], examples_nfeats_iter)
-        examples_iter = (ex for ex, nfeats in examples_nfeats_iter)
-
-        return examples_iter, num_feats
+        return examples
 
     @staticmethod
     def make_examples(text_iter, truncate, side):
@@ -151,15 +139,14 @@ class TextDataset(DatasetBase):
             if truncate:
                 line = line[:truncate]
 
-            words, feats, n_feats = \
-                TextDataset.extract_text_features(line)
+            words, feats, n_feats = TextDataset.extract_text_features(line)
 
             example_dict = {side: words, "indices": i}
             if feats:
                 prefix = side + "_feat_"
                 example_dict.update((prefix + str(j), f)
                                     for j, f in enumerate(feats))
-            yield example_dict, n_feats
+            yield example_dict
 
     @staticmethod
     def make_text_iterator_from_file(path):
