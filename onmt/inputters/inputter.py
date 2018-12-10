@@ -8,6 +8,7 @@ import codecs
 
 from collections import Counter, defaultdict, OrderedDict
 from itertools import count
+from functools import partial
 
 import torch
 import torchtext.data
@@ -263,9 +264,35 @@ def collect_feature_vocabs(fields, side):
     return feature_vocabs
 
 
+# min_len is misnamed
+'''
+def filter_seq(seq, min_len=0, max_len=float('inf')):
+    return min_len < len(seq) <= max_len
+
+
+def filter_example(ex, min_src_len=None, max_src_len=None,
+                   min_tgt_len=None, max_tgt_len=None):
+    return filter_seq(ex.src, min_src_len, max_src_len) and \
+        filter_seq(ex.tgt, min_tgt_len, max_tgt_len)
+'''
+
+
+def filter_example(ex, use_src_len=True, use_tgt_len=True,
+                   min_src_len=0, max_src_len=float('inf'),
+                   min_tgt_len=0, max_tgt_len=float('inf')):
+    """
+    A generalized function for filtering examples based on the length of their
+    src or tgt values. Rather than being used by itself as the filter_pred
+    argument to a dataset, it should be partially evaluated with everything
+    specified except the value of the example.
+    """
+    return (not use_src_len or min_src_len < len(ex.src) <= max_src_len) and \
+        (not use_tgt_len or min_tgt_len < len(ex.tgt) <= max_tgt_len)
+
+
 def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
                   src_dir=None, tgt_data_iter=None, tgt_path=None,
-                  src_seq_length=0, tgt_seq_length=0,
+                  src_seq_len=0, tgt_seq_len=0,
                   src_seq_length_trunc=0, tgt_seq_length_trunc=0,
                   dynamic_dict=True, sample_rate=0,
                   window_size=0, window_stride=0, window=None,
@@ -323,25 +350,30 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
         TextDataset.make_text_examples_nfeats_tpl(
             tgt_data_iter, tgt_path, tgt_seq_length_trunc, "tgt")
 
+    # I'm not certain about the practical utility of the second part
+    if use_filter_pred and tgt_examples_iter is not None:
+        filter_pred = partial(
+            filter_example, use_src_len=data_type == 'text',
+            max_src_len=src_seq_len, max_tgt_len=tgt_seq_len
+        )
+    else:
+        filter_pred = None
+
     if data_type == 'text':
         dataset = TextDataset(fields, src_examples_iter, tgt_examples_iter,
                               num_src_feats, num_tgt_feats,
-                              src_seq_length=src_seq_length,
-                              tgt_seq_length=tgt_seq_length,
                               dynamic_dict=dynamic_dict,
-                              use_filter_pred=use_filter_pred)
+                              filter_pred=filter_pred)
 
     elif data_type == 'img':
         dataset = ImageDataset(fields, src_examples_iter, tgt_examples_iter,
                                num_src_feats, num_tgt_feats,
-                               tgt_seq_length=tgt_seq_length,
-                               use_filter_pred=use_filter_pred,
+                               filter_pred=filter_pred,
                                image_channel_size=image_channel_size)
 
     elif data_type == 'audio':
         dataset = AudioDataset(fields, src_examples_iter, tgt_examples_iter,
-                               tgt_seq_length=tgt_seq_length,
-                               use_filter_pred=use_filter_pred)
+                               filter_pred=filter_pred)
 
     return dataset
 

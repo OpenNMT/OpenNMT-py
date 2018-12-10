@@ -37,7 +37,7 @@ class DatasetBase(torchtext.data.Dataset):
         self.__dict__.update(_d)
 
     def __reduce_ex__(self, proto):
-        "This is a hack. Something is broken with torch pickle."
+        # This is a hack. Something is broken with torch pickle.
         return super(DatasetBase, self).__reduce_ex__()
 
     def save(self, path, remove_fields=True):
@@ -83,9 +83,8 @@ class DatasetBase(torchtext.data.Dataset):
 
                 if n_feats is None:
                     n_feats = len(split_token)
-                else:
-                    assert len(split_token) == n_feats, \
-                        "all words must have the same number of features"
+                assert len(split_token) == n_feats, \
+                    "all words must have the same number of features"
         features = list(zip(*features))
         return tuple(words), features, n_feats - 1
 

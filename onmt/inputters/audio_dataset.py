@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-    AudioDataset
-"""
 import codecs
 import os
 import sys
@@ -29,9 +26,13 @@ class AudioDataset(DatasetBase):
             use_filter_pred (bool): use a custom filter predicate to filter
                 out examples?
     """
+    @staticmethod
+    def sort_key(ex):
+        """ Sort using duration time of the sound spectrogram. """
+        return ex.src.size(1)
 
     def __init__(self, fields, src_examples_iter, tgt_examples_iter,
-                 tgt_seq_length=0, use_filter_pred=True):
+                 filter_pred=None):
         self.data_type = 'audio'
         self.n_src_feats = 0
         self.n_tgt_feats = 0
@@ -46,33 +47,12 @@ class AudioDataset(DatasetBase):
         ex, examples_iter = self._peek(examples_iter)
         keys = ex.keys()
 
-        out_fields = [(k, fields[k]) if k in fields else (k, None)
-                      for k in keys]
+        fields = [(k, fields[k]) if k in fields else (k, None) for k in keys]
         example_values = ([ex[k] for k in keys] for ex in examples_iter)
-        out_examples = (self._construct_example_fromlist(
-            ex_values, out_fields)
-            for ex_values in example_values)
-        # If out_examples is a generator, we need to save the filter_pred
-        # function in serialization too, which would cause a problem when
-        # `torch.save()`. Thus we materialize it as a list.
-        out_examples = list(out_examples)
+        examples = [self._construct_example_fromlist(ex_values, fields)
+                    for ex_values in example_values]
 
-        def filter_pred(example):
-            """    ?    """
-            if tgt_examples_iter is not None:
-                return 0 < len(example.tgt) <= tgt_seq_length
-            else:
-                return True
-
-        filter_pred = filter_pred if use_filter_pred else lambda x: True
-
-        super(AudioDataset, self).__init__(
-            out_examples, out_fields, filter_pred
-        )
-
-    def sort_key(self, ex):
-        """ Sort using duration time of the sound spectrogram. """
-        return ex.src.size(1)
+        super(AudioDataset, self).__init__(examples, fields, filter_pred)
 
     @staticmethod
     def make_audio_examples_nfeats_tpl(path, audio_dir,
@@ -98,9 +78,8 @@ class AudioDataset(DatasetBase):
             path, audio_dir, "src", sample_rate,
             window_size, window_stride, window,
             normalize_audio, truncate)
-        num_feats = 0  # Source side(audio) has no features.
 
-        return (examples_iter, num_feats)
+        return examples_iter, 0
 
     @staticmethod
     def extract_features(audio_path, sample_rate, truncate, window_size,
@@ -166,8 +145,7 @@ class AudioDataset(DatasetBase):
             "src_dir must be a valid directory if data_type is audio"
 
         with codecs.open(path, "r", "utf-8") as corpus_file:
-            index = 0
-            for line in tqdm(corpus_file):
+            for i, line in enumerate(tqdm(corpus_file)):
                 audio_path = os.path.join(src_dir, line.strip())
                 if not os.path.exists(audio_path):
                     audio_path = line.strip()
@@ -175,19 +153,13 @@ class AudioDataset(DatasetBase):
                 assert os.path.exists(audio_path), \
                     'audio path %s not found' % (line.strip())
 
-                spect = AudioDataset.extract_features(audio_path,
-                                                      sample_rate,
-                                                      truncate, window_size,
-                                                      window_stride, window,
-                                                      normalize_audio)
+                spect = AudioDataset.extract_features(
+                    audio_path, sample_rate, truncate, window_size,
+                    window_stride, window, normalize_audio
+                )
 
-                example_dict = {side: spect,
-                                side + '_path': line.strip(),
-                                side + '_lengths': spect.size(1),
-                                'indices': index}
-                index += 1
-
-                yield example_dict
+                yield {side: spect, side + '_path': line.strip(),
+                       side + '_lengths': spect.size(1), 'indices': i}
 
     @staticmethod
     def get_num_features(corpus_file, side):
@@ -204,13 +176,11 @@ class AudioDataset(DatasetBase):
             number of features on `side`.
         """
         if side == 'src':
-            num_feats = 0
-        else:
-            with codecs.open(corpus_file, "r", "utf-8") as cf:
-                f_line = cf.readline().strip().split()
-                _, _, num_feats = AudioDataset.extract_text_features(f_line)
-
-        return num_feats
+            return 0
+        with codecs.open(corpus_file, "r", "utf-8") as cf:
+            f_line = cf.readline().strip().split()
+            _, _, num_feats = AudioDataset.extract_text_features(f_line)
+            return num_feats
 
 
 class ShardedAudioCorpusIterator(object):
@@ -276,9 +246,7 @@ class ShardedAudioCorpusIterator(object):
             # util we run parallel with it.
             while self.line_index < self.assoc_iter.line_index:
                 line = self.corpus.readline()
-                if line == '':
-                    raise AssertionError(
-                        "Two corpuses must have same number of lines!")
+                assert line != '', "The corpora must have same number of lines"
 
                 self.line_index += 1
                 iteration_index += 1
@@ -288,7 +256,7 @@ class ShardedAudioCorpusIterator(object):
                 self.eof = True
                 self.corpus.close()
         else:
-            # Yield tuples util this shard's size reaches the threshold.
+            # Yield tuples until this shard's size reaches the threshold.
             self.corpus.seek(self.last_pos)
             while True:
                 if self.shard_size != 0 and self.line_index % 64 == 0:
@@ -313,22 +281,16 @@ class ShardedAudioCorpusIterator(object):
         return self.eof
 
     def _example_dict_iter(self, line, index):
-        audio_path = os.path.join(self.src_dir, line.strip())
+        line = line.strip()
+        audio_path = os.path.join(self.src_dir, line)
         if not os.path.exists(audio_path):
-            audio_path = line.strip()
+            audio_path = line
 
-        assert os.path.exists(audio_path), \
-            'audio path %s not found' % (line.strip())
+        assert os.path.exists(audio_path), 'audio path %s not found' % line
 
-        spect = AudioDataset.extract_features(audio_path,
-                                              self.sample_rate,
-                                              self.truncate,
-                                              self.window_size,
-                                              self.window_stride,
-                                              self.window,
-                                              self.normalize_audio)
-        example_dict = {self.side: spect,
-                        self.side + '_path': line.strip(),
-                        self.side + '_lengths': spect.size(1),
-                        'indices': index}
-        return example_dict
+        spect = AudioDataset.extract_features(
+            audio_path, self.sample_rate, self.truncate, self.window_size,
+            self.window_stride, self.window, self.normalize_audio
+        )
+        return {self.side: spect, self.side + '_path': line,
+                self.side + '_lengths': spect.size(1), 'indices': index}
