@@ -264,18 +264,6 @@ def collect_feature_vocabs(fields, side):
 
 
 # min_len is misnamed
-'''
-def filter_seq(seq, min_len=0, max_len=float('inf')):
-    return min_len < len(seq) <= max_len
-
-
-def filter_example(ex, min_src_len=None, max_src_len=None,
-                   min_tgt_len=None, max_tgt_len=None):
-    return filter_seq(ex.src, min_src_len, max_src_len) and \
-        filter_seq(ex.tgt, min_tgt_len, max_tgt_len)
-'''
-
-
 def filter_example(ex, use_src_len=True, use_tgt_len=True,
                    min_src_len=0, max_src_len=float('inf'),
                    min_tgt_len=0, max_tgt_len=float('inf')):
