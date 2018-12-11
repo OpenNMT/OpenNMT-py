@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 import configargparse
 
-import onmt.opts as opts
-
 from flask import Flask, jsonify, request
 from onmt.translate import TranslationServer, ServerModelError
 
