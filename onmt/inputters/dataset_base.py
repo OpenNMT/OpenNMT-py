@@ -1,13 +1,9 @@
 # coding: utf-8
-"""
-    Base dataset class and constants
-"""
+
 from itertools import chain
 
 import torch
 import torchtext
-
-import onmt
 
 PAD_WORD = '<blank>'
 UNK_WORD = '<unk>'
@@ -44,17 +40,6 @@ class DatasetBase(torchtext.data.Dataset):
         if remove_fields:
             self.fields = []
         torch.save(self, path)
-
-    def load_fields(self, vocab_dict):
-        """ Load fields from vocab.pt, and set the `fields` attribute.
-
-        Args:
-            vocab_dict (dict): a dict of loaded vocab from vocab.pt file.
-        """
-        fields = onmt.inputters.inputter.load_fields_from_vocab(
-            vocab_dict.items(), self.data_type)
-        self.fields = dict([(k, f) for (k, f) in fields.items()
-                            if k in self.examples[0].__dict__])
 
     @staticmethod
     def extract_text_features(tokens):
@@ -130,3 +115,34 @@ class DatasetBase(torchtext.data.Dataset):
             else:
                 setattr(ex, name, val)
         return ex
+
+
+# this is just temporary until the TextDatabase can be unified with the others
+class NonTextDatasetBase(DatasetBase):
+    """
+    Args:
+            fields (dict): a dictionary of `torchtext.data.Field`.
+            src_examples_iter (dict iter): preprocessed source example
+                dictionary iterator.
+            tgt_examples_iter (dict iter): preprocessed target example
+                dictionary iterator.
+            tgt_seq_length (int): maximum target sequence length.
+    """
+    def __init__(self, fields, src_examples_iter, tgt_examples_iter,
+                 filter_pred=None):
+        if tgt_examples_iter is not None:
+            examples_iter = (self._join_dicts(src, tgt) for src, tgt in
+                             zip(src_examples_iter, tgt_examples_iter))
+        else:
+            examples_iter = src_examples_iter
+
+        # Peek at the first to see which fields are used.
+        ex, examples_iter = self._peek(examples_iter)
+        keys = ex.keys()
+
+        fields = [(k, fields[k]) if k in fields else (k, None) for k in keys]
+        example_values = ([ex[k] for k in keys] for ex in examples_iter)
+        examples = [self._construct_example_fromlist(ex_values, fields)
+                    for ex_values in example_values]
+
+        super(DatasetBase, self).__init__(examples, fields, filter_pred)

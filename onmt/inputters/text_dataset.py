@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from collections import Counter
-from itertools import chain
 import io
 import codecs
 import sys
@@ -25,10 +24,10 @@ class TextDataset(DatasetBase):
             dictionary iterator.
         tgt_examples_iter (dict iter): preprocessed target example
             dictionary iterator.
-        num_src_feats (int): number of source side features.
-        num_tgt_feats (int): number of target side features.
-        dynamic_dict (bool): create dynamic dictionaries?
+        dynamic_dict (bool)
     """
+    data_type = 'text'  # get rid of this class attribute asap
+
     @staticmethod
     def sort_key(ex):
         if hasattr(ex, "tgt"):
@@ -36,16 +35,10 @@ class TextDataset(DatasetBase):
         return len(ex.src)
 
     def __init__(self, fields, src_examples_iter, tgt_examples_iter,
-                 num_src_feats=0, num_tgt_feats=0,
                  dynamic_dict=True, filter_pred=None):
-        self.data_type = 'text'
-
         # self.src_vocabs: mutated in dynamic_dict, used in
         # collapse_copy_scores and in Translator.py
         self.src_vocabs = []
-
-        self.n_src_feats = num_src_feats
-        self.n_tgt_feats = num_tgt_feats
 
         # Each element of an example is a dictionary whose keys represents
         # at minimum the src tokens and their indices and potentially also
@@ -72,12 +65,8 @@ class TextDataset(DatasetBase):
         super(TextDataset, self).__init__(examples, fields, filter_pred)
 
     @staticmethod
-    def collapse_copy_scores(scores,
-                             batch,
-                             tgt_vocab,
-                             src_vocabs,
-                             batch_dim=1,
-                             batch_offset=None):
+    def collapse_copy_scores(scores, batch, tgt_vocab, src_vocabs,
+                             batch_dim=1, batch_offset=None):
         """
         Given scores from an expanded dictionary
         corresponeding to a batch, sums together copies,
@@ -105,7 +94,7 @@ class TextDataset(DatasetBase):
         return scores
 
     @staticmethod
-    def make_text_examples_nfeats_tpl(text_iter, text_path, truncate, side):
+    def make_text_examples(text_iter, text_path, truncate, side):
         """
         Args:
             text_iter(iterator): an iterator (or None) that we can loop over
@@ -117,27 +106,20 @@ class TextDataset(DatasetBase):
             side (str): "src" or "tgt".
 
         Returns:
-            (example_dict iterator, num_feats) tuple.
+            example_dict iterator
         """
+        # this will probably be removed soon
         assert side in ['src', 'tgt']
 
         if text_iter is None and text_path is None:
-            return None, 0
+            return None
 
         if text_iter is None:
             text_iter = TextDataset.make_text_iterator_from_file(text_path)
 
-        examples_nfeats_iter = \
-            TextDataset.make_examples(text_iter, truncate, side)
+        examples = TextDataset.make_examples(text_iter, truncate, side)
 
-        first_ex = next(examples_nfeats_iter)
-        num_feats = first_ex[1]
-
-        # Chain back the first element - we only want to peek at it.
-        examples_nfeats_iter = chain([first_ex], examples_nfeats_iter)
-        examples_iter = (ex for ex, nfeats in examples_nfeats_iter)
-
-        return examples_iter, num_feats
+        return examples
 
     @staticmethod
     def make_examples(text_iter, truncate, side):
@@ -155,42 +137,20 @@ class TextDataset(DatasetBase):
             if truncate:
                 line = line[:truncate]
 
-            words, feats, n_feats = \
-                TextDataset.extract_text_features(line)
+            words, feats, _ = TextDataset.extract_text_features(line)
 
             example_dict = {side: words, "indices": i}
             if feats:
                 prefix = side + "_feat_"
                 example_dict.update((prefix + str(j), f)
                                     for j, f in enumerate(feats))
-            yield example_dict, n_feats
+            yield example_dict
 
     @staticmethod
     def make_text_iterator_from_file(path):
         with codecs.open(path, "r", "utf-8") as corpus_file:
             for line in corpus_file:
                 yield line
-
-    @staticmethod
-    def get_num_features(corpus_file, side):
-        """
-        Peek one line and get number of features of it.
-        (All lines must have same number of features).
-        For text corpus, both sides are in text form, thus
-        it works the same.
-
-        Args:
-            corpus_file (str): file path to get the features.
-            side (str): 'src' or 'tgt'.
-
-        Returns:
-            number of features on `side`.
-        """
-        with codecs.open(corpus_file, "r", "utf-8") as cf:
-            f_line = cf.readline().strip().split()
-            _, _, num_feats = TextDataset.extract_text_features(f_line)
-
-        return num_feats
 
     def _dynamic_dict(self, examples_iter):
         for example in examples_iter:

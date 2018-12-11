@@ -110,7 +110,7 @@ def main(opt, device_id):
     data_type = first_dataset.data_type
 
     # Load fields generated from preprocess phase.
-    fields = load_fields(first_dataset, data_type, opt, checkpoint)
+    fields = load_fields(first_dataset, opt, checkpoint)
 
     # Report src/tgt features.
 

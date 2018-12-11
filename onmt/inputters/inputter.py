@@ -185,27 +185,26 @@ def merge_vocabs(vocabs, vocab_size=None, min_frequency=1):
                                  min_freq=min_frequency)
 
 
-def get_num_features(data_type, corpus_file, side):
+def get_num_features(src_data_type, corpus_file, side):
     """
     Args:
-        data_type (str): type of the source input.
-            Options are [text|img|audio].
+        src_data_type (str): ['text'|'img'|'audio']
         corpus_file (str): file path to get the features.
-        side (str): for source or for target.
+        side (str): src or tgt
 
     Returns:
         number of features on `side`.
     """
     assert side in ["src", "tgt"]
-
-    if data_type == 'text':
-        return TextDataset.get_num_features(corpus_file, side)
-    elif data_type == 'img':
-        return ImageDataset.get_num_features(corpus_file, side)
-    elif data_type == 'audio':
-        return AudioDataset.get_num_features(corpus_file, side)
+    assert src_data_type in ['text', 'img', 'audio'], \
+        "Data type not implemented"
+    if side == 'src' and src_data_type != 'text':
+        return 0  # no features for non-text
     else:
-        raise ValueError("Data type not implemented")
+        with codecs.open(corpus_file, "r", "utf-8") as f:
+            line = f.readline().strip().split()
+            _, _, n_feats = TextDataset.extract_text_features(line)
+            return n_feats
 
 
 def make_features(batch, side, data_type='text'):
@@ -303,52 +302,29 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
     number of features.
     """
 
-    def _make_examples_nfeats_tpl(data_type, src_data_iter, src_path, src_dir,
-                                  src_seq_length_trunc, sample_rate,
-                                  window_size, window_stride,
-                                  window, normalize_audio,
-                                  image_channel_size=3):
-        """
-        Process the corpus into (example_dict iterator, num_feats) tuple
-        on source side for different 'data_type'.
-        """
+    if data_type == 'text':
+        src_examples_iter = TextDataset.make_text_examples(
+            src_data_iter, src_path, src_seq_length_trunc, "src"
+        )
+    elif data_type == 'img':
+        src_examples_iter = ImageDataset.make_image_examples(
+            src_data_iter, src_path, src_dir, image_channel_size)
 
-        if data_type == 'text':
-            src_examples_iter, num_src_feats = \
-                TextDataset.make_text_examples_nfeats_tpl(
-                    src_data_iter, src_path, src_seq_length_trunc, "src")
-
-        elif data_type == 'img':
-            src_examples_iter, num_src_feats = \
-                ImageDataset.make_image_examples_nfeats_tpl(
-                    src_data_iter, src_path, src_dir, image_channel_size)
-
-        elif data_type == 'audio':
-            if src_data_iter:
-                raise ValueError("""Data iterator for AudioDataset isn't
-                                    implemented""")
-
-            if src_path is None:
-                raise ValueError("AudioDataset requires a non None path")
-            src_examples_iter, num_src_feats = \
-                AudioDataset.make_audio_examples_nfeats_tpl(
-                    src_path, src_dir, sample_rate,
-                    window_size, window_stride, window,
-                    normalize_audio)
-
-        return src_examples_iter, num_src_feats
-
-    src_examples_iter, num_src_feats = \
-        _make_examples_nfeats_tpl(data_type, src_data_iter, src_path, src_dir,
-                                  src_seq_length_trunc, sample_rate,
-                                  window_size, window_stride,
-                                  window, normalize_audio,
-                                  image_channel_size=image_channel_size)
+    elif data_type == 'audio':
+        if src_data_iter:
+            raise ValueError("""Data iterator for AudioDataset isn't
+                                implemented""")
+        if src_path is None:
+            raise ValueError("AudioDataset requires a non None path")
+        src_examples_iter = AudioDataset.make_audio_examples(
+            src_path, src_dir, sample_rate, window_size, window_stride,
+            window, normalize_audio
+        )
 
     # For all data types, the tgt side corpus is in form of text.
-    tgt_examples_iter, num_tgt_feats = \
-        TextDataset.make_text_examples_nfeats_tpl(
-            tgt_data_iter, tgt_path, tgt_seq_length_trunc, "tgt")
+    tgt_examples_iter = TextDataset.make_text_examples(
+        tgt_data_iter, tgt_path, tgt_seq_length_trunc, "tgt"
+    )
 
     # I'm not certain about the practical utility of the second part
     if use_filter_pred and tgt_examples_iter is not None:
@@ -360,21 +336,15 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
         filter_pred = None
 
     if data_type == 'text':
-        dataset = TextDataset(fields, src_examples_iter, tgt_examples_iter,
-                              num_src_feats, num_tgt_feats,
-                              dynamic_dict=dynamic_dict,
-                              filter_pred=filter_pred)
-
-    elif data_type == 'img':
-        dataset = ImageDataset(fields, src_examples_iter, tgt_examples_iter,
-                               num_src_feats, num_tgt_feats,
-                               filter_pred=filter_pred,
-                               image_channel_size=image_channel_size)
-
-    elif data_type == 'audio':
-        dataset = AudioDataset(fields, src_examples_iter, tgt_examples_iter,
-                               filter_pred=filter_pred)
-
+        dataset = TextDataset(
+            fields, src_examples_iter, tgt_examples_iter,
+            dynamic_dict=dynamic_dict, filter_pred=filter_pred)
+    else:
+        dataset_cls = ImageDataset if data_type == 'img' else AudioDataset
+        dataset = dataset_cls(
+            fields, src_examples_iter, tgt_examples_iter,
+            filter_pred=filter_pred
+        )
     return dataset
 
 
@@ -407,14 +377,10 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
     Returns:
         Dict of Fields
     """
-    counter = {}
-
     # Prop src from field to get lower memory using when training with image
     if data_type == 'img' or data_type == 'audio':
         fields.pop("src")
-
-    for k in fields:
-        counter[k] = Counter()
+    counters = {k: Counter() for k in fields}
 
     # Load vocabulary
     src_vocab = load_vocabulary(src_vocab_path, tag="source")
@@ -424,31 +390,28 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
         for i, token in enumerate(src_vocab):
             # keep the order of tokens specified in the vocab file by
             # adding them to the counter with decreasing counting values
-            counter['src'][token] = src_vocab_size - i
+            counters['src'][token] = src_vocab_size - i
 
     tgt_vocab = load_vocabulary(tgt_vocab_path, tag="target")
     if tgt_vocab is not None:
         tgt_vocab_size = len(tgt_vocab)
         logger.info('Loaded source vocab has %d tokens.' % tgt_vocab_size)
         for i, token in enumerate(tgt_vocab):
-            counter['tgt'][token] = tgt_vocab_size - i
+            counters['tgt'][token] = tgt_vocab_size - i
 
-    for index, path in enumerate(train_dataset_files):
+    for i, path in enumerate(train_dataset_files):
         dataset = torch.load(path)
         logger.info(" * reloading %s." % path)
         for ex in dataset.examples:
             for k in fields:
-                val = getattr(ex, k, None)
-                if not fields[k].sequential:
-                    continue
-                elif k == 'src' and src_vocab:
-                    continue
-                elif k == 'tgt' and tgt_vocab:
-                    continue
-                counter[k].update(val)
+                has_vocab = (k == 'src' and src_vocab) or \
+                    (k == 'tgt' and tgt_vocab)
+                if fields[k].sequential and not has_vocab:
+                    val = getattr(ex, k, None)
+                    counters[k].update(val)
 
         # Drop the none-using from memory but keep the last
-        if (index < len(train_dataset_files) - 1):
+        if i < len(train_dataset_files) - 1:
             dataset.examples = None
             gc.collect()
             del dataset.examples
@@ -456,30 +419,31 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
             del dataset
             gc.collect()
 
-    _build_field_vocab(fields["tgt"], counter["tgt"],
-                       max_size=tgt_vocab_size,
-                       min_freq=tgt_words_min_frequency)
+    _build_field_vocab(
+        fields["tgt"], counters["tgt"],
+        max_size=tgt_vocab_size, min_freq=tgt_words_min_frequency)
     logger.info(" * tgt vocab size: %d." % len(fields["tgt"].vocab))
 
     # All datasets have same num of n_tgt_features,
     # getting the last one is OK.
-    for j in range(dataset.n_tgt_feats):
+    n_tgt_feats = sum('tgt_feat_' in k for k in fields)
+    for j in range(n_tgt_feats):
         key = "tgt_feat_" + str(j)
-        _build_field_vocab(fields[key], counter[key])
-        logger.info(" * %s vocab size: %d." % (key,
-                                               len(fields[key].vocab)))
+        _build_field_vocab(fields[key], counters[key])
+        logger.info(" * %s vocab size: %d." % (key, len(fields[key].vocab)))
 
     if data_type == 'text':
-        _build_field_vocab(fields["src"], counter["src"],
-                           max_size=src_vocab_size,
-                           min_freq=src_words_min_frequency)
+        _build_field_vocab(
+            fields["src"], counters["src"],
+            max_size=src_vocab_size, min_freq=src_words_min_frequency)
         logger.info(" * src vocab size: %d." % len(fields["src"].vocab))
 
         # All datasets have same num of n_src_features,
         # getting the last one is OK.
-        for j in range(dataset.n_src_feats):
+        n_src_feats = sum('src_feat_' in k for k in fields)
+        for j in range(n_src_feats):
             key = "src_feat_" + str(j)
-            _build_field_vocab(fields[key], counter[key])
+            _build_field_vocab(fields[key], counters[key])
             logger.info(" * %s vocab size: %d." %
                         (key, len(fields[key].vocab)))
 
@@ -675,16 +639,23 @@ def lazily_load_dataset(corpus_type, opt):
         yield _lazy_dataset_loader(pt, corpus_type)
 
 
-def load_fields(dataset, data_type, opt, checkpoint):
+def load_fields(dataset, opt, checkpoint):
+    if isinstance(dataset, TextDataset):
+        data_type = 'text'
+    elif isinstance(dataset, AudioDataset):
+        data_type = 'audio'
+    else:
+        data_type = 'img'
     if checkpoint is not None:
         logger.info('Loading vocab from checkpoint at %s.' % opt.train_from)
-        fields = load_fields_from_vocab(
-            checkpoint['vocab'], data_type)
+        vocab = checkpoint['vocab']
     else:
-        fields = load_fields_from_vocab(
-            torch.load(opt.data + '.vocab.pt'), data_type)
-    fields = dict([(k, f) for (k, f) in fields.items()
-                   if k in dataset.examples[0].__dict__])
+        vocab = torch.load(opt.data + '.vocab.pt')
+
+    fields = load_fields_from_vocab(vocab, data_type)
+
+    ex_fields = dataset.examples[0].__dict__
+    fields = {k: f for k, f in fields.items() if k in ex_fields}
 
     if data_type == 'text':
         logger.info(' * vocabulary size. source = %d; target = %d' %

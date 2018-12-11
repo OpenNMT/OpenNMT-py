@@ -7,58 +7,21 @@ from tqdm import tqdm
 
 import torch
 
-from onmt.inputters.dataset_base import DatasetBase
+from onmt.inputters.dataset_base import NonTextDatasetBase
 
 
-class AudioDataset(DatasetBase):
-    """ Dataset for data_type=='audio'
+class AudioDataset(NonTextDatasetBase):
+    data_type = 'audio'  # get rid of this class attribute asap
 
-        Build `Example` objects, `Field` objects, and filter_pred function
-        from audio corpus.
-
-        Args:
-            fields (dict): a dictionary of `torchtext.data.Field`.
-            src_examples_iter (dict iter): preprocessed source example
-                dictionary iterator.
-            tgt_examples_iter (dict iter): preprocessed target example
-                dictionary iterator.
-            tgt_seq_length (int): maximum target sequence length.
-            use_filter_pred (bool): use a custom filter predicate to filter
-                out examples?
-    """
     @staticmethod
     def sort_key(ex):
         """ Sort using duration time of the sound spectrogram. """
         return ex.src.size(1)
 
-    def __init__(self, fields, src_examples_iter, tgt_examples_iter,
-                 filter_pred=None):
-        self.data_type = 'audio'
-        self.n_src_feats = 0
-        self.n_tgt_feats = 0
-
-        if tgt_examples_iter is not None:
-            examples_iter = (self._join_dicts(src, tgt) for src, tgt in
-                             zip(src_examples_iter, tgt_examples_iter))
-        else:
-            examples_iter = src_examples_iter
-
-        # Peek at the first to see which fields are used.
-        ex, examples_iter = self._peek(examples_iter)
-        keys = ex.keys()
-
-        fields = [(k, fields[k]) if k in fields else (k, None) for k in keys]
-        example_values = ([ex[k] for k in keys] for ex in examples_iter)
-        examples = [self._construct_example_fromlist(ex_values, fields)
-                    for ex_values in example_values]
-
-        super(AudioDataset, self).__init__(examples, fields, filter_pred)
-
     @staticmethod
-    def make_audio_examples_nfeats_tpl(path, audio_dir,
-                                       sample_rate, window_size,
-                                       window_stride, window,
-                                       normalize_audio, truncate=None):
+    def make_audio_examples(path, audio_dir, sample_rate, window_size,
+                            window_stride, window, normalize_audio,
+                            truncate=None):
         """
         Args:
             path (str): location of a src file containing audio paths.
@@ -72,14 +35,14 @@ class AudioDataset(DatasetBase):
             truncate (int): maximum audio length (0 or None for unlimited).
 
         Returns:
-            (example_dict iterator, num_feats) tuple
+            example_dict iterator
         """
         examples_iter = AudioDataset.read_audio_file(
             path, audio_dir, "src", sample_rate,
             window_size, window_stride, window,
             normalize_audio, truncate)
 
-        return examples_iter, 0
+        return examples_iter
 
     @staticmethod
     def extract_features(audio_path, sample_rate, truncate, window_size,
@@ -160,27 +123,6 @@ class AudioDataset(DatasetBase):
 
                 yield {side: spect, side + '_path': line.strip(),
                        side + '_lengths': spect.size(1), 'indices': i}
-
-    @staticmethod
-    def get_num_features(corpus_file, side):
-        """
-        For audio corpus, source side is in form of audio, thus
-        no feature; while target side is in form of text, thus
-        we can extract its text features.
-
-        Args:
-            corpus_file (str): file path to get the features.
-            side (str): 'src' or 'tgt'.
-
-        Returns:
-            number of features on `side`.
-        """
-        if side == 'src':
-            return 0
-        with codecs.open(corpus_file, "r", "utf-8") as cf:
-            f_line = cf.readline().strip().split()
-            _, _, num_feats = AudioDataset.extract_text_features(f_line)
-            return num_feats
 
 
 class ShardedAudioCorpusIterator(object):
