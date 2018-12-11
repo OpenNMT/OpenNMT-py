@@ -17,7 +17,7 @@ before_install:
   # Useful for debugging any issues with conda
   - conda info -a
   # freeze the supported pytorch version for consistency
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION pytorch=0.4.1 cuda92 -c pytorch
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION pytorch=1.0.0 cuda100 -c pytorch
   - source activate test-environment
   # use requirements.txt for dependencies
   - pip install -r requirements.txt

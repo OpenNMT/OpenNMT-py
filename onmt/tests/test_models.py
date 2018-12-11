@@ -196,6 +196,8 @@ class TestModel(unittest.TestCase):
         """
         if opt.encoder_type == 'transformer' or opt.encoder_type == 'cnn':
             return
+        if opt.rnn_type == 'SRU':
+            return
 
         word_dict = self.get_vocab()
         feature_dicts = []
@@ -252,6 +254,7 @@ def _add_test(param_setting, methodname):
 '''
 TEST PARAMETERS
 '''
+opt.brnn = False
 
 test_embeddings = [[],
                    [('decoder_type', 'transformer')]
