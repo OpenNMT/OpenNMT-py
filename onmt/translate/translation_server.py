@@ -17,6 +17,20 @@ from onmt.utils.logging import init_logger
 from onmt.translate.translator import build_translator
 
 
+def critical(func):
+    """
+        Decorator for critical section (mutually exclusive code)
+    """
+    def wrapper(server_model, *args, **kwargs):
+        if not server_model.running_lock.acquire(blocking=True, timeout=120):
+            raise ServerModelError("Model %d running lock timeout"
+                                   % server_model.model_id)
+        o = func(server_model, *args, **kwargs)
+        server_model.running_lock.release()
+        return o
+    return wrapper
+
+
 class Timer:
     def __init__(self, start=False):
         self.stime = -1
@@ -292,6 +306,7 @@ class ServerModel:
         self.reset_unload_timer()
         self.loading_lock.set()
 
+    @critical
     def run(self, inputs):
         """Translate `inputs` using this model
 
@@ -303,10 +318,6 @@ class ServerModel:
                 times: (dict) containing times
         """
         self.stop_unload_timer()
-
-        if not self.running_lock.acquire(blocking=True, timeout=120):
-            raise ServerModelError("Model %d running lock timeout"
-                                   % self.model_id)
 
         timer = Timer()
         timer.start()
@@ -400,7 +411,6 @@ class ServerModel:
                    for items in zip(head_spaces, results, tail_spaces)]
 
         self.logger.info("Translation Results: %d", len(results))
-        self.running_lock.release()
         return results, scores, self.opt.n_best, timer.times
 
     def do_timeout(self):
@@ -415,6 +425,7 @@ class ServerModel:
                              % self.model_id)
             self.to_cpu()
 
+    @critical
     def unload(self):
         self.logger.info("Unloading model %d" % self.model_id)
         del self.translator
@@ -447,6 +458,7 @@ class ServerModel:
             d["tokenizer"] = self.tokenizer_opt
         return d
 
+    @critical
     def to_cpu(self):
         """Move the model to CPU and clear CUDA cache
         """
