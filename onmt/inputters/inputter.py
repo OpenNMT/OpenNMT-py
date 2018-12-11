@@ -639,16 +639,23 @@ def lazily_load_dataset(corpus_type, opt):
         yield _lazy_dataset_loader(pt, corpus_type)
 
 
-def load_fields(dataset, data_type, opt, checkpoint):
+def load_fields(dataset, opt, checkpoint):
+    if isinstance(dataset, TextDataset):
+        data_type = 'text'
+    elif isinstance(dataset, AudioDataset):
+        data_type = 'audio'
+    else:
+        data_type = 'img'
     if checkpoint is not None:
         logger.info('Loading vocab from checkpoint at %s.' % opt.train_from)
-        fields = load_fields_from_vocab(
-            checkpoint['vocab'], data_type)
+        vocab = checkpoint['vocab']
     else:
-        fields = load_fields_from_vocab(
-            torch.load(opt.data + '.vocab.pt'), data_type)
-    fields = dict([(k, f) for (k, f) in fields.items()
-                   if k in dataset.examples[0].__dict__])
+        vocab = torch.load(opt.data + '.vocab.pt')
+
+    fields = load_fields_from_vocab(vocab, data_type)
+
+    ex_fields = dataset.examples[0].__dict__
+    fields = {k: f for k, f in fields.items() if k in ex_fields}
 
     if data_type == 'text':
         logger.info(' * vocabulary size. source = %d; target = %d' %
