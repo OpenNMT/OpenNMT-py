@@ -430,8 +430,7 @@ def train_opts(parser):
     group.add('--learning_rate_decay', '-learning_rate_decay',
               type=float, default=0.5,
               help="""If update_learning_rate, decay learning rate by
-                       this much if (i) perplexity does not decrease on the
-                       validation set or (ii) steps have gone past
+                       this much if steps have gone past
                        start_decay_steps""")
     group.add('--start_decay_steps', '-start_decay_steps',
               type=int, default=50000,
