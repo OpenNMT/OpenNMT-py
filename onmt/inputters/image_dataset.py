@@ -3,10 +3,10 @@
 import codecs
 import os
 
-from onmt.inputters.dataset_base import AudioVisualDataset
+from onmt.inputters.dataset_base import NonTextDatasetBase
 
 
-class ImageDataset(AudioVisualDataset):
+class ImageDataset(NonTextDatasetBase):
     data_type = 'img'  # get rid of this class attribute asap
 
     @staticmethod

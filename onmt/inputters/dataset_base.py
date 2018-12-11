@@ -118,7 +118,7 @@ class DatasetBase(torchtext.data.Dataset):
 
 
 # this is just temporary until the TextDatabase can be unified with the others
-class AudioVisualDataset(DatasetBase):
+class NonTextDatasetBase(DatasetBase):
     """
     Args:
             fields (dict): a dictionary of `torchtext.data.Field`.
