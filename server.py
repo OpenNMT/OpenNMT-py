@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 import configargparse
 
-import onmt.opts as opts
-
 from flask import Flask, jsonify, request
 from onmt.translate import TranslationServer, ServerModelError
 
@@ -116,7 +114,6 @@ if __name__ == '__main__':
     parser.add_argument("--config", "-c", type=str,
                         default="./available_models/conf.json")
 
-    opts.config_opts(parser)
     args = parser.parse_args()
     start(args.config, url_root=args.url_root, host=args.ip, port=args.port,
           debug=args.debug)
