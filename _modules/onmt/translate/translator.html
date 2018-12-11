@@ -309,25 +309,16 @@
 
         <span class="k">if</span> <span class="n">batch_size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;batch_size must be set&quot;</span><span class="p">)</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span> \
-            <span class="n">build_dataset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">,</span>
-                          <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span><span class="p">,</span>
-                          <span class="n">src_path</span><span class="o">=</span><span class="n">src_path</span><span class="p">,</span>
-                          <span class="n">src_data_iter</span><span class="o">=</span><span class="n">src_data_iter</span><span class="p">,</span>
-                          <span class="n">tgt_path</span><span class="o">=</span><span class="n">tgt_path</span><span class="p">,</span>
-                          <span class="n">tgt_data_iter</span><span class="o">=</span><span class="n">tgt_data_iter</span><span class="p">,</span>
-                          <span class="n">src_dir</span><span class="o">=</span><span class="n">src_dir</span><span class="p">,</span>
-                          <span class="n">sample_rate</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">,</span>
-                          <span class="n">window_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">window_size</span><span class="p">,</span>
-                          <span class="n">window_stride</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">window_stride</span><span class="p">,</span>
-                          <span class="n">window</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">window</span><span class="p">,</span>
-                          <span class="n">use_filter_pred</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">use_filter_pred</span><span class="p">,</span>
-                          <span class="n">image_channel_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">image_channel_size</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span> <span class="n">build_dataset</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span><span class="p">,</span>
+            <span class="n">src_path</span><span class="o">=</span><span class="n">src_path</span><span class="p">,</span> <span class="n">src_data_iter</span><span class="o">=</span><span class="n">src_data_iter</span><span class="p">,</span>
+            <span class="n">tgt_path</span><span class="o">=</span><span class="n">tgt_path</span><span class="p">,</span> <span class="n">tgt_data_iter</span><span class="o">=</span><span class="n">tgt_data_iter</span><span class="p">,</span>
+            <span class="n">src_dir</span><span class="o">=</span><span class="n">src_dir</span><span class="p">,</span> <span class="n">sample_rate</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">,</span>
+            <span class="n">window_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">window_size</span><span class="p">,</span> <span class="n">window_stride</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">window_stride</span><span class="p">,</span>
+            <span class="n">window</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">window</span><span class="p">,</span> <span class="n">use_filter_pred</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">use_filter_pred</span><span class="p">,</span>
+            <span class="n">image_channel_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">image_channel_size</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cuda</span><span class="p">:</span>
-            <span class="n">cur_device</span> <span class="o">=</span> <span class="s2">&quot;cuda&quot;</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">cur_device</span> <span class="o">=</span> <span class="s2">&quot;cpu&quot;</span>
+        <span class="n">cur_device</span> <span class="o">=</span> <span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cuda</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span>
 
         <span class="n">data_iter</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">OrderedIterator</span><span class="p">(</span>
             <span class="n">dataset</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">cur_device</span><span class="p">,</span>
@@ -373,7 +364,6 @@
                     <span class="k">else</span><span class="p">:</span>
                         <span class="n">os</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">output</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span>
 
-                <span class="c1"># Debug attention.</span>
                 <span class="k">if</span> <span class="n">attn_debug</span><span class="p">:</span>
                     <span class="n">preds</span> <span class="o">=</span> <span class="n">trans</span><span class="o">.</span><span class="n">pred_sents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                     <span class="n">preds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;&lt;/s&gt;&#39;</span><span class="p">)</span>
@@ -486,9 +476,7 @@
         <span class="c1"># in case of inference tgt_len = 1, batch = beam times batch_size</span>
         <span class="c1"># in case of Gold Scoring tgt_len = actual length, batch = 1 batch</span>
         <span class="n">dec_out</span><span class="p">,</span> <span class="n">dec_attn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="p">(</span>
-            <span class="n">decoder_input</span><span class="p">,</span>
-            <span class="n">memory_bank</span><span class="p">,</span>
-            <span class="n">memory_lengths</span><span class="o">=</span><span class="n">memory_lengths</span><span class="p">,</span>
+            <span class="n">decoder_input</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">memory_lengths</span><span class="o">=</span><span class="n">memory_lengths</span><span class="p">,</span>
             <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">)</span>
 
         <span class="c1"># Generator forward.</span>
@@ -508,11 +496,8 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">scores</span> <span class="o">=</span> <span class="n">scores</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span><span class="p">,</span> <span class="n">scores</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
             <span class="n">scores</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">collapse_copy_scores</span><span class="p">(</span>
-                <span class="n">scores</span><span class="p">,</span>
-                <span class="n">batch</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">vocab</span><span class="p">,</span>
-                <span class="n">data</span><span class="o">.</span><span class="n">src_vocabs</span><span class="p">,</span>
-                <span class="n">batch_dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                <span class="n">scores</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">vocab</span><span class="p">,</span>
+                <span class="n">data</span><span class="o">.</span><span class="n">src_vocabs</span><span class="p">,</span> <span class="n">batch_dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                 <span class="n">batch_offset</span><span class="o">=</span><span class="n">batch_offset</span><span class="p">)</span>
             <span class="n">scores</span> <span class="o">=</span> <span class="n">scores</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">decoder_input</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">scores</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
             <span class="n">log_probs</span> <span class="o">=</span> <span class="n">scores</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">log</span><span class="p">()</span>
@@ -601,12 +586,11 @@
             <span class="n">decoder_input</span> <span class="o">=</span> <span class="n">alive_seq</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 
             <span class="n">log_probs</span><span class="p">,</span> <span class="n">attn</span> <span class="o">=</span> \
-                <span class="bp">self</span><span class="o">.</span><span class="n">_decode_and_generate</span><span class="p">(</span><span class="n">decoder_input</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span>
-                                          <span class="n">batch</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
-                                          <span class="n">memory_lengths</span><span class="o">=</span><span class="n">memory_lengths</span><span class="p">,</span>
-                                          <span class="n">src_map</span><span class="o">=</span><span class="n">src_map</span><span class="p">,</span>
-                                          <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">,</span>
-                                          <span class="n">batch_offset</span><span class="o">=</span><span class="n">batch_offset</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_decode_and_generate</span><span class="p">(</span>
+                    <span class="n">decoder_input</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
+                    <span class="n">memory_lengths</span><span class="o">=</span><span class="n">memory_lengths</span><span class="p">,</span>
+                    <span class="n">src_map</span><span class="o">=</span><span class="n">src_map</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">,</span>
+                    <span class="n">batch_offset</span><span class="o">=</span><span class="n">batch_offset</span><span class="p">)</span>
 
             <span class="n">vocab_size</span> <span class="o">=</span> <span class="n">log_probs</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
 
