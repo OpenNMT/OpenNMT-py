@@ -1,6 +1,6 @@
 six
 tqdm
-torch>=0.4.1
+torch>=1.0
 git+https://github.com/pytorch/text
 future
 configargparse
