@@ -150,25 +150,16 @@ class Translator(object):
 
         if batch_size is None:
             raise ValueError("batch_size must be set")
-        data = inputters. \
-            build_dataset(self.fields,
-                          self.data_type,
-                          src_path=src_path,
-                          src_data_iter=src_data_iter,
-                          tgt_path=tgt_path,
-                          tgt_data_iter=tgt_data_iter,
-                          src_dir=src_dir,
-                          sample_rate=self.sample_rate,
-                          window_size=self.window_size,
-                          window_stride=self.window_stride,
-                          window=self.window,
-                          use_filter_pred=self.use_filter_pred,
-                          image_channel_size=self.image_channel_size)
+        data = inputters. build_dataset(
+            self.fields, self.data_type,
+            src_path=src_path, src_data_iter=src_data_iter,
+            tgt_path=tgt_path, tgt_data_iter=tgt_data_iter,
+            src_dir=src_dir, sample_rate=self.sample_rate,
+            window_size=self.window_size, window_stride=self.window_stride,
+            window=self.window, use_filter_pred=self.use_filter_pred,
+            image_channel_size=self.image_channel_size)
 
-        if self.cuda:
-            cur_device = "cuda"
-        else:
-            cur_device = "cpu"
+        cur_device = "cuda" if self.cuda else "cpu"
 
         data_iter = inputters.OrderedIterator(
             dataset=data, device=cur_device,
@@ -214,7 +205,6 @@ class Translator(object):
                     else:
                         os.write(1, output.encode('utf-8'))
 
-                # Debug attention.
                 if attn_debug:
                     preds = trans.pred_sents[0]
                     preds.append('</s>')
@@ -327,9 +317,7 @@ class Translator(object):
         # in case of inference tgt_len = 1, batch = beam times batch_size
         # in case of Gold Scoring tgt_len = actual length, batch = 1 batch
         dec_out, dec_attn = self.model.decoder(
-            decoder_input,
-            memory_bank,
-            memory_lengths=memory_lengths,
+            decoder_input, memory_bank, memory_lengths=memory_lengths,
             step=step)
 
         # Generator forward.
@@ -349,11 +337,8 @@ class Translator(object):
             else:
                 scores = scores.view(-1, self.beam_size, scores.size(-1))
             scores = data.collapse_copy_scores(
-                scores,
-                batch,
-                self.fields["tgt"].vocab,
-                data.src_vocabs,
-                batch_dim=0,
+                scores, batch, self.fields["tgt"].vocab,
+                data.src_vocabs, batch_dim=0,
                 batch_offset=batch_offset)
             scores = scores.view(decoder_input.size(0), -1, scores.size(-1))
             log_probs = scores.squeeze(0).log()
@@ -442,12 +427,11 @@ class Translator(object):
             decoder_input = alive_seq[:, -1].view(1, -1, 1)
 
             log_probs, attn = \
-                self._decode_and_generate(decoder_input, memory_bank,
-                                          batch, data,
-                                          memory_lengths=memory_lengths,
-                                          src_map=src_map,
-                                          step=step,
-                                          batch_offset=batch_offset)
+                self._decode_and_generate(
+                    decoder_input, memory_bank, batch, data,
+                    memory_lengths=memory_lengths,
+                    src_map=src_map, step=step,
+                    batch_offset=batch_offset)
 
             vocab_size = log_probs.size(-1)
 
