@@ -25,9 +25,8 @@ from onmt.utils.misc import use_gpu
 from onmt.utils.logging import logger
 
 
-def build_embeddings(opt, word_dict, feature_dicts, for_encoder=True):
+def build_embeddings(opt, word_field, feat_fields, for_encoder=True):
     """
-    Build an Embeddings instance.
     Args:
         opt: the option in current environment.
         word_dict(Vocab): words dictionary.
@@ -36,12 +35,11 @@ def build_embeddings(opt, word_dict, feature_dicts, for_encoder=True):
     """
     emb_dim = opt.src_word_vec_size if for_encoder else opt.tgt_word_vec_size
 
-    word_padding_idx = word_dict.stoi[inputters.PAD_WORD]
-    num_word_embeddings = len(word_dict)
+    word_padding_idx = word_field.vocab.stoi[word_field.pad_token]
+    num_word_embeddings = len(word_field.vocab)
 
-    feats_padding_idx = [feat_dict.stoi[inputters.PAD_WORD]
-                         for feat_dict in feature_dicts]
-    num_feat_embeddings = [len(feat_dict) for feat_dict in feature_dicts]
+    feat_pad_indices = [ff.vocab.stoi[ff.pad_token] for ff in feat_fields]
+    num_feat_embeddings = [len(ff.vocab) for ff in feat_fields]
 
     return Embeddings(word_vec_size=emb_dim,
                       position_encoding=opt.position_encoding,
@@ -50,7 +48,7 @@ def build_embeddings(opt, word_dict, feature_dicts, for_encoder=True):
                       feat_vec_size=opt.feat_vec_size,
                       dropout=opt.dropout,
                       word_padding_idx=word_padding_idx,
-                      feat_padding_idx=feats_padding_idx,
+                      feat_padding_idx=feat_pad_indices,
                       word_vocab_size=num_word_embeddings,
                       feat_vocab_sizes=num_feat_embeddings,
                       sparse=opt.optim == "sparseadam")
@@ -74,7 +72,6 @@ def build_encoder(opt, embeddings):
     elif opt.encoder_type == "mean":
         return MeanEncoder(opt.enc_layers, embeddings)
     else:
-        # "rnn" or "brnn"
         return RNNEncoder(opt.rnn_type, opt.brnn, opt.enc_layers,
                           opt.enc_rnn_size, opt.dropout, embeddings,
                           opt.bridge)
@@ -153,62 +150,52 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
         the NMTModel.
     """
     assert model_opt.model_type in ["text", "img", "audio"], \
-        ("Unsupported model type %s" % (model_opt.model_type))
+        "Unsupported model type %s" % model_opt.model_type
 
     # for backward compatibility
     if model_opt.rnn_size != -1:
         model_opt.enc_rnn_size = model_opt.rnn_size
         model_opt.dec_rnn_size = model_opt.rnn_size
-        if model_opt.model_type == 'text' and \
-           model_opt.enc_rnn_size != model_opt.dec_rnn_size:
-                raise AssertionError("""We do not support different encoder and
-                                     decoder rnn sizes for translation now.""")
 
     # Build encoder.
     if model_opt.model_type == "text":
-        src_dict = fields["src"].vocab
-        feature_dicts = inputters.collect_feature_vocabs(fields, 'src')
-        src_embeddings = build_embeddings(model_opt, src_dict, feature_dicts)
-        encoder = build_encoder(model_opt, src_embeddings)
+        feat_fields = [fields[k]
+                       for k in inputters.collect_features(fields, 'src')]
+        src_emb = build_embeddings(model_opt, fields["src"], feat_fields)
+        encoder = build_encoder(model_opt, src_emb)
     elif model_opt.model_type == "img":
-        if ("image_channel_size" not in model_opt.__dict__):
+        # why is the model_opt.__dict__ check necessary?
+        if "image_channel_size" not in model_opt.__dict__:
             image_channel_size = 3
         else:
             image_channel_size = model_opt.image_channel_size
 
-        encoder = ImageEncoder(model_opt.enc_layers,
-                               model_opt.brnn,
-                               model_opt.enc_rnn_size,
-                               model_opt.dropout,
-                               image_channel_size)
+        encoder = ImageEncoder(
+            model_opt.enc_layers, model_opt.brnn, model_opt.enc_rnn_size,
+            model_opt.dropout, image_channel_size)
     elif model_opt.model_type == "audio":
-        encoder = AudioEncoder(model_opt.rnn_type,
-                               model_opt.enc_layers,
-                               model_opt.dec_layers,
-                               model_opt.brnn,
-                               model_opt.enc_rnn_size,
-                               model_opt.dec_rnn_size,
-                               model_opt.audio_enc_pooling,
-                               model_opt.dropout,
-                               model_opt.sample_rate,
-                               model_opt.window_size)
+        encoder = AudioEncoder(
+            model_opt.rnn_type, model_opt.enc_layers, model_opt.dec_layers,
+            model_opt.brnn, model_opt.enc_rnn_size, model_opt.dec_rnn_size,
+            model_opt.audio_enc_pooling, model_opt.dropout,
+            model_opt.sample_rate, model_opt.window_size)
 
     # Build decoder.
-    tgt_dict = fields["tgt"].vocab
-    feature_dicts = inputters.collect_feature_vocabs(fields, 'tgt')
-    tgt_embeddings = build_embeddings(model_opt, tgt_dict,
-                                      feature_dicts, for_encoder=False)
+    feat_fields = [fields[k]
+                   for k in inputters.collect_features(fields, 'tgt')]
+    tgt_emb = build_embeddings(
+        model_opt, fields["tgt"], feat_fields, for_encoder=False)
 
     # Share the embedding matrix - preprocess with share_vocab required.
     if model_opt.share_embeddings:
         # src/tgt vocab should be the same if `-share_vocab` is specified.
-        if src_dict != tgt_dict:
-            raise AssertionError('The `-share_vocab` should be set during '
-                                 'preprocess if you use share_embeddings!')
+        assert fields['src'].vocab == fields['tgt'].vocab, \
+            """-share_vocab should be set during
+            preprocessing if you use share_embeddings"""
 
-        tgt_embeddings.word_lut.weight = src_embeddings.word_lut.weight
+        tgt_emb.word_lut.weight = src_emb.word_lut.weight
 
-    decoder = build_decoder(model_opt, tgt_embeddings)
+    decoder = build_decoder(model_opt, tgt_emb)
 
     # Build NMTModel(= encoder + decoder).
     device = torch.device("cuda" if gpu else "cpu")
@@ -268,7 +255,6 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
             model.decoder.embeddings.load_pretrained_vectors(
                 model_opt.pre_word_vecs_dec, model_opt.fix_word_vecs_dec)
 
-    # Add generator to model (this registers it as parameter of model).
     model.generator = generator
     model.to(device)
 
@@ -276,9 +262,7 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
 
 
 def build_model(model_opt, opt, fields, checkpoint):
-    """ Build the Model """
     logger.info('Building model...')
-    model = build_base_model(model_opt, fields,
-                             use_gpu(opt), checkpoint)
+    model = build_base_model(model_opt, fields, use_gpu(opt), checkpoint)
     logger.info(model)
     return model

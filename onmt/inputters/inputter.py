@@ -236,9 +236,6 @@ def make_features(batch, side, data_type='text'):
 
 
 def collect_features(fields, side="src"):
-    """
-    Collect features from Field object.
-    """
     assert side in ["src", "tgt"]
     feats = []
     for j in count():
@@ -247,20 +244,6 @@ def collect_features(fields, side="src"):
             break
         feats.append(key)
     return feats
-
-
-def collect_feature_vocabs(fields, side):
-    """
-    Collect feature Vocab objects from Field object.
-    """
-    assert side in ['src', 'tgt']
-    feature_vocabs = []
-    for j in count():
-        key = side + "_feat_" + str(j)
-        if key not in fields:
-            break
-        feature_vocabs.append(fields[key].vocab)
-    return feature_vocabs
 
 
 # min_len is misnamed
