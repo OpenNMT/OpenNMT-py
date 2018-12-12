@@ -1,4 +1,3 @@
-""" Generator module """
 import torch
 import torch.nn as nn
 
@@ -11,13 +10,6 @@ class CopyGenerator(nn.Module):
     """An implementation of pointer-generator networks (See et al., 2017)
     (https://arxiv.org/abs/1704.04368), which consider copying words
     directly from the source sequence.
-
-    The main idea is that we have an extended "dynamic dictionary".
-    It contains `|tgt_dict|` words plus an arbitrary number of
-    additional words introduced by the source sentence.
-    For each source sentence we have a `src_map` that maps
-    each source word to an index in `tgt_dict` if it known, or
-    else to an extra word.
 
     The copy generator is an extended version of the standard
     generator that computes three values.
@@ -55,8 +47,8 @@ class CopyGenerator(nn.Module):
 
     Args:
        input_size (int): size of input representation
-       tgt_dict (Vocab): output target dictionary
-
+       output_size (int): size of output vocabulary
+       pad_idx (int)
     """
 
     def __init__(self, input_size, output_size, pad_idx):
