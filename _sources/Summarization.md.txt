@@ -163,7 +163,7 @@ python train.py -data data/giga/GIGA \
 
 ### Inference
 
-During inference, we use beam-search with a beam-size of 5. We also added specific penalties that we can use during decoding, described in the following.
+During inference, we use beam-search with a beam-size of 10. We also added specific penalties that we can use during decoding, described in the following.
 
 - `stepwise_penalty`: Applies penalty at every step
 - `coverage_penalty summary`: Uses a penalty that prevents repeated attention to the same source word
@@ -180,7 +180,7 @@ During inference, we use beam-search with a beam-size of 5. We also added specif
 ```
 python translate.py -gpu X \
                     -batch_size 20 \
-                    -beam_size 5 \
+                    -beam_size 10 \
                     -model models/cnndm... \
                     -src data/cnndm/test.txt.src \
                     -output testout/cnndm.out \
@@ -208,10 +208,10 @@ The installation instructions can be found [here](https://github.com/falcondai/p
 It can be run with the following command:
 
 ```
-python baseline.py -s testout/cnndm.out -t data/cnndm/test.txt.tgt -m no_sent_tag -r
+python baseline.py -s testout/cnndm.out -t data/cnndm/test.txt.tgt -m sent_tag_verbatim -r
 ```
 
-The `no_sent_tag` option strips tags around sentences - when a sentence previously was `<s> w w w w . </s>`, it becomes `w w w w .`.
+The `sent_tag_verbatim` option strips `<t>` and `</t>` tags around sentences - when a sentence previously was `<t> w w w w . </t>`, it becomes `w w w w .`.
 
 #### Gigaword
 
