@@ -34,20 +34,16 @@ def build_embeddings(opt, word_dict, feature_dicts, for_encoder=True):
         feature_dicts([Vocab], optional): a list of feature dictionary.
         for_encoder(bool): build Embeddings for encoder or decoder?
     """
-    if for_encoder:
-        embedding_dim = opt.src_word_vec_size
-    else:
-        embedding_dim = opt.tgt_word_vec_size
+    emb_dim = opt.src_word_vec_size if for_encoder else opt.tgt_word_vec_size
 
     word_padding_idx = word_dict.stoi[inputters.PAD_WORD]
     num_word_embeddings = len(word_dict)
 
     feats_padding_idx = [feat_dict.stoi[inputters.PAD_WORD]
                          for feat_dict in feature_dicts]
-    num_feat_embeddings = [len(feat_dict) for feat_dict in
-                           feature_dicts]
+    num_feat_embeddings = [len(feat_dict) for feat_dict in feature_dicts]
 
-    return Embeddings(word_vec_size=embedding_dim,
+    return Embeddings(word_vec_size=emb_dim,
                       position_encoding=opt.position_encoding,
                       feat_merge=opt.feat_merge,
                       feat_vec_exponent=opt.feat_vec_exponent,
@@ -231,8 +227,9 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
         if model_opt.share_decoder_embeddings:
             generator[0].weight = decoder.embeddings.word_lut.weight
     else:
-        generator = CopyGenerator(model_opt.dec_rnn_size,
-                                  fields["tgt"].vocab)
+        vocab_size = len(fields["tgt"].vocab)
+        pad_idx = fields["tgt"].vocab.stoi[fields["tgt"].pad_token]
+        generator = CopyGenerator(model_opt.dec_rnn_size, vocab_size, pad_idx)
 
     # Load the model states from checkpoint or initialize them.
     if checkpoint is not None:
