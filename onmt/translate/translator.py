@@ -365,8 +365,8 @@ class Translator(object):
         beam_size = self.beam_size
         batch_size = batch.batch_size
         vocab = self.fields["tgt"].vocab
-        start_token = vocab.stoi[inputters.BOS_WORD]
-        end_token = vocab.stoi[inputters.EOS_WORD]
+        start_token = vocab.stoi[self.fields["tgt"].init_token]
+        end_token = vocab.stoi[self.fields["tgt"].eos_token]
 
         # Encoder forward.
         src, enc_states, memory_bank, src_lengths = self._run_encoder(
@@ -556,17 +556,16 @@ class Translator(object):
         data_type = data.data_type
         vocab = self.fields["tgt"].vocab
 
-        # Define a list of tokens to exclude from ngram-blocking
-        # exclusion_list = ["<t>", "</t>", "."]
-        exclusion_tokens = set([vocab.stoi[t]
-                                for t in self.ignore_when_blocking])
+        # Define a set of tokens to exclude from ngram-blocking
+        exclusion_tokens = {vocab.stoi[t] for t in self.ignore_when_blocking}
 
+        pad = vocab.stoi[self.fields['tgt'].pad_token]
+        eos = vocab.stoi[self.fields['tgt'].eos_token]
+        bos = vocab.stoi[self.fields['tgt'].init_token]
         beam = [onmt.translate.Beam(beam_size, n_best=self.n_best,
                                     cuda=self.cuda,
                                     global_scorer=self.global_scorer,
-                                    pad=vocab.stoi[inputters.PAD_WORD],
-                                    eos=vocab.stoi[inputters.EOS_WORD],
-                                    bos=vocab.stoi[inputters.BOS_WORD],
+                                    pad=pad, eos=eos, bos=bos,
                                     min_length=self.min_length,
                                     stepwise_penalty=self.stepwise_penalty,
                                     block_ngram_repeat=self.block_ngram_repeat,
@@ -655,11 +654,10 @@ class Translator(object):
     def _score_target(self, batch, memory_bank, src_lengths, data, src_map):
         tgt_in = inputters.make_features(batch, 'tgt')[:-1]
 
-        log_probs, attn = \
-            self._decode_and_generate(tgt_in, memory_bank, batch, data,
-                                      memory_lengths=src_lengths,
-                                      src_map=src_map)
-        tgt_pad = self.fields["tgt"].vocab.stoi[inputters.PAD_WORD]
+        log_probs, attn = self._decode_and_generate(
+            tgt_in, memory_bank, batch, data,
+            memory_lengths=src_lengths, src_map=src_map)
+        tgt_pad = self.fields["tgt"].vocab.stoi[self.fields["tgt"].pad_token]
 
         log_probs[:, :, tgt_pad] = 0
         gold = batch.tgt[1:].unsqueeze(2)
@@ -684,10 +682,10 @@ class Translator(object):
         self.out_file.seek(0)
         print()
 
-        res = subprocess.check_output("perl %s/tools/multi-bleu.perl %s"
-                                      % (base_dir, tgt_path),
-                                      stdin=self.out_file,
-                                      shell=True).decode("utf-8")
+        res = subprocess.check_output(
+            "perl %s/tools/multi-bleu.perl %s" % (base_dir, tgt_path),
+            stdin=self.out_file, shell=True
+        ).decode("utf-8")
 
         msg = ">> " + res.strip()
         return msg
@@ -695,10 +693,8 @@ class Translator(object):
     def _report_rouge(self, tgt_path):
         import subprocess
         path = os.path.split(os.path.realpath(__file__))[0]
-        res = subprocess.check_output(
-            "python %s/tools/test_rouge.py -r %s -c STDIN"
-            % (path, tgt_path),
-            shell=True,
-            stdin=self.out_file).decode("utf-8")
-        msg = res.strip()
+        msg = subprocess.check_output(
+            "python %s/tools/test_rouge.py -r %s -c STDIN" % (path, tgt_path),
+            shell=True, stdin=self.out_file
+        ).decode("utf-8").strip()
         return msg
