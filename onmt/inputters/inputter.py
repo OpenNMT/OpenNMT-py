@@ -157,12 +157,8 @@ def save_fields_to_vocab(fields):
     returns: a list of (field name, vocab) pairs for the fields that have a
              vocabulary
     """
-    vocab = []
-    for k, f in fields.items():
-        if f is not None and 'vocab' in f.__dict__:
-            f.vocab.stoi = f.vocab.stoi
-            vocab.append((k, f.vocab))
-    return vocab
+    return [(k, f.vocab) for k, f in fields.items()
+            if f is not None and 'vocab' in f.__dict__]
 
 
 def merge_vocabs(vocabs, vocab_size=None, min_frequency=1):
