@@ -10,7 +10,7 @@ from functools import partial
 import torch
 import torchtext.data
 from torchtext.data import Field
-import torchtext.vocab
+from torchtext.vocab import Vocab
 
 from onmt.inputters.dataset_base import PAD_WORD, BOS_WORD, EOS_WORD
 from onmt.inputters.text_dataset import TextDataset
@@ -30,8 +30,8 @@ def _setstate(self, state):
     self.stoi = defaultdict(lambda: 0, self.stoi)
 
 
-torchtext.vocab.Vocab.__getstate__ = _getstate
-torchtext.vocab.Vocab.__setstate__ = _setstate
+Vocab.__getstate__ = _getstate
+Vocab.__setstate__ = _setstate
 
 
 def make_src(data, vocab):
@@ -116,7 +116,7 @@ def get_fields(src_data_type, n_src_features, n_tgt_features):
             use_vocab=False, dtype=torch.long,
             postprocessing=make_tgt, sequential=False)
 
-    # below this: things defined for all source data types
+    # below this: things defined no matter what the data source type is
     fields["tgt"] = Field(
         init_token=BOS_WORD, eos_token=EOS_WORD, pad_token=PAD_WORD)
 
@@ -327,7 +327,7 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
     counters = {k: Counter() for k in fields}
 
     # Load vocabulary
-    src_vocab = load_vocabulary(src_vocab_path, tag="source")
+    src_vocab = load_vocabulary(src_vocab_path, "source")
     if src_vocab is not None:
         src_vocab_size = len(src_vocab)
         logger.info('Loaded source vocab has %d tokens.' % src_vocab_size)
@@ -336,7 +336,7 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
             # adding them to the counter with decreasing counting values
             counters['src'][token] = src_vocab_size - i
 
-    tgt_vocab = load_vocabulary(tgt_vocab_path, tag="target")
+    tgt_vocab = load_vocabulary(tgt_vocab_path, "target")
     if tgt_vocab is not None:
         tgt_vocab_size = len(tgt_vocab)
         logger.info('Loaded source vocab has %d tokens.' % tgt_vocab_size)
@@ -410,7 +410,7 @@ def _merge_field_vocabs(src_field, tgt_field, vocab_size, min_freq):
     merged = sum(
         [src_field.vocab.freqs, tgt_field.vocab.freqs], Counter()
     )
-    merged_vocab = torchtext.vocab.Vocab(
+    merged_vocab = Vocab(
         merged, specials=specials,
         max_size=vocab_size, min_freq=min_freq
     )
@@ -419,30 +419,21 @@ def _merge_field_vocabs(src_field, tgt_field, vocab_size, min_freq):
     assert len(src_field.vocab) == len(tgt_field.vocab)
 
 
-def load_vocabulary(vocabulary_path, tag=""):
+def load_vocabulary(vocab_path, tag):
     """
     Loads a vocabulary from the given path.
     :param vocabulary_path: path to load vocabulary from
     :param tag: tag for vocabulary (only used for logging)
     :return: vocabulary or None if path is null
     """
-    vocabulary = None
-    if vocabulary_path:
-        vocabulary = []
-        logger.info("Loading {} vocabulary from {}".format(tag,
-                                                           vocabulary_path))
+    logger.info("Loading {} vocabulary from {}".format(tag, vocab_path))
 
-        if not os.path.exists(vocabulary_path):
-            raise RuntimeError(
-                "{} vocabulary not found at {}!".format(tag, vocabulary_path))
-        else:
-            with codecs.open(vocabulary_path, 'r', 'utf-8') as f:
-                for line in f:
-                    if len(line.strip()) == 0:
-                        continue
-                    word = line.strip().split()[0]
-                    vocabulary.append(word)
-    return vocabulary
+    if not os.path.exists(vocab_path):
+        raise RuntimeError(
+            "{} vocabulary not found at {}".format(tag, vocab_path))
+    else:
+        with codecs.open(vocab_path, 'r', 'utf-8') as f:
+            return [line.strip().split()[0] for line in f if line.strip()]
 
 
 class OrderedIterator(torchtext.data.Iterator):
