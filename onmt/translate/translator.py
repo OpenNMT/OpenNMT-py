@@ -59,15 +59,8 @@ class Translator(object):
        logger(logging.Logger): logger.
     """
 
-    def __init__(self,
-                 model,
-                 fields,
-                 opt,
-                 model_opt,
-                 global_scorer=None,
-                 out_file=None,
-                 report_score=True,
-                 logger=None):
+    def __init__(self, model, fields, opt, model_opt, global_scorer=None,
+                 out_file=None, report_score=True, logger=None):
 
         self.model = model
         self.fields = fields
@@ -113,13 +106,8 @@ class Translator(object):
                 "scores": [],
                 "log_probs": []}
 
-    def translate(self,
-                  src_path=None,
-                  src_data_iter=None,
-                  tgt_path=None,
-                  tgt_data_iter=None,
-                  src_dir=None,
-                  batch_size=None,
+    def translate(self, src_path=None, src_data_iter=None, src_dir=None,
+                  tgt_path=None, tgt_data_iter=None, batch_size=None,
                   attn_debug=False):
         """
         Translate content of `src_data_iter` (if not None) or `src_path`
@@ -307,10 +295,11 @@ class Translator(object):
                              memory_lengths, src_map=None,
                              step=None, batch_offset=None):
 
+        unk_idx = self.fields["tgt"].vocab.stoi[self.fields["tgt"].unk_token]
         if self.copy_attn:
-            # Turn any copied words to UNKs (index 0).
+            # Turn any copied words into UNKs.
             decoder_input = decoder_input.masked_fill(
-                decoder_input.gt(len(self.fields["tgt"].vocab) - 1), 0)
+                decoder_input.gt(len(self.fields["tgt"].vocab) - 1), unk_idx)
 
         # Decoder forward, takes [tgt_len, batch, nfeats] as input
         # and [src_len, batch, hidden] as memory_bank
@@ -347,13 +336,8 @@ class Translator(object):
 
         return log_probs, attn
 
-    def _fast_translate_batch(self,
-                              batch,
-                              data,
-                              max_length,
-                              min_length=0,
-                              n_best=1,
-                              return_attention=False):
+    def _fast_translate_batch(self, batch, data, max_length, min_length=0,
+                              n_best=1, return_attention=False):
         # TODO: faster code path for beam_size == 1.
 
         # TODO: support these blacklisted features.
@@ -403,22 +387,17 @@ class Translator(object):
         top_beam_finished = torch.zeros([batch_size], dtype=torch.uint8)
         batch_offset = torch.arange(batch_size, dtype=torch.long)
         beam_offset = torch.arange(
-            0,
-            batch_size * beam_size,
-            step=beam_size,
-            dtype=torch.long,
+            0, batch_size * beam_size, step=beam_size, dtype=torch.long,
             device=mb_device)
         alive_seq = torch.full(
-            [batch_size * beam_size, 1],
-            start_token,
-            dtype=torch.long,
+            [batch_size * beam_size, 1], start_token, dtype=torch.long,
             device=mb_device)
         alive_attn = None
 
         # Give full probability to the first beam on the first step.
-        topk_log_probs = (
-            torch.tensor([0.0] + [float("-inf")] * (beam_size - 1),
-                         device=mb_device).repeat(batch_size))
+        topk_log_probs = torch.tensor(
+            [0.0] + [float("-inf")] * (beam_size - 1), device=mb_device
+        ).repeat(batch_size)
 
         # Structure that holds finished hypotheses.
         hypotheses = [[] for _ in range(batch_size)]  # noqa: F812
@@ -426,12 +405,10 @@ class Translator(object):
         for step in range(max_length):
             decoder_input = alive_seq[:, -1].view(1, -1, 1)
 
-            log_probs, attn = \
-                self._decode_and_generate(
-                    decoder_input, memory_bank, batch, data,
-                    memory_lengths=memory_lengths,
-                    src_map=src_map, step=step,
-                    batch_offset=batch_offset)
+            log_probs, attn = self._decode_and_generate(
+                decoder_input, memory_bank, batch, data,
+                memory_lengths=memory_lengths, src_map=src_map, step=step,
+                batch_offset=batch_offset)
 
             vocab_size = log_probs.size(-1)
 
@@ -615,11 +592,10 @@ class Translator(object):
             inp = inp.view(1, -1, 1)
 
             # (b) Decode and forward
-            out, beam_attn = \
-                self._decode_and_generate(inp, memory_bank, batch, data,
-                                          memory_lengths=memory_lengths,
-                                          src_map=src_map, step=i)
-
+            out, beam_attn = self._decode_and_generate(
+                inp, memory_bank, batch, data, memory_lengths=memory_lengths,
+                src_map=src_map, step=i
+            )
             out = out.view(batch_size, beam_size, -1)
             beam_attn = beam_attn.view(batch_size, beam_size, -1)
 
@@ -638,10 +614,9 @@ class Translator(object):
 
         # (4) Extract sentences from beam.
         for b in beam:
-            n_best = self.n_best
-            scores, ks = b.sort_finished(minimum=n_best)
+            scores, ks = b.sort_finished(minimum=self.n_best)
             hyps, attn = [], []
-            for i, (times, k) in enumerate(ks[:n_best]):
+            for i, (times, k) in enumerate(ks[:self.n_best]):
                 hyp, att = b.get_hyp(times, k)
                 hyps.append(hyp)
                 attn.append(att)
