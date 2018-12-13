@@ -31,7 +31,7 @@ class ImageDataset(NonTextDatasetBase):
         if img_iter is None and img_path is None:
             raise ValueError("Either img_iter or img_path must be non-None")
         if img_iter is None:
-            img_iter = ImageDataset.make_img_iterator_from_file(
+            img_iter = ImageDataset.make_iterator_from_file(
                 img_path, img_dir, image_channel_size
             )
 
@@ -62,7 +62,7 @@ class ImageDataset(NonTextDatasetBase):
             yield {side: img, side + '_path': filename, 'indices': i}
 
     @staticmethod
-    def make_img_iterator_from_file(path, src_dir, image_channel_size=3):
+    def make_iterator_from_file(path, src_dir, image_channel_size=3):
         """
         Args:
             path(str):

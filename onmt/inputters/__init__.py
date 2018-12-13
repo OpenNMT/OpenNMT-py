@@ -8,10 +8,9 @@ from onmt.inputters.inputter import make_features, collect_features, \
     save_fields_to_vocab, build_dataset, build_vocab
 from onmt.inputters.dataset_base import DatasetBase, PAD_WORD, BOS_WORD, \
     EOS_WORD
-from onmt.inputters.text_dataset import TextDataset, ShardedTextCorpusIterator
+from onmt.inputters.text_dataset import TextDataset
 from onmt.inputters.image_dataset import ImageDataset
-from onmt.inputters.audio_dataset import AudioDataset, \
-    ShardedAudioCorpusIterator
+from onmt.inputters.audio_dataset import AudioDataset
 
 
 __all__ = ['PAD_WORD', 'BOS_WORD', 'EOS_WORD', 'DatasetBase',
@@ -19,5 +18,4 @@ __all__ = ['PAD_WORD', 'BOS_WORD', 'EOS_WORD', 'DatasetBase',
            'load_fields_from_vocab', 'get_fields',
            'save_fields_to_vocab', 'build_dataset',
            'build_vocab', 'OrderedIterator',
-           'TextDataset', 'ImageDataset', 'AudioDataset',
-           'ShardedTextCorpusIterator', 'ShardedAudioCorpusIterator']
+           'TextDataset', 'ImageDataset', 'AudioDataset']
