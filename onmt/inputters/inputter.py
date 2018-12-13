@@ -327,21 +327,25 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
     counters = {k: Counter() for k in fields}
 
     # Load vocabulary
-    src_vocab = load_vocabulary(src_vocab_path, "source")
-    if src_vocab is not None:
+    if src_vocab_path:
+        src_vocab = load_vocabulary(src_vocab_path, "src")
         src_vocab_size = len(src_vocab)
         logger.info('Loaded source vocab has %d tokens.' % src_vocab_size)
         for i, token in enumerate(src_vocab):
             # keep the order of tokens specified in the vocab file by
             # adding them to the counter with decreasing counting values
             counters['src'][token] = src_vocab_size - i
+    else:
+        src_vocab = None
 
-    tgt_vocab = load_vocabulary(tgt_vocab_path, "target")
-    if tgt_vocab is not None:
+    if tgt_vocab_path:
+        tgt_vocab = load_vocabulary(tgt_vocab_path, "tgt")
         tgt_vocab_size = len(tgt_vocab)
         logger.info('Loaded source vocab has %d tokens.' % tgt_vocab_size)
         for i, token in enumerate(tgt_vocab):
             counters['tgt'][token] = tgt_vocab_size - i
+    else:
+        tgt_vocab = None
 
     for i, path in enumerate(train_dataset_files):
         dataset = torch.load(path)
