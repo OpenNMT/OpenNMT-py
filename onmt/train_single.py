@@ -51,14 +51,14 @@ def training_opt_postprocessing(opt, device_id):
     if opt.rnn_size != -1:
         opt.enc_rnn_size = opt.rnn_size
         opt.dec_rnn_size = opt.rnn_size
-        if opt.model_type == 'text' and opt.enc_rnn_size != opt.dec_rnn_size:
-            raise AssertionError("""We do not support different encoder and
-                                 decoder rnn sizes for translation now.""")
+        # removed the part for model_type != text...why would that matter?
+        assert opt.enc_rnn_size == opt.dec_rnn_size, \
+            "The encoder and decoder rnns must be the same size for now"
 
-    opt.brnn = (opt.encoder_type == "brnn")
+    opt.brnn = opt.encoder_type == "brnn"
 
-    if opt.rnn_type == "SRU" and not opt.gpu_ranks:
-        raise AssertionError("Using SRU requires -gpu_ranks set.")
+    assert opt.rnn_type != "SRU" or opt.gpu_ranks, \
+        "Using SRU requires -gpu_ranks set."
 
     if torch.cuda.is_available() and not opt.gpu_ranks:
         logger.info("WARNING: You have a CUDA device, \
