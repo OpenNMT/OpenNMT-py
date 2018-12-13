@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-    Defining general functions for inputters
-"""
 import glob
 import os
 import codecs
@@ -15,7 +12,7 @@ import torchtext.data
 from torchtext.data import Field
 import torchtext.vocab
 
-from onmt.inputters.dataset_base import UNK_WORD, PAD_WORD, BOS_WORD, EOS_WORD
+from onmt.inputters.dataset_base import PAD_WORD, BOS_WORD, EOS_WORD
 from onmt.inputters.text_dataset import TextDataset
 from onmt.inputters.image_dataset import ImageDataset
 from onmt.inputters.audio_dataset import AudioDataset
@@ -159,26 +156,6 @@ def save_fields_to_vocab(fields):
     """
     return [(k, f.vocab) for k, f in fields.items()
             if f is not None and 'vocab' in f.__dict__]
-
-
-def merge_vocabs(vocabs, vocab_size=None, min_frequency=1):
-    """
-    Merge individual vocabularies (assumed to be generated from disjoint
-    documents) into a larger vocabulary.
-
-    Args:
-        vocabs: `torchtext.vocab.Vocab` vocabularies to be merged
-        vocab_size: `int` the final vocabulary size. `None` for no limit.
-        min_frequency: `int` minimum frequency for word to be retained.
-    Return:
-        `torchtext.vocab.Vocab`
-    """
-    merged = sum([vocab.freqs for vocab in vocabs], Counter())
-    return torchtext.vocab.Vocab(merged,
-                                 specials=[UNK_WORD, PAD_WORD,
-                                           BOS_WORD, EOS_WORD],
-                                 max_size=vocab_size,
-                                 min_freq=min_frequency)
 
 
 def get_num_features(src_data_type, corpus_file, side):
@@ -414,18 +391,32 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
             logger.info(" * %s vocab size: %d." %
                         (key, len(fields[key].vocab)))
 
-        # Merge the input and output vocabularies.
         if share_vocab:
             # `tgt_vocab_size` is ignored when sharing vocabularies
             logger.info(" * merging src and tgt vocab...")
-            merged_vocab = merge_vocabs(
-                [fields["src"].vocab, fields["tgt"].vocab],
-                vocab_size=src_vocab_size,
-                min_frequency=src_words_min_frequency)
-            fields["src"].vocab = merged_vocab
-            fields["tgt"].vocab = merged_vocab
+            _merge_field_vocabs(
+                fields["src"], fields["tgt"], vocab_size=src_vocab_size,
+                min_freq=src_words_min_frequency)
+            logger.info(" * merged vocab size: %d." % len(fields["src"].vocab))
 
     return fields
+
+
+def _merge_field_vocabs(src_field, tgt_field, vocab_size, min_freq):
+    # in the long run, shouldn't it be possible to do this by calling
+    # build_vocab with both the src and tgt data?
+    specials = [src_field.unk_token, src_field.pad_token,
+                src_field.init_token, src_field.eos_token]
+    merged = sum(
+        [src_field.vocab.freqs, tgt_field.vocab.freqs], Counter()
+    )
+    merged_vocab = torchtext.vocab.Vocab(
+        merged, specials=specials,
+        max_size=vocab_size, min_freq=min_freq
+    )
+    src_field.vocab = merged_vocab
+    tgt_field.vocab = merged_vocab
+    assert len(src_field.vocab) == len(tgt_field.vocab)
 
 
 def load_vocabulary(vocabulary_path, tag=""):
