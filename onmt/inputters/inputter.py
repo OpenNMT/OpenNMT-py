@@ -158,28 +158,6 @@ def save_fields_to_vocab(fields):
             if f is not None and 'vocab' in f.__dict__]
 
 
-def get_num_features(src_data_type, corpus_file, side):
-    """
-    Args:
-        src_data_type (str): ['text'|'img'|'audio']
-        corpus_file (str): file path to get the features.
-        side (str): src or tgt
-
-    Returns:
-        number of features on `side`.
-    """
-    assert side in ["src", "tgt"]
-    assert src_data_type in ['text', 'img', 'audio'], \
-        "Data type not implemented"
-    if side == 'src' and src_data_type != 'text':
-        return 0  # no features for non-text
-    else:
-        with codecs.open(corpus_file, "r", "utf-8") as f:
-            line = f.readline().strip().split()
-            _, _, n_feats = TextDataset.extract_text_features(line)
-            return n_feats
-
-
 def make_features(batch, side, data_type='text'):
     """
     Args:
