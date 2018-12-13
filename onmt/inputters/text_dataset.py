@@ -6,10 +6,9 @@ import codecs
 import sys
 
 import torch
-import torchtext
+from torchtext.vocab import Vocab
 
 from onmt.inputters.dataset_base import DatasetBase, UNK_WORD, PAD_WORD
-from onmt.utils.misc import aeq
 
 
 class TextDataset(DatasetBase):
@@ -155,8 +154,7 @@ class TextDataset(DatasetBase):
     def _dynamic_dict(self, examples_iter):
         for example in examples_iter:
             src = example["src"]
-            src_vocab = torchtext.vocab.Vocab(Counter(src),
-                                              specials=[UNK_WORD, PAD_WORD])
+            src_vocab = Vocab(Counter(src), specials=[UNK_WORD, PAD_WORD])
             self.src_vocabs.append(src_vocab)
             # Map source tokens to indices in the dynamic dict.
             src_map = torch.LongTensor([src_vocab.stoi[w] for w in src])
@@ -252,26 +250,6 @@ class ShardedTextCorpusIterator(object):
                 iteration_index += 1
                 yield self._example_dict_iter(line, iteration_index)
 
-    def hit_end(self):
-        return self.eof
-
-    @property
-    def num_feats(self):
-        """
-        We peek the first line and seek back to
-        the beginning of the file.
-        """
-        saved_pos = self.corpus.tell()
-
-        line = self.corpus.readline().split()
-        if self.line_truncate:
-            line = line[:self.line_truncate]
-        _, _, self.n_feats = TextDataset.extract_text_features(line)
-
-        self.corpus.seek(saved_pos)
-
-        return self.n_feats
-
     def _example_dict_iter(self, line, index):
         line = line.split()
         if self.line_truncate:
@@ -279,8 +257,6 @@ class ShardedTextCorpusIterator(object):
         words, feats, n_feats = TextDataset.extract_text_features(line)
         example_dict = {self.side: words, "indices": index}
         if feats:
-            aeq(self.n_feats, n_feats)
-
             prefix = self.side + "_feat_"
             example_dict.update((prefix + str(j), f)
                                 for j, f in enumerate(feats))
