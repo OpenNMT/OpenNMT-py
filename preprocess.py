@@ -24,7 +24,7 @@ def check_existing_pt_files(opt):
         path = pattern.format(t)
         if glob.glob(path):
             sys.stderr.write("Please backup existing pt files: %s, "
-                             "to avoid ovewriting them!\n" % path)
+                             "to avoid overwriting them!\n" % path)
             sys.exit(1)
 
 
