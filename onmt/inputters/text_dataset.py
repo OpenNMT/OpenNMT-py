@@ -94,34 +94,6 @@ class TextDataset(DatasetBase):
         return scores
 
     @staticmethod
-    def make_text_examples(text_iter, text_path, truncate, side):
-        """
-        Args:
-            text_iter(iterator): an iterator (or None) that we can loop over
-                to read examples.
-                It may be an openned file, a string list etc...
-            text_path(str): path to file or None
-            path (str): location of a src or tgt file.
-            truncate (int): maximum sequence length (0 for unlimited).
-            side (str): "src" or "tgt".
-
-        Returns:
-            example_dict iterator
-        """
-        # this will probably be removed soon
-        assert side in ['src', 'tgt']
-
-        if text_iter is None and text_path is None:
-            return None
-
-        if text_iter is None:
-            text_iter = TextDataset.make_text_iterator_from_file(text_path)
-
-        examples = TextDataset.make_examples(text_iter, truncate, side)
-
-        return examples
-
-    @staticmethod
     def make_examples(text_iter, truncate, side):
         """
         Args:

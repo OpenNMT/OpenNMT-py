@@ -291,9 +291,13 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
     """
 
     if data_type == 'text':
-        src_examples_iter = TextDataset.make_text_examples(
-            src_data_iter, src_path, src_seq_length_trunc, "src"
-        )
+        # afaik src_path and src_data_iter should never both be None
+        if src_data_iter is None:
+            src_data_iter = TextDataset.make_text_iterator_from_file(src_path)
+
+        src_examples_iter = TextDataset.make_examples(
+            src_data_iter, src_seq_length_trunc, "src")
+
     elif data_type == 'img':
         src_examples_iter = ImageDataset.make_image_examples(
             src_data_iter, src_path, src_dir, image_channel_size)
@@ -309,10 +313,14 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
             window, normalize_audio
         )
 
-    # For all data types, the tgt side corpus is in form of text.
-    tgt_examples_iter = TextDataset.make_text_examples(
-        tgt_data_iter, tgt_path, tgt_seq_length_trunc, "tgt"
-    )
+    if tgt_data_iter is None and tgt_path is None:
+        tgt_examples_iter = None
+    else:
+        if tgt_data_iter is None:
+            tgt_data_iter = TextDataset.make_text_iterator_from_file(tgt_path)
+
+        tgt_examples_iter = TextDataset.make_examples(
+            tgt_data_iter, tgt_seq_length_trunc, "tgt")
 
     # I'm not certain about the practical utility of the second part
     if use_filter_pred and tgt_examples_iter is not None:
