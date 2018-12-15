@@ -289,10 +289,8 @@ def build_dataset(fields, data_type, src_path=None,
     assert data_type in ['text', 'img', 'audio']
     assert src_path is not None
     if data_type == 'text':
-        src_data_iter = TextDataset.make_iterator_from_file(src_path)
-
         src_examples_iter = TextDataset.make_examples(
-            src_data_iter, src_seq_length_trunc, "src")
+            src_path, src_seq_length_trunc, "src")
 
     elif data_type == 'img':
         src_data_iter = ImageDataset.make_iterator_from_file(
@@ -312,10 +310,8 @@ def build_dataset(fields, data_type, src_path=None,
     if tgt_path is None:
         tgt_examples_iter = None
     else:
-        tgt_data_iter = TextDataset.make_iterator_from_file(tgt_path)
-
         tgt_examples_iter = TextDataset.make_examples(
-            tgt_data_iter, tgt_seq_length_trunc, "tgt")
+            tgt_path, tgt_seq_length_trunc, "tgt")
 
     # I'm not certain about the practical utility of the second part
     if use_filter_pred and tgt_examples_iter is not None:

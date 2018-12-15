@@ -94,7 +94,7 @@ class TextDataset(DatasetBase):
         return scores
 
     @staticmethod
-    def make_examples(text_iter, truncate, side):
+    def make_examples(path, truncate, side):
         """
         Args:
             text_iter (iterator): iterator of text sequences
@@ -104,25 +104,20 @@ class TextDataset(DatasetBase):
         Yields:
             (word, features, nfeat) triples for each line.
         """
-        for i, line in enumerate(text_iter):
-            line = line.strip().split()
-            if truncate:
-                line = line[:truncate]
+        with codecs.open(path, "r", "utf-8") as f:
+            for i, line in enumerate(f):
+                line = line.strip().split()
+                if truncate:
+                    line = line[:truncate]
 
-            words, feats, _ = TextDataset.extract_text_features(line)
+                words, feats, _ = TextDataset.extract_text_features(line)
 
-            example_dict = {side: words, "indices": i}
-            if feats:
-                prefix = side + "_feat_"
-                example_dict.update((prefix + str(j), f)
-                                    for j, f in enumerate(feats))
-            yield example_dict
-
-    @staticmethod
-    def make_iterator_from_file(path):
-        with codecs.open(path, "r", "utf-8") as corpus_file:
-            for line in corpus_file:
-                yield line
+                example_dict = {side: words, "indices": i}
+                if feats:
+                    prefix = side + "_feat_"
+                    example_dict.update((prefix + str(j), f)
+                                        for j, f in enumerate(feats))
+                yield example_dict
 
     def _dynamic_dict(self, examples_iter):
         for example in examples_iter:
