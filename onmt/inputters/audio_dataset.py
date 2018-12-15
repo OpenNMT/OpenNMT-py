@@ -19,32 +19,6 @@ class AudioDataset(NonTextDatasetBase):
         return ex.src.size(1)
 
     @staticmethod
-    def make_audio_examples(path, audio_dir, sample_rate, window_size,
-                            window_stride, window, normalize_audio,
-                            truncate=None):
-        """
-        Args:
-            path (str): location of a src file containing audio paths.
-            audio_dir (str): location of source audio files.
-            sample_rate (int): sample_rate.
-            window_size (float) : window size for spectrogram in seconds.
-            window_stride (float): window stride for spectrogram in seconds.
-            window (str): window type for spectrogram generation.
-            normalize_audio (bool): subtract spectrogram by mean and divide
-                by std or not.
-            truncate (int): maximum audio length (0 or None for unlimited).
-
-        Returns:
-            example_dict iterator
-        """
-        examples_iter = AudioDataset.read_audio_file(
-            path, audio_dir, "src", sample_rate,
-            window_size, window_stride, window,
-            normalize_audio, truncate)
-
-        return examples_iter
-
-    @staticmethod
     def extract_features(audio_path, sample_rate, truncate, window_size,
                          window_stride, window, normalize_audio):
         global torchaudio, librosa, np

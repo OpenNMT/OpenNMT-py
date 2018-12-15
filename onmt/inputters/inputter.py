@@ -307,15 +307,16 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
             src_data_iter, src_dir, 'src')
 
     elif data_type == 'audio':
+        # this one looks a little different from the text and image cases
         if src_data_iter:
             raise ValueError("""Data iterator for AudioDataset isn't
                                 implemented""")
         if src_path is None:
             raise ValueError("AudioDataset requires a non None path")
-        src_examples_iter = AudioDataset.make_audio_examples(
-            src_path, src_dir, sample_rate, window_size, window_stride,
-            window, normalize_audio
-        )
+        src_examples_iter = AudioDataset.read_audio_file(
+            src_path, src_dir, "src", sample_rate,
+            window_size, window_stride, window,
+            normalize_audio, None)
 
     if tgt_data_iter is None and tgt_path is None:
         tgt_examples_iter = None
