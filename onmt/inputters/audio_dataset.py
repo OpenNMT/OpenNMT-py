@@ -57,9 +57,17 @@ class AudioDataset(NonTextDatasetBase):
         return spect
 
     @staticmethod
-    def read_audio_file(path, src_dir, side, sample_rate, window_size,
-                        window_stride, window, normalize_audio,
-                        truncate=None):
+    def make_examples(
+        path,
+        src_dir,
+        side,
+        sample_rate,
+        window_size,
+        window_stride,
+        window,
+        normalize_audio,
+        truncate=None
+    ):
         """
         Args:
             path (str): location of a src file containing audio paths.
@@ -76,7 +84,7 @@ class AudioDataset(NonTextDatasetBase):
         Yields:
             a dictionary containing audio data for each line.
         """
-        assert (src_dir is not None) and os.path.exists(src_dir),\
+        assert src_dir is not None and os.path.exists(src_dir),\
             "src_dir must be a valid directory if data_type is audio"
 
         with codecs.open(path, "r", "utf-8") as corpus_file:

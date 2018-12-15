@@ -233,8 +233,7 @@ def build_dataset(fields, data_type, src_path=None,
             src_path, src_dir, 'src', channel_size=image_channel_size
         )
     else:
-        # this one looks a little different from the text and image cases
-        src_examples_iter = AudioDataset.read_audio_file(
+        src_examples_iter = AudioDataset.make_examples(
             src_path, src_dir, "src", sample_rate,
             window_size, window_stride, window,
             normalize_audio, None)
