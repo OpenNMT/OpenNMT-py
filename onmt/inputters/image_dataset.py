@@ -15,31 +15,6 @@ class ImageDataset(NonTextDatasetBase):
         return ex.src.size(2), ex.src.size(1)
 
     @staticmethod
-    def make_image_examples(img_iter, img_path, img_dir, image_channel_size=3):
-        """
-        Note: one of img_iter and img_path must be not None
-        Args:
-            img_iter(iterator): an iterator that yields pairs (img, filename)
-                (or None)
-            img_path(str): location of a src file containing image paths
-                (or None)
-            src_dir (str): location of source images
-
-        Returns:
-            example_dict iterator
-        """
-        if img_iter is None and img_path is None:
-            raise ValueError("Either img_iter or img_path must be non-None")
-        if img_iter is None:
-            img_iter = ImageDataset.make_img_iterator_from_file(
-                img_path, img_dir, image_channel_size
-            )
-
-        examples_iter = ImageDataset.make_examples(img_iter, img_dir, 'src')
-
-        return examples_iter
-
-    @staticmethod
     def make_examples(img_iter, src_dir, side, truncate=None):
         """
         Args:

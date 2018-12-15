@@ -285,10 +285,6 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
                   window_size=0, window_stride=0, window=None,
                   normalize_audio=True, use_filter_pred=True,
                   image_channel_size=3):
-    """
-    Build src/tgt examples iterator from corpus files, also extract
-    number of features.
-    """
 
     if data_type == 'text':
         # afaik src_path and src_data_iter should never both be None
@@ -299,8 +295,16 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
             src_data_iter, src_seq_length_trunc, "src")
 
     elif data_type == 'img':
-        src_examples_iter = ImageDataset.make_image_examples(
-            src_data_iter, src_path, src_dir, image_channel_size)
+        # this should be a more general check on the source side
+        if src_data_iter is None and src_path is None:
+            raise ValueError("Either img_iter or img_path must be non-None")
+        if src_data_iter is None:
+            src_data_iter = ImageDataset.make_img_iterator_from_file(
+                src_path, src_dir, image_channel_size
+            )
+
+        src_examples_iter = ImageDataset.make_examples(
+            src_data_iter, src_dir, 'src')
 
     elif data_type == 'audio':
         if src_data_iter:
