@@ -96,7 +96,7 @@ class TextDataset(DatasetBase):
     def make_examples(path, truncate, side):
         """
         Args:
-            text_iter (iterator): iterator of text sequences
+            path: location of corpus file
             truncate (int): maximum sequence length (0 for unlimited).
             side (str): "src" or "tgt".
 

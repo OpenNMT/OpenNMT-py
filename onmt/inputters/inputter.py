@@ -224,16 +224,14 @@ def build_dataset(fields, data_type, src_path=None,
     assert src_path is not None
     if data_type == 'text':
         src_examples_iter = TextDataset.make_examples(
-            src_path, src_seq_length_trunc, "src")
-
-    elif data_type == 'img':
-        src_data_iter = ImageDataset.make_iterator_from_file(
-            src_path, src_dir, image_channel_size
+            src_path, src_seq_length_trunc, "src"
         )
-
+    elif data_type == 'img':
+        # there is a truncate argument as well, but it was never set to
+        # anything besides None before
         src_examples_iter = ImageDataset.make_examples(
-            src_data_iter, src_dir, 'src')
-
+            src_path, src_dir, 'src', channel_size=image_channel_size
+        )
     else:
         # this one looks a little different from the text and image cases
         src_examples_iter = AudioDataset.read_audio_file(
