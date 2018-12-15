@@ -2,7 +2,6 @@
 from __future__ import unicode_literals, print_function
 
 import torch
-import onmt.inputters as inputters
 
 
 class TranslationBuilder(object):
@@ -37,12 +36,12 @@ class TranslationBuilder(object):
                 tokens.append(vocab.itos[tok])
             else:
                 tokens.append(src_vocab.itos[tok - len(vocab)])
-            if tokens[-1] == inputters.EOS_WORD:
+            if tokens[-1] == self.fields["tgt"].eos_token:
                 tokens = tokens[:-1]
                 break
-        if self.replace_unk and (attn is not None) and (src is not None):
+        if self.replace_unk and attn is not None and src is not None:
             for i in range(len(tokens)):
-                if tokens[i] == vocab.itos[inputters.UNK]:
+                if tokens[i] == self.fields["tgt"].unk_token:
                     _, max_index = attn[i].max(0)
                     tokens[i] = src_raw[max_index.item()]
         return tokens
@@ -62,17 +61,13 @@ class TranslationBuilder(object):
                     key=lambda x: x[-1])))
 
         # Sorting
-        inds, perm = torch.sort(batch.indices.data)
+        inds, perm = torch.sort(batch.indices)
         data_type = self.data.data_type
         if data_type == 'text':
-            src = batch.src[0].data.index_select(1, perm)
+            src = batch.src[0].index_select(1, perm)
         else:
             src = None
-
-        if self.has_tgt:
-            tgt = batch.tgt.data.index_select(1, perm)
-        else:
-            tgt = None
+        tgt = batch.tgt.index_select(1, perm) if self.has_tgt else None
 
         translations = []
         for b in range(batch_size):
@@ -95,10 +90,11 @@ class TranslationBuilder(object):
                     src_vocab, src_raw,
                     tgt[1:, b] if tgt is not None else None, None)
 
-            translation = Translation(src[:, b] if src is not None else None,
-                                      src_raw, pred_sents,
-                                      attn[b], pred_score[b], gold_sent,
-                                      gold_score[b])
+            translation = Translation(
+                src[:, b] if src is not None else None,
+                src_raw, pred_sents, attn[b], pred_score[b],
+                gold_sent, gold_score[b]
+            )
             translations.append(translation)
 
         return translations

@@ -31,9 +31,9 @@ def build_trainer(opt, device_id, model, fields,
             used to save the model
     """
     train_loss = onmt.utils.loss.build_loss_compute(
-        model, fields["tgt"].vocab, opt)
+        model, fields["tgt"], opt)
     valid_loss = onmt.utils.loss.build_loss_compute(
-        model, fields["tgt"].vocab, opt, train=False)
+        model, fields["tgt"], opt, train=False)
 
     trunc_size = opt.truncated_decoder  # Badly named...
     shard_size = opt.max_generator_batches

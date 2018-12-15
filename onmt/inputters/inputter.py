@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-    Defining general functions for inputters
-"""
 import glob
 import os
 import codecs
@@ -13,9 +10,9 @@ from functools import partial
 import torch
 import torchtext.data
 from torchtext.data import Field
-import torchtext.vocab
+from torchtext.vocab import Vocab
 
-from onmt.inputters.dataset_base import UNK_WORD, PAD_WORD, BOS_WORD, EOS_WORD
+from onmt.inputters.dataset_base import PAD_WORD, BOS_WORD, EOS_WORD
 from onmt.inputters.text_dataset import TextDataset
 from onmt.inputters.image_dataset import ImageDataset
 from onmt.inputters.audio_dataset import AudioDataset
@@ -33,8 +30,8 @@ def _setstate(self, state):
     self.stoi = defaultdict(lambda: 0, self.stoi)
 
 
-torchtext.vocab.Vocab.__getstate__ = _getstate
-torchtext.vocab.Vocab.__setstate__ = _setstate
+Vocab.__getstate__ = _getstate
+Vocab.__setstate__ = _setstate
 
 
 def make_src(data, vocab):
@@ -119,7 +116,7 @@ def get_fields(src_data_type, n_src_features, n_tgt_features):
             use_vocab=False, dtype=torch.long,
             postprocessing=make_tgt, sequential=False)
 
-    # below this: things defined for all source data types
+    # below this: things defined no matter what the data source type is
     fields["tgt"] = Field(
         init_token=BOS_WORD, eos_token=EOS_WORD, pad_token=PAD_WORD)
 
@@ -157,54 +154,8 @@ def save_fields_to_vocab(fields):
     returns: a list of (field name, vocab) pairs for the fields that have a
              vocabulary
     """
-    vocab = []
-    for k, f in fields.items():
-        if f is not None and 'vocab' in f.__dict__:
-            f.vocab.stoi = f.vocab.stoi
-            vocab.append((k, f.vocab))
-    return vocab
-
-
-def merge_vocabs(vocabs, vocab_size=None, min_frequency=1):
-    """
-    Merge individual vocabularies (assumed to be generated from disjoint
-    documents) into a larger vocabulary.
-
-    Args:
-        vocabs: `torchtext.vocab.Vocab` vocabularies to be merged
-        vocab_size: `int` the final vocabulary size. `None` for no limit.
-        min_frequency: `int` minimum frequency for word to be retained.
-    Return:
-        `torchtext.vocab.Vocab`
-    """
-    merged = sum([vocab.freqs for vocab in vocabs], Counter())
-    return torchtext.vocab.Vocab(merged,
-                                 specials=[UNK_WORD, PAD_WORD,
-                                           BOS_WORD, EOS_WORD],
-                                 max_size=vocab_size,
-                                 min_freq=min_frequency)
-
-
-def get_num_features(src_data_type, corpus_file, side):
-    """
-    Args:
-        src_data_type (str): ['text'|'img'|'audio']
-        corpus_file (str): file path to get the features.
-        side (str): src or tgt
-
-    Returns:
-        number of features on `side`.
-    """
-    assert side in ["src", "tgt"]
-    assert src_data_type in ['text', 'img', 'audio'], \
-        "Data type not implemented"
-    if side == 'src' and src_data_type != 'text':
-        return 0  # no features for non-text
-    else:
-        with codecs.open(corpus_file, "r", "utf-8") as f:
-            line = f.readline().strip().split()
-            _, _, n_feats = TextDataset.extract_text_features(line)
-            return n_feats
+    return [(k, f.vocab) for k, f in fields.items()
+            if f is not None and 'vocab' in f.__dict__]
 
 
 def make_features(batch, side, data_type='text'):
@@ -236,9 +187,6 @@ def make_features(batch, side, data_type='text'):
 
 
 def collect_features(fields, side="src"):
-    """
-    Collect features from Field object.
-    """
     assert side in ["src", "tgt"]
     feats = []
     for j in count():
@@ -247,20 +195,6 @@ def collect_features(fields, side="src"):
             break
         feats.append(key)
     return feats
-
-
-def collect_feature_vocabs(fields, side):
-    """
-    Collect feature Vocab objects from Field object.
-    """
-    assert side in ['src', 'tgt']
-    feature_vocabs = []
-    for j in count():
-        key = side + "_feat_" + str(j)
-        if key not in fields:
-            break
-        feature_vocabs.append(fields[key].vocab)
-    return feature_vocabs
 
 
 # min_len is misnamed
@@ -371,21 +305,25 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
     counters = {k: Counter() for k in fields}
 
     # Load vocabulary
-    src_vocab = load_vocabulary(src_vocab_path, tag="source")
-    if src_vocab is not None:
+    if src_vocab_path:
+        src_vocab = load_vocabulary(src_vocab_path, "src")
         src_vocab_size = len(src_vocab)
         logger.info('Loaded source vocab has %d tokens.' % src_vocab_size)
         for i, token in enumerate(src_vocab):
             # keep the order of tokens specified in the vocab file by
             # adding them to the counter with decreasing counting values
             counters['src'][token] = src_vocab_size - i
+    else:
+        src_vocab = None
 
-    tgt_vocab = load_vocabulary(tgt_vocab_path, tag="target")
-    if tgt_vocab is not None:
+    if tgt_vocab_path:
+        tgt_vocab = load_vocabulary(tgt_vocab_path, "tgt")
         tgt_vocab_size = len(tgt_vocab)
         logger.info('Loaded source vocab has %d tokens.' % tgt_vocab_size)
         for i, token in enumerate(tgt_vocab):
             counters['tgt'][token] = tgt_vocab_size - i
+    else:
+        tgt_vocab = None
 
     for i, path in enumerate(train_dataset_files):
         dataset = torch.load(path)
@@ -435,44 +373,49 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
             logger.info(" * %s vocab size: %d." %
                         (key, len(fields[key].vocab)))
 
-        # Merge the input and output vocabularies.
         if share_vocab:
             # `tgt_vocab_size` is ignored when sharing vocabularies
             logger.info(" * merging src and tgt vocab...")
-            merged_vocab = merge_vocabs(
-                [fields["src"].vocab, fields["tgt"].vocab],
-                vocab_size=src_vocab_size,
-                min_frequency=src_words_min_frequency)
-            fields["src"].vocab = merged_vocab
-            fields["tgt"].vocab = merged_vocab
+            _merge_field_vocabs(
+                fields["src"], fields["tgt"], vocab_size=src_vocab_size,
+                min_freq=src_words_min_frequency)
+            logger.info(" * merged vocab size: %d." % len(fields["src"].vocab))
 
     return fields
 
 
-def load_vocabulary(vocabulary_path, tag=""):
+def _merge_field_vocabs(src_field, tgt_field, vocab_size, min_freq):
+    # in the long run, shouldn't it be possible to do this by calling
+    # build_vocab with both the src and tgt data?
+    specials = [src_field.unk_token, src_field.pad_token,
+                src_field.init_token, src_field.eos_token]
+    merged = sum(
+        [src_field.vocab.freqs, tgt_field.vocab.freqs], Counter()
+    )
+    merged_vocab = Vocab(
+        merged, specials=specials,
+        max_size=vocab_size, min_freq=min_freq
+    )
+    src_field.vocab = merged_vocab
+    tgt_field.vocab = merged_vocab
+    assert len(src_field.vocab) == len(tgt_field.vocab)
+
+
+def load_vocabulary(vocab_path, tag):
     """
     Loads a vocabulary from the given path.
     :param vocabulary_path: path to load vocabulary from
     :param tag: tag for vocabulary (only used for logging)
     :return: vocabulary or None if path is null
     """
-    vocabulary = None
-    if vocabulary_path:
-        vocabulary = []
-        logger.info("Loading {} vocabulary from {}".format(tag,
-                                                           vocabulary_path))
+    logger.info("Loading {} vocabulary from {}".format(tag, vocab_path))
 
-        if not os.path.exists(vocabulary_path):
-            raise RuntimeError(
-                "{} vocabulary not found at {}!".format(tag, vocabulary_path))
-        else:
-            with codecs.open(vocabulary_path, 'r', 'utf-8') as f:
-                for line in f:
-                    if len(line.strip()) == 0:
-                        continue
-                    word = line.strip().split()[0]
-                    vocabulary.append(word)
-    return vocabulary
+    if not os.path.exists(vocab_path):
+        raise RuntimeError(
+            "{} vocabulary not found at {}".format(tag, vocab_path))
+    else:
+        with codecs.open(vocab_path, 'r', 'utf-8') as f:
+            return [line.strip().split()[0] for line in f if line.strip()]
 
 
 class OrderedIterator(torchtext.data.Iterator):

@@ -27,12 +27,10 @@ class TestModel(unittest.TestCase):
         super(TestModel, self).__init__(*args, **kwargs)
         self.opt = opt
 
-    # Helper to generate a vocabulary
-
-    def get_vocab(self):
+    def get_field(self):
         src = onmt.inputters.get_fields("text", 0, 0)["src"]
         src.build_vocab([])
-        return src.vocab
+        return src
 
     def get_batch(self, source_l=3, bsize=1):
         # len x batch x nfeat
@@ -66,11 +64,10 @@ class TestModel(unittest.TestCase):
             source_l: Length of generated input sentence
             bsize: Batchsize of generated input
         '''
-        word_dict = self.get_vocab()
-        feature_dicts = []
-        emb = build_embeddings(opt, word_dict, feature_dicts)
-        test_src, _, __ = self.get_batch(source_l=source_l,
-                                         bsize=bsize)
+        word_field = self.get_field()
+        feature_fields = []
+        emb = build_embeddings(opt, word_field, feature_fields)
+        test_src, _, __ = self.get_batch(source_l=source_l, bsize=bsize)
         if opt.decoder_type == 'transformer':
             input = torch.cat([test_src, test_src], 0)
             res = emb(input)
@@ -93,9 +90,9 @@ class TestModel(unittest.TestCase):
         '''
         if opt.rnn_size > 0:
             opt.enc_rnn_size = opt.rnn_size
-        word_dict = self.get_vocab()
-        feature_dicts = []
-        embeddings = build_embeddings(opt, word_dict, feature_dicts)
+        word_field = self.get_field()
+        feature_fields = []
+        embeddings = build_embeddings(opt, word_field, feature_fields)
         enc = build_encoder(opt, embeddings)
 
         test_src, test_tgt, test_length = self.get_batch(source_l=source_l,
@@ -127,13 +124,13 @@ class TestModel(unittest.TestCase):
         if opt.rnn_size > 0:
             opt.enc_rnn_size = opt.rnn_size
             opt.dec_rnn_size = opt.rnn_size
-        word_dict = self.get_vocab()
-        feature_dicts = []
+        word_field = self.get_field()
+        feature_fields = []
 
-        embeddings = build_embeddings(opt, word_dict, feature_dicts)
+        embeddings = build_embeddings(opt, word_field, feature_fields)
         enc = build_encoder(opt, embeddings)
 
-        embeddings = build_embeddings(opt, word_dict, feature_dicts,
+        embeddings = build_embeddings(opt, word_field, feature_fields,
                                       for_encoder=False)
         dec = build_decoder(opt, embeddings)
 
@@ -160,15 +157,13 @@ class TestModel(unittest.TestCase):
         if opt.encoder_type == 'transformer' or opt.encoder_type == 'cnn':
             return
 
-        word_dict = self.get_vocab()
-        feature_dicts = []
+        word_field = self.get_field()
+        feature_fields = []
 
-        enc = ImageEncoder(opt.enc_layers,
-                           opt.brnn,
-                           opt.enc_rnn_size,
-                           opt.dropout)
+        enc = ImageEncoder(
+            opt.enc_layers, opt.brnn, opt.enc_rnn_size, opt.dropout)
 
-        embeddings = build_embeddings(opt, word_dict, feature_dicts,
+        embeddings = build_embeddings(opt, word_field, feature_fields,
                                       for_encoder=False)
         dec = build_decoder(opt, embeddings)
 
@@ -199,15 +194,15 @@ class TestModel(unittest.TestCase):
         if opt.rnn_type == 'SRU':
             return
 
-        word_dict = self.get_vocab()
-        feature_dicts = []
+        word_field = self.get_field()
+        feature_fields = []
 
         enc = AudioEncoder(opt.rnn_type, opt.enc_layers, opt.dec_layers,
                            opt.brnn, opt.enc_rnn_size, opt.dec_rnn_size,
                            opt.audio_enc_pooling, opt.dropout,
                            opt.sample_rate, opt.window_size)
 
-        embeddings = build_embeddings(opt, word_dict, feature_dicts,
+        embeddings = build_embeddings(opt, word_field, feature_fields,
                                       for_encoder=False)
         dec = build_decoder(opt, embeddings)
 
