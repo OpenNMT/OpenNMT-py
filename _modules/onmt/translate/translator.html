@@ -191,10 +191,16 @@
 
     <span class="n">scorer</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">translate</span><span class="o">.</span><span class="n">GNMTGlobalScorer</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
 
-    <span class="n">translator</span> <span class="o">=</span> <span class="n">Translator</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">model_opt</span><span class="p">,</span>
-                            <span class="n">global_scorer</span><span class="o">=</span><span class="n">scorer</span><span class="p">,</span> <span class="n">out_file</span><span class="o">=</span><span class="n">out_file</span><span class="p">,</span>
-                            <span class="n">report_score</span><span class="o">=</span><span class="n">report_score</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="n">logger</span><span class="p">)</span>
-
+    <span class="n">translator</span> <span class="o">=</span> <span class="n">Translator</span><span class="p">(</span>
+        <span class="n">model</span><span class="p">,</span>
+        <span class="n">fields</span><span class="p">,</span>
+        <span class="n">opt</span><span class="p">,</span>
+        <span class="n">model_opt</span><span class="p">,</span>
+        <span class="n">global_scorer</span><span class="o">=</span><span class="n">scorer</span><span class="p">,</span>
+        <span class="n">out_file</span><span class="o">=</span><span class="n">out_file</span><span class="p">,</span>
+        <span class="n">report_score</span><span class="o">=</span><span class="n">report_score</span><span class="p">,</span>
+        <span class="n">logger</span><span class="o">=</span><span class="n">logger</span>
+    <span class="p">)</span>
     <span class="k">return</span> <span class="n">translator</span>
 
 
@@ -218,15 +224,17 @@
 <span class="sd">       logger(logging.Logger): logger.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                 <span class="n">model</span><span class="p">,</span>
-                 <span class="n">fields</span><span class="p">,</span>
-                 <span class="n">opt</span><span class="p">,</span>
-                 <span class="n">model_opt</span><span class="p">,</span>
-                 <span class="n">global_scorer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">out_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">report_score</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                 <span class="n">logger</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">,</span>
+        <span class="n">fields</span><span class="p">,</span>
+        <span class="n">opt</span><span class="p">,</span>
+        <span class="n">model_opt</span><span class="p">,</span>
+        <span class="n">global_scorer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">out_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">report_score</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">logger</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fields</span> <span class="o">=</span> <span class="n">fields</span>
@@ -272,14 +280,16 @@
                 <span class="s2">&quot;scores&quot;</span><span class="p">:</span> <span class="p">[],</span>
                 <span class="s2">&quot;log_probs&quot;</span><span class="p">:</span> <span class="p">[]}</span>
 
-<div class="viewcode-block" id="Translator.translate"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.Translator.translate">[docs]</a>    <span class="k">def</span> <span class="nf">translate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                  <span class="n">src_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                  <span class="n">src_data_iter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                  <span class="n">tgt_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                  <span class="n">tgt_data_iter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                  <span class="n">src_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                  <span class="n">batch_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                  <span class="n">attn_debug</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="Translator.translate"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.Translator.translate">[docs]</a>    <span class="k">def</span> <span class="nf">translate</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">src_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">src_data_iter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">src_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">tgt_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">tgt_data_iter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">batch_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">attn_debug</span><span class="o">=</span><span class="kc">False</span>
+    <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Translate content of `src_data_iter` (if not None) or `src_path`</span>
 <span class="sd">        and get gold scores if one of `tgt_data_iter` or `tgt_path` is set.</span>
@@ -310,24 +320,36 @@
         <span class="k">if</span> <span class="n">batch_size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;batch_size must be set&quot;</span><span class="p">)</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span> <span class="n">build_dataset</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span><span class="p">,</span>
-            <span class="n">src_path</span><span class="o">=</span><span class="n">src_path</span><span class="p">,</span> <span class="n">src_data_iter</span><span class="o">=</span><span class="n">src_data_iter</span><span class="p">,</span>
-            <span class="n">tgt_path</span><span class="o">=</span><span class="n">tgt_path</span><span class="p">,</span> <span class="n">tgt_data_iter</span><span class="o">=</span><span class="n">tgt_data_iter</span><span class="p">,</span>
-            <span class="n">src_dir</span><span class="o">=</span><span class="n">src_dir</span><span class="p">,</span> <span class="n">sample_rate</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">,</span>
-            <span class="n">window_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">window_size</span><span class="p">,</span> <span class="n">window_stride</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">window_stride</span><span class="p">,</span>
-            <span class="n">window</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">window</span><span class="p">,</span> <span class="n">use_filter_pred</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">use_filter_pred</span><span class="p">,</span>
-            <span class="n">image_channel_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">image_channel_size</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span><span class="p">,</span>
+            <span class="n">src_path</span><span class="o">=</span><span class="n">src_path</span><span class="p">,</span>
+            <span class="n">src_data_iter</span><span class="o">=</span><span class="n">src_data_iter</span><span class="p">,</span>
+            <span class="n">tgt_path</span><span class="o">=</span><span class="n">tgt_path</span><span class="p">,</span>
+            <span class="n">tgt_data_iter</span><span class="o">=</span><span class="n">tgt_data_iter</span><span class="p">,</span>
+            <span class="n">src_dir</span><span class="o">=</span><span class="n">src_dir</span><span class="p">,</span>
+            <span class="n">sample_rate</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">,</span>
+            <span class="n">window_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">window_size</span><span class="p">,</span>
+            <span class="n">window_stride</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">window_stride</span><span class="p">,</span>
+            <span class="n">window</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">window</span><span class="p">,</span>
+            <span class="n">use_filter_pred</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">use_filter_pred</span><span class="p">,</span>
+            <span class="n">image_channel_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">image_channel_size</span>
+        <span class="p">)</span>
 
         <span class="n">cur_device</span> <span class="o">=</span> <span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cuda</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span>
 
         <span class="n">data_iter</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">OrderedIterator</span><span class="p">(</span>
-            <span class="n">dataset</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">cur_device</span><span class="p">,</span>
-            <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">train</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">sort</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-            <span class="n">sort_within_batch</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">dataset</span><span class="o">=</span><span class="n">data</span><span class="p">,</span>
+            <span class="n">device</span><span class="o">=</span><span class="n">cur_device</span><span class="p">,</span>
+            <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
+            <span class="n">train</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">sort</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">sort_within_batch</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">shuffle</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">)</span>
 
         <span class="n">builder</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">translate</span><span class="o">.</span><span class="n">TranslationBuilder</span><span class="p">(</span>
-            <span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">n_best</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">replace_unk</span><span class="p">,</span> <span class="n">tgt_path</span><span class="p">)</span>
+            <span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_best</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">replace_unk</span><span class="p">,</span> <span class="n">tgt_path</span>
+        <span class="p">)</span>
 
         <span class="c1"># Statistics</span>
         <span class="n">counter</span> <span class="o">=</span> <span class="n">count</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
@@ -338,8 +360,9 @@
         <span class="n">all_predictions</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">data_iter</span><span class="p">:</span>
-            <span class="n">batch_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translate_batch</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">attn_debug</span><span class="p">,</span>
-                                              <span class="n">fast</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fast</span><span class="p">)</span>
+            <span class="n">batch_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translate_batch</span><span class="p">(</span>
+                <span class="n">batch</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">attn_debug</span><span class="p">,</span> <span class="n">fast</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fast</span>
+            <span class="p">)</span>
             <span class="n">translations</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="n">from_batch</span><span class="p">(</span><span class="n">batch_data</span><span class="p">)</span>
 
             <span class="k">for</span> <span class="n">trans</span> <span class="ow">in</span> <span class="n">translations</span><span class="p">:</span>
@@ -462,22 +485,32 @@
                                <span class="o">.</span><span class="n">fill_</span><span class="p">(</span><span class="n">memory_bank</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">src</span><span class="p">,</span> <span class="n">enc_states</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_lengths</span>
 
-    <span class="k">def</span> <span class="nf">_decode_and_generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">decoder_input</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
-                             <span class="n">memory_lengths</span><span class="p">,</span> <span class="n">src_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                             <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">batch_offset</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_decode_and_generate</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">decoder_in</span><span class="p">,</span>
+        <span class="n">memory_bank</span><span class="p">,</span>
+        <span class="n">batch</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">,</span>
+        <span class="n">memory_lengths</span><span class="p">,</span>
+        <span class="n">src_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">batch_offset</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
 
+        <span class="n">unk_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">unk_token</span><span class="p">]</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span><span class="p">:</span>
-            <span class="c1"># Turn any copied words to UNKs (index 0).</span>
-            <span class="n">decoder_input</span> <span class="o">=</span> <span class="n">decoder_input</span><span class="o">.</span><span class="n">masked_fill</span><span class="p">(</span>
-                <span class="n">decoder_input</span><span class="o">.</span><span class="n">gt</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">vocab</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="c1"># Turn any copied words into UNKs.</span>
+            <span class="n">decoder_in</span> <span class="o">=</span> <span class="n">decoder_in</span><span class="o">.</span><span class="n">masked_fill</span><span class="p">(</span>
+                <span class="n">decoder_in</span><span class="o">.</span><span class="n">gt</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">vocab</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="n">unk_idx</span>
+            <span class="p">)</span>
 
         <span class="c1"># Decoder forward, takes [tgt_len, batch, nfeats] as input</span>
         <span class="c1"># and [src_len, batch, hidden] as memory_bank</span>
         <span class="c1"># in case of inference tgt_len = 1, batch = beam times batch_size</span>
         <span class="c1"># in case of Gold Scoring tgt_len = actual length, batch = 1 batch</span>
         <span class="n">dec_out</span><span class="p">,</span> <span class="n">dec_attn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="p">(</span>
-            <span class="n">decoder_input</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">memory_lengths</span><span class="o">=</span><span class="n">memory_lengths</span><span class="p">,</span>
-            <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">)</span>
+            <span class="n">decoder_in</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">memory_lengths</span><span class="o">=</span><span class="n">memory_lengths</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">step</span>
+        <span class="p">)</span>
 
         <span class="c1"># Generator forward.</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span><span class="p">:</span>
@@ -496,23 +529,29 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">scores</span> <span class="o">=</span> <span class="n">scores</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span><span class="p">,</span> <span class="n">scores</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
             <span class="n">scores</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">collapse_copy_scores</span><span class="p">(</span>
-                <span class="n">scores</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">vocab</span><span class="p">,</span>
-                <span class="n">data</span><span class="o">.</span><span class="n">src_vocabs</span><span class="p">,</span> <span class="n">batch_dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                <span class="n">batch_offset</span><span class="o">=</span><span class="n">batch_offset</span><span class="p">)</span>
-            <span class="n">scores</span> <span class="o">=</span> <span class="n">scores</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">decoder_input</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">scores</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+                <span class="n">scores</span><span class="p">,</span>
+                <span class="n">batch</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">vocab</span><span class="p">,</span>
+                <span class="n">data</span><span class="o">.</span><span class="n">src_vocabs</span><span class="p">,</span>
+                <span class="n">batch_dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                <span class="n">batch_offset</span><span class="o">=</span><span class="n">batch_offset</span>
+            <span class="p">)</span>
+            <span class="n">scores</span> <span class="o">=</span> <span class="n">scores</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">decoder_in</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">scores</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
             <span class="n">log_probs</span> <span class="o">=</span> <span class="n">scores</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">log</span><span class="p">()</span>
             <span class="c1"># returns [(batch_size x beam_size) , vocab ] when 1 step</span>
             <span class="c1"># or [ tgt_len, batch_size, vocab ] when full sentence</span>
 
         <span class="k">return</span> <span class="n">log_probs</span><span class="p">,</span> <span class="n">attn</span>
 
-    <span class="k">def</span> <span class="nf">_fast_translate_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                              <span class="n">batch</span><span class="p">,</span>
-                              <span class="n">data</span><span class="p">,</span>
-                              <span class="n">max_length</span><span class="p">,</span>
-                              <span class="n">min_length</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                              <span class="n">n_best</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-                              <span class="n">return_attention</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_fast_translate_batch</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">batch</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">,</span>
+        <span class="n">max_length</span><span class="p">,</span>
+        <span class="n">min_length</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">n_best</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">return_attention</span><span class="o">=</span><span class="kc">False</span>
+    <span class="p">):</span>
         <span class="c1"># TODO: faster code path for beam_size == 1.</span>
 
         <span class="c1"># TODO: support these blacklisted features.</span>
@@ -524,13 +563,15 @@
         <span class="n">beam_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span>
         <span class="n">batch_size</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">batch_size</span>
         <span class="n">vocab</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">vocab</span>
-        <span class="n">start_token</span> <span class="o">=</span> <span class="n">vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">inputters</span><span class="o">.</span><span class="n">BOS_WORD</span><span class="p">]</span>
-        <span class="n">end_token</span> <span class="o">=</span> <span class="n">vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">inputters</span><span class="o">.</span><span class="n">EOS_WORD</span><span class="p">]</span>
+        <span class="n">start_token</span> <span class="o">=</span> <span class="n">vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">init_token</span><span class="p">]</span>
+        <span class="n">end_token</span> <span class="o">=</span> <span class="n">vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">eos_token</span><span class="p">]</span>
 
         <span class="c1"># Encoder forward.</span>
         <span class="n">src</span><span class="p">,</span> <span class="n">enc_states</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_lengths</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_encoder</span><span class="p">(</span>
             <span class="n">batch</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">data_type</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">init_state</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">enc_states</span><span class="p">)</span>
+
+        <span class="n">use_src_map</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">data_type</span> <span class="o">==</span> <span class="s1">&#39;text&#39;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span>
 
         <span class="n">results</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">results</span><span class="p">[</span><span class="s2">&quot;predictions&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)]</span>  <span class="c1"># noqa: F812</span>
@@ -539,8 +580,12 @@
         <span class="n">results</span><span class="p">[</span><span class="s2">&quot;batch&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">batch</span>
         <span class="k">if</span> <span class="s2">&quot;tgt&quot;</span> <span class="ow">in</span> <span class="n">batch</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">:</span>
             <span class="n">results</span><span class="p">[</span><span class="s2">&quot;gold_score&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_score_target</span><span class="p">(</span>
-                <span class="n">batch</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">batch</span><span class="o">.</span><span class="n">src_map</span>
-                <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">data_type</span> <span class="o">==</span> <span class="s1">&#39;text&#39;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="n">batch</span><span class="p">,</span>
+                <span class="n">memory_bank</span><span class="p">,</span>
+                <span class="n">src_lengths</span><span class="p">,</span>
+                <span class="n">data</span><span class="p">,</span>
+                <span class="n">batch</span><span class="o">.</span><span class="n">src_map</span> <span class="k">if</span> <span class="n">use_src_map</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">init_state</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">enc_states</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">results</span><span class="p">[</span><span class="s2">&quot;gold_score&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">batch_size</span>
@@ -557,27 +602,22 @@
 
         <span class="n">memory_lengths</span> <span class="o">=</span> <span class="n">tile</span><span class="p">(</span><span class="n">src_lengths</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">)</span>
         <span class="n">src_map</span> <span class="o">=</span> <span class="p">(</span><span class="n">tile</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">src_map</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-                   <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">data_type</span> <span class="o">==</span> <span class="s1">&#39;text&#39;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+                   <span class="k">if</span> <span class="n">use_src_map</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
 
         <span class="n">top_beam_finished</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">batch_size</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
         <span class="n">batch_offset</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
         <span class="n">beam_offset</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span>
-            <span class="mi">0</span><span class="p">,</span>
-            <span class="n">batch_size</span> <span class="o">*</span> <span class="n">beam_size</span><span class="p">,</span>
-            <span class="n">step</span><span class="o">=</span><span class="n">beam_size</span><span class="p">,</span>
-            <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span>
+            <span class="mi">0</span><span class="p">,</span> <span class="n">batch_size</span> <span class="o">*</span> <span class="n">beam_size</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">beam_size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span>
             <span class="n">device</span><span class="o">=</span><span class="n">mb_device</span><span class="p">)</span>
         <span class="n">alive_seq</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">full</span><span class="p">(</span>
-            <span class="p">[</span><span class="n">batch_size</span> <span class="o">*</span> <span class="n">beam_size</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
-            <span class="n">start_token</span><span class="p">,</span>
-            <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span>
+            <span class="p">[</span><span class="n">batch_size</span> <span class="o">*</span> <span class="n">beam_size</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">start_token</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span>
             <span class="n">device</span><span class="o">=</span><span class="n">mb_device</span><span class="p">)</span>
         <span class="n">alive_attn</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="c1"># Give full probability to the first beam on the first step.</span>
-        <span class="n">topk_log_probs</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">0.0</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;-inf&quot;</span><span class="p">)]</span> <span class="o">*</span> <span class="p">(</span><span class="n">beam_size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span>
-                         <span class="n">device</span><span class="o">=</span><span class="n">mb_device</span><span class="p">)</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">batch_size</span><span class="p">))</span>
+        <span class="n">topk_log_probs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
+            <span class="p">[</span><span class="mf">0.0</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;-inf&quot;</span><span class="p">)]</span> <span class="o">*</span> <span class="p">(</span><span class="n">beam_size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="n">mb_device</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)</span>
 
         <span class="c1"># Structure that holds finished hypotheses.</span>
         <span class="n">hypotheses</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)]</span>  <span class="c1"># noqa: F812</span>
@@ -585,12 +625,16 @@
         <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_length</span><span class="p">):</span>
             <span class="n">decoder_input</span> <span class="o">=</span> <span class="n">alive_seq</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 
-            <span class="n">log_probs</span><span class="p">,</span> <span class="n">attn</span> <span class="o">=</span> \
-                <span class="bp">self</span><span class="o">.</span><span class="n">_decode_and_generate</span><span class="p">(</span>
-                    <span class="n">decoder_input</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
-                    <span class="n">memory_lengths</span><span class="o">=</span><span class="n">memory_lengths</span><span class="p">,</span>
-                    <span class="n">src_map</span><span class="o">=</span><span class="n">src_map</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">,</span>
-                    <span class="n">batch_offset</span><span class="o">=</span><span class="n">batch_offset</span><span class="p">)</span>
+            <span class="n">log_probs</span><span class="p">,</span> <span class="n">attn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decode_and_generate</span><span class="p">(</span>
+                <span class="n">decoder_input</span><span class="p">,</span>
+                <span class="n">memory_bank</span><span class="p">,</span>
+                <span class="n">batch</span><span class="p">,</span>
+                <span class="n">data</span><span class="p">,</span>
+                <span class="n">memory_lengths</span><span class="o">=</span><span class="n">memory_lengths</span><span class="p">,</span>
+                <span class="n">src_map</span><span class="o">=</span><span class="n">src_map</span><span class="p">,</span>
+                <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">,</span>
+                <span class="n">batch_offset</span><span class="o">=</span><span class="n">batch_offset</span>
+            <span class="p">)</span>
 
             <span class="n">vocab_size</span> <span class="o">=</span> <span class="n">log_probs</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
 
@@ -715,17 +759,16 @@
         <span class="n">data_type</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">data_type</span>
         <span class="n">vocab</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">vocab</span>
 
-        <span class="c1"># Define a list of tokens to exclude from ngram-blocking</span>
-        <span class="c1"># exclusion_list = [&quot;&lt;t&gt;&quot;, &quot;&lt;/t&gt;&quot;, &quot;.&quot;]</span>
-        <span class="n">exclusion_tokens</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">t</span><span class="p">]</span>
-                                <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignore_when_blocking</span><span class="p">])</span>
+        <span class="c1"># Define a set of tokens to exclude from ngram-blocking</span>
+        <span class="n">exclusion_tokens</span> <span class="o">=</span> <span class="p">{</span><span class="n">vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignore_when_blocking</span><span class="p">}</span>
 
+        <span class="n">pad</span> <span class="o">=</span> <span class="n">vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">pad_token</span><span class="p">]</span>
+        <span class="n">eos</span> <span class="o">=</span> <span class="n">vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">eos_token</span><span class="p">]</span>
+        <span class="n">bos</span> <span class="o">=</span> <span class="n">vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">init_token</span><span class="p">]</span>
         <span class="n">beam</span> <span class="o">=</span> <span class="p">[</span><span class="n">onmt</span><span class="o">.</span><span class="n">translate</span><span class="o">.</span><span class="n">Beam</span><span class="p">(</span><span class="n">beam_size</span><span class="p">,</span> <span class="n">n_best</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_best</span><span class="p">,</span>
                                     <span class="n">cuda</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cuda</span><span class="p">,</span>
                                     <span class="n">global_scorer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">global_scorer</span><span class="p">,</span>
-                                    <span class="n">pad</span><span class="o">=</span><span class="n">vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">inputters</span><span class="o">.</span><span class="n">PAD_WORD</span><span class="p">],</span>
-                                    <span class="n">eos</span><span class="o">=</span><span class="n">vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">inputters</span><span class="o">.</span><span class="n">EOS_WORD</span><span class="p">],</span>
-                                    <span class="n">bos</span><span class="o">=</span><span class="n">vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">inputters</span><span class="o">.</span><span class="n">BOS_WORD</span><span class="p">],</span>
+                                    <span class="n">pad</span><span class="o">=</span><span class="n">pad</span><span class="p">,</span> <span class="n">eos</span><span class="o">=</span><span class="n">eos</span><span class="p">,</span> <span class="n">bos</span><span class="o">=</span><span class="n">bos</span><span class="p">,</span>
                                     <span class="n">min_length</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">min_length</span><span class="p">,</span>
                                     <span class="n">stepwise_penalty</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">stepwise_penalty</span><span class="p">,</span>
                                     <span class="n">block_ngram_repeat</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">block_ngram_repeat</span><span class="p">,</span>
@@ -775,11 +818,10 @@
             <span class="n">inp</span> <span class="o">=</span> <span class="n">inp</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 
             <span class="c1"># (b) Decode and forward</span>
-            <span class="n">out</span><span class="p">,</span> <span class="n">beam_attn</span> <span class="o">=</span> \
-                <span class="bp">self</span><span class="o">.</span><span class="n">_decode_and_generate</span><span class="p">(</span><span class="n">inp</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
-                                          <span class="n">memory_lengths</span><span class="o">=</span><span class="n">memory_lengths</span><span class="p">,</span>
-                                          <span class="n">src_map</span><span class="o">=</span><span class="n">src_map</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
-
+            <span class="n">out</span><span class="p">,</span> <span class="n">beam_attn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decode_and_generate</span><span class="p">(</span>
+                <span class="n">inp</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">memory_lengths</span><span class="o">=</span><span class="n">memory_lengths</span><span class="p">,</span>
+                <span class="n">src_map</span><span class="o">=</span><span class="n">src_map</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">i</span>
+            <span class="p">)</span>
             <span class="n">out</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
             <span class="n">beam_attn</span> <span class="o">=</span> <span class="n">beam_attn</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
 
@@ -798,10 +840,9 @@
 
         <span class="c1"># (4) Extract sentences from beam.</span>
         <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">beam</span><span class="p">:</span>
-            <span class="n">n_best</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_best</span>
-            <span class="n">scores</span><span class="p">,</span> <span class="n">ks</span> <span class="o">=</span> <span class="n">b</span><span class="o">.</span><span class="n">sort_finished</span><span class="p">(</span><span class="n">minimum</span><span class="o">=</span><span class="n">n_best</span><span class="p">)</span>
+            <span class="n">scores</span><span class="p">,</span> <span class="n">ks</span> <span class="o">=</span> <span class="n">b</span><span class="o">.</span><span class="n">sort_finished</span><span class="p">(</span><span class="n">minimum</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_best</span><span class="p">)</span>
             <span class="n">hyps</span><span class="p">,</span> <span class="n">attn</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">times</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ks</span><span class="p">[:</span><span class="n">n_best</span><span class="p">]):</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">times</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ks</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">n_best</span><span class="p">]):</span>
                 <span class="n">hyp</span><span class="p">,</span> <span class="n">att</span> <span class="o">=</span> <span class="n">b</span><span class="o">.</span><span class="n">get_hyp</span><span class="p">(</span><span class="n">times</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
                 <span class="n">hyps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hyp</span><span class="p">)</span>
                 <span class="n">attn</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">att</span><span class="p">)</span>
@@ -814,11 +855,10 @@
     <span class="k">def</span> <span class="nf">_score_target</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">src_map</span><span class="p">):</span>
         <span class="n">tgt_in</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">make_features</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="s1">&#39;tgt&#39;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 
-        <span class="n">log_probs</span><span class="p">,</span> <span class="n">attn</span> <span class="o">=</span> \
-            <span class="bp">self</span><span class="o">.</span><span class="n">_decode_and_generate</span><span class="p">(</span><span class="n">tgt_in</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
-                                      <span class="n">memory_lengths</span><span class="o">=</span><span class="n">src_lengths</span><span class="p">,</span>
-                                      <span class="n">src_map</span><span class="o">=</span><span class="n">src_map</span><span class="p">)</span>
-        <span class="n">tgt_pad</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">inputters</span><span class="o">.</span><span class="n">PAD_WORD</span><span class="p">]</span>
+        <span class="n">log_probs</span><span class="p">,</span> <span class="n">attn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decode_and_generate</span><span class="p">(</span>
+            <span class="n">tgt_in</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
+            <span class="n">memory_lengths</span><span class="o">=</span><span class="n">src_lengths</span><span class="p">,</span> <span class="n">src_map</span><span class="o">=</span><span class="n">src_map</span><span class="p">)</span>
+        <span class="n">tgt_pad</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">pad_token</span><span class="p">]</span>
 
         <span class="n">log_probs</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">tgt_pad</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">gold</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">tgt</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
@@ -843,10 +883,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">out_file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
         <span class="nb">print</span><span class="p">()</span>
 
-        <span class="n">res</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span><span class="s2">&quot;perl </span><span class="si">%s</span><span class="s2">/tools/multi-bleu.perl </span><span class="si">%s</span><span class="s2">&quot;</span>
-                                      <span class="o">%</span> <span class="p">(</span><span class="n">base_dir</span><span class="p">,</span> <span class="n">tgt_path</span><span class="p">),</span>
-                                      <span class="n">stdin</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">out_file</span><span class="p">,</span>
-                                      <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span>
+            <span class="s2">&quot;perl </span><span class="si">%s</span><span class="s2">/tools/multi-bleu.perl </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">base_dir</span><span class="p">,</span> <span class="n">tgt_path</span><span class="p">),</span>
+            <span class="n">stdin</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">out_file</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
 
         <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;&gt;&gt; &quot;</span> <span class="o">+</span> <span class="n">res</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">msg</span>
@@ -854,12 +894,10 @@
     <span class="k">def</span> <span class="nf">_report_rouge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tgt_path</span><span class="p">):</span>
         <span class="kn">import</span> <span class="nn">subprocess</span>
         <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">res</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span>
-            <span class="s2">&quot;python </span><span class="si">%s</span><span class="s2">/tools/test_rouge.py -r </span><span class="si">%s</span><span class="s2"> -c STDIN&quot;</span>
-            <span class="o">%</span> <span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">tgt_path</span><span class="p">),</span>
-            <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">stdin</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">out_file</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
-        <span class="n">msg</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span>
+            <span class="s2">&quot;python </span><span class="si">%s</span><span class="s2">/tools/test_rouge.py -r </span><span class="si">%s</span><span class="s2"> -c STDIN&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">tgt_path</span><span class="p">),</span>
+            <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">stdin</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">out_file</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">msg</span></div>
 </pre></div>
 

@@ -190,9 +190,9 @@
 <span class="sd">            used to save the model</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">train_loss</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">loss</span><span class="o">.</span><span class="n">build_loss_compute</span><span class="p">(</span>
-        <span class="n">model</span><span class="p">,</span> <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">vocab</span><span class="p">,</span> <span class="n">opt</span><span class="p">)</span>
+        <span class="n">model</span><span class="p">,</span> <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">],</span> <span class="n">opt</span><span class="p">)</span>
     <span class="n">valid_loss</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">loss</span><span class="o">.</span><span class="n">build_loss_compute</span><span class="p">(</span>
-        <span class="n">model</span><span class="p">,</span> <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">vocab</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">train</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">model</span><span class="p">,</span> <span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">],</span> <span class="n">opt</span><span class="p">,</span> <span class="n">train</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
     <span class="n">trunc_size</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">truncated_decoder</span>  <span class="c1"># Badly named...</span>
     <span class="n">shard_size</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">max_generator_batches</span>

@@ -597,16 +597,10 @@ which is the combination of base emb and top output of encode</li>
 <h2>Copy Attention<a class="headerlink" href="#copy-attention" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.modules.CopyGenerator">
-<em class="property">class </em><code class="descclassname">onmt.modules.</code><code class="descname">CopyGenerator</code><span class="sig-paren">(</span><em>input_size</em>, <em>tgt_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/modules/copy_generator.html#CopyGenerator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.modules.CopyGenerator" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.modules.</code><code class="descname">CopyGenerator</code><span class="sig-paren">(</span><em>input_size</em>, <em>output_size</em>, <em>pad_idx</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/modules/copy_generator.html#CopyGenerator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.modules.CopyGenerator" title="Permalink to this definition">¶</a></dt>
 <dd><p>An implementation of pointer-generator networks (See et al., 2017)
 (<a class="reference external" href="https://arxiv.org/abs/1704.04368">https://arxiv.org/abs/1704.04368</a>), which consider copying words
 directly from the source sequence.</p>
-<p>The main idea is that we have an extended “dynamic dictionary”.
-It contains <cite>|tgt_dict|</cite> words plus an arbitrary number of
-additional words introduced by the source sentence.
-For each source sentence we have a <cite>src_map</cite> that maps
-each source word to an index in <cite>tgt_dict</cite> if it known, or
-else to an extra word.</p>
 <p>The copy generator is an extended version of the standard
 generator that computes three values.</p>
 <ul class="simple">
@@ -648,7 +642,8 @@ computed as</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>input_size</strong> (<em>int</em>) – size of input representation</li>
-<li><strong>tgt_dict</strong> (<em>Vocab</em>) – output target dictionary</li>
+<li><strong>output_size</strong> (<em>int</em>) – size of output vocabulary</li>
+<li><strong>pad_idx</strong> (<em>int</em>) – </li>
 </ul>
 </td>
 </tr>
