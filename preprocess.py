@@ -24,7 +24,7 @@ def check_existing_pt_files(opt):
         path = pattern.format(t)
         if glob.glob(path):
             sys.stderr.write("Please backup existing pt files: %s, "
-                             "to avoid ovewriting them!\n" % path)
+                             "to avoid overwriting them!\n" % path)
             sys.exit(1)
 
 
@@ -140,6 +140,17 @@ def build_save_vocab(train_dataset, fields, opt):
     torch.save(inputters.save_fields_to_vocab(fields), vocab_path)
 
 
+def count_features(path):
+    """
+    path: location of a corpus file with whitespace-delimited tokens and
+                    ￨-delimited features within the token
+    returns: the number of features in the dataset
+    """
+    with codecs.open(path, "r", "utf-8") as f:
+        first_tok = f.readline().split(None, 1)[0]
+        return len(first_tok.split(u"￨")) - 1
+
+
 def main():
     opt = parse_args()
 
@@ -153,10 +164,9 @@ def main():
     init_logger(opt.log_file)
     logger.info("Extracting features...")
 
-    src_nfeats = inputters.get_num_features(
-        opt.data_type, opt.train_src, 'src')
-    tgt_nfeats = inputters.get_num_features(
-        opt.data_type, opt.train_tgt, 'tgt')
+    src_nfeats = count_features(opt.train_src) if opt.data_type == 'text' \
+        else 0
+    tgt_nfeats = count_features(opt.train_tgt)  # tgt always text so far
     logger.info(" * number of source features: %d." % src_nfeats)
     logger.info(" * number of target features: %d." % tgt_nfeats)
 

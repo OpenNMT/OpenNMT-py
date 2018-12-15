@@ -1,4 +1,3 @@
-""" Generator module """
 import torch
 import torch.nn as nn
 
@@ -11,13 +10,6 @@ class CopyGenerator(nn.Module):
     """An implementation of pointer-generator networks (See et al., 2017)
     (https://arxiv.org/abs/1704.04368), which consider copying words
     directly from the source sequence.
-
-    The main idea is that we have an extended "dynamic dictionary".
-    It contains `|tgt_dict|` words plus an arbitrary number of
-    additional words introduced by the source sentence.
-    For each source sentence we have a `src_map` that maps
-    each source word to an index in `tgt_dict` if it known, or
-    else to an extra word.
 
     The copy generator is an extended version of the standard
     generator that computes three values.
@@ -55,15 +47,15 @@ class CopyGenerator(nn.Module):
 
     Args:
        input_size (int): size of input representation
-       tgt_dict (Vocab): output target dictionary
-
+       output_size (int): size of output vocabulary
+       pad_idx (int)
     """
 
-    def __init__(self, input_size, tgt_dict):
+    def __init__(self, input_size, output_size, pad_idx):
         super(CopyGenerator, self).__init__()
-        self.linear = nn.Linear(input_size, len(tgt_dict))
+        self.linear = nn.Linear(input_size, output_size)
         self.linear_copy = nn.Linear(input_size, 1)
-        self.tgt_dict = tgt_dict
+        self.pad_idx = pad_idx
 
     def forward(self, hidden, attn, src_map):
         """
@@ -88,12 +80,12 @@ class CopyGenerator(nn.Module):
 
         # Original probabilities.
         logits = self.linear(hidden)
-        logits[:, self.tgt_dict.stoi[inputters.PAD_WORD]] = -float('inf')
+        logits[:, self.pad_idx] = -float('inf')
         prob = torch.softmax(logits, 1)
 
         # Probability of copying p(z=1) batch.
         p_copy = torch.sigmoid(self.linear_copy(hidden))
-        # Probibility of not copying: p_{word}(w) * (1 - p(z))
+        # Probability of not copying: p_{word}(w) * (1 - p(z))
         out_prob = torch.mul(prob, 1 - p_copy)
         mul_attn = torch.mul(attn, p_copy)
         copy_prob = torch.bmm(
@@ -182,9 +174,9 @@ class CopyGeneratorLossCompute(LossComputeBase):
         """
         target = target.view(-1)
         align = align.view(-1)
-        scores = self.generator(self._bottle(output),
-                                self._bottle(copy_attn),
-                                batch.src_map)
+        scores = self.generator(
+            self._bottle(output), self._bottle(copy_attn), batch.src_map
+        )
         loss = self.criterion(scores, align, target)
 
         # this block does not depend on the loss value computed above

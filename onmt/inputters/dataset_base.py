@@ -7,7 +7,6 @@ import torchtext
 
 PAD_WORD = '<blank>'
 UNK_WORD = '<unk>'
-UNK = 0
 BOS_WORD = '<s>'
 EOS_WORD = '</s>'
 
@@ -108,6 +107,7 @@ class DatasetBase(torchtext.data.Dataset):
         Returns:
             the created `Example` object.
         """
+        # why does this exist?
         ex = torchtext.data.Example()
         for (name, field), val in zip(fields, data):
             if field is not None:
@@ -140,6 +140,7 @@ class NonTextDatasetBase(DatasetBase):
         ex, examples_iter = self._peek(examples_iter)
         keys = ex.keys()
 
+        # why do we need to use different keys from the ones passed in?
         fields = [(k, fields[k]) if k in fields else (k, None) for k in keys]
         example_values = ([ex[k] for k in keys] for ex in examples_iter)
         examples = [self._construct_example_fromlist(ex_values, fields)
