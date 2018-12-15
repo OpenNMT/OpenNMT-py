@@ -37,7 +37,7 @@ class ImageDataset(NonTextDatasetBase):
             yield {side: img, side + '_path': filename, 'indices': i}
 
     @staticmethod
-    def make_img_iterator_from_file(path, src_dir, image_channel_size=3):
+    def make_iterator_from_file(path, src_dir, image_channel_size=3):
         """
         Args:
             path(str):

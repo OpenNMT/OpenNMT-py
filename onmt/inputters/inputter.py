@@ -277,8 +277,8 @@ def filter_example(ex, use_src_len=True, use_tgt_len=True,
         (not use_tgt_len or min_tgt_len < len(ex.tgt) <= max_tgt_len)
 
 
-def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
-                  src_dir=None, tgt_data_iter=None, tgt_path=None,
+def build_dataset(fields, data_type, src_path=None,
+                  src_dir=None, tgt_path=None,
                   src_seq_len=0, tgt_seq_len=0,
                   src_seq_length_trunc=0, tgt_seq_length_trunc=0,
                   dynamic_dict=True, sample_rate=0,
@@ -286,43 +286,33 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
                   normalize_audio=True, use_filter_pred=True,
                   image_channel_size=3):
 
+    assert data_type in ['text', 'img', 'audio']
+    assert src_path is not None
     if data_type == 'text':
-        # afaik src_path and src_data_iter should never both be None
-        if src_data_iter is None:
-            src_data_iter = TextDataset.make_text_iterator_from_file(src_path)
+        src_data_iter = TextDataset.make_iterator_from_file(src_path)
 
         src_examples_iter = TextDataset.make_examples(
             src_data_iter, src_seq_length_trunc, "src")
 
     elif data_type == 'img':
-        # this should be a more general check on the source side
-        if src_data_iter is None and src_path is None:
-            raise ValueError("Either img_iter or img_path must be non-None")
-        if src_data_iter is None:
-            src_data_iter = ImageDataset.make_img_iterator_from_file(
-                src_path, src_dir, image_channel_size
-            )
+        src_data_iter = ImageDataset.make_iterator_from_file(
+            src_path, src_dir, image_channel_size
+        )
 
         src_examples_iter = ImageDataset.make_examples(
             src_data_iter, src_dir, 'src')
 
-    elif data_type == 'audio':
+    else:
         # this one looks a little different from the text and image cases
-        if src_data_iter:
-            raise ValueError("""Data iterator for AudioDataset isn't
-                                implemented""")
-        if src_path is None:
-            raise ValueError("AudioDataset requires a non None path")
         src_examples_iter = AudioDataset.read_audio_file(
             src_path, src_dir, "src", sample_rate,
             window_size, window_stride, window,
             normalize_audio, None)
 
-    if tgt_data_iter is None and tgt_path is None:
+    if tgt_path is None:
         tgt_examples_iter = None
     else:
-        if tgt_data_iter is None:
-            tgt_data_iter = TextDataset.make_text_iterator_from_file(tgt_path)
+        tgt_data_iter = TextDataset.make_iterator_from_file(tgt_path)
 
         tgt_examples_iter = TextDataset.make_examples(
             tgt_data_iter, tgt_seq_length_trunc, "tgt")

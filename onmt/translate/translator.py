@@ -113,14 +113,14 @@ class Translator(object):
                 "scores": [],
                 "log_probs": []}
 
-    def translate(self,
-                  src_path=None,
-                  src_data_iter=None,
-                  tgt_path=None,
-                  tgt_data_iter=None,
-                  src_dir=None,
-                  batch_size=None,
-                  attn_debug=False):
+    def translate(
+        self,
+        src_path,
+        tgt_path=None,
+        src_dir=None,
+        batch_size=None,
+        attn_debug=False
+    ):
         """
         Translate content of `src_data_iter` (if not None) or `src_path`
         and get gold scores if one of `tgt_data_iter` or `tgt_path` is set.
@@ -130,10 +130,7 @@ class Translator(object):
 
         Args:
             src_path (str): filepath of source data
-            src_data_iter (iterator): an interator generating source data
-                e.g. it may be a list or an openned file
-            tgt_path (str): filepath of target data
-            tgt_data_iter (iterator): an interator generating target data
+            tgt_path (str): filepath of target data or None
             src_dir (str): source directory path
                 (used for Audio and Image datasets)
             batch_size (int): size of examples per mini-batch
@@ -146,14 +143,14 @@ class Translator(object):
             * all_predictions is a list of `batch_size` lists
                 of `n_best` predictions
         """
-        assert src_data_iter is not None or src_path is not None
+        assert src_path is not None
 
         if batch_size is None:
             raise ValueError("batch_size must be set")
-        data = inputters. build_dataset(
+        data = inputters.build_dataset(
             self.fields, self.data_type,
-            src_path=src_path, src_data_iter=src_data_iter,
-            tgt_path=tgt_path, tgt_data_iter=tgt_data_iter,
+            src_path=src_path,
+            tgt_path=tgt_path,
             src_dir=src_dir, sample_rate=self.sample_rate,
             window_size=self.window_size, window_stride=self.window_stride,
             window=self.window, use_filter_pred=self.use_filter_pred,
