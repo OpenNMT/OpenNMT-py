@@ -5,7 +5,6 @@ from collections import Counter
 
 import torch
 import torchtext
-from torchtext.data import Vocab
 
 PAD_WORD = '<blank>'
 UNK_WORD = '<unk>'
@@ -150,7 +149,8 @@ class DatasetBase(torchtext.data.Dataset):
     def _dynamic_dict(self, examples_iter):
         for example in examples_iter:
             src = example["src"]
-            src_vocab = Vocab(Counter(src), specials=[UNK_WORD, PAD_WORD])
+            src_vocab = torchtext.data.Vocab(
+                Counter(src), specials=[UNK_WORD, PAD_WORD])
             self.src_vocabs.append(src_vocab)
             # Map source tokens to indices in the dynamic dict.
             src_map = torch.LongTensor([src_vocab.stoi[w] for w in src])
