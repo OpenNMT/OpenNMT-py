@@ -56,8 +56,9 @@ class AudioDataset(DatasetBase):
             spect.div_(std)
         return spect
 
-    @staticmethod
+    @classmethod
     def make_examples(
+        cls,
         path,
         src_dir,
         side,
@@ -84,6 +85,7 @@ class AudioDataset(DatasetBase):
         Yields:
             a dictionary containing audio data for each line.
         """
+        assert isinstance(path, str), "Iterators not supported for audio"
         assert src_dir is not None and os.path.exists(src_dir),\
             "src_dir must be a valid directory if data_type is audio"
 

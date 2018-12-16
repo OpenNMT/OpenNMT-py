@@ -123,8 +123,8 @@ class Translator(object):
 
     def translate(
         self,
-        src_path,
-        tgt_path=None,
+        src,
+        tgt=None,
         src_dir=None,
         batch_size=None,
         attn_debug=False
@@ -151,7 +151,7 @@ class Translator(object):
             * all_predictions is a list of `batch_size` lists
                 of `n_best` predictions
         """
-        assert src_path is not None
+        assert src is not None
 
         if batch_size is None:
             raise ValueError("batch_size must be set")
@@ -159,16 +159,18 @@ class Translator(object):
         data = inputters.build_dataset(
             self.fields,
             self.data_type,
-            src_path=src_path,
-            tgt_path=tgt_path,
+            src=src,
+            tgt=tgt,
             src_dir=src_dir,
             sample_rate=self.sample_rate,
             window_size=self.window_size,
             window_stride=self.window_stride,
             window=self.window,
             use_filter_pred=self.use_filter_pred,
-            image_channel_size=self.image_channel_size
+            image_channel_size=self.image_channel_size,
+            dynamic_dict=self.copy_attn
         )
+        print(data.examples[0].__dict__)
 
         cur_device = "cuda" if self.cuda else "cpu"
 
@@ -183,7 +185,7 @@ class Translator(object):
         )
 
         builder = onmt.translate.TranslationBuilder(
-            data, self.fields, self.n_best, self.replace_unk, tgt_path
+            data, self.fields, self.n_best, self.replace_unk, tgt
         )
 
         # Statistics
@@ -204,7 +206,7 @@ class Translator(object):
                 all_scores += [trans.pred_scores[:self.n_best]]
                 pred_score_total += trans.pred_scores[0]
                 pred_words_total += len(trans.pred_sents[0])
-                if tgt_path is not None:
+                if tgt is not None:
                     gold_score_total += trans.gold_score
                     gold_words_total += len(trans.gold_sent) + 1
 
@@ -250,7 +252,7 @@ class Translator(object):
                 self.logger.info(msg)
             else:
                 print(msg)
-            if tgt_path is not None:
+            if tgt is not None:
                 msg = self._report_score('GOLD', gold_score_total,
                                          gold_words_total)
                 if self.logger:
@@ -258,13 +260,13 @@ class Translator(object):
                 else:
                     print(msg)
                 if self.report_bleu:
-                    msg = self._report_bleu(tgt_path)
+                    msg = self._report_bleu(tgt)
                     if self.logger:
                         self.logger.info(msg)
                     else:
                         print(msg)
                 if self.report_rouge:
-                    msg = self._report_rouge(tgt_path)
+                    msg = self._report_rouge(tgt)
                     if self.logger:
                         self.logger.info(msg)
                     else:
