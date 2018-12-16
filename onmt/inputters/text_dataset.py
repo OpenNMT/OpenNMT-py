@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
 
-from collections import Counter
 import codecs
 
 import torch
-from torchtext.vocab import Vocab
 
-from onmt.inputters.dataset_base import DatasetBase, UNK_WORD, PAD_WORD
+from onmt.inputters.dataset_base import DatasetBase
 
 
 class TextDataset(DatasetBase):
@@ -87,19 +85,3 @@ class TextDataset(DatasetBase):
                     example_dict.update((prefix + str(j), f)
                                         for j, f in enumerate(feats))
                 yield example_dict
-
-    def _dynamic_dict(self, examples_iter):
-        for example in examples_iter:
-            src = example["src"]
-            src_vocab = Vocab(Counter(src), specials=[UNK_WORD, PAD_WORD])
-            self.src_vocabs.append(src_vocab)
-            # Map source tokens to indices in the dynamic dict.
-            src_map = torch.LongTensor([src_vocab.stoi[w] for w in src])
-            example["src_map"] = src_map
-
-            if "tgt" in example:
-                tgt = example["tgt"]
-                mask = torch.LongTensor(
-                    [0] + [src_vocab.stoi[w] for w in tgt] + [0])
-                example["alignment"] = mask
-            yield example

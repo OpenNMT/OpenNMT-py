@@ -1,9 +1,11 @@
 # coding: utf-8
 
 from itertools import chain
+from collections import Counter
 
 import torch
 import torchtext
+from torchtext.data import Vocab
 
 PAD_WORD = '<blank>'
 UNK_WORD = '<unk>'
@@ -144,3 +146,19 @@ class DatasetBase(torchtext.data.Dataset):
             else:
                 setattr(ex, name, val)
         return ex
+
+    def _dynamic_dict(self, examples_iter):
+        for example in examples_iter:
+            src = example["src"]
+            src_vocab = Vocab(Counter(src), specials=[UNK_WORD, PAD_WORD])
+            self.src_vocabs.append(src_vocab)
+            # Map source tokens to indices in the dynamic dict.
+            src_map = torch.LongTensor([src_vocab.stoi[w] for w in src])
+            example["src_map"] = src_map
+
+            if "tgt" in example:
+                tgt = example["tgt"]
+                mask = torch.LongTensor(
+                    [0] + [src_vocab.stoi[w] for w in tgt] + [0])
+                example["alignment"] = mask
+            yield example
