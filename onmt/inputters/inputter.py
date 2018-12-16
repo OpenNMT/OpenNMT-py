@@ -215,7 +215,7 @@ def build_dataset(fields, data_type, src_path=None,
                   src_dir=None, tgt_path=None,
                   src_seq_len=0, tgt_seq_len=0,
                   src_seq_length_trunc=0, tgt_seq_length_trunc=0,
-                  dynamic_dict=True, sample_rate=0,
+                  dynamic_dict=False, sample_rate=0,
                   window_size=0, window_stride=0, window=None,
                   normalize_audio=True, use_filter_pred=True,
                   image_channel_size=3):
@@ -225,6 +225,8 @@ def build_dataset(fields, data_type, src_path=None,
     }
     assert data_type in dataset_classes
     assert src_path is not None
+    assert not dynamic_dict or data_type == 'text', \
+        'it is not possible to use dynamic_dict with non-text input'
     if data_type == 'text':
         src_examples_iter = TextDataset.make_examples(
             src_path, src_seq_length_trunc, "src"
