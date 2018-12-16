@@ -5,10 +5,10 @@ from tqdm import tqdm
 
 import torch
 
-from onmt.inputters.dataset_base import NonTextDatasetBase
+from onmt.inputters.dataset_base import DatasetBase
 
 
-class AudioDataset(NonTextDatasetBase):
+class AudioDataset(DatasetBase):
     data_type = 'audio'  # get rid of this class attribute asap
 
     @staticmethod

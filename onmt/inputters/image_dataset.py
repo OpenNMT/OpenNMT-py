@@ -3,10 +3,10 @@
 import codecs
 import os
 
-from onmt.inputters.dataset_base import NonTextDatasetBase
+from onmt.inputters.dataset_base import DatasetBase
 
 
-class ImageDataset(NonTextDatasetBase):
+class ImageDataset(DatasetBase):
     data_type = 'img'  # get rid of this class attribute asap
 
     @staticmethod

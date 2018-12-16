@@ -220,7 +220,10 @@ def build_dataset(fields, data_type, src_path=None,
                   normalize_audio=True, use_filter_pred=True,
                   image_channel_size=3):
 
-    assert data_type in ['text', 'img', 'audio']
+    dataset_classes = {
+        'text': TextDataset, 'img': ImageDataset, 'audio': AudioDataset
+    }
+    assert data_type in dataset_classes
     assert src_path is not None
     if data_type == 'text':
         src_examples_iter = TextDataset.make_examples(
@@ -244,7 +247,8 @@ def build_dataset(fields, data_type, src_path=None,
         tgt_examples_iter = TextDataset.make_examples(
             tgt_path, tgt_seq_length_trunc, "tgt")
 
-    # I'm not certain about the practical utility of the second part
+    # the second conjunct means nothing will be filtered at translation time
+    # if there is no target data
     if use_filter_pred and tgt_examples_iter is not None:
         filter_pred = partial(
             filter_example, use_src_len=data_type == 'text',
@@ -253,16 +257,10 @@ def build_dataset(fields, data_type, src_path=None,
     else:
         filter_pred = None
 
-    if data_type == 'text':
-        dataset = TextDataset(
-            fields, src_examples_iter, tgt_examples_iter,
-            dynamic_dict=dynamic_dict, filter_pred=filter_pred)
-    else:
-        dataset_cls = ImageDataset if data_type == 'img' else AudioDataset
-        dataset = dataset_cls(
-            fields, src_examples_iter, tgt_examples_iter,
-            filter_pred=filter_pred
-        )
+    dataset_cls = dataset_classes[data_type]
+    dataset = dataset_cls(
+        fields, src_examples_iter, tgt_examples_iter,
+        dynamic_dict=dynamic_dict, filter_pred=filter_pred)
     return dataset
 
 

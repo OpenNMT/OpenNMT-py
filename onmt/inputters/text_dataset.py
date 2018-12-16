@@ -31,38 +31,6 @@ class TextDataset(DatasetBase):
             return len(ex.src), len(ex.tgt)
         return len(ex.src)
 
-    def __init__(self, fields, src_examples_iter, tgt_examples_iter,
-                 dynamic_dict=True, filter_pred=None):
-        # self.src_vocabs: mutated in dynamic_dict, used in
-        # collapse_copy_scores and in Translator.py
-        self.src_vocabs = []
-
-        # Each element of an example is a dictionary whose keys represents
-        # at minimum the src tokens and their indices and potentially also
-        # the src and tgt features and alignment information.
-        if tgt_examples_iter is not None:
-            examples_iter = (self._join_dicts(src, tgt) for src, tgt in
-                             zip(src_examples_iter, tgt_examples_iter))
-        else:
-            examples_iter = src_examples_iter
-
-        if dynamic_dict:
-            examples_iter = self._dynamic_dict(examples_iter)
-
-        # Peek at the first to see which fields are used.
-        ex, examples_iter = self._peek(examples_iter)
-        keys = ex.keys()
-
-        # why do we need to use different keys from the ones passed in?
-        fields = [(k, fields[k]) if k in fields else (k, None) for k in keys]
-
-        example_values = ([ex[k] for k in keys] for ex in examples_iter)
-
-        examples = [self._construct_example_fromlist(ex_values, fields)
-                    for ex_values in example_values]
-
-        super(TextDataset, self).__init__(examples, fields, filter_pred)
-
     @staticmethod
     def collapse_copy_scores(scores, batch, tgt_vocab, src_vocabs,
                              batch_dim=1, batch_offset=None):
