@@ -109,7 +109,7 @@ def build_save_dataset(corpus_type, fields, opt):
             window_stride=opt.window_stride,
             window=opt.window,
             image_channel_size=opt.image_channel_size,
-            use_filter_pred=corpus_type == 'train'
+            use_filter_pred=corpus_type == 'train' or opt.filter_valid
         )
 
         data_path = "{:s}.{:s}.{:d}.pt".format(opt.save_data, corpus_type, i)

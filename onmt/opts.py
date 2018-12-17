@@ -238,6 +238,8 @@ def preprocess_opts(parser):
               type=int, default=0,
               help="Truncate target sequence length.")
     group.add('--lower', '-lower', action='store_true', help='lowercase data')
+    group.add('--filter_valid', '-filter_valid', action='store_true',
+              help='Filter validation data by src and/or tgt length')
 
     # Data processing options
     group = parser.add_argument_group('Random')
