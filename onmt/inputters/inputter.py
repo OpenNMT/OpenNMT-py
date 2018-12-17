@@ -387,8 +387,8 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
 def _merge_field_vocabs(src_field, tgt_field, vocab_size, min_freq):
     # in the long run, shouldn't it be possible to do this by calling
     # build_vocab with both the src and tgt data?
-    specials = [src_field.unk_token, src_field.pad_token,
-                src_field.init_token, src_field.eos_token]
+    specials = [tgt_field.unk_token, tgt_field.pad_token,
+                tgt_field.init_token, tgt_field.eos_token]
     merged = sum(
         [src_field.vocab.freqs, tgt_field.vocab.freqs], Counter()
     )
