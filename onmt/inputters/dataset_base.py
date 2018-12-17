@@ -52,7 +52,9 @@ class DatasetBase(torchtext.data.Dataset):
         # self.src_vocabs is used in collapse_copy_scores and in Translator.py
         self.src_vocabs = []
         if dynamic_dict:
-            examples_iter = self._dynamic_dict(examples_iter)
+            unk, pad = fields['src'].unk_token, fields['src'].pad_token
+            examples_iter = (self._dynamic_dict(ex, unk, pad)
+                             for ex in examples_iter)
 
         # Peek at the first to see which fields are used.
         ex, examples_iter = self._peek(examples_iter)
@@ -147,18 +149,19 @@ class DatasetBase(torchtext.data.Dataset):
                 setattr(ex, name, val)
         return ex
 
-    def _dynamic_dict(self, examples_iter):
-        for example in examples_iter:
-            src = example["src"]
-            src_vocab = Vocab(Counter(src), specials=[UNK_WORD, PAD_WORD])
-            self.src_vocabs.append(src_vocab)
-            # Map source tokens to indices in the dynamic dict.
-            src_map = torch.LongTensor([src_vocab.stoi[w] for w in src])
-            example["src_map"] = src_map
+    def _dynamic_dict(self, example, unk, pad):
+        # it would not be necessary to pass unk and pad if the method were
+        # called after fields becomes an attribute of self
+        src = example["src"]
+        src_vocab = Vocab(Counter(src), specials=[unk, pad])
+        self.src_vocabs.append(src_vocab)
+        # Map source tokens to indices in the dynamic dict.
+        src_map = torch.LongTensor([src_vocab.stoi[w] for w in src])
+        example["src_map"] = src_map
 
-            if "tgt" in example:
-                tgt = example["tgt"]
-                mask = torch.LongTensor(
-                    [0] + [src_vocab.stoi[w] for w in tgt] + [0])
-                example["alignment"] = mask
-            yield example
+        if "tgt" in example:
+            tgt = example["tgt"]
+            mask = torch.LongTensor(
+                [0] + [src_vocab.stoi[w] for w in tgt] + [0])
+            example["alignment"] = mask
+        return example
