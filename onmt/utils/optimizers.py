@@ -14,7 +14,7 @@ def build_optim(model, opt, checkpoint):
         optim = checkpoint['optim']
         # We need to save a copy of optim.optimizer.state_dict() for setting
         # the, optimizer state later on in Stage 2 in this method, since
-        # the method optim.set_parameters(model.parameters()) will overwrite
+        # the method optim.set_parameters(model) will overwrite
         # optim.optimizer, and with ith the values stored in
         # optim.optimizer.state_dict()
         if opt.reset_optim != 'states':
@@ -52,7 +52,7 @@ def build_optim(model, opt, checkpoint):
     # Importantly, this method does not yet load the optimizer state, as
     # essentially it builds a new optimizer with empty optimizer state and
     # parameters from the model.
-    optim.set_parameters(model.named_parameters())
+    optim.set_parameters(model)
 
     if opt.train_from and (opt.reset_optim in ['none', 'keep_states']):
         # Stage 2: In this stage, which is only performed when loading an
@@ -88,6 +88,13 @@ class MultipleOptimizer(object):
     def __init__(self, op):
         """ ? """
         self.optimizers = op
+
+    @property
+    def param_groups(self):
+        param_groups = []
+        for optimizer in self.optimizers:
+            param_groups.extend(optimizer.param_groups)
+        return param_groups
 
     def zero_grad(self):
         """ ? """
@@ -161,7 +168,6 @@ class Optimizer(object):
         self.lr_decay = lr_decay
         self.start_decay_steps = start_decay_steps
         self.decay_steps = decay_steps
-        self.start_decay = False
         self._step = 0
         self.betas = [beta1, beta2]
         self.adagrad_accum = adagrad_accum
@@ -169,45 +175,39 @@ class Optimizer(object):
         self.warmup_steps = warmup_steps
         self.model_size = model_size
 
-    def set_parameters(self, params):
+    def set_parameters(self, model):
         """ ? """
-        self.params = []
-        self.sparse_params = []
-        for k, p in params:
-            if p.requires_grad:
-                if self.method != 'sparseadam' or "embed" not in k:
-                    self.params.append(p)
-                else:
-                    self.sparse_params.append(p)
+        params = [p for p in model.parameters() if p.requires_grad]
         if self.method == 'sgd':
-            self.optimizer = optim.SGD(self.params, lr=self.learning_rate)
+            self.optimizer = optim.SGD(params, lr=self.learning_rate)
         elif self.method == 'adagrad':
-            self.optimizer = optim.Adagrad(self.params, lr=self.learning_rate)
-            for group in self.optimizer.param_groups:
-                for p in group['params']:
-                    self.optimizer.state[p]['sum'] = self.optimizer\
-                        .state[p]['sum'].fill_(self.adagrad_accum)
+            self.optimizer = optim.Adagrad(
+                self.params,
+                lr=self.learning_rate,
+                initial_accumulator_value=self.adagrad_accum)
         elif self.method == 'adadelta':
-            self.optimizer = optim.Adadelta(self.params, lr=self.learning_rate)
+            self.optimizer = optim.Adadelta(params, lr=self.learning_rate)
         elif self.method == 'adam':
-            self.optimizer = optim.Adam(self.params, lr=self.learning_rate,
+            self.optimizer = optim.Adam(params, lr=self.learning_rate,
                                         betas=self.betas, eps=1e-9)
         elif self.method == 'sparseadam':
+            dense = []
+            sparse = []
+            for name, param in model.named_parameters():
+                if not param.requires_grad:
+                    continue
+                # TODO: Find a better way to check for sparse gradients.
+                if 'embed' in name:
+                    sparse.append(param)
+                else:
+                    dense.append(param)
             self.optimizer = MultipleOptimizer(
-                [optim.Adam(self.params, lr=self.learning_rate,
+                [optim.Adam(dense, lr=self.learning_rate,
                             betas=self.betas, eps=1e-8),
-                 optim.SparseAdam(self.sparse_params, lr=self.learning_rate,
+                 optim.SparseAdam(sparse, lr=self.learning_rate,
                                   betas=self.betas, eps=1e-8)])
         else:
             raise RuntimeError("Invalid optim method: " + self.method)
-
-    def _set_rate(self, learning_rate):
-        self.learning_rate = learning_rate
-        if self.method != 'sparseadam':
-            self.optimizer.param_groups[0]['lr'] = self.learning_rate
-        else:
-            for op in self.optimizer.optimizers:
-                op.param_groups[0]['lr'] = self.learning_rate
 
     def step(self):
         """Update the model parameters based on current gradients.
@@ -219,24 +219,21 @@ class Optimizer(object):
 
         # Decay method used in tensor2tensor.
         if self.decay_method == "noam":
-            self._set_rate(
-                self.original_lr *
-                (self.model_size ** (-0.5) *
-                 min(self._step ** (-0.5),
-                     self._step * self.warmup_steps**(-1.5))))
+            lr_scale = (
+                self.model_size ** (-0.5) *
+                min(self._step ** (-0.5),
+                    self._step * self.warmup_steps**(-1.5)))
         # Decay based on start_decay_steps every decay_steps
+        elif self.start_decay_steps is not None:
+            step = self._step - self.start_decay_steps
+            lr_scale = (self.lr_decay ** (
+                max(step + self.decay_steps, 0) // self.decay_steps))
         else:
-            if ((self.start_decay_steps is not None) and (
-                     self._step >= self.start_decay_steps)):
-                self.start_decay = True
-            if self.start_decay:
-                if ((self._step - self.start_decay_steps)
-                   % self.decay_steps == 0):
-                    self.learning_rate = self.learning_rate * self.lr_decay
+            lr_scale = 1
 
-        if self.method != 'sparseadam':
-            self.optimizer.param_groups[0]['lr'] = self.learning_rate
-
-        if self.max_grad_norm:
-            clip_grad_norm_(self.params, self.max_grad_norm)
+        self.learning_rate = lr_scale * self.original_lr
+        for group in self.optimizer.param_groups:
+            group['lr'] = self.learning_rate
+            if self.max_grad_norm:
+                clip_grad_norm_(group['params'], self.max_grad_norm)
         self.optimizer.step()
