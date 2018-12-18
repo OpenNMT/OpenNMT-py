@@ -96,8 +96,8 @@ def build_save_dataset(corpus_type, fields, opt):
         logger.info("Building shard %d." % i)
         dataset = inputters.build_dataset(
             fields, opt.data_type,
-            src_path=src_shard,
-            tgt_path=tgt_shard,
+            src=src_shard,
+            tgt=tgt_shard,
             src_dir=opt.src_dir,
             src_seq_len=opt.src_seq_length,
             tgt_seq_len=opt.tgt_seq_length,

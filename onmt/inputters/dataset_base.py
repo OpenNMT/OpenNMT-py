@@ -1,9 +1,11 @@
 # coding: utf-8
 
 from itertools import chain
+from collections import Counter
 
 import torch
 import torchtext
+from torchtext.vocab import Vocab
 
 PAD_WORD = '<blank>'
 UNK_WORD = '<unk>'
@@ -34,6 +36,37 @@ class DatasetBase(torchtext.data.Dataset):
     def __reduce_ex__(self, proto):
         # This is a hack. Something is broken with torch pickle.
         return super(DatasetBase, self).__reduce_ex__()
+
+    def __init__(self, fields, src_examples_iter, tgt_examples_iter,
+                 dynamic_dict=False, filter_pred=None):
+
+        # Each element of an example is a dictionary whose keys represents
+        # at minimum the src tokens and their indices and potentially also
+        # the src and tgt features and alignment information.
+        if tgt_examples_iter is not None:
+            examples_iter = (self._join_dicts(src, tgt) for src, tgt in
+                             zip(src_examples_iter, tgt_examples_iter))
+        else:
+            examples_iter = src_examples_iter
+
+        # self.src_vocabs is used in collapse_copy_scores and in Translator.py
+        self.src_vocabs = []
+        if dynamic_dict:
+            unk, pad = fields['src'].unk_token, fields['src'].pad_token
+            examples_iter = (self._dynamic_dict(ex, unk, pad)
+                             for ex in examples_iter)
+
+        # Peek at the first to see which fields are used.
+        ex, examples_iter = self._peek(examples_iter)
+        keys = ex.keys()
+
+        # why do we need to use different keys from the ones passed in?
+        fields = [(k, fields[k]) if k in fields else (k, None) for k in keys]
+        example_values = ([ex[k] for k in keys] for ex in examples_iter)
+        examples = [self._construct_example_fromlist(ex_values, fields)
+                    for ex_values in example_values]
+
+        super(DatasetBase, self).__init__(examples, fields, filter_pred)
 
     def save(self, path, remove_fields=True):
         if remove_fields:
@@ -116,34 +149,19 @@ class DatasetBase(torchtext.data.Dataset):
                 setattr(ex, name, val)
         return ex
 
+    def _dynamic_dict(self, example, unk, pad):
+        # it would not be necessary to pass unk and pad if the method were
+        # called after fields becomes an attribute of self
+        src = example["src"]
+        src_vocab = Vocab(Counter(src), specials=[unk, pad])
+        self.src_vocabs.append(src_vocab)
+        # Map source tokens to indices in the dynamic dict.
+        src_map = torch.LongTensor([src_vocab.stoi[w] for w in src])
+        example["src_map"] = src_map
 
-# this is just temporary until the TextDatabase can be unified with the others
-class NonTextDatasetBase(DatasetBase):
-    """
-    Args:
-            fields (dict): a dictionary of `torchtext.data.Field`.
-            src_examples_iter (dict iter): preprocessed source example
-                dictionary iterator.
-            tgt_examples_iter (dict iter): preprocessed target example
-                dictionary iterator.
-            tgt_seq_length (int): maximum target sequence length.
-    """
-    def __init__(self, fields, src_examples_iter, tgt_examples_iter,
-                 filter_pred=None):
-        if tgt_examples_iter is not None:
-            examples_iter = (self._join_dicts(src, tgt) for src, tgt in
-                             zip(src_examples_iter, tgt_examples_iter))
-        else:
-            examples_iter = src_examples_iter
-
-        # Peek at the first to see which fields are used.
-        ex, examples_iter = self._peek(examples_iter)
-        keys = ex.keys()
-
-        # why do we need to use different keys from the ones passed in?
-        fields = [(k, fields[k]) if k in fields else (k, None) for k in keys]
-        example_values = ([ex[k] for k in keys] for ex in examples_iter)
-        examples = [self._construct_example_fromlist(ex_values, fields)
-                    for ex_values in example_values]
-
-        super(DatasetBase, self).__init__(examples, fields, filter_pred)
+        if "tgt" in example:
+            tgt = example["tgt"]
+            mask = torch.LongTensor(
+                [0] + [src_vocab.stoi[w] for w in tgt] + [0])
+            example["alignment"] = mask
+        return example
