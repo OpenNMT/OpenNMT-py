@@ -89,6 +89,13 @@ class MultipleOptimizer(object):
         """ ? """
         self.optimizers = op
 
+    @property
+    def param_groups(self):
+        param_groups = []
+        for optimizer in self.optimizers:
+            param_groups.extend(optimizer.param_groups)
+        return param_groups
+
     def zero_grad(self):
         """ ? """
         for op in self.optimizers:
@@ -201,14 +208,6 @@ class Optimizer(object):
         else:
             raise RuntimeError("Invalid optim method: " + self.method)
 
-    def _set_rate(self, learning_rate):
-        self.learning_rate = learning_rate
-        if self.method != 'sparseadam':
-            self.optimizer.param_groups[0]['lr'] = self.learning_rate
-        else:
-            for op in self.optimizer.optimizers:
-                op.param_groups[0]['lr'] = self.learning_rate
-
     def step(self):
         """Update the model parameters based on current gradients.
 
@@ -219,7 +218,7 @@ class Optimizer(object):
 
         # Decay method used in tensor2tensor.
         if self.decay_method == "noam":
-            self._set_rate(
+            self.learning_rate = (
                 self.original_lr *
                 (self.model_size ** (-0.5) *
                  min(self._step ** (-0.5),
@@ -234,8 +233,8 @@ class Optimizer(object):
                    % self.decay_steps == 0):
                     self.learning_rate = self.learning_rate * self.lr_decay
 
-        if self.method != 'sparseadam':
-            self.optimizer.param_groups[0]['lr'] = self.learning_rate
+        for group in self.optimizer.param_groups:
+            group['lr'] = self.learning_rate
 
         if self.max_grad_norm:
             clip_grad_norm_(self.params, self.max_grad_norm)
