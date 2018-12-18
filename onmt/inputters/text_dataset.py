@@ -78,7 +78,7 @@ class TextDataset(DatasetBase):
             # from a file is already at least semi-tokenized, i.e. split on
             # whitespace. We cannot do modular/user-specified tokenization
             # until that is no longer the case. The fields should handle this.
-            line = line.strip().split()
+            seq = seq.strip().split()
             if truncate:
                 seq = seq[:truncate]
 
