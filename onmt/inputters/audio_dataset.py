@@ -5,42 +5,16 @@ from tqdm import tqdm
 
 import torch
 
-from onmt.inputters.dataset_base import NonTextDatasetBase
+from onmt.inputters.dataset_base import DatasetBase
 
 
-class AudioDataset(NonTextDatasetBase):
+class AudioDataset(DatasetBase):
     data_type = 'audio'  # get rid of this class attribute asap
 
     @staticmethod
     def sort_key(ex):
         """ Sort using duration time of the sound spectrogram. """
         return ex.src.size(1)
-
-    @staticmethod
-    def make_audio_examples(path, audio_dir, sample_rate, window_size,
-                            window_stride, window, normalize_audio,
-                            truncate=None):
-        """
-        Args:
-            path (str): location of a src file containing audio paths.
-            audio_dir (str): location of source audio files.
-            sample_rate (int): sample_rate.
-            window_size (float) : window size for spectrogram in seconds.
-            window_stride (float): window stride for spectrogram in seconds.
-            window (str): window type for spectrogram generation.
-            normalize_audio (bool): subtract spectrogram by mean and divide
-                by std or not.
-            truncate (int): maximum audio length (0 or None for unlimited).
-
-        Returns:
-            example_dict iterator
-        """
-        examples_iter = AudioDataset.read_audio_file(
-            path, audio_dir, "src", sample_rate,
-            window_size, window_stride, window,
-            normalize_audio, truncate)
-
-        return examples_iter
 
     @staticmethod
     def extract_features(audio_path, sample_rate, truncate, window_size,
@@ -82,10 +56,19 @@ class AudioDataset(NonTextDatasetBase):
             spect.div_(std)
         return spect
 
-    @staticmethod
-    def read_audio_file(path, src_dir, side, sample_rate, window_size,
-                        window_stride, window, normalize_audio,
-                        truncate=None):
+    @classmethod
+    def make_examples(
+        cls,
+        path,
+        src_dir,
+        side,
+        sample_rate,
+        window_size,
+        window_stride,
+        window,
+        normalize_audio,
+        truncate=None
+    ):
         """
         Args:
             path (str): location of a src file containing audio paths.
@@ -102,7 +85,8 @@ class AudioDataset(NonTextDatasetBase):
         Yields:
             a dictionary containing audio data for each line.
         """
-        assert (src_dir is not None) and os.path.exists(src_dir),\
+        assert isinstance(path, str), "Iterators not supported for audio"
+        assert src_dir is not None and os.path.exists(src_dir),\
             "src_dir must be a valid directory if data_type is audio"
 
         with codecs.open(path, "r", "utf-8") as corpus_file:

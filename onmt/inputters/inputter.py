@@ -211,44 +211,49 @@ def filter_example(ex, use_src_len=True, use_tgt_len=True,
         (not use_tgt_len or min_tgt_len < len(ex.tgt) <= max_tgt_len)
 
 
-def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
-                  src_dir=None, tgt_data_iter=None, tgt_path=None,
+def build_dataset(fields, data_type, src,
+                  src_dir=None, tgt=None,
                   src_seq_len=0, tgt_seq_len=0,
                   src_seq_length_trunc=0, tgt_seq_length_trunc=0,
-                  dynamic_dict=True, sample_rate=0,
+                  dynamic_dict=False, sample_rate=0,
                   window_size=0, window_stride=0, window=None,
                   normalize_audio=True, use_filter_pred=True,
                   image_channel_size=3):
     """
-    Build src/tgt examples iterator from corpus files, also extract
-    number of features.
+    src: path to corpus file or iterator over source data
+    tgt: path to corpus file, iterator over target data, or None
     """
-
+    dataset_classes = {
+        'text': TextDataset, 'img': ImageDataset, 'audio': AudioDataset
+    }
+    assert data_type in dataset_classes
+    assert src is not None
+    assert not dynamic_dict or data_type == 'text', \
+        'it is not possible to use dynamic_dict with non-text input'
     if data_type == 'text':
-        src_examples_iter = TextDataset.make_text_examples(
-            src_data_iter, src_path, src_seq_length_trunc, "src"
+        src_examples_iter = TextDataset.make_examples(
+            src, src_seq_length_trunc, "src"
         )
     elif data_type == 'img':
-        src_examples_iter = ImageDataset.make_image_examples(
-            src_data_iter, src_path, src_dir, image_channel_size)
-
-    elif data_type == 'audio':
-        if src_data_iter:
-            raise ValueError("""Data iterator for AudioDataset isn't
-                                implemented""")
-        if src_path is None:
-            raise ValueError("AudioDataset requires a non None path")
-        src_examples_iter = AudioDataset.make_audio_examples(
-            src_path, src_dir, sample_rate, window_size, window_stride,
-            window, normalize_audio
+        # there is a truncate argument as well, but it was never set to
+        # anything besides None before
+        src_examples_iter = ImageDataset.make_examples(
+            src, src_dir, 'src', channel_size=image_channel_size
         )
+    else:
+        src_examples_iter = AudioDataset.make_examples(
+            src, src_dir, "src", sample_rate,
+            window_size, window_stride, window,
+            normalize_audio, None)
 
-    # For all data types, the tgt side corpus is in form of text.
-    tgt_examples_iter = TextDataset.make_text_examples(
-        tgt_data_iter, tgt_path, tgt_seq_length_trunc, "tgt"
-    )
+    if tgt is None:
+        tgt_examples_iter = None
+    else:
+        tgt_examples_iter = TextDataset.make_examples(
+            tgt, tgt_seq_length_trunc, "tgt")
 
-    # I'm not certain about the practical utility of the second part
+    # the second conjunct means nothing will be filtered at translation time
+    # if there is no target data
     if use_filter_pred and tgt_examples_iter is not None:
         filter_pred = partial(
             filter_example, use_src_len=data_type == 'text',
@@ -257,16 +262,10 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
     else:
         filter_pred = None
 
-    if data_type == 'text':
-        dataset = TextDataset(
-            fields, src_examples_iter, tgt_examples_iter,
-            dynamic_dict=dynamic_dict, filter_pred=filter_pred)
-    else:
-        dataset_cls = ImageDataset if data_type == 'img' else AudioDataset
-        dataset = dataset_cls(
-            fields, src_examples_iter, tgt_examples_iter,
-            filter_pred=filter_pred
-        )
+    dataset_cls = dataset_classes[data_type]
+    dataset = dataset_cls(
+        fields, src_examples_iter, tgt_examples_iter,
+        dynamic_dict=dynamic_dict, filter_pred=filter_pred)
     return dataset
 
 

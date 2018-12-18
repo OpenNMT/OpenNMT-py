@@ -12,11 +12,13 @@ import onmt.opts as opts
 
 def main(opt):
     translator = build_translator(opt, report_score=True)
-    translator.translate(src_path=opt.src,
-                         tgt_path=opt.tgt,
-                         src_dir=opt.src_dir,
-                         batch_size=opt.batch_size,
-                         attn_debug=opt.attn_debug)
+    translator.translate(
+        src=opt.src,
+        tgt=opt.tgt,
+        src_dir=opt.src_dir,
+        batch_size=opt.batch_size,
+        attn_debug=opt.attn_debug
+    )
 
 
 if __name__ == "__main__":
