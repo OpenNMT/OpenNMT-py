@@ -282,11 +282,9 @@
 
 <div class="viewcode-block" id="Translator.translate"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.Translator.translate">[docs]</a>    <span class="k">def</span> <span class="nf">translate</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">src_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">src_data_iter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">src</span><span class="p">,</span>
+        <span class="n">tgt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">src_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">tgt_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">tgt_data_iter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">batch_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">attn_debug</span><span class="o">=</span><span class="kc">False</span>
     <span class="p">):</span>
@@ -299,10 +297,7 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            src_path (str): filepath of source data</span>
-<span class="sd">            src_data_iter (iterator): an interator generating source data</span>
-<span class="sd">                e.g. it may be a list or an openned file</span>
-<span class="sd">            tgt_path (str): filepath of target data</span>
-<span class="sd">            tgt_data_iter (iterator): an interator generating target data</span>
+<span class="sd">            tgt_path (str): filepath of target data or None</span>
 <span class="sd">            src_dir (str): source directory path</span>
 <span class="sd">                (used for Audio and Image datasets)</span>
 <span class="sd">            batch_size (int): size of examples per mini-batch</span>
@@ -315,24 +310,24 @@
 <span class="sd">            * all_predictions is a list of `batch_size` lists</span>
 <span class="sd">                of `n_best` predictions</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">assert</span> <span class="n">src_data_iter</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">src_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">assert</span> <span class="n">src</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
 
         <span class="k">if</span> <span class="n">batch_size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;batch_size must be set&quot;</span><span class="p">)</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span> <span class="n">build_dataset</span><span class="p">(</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">build_dataset</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span><span class="p">,</span>
-            <span class="n">src_path</span><span class="o">=</span><span class="n">src_path</span><span class="p">,</span>
-            <span class="n">src_data_iter</span><span class="o">=</span><span class="n">src_data_iter</span><span class="p">,</span>
-            <span class="n">tgt_path</span><span class="o">=</span><span class="n">tgt_path</span><span class="p">,</span>
-            <span class="n">tgt_data_iter</span><span class="o">=</span><span class="n">tgt_data_iter</span><span class="p">,</span>
+            <span class="n">src</span><span class="o">=</span><span class="n">src</span><span class="p">,</span>
+            <span class="n">tgt</span><span class="o">=</span><span class="n">tgt</span><span class="p">,</span>
             <span class="n">src_dir</span><span class="o">=</span><span class="n">src_dir</span><span class="p">,</span>
             <span class="n">sample_rate</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">,</span>
             <span class="n">window_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">window_size</span><span class="p">,</span>
             <span class="n">window_stride</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">window_stride</span><span class="p">,</span>
             <span class="n">window</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">window</span><span class="p">,</span>
             <span class="n">use_filter_pred</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">use_filter_pred</span><span class="p">,</span>
-            <span class="n">image_channel_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">image_channel_size</span>
+            <span class="n">image_channel_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">image_channel_size</span><span class="p">,</span>
+            <span class="n">dynamic_dict</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span>
         <span class="p">)</span>
 
         <span class="n">cur_device</span> <span class="o">=</span> <span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cuda</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span>
@@ -348,7 +343,7 @@
         <span class="p">)</span>
 
         <span class="n">builder</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">translate</span><span class="o">.</span><span class="n">TranslationBuilder</span><span class="p">(</span>
-            <span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_best</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">replace_unk</span><span class="p">,</span> <span class="n">tgt_path</span>
+            <span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_best</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">replace_unk</span><span class="p">,</span> <span class="n">tgt</span>
         <span class="p">)</span>
 
         <span class="c1"># Statistics</span>
@@ -369,7 +364,7 @@
                 <span class="n">all_scores</span> <span class="o">+=</span> <span class="p">[</span><span class="n">trans</span><span class="o">.</span><span class="n">pred_scores</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">n_best</span><span class="p">]]</span>
                 <span class="n">pred_score_total</span> <span class="o">+=</span> <span class="n">trans</span><span class="o">.</span><span class="n">pred_scores</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                 <span class="n">pred_words_total</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">trans</span><span class="o">.</span><span class="n">pred_sents</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-                <span class="k">if</span> <span class="n">tgt_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">tgt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">gold_score_total</span> <span class="o">+=</span> <span class="n">trans</span><span class="o">.</span><span class="n">gold_score</span>
                     <span class="n">gold_words_total</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">trans</span><span class="o">.</span><span class="n">gold_sent</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
 
@@ -415,7 +410,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="nb">print</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">tgt_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">tgt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_report_score</span><span class="p">(</span><span class="s1">&#39;GOLD&#39;</span><span class="p">,</span> <span class="n">gold_score_total</span><span class="p">,</span>
                                          <span class="n">gold_words_total</span><span class="p">)</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="p">:</span>
@@ -423,13 +418,13 @@
                 <span class="k">else</span><span class="p">:</span>
                     <span class="nb">print</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_bleu</span><span class="p">:</span>
-                    <span class="n">msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_report_bleu</span><span class="p">(</span><span class="n">tgt_path</span><span class="p">)</span>
+                    <span class="n">msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_report_bleu</span><span class="p">(</span><span class="n">tgt</span><span class="p">)</span>
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="p">:</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="nb">print</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_rouge</span><span class="p">:</span>
-                    <span class="n">msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_report_rouge</span><span class="p">(</span><span class="n">tgt_path</span><span class="p">)</span>
+                    <span class="n">msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_report_rouge</span><span class="p">(</span><span class="n">tgt</span><span class="p">)</span>
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="p">:</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
