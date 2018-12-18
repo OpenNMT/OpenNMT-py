@@ -77,7 +77,8 @@ class TextDataset(DatasetBase):
             # the implicit assumption here is that data that does not come
             # from a file is already at least semi-tokenized, i.e. split on
             # whitespace. We cannot do modular/user-specified tokenization
-            # until that is no longer the case
+            # until that is no longer the case. The fields should handle this.
+            line = line.strip().split()
             if truncate:
                 seq = seq[:truncate]
 
@@ -94,6 +95,4 @@ class TextDataset(DatasetBase):
     def _read_file(cls, path):
         with codecs.open(path, "r", "utf-8") as f:
             for line in f:
-                # this is tokenization. The fields should handle it
-                line = line.strip().split()
                 yield line
