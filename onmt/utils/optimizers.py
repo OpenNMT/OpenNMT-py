@@ -188,11 +188,10 @@ class Optimizer(object):
         if self.method == 'sgd':
             self.optimizer = optim.SGD(self.params, lr=self.learning_rate)
         elif self.method == 'adagrad':
-            self.optimizer = optim.Adagrad(self.params, lr=self.learning_rate)
-            for group in self.optimizer.param_groups:
-                for p in group['params']:
-                    self.optimizer.state[p]['sum'] = self.optimizer\
-                        .state[p]['sum'].fill_(self.adagrad_accum)
+            self.optimizer = optim.Adagrad(
+                self.params,
+                lr=self.learning_rate,
+                initial_accumulator_value=self.adagrad_accum)
         elif self.method == 'adadelta':
             self.optimizer = optim.Adadelta(self.params, lr=self.learning_rate)
         elif self.method == 'adam':
