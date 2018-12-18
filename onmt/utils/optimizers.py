@@ -168,7 +168,6 @@ class Optimizer(object):
         self.lr_decay = lr_decay
         self.start_decay_steps = start_decay_steps
         self.decay_steps = decay_steps
-        self.start_decay = False
         self._step = 0
         self.betas = [beta1, beta2]
         self.adagrad_accum = adagrad_accum
@@ -218,21 +217,19 @@ class Optimizer(object):
 
         # Decay method used in tensor2tensor.
         if self.decay_method == "noam":
-            self.learning_rate = (
-                self.original_lr *
-                (self.model_size ** (-0.5) *
-                 min(self._step ** (-0.5),
-                     self._step * self.warmup_steps**(-1.5))))
+            lr_scale = (
+                self.model_size ** (-0.5) *
+                min(self._step ** (-0.5),
+                    self._step * self.warmup_steps**(-1.5)))
         # Decay based on start_decay_steps every decay_steps
+        elif self.start_decay_steps is not None:
+            step = self._step - self.start_decay_steps
+            lr_scale = (self.lr_decay ** (
+                max(step + self.decay_steps, 0) // self.decay_steps))
         else:
-            if ((self.start_decay_steps is not None) and (
-                     self._step >= self.start_decay_steps)):
-                self.start_decay = True
-            if self.start_decay:
-                if ((self._step - self.start_decay_steps)
-                   % self.decay_steps == 0):
-                    self.learning_rate = self.learning_rate * self.lr_decay
+            lr_scale = 1
 
+        self.learning_rate = lr_scale * self.original_lr
         for group in self.optimizer.param_groups:
             group['lr'] = self.learning_rate
 
