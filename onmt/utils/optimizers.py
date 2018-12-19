@@ -247,55 +247,26 @@ class Optimizer(object):
         self.optimizer.step()
 
 # Code below is an implementation of https://arxiv.org/pdf/1804.04235.pdf
-# done by https://github.com/DeadAt0m/adafactor-pytorch
+# inspired but modified from https://github.com/DeadAt0m/adafactor-pytorch
 
 
 class AdaFactor(torch.optim.Optimizer):
+
     def __init__(self, params, lr=None, beta1=0.9, beta2=0.999, eps1=1e-30,
                  eps2=1e-3, cliping_threshold=1, non_constant_decay=True,
                  enable_factorization=True, ams_grad=True, weight_decay=0):
 
         enable_momentum = beta1 != 0
-        self.beta1_glob = copy(beta1)
-        self.beta2_glob = copy(beta2)
-        self.lr_glob = copy(lr)
-
-        if hasattr(beta1, '__call__'):
-            beta1 = self.beta1_glob
-        else:
-            beta1 = lambda x: self.beta1_glob
-        if hasattr(beta2, '__call__'):
-            beta2 = self.beta2_glob
-        else:
-            beta2 = lambda x: self.beta2_glob
 
         if non_constant_decay:
             ams_grad = False
-            if isinstance(self.beta1_glob, float):
-                beta1 = lambda t: self.beta1_glob * \
-                        (1 - self.beta1_glob ** (t-1)) / \
-                        (1 - self.beta1_glob ** t)
-            if isinstance(self.beta2_glob, float):
-                beta2 = lambda t: self.beta2_glob * \
-                        (1 - self.beta2_glob ** (t-1)) / \
-                        (1 - self.beta2_glob ** t)
-
-        relative_step_size = True
-
-        if lr is None:
-            # default value from article
-            lr = lambda t: min(1e-2, 1 / sqrt(t))
-
-        if isinstance(self.lr_glob, float):
-            lr = lambda x: self.lr_glob
-            relative_step_size = False
 
         defaults = dict(lr=lr, beta1=beta1, beta2=beta2, eps1=eps1,
                         eps2=eps2, cliping_threshold=cliping_threshold,
                         weight_decay=weight_decay, ams_grad=ams_grad,
                         enable_factorization=enable_factorization,
                         enable_momentum=enable_momentum,
-                        relative_step_size=relative_step_size)
+                        non_constant_decay=non_constant_decay)
 
         super(AdaFactor, self).__init__(params, defaults)
 
@@ -391,15 +362,28 @@ class AdaFactor(torch.optim.Optimizer):
                     exp_avg_sq_hat = state['exp_avg_sq_hat']
 
                 state['step'] += 1
-                lr_t = group['lr'](state['step'])
-                if group['relative_step_size']:
+                if group['lr'] == None:
+                    # default value from paper
+                    lr_t = min(1e-2, 1 / sqrt(state['step']))
                     lr_t *= max(group['eps2'], self._rms(p.data))
+                else:
+                    lr_t = group['lr']
 
                 if group['enable_momentum']:
-                    beta1_t = group['beta1'](state['step'])
+                    if group['non_constant_decay']:
+                        beta1_t = group['beta1'] * \
+                                  (1 - group['beta1'] ** (state['step'] - 1)) / \
+                                  (1 - group['beta1'] ** state['step'])
+                    else:
+                        beta1_t = group['beta1']
                     exp_avg.mul_(beta1_t).add_(1 - beta1_t, grad)
 
-                beta2_t = group['beta2'](state['step'])
+                if group['non_constant_decay']:
+                    beta2_t = group['beta2'] * \
+                              (1 - group['beta2'] ** (state['step'] - 1)) / \
+                              (1 - group['beta2'] ** state['step'])
+                else:
+                    beta2_t = group['beta2']
 
                 if is_matrix and group['enable_factorization']:
                     exp_avg_sq_R.mul_(beta2_t). \
