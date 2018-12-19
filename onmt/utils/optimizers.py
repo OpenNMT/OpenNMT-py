@@ -353,8 +353,8 @@ class AdaFactor(torch.optim.Optimizer):
                     exp_avg = state['exp_avg']
 
                 if is_matrix and group['enable_factorization']:
-                    exp_avg_sq_R = state['exp_avg_sq_R']
-                    exp_avg_sq_C = state['exp_avg_sq_C']
+                    exp_avg_sq_r = state['exp_avg_sq_R']
+                    exp_avg_sq_c = state['exp_avg_sq_C']
                 else:
                     exp_avg_sq = state['exp_avg_sq']
 
@@ -386,16 +386,16 @@ class AdaFactor(torch.optim.Optimizer):
                     beta2_t = group['beta2']
 
                 if is_matrix and group['enable_factorization']:
-                    exp_avg_sq_R.mul_(beta2_t). \
+                    exp_avg_sq_r.mul_(beta2_t). \
                         add_(1 - beta2_t, torch.sum(torch.mul(grad, grad).
                                                     add_(group['eps1']),
                                                     dim=0, keepdim=True))
-                    exp_avg_sq_C.mul_(beta2_t). \
+                    exp_avg_sq_c.mul_(beta2_t). \
                         add_(1 - beta2_t, torch.sum(torch.mul(grad, grad).
                                                     add_(group['eps1']),
                                                     dim=1, keepdim=True))
-                    v = torch.mul(exp_avg_sq_C,
-                                  exp_avg_sq_R).div_(torch.sum(exp_avg_sq_R))
+                    v = torch.mul(exp_avg_sq_c,
+                                  exp_avg_sq_r).div_(torch.sum(exp_avg_sq_r))
                 else:
                     exp_avg_sq.mul_(beta2_t). \
                         addcmul_(1 - beta2_t, grad, grad). \
