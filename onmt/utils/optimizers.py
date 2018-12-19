@@ -362,7 +362,7 @@ class AdaFactor(torch.optim.Optimizer):
                     exp_avg_sq_hat = state['exp_avg_sq_hat']
 
                 state['step'] += 1
-                if group['lr'] == None:
+                if group['lr'] is None:
                     # default value from paper
                     lr_t = min(1e-2, 1 / sqrt(state['step']))
                     lr_t *= max(group['eps2'], self._rms(p.data))
@@ -372,8 +372,8 @@ class AdaFactor(torch.optim.Optimizer):
                 if group['enable_momentum']:
                     if group['non_constant_decay']:
                         beta1_t = group['beta1'] * \
-                                  (1 - group['beta1'] ** (state['step'] - 1)) / \
-                                  (1 - group['beta1'] ** state['step'])
+                                  (1 - group['beta1'] ** (state['step'] - 1)) \
+                                  / (1 - group['beta1'] ** state['step'])
                     else:
                         beta1_t = group['beta1']
                     exp_avg.mul_(beta1_t).add_(1 - beta1_t, grad)
