@@ -197,23 +197,22 @@ def collect_features(fields, side="src"):
     return feats
 
 
-# min_len is misnamed
 def filter_example(ex, use_src_len=True, use_tgt_len=True,
-                   min_src_len=0, max_src_len=float('inf'),
-                   min_tgt_len=0, max_tgt_len=float('inf')):
+                   min_src_len=1, max_src_len=float('inf'),
+                   min_tgt_len=1, max_tgt_len=float('inf')):
     """
     A generalized function for filtering examples based on the length of their
     src or tgt values. Rather than being used by itself as the filter_pred
     argument to a dataset, it should be partially evaluated with everything
     specified except the value of the example.
     """
-    return (not use_src_len or min_src_len < len(ex.src) <= max_src_len) and \
-        (not use_tgt_len or min_tgt_len < len(ex.tgt) <= max_tgt_len)
+    return (not use_src_len or min_src_len <= len(ex.src) <= max_src_len) and \
+        (not use_tgt_len or min_tgt_len <= len(ex.tgt) <= max_tgt_len)
 
 
 def build_dataset(fields, data_type, src,
                   src_dir=None, tgt=None,
-                  src_seq_len=0, tgt_seq_len=0,
+                  src_seq_len=50, tgt_seq_len=50,
                   src_seq_length_trunc=0, tgt_seq_length_trunc=0,
                   dynamic_dict=False, sample_rate=0,
                   window_size=0, window_stride=0, window=None,
