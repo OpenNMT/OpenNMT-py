@@ -609,6 +609,11 @@ def translate_opts(parser):
               help="""Using grayscale image can training
                        model faster and smaller""")
 
+    # ADDED OPTS
+    group.add('--k_per_cand', '-k_per_cand',
+              type=int, default=0,
+              help='Number of candidates allowed per beam hypothesis')
+
 
 def add_md_help_argument(parser):
     """ md help parser """

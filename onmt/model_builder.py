@@ -242,6 +242,7 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
             gen_func = onmt.modules.sparse_activations.LogSparsemax(dim=-1)
         else:
             gen_func = nn.LogSoftmax(dim=-1)
+
         generator = nn.Sequential(
             nn.Linear(model_opt.dec_rnn_size, len(fields["tgt"].vocab)),
             gen_func
