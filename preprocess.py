@@ -162,6 +162,12 @@ def main():
         "-shuffle is not implemented. Please shuffle \
         your data before pre-processing."
 
+    assert os.path.isfile(opt.train_src) and os.path.isfile(opt.train_tgt), \
+        "Please check path of your train src and tgt files!"
+
+    assert os.path.isfile(opt.valid_src) and os.path.isfile(opt.valid_tgt), \
+        "Please check path of your valid src and tgt files!"
+
     init_logger(opt.log_file)
     logger.info("Extracting features...")
 
