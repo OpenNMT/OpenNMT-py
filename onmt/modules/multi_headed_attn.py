@@ -179,4 +179,3 @@ class MultiHeadedAttention(nn.Module):
             .contiguous()
 
         return output, top_attn
-    
