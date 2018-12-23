@@ -120,8 +120,8 @@ class MultiHeadedAttention(nn.Module):
             return x.transpose(1, 2).contiguous() \
                     .view(batch_size, -1, head_count * dim_per_head)
 
-        query, key, value = self.linear_query(query), \
-                            self.linear_keys(key), \
+        query, key, value = self.linear_query(query),\
+                            self.linear_keys(key),\
                             self.linear_values(value)
         key = shape(key)
         value = shape(value)
@@ -179,3 +179,4 @@ class MultiHeadedAttention(nn.Module):
             .contiguous()
 
         return output, top_attn
+
