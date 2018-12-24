@@ -6,6 +6,7 @@
 import configargparse
 
 import os
+import glob
 import random
 import torch
 
@@ -107,9 +108,10 @@ def main(opt, device_id):
         checkpoint = None
         model_opt = opt
 
-    # Peek the first dataset to determine the data_type.
+    # Load a shard dataset to determine the data_type.
     # (All datasets have the same data_type).
-    first_dataset = next(lazily_load_dataset("train", opt.data))
+    # this should be refactored out of existence reasonably soon
+    first_dataset = torch.load(glob.glob(opt.data + '.train*.pt')[0])
     data_type = first_dataset.data_type
 
     # Load fields generated from preprocess phase.
