@@ -4,7 +4,7 @@ import torch
 
 import onmt
 import onmt.model_builder
-import onmt.inputters
+import onmt.inputters as inputters
 import onmt.opts
 
 from onmt.utils.misc import use_gpu
