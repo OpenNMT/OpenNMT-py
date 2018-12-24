@@ -6,7 +6,6 @@ import re
 import torch
 import torch.nn as nn
 from torch.nn.init import xavier_uniform_
-from torchtext.vocab import Vocab
 
 import onmt.inputters as inputters
 import onmt.modules
@@ -150,12 +149,9 @@ def load_test_model(opt, dummy_opt, model_path=None):
     checkpoint = torch.load(model_path,
                             map_location=lambda storage, loc: storage)
 
-    # check for code where vocab is saved instead of fields
-    # (in the future this will be done in a smarter way
     vocab = checkpoint['vocab']
-    if isinstance(vocab, list) and any(isinstance(v[1], Vocab) for v in vocab):
-        fields = inputters.load_fields_from_vocab(
-            vocab, data_type=opt.data_type)
+    if inputters.old_style_vocab(vocab):
+        fields = inputters.load_fields_from_vocab(vocab, opt.data_type)
     else:
         fields = vocab
 

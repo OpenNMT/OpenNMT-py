@@ -148,6 +148,20 @@ def load_fields_from_vocab(vocab, data_type="text"):
     return fields
 
 
+def old_style_vocab(vocab):
+    """
+    vocab: some object loaded from a *.vocab.pt file
+    returns: whether the object is a list of pairs where the second object
+        is a torchtext.vocab.Vocab object.
+
+    This exists because previously only the vocab objects from the fields
+    were saved directly, not the fields themselves, and the fields needed to
+    be reconstructed at training and translation time.
+    """
+    return isinstance(vocab, list) and \
+        any(isinstance(v[1], Vocab) for v in vocab)
+
+
 def make_features(batch, side, data_type='text'):
     """
     Args:
@@ -556,32 +570,6 @@ def lazily_load_dataset(corpus_type, opt):
         # Only one inputters.*Dataset, simple!
         pt = opt.data + '.' + corpus_type + '.pt'
         yield _lazy_dataset_loader(pt, corpus_type)
-
-
-def load_fields(dataset, opt, checkpoint):
-    if isinstance(dataset, TextDataset):
-        data_type = 'text'
-    elif isinstance(dataset, AudioDataset):
-        data_type = 'audio'
-    else:
-        data_type = 'img'
-    if checkpoint is not None:
-        logger.info('Loading vocab from checkpoint at %s.' % opt.train_from)
-        vocab = checkpoint['vocab']
-    else:
-        vocab = torch.load(opt.data + '.vocab.pt')
-
-    # check for code where vocab is saved instead of fields
-    # (in the future this will be done in a smarter way
-    if isinstance(vocab, list) and any(isinstance(v[1], Vocab) for v in vocab):
-        fields = load_fields_from_vocab(vocab, data_type)
-    else:
-        fields = vocab
-
-    ex_fields = dataset.examples[0].__dict__
-    fields = {k: f for k, f in fields.items() if k in ex_fields}
-
-    return fields
 
 
 def _collect_report_features(fields):

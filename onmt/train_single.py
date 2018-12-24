@@ -12,7 +12,7 @@ import torch
 import onmt.opts as opts
 
 from onmt.inputters.inputter import build_dataset_iter, lazily_load_dataset, \
-    load_fields, _collect_report_features
+    load_fields_from_vocab, _collect_report_features, old_style_vocab
 from onmt.model_builder import build_model
 from onmt.utils.optimizers import build_optim
 from onmt.trainer import build_trainer
@@ -103,17 +103,27 @@ def main(opt, device_id):
 
         model_opt = default_opt
         model_opt.__dict__.update(checkpoint['opt'].__dict__)
+        logger.info('Loading vocab from checkpoint at %s.' % opt.train_from)
+        vocab = checkpoint['vocab']
     else:
         checkpoint = None
         model_opt = opt
+        vocab = torch.load(opt.data + '.vocab.pt')
 
     # Peek the first dataset to determine the data_type.
     # (All datasets have the same data_type).
     first_dataset = next(lazily_load_dataset("train", opt))
     data_type = first_dataset.data_type
 
-    # Load fields generated from preprocess phase.
-    fields = load_fields(first_dataset, opt, checkpoint)
+    # check for code where vocab is saved instead of fields
+    # (in the future this will be done in a smarter way
+    if old_style_vocab(vocab):
+        fields = load_fields_from_vocab(vocab, data_type)
+    else:
+        fields = vocab
+    ex_fields = first_dataset.examples[0].__dict__
+    fields = {k: f for k, f in fields.items() if k in ex_fields}
+
     if data_type == 'text':
         logger.info(' * vocabulary size. source = %d; target = %d' %
                     (len(fields['src'].vocab), len(fields['tgt'].vocab)))
