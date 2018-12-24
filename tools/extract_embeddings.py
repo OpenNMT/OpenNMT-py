@@ -1,5 +1,8 @@
-import torch
 import argparse
+
+import torch
+from torchtext.vocab import Vocab
+
 import onmt
 import onmt.model_builder
 import onmt.inputters
@@ -43,16 +46,13 @@ def main():
 
     src_dict, tgt_dict = None, None
 
-    # the vocab object is a list of tuple (name, torchtext.Vocab)
-    # we iterate over this list and associate vocabularies based on the name
-    for vocab in checkpoint['vocab']:
-        if vocab[0] == 'src':
-            src_dict = vocab[1]
-        if vocab[0] == 'tgt':
-            tgt_dict = vocab[1]
-    assert src_dict is not None and tgt_dict is not None
-
-    fields = onmt.inputters.load_fields_from_vocab(checkpoint['vocab'])
+    vocab = checkpoint['vocab']
+    if isinstance(vocab, list) and any(isinstance(v[1], Vocab) for v in vocab):
+        fields = onmt.inputters.load_fields_from_vocab(vocab)
+    else:
+        fields = vocab
+    src_dict = fields['src'].vocab
+    tgt_dict = fields['tgt'].vocab
 
     model_opt = checkpoint['opt']
     for arg in dummy_opt.__dict__:
