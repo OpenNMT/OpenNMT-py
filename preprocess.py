@@ -138,7 +138,7 @@ def build_save_vocab(train_dataset, fields, opt):
     )
 
     vocab_path = opt.save_data + '.vocab.pt'
-    torch.save(inputters.save_fields_to_vocab(fields), vocab_path)
+    torch.save(fields, vocab_path)
 
 
 def count_features(path):

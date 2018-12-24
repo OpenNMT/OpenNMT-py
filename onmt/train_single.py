@@ -116,7 +116,6 @@ def main(opt, device_id):
     fields = load_fields(first_dataset, opt, checkpoint)
 
     # Report src/tgt features.
-
     src_features, tgt_features = _collect_report_features(fields)
     for j, feat in enumerate(src_features):
         logger.info(' * src feature %d size = %d'

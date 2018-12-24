@@ -147,17 +147,6 @@ def load_fields_from_vocab(vocab, data_type="text"):
     return fields
 
 
-def save_fields_to_vocab(fields):
-    """
-    fields: a dictionary whose keys are field names and whose values are
-            Field objects
-    returns: a list of (field name, vocab) pairs for the fields that have a
-             vocabulary
-    """
-    return [(k, f.vocab) for k, f in fields.items()
-            if f is not None and 'vocab' in f.__dict__]
-
-
 def make_features(batch, side, data_type='text'):
     """
     Args:
@@ -581,7 +570,12 @@ def load_fields(dataset, opt, checkpoint):
     else:
         vocab = torch.load(opt.data + '.vocab.pt')
 
-    fields = load_fields_from_vocab(vocab, data_type)
+    # check for code where vocab is saved instead of fields
+    # (in the future this will be done in a smarter way
+    if isinstance(vocab, list) and any(isinstance(v[1], Vocab) for v in vocab):
+        fields = load_fields_from_vocab(vocab, data_type)
+    else:
+        fields = vocab
 
     ex_fields = dataset.examples[0].__dict__
     fields = {k: f for k, f in fields.items() if k in ex_fields}
