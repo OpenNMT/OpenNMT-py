@@ -109,7 +109,7 @@ def main(opt, device_id):
 
     # Peek the first dataset to determine the data_type.
     # (All datasets have the same data_type).
-    first_dataset = next(lazily_load_dataset("train", opt))
+    first_dataset = next(lazily_load_dataset("train", opt.data))
     data_type = first_dataset.data_type
 
     # Load fields generated from preprocess phase.
@@ -143,10 +143,10 @@ def main(opt, device_id):
                             optim, data_type, model_saver=model_saver)
 
     def train_iter_fct(): return build_dataset_iter(
-        lazily_load_dataset("train", opt), fields, opt)
+        lazily_load_dataset("train", opt.data), fields, opt)
 
     def valid_iter_fct(): return build_dataset_iter(
-        lazily_load_dataset("valid", opt), fields, opt, is_train=False)
+        lazily_load_dataset("valid", opt.data), fields, opt, is_train=False)
 
     # Do training.
     if len(opt.gpu_ranks):

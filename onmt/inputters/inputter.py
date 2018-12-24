@@ -539,33 +539,20 @@ def build_dataset_iter(datasets, fields, opt, is_train=True):
                            device, is_train)
 
 
-def lazily_load_dataset(corpus_type, opt):
+def lazily_load_dataset(corpus_type, data):
     """
-    Dataset generator. Don't do extra stuff here, like printing,
-    because they will be postponed to the first loading time.
-
-    Args:
-        corpus_type: 'train' or 'valid'
-    Returns:
-        A list of dataset, the dataset(s) are lazily loaded.
+    corpus_type: 'train' or 'valid'
+    data: name of saved data files
     """
     assert corpus_type in ["train", "valid"]
 
-    def _lazy_dataset_loader(pt_file, corpus_type):
-        dataset = torch.load(pt_file)
+    # this is a lexicographic sort: shard 11 comes before shard 2
+    paths = sorted(glob.glob(data + '.' + corpus_type + '*.pt'))
+    for path in paths:
+        dataset = torch.load(path)
         logger.info('Loading %s dataset from %s, number of examples: %d' %
-                    (corpus_type, pt_file, len(dataset)))
-        return dataset
-
-    # Sort the glob output by file name (by increasing indexes).
-    pts = sorted(glob.glob(opt.data + '.' + corpus_type + '.[0-9]*.pt'))
-    if pts:
-        for pt in pts:
-            yield _lazy_dataset_loader(pt, corpus_type)
-    else:
-        # Only one inputters.*Dataset, simple!
-        pt = opt.data + '.' + corpus_type + '.pt'
-        yield _lazy_dataset_loader(pt, corpus_type)
+                    (corpus_type, path, len(dataset)))
+        yield dataset
 
 
 def load_fields(dataset, opt, checkpoint):
