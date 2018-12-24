@@ -301,9 +301,6 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
     Returns:
         Dict of Fields
     """
-    # Prop src from field to get lower memory using when training with image
-    if data_type == 'img' or data_type == 'audio':
-        fields.pop("src")
     counters = {k: Counter() for k in fields}
 
     # Load vocabulary
