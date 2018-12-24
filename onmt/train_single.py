@@ -12,7 +12,7 @@ import torch
 
 import onmt.opts as opts
 
-from onmt.inputters.inputter import build_dataset_iter, lazily_load_dataset, \
+from onmt.inputters.inputter import build_dataset_iter, \
     load_fields, _collect_report_features
 from onmt.model_builder import build_model
 from onmt.utils.optimizers import build_optim
@@ -144,11 +144,10 @@ def main(opt, device_id):
     trainer = build_trainer(opt, device_id, model, fields,
                             optim, data_type, model_saver=model_saver)
 
-    def train_iter_fct(): return build_dataset_iter(
-        lazily_load_dataset("train", opt.data), fields, opt)
+    def train_iter_fct(): return build_dataset_iter("train", fields, opt)
 
-    def valid_iter_fct(): return build_dataset_iter(
-        lazily_load_dataset("valid", opt.data), fields, opt, is_train=False)
+    def valid_iter_fct():
+        return build_dataset_iter("valid", fields, opt, is_train=False)
 
     # Do training.
     if len(opt.gpu_ranks):

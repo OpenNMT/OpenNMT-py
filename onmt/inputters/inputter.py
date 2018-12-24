@@ -503,12 +503,13 @@ class DatasetLazyIter(object):
             repeat=False)
 
 
-def build_dataset_iter(datasets, fields, opt, is_train=True):
+def build_dataset_iter(corpus_type, fields, opt, is_train=True):
     """
     This returns user-defined train/validate data iterator for the trainer
     to iterate over. We implement simple ordered iterator strategy here,
     but more sophisticated strategy like curriculum learning is ok too.
     """
+    datasets = _lazily_load_dataset(corpus_type, opt.data)
     batch_size = opt.batch_size if is_train else opt.valid_batch_size
     if is_train and opt.batch_type == "tokens":
         def batch_size_fn(new, count, sofar):
@@ -539,7 +540,7 @@ def build_dataset_iter(datasets, fields, opt, is_train=True):
                            device, is_train)
 
 
-def lazily_load_dataset(corpus_type, data):
+def _lazily_load_dataset(corpus_type, data):
     """
     corpus_type: 'train' or 'valid'
     data: name of saved data files
