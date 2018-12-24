@@ -1,7 +1,6 @@
 import argparse
 
 import torch
-from torchtext.vocab import Vocab
 
 import onmt
 import onmt.model_builder
@@ -44,10 +43,8 @@ def main():
                             map_location=lambda storage, loc: storage)
     model_opt = checkpoint['opt']
 
-    src_dict, tgt_dict = None, None
-
     vocab = checkpoint['vocab']
-    if isinstance(vocab, list) and any(isinstance(v[1], Vocab) for v in vocab):
+    if inputters.old_style_vocab(vocab):
         fields = onmt.inputters.load_fields_from_vocab(vocab)
     else:
         fields = vocab
