@@ -114,6 +114,12 @@ def main(opt, device_id):
 
     # Load fields generated from preprocess phase.
     fields = load_fields(first_dataset, opt, checkpoint)
+    if data_type == 'text':
+        logger.info(' * vocabulary size. source = %d; target = %d' %
+                    (len(fields['src'].vocab), len(fields['tgt'].vocab)))
+    else:
+        logger.info(' * vocabulary size. target = %d' %
+                    (len(fields['tgt'].vocab)))
 
     # Report src/tgt features.
     src_features, tgt_features = _collect_report_features(fields)

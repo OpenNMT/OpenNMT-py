@@ -107,7 +107,8 @@ def get_fields(src_data_type, n_src_features, n_tgt_features):
         fields["src_lengths"] = Field(
             use_vocab=False, dtype=torch.long, sequential=False)
     else:
-        # everything except audio has src_map and alignment
+        # for some reason, these things are created for everything except
+        # audio, but they should only be necessary if you use a dynamic dict
         fields["src_map"] = Field(
             use_vocab=False, dtype=torch.float,
             postprocessing=make_src, sequential=False)
@@ -139,8 +140,8 @@ def load_fields_from_vocab(vocab, data_type="text"):
              object from the input.
     """
     vocab = dict(vocab)
-    n_src_features = len(collect_features(vocab, 'src'))
-    n_tgt_features = len(collect_features(vocab, 'tgt'))
+    n_src_features = sum('src_feat_' in k for k in vocab)
+    n_tgt_features = sum('tgt_feat_' in k for k in vocab)
     fields = get_fields(data_type, n_src_features, n_tgt_features)
     for k, v in vocab.items():
         fields[k].vocab = v
@@ -579,13 +580,6 @@ def load_fields(dataset, opt, checkpoint):
 
     ex_fields = dataset.examples[0].__dict__
     fields = {k: f for k, f in fields.items() if k in ex_fields}
-
-    if data_type == 'text':
-        logger.info(' * vocabulary size. source = %d; target = %d' %
-                    (len(fields['src'].vocab), len(fields['tgt'].vocab)))
-    else:
-        logger.info(' * vocabulary size. target = %d' %
-                    (len(fields['tgt'].vocab)))
 
     return fields
 
