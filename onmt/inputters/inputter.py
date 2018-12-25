@@ -439,7 +439,7 @@ class OrderedIterator(torchtext.data.Iterator):
 
 class DatasetLazyIter(object):
     """
-    datasets: an iterator over Dataset objects
+    dataset_paths: a list containing the locations of datasets
     fields (dict): fields dict for the datasets.
     batch_size (int): batch size.
     batch_size_fn: custom batch process function.
