@@ -438,16 +438,13 @@ class OrderedIterator(torchtext.data.Iterator):
 
 
 class DatasetLazyIter(object):
-    """ An Ordered Dataset Iterator, supporting multiple datasets,
-        and lazy loading.
-
-    Args:
-        datasets (list): a list of datasets, which are lazily loaded.
-        fields (dict): fields dict for the datasets.
-        batch_size (int): batch size.
-        batch_size_fn: custom batch process function.
-        device: the GPU device.
-        is_train (bool): train or valid?
+    """ 
+    datasets: an iterator over Dataset objects
+    fields (dict): fields dict for the datasets.
+    batch_size (int): batch size.
+    batch_size_fn: custom batch process function.
+    device: the GPU device.
+    is_train (bool): train or valid?
     """
 
     def __init__(self, datasets, fields, batch_size, batch_size_fn,
@@ -471,9 +468,7 @@ class DatasetLazyIter(object):
             self.cur_iter = self._next_dataset_iterator(dataset_iter)
 
     def __len__(self):
-        # We return the len of cur_dataset, otherwise we need to load
-        # all datasets to determine the real len, which loses the benefit
-        # of lazy loading.
+        # length of the current dataset, not all together
         assert self.cur_iter is not None
         return len(self.cur_iter)
 
@@ -503,6 +498,27 @@ class DatasetLazyIter(object):
             repeat=False)
 
 
+def max_tok_len(new, count, sofar):
+    """
+    In token batching scheme, the number of sequences is limited
+    such that the total number of src/tgt tokens (including padding)
+    in a batch <= batch_size
+    """
+    # Maintains the longest src and tgt length in the current batch
+    global max_src_in_batch, max_tgt_in_batch
+    # Reset current longest length at a new batch (count=1)
+    if count == 1:
+        max_src_in_batch = 0
+        max_tgt_in_batch = 0
+    # Src: <bos> w1 ... wN <eos>
+    max_src_in_batch = max(max_src_in_batch, len(new.src) + 2)
+    # Tgt: w1 ... wN <eos>
+    max_tgt_in_batch = max(max_tgt_in_batch, len(new.tgt) + 1)
+    src_elements = count * max_src_in_batch
+    tgt_elements = count * max_tgt_in_batch
+    return max(src_elements, tgt_elements)
+
+
 def build_dataset_iter(corpus_type, fields, opt, is_train=True):
     """
     This returns user-defined train/validate data iterator for the trainer
@@ -511,32 +527,11 @@ def build_dataset_iter(corpus_type, fields, opt, is_train=True):
     """
     datasets = _lazily_load_dataset(corpus_type, opt.data)
     batch_size = opt.batch_size if is_train else opt.valid_batch_size
-    if is_train and opt.batch_type == "tokens":
-        def batch_size_fn(new, count, sofar):
-            """
-            In token batching scheme, the number of sequences is limited
-            such that the total number of src/tgt tokens (including padding)
-            in a batch <= batch_size
-            """
-            # Maintains the longest src and tgt length in the current batch
-            global max_src_in_batch, max_tgt_in_batch
-            # Reset current longest length at a new batch (count=1)
-            if count == 1:
-                max_src_in_batch = 0
-                max_tgt_in_batch = 0
-            # Src: <bos> w1 ... wN <eos>
-            max_src_in_batch = max(max_src_in_batch, len(new.src) + 2)
-            # Tgt: w1 ... wN <eos>
-            max_tgt_in_batch = max(max_tgt_in_batch, len(new.tgt) + 1)
-            src_elements = count * max_src_in_batch
-            tgt_elements = count * max_tgt_in_batch
-            return max(src_elements, tgt_elements)
-    else:
-        batch_size_fn = None
+    batch_fn = max_tok_len if is_train and opt.batch_type == "tokens" else None
 
     device = "cuda" if opt.gpu_ranks else "cpu"
 
-    return DatasetLazyIter(datasets, fields, batch_size, batch_size_fn,
+    return DatasetLazyIter(datasets, fields, batch_size, batch_fn,
                            device, is_train)
 
 
