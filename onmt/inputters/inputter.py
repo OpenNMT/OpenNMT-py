@@ -456,23 +456,22 @@ class DatasetLazyIter(object):
         self.device = device
         self.is_train = is_train
 
-        self.cur_iter = self._next_dataset_iterator(datasets)
+        self.cur_iter = self._next_dataset_iterator()
         # We have at least one dataset.
         assert self.cur_iter is not None
 
     def __iter__(self):
-        dataset_iter = (d for d in self.datasets)
         while self.cur_iter is not None:
             for batch in self.cur_iter:
                 yield batch
-            self.cur_iter = self._next_dataset_iterator(dataset_iter)
+            self.cur_iter = self._next_dataset_iterator()
 
     def __len__(self):
         # length of the current dataset, not all together
         assert self.cur_iter is not None
         return len(self.cur_iter)
 
-    def _next_dataset_iterator(self, dataset_iter):
+    def _next_dataset_iterator(self):
         try:
             # Drop the current dataset for decreasing memory
             if hasattr(self, "cur_dataset"):
@@ -481,7 +480,7 @@ class DatasetLazyIter(object):
                 del self.cur_dataset
                 gc.collect()
 
-            self.cur_dataset = next(dataset_iter)
+            self.cur_dataset = next(self.datasets)
         except StopIteration:
             return None
 
