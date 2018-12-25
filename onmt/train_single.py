@@ -144,18 +144,14 @@ def main(opt, device_id):
     trainer = build_trainer(opt, device_id, model, fields,
                             optim, data_type, model_saver=model_saver)
 
-    def train_iter_fct(): return build_dataset_iter("train", fields, opt)
+    train_iter = build_dataset_iter("train", fields, opt)
+    valid_iter = build_dataset_iter("valid", fields, opt, is_train=False)
 
-    def valid_iter_fct():
-        return build_dataset_iter("valid", fields, opt, is_train=False)
-
-    # Do training.
     if len(opt.gpu_ranks):
         logger.info('Starting training on GPU: %s' % opt.gpu_ranks)
     else:
         logger.info('Starting training on CPU, could be very slow')
-    trainer.train(train_iter_fct, valid_iter_fct, opt.train_steps,
-                  opt.valid_steps)
+    trainer.train(train_iter, valid_iter, opt.train_steps, opt.valid_steps)
 
     if opt.tensorboard:
         trainer.report_manager.tensorboard_writer.close()
