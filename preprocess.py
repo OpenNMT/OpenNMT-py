@@ -74,6 +74,7 @@ def build_save_dataset(corpus_type, fields, opt):
     dataset_paths = []
 
     for i, (src_shard, tgt_shard) in enumerate(shard_pairs):
+        assert len(src_shard) == len(tgt_shard)
         logger.info("Building shard %d." % i)
         dataset = inputters.build_dataset(
             fields, opt.data_type,
