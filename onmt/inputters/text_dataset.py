@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import codecs
-
 import torch
 
 from onmt.inputters.dataset_base import DatasetBase
@@ -90,9 +88,3 @@ class TextDataset(DatasetBase):
                 example_dict.update((prefix + str(j), f)
                                     for j, f in enumerate(feats))
             yield example_dict
-
-    @classmethod
-    def _read_file(cls, path):
-        with codecs.open(path, "r", "utf-8") as f:
-            for line in f:
-                yield line
