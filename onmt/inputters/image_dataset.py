@@ -31,7 +31,7 @@ class ImageDataset(DatasetBase):
         import cv2
 
         if isinstance(images, str):
-            images = cls._read_file(images, src_dir, channel_size)
+            images = cls._read_file(images)
 
         for i, filename in enumerate(images):
             filename = filename.strip()
