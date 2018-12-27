@@ -3,8 +3,8 @@ import glob
 import os
 import codecs
 
-from collections import Counter, defaultdict, OrderedDict
-from itertools import count
+from collections import Counter, defaultdict
+from itertools import count, chain
 from functools import partial
 
 import torch
@@ -307,10 +307,11 @@ def build_dataset(fields, data_type, src,
 
 
 def _build_field_vocab(field, counter, **kwargs):
-    specials = list(OrderedDict.fromkeys(
-        tok for tok in [field.unk_token, field.pad_token, field.init_token,
-                        field.eos_token]
-        if tok is not None))
+    # this is basically copy-pasted from torchtext.
+    all_specials = [
+        field.unk_token, field.pad_token, field.init_token, field.eos_token
+    ]
+    specials = [tok for tok in all_specials if tok is not None]
     field.vocab = field.vocab_cls(counter, specials=specials, **kwargs)
 
 
@@ -335,11 +336,14 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
     Returns:
         Dict of Fields
     """
-    counters = {k: Counter() for k in fields}
+    # Prop src from field to get lower memory using when training with image
+    if data_type == 'img' or data_type == 'audio':
+        fields.pop("src")
+    counters = {k: Counter() for k, v in chain.from_iterable(fields.values())}
 
     # Load vocabulary
     if src_vocab_path:
-        src_vocab = load_vocabulary(src_vocab_path, "src")
+        src_vocab = _read_vocab_file(src_vocab_path, "src")
         src_vocab_size = len(src_vocab)
         logger.info('Loaded source vocab has %d tokens.' % src_vocab_size)
         for i, token in enumerate(src_vocab):
@@ -350,7 +354,7 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
         src_vocab = None
 
     if tgt_vocab_path:
-        tgt_vocab = load_vocabulary(tgt_vocab_path, "tgt")
+        tgt_vocab = _read_vocab_file(tgt_vocab_path, "tgt")
         tgt_vocab_size = len(tgt_vocab)
         logger.info('Loaded source vocab has %d tokens.' % tgt_vocab_size)
         for i, token in enumerate(tgt_vocab):
@@ -362,12 +366,12 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
         dataset = torch.load(path)
         logger.info(" * reloading %s." % path)
         for ex in dataset.examples:
-            for k in fields:
-                has_vocab = (k == 'src' and src_vocab) or \
-                    (k == 'tgt' and tgt_vocab)
-                if fields[k].sequential and not has_vocab:
-                    val = getattr(ex, k, None)
-                    counters[k].update(val)
+            for name, field in chain.from_iterable(fields.values()):
+                has_vocab = (name == 'src' and src_vocab) or \
+                    (name == 'tgt' and tgt_vocab)
+                if field.sequential and not has_vocab:
+                    val = getattr(ex, name, None)
+                    counters[name].update(val)
 
         # Drop the none-using from memory but keep the last
         if i < len(train_dataset_files) - 1:
@@ -378,43 +382,24 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
             del dataset
             gc.collect()
 
-    _build_field_vocab(
-        fields["tgt"], counters["tgt"],
-        max_size=tgt_vocab_size, min_freq=tgt_words_min_frequency)
-    logger.info(" * tgt vocab size: %d." % len(fields["tgt"].vocab))
-
-    # All datasets have same num of n_tgt_features,
-    # getting the last one is OK.
-    n_tgt_feats = sum('tgt_feat_' in k for k in fields)
-    for j in range(n_tgt_feats):
-        key = "tgt_feat_" + str(j)
-        _build_field_vocab(fields[key], counters[key])
-        logger.info(" * %s vocab size: %d." % (key, len(fields[key].vocab)))
-
+    for name, field in fields["tgt"]:
+        _build_field_vocab(field, counters[name])
+        logger.info(" * %s vocab size: %d." % (name, len(field.vocab)))
     if data_type == 'text':
-        _build_field_vocab(
-            fields["src"], counters["src"],
-            max_size=src_vocab_size, min_freq=src_words_min_frequency)
-        logger.info(" * src vocab size: %d." % len(fields["src"].vocab))
-
-        # All datasets have same num of n_src_features,
-        # getting the last one is OK.
-        n_src_feats = sum('src_feat_' in k for k in fields)
-        for j in range(n_src_feats):
-            key = "src_feat_" + str(j)
-            _build_field_vocab(fields[key], counters[key])
-            logger.info(" * %s vocab size: %d." %
-                        (key, len(fields[key].vocab)))
-
+        for name, field in fields["src"]:
+            _build_field_vocab(field, counters[name])
+            logger.info(" * %s vocab size: %d." % (name, len(field.vocab)))
         if share_vocab:
             # `tgt_vocab_size` is ignored when sharing vocabularies
             logger.info(" * merging src and tgt vocab...")
+            src_field = fields['src'][0][1]
+            tgt_field = fields['tgt'][0][1]
             _merge_field_vocabs(
-                fields["src"], fields["tgt"], vocab_size=src_vocab_size,
+                src_field, tgt_field, vocab_size=src_vocab_size,
                 min_freq=src_words_min_frequency)
-            logger.info(" * merged vocab size: %d." % len(fields["src"].vocab))
+            logger.info(" * merged vocab size: %d." % len(src_field.vocab))
 
-    return fields
+    return fields  # is the return necessary?
 
 
 def _merge_field_vocabs(src_field, tgt_field, vocab_size, min_freq):
@@ -434,7 +419,7 @@ def _merge_field_vocabs(src_field, tgt_field, vocab_size, min_freq):
     assert len(src_field.vocab) == len(tgt_field.vocab)
 
 
-def load_vocabulary(vocab_path, tag):
+def _read_vocab_file(vocab_path, tag):
     """
     Loads a vocabulary from the given path.
     :param vocabulary_path: path to load vocabulary from
