@@ -185,8 +185,11 @@ def load_fields_from_vocab(vocab, data_type="text"):
     n_src_features = sum('src_feat_' in k for k in vocab)
     n_tgt_features = sum('tgt_feat_' in k for k in vocab)
     fields = get_fields(data_type, n_src_features, n_tgt_features)
-    for k, v in vocab.items():
-        fields[k].vocab = v
+
+    for k, vals in fields.items():
+        for n, f in vals:
+            if n in vocab:
+                f.vocab = vocab[n]
     return fields
 
 
