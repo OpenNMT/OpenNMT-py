@@ -59,7 +59,7 @@ class TextDataset(DatasetBase):
         return scores
 
     @classmethod
-    def make_examples(cls, sequences, truncate, side):
+    def make_examples(cls, sequences, side):
         """
         Args:
             sequences: path to corpus file or iterable

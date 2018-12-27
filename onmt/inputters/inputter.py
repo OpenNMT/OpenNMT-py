@@ -104,8 +104,6 @@ def get_fields(
         pairs, where the name is a string which will become the name of
         an attribute of an example.
     """
-    assert src_truncate is None and tgt_truncate is None, \
-        "Truncation does not work yet"
     assert src_data_type in ['text', 'img', 'audio'], \
         "Data type not implemented"
     assert not dynamic_dict or src_data_type == 'text', \
@@ -261,9 +259,7 @@ def filter_example(ex, use_src_len=True, use_tgt_len=True,
 def build_dataset(fields, data_type, src,
                   src_dir=None, tgt=None,
                   src_seq_len=50, tgt_seq_len=50,
-                  src_seq_length_trunc=0, tgt_seq_length_trunc=0,
-                  dynamic_dict=False, sample_rate=0,
-                  window_size=0, window_stride=0, window=None,
+                  sample_rate=0, window_size=0, window_stride=0, window=None,
                   normalize_audio=True, use_filter_pred=True,
                   image_channel_size=3):
     """
@@ -275,12 +271,8 @@ def build_dataset(fields, data_type, src,
     }
     assert data_type in dataset_classes
     assert src is not None
-    assert not dynamic_dict or data_type == 'text', \
-        'it is not possible to use dynamic_dict with non-text input'
     if data_type == 'text':
-        src_examples_iter = TextDataset.make_examples(
-            src, src_seq_length_trunc, "src"
-        )
+        src_examples_iter = TextDataset.make_examples(src, "src")
     elif data_type == 'img':
         # there is a truncate argument as well, but it was never set to
         # anything besides None before
@@ -296,8 +288,7 @@ def build_dataset(fields, data_type, src,
     if tgt is None:
         tgt_examples_iter = None
     else:
-        tgt_examples_iter = TextDataset.make_examples(
-            tgt, tgt_seq_length_trunc, "tgt")
+        tgt_examples_iter = TextDataset.make_examples(tgt, "tgt")
 
     # the second conjunct means nothing will be filtered at translation time
     # if there is no target data
@@ -311,8 +302,7 @@ def build_dataset(fields, data_type, src,
 
     dataset_cls = dataset_classes[data_type]
     dataset = dataset_cls(
-        fields, src_examples_iter, tgt_examples_iter,
-        dynamic_dict=dynamic_dict, filter_pred=filter_pred)
+        fields, src_examples_iter, tgt_examples_iter, filter_pred=filter_pred)
     return dataset
 
 
