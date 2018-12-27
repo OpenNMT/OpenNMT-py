@@ -71,68 +71,106 @@ def make_audio(data, vocab):
     return sounds
 
 
+# mix this with partial
+def _feature_tokenize(
+        string, layer=0, tok_delim=None, feat_delim=None, truncate=None):
+    tokens = string.split(tok_delim)
+    if truncate is not None:
+        tokens = tokens[:truncate]
+    if feat_delim is not None:
+        tokens = [t.split(feat_delim)[layer] for t in tokens]
+    return tokens
+
+
 def get_fields(
     src_data_type,
-    n_src_features,
-    n_tgt_features,
+    n_src_feats,
+    n_tgt_feats,
     pad='<blank>',
     bos='<s>',
-    eos='</s>'
+    eos='</s>',
+    dynamic_dict=False,
+    src_truncate=None,
+    tgt_truncate=None
 ):
     """
-    Args:
-        src_data_type: type of the source input. Options are [text|img|audio].
-        n_src_features: the number of source features to
-            create `torchtext.data.Field` for.
-        n_tgt_features: the number of target features to
-            create `torchtext.data.Field` for.
-
-    Returns:
-        A dictionary whose keys are strings and whose values are the
-        corresponding Field objects.
+    src_data_type: type of the source input. Options are [text|img|audio].
+    n_src_feats, n_tgt_feats: the number of source and target features to
+        create a `torchtext.data.Field` for.
+    pad, bos, eos: special symbols to use for fields.
+    returns: A dictionary. The keys are strings whose names correspond to the
+        keys of the dictionaries yielded by the make_examples methods of
+        various dataset classes. The values are lists of (name, Field)
+        pairs, where the name is a string which will become the name of
+        an attribute of an example.
     """
+    assert src_truncate is None and tgt_truncate is None, \
+        "Truncation does not work yet"
     assert src_data_type in ['text', 'img', 'audio'], \
         "Data type not implemented"
-    fields = dict()
+    assert not dynamic_dict or src_data_type == 'text', \
+        'it is not possible to use dynamic_dict with non-text input'
+    fields = {'src': [], 'tgt': []}
 
     if src_data_type == 'text':
-        fields["src"] = Field(pad_token=pad, include_lengths=True)
-        for i in range(n_src_features):
-            fields["src_feat_" + str(i)] = Field(pad_token=pad)
+        feat_delim = u"￨" if n_src_feats > 0 else None
+        for i in range(n_src_feats + 1):
+            name = "src_feat_" + str(i - 1) if i > 0 else "src"
+            tokenize = partial(
+                _feature_tokenize,
+                layer=i,
+                truncate=src_truncate,
+                feat_delim=feat_delim)
+            use_len = i == 0
+            feat = Field(
+                pad_token=pad, tokenize=tokenize, include_lengths=use_len)
+            fields['src'].append((name, feat))
     elif src_data_type == 'img':
-        fields["src"] = Field(
+        img = Field(
             use_vocab=False, dtype=torch.float,
             postprocessing=make_img, sequential=False)
+        fields["src"].append(('src', img))
     else:
-        fields["src"] = Field(
+        audio = Field(
             use_vocab=False, dtype=torch.float,
             postprocessing=make_audio, sequential=False)
+        fields["src"].append(('src', audio))
 
     if src_data_type == 'audio':
         # only audio has src_lengths
-        fields["src_lengths"] = Field(
-            use_vocab=False, dtype=torch.long, sequential=False)
-    else:
-        # for some reason, these things are created for everything except
-        # audio, but they should only be necessary if you use a dynamic dict
-        fields["src_map"] = Field(
-            use_vocab=False, dtype=torch.float,
-            postprocessing=make_src, sequential=False)
-
-        fields["alignment"] = Field(
-            use_vocab=False, dtype=torch.long,
-            postprocessing=make_tgt, sequential=False)
+        length = Field(use_vocab=False, dtype=torch.long, sequential=False)
+        fields["src_lengths"] = [("src_lengths", length)]
 
     # below this: things defined no matter what the data source type is
-    fields["tgt"] = Field(
-        init_token=bos, eos_token=eos, pad_token=pad)
+    feat_delim = u"￨" if n_tgt_feats > 0 else None
+    for i in range(n_tgt_feats + 1):
+        name = "tgt_feat_" + str(i - 1) if i > 0 else "tgt"
+        tokenize = partial(
+            _feature_tokenize,
+            layer=i,
+            truncate=tgt_truncate,
+            feat_delim=feat_delim)
 
-    for i in range(n_tgt_features):
-        fields["tgt_feat_" + str(i)] = Field(
-            init_token=bos, eos_token=eos, pad_token=pad)
+        feat = Field(
+            init_token=bos,
+            eos_token=eos,
+            pad_token=pad,
+            tokenize=tokenize)
+        fields['tgt'].append((name, feat))
 
-    fields["indices"] = Field(
-        use_vocab=False, dtype=torch.long, sequential=False)
+    indices = Field(use_vocab=False, dtype=torch.long, sequential=False)
+    fields["indices"] = [('indices', indices)]
+
+    if dynamic_dict:
+        src_map = Field(
+            use_vocab=False, dtype=torch.float,
+            postprocessing=make_src, sequential=False)
+        fields["src_map"] = [("src_map", src_map)]
+
+        align = Field(
+            use_vocab=False, dtype=torch.long,
+            postprocessing=make_tgt, sequential=False)
+        fields["alignment"] = [('alignment', align)]
 
     return fields
 
