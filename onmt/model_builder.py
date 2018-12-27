@@ -187,9 +187,8 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
 
     # Build encoder.
     if model_opt.model_type == "text":
-        feat_fields = [fields[k]
-                       for k in inputters.collect_features(fields, 'src')]
-        src_emb = build_embeddings(model_opt, fields["src"], feat_fields)
+        src_fields = [f for n, f in fields['src']]
+        src_emb = build_embeddings(model_opt, src_fields[0], src_fields[1:])
         encoder = build_encoder(model_opt, src_emb)
     elif model_opt.model_type == "img":
         # why is build_encoder not used here?
@@ -221,10 +220,9 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
         )
 
     # Build decoder.
-    feat_fields = [fields[k]
-                   for k in inputters.collect_features(fields, 'tgt')]
+    tgt_fields = [f for n, f in fields['tgt']]
     tgt_emb = build_embeddings(
-        model_opt, fields["tgt"], feat_fields, for_encoder=False)
+        model_opt, tgt_fields[0], tgt_fields[1:], for_encoder=False)
 
     # Share the embedding matrix - preprocess with share_vocab required.
     if model_opt.share_embeddings:
@@ -247,14 +245,14 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
         else:
             gen_func = nn.LogSoftmax(dim=-1)
         generator = nn.Sequential(
-            nn.Linear(model_opt.dec_rnn_size, len(fields["tgt"].vocab)),
+            nn.Linear(model_opt.dec_rnn_size, len(fields["tgt"][0][1].vocab)),
             gen_func
         )
         if model_opt.share_decoder_embeddings:
             generator[0].weight = decoder.embeddings.word_lut.weight
     else:
-        vocab_size = len(fields["tgt"].vocab)
-        pad_idx = fields["tgt"].vocab.stoi[fields["tgt"].pad_token]
+        vocab_size = len(fields["tgt"][0][1].vocab)
+        pad_idx = fields["tgt"][0][1].vocab.stoi[fields["tgt"][0][1].pad_token]
         generator = CopyGenerator(model_opt.dec_rnn_size, vocab_size, pad_idx)
 
     # Load the model states from checkpoint or initialize them.

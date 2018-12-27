@@ -7,12 +7,14 @@ import configargparse
 
 import os
 import random
+from itertools import chain
+
 import torch
 
 import onmt.opts as opts
 
 from onmt.inputters.inputter import build_dataset_iter, lazily_load_dataset, \
-    load_fields_from_vocab, _collect_report_features, old_style_vocab
+    load_fields_from_vocab, old_style_vocab
 from onmt.model_builder import build_model
 from onmt.utils.optimizers import build_optim
 from onmt.trainer import build_trainer
@@ -121,24 +123,12 @@ def main(opt, device_id):
         fields = load_fields_from_vocab(vocab, data_type)
     else:
         fields = vocab
-    ex_fields = first_dataset.examples[0].__dict__
-    fields = {k: f for k, f in fields.items() if k in ex_fields}
 
-    if data_type == 'text':
-        logger.info(' * vocabulary size. source = %d; target = %d' %
-                    (len(fields['src'].vocab), len(fields['tgt'].vocab)))
-    else:
-        logger.info(' * vocabulary size. target = %d' %
-                    (len(fields['tgt'].vocab)))
-
-    # Report src/tgt features.
-    src_features, tgt_features = _collect_report_features(fields)
-    for j, feat in enumerate(src_features):
-        logger.info(' * src feature %d size = %d'
-                    % (j, len(fields[feat].vocab)))
-    for j, feat in enumerate(tgt_features):
-        logger.info(' * tgt feature %d size = %d'
-                    % (j, len(fields[feat].vocab)))
+    # Report src and tgt vocab sizes, including for features
+    for side in ['src', 'tgt']:
+        for name, f in fields[side]:
+            if f.use_vocab:
+                logger.info(' * %s vocab size = %d' % (name, len(f.vocab)))
 
     # Build model.
     model = build_model(model_opt, opt, fields, checkpoint)
@@ -157,11 +147,15 @@ def main(opt, device_id):
     trainer = build_trainer(opt, device_id, model, fields,
                             optim, data_type, model_saver=model_saver)
 
+    # this line is kind of a temporary kludge because different objects expect
+    # fields to have a different structure
+    dataset_fields = dict(chain.from_iterable(fields.values()))
+
     def train_iter_fct(): return build_dataset_iter(
-        lazily_load_dataset("train", opt), fields, opt)
+        lazily_load_dataset("train", opt), dataset_fields, opt)
 
     def valid_iter_fct(): return build_dataset_iter(
-        lazily_load_dataset("valid", opt), fields, opt, is_train=False)
+        lazily_load_dataset("valid", opt), dataset_fields, opt, is_train=False)
 
     # Do training.
     if len(opt.gpu_ranks):

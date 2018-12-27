@@ -4,7 +4,7 @@ import os
 import codecs
 
 from collections import Counter, defaultdict
-from itertools import count, chain
+from itertools import chain
 from functools import partial
 
 import torch
@@ -230,17 +230,6 @@ def make_features(batch, side, data_type='text'):
         return torch.cat([level.unsqueeze(2) for level in levels], 2)
     else:
         return levels[0]
-
-
-def collect_features(fields, side="src"):
-    assert side in ["src", "tgt"]
-    feats = []
-    for j in count():
-        key = side + "_feat_" + str(j)
-        if key not in fields:
-            break
-        feats.append(key)
-    return feats
 
 
 def filter_example(ex, use_src_len=True, use_tgt_len=True,
@@ -586,10 +575,3 @@ def lazily_load_dataset(corpus_type, opt):
         # Only one inputters.*Dataset, simple!
         pt = opt.data + '.' + corpus_type + '.pt'
         yield _lazy_dataset_loader(pt, corpus_type)
-
-
-def _collect_report_features(fields):
-    src_features = collect_features(fields, side='src')
-    tgt_features = collect_features(fields, side='tgt')
-
-    return src_features, tgt_features
