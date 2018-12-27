@@ -81,3 +81,7 @@ class TextDataset(DatasetBase):
         with codecs.open(path, "r", "utf-8") as f:
             for line in f:
                 yield line
+
+    @property
+    def can_copy(self):
+        return "src_map" in self.fields and "alignment" in self.fields

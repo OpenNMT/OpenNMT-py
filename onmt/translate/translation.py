@@ -29,19 +29,20 @@ class TranslationBuilder(object):
         self.has_tgt = has_tgt
 
     def _build_target_tokens(self, src, src_vocab, src_raw, pred, attn):
-        vocab = self.fields["tgt"].vocab
+        tgt_field = self.fields["tgt"][0][1]
+        vocab = tgt_field.vocab
         tokens = []
         for tok in pred:
             if tok < len(vocab):
                 tokens.append(vocab.itos[tok])
             else:
                 tokens.append(src_vocab.itos[tok - len(vocab)])
-            if tokens[-1] == self.fields["tgt"].eos_token:
+            if tokens[-1] == tgt_field.eos_token:
                 tokens = tokens[:-1]
                 break
         if self.replace_unk and attn is not None and src is not None:
             for i in range(len(tokens)):
-                if tokens[i] == self.fields["tgt"].unk_token:
+                if tokens[i] == tgt_field.unk_token:
                     _, max_index = attn[i].max(0)
                     tokens[i] = src_raw[max_index.item()]
         return tokens
