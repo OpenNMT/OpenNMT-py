@@ -7,11 +7,6 @@ import torch
 import torchtext
 from torchtext.vocab import Vocab
 
-PAD_WORD = '<blank>'
-UNK_WORD = '<unk>'
-BOS_WORD = '<s>'
-EOS_WORD = '</s>'
-
 
 class DatasetBase(torchtext.data.Dataset):
     """
@@ -72,38 +67,6 @@ class DatasetBase(torchtext.data.Dataset):
         if remove_fields:
             self.fields = []
         torch.save(self, path)
-
-    @staticmethod
-    def extract_text_features(tokens):
-        """
-        Args:
-            tokens: A list of tokens, where each token consists of a word,
-                optionally followed by u"￨"-delimited features.
-        Returns:
-            A sequence of words, a sequence of features, and num of features.
-        """
-        if not tokens:
-            return [], [], -1
-
-        specials = [PAD_WORD, UNK_WORD, BOS_WORD, EOS_WORD]
-        words = []
-        features = []
-        n_feats = None
-        for token in tokens:
-            split_token = token.split(u"￨")
-            assert all([special != split_token[0] for special in specials]), \
-                "Dataset cannot contain Special Tokens"
-
-            if split_token[0]:
-                words += [split_token[0]]
-                features += [split_token[1:]]
-
-                if n_feats is None:
-                    n_feats = len(split_token)
-                assert len(split_token) == n_feats, \
-                    "all words must have the same number of features"
-        features = list(zip(*features))
-        return tuple(words), features, n_feats - 1
 
     def _join_dicts(self, *args):
         """

@@ -12,7 +12,6 @@ import torchtext.data
 from torchtext.data import Field
 from torchtext.vocab import Vocab
 
-from onmt.inputters.dataset_base import PAD_WORD, BOS_WORD, EOS_WORD
 from onmt.inputters.text_dataset import TextDataset
 from onmt.inputters.image_dataset import ImageDataset
 from onmt.inputters.audio_dataset import AudioDataset
@@ -72,7 +71,14 @@ def make_audio(data, vocab):
     return sounds
 
 
-def get_fields(src_data_type, n_src_features, n_tgt_features):
+def get_fields(
+    src_data_type,
+    n_src_features,
+    n_tgt_features,
+    pad='<blank>',
+    bos='<s>',
+    eos='</s>'
+):
     """
     Args:
         src_data_type: type of the source input. Options are [text|img|audio].
@@ -90,9 +96,9 @@ def get_fields(src_data_type, n_src_features, n_tgt_features):
     fields = dict()
 
     if src_data_type == 'text':
-        fields["src"] = Field(pad_token=PAD_WORD, include_lengths=True)
+        fields["src"] = Field(pad_token=pad, include_lengths=True)
         for i in range(n_src_features):
-            fields["src_feat_" + str(i)] = Field(pad_token=PAD_WORD)
+            fields["src_feat_" + str(i)] = Field(pad_token=pad)
     elif src_data_type == 'img':
         fields["src"] = Field(
             use_vocab=False, dtype=torch.float,
@@ -119,11 +125,11 @@ def get_fields(src_data_type, n_src_features, n_tgt_features):
 
     # below this: things defined no matter what the data source type is
     fields["tgt"] = Field(
-        init_token=BOS_WORD, eos_token=EOS_WORD, pad_token=PAD_WORD)
+        init_token=bos, eos_token=eos, pad_token=pad)
 
     for i in range(n_tgt_features):
         fields["tgt_feat_" + str(i)] = Field(
-            init_token=BOS_WORD, eos_token=EOS_WORD, pad_token=PAD_WORD)
+            init_token=bos, eos_token=eos, pad_token=pad)
 
     fields["indices"] = Field(
         use_vocab=False, dtype=torch.long, sequential=False)
