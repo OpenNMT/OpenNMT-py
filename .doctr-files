@@ -85,6 +85,7 @@
 ./_static/jquery.js
 ./_static/js/modernizr.min.js
 ./_static/js/theme.js
+./_static/language_data.js
 ./_static/minus.png
 ./_static/plus.png
 ./_static/pygments.css
