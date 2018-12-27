@@ -72,11 +72,11 @@ class DatasetBase(Dataset):
 
         # self.src_vocabs is used in collapse_copy_scores and Translator.py
         self.src_vocabs = []
-        src_field = fields['src'][0][1]
-        tgt_field = fields['tgt'][0][1]
         examples = []
         for ex_dict in examples_iter:
             if dynamic_dict:
+                src_field = fields['src'][0][1]
+                tgt_field = fields['tgt'][0][1]
                 src_vocab, ex_dict = self._dynamic_dict(
                     ex_dict, src_field, tgt_field)
                 self.src_vocabs.append(src_vocab)
