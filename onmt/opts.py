@@ -497,6 +497,18 @@ def translate_opts(parser):
               Necessary for models whose output layers can assign
               zero probability.""")
 
+    group = parser.add_argument_group('Random Sampling')
+    group.add('--sampling_temp', '-sampling_temp',
+               default=1., type=float,
+               help="""Divide the logits by this before computing
+                     softmax during decoding. This should only be 
+                     non-1 if beam_size is 1""")
+    group.add('--sample_from_topk', '-sample_from_topk',
+              default=-1, type=int,
+              help="""If doing random sampling (beam_size is 1), only
+                      sample from this many of the most likely next
+                      tokens.""")
+
     group = parser.add_argument_group('Data')
     group.add('--data_type', '-data_type', default="text",
               help="Type of the source input. Options: [text|img].")

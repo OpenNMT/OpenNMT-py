@@ -32,3 +32,46 @@ class Elementwise(nn.ModuleList):
             return sum(outputs)
         else:
             return outputs
+
+
+class ApplyTemperature(nn.Module):
+    """Divides logits by temperature."""
+
+    def __init__(self, temp, *args):
+        self.temp = temp
+        super(ApplyTemperature, self).__init__(*args)
+
+    def forward(self, x):
+        if self.temp == 0.0:
+            return torch.argmax(x, dim=1)
+        else:
+            return torch.div(x, self.temp)
+
+
+class RestrictToTopK(nn.Module):
+    """Zeroes out all logits except for the k largest."""
+
+    def __init__(self, k, *args):
+        self.k = k
+        super(RestrictToTopK, self).__init__(*args)
+
+    def forward(self, x):
+        top_values, top_indices = torch.topk(x, self.k, dim=1)
+        kth_best = top_values[:, -1].view([-1, 1])
+        kth_best = kth_best.repeat([1, x.shape[1]])
+        kth_best = kth_best.type(torch.cuda.FloatTensor)
+
+        keep = torch.ge(x, kth_best).type(torch.cuda.FloatTensor)
+
+        # Set all logits that are not in the top-k to -100.
+        # This puts the probabilities close to 0.
+        x = (keep * x) + ((1-keep) * -100)
+        return x
+
+
+
+
+
+
+
+
