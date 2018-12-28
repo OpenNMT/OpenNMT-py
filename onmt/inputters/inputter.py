@@ -4,7 +4,7 @@ import os
 import codecs
 
 from collections import Counter, defaultdict, OrderedDict
-from itertools import count
+from itertools import count, cycle
 from functools import partial
 
 import torch
@@ -438,134 +438,85 @@ class OrderedIterator(torchtext.data.Iterator):
 
 
 class DatasetLazyIter(object):
-    """ An Ordered Dataset Iterator, supporting multiple datasets,
-        and lazy loading.
-
-    Args:
-        datasets (list): a list of datasets, which are lazily loaded.
-        fields (dict): fields dict for the datasets.
-        batch_size (int): batch size.
-        batch_size_fn: custom batch process function.
-        device: the GPU device.
-        is_train (bool): train or valid?
+    """
+    dataset_paths: a list containing the locations of datasets
+    fields (dict): fields dict for the datasets.
+    batch_size (int): batch size.
+    batch_size_fn: custom batch process function.
+    device: the GPU device.
+    is_train (bool): train or valid?
     """
 
-    def __init__(self, datasets, fields, batch_size, batch_size_fn,
+    def __init__(self, dataset_paths, fields, batch_size, batch_size_fn,
                  device, is_train):
-        self.datasets = datasets
+        self._paths = dataset_paths
         self.fields = fields
         self.batch_size = batch_size
         self.batch_size_fn = batch_size_fn
         self.device = device
         self.is_train = is_train
 
-        self.cur_iter = self._next_dataset_iterator(datasets)
-        # We have at least one dataset.
-        assert self.cur_iter is not None
-
     def __iter__(self):
-        dataset_iter = (d for d in self.datasets)
-        while self.cur_iter is not None:
-            for batch in self.cur_iter:
+        paths = cycle(self._paths) if self.is_train else self._paths
+        for path in paths:
+            cur_dataset = torch.load(path)
+            logger.info('Loading dataset from %s, number of examples: %d' %
+                        (path, len(cur_dataset)))
+            cur_dataset.fields = self.fields
+            cur_iter = OrderedIterator(
+                dataset=cur_dataset,
+                batch_size=self.batch_size,
+                batch_size_fn=self.batch_size_fn,
+                device=self.device,
+                train=self.is_train,
+                sort=False,
+                sort_within_batch=True,
+                repeat=False
+            )
+            for batch in cur_iter:
                 yield batch
-            self.cur_iter = self._next_dataset_iterator(dataset_iter)
 
-    def __len__(self):
-        # We return the len of cur_dataset, otherwise we need to load
-        # all datasets to determine the real len, which loses the benefit
-        # of lazy loading.
-        assert self.cur_iter is not None
-        return len(self.cur_iter)
-
-    def _next_dataset_iterator(self, dataset_iter):
-        try:
-            # Drop the current dataset for decreasing memory
-            if hasattr(self, "cur_dataset"):
-                self.cur_dataset.examples = None
-                gc.collect()
-                del self.cur_dataset
-                gc.collect()
-
-            self.cur_dataset = next(dataset_iter)
-        except StopIteration:
-            return None
-
-        # We clear `fields` when saving, restore when loading.
-        self.cur_dataset.fields = self.fields
-
-        # Sort batch by decreasing lengths of sentence required by pytorch.
-        # sort=False means "Use dataset's sortkey instead of iterator's".
-        return OrderedIterator(
-            dataset=self.cur_dataset, batch_size=self.batch_size,
-            batch_size_fn=self.batch_size_fn,
-            device=self.device, train=self.is_train,
-            sort=False, sort_within_batch=True,
-            repeat=False)
+            cur_dataset.examples = None
+            gc.collect()
+            del cur_dataset
+            gc.collect()
 
 
-def build_dataset_iter(datasets, fields, opt, is_train=True):
+def max_tok_len(new, count, sofar):
+    """
+    In token batching scheme, the number of sequences is limited
+    such that the total number of src/tgt tokens (including padding)
+    in a batch <= batch_size
+    """
+    # Maintains the longest src and tgt length in the current batch
+    global max_src_in_batch, max_tgt_in_batch
+    # Reset current longest length at a new batch (count=1)
+    if count == 1:
+        max_src_in_batch = 0
+        max_tgt_in_batch = 0
+    # Src: <bos> w1 ... wN <eos>
+    max_src_in_batch = max(max_src_in_batch, len(new.src) + 2)
+    # Tgt: w1 ... wN <eos>
+    max_tgt_in_batch = max(max_tgt_in_batch, len(new.tgt) + 1)
+    src_elements = count * max_src_in_batch
+    tgt_elements = count * max_tgt_in_batch
+    return max(src_elements, tgt_elements)
+
+
+def build_dataset_iter(corpus_type, fields, opt, is_train=True):
     """
     This returns user-defined train/validate data iterator for the trainer
     to iterate over. We implement simple ordered iterator strategy here,
     but more sophisticated strategy like curriculum learning is ok too.
     """
+    dataset_paths = sorted(glob.glob(opt.data + '.' + corpus_type + '*.pt'))
     batch_size = opt.batch_size if is_train else opt.valid_batch_size
-    if is_train and opt.batch_type == "tokens":
-        def batch_size_fn(new, count, sofar):
-            """
-            In token batching scheme, the number of sequences is limited
-            such that the total number of src/tgt tokens (including padding)
-            in a batch <= batch_size
-            """
-            # Maintains the longest src and tgt length in the current batch
-            global max_src_in_batch, max_tgt_in_batch
-            # Reset current longest length at a new batch (count=1)
-            if count == 1:
-                max_src_in_batch = 0
-                max_tgt_in_batch = 0
-            # Src: <bos> w1 ... wN <eos>
-            max_src_in_batch = max(max_src_in_batch, len(new.src) + 2)
-            # Tgt: w1 ... wN <eos>
-            max_tgt_in_batch = max(max_tgt_in_batch, len(new.tgt) + 1)
-            src_elements = count * max_src_in_batch
-            tgt_elements = count * max_tgt_in_batch
-            return max(src_elements, tgt_elements)
-    else:
-        batch_size_fn = None
+    batch_fn = max_tok_len if is_train and opt.batch_type == "tokens" else None
 
     device = "cuda" if opt.gpu_ranks else "cpu"
 
-    return DatasetLazyIter(datasets, fields, batch_size, batch_size_fn,
+    return DatasetLazyIter(dataset_paths, fields, batch_size, batch_fn,
                            device, is_train)
-
-
-def lazily_load_dataset(corpus_type, opt):
-    """
-    Dataset generator. Don't do extra stuff here, like printing,
-    because they will be postponed to the first loading time.
-
-    Args:
-        corpus_type: 'train' or 'valid'
-    Returns:
-        A list of dataset, the dataset(s) are lazily loaded.
-    """
-    assert corpus_type in ["train", "valid"]
-
-    def _lazy_dataset_loader(pt_file, corpus_type):
-        dataset = torch.load(pt_file)
-        logger.info('Loading %s dataset from %s, number of examples: %d' %
-                    (corpus_type, pt_file, len(dataset)))
-        return dataset
-
-    # Sort the glob output by file name (by increasing indexes).
-    pts = sorted(glob.glob(opt.data + '.' + corpus_type + '.[0-9]*.pt'))
-    if pts:
-        for pt in pts:
-            yield _lazy_dataset_loader(pt, corpus_type)
-    else:
-        # Only one inputters.*Dataset, simple!
-        pt = opt.data + '.' + corpus_type + '.pt'
-        yield _lazy_dataset_loader(pt, corpus_type)
 
 
 def load_fields(dataset, opt, checkpoint):

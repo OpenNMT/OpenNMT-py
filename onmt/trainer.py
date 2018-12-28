@@ -110,7 +110,7 @@ class Trainer(object):
         # Set model in training mode.
         self.model.train()
 
-    def train(self, train_iter_fct, valid_iter_fct, train_steps, valid_steps):
+    def train(self, train_iter, valid_iter, train_steps, valid_steps):
         """
         The main training loops.
         by iterating over training data (i.e. `train_iter_fct`)
@@ -134,7 +134,6 @@ class Trainer(object):
         true_batchs = []
         accum = 0
         normalization = 0
-        train_iter = train_iter_fct()
 
         total_stats = onmt.utils.Statistics()
         report_stats = onmt.utils.Statistics()
@@ -186,7 +185,6 @@ class Trainer(object):
                             if self.gpu_verbose_level > 0:
                                 logger.info('GpuRank %d: validate step %d'
                                             % (self.gpu_rank, step))
-                            valid_iter = valid_iter_fct()
                             valid_stats = self.validate(valid_iter)
                             if self.gpu_verbose_level > 0:
                                 logger.info('GpuRank %d: gather valid stat \
@@ -206,7 +204,6 @@ class Trainer(object):
             if self.gpu_verbose_level > 0:
                 logger.info('GpuRank %d: we completed an epoch \
                             at step %d' % (self.gpu_rank, step))
-            train_iter = train_iter_fct()
 
         return total_stats
 
