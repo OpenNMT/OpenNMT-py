@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import codecs
-
 import torch
 
 from onmt.inputters.dataset_base import DatasetBase
@@ -75,12 +73,6 @@ class TextDataset(DatasetBase):
             sequences = cls._read_file(sequences)
         for i, seq in enumerate(sequences):
             yield {side: seq, "indices": i}
-
-    @classmethod
-    def _read_file(cls, path):
-        with codecs.open(path, "r", "utf-8") as f:
-            for line in f:
-                yield line
 
     @property
     def can_copy(self):

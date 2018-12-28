@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import codecs
 import os
 from tqdm import tqdm
 
@@ -61,7 +60,7 @@ class AudioDataset(DatasetBase):
     @classmethod
     def make_examples(
         cls,
-        path,
+        data,
         src_dir,
         side,
         sample_rate,
@@ -73,7 +72,7 @@ class AudioDataset(DatasetBase):
     ):
         """
         Args:
-            path (str): location of a src file containing audio paths.
+            data: sequence of audio paths or path containing these sequences
             src_dir (str): location of source audio files.
             side (str): 'src' or 'tgt'.
             sample_rate (int): sample_rate.
@@ -87,23 +86,24 @@ class AudioDataset(DatasetBase):
         Yields:
             a dictionary containing audio data for each line.
         """
-        assert isinstance(path, str), "Iterators not supported for audio"
         assert src_dir is not None and os.path.exists(src_dir),\
             "src_dir must be a valid directory if data_type is audio"
 
-        with codecs.open(path, "r", "utf-8") as corpus_file:
-            for i, line in enumerate(tqdm(corpus_file)):
-                audio_path = os.path.join(src_dir, line.strip())
-                if not os.path.exists(audio_path):
-                    audio_path = line.strip()
+        if isinstance(data, str):
+            data = cls._read_file(data)
 
-                assert os.path.exists(audio_path), \
-                    'audio path %s not found' % (line.strip())
+        for i, line in enumerate(tqdm(data)):
+            audio_path = os.path.join(src_dir, line.strip())
+            if not os.path.exists(audio_path):
+                audio_path = line.strip()
 
-                spect = AudioDataset.extract_features(
-                    audio_path, sample_rate, truncate, window_size,
-                    window_stride, window, normalize_audio
-                )
+            assert os.path.exists(audio_path), \
+                'audio path %s not found' % (line.strip())
 
-                yield {side: spect, side + '_path': line.strip(),
-                       side + '_lengths': spect.size(1), 'indices': i}
+            spect = AudioDataset.extract_features(
+                audio_path, sample_rate, truncate, window_size,
+                window_stride, window, normalize_audio
+            )
+
+            yield {side: spect, side + '_path': line.strip(),
+                   side + '_lengths': spect.size(1), 'indices': i}
