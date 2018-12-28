@@ -269,7 +269,7 @@
         <span class="c1"># Set model in training mode.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
 
-<div class="viewcode-block" id="Trainer.train"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.train">[docs]</a>    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_iter_fct</span><span class="p">,</span> <span class="n">valid_iter_fct</span><span class="p">,</span> <span class="n">train_steps</span><span class="p">,</span> <span class="n">valid_steps</span><span class="p">):</span>
+<div class="viewcode-block" id="Trainer.train"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.train">[docs]</a>    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_iter</span><span class="p">,</span> <span class="n">valid_iter</span><span class="p">,</span> <span class="n">train_steps</span><span class="p">,</span> <span class="n">valid_steps</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        The main training loops.</span>
 <span class="sd">        by iterating over training data (i.e. `train_iter_fct`)</span>
@@ -293,7 +293,6 @@
         <span class="n">true_batchs</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">accum</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">normalization</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="n">train_iter</span> <span class="o">=</span> <span class="n">train_iter_fct</span><span class="p">()</span>
 
         <span class="n">total_stats</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">Statistics</span><span class="p">()</span>
         <span class="n">report_stats</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">Statistics</span><span class="p">()</span>
@@ -345,7 +344,6 @@
                             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpu_verbose_level</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;GpuRank </span><span class="si">%d</span><span class="s1">: validate step </span><span class="si">%d</span><span class="s1">&#39;</span>
                                             <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gpu_rank</span><span class="p">,</span> <span class="n">step</span><span class="p">))</span>
-                            <span class="n">valid_iter</span> <span class="o">=</span> <span class="n">valid_iter_fct</span><span class="p">()</span>
                             <span class="n">valid_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">valid_iter</span><span class="p">)</span>
                             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpu_verbose_level</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;GpuRank </span><span class="si">%d</span><span class="s1">: gather valid stat </span><span class="se">\</span>
@@ -365,7 +363,6 @@
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpu_verbose_level</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;GpuRank </span><span class="si">%d</span><span class="s1">: we completed an epoch </span><span class="se">\</span>
 <span class="s1">                            at step </span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gpu_rank</span><span class="p">,</span> <span class="n">step</span><span class="p">))</span>
-            <span class="n">train_iter</span> <span class="o">=</span> <span class="n">train_iter_fct</span><span class="p">()</span>
 
         <span class="k">return</span> <span class="n">total_stats</span></div>
 
