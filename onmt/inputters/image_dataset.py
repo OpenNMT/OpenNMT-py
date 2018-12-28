@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import codecs
 import os
 
 from onmt.inputters.dataset_base import DatasetBase
@@ -27,36 +26,29 @@ class ImageDataset(DatasetBase):
         Yields:
             a dictionary containing image data, path and index for each line.
         """
-        if isinstance(images, str):
-            images = cls._read_file(images, src_dir, channel_size)
-
-        for i, (img, filename) in enumerate(images):
-            if truncate and truncate != (0, 0):
-                if not (img.size(1) <= truncate[0]
-                        and img.size(2) <= truncate[1]):
-                    continue
-
-            yield {side: img, side + '_path': filename, 'indices': i}
-
-    @classmethod
-    def _read_file(cls, path, src_dir, channel_size):
         from PIL import Image
         from torchvision import transforms
         import cv2
 
-        with codecs.open(path, "r", "utf-8") as f:
-            for line in f:
-                filename = line.strip()
-                img_path = os.path.join(src_dir, filename)
-                if not os.path.exists(img_path):
-                    img_path = line
+        if isinstance(images, str):
+            images = cls._read_file(images)
 
-                assert os.path.exists(img_path), \
-                    'img path %s not found' % (line.strip())
+        for i, filename in enumerate(images):
+            filename = filename.strip()
+            img_path = os.path.join(src_dir, filename)
+            if not os.path.exists(img_path):
+                img_path = filename
 
-                if channel_size == 1:
-                    img = transforms.ToTensor()(
-                        Image.fromarray(cv2.imread(img_path, 0)))
-                else:
-                    img = transforms.ToTensor()(Image.open(img_path))
-                yield img, filename
+            assert os.path.exists(img_path), \
+                'img path %s not found' % filename
+
+            if channel_size == 1:
+                img = transforms.ToTensor()(
+                    Image.fromarray(cv2.imread(img_path, 0)))
+            else:
+                img = transforms.ToTensor()(Image.open(img_path))
+            if truncate and truncate != (0, 0):
+                if not (img.size(1) <= truncate[0]
+                        and img.size(2) <= truncate[1]):
+                    continue
+            yield {side: img, side + '_path': filename, 'indices': i}
