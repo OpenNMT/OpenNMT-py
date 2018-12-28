@@ -4,6 +4,9 @@ import os
 from tqdm import tqdm
 
 import torch
+import torchaudio
+import librosa
+import numpy as np
 
 from onmt.inputters.dataset_base import DatasetBase
 
@@ -19,12 +22,11 @@ class AudioDataset(DatasetBase):
     @staticmethod
     def extract_features(audio_path, sample_rate, truncate, window_size,
                          window_stride, window, normalize_audio):
-        global torchaudio, librosa, np
-        import torchaudio
-        import librosa
-        import numpy as np
-
-        sound, sample_rate_ = torchaudio.load(audio_path)
+        # torchaudio loading options recently changed. It's probably
+        # straightforward to rewrite the audio handling to make use of
+        # up-to-date torchaudio, but in the meantime there is a legacy
+        # method which uses the old defaults
+        sound, sample_rate_ = torchaudio.legacy.load(audio_path)
         if truncate and truncate > 0:
             if sound.size(0) > truncate:
                 sound = sound[:truncate]

@@ -65,6 +65,9 @@ class AverageAttention(nn.Module):
                 used to compute the cumulative average.
             cache: a dictionary containing the cumulative average
                 of the previous step.
+
+        Returns:
+            a tensor of the same shape and type as :obj:`inputs`.
         """
         if layer_cache is not None:
             step = mask_or_step
@@ -85,8 +88,9 @@ class AverageAttention(nn.Module):
         Returns:
             (`FloatTensor`, `FloatTensor`):
 
-            * gating_outputs `[batch_size x 1 x model_dim]`
-            * average_outputs average attention `[batch_size x 1 x model_dim]`
+            * gating_outputs `[batch_size x input_len x model_dim]`
+            * average_outputs average attention
+                `[batch_size x input_len x model_dim]`
         """
         batch_size = inputs.size(0)
         inputs_len = inputs.size(1)
