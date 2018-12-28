@@ -6,12 +6,13 @@
 import configargparse
 
 import os
+import glob
 import random
 import torch
 
 import onmt.opts as opts
 
-from onmt.inputters.inputter import build_dataset_iter, lazily_load_dataset, \
+from onmt.inputters.inputter import build_dataset_iter, \
     load_fields, _collect_report_features
 from onmt.model_builder import build_model
 from onmt.utils.optimizers import build_optim
@@ -107,9 +108,10 @@ def main(opt, device_id):
         checkpoint = None
         model_opt = opt
 
-    # Peek the first dataset to determine the data_type.
+    # Load a shard dataset to determine the data_type.
     # (All datasets have the same data_type).
-    first_dataset = next(lazily_load_dataset("train", opt))
+    # this should be refactored out of existence reasonably soon
+    first_dataset = torch.load(glob.glob(opt.data + '.train*.pt')[0])
     data_type = first_dataset.data_type
 
     # Load fields generated from preprocess phase.
@@ -142,19 +144,14 @@ def main(opt, device_id):
     trainer = build_trainer(opt, device_id, model, fields,
                             optim, data_type, model_saver=model_saver)
 
-    def train_iter_fct(): return build_dataset_iter(
-        lazily_load_dataset("train", opt), fields, opt)
+    train_iter = build_dataset_iter("train", fields, opt)
+    valid_iter = build_dataset_iter("valid", fields, opt, is_train=False)
 
-    def valid_iter_fct(): return build_dataset_iter(
-        lazily_load_dataset("valid", opt), fields, opt, is_train=False)
-
-    # Do training.
     if len(opt.gpu_ranks):
         logger.info('Starting training on GPU: %s' % opt.gpu_ranks)
     else:
         logger.info('Starting training on CPU, could be very slow')
-    trainer.train(train_iter_fct, valid_iter_fct, opt.train_steps,
-                  opt.valid_steps)
+    trainer.train(train_iter, valid_iter, opt.train_steps, opt.valid_steps)
 
     if opt.tensorboard:
         trainer.report_manager.tensorboard_writer.close()
