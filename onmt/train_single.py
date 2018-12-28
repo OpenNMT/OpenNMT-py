@@ -14,7 +14,6 @@ import torch
 
 import onmt.opts as opts
 
-<<<<<<< HEAD
 from onmt.inputters.inputter import build_dataset_iter, \
     load_fields_from_vocab, old_style_vocab
 from onmt.model_builder import build_model
