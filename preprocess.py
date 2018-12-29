@@ -10,6 +10,7 @@ import sys
 import gc
 import os
 import codecs
+from itertools import islice
 import torch
 from onmt.utils.logging import init_logger, logger
 
@@ -46,30 +47,13 @@ def parse_args():
     return opt
 
 
-def _write_shard(path, data, start, end=None):
-    with codecs.open(path, "w", encoding="utf-8") as f:
-        shard = data[start:end] if end is not None else data[start:]
-        f.writelines(shard)
-
-
-def _write_temp_shard_files(corpus, fields, corpus_type, shard_size):
-    # Does this actually shard in a memory-efficient way? The readlines()
-    # reads in the whole corpus. Shards should be efficient at training time,
-    # but in principle it should not be necessary to read everything at once
-    # when preprocessing either.
-    with codecs.open(corpus, "r", encoding="utf-8") as f:
-        data = f.readlines()
-        corpus_size = len(data)
-
-    if shard_size <= 0:
-        shard_size = corpus_size
-    for i, start in enumerate(range(0, corpus_size, shard_size)):
-        logger.info("Splitting shard %d." % i)
-        end = start + shard_size
-        shard_path = corpus + ".{}.txt".format(i)
-        _write_shard(shard_path, data, start, end)
-
-    return corpus_size
+def split_corpus(path, shard_size):
+    with codecs.open(path, "r", encoding="utf-8") as f:
+        while True:
+            shard = list(islice(f, shard_size))
+            if not shard:
+                break
+            yield shard
 
 
 def build_save_dataset(corpus_type, fields, opt):
@@ -83,16 +67,14 @@ def build_save_dataset(corpus_type, fields, opt):
         tgt = opt.valid_tgt
 
     logger.info("Reading source and target files: %s %s." % (src, tgt))
-    src_len = _write_temp_shard_files(src, fields, corpus_type, opt.shard_size)
-    tgt_len = _write_temp_shard_files(tgt, fields, corpus_type, opt.shard_size)
-    assert src_len == tgt_len, "Source and target should be the same length"
 
-    src_shards = sorted(glob.glob(src + '.*.txt'))
-    tgt_shards = sorted(glob.glob(tgt + '.*.txt'))
+    src_shards = split_corpus(src, opt.shard_size)
+    tgt_shards = split_corpus(tgt, opt.shard_size)
     shard_pairs = zip(src_shards, tgt_shards)
     dataset_paths = []
 
     for i, (src_shard, tgt_shard) in enumerate(shard_pairs):
+        assert len(src_shard) == len(tgt_shard)
         logger.info("Building shard %d." % i)
         dataset = inputters.build_dataset(
             fields, opt.data_type,
@@ -120,8 +102,6 @@ def build_save_dataset(corpus_type, fields, opt):
 
         dataset.save(data_path)
 
-        os.remove(src_shard)
-        os.remove(tgt_shard)
         del dataset.examples
         gc.collect()
         del dataset

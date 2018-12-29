@@ -185,7 +185,7 @@ class Optimizer(object):
             self.optimizer = optim.SGD(params, lr=self.learning_rate)
         elif self.method == 'adagrad':
             self.optimizer = optim.Adagrad(
-                self.params,
+                params,
                 lr=self.learning_rate,
                 initial_accumulator_value=self.adagrad_accum)
         elif self.method == 'adadelta':
