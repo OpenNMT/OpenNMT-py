@@ -17,6 +17,8 @@ import onmt.translate.beam
 import onmt.inputters as inputters
 import onmt.opts as opts
 import onmt.decoders.ensemble
+# import torch.nn as nn
+# from onmt.modules import ApplyTemperature, RestrictToTopK
 
 
 def build_translator(opt, report_score=True, logger=None, out_file=None):
@@ -280,13 +282,36 @@ class Translator(object):
                       codecs.open(self.dump_beam, 'w', 'utf-8'))
         return all_scores, all_predictions
 
+    def sample_with_temperature(self, logits, sampling_temp, restrict_to_topk):
+        if sampling_temp == 0.0:
+          # To avoid divide-by-zero errors, just take the argmax.
+          topk_scores, topk_ids = logits.topk(1, dim=-1)
+        else:
+          logits = torch.div(logits, sampling_temp)
+
+          top_values, top_indices = torch.topk(logits, restrict_to_topk, dim=1)
+          kth_best = top_values[:, -1].view([-1, 1])
+          kth_best = kth_best.repeat([1, logits.shape[1]])
+          kth_best = kth_best.type(torch.cuda.FloatTensor)
+
+          # Set all logits that are not in the top-k to -1000.
+          # This puts the probabilities close to 0.
+          keep = torch.ge(logits, kth_best).type(torch.cuda.FloatTensor)
+          logits = (keep * logits) + ((1-keep) * -10000)
+
+          dist = torch.distributions.Multinomial(logits=logits, total_count=1)
+          topk_ids = torch.argmax(dist.sample(), dim=1, keepdim=True)
+          topk_scores = logits.gather(dim=1, index=topk_ids) 
+        return topk_ids, topk_scores
+
     def _translate_random_sampling(
         self,
         batch,
         data,
         max_length,
         min_length=0,
-        n_best=1,
+        sampling_temp=1.0,
+        keep_topk=-1,
         return_attention=False
     ):
         # qwerty
@@ -299,7 +324,6 @@ class Translator(object):
         assert self.block_ngram_repeat == 0
         assert self.global_scorer.beta == 0
 
-        beam_size = self.beam_size
         batch_size = batch.batch_size
         vocab = self.fields["tgt"].vocab
         start_token = vocab.stoi[self.fields["tgt"].init_token]
@@ -329,26 +353,17 @@ class Translator(object):
         else:
             results["gold_score"] = [0] * batch_size
 
-        # Tile states and memory beam_size times.
-        self.model.decoder.map_state(
-            lambda state, dim: tile(state, beam_size, dim=dim))
+        memory_lengths = src_lengths
+        src_map = batch.src_map if use_src_map else None
+
         if isinstance(memory_bank, tuple):
-            memory_bank = tuple(tile(x, beam_size, dim=1) for x in memory_bank)
             mb_device = memory_bank[0].device
         else:
-            memory_bank = tile(memory_bank, beam_size, dim=1)
             mb_device = memory_bank.device
-
-        memory_lengths = tile(src_lengths, beam_size)
-        src_map = (tile(batch.src_map, beam_size, dim=1)
-                   if use_src_map else None)
 
         seq_so_far = torch.full([batch_size, 1], start_token, dtype=torch.long,
             device=mb_device)
         alive_attn = None
-
-        # Give full probability to the first beam on the first step.
-        topk_log_probs = torch.tensor([0.0], device=mb_device).repeat(batch_size)
 
         # Structure that holds finished sequence for each batch index.
         hypotheses = [[] for _ in range(batch_size)]
@@ -372,14 +387,13 @@ class Translator(object):
             if step < min_length:
                 log_probs[:, end_token] = -1e20
 
-            actual_log_probs = log_probs - (log_probs - F.log_softmax(log_probs)).mean(1, True).repeat([1, log_probs.shape[1]])
+            # For reference, this is how we convert from logits to log-probabiltiies.
+            # The variable named log_probs is not actually log-probabilities. It is
+            # logits.
+            # actual_log_probs = log_probs - (log_probs - F.log_softmax(log_probs)).mean(1, True).repeat([1, log_probs.shape[1]])
 
-            dist = torch.distributions.Multinomial(logits=log_probs, total_count=1)
-            topk_ids = torch.argmax(dist.sample(), dim=1, keepdim=True)
-            topk_scores = log_probs.gather(dim=1, index=topk_ids) 
-
-            # Recover log probs.
-            topk_log_probs = topk_scores
+            topk_ids, topk_scores = self.sample_with_temperature(
+                    log_probs, sampling_temp, keep_topk) 
 
             # Append last prediction.
             seq_so_far = torch.cat(
@@ -423,6 +437,9 @@ class Translator(object):
 
         Mostly a wrapper around :obj:`Beam`.
 
+        If the beam-size is 1, does random sampling instead. (Set sampling_temp
+        to 0 for argmax-like behaviour.)
+
         Args:
            batch (:obj:`Batch`): a batch from a dataset object
            data (:obj:`Dataset`): the dataset object
@@ -432,20 +449,15 @@ class Translator(object):
            Shouldn't need the original dataset.
         """
         with torch.no_grad():
-            # import pdb; pdb.set_trace()
-            # best_scores_id = torch.multinomial(
-                    # torch.log(batch), 1)
-            # best_scores = flat_beam_scores[best_scores_id]
-            return self._translate_random_sampling(
-                    batch,
-                    data,
-                    self.max_length,
-                    min_length=self.min_length,
-                    n_best=self.n_best,
-                    return_attention=attn_debug or self.replace_unk)
-
             if self.beam_size == 1:
-                pass
+              return self._translate_random_sampling(
+                      batch,
+                      data,
+                      self.max_length,
+                      min_length=self.min_length,
+                      sampling_temp=self.sampling_temp,
+                      keep_topk=self.sample_from_topk,
+                      return_attention=attn_debug or self.replace_unk)
             if fast:
                 return self._fast_translate_batch(
                     batch,

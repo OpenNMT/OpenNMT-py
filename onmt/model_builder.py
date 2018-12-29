@@ -20,7 +20,7 @@ from onmt.decoders.decoder import InputFeedRNNDecoder, StdRNNDecoder
 from onmt.decoders.transformer import TransformerDecoder
 from onmt.decoders.cnn_decoder import CNNDecoder
 
-from onmt.modules import Embeddings, CopyGenerator, ApplyTemperature, RestrictToTopK
+from onmt.modules import Embeddings, CopyGenerator
 from onmt.utils.misc import use_gpu
 from onmt.utils.logging import logger
 
@@ -156,14 +156,13 @@ def load_test_model(opt, dummy_opt, model_path=None):
     for arg in dummy_opt:
         if arg not in model_opt:
             model_opt.__dict__[arg] = dummy_opt[arg]
-
-    model = build_base_model(model_opt, fields, use_gpu(opt), checkpoint, opt)
+    model = build_base_model(model_opt, fields, use_gpu(opt), checkpoint)
     model.eval()
     model.generator.eval()
     return fields, model, model_opt
 
 
-def build_base_model(model_opt, fields, gpu, checkpoint=None, opt=None):
+def build_base_model(model_opt, fields, gpu, checkpoint=None):
     """
     Args:
         model_opt: the option loaded from checkpoint.
@@ -171,17 +170,11 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, opt=None):
         gpu(bool): whether to use gpu.
         checkpoint: the model gnerated by train phase, or a resumed snapshot
                     model from a stopped training.
-        opt: The options passed in as command line arguments.
     Returns:
         the NMTModel.
     """
     assert model_opt.model_type in ["text", "img", "audio"], \
         "Unsupported model type %s" % model_opt.model_type
-
-    # If no opts were passed in on the command line, default to the ones
-    # read from checkpoint
-    if opt is None:
-        opt = model_opt
 
     # for backward compatibility
     if model_opt.rnn_size != -1:
@@ -249,25 +242,13 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, opt=None):
             gen_func = onmt.modules.sparse_activations.LogSparsemax(dim=-1)
         else:
             gen_func = nn.LogSoftmax(dim=-1)
-
-        if opt.sampling_temp != 1. or opt.sample_from_topk != -1:
-          assert opt.beam_size == 1
-
-        logits =  nn.Linear(model_opt.dec_rnn_size, len(fields["tgt"].vocab))
-        divide_temp = ApplyTemperature(opt.sampling_temp)
-
-        if opt.sample_from_topk != -1:
-            restrict_topk = RestrictToTopK(opt.sample_from_topk)
-            generator = nn.Sequential(logits, divide_temp, restrict_topk, gen_func)
-        else:
-            generator = nn.Sequential(logits, divide_temp, gen_func)
-
+        generator = nn.Sequential(
+            nn.Linear(model_opt.dec_rnn_size, len(fields["tgt"].vocab)),
+            gen_func
+        )
         if model_opt.share_decoder_embeddings:
             generator[0].weight = decoder.embeddings.word_lut.weight
     else:
-        if opt.sampling_temp != 1:
-          raise ValueError('Sampling temperature has not been implemented with copy attention.')
-
         vocab_size = len(fields["tgt"].vocab)
         pad_idx = fields["tgt"].vocab.stoi[fields["tgt"].pad_token]
         generator = CopyGenerator(model_opt.dec_rnn_size, vocab_size, pad_idx)
