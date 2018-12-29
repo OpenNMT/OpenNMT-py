@@ -17,8 +17,6 @@ import onmt.translate.beam
 import onmt.inputters as inputters
 import onmt.opts as opts
 import onmt.decoders.ensemble
-# import torch.nn as nn
-# from onmt.modules import ApplyTemperature, RestrictToTopK
 
 
 def build_translator(opt, report_score=True, logger=None, out_file=None):
@@ -314,8 +312,8 @@ class Translator(object):
         keep_topk=-1,
         return_attention=False
     ):
-        # qwerty
-        # 
+        """Alternative to beam search. Do random-sampling at each step."""
+
         assert self.beam_size == 1
 
         # TODO: support these blacklisted features.
@@ -421,6 +419,7 @@ class Translator(object):
 
         for i in range(is_finished.size(0)):
             # Store finished hypotheses for this batch.
+            # Unlike in beam search, there will only ever be one hypothesis per example.
             score = topk_scores[i, 0]
             pred = predictions[i, 0, 1:]  # Ignore start_token.
             attn = attention[:, i, 0, :memory_lengths[i]] if attention is not None else None
@@ -815,7 +814,6 @@ class Translator(object):
             # (a) Construct batch x beam_size nxt words.
             # Get all the pending current beam words and arrange for forward.
 
-            import pdb; pdb.set_trace()
             inp = torch.stack([b.get_current_state() for b in beam])
             inp = inp.view(1, -1, 1)
 
