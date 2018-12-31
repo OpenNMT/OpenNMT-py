@@ -16,7 +16,6 @@ import onmt.translate.beam
 import onmt.inputters as inputters
 import onmt.opts as opts
 import onmt.decoders.ensemble
-import pdb
 
 def build_translator(opt, report_score=True, logger=None, out_file=None):
     if out_file is None:
@@ -200,7 +199,6 @@ class Translator(object):
                 batch, data, attn_debug, fast=self.fast
             )
             translations = builder.from_batch(batch_data)
-            pdb.set_trace()
             for trans in translations:
                 all_scores += [trans.pred_scores[:self.n_best]]
                 pred_score_total += trans.pred_scores[0]
@@ -690,7 +688,6 @@ class Translator(object):
                         for n, (score, pred, attn) in enumerate(best_hyp):
                             if n >= n_best:
                                 break
-                            pdb.set_trace()
                             results["scores"][b].append(score)
                             results["predictions"][b].append(pred)
                             results["attention"][b].append(
