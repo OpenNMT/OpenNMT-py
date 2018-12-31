@@ -121,8 +121,8 @@ class MultiHeadedAttention(nn.Module):
                     .view(batch_size, -1, head_count * dim_per_head)
 
         query, key, value = self.linear_query(query),\
-                            self.linear_keys(key),\
-                            self.linear_values(value)
+            self.linear_keys(key),\
+            self.linear_values(value)
         key = shape(key)
         value = shape(value)
         query = shape(query)
@@ -147,7 +147,6 @@ class MultiHeadedAttention(nn.Module):
                                layer_cache["memory_values"]
                 layer_cache["memory_keys"] = key
                 layer_cache["memory_values"] = value
-
 
         key_len = key.size(2)
         query_len = query.size(2)
