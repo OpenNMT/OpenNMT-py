@@ -279,16 +279,14 @@
             <span class="k">return</span> <span class="n">x</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span> \
                     <span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">head_count</span> <span class="o">*</span> <span class="n">dim_per_head</span><span class="p">)</span>
 
-        <span class="n">query</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear_query</span><span class="p">(</span><span class="n">query</span><span class="p">),</span>\
-            <span class="bp">self</span><span class="o">.</span><span class="n">linear_keys</span><span class="p">(</span><span class="n">key</span><span class="p">),</span>\
-            <span class="bp">self</span><span class="o">.</span><span class="n">linear_values</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
-        <span class="n">key</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
-        <span class="n">value</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
-        <span class="n">query</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
-
         <span class="c1"># 1) Project key, value, and query.</span>
         <span class="k">if</span> <span class="n">layer_cache</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">type</span> <span class="o">==</span> <span class="s2">&quot;self&quot;</span><span class="p">:</span>
+                <span class="n">query</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear_query</span><span class="p">(</span><span class="n">query</span><span class="p">),</span>\
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">linear_keys</span><span class="p">(</span><span class="n">query</span><span class="p">),</span>\
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">linear_values</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
                 <span class="n">device</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">device</span>
                 <span class="k">if</span> <span class="n">layer_cache</span><span class="p">[</span><span class="s2">&quot;self_keys&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">key</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span>
@@ -301,11 +299,25 @@
                 <span class="n">layer_cache</span><span class="p">[</span><span class="s2">&quot;self_keys&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">key</span>
                 <span class="n">layer_cache</span><span class="p">[</span><span class="s2">&quot;self_values&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
             <span class="k">elif</span> <span class="nb">type</span> <span class="o">==</span> <span class="s2">&quot;context&quot;</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">layer_cache</span><span class="p">[</span><span class="s2">&quot;memory_keys&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">query</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear_query</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">layer_cache</span><span class="p">[</span><span class="s2">&quot;memory_keys&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear_keys</span><span class="p">(</span><span class="n">key</span><span class="p">),</span>\
+                                 <span class="bp">self</span><span class="o">.</span><span class="n">linear_values</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                    <span class="n">key</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
                     <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="n">layer_cache</span><span class="p">[</span><span class="s2">&quot;memory_keys&quot;</span><span class="p">],</span>\
                                <span class="n">layer_cache</span><span class="p">[</span><span class="s2">&quot;memory_values&quot;</span><span class="p">]</span>
                 <span class="n">layer_cache</span><span class="p">[</span><span class="s2">&quot;memory_keys&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">key</span>
                 <span class="n">layer_cache</span><span class="p">[</span><span class="s2">&quot;memory_values&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear_keys</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear_values</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear_query</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+        <span class="n">query</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
 
         <span class="n">key_len</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
         <span class="n">query_len</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
