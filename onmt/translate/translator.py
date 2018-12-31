@@ -17,7 +17,6 @@ import onmt.inputters as inputters
 import onmt.opts as opts
 import onmt.decoders.ensemble
 
-
 def build_translator(opt, report_score=True, logger=None, out_file=None):
     if out_file is None:
         out_file = codecs.open(opt.output, 'w+', 'utf-8')
@@ -200,7 +199,6 @@ class Translator(object):
                 batch, data, attn_debug, fast=self.fast
             )
             translations = builder.from_batch(batch_data)
-
             for trans in translations:
                 all_scores += [trans.pred_scores[:self.n_best]]
                 pred_score_total += trans.pred_scores[0]
@@ -379,6 +377,147 @@ class Translator(object):
 
         return log_probs, attn
 
+    def _fast_translate_batch_without_beam(self,batch,
+        data,
+        max_length,
+        min_length,
+        return_attention
+    ):
+        batch_size = batch.batch_size
+        vocab = self.fields["tgt"].vocab
+        start_token = vocab.stoi[self.fields["tgt"].init_token]
+        end_token = vocab.stoi[self.fields["tgt"].eos_token]
+
+        # Encoder forward.
+        src, enc_states, memory_bank, src_lengths = self._run_encoder(
+            batch, data.data_type)
+        self.model.decoder.init_state(src, memory_bank, enc_states)
+
+        use_src_map = data.data_type == 'text' and self.copy_attn
+
+        results = {}
+        results["predictions"] = [[] for _ in range(batch_size)]  # noqa: F812
+        results["scores"] = [[] for _ in range(batch_size)]  # noqa: F812
+        results["attention"] = [[] for _ in range(batch_size)]  # noqa: F812
+        results["batch"] = batch
+        if "tgt" in batch.__dict__:
+            results["gold_score"] = self._score_target(
+                batch,
+                memory_bank,
+                src_lengths,
+                data,
+                batch.src_map if use_src_map else None
+            )
+            self.model.decoder.init_state(src, memory_bank, enc_states)
+        else:
+            results["gold_score"] = [0] * batch_size
+
+        mb_device = memory_bank[0].device if isinstance(memory_bank, tuple) else memory_bank.device
+        batch_offset = torch.arange(batch_size, dtype=torch.long)
+        src_map = batch.src_map if use_src_map else None;
+
+        alive_seq = torch.full(
+            [batch_size, 1], start_token, dtype=torch.long,
+            device=mb_device)
+        alive_attn = None
+        prev_log_probs = torch.zeros([batch_size], dtype=torch.float, device=mb_device)
+
+        for step in range(max_length):
+            decoder_input = alive_seq[:, -1].view(1, -1, 1)
+            log_probs, attn = self._decode_and_generate(
+                decoder_input,
+                memory_bank,
+                batch,
+                data,
+                memory_lengths=src_lengths,
+                src_map=src_map,
+                step=step,
+                batch_offset=None
+            )
+
+            if step < min_length:
+                log_probs[:, end_token] = -1e20
+
+            # Multiply probs by the previous probability.
+            log_probs += prev_log_probs.unsqueeze(1)
+
+            alpha = self.global_scorer.alpha
+            length_penalty = ((5.0 + (step + 1)) / 6.0) ** alpha
+
+            curr_scores = log_probs / length_penalty
+            top_score,top_id = torch.max(curr_scores, dim=-1)
+
+            # Recover log probs.
+            prev_log_probs = top_score * length_penalty
+            select_indices = batch_offset.view(-1)
+
+            # Append last prediction.
+            alive_seq = torch.cat(
+                [alive_seq,top_id.view(-1,1)], -1)
+            if return_attention:
+                current_attn = attn.index_select(1, select_indices)
+                if alive_attn is None:
+                    alive_attn = current_attn
+                else:
+                    alive_attn = alive_attn.index_select(1, select_indices)
+                    alive_attn = torch.cat([alive_attn, current_attn], 0)
+
+            is_finished = top_id.eq(end_token)
+            if step + 1 == max_length:
+                is_finished.fill_(1)
+
+            # Save finished hypotheses.
+            if is_finished.any():
+                prev_log_probs.masked_fill_(is_finished, -1e10)
+                is_finished = is_finished.to('cpu')
+                predictions = alive_seq
+                attention = (
+                    alive_attn.view(
+                        alive_attn.size(0), -1, alive_attn.size(-1))
+                    if alive_attn is not None else None)
+                non_finished_batch = []
+                for i in range(is_finished.size(0)):
+                    b = batch_offset[i]
+                    if is_finished[i]:
+                            results["scores"][b].append(top_score[i])
+                            results["predictions"][b].append(predictions[i,1:])
+                            results["attention"][b].append(
+                              attention[:, i, :src_lengths[i]]
+                                if attention is not None else [])
+                    else:
+                        non_finished_batch.append(i)
+                non_finished = torch.tensor(non_finished_batch)
+                # If all sentences are translated, no need to go further.
+                if len(non_finished) == 0:
+                    break
+                batch_offset = batch_offset.index_select(0, non_finished)
+                # Remove finished batches for the next step.
+                non_finished = non_finished.to(top_id.device)
+                prev_log_probs = prev_log_probs.index_select(0, non_finished)
+                select_indices = non_finished.view(-1)
+                alive_seq = predictions.index_select(0, non_finished) \
+                    .view(-1, alive_seq.size(-1))
+                if alive_attn is not None:
+                    alive_attn = attention.index_select(1, non_finished) \
+                        .view(alive_attn.size(0),
+                              -1, alive_attn.size(-1))
+
+
+            # Reorder states.
+            if isinstance(memory_bank, tuple):
+                memory_bank = tuple(x.index_select(1, select_indices)
+                                    for x in memory_bank)
+            else:
+                memory_bank = memory_bank.index_select(1, select_indices)
+
+            src_lengths = src_lengths.index_select(0, select_indices)
+            self.model.decoder.map_state(
+                lambda state, dim: state.index_select(dim, select_indices))
+            if src_map is not None:
+                src_map = src_map.index_select(1, select_indices)
+
+        return results
+
     def _fast_translate_batch(
         self,
         batch,
@@ -388,13 +527,15 @@ class Translator(object):
         n_best=1,
         return_attention=False
     ):
-        # TODO: faster code path for beam_size == 1.
 
         # TODO: support these blacklisted features.
         assert not self.dump_beam
         assert not self.use_filter_pred
         assert self.block_ngram_repeat == 0
         assert self.global_scorer.beta == 0
+
+        if self.beam_size == 1:
+            return self._fast_translate_batch_without_beam(batch,data,max_length,min_length,return_attention)
 
         beam_size = self.beam_size
         batch_size = batch.batch_size
