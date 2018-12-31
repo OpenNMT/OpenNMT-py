@@ -120,14 +120,16 @@ class MultiHeadedAttention(nn.Module):
             return x.transpose(1, 2).contiguous() \
                     .view(batch_size, -1, head_count * dim_per_head)
 
+        query, key, value = self.linear_query(query),\
+            self.linear_keys(key),\
+            self.linear_values(value)
+        key = shape(key)
+        value = shape(value)
+        query = shape(query)
+
         # 1) Project key, value, and query.
         if layer_cache is not None:
             if type == "self":
-                query, key, value = self.linear_query(query),\
-                                    self.linear_keys(query),\
-                                    self.linear_values(query)
-                key = shape(key)
-                value = shape(value)
                 device = key.device
                 if layer_cache["self_keys"] is not None:
                     key = torch.cat(
@@ -140,25 +142,11 @@ class MultiHeadedAttention(nn.Module):
                 layer_cache["self_keys"] = key
                 layer_cache["self_values"] = value
             elif type == "context":
-                query = self.linear_query(query)
-                if layer_cache["memory_keys"] is None:
-                    key, value = self.linear_keys(key),\
-                                 self.linear_values(value)
-                    key = shape(key)
-                    value = shape(value)
-                else:
+                if layer_cache["memory_keys"] is not None:
                     key, value = layer_cache["memory_keys"],\
                                layer_cache["memory_values"]
                 layer_cache["memory_keys"] = key
                 layer_cache["memory_values"] = value
-        else:
-            key = self.linear_keys(key)
-            value = self.linear_values(value)
-            query = self.linear_query(query)
-            key = shape(key)
-            value = shape(value)
-
-        query = shape(query)
 
         key_len = key.size(2)
         query_len = query.size(2)
