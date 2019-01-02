@@ -85,9 +85,19 @@ class Translator(object):
 
         self.n_best = opt.n_best
         self.max_length = opt.max_length
+        
+        if opt.beam_size != 1 and opt.do_random_sampling:
+          raise ValueError('Can either do beam search OR random sampling.')
+
         self.beam_size = opt.beam_size
         self.sampling_temp = opt.sampling_temp
         self.sample_from_topk = opt.sample_from_topk
+
+        if not opt.do_random_sampling and self.beam_size == 1:
+          # Beam search with size 1 is equivalent to random sampling with temp=0.0.
+          self.sampling_temp = 0.0
+          self.sample_from_top_k = -1
+
         self.min_length = opt.min_length
         self.stepwise_penalty = opt.stepwise_penalty
         self.dump_beam = opt.dump_beam
@@ -364,7 +374,7 @@ class Translator(object):
         alive_attn = None
 
         # Structure that holds finished sequence for each batch index.
-        hypotheses = [[] for _ in range(batch_size)]
+        hypotheses = [[] for _ in range(batch_size)]  # noqa: F812
 
         for step in range(max_length):
             decoder_input = seq_so_far[:, -1].view(1, -1, 1)
@@ -385,11 +395,7 @@ class Translator(object):
             if step < min_length:
                 log_probs[:, end_token] = -1e20
 
-            # For reference, this is how we convert from logits to log-probabiltiies.
-            # The variable named log_probs is not actually log-probabilities. It is
-            # logits.
-            # actual_log_probs = log_probs - (log_probs - F.log_softmax(log_probs)).mean(1, True).repeat([1, log_probs.shape[1]])
-
+            # Note that what this code calls log_probs are actual logits.
             topk_ids, topk_scores = self.sample_with_temperature(
                     log_probs, sampling_temp, keep_topk) 
 
@@ -435,9 +441,6 @@ class Translator(object):
         Translate a batch of sentences.
 
         Mostly a wrapper around :obj:`Beam`.
-
-        If the beam-size is 1, does random sampling instead. (Set sampling_temp
-        to 0 for argmax-like behaviour.)
 
         Args:
            batch (:obj:`Batch`): a batch from a dataset object
@@ -850,9 +853,6 @@ class Translator(object):
             results["scores"].append(scores)
             results["attention"].append(attn)
 
-        import pdb; pdb.set_trace()
-        for key, value in results.items():
-          print(key)
         return results
 
     def _score_target(self, batch, memory_bank, src_lengths, data, src_map):
