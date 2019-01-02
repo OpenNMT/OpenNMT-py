@@ -3,9 +3,6 @@ import os
 from tqdm import tqdm
 
 import torch
-import torchaudio
-import librosa
-import numpy as np
 
 from onmt.inputters.dataset_base import DatasetBase
 
@@ -21,6 +18,9 @@ class AudioDataset(DatasetBase):
     @staticmethod
     def extract_features(audio_path, sample_rate, truncate, window_size,
                          window_stride, window, normalize_audio):
+        import torchaudio
+        import librosa
+        import numpy as np
         # torchaudio loading options recently changed. It's probably
         # straightforward to rewrite the audio handling to make use of
         # up-to-date torchaudio, but in the meantime there is a legacy
