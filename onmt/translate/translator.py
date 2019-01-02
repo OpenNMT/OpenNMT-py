@@ -548,8 +548,6 @@ class Translator(object):
         n_best=1,
         return_attention=False
     ):
-        # TODO: faster code path for beam_size == 1.
-
         # TODO: support these blacklisted features.
         assert not self.dump_beam
         assert not self.use_filter_pred
