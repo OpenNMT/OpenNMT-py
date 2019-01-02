@@ -168,6 +168,7 @@
 <span class="sd">          users of this library) for the strategy things we do.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
+<span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">onmt.inputters</span> <span class="k">as</span> <span class="nn">inputters</span>
 <span class="kn">import</span> <span class="nn">onmt.utils</span>
 
@@ -375,28 +376,29 @@
         <span class="c1"># Set model in validating mode.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
 
-        <span class="n">stats</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">Statistics</span><span class="p">()</span>
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="n">stats</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">Statistics</span><span class="p">()</span>
 
-        <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">valid_iter</span><span class="p">:</span>
-            <span class="n">src</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">make_features</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="s1">&#39;src&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span><span class="p">)</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span> <span class="o">==</span> <span class="s1">&#39;text&#39;</span><span class="p">:</span>
-                <span class="n">_</span><span class="p">,</span> <span class="n">src_lengths</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">src</span>
-            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span> <span class="o">==</span> <span class="s1">&#39;audio&#39;</span><span class="p">:</span>
-                <span class="n">src_lengths</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">src_lengths</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">src_lengths</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">valid_iter</span><span class="p">:</span>
+                <span class="n">src</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">make_features</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="s1">&#39;src&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span> <span class="o">==</span> <span class="s1">&#39;text&#39;</span><span class="p">:</span>
+                    <span class="n">_</span><span class="p">,</span> <span class="n">src_lengths</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">src</span>
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span> <span class="o">==</span> <span class="s1">&#39;audio&#39;</span><span class="p">:</span>
+                    <span class="n">src_lengths</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">src_lengths</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">src_lengths</span> <span class="o">=</span> <span class="kc">None</span>
 
-            <span class="n">tgt</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">make_features</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="s1">&#39;tgt&#39;</span><span class="p">)</span>
+                <span class="n">tgt</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">make_features</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="s1">&#39;tgt&#39;</span><span class="p">)</span>
 
-            <span class="c1"># F-prop through the model.</span>
-            <span class="n">outputs</span><span class="p">,</span> <span class="n">attns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">)</span>
+                <span class="c1"># F-prop through the model.</span>
+                <span class="n">outputs</span><span class="p">,</span> <span class="n">attns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">)</span>
 
-            <span class="c1"># Compute loss.</span>
-            <span class="n">batch_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_loss</span><span class="o">.</span><span class="n">monolithic_compute_loss</span><span class="p">(</span>
-                <span class="n">batch</span><span class="p">,</span> <span class="n">outputs</span><span class="p">,</span> <span class="n">attns</span><span class="p">)</span>
+                <span class="c1"># Compute loss.</span>
+                <span class="n">batch_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_loss</span><span class="o">.</span><span class="n">monolithic_compute_loss</span><span class="p">(</span>
+                    <span class="n">batch</span><span class="p">,</span> <span class="n">outputs</span><span class="p">,</span> <span class="n">attns</span><span class="p">)</span>
 
-            <span class="c1"># Update statistics.</span>
-            <span class="n">stats</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">batch_stats</span><span class="p">)</span>
+                <span class="c1"># Update statistics.</span>
+                <span class="n">stats</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">batch_stats</span><span class="p">)</span>
 
         <span class="c1"># Set model back to training mode.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
