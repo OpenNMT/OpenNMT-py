@@ -2,6 +2,7 @@
 
 from itertools import chain
 from collections import Counter
+import codecs
 
 import torch
 import torchtext
@@ -165,3 +166,9 @@ class DatasetBase(torchtext.data.Dataset):
                 [0] + [src_vocab.stoi[w] for w in tgt] + [0])
             example["alignment"] = mask
         return example
+
+    @classmethod
+    def _read_file(cls, path):
+        with codecs.open(path, "r", "utf-8") as f:
+            for line in f:
+                yield line

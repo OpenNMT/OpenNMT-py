@@ -7,6 +7,9 @@
 ### New features
 
 ### Fixes and improvements
+## [0.7.0](https://github.com/OpenNMT/OpenNMT-py/tree/0.7.0) (2019-01-02)
+* Many fixes and code refactoring thanks @benopeters
+* Migrated to Pytorch 1.0
 
 ## [0.6.0](https://github.com/OpenNMT/OpenNMT-py/tree/0.6.0) (2018-11-28)
 * Many fixes and code improvements
