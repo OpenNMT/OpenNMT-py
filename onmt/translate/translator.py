@@ -410,20 +410,13 @@ class Translator(object):
                 else:
                     alive_attn = torch.cat([alive_attn, current_attn], 0)
 
-        is_finished = topk_ids.eq(end_token)
-        if step + 1 == max_length:
-            is_finished.fill_(1)
-
-        # Save finished hypotheses.
-        is_finished = is_finished.to('cpu')
-
         predictions = seq_so_far.view(-1, 1, seq_so_far.size(-1))
         attention = (
             alive_attn.view(
                 alive_attn.size(0), -1, 1, alive_attn.size(-1))
             if alive_attn is not None else None)
 
-        for i in range(is_finished.size(0)):
+        for i in range(topk_scores.size(0)):
             # Store finished hypotheses for this batch.
             # Unlike in beam search, there will only ever be one hypothesis per example.
             score = topk_scores[i, 0]
