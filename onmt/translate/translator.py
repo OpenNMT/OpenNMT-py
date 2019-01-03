@@ -290,15 +290,14 @@ class Translator(object):
                       codecs.open(self.dump_beam, 'w', 'utf-8'))
         return all_scores, all_predictions
 
-    def sample_with_temperature(self, logits, sampling_temp, restrict_to_topk):
+    def sample_with_temperature(self, logits, sampling_temp, keep_topk):
         if sampling_temp == 0.0:
             # To avoid divide-by-zero errors, just take the argmax.
             topk_scores, topk_ids = logits.topk(1, dim=-1)
         else:
             logits = torch.div(logits, sampling_temp)
 
-            top_values, top_indices = torch.topk(
-                logits, restrict_to_topk, dim=1)
+            top_values, top_indices = torch.topk(logits, keep_topk, dim=1)
             kth_best = top_values[:, -1].view([-1, 1])
             kth_best = kth_best.repeat([1, logits.shape[1]])
             kth_best = kth_best.type(torch.cuda.FloatTensor)
@@ -329,10 +328,8 @@ class Translator(object):
         assert self.beam_size == 1
 
         # TODO: support these blacklisted features.
-        assert not self.dump_beam
         assert not self.use_filter_pred
         assert self.block_ngram_repeat == 0
-        assert self.global_scorer.beta == 0
 
         batch_size = batch.batch_size
         vocab = self.fields["tgt"].vocab
@@ -347,7 +344,7 @@ class Translator(object):
         use_src_map = data.data_type == 'text' and self.copy_attn
 
         results = {}
-        results["predictions"] = [[] for _ in range(batch_size)]  # noqa: F812
+        results["predictions"] = [[] * range(batch_size)]  # noqa: F812
         results["scores"] = [[] for _ in range(batch_size)]  # noqa: F812
         results["attention"] = [[] for _ in range(batch_size)]  # noqa: F812
         results["batch"] = batch
@@ -393,7 +390,7 @@ class Translator(object):
             if step < min_length:
                 log_probs[:, end_token] = -1e20
 
-            # Note that what this code calls log_probs are actual logits.
+            # Note that what this code calls log_probs are actually logits.
             topk_ids, topk_scores = self.sample_with_temperature(
                     log_probs, sampling_temp, keep_topk)
 
@@ -417,13 +414,12 @@ class Translator(object):
             # there will only ever be 1 hypothesis per example.
             score = topk_scores[i, 0]
             pred = predictions[i, 0, 1:]  # Ignore start_token.
-            mem_length = memory_lengths[i]
-            attn = (attention[:, i, 0, :mem_length]
-                    if attention is not None else None)
+            m_len = memory_lengths[i]
+            attn = attention[:, i, 0, :m_len] if attention is not None else []
 
             results["scores"][i].append(score)
             results["predictions"][i].append(pred)
-            results["attention"][i].append(attn if attn is not None else [])
+            results["attention"][i].append(attn)
 
         return results
 
