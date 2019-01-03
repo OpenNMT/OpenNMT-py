@@ -7,7 +7,6 @@ import os
 import math
 
 import torch
-import torch.nn.functional as F
 
 from itertools import count
 from onmt.utils.misc import tile
@@ -85,18 +84,19 @@ class Translator(object):
 
         self.n_best = opt.n_best
         self.max_length = opt.max_length
-        
+
         if opt.beam_size != 1 and opt.do_random_sampling:
-          raise ValueError('Can either do beam search OR random sampling.')
+            raise ValueError('Can either do beam search OR random sampling.')
 
         self.beam_size = opt.beam_size
         self.sampling_temp = opt.sampling_temp
         self.sample_from_topk = opt.sample_from_topk
 
         if not opt.do_random_sampling and self.beam_size == 1:
-          # Beam search with size 1 is equivalent to random sampling with temp=0.0.
-          self.sampling_temp = 0.0
-          self.sample_from_top_k = -1
+            # Beam search with size 1 is equivalent to random sampling with
+            # samplihg_temp = 0.0.
+            self.sampling_temp = 0.0
+            self.sample_from_top_k = -1
 
         self.min_length = opt.min_length
         self.stepwise_penalty = opt.stepwise_penalty
@@ -292,24 +292,26 @@ class Translator(object):
 
     def sample_with_temperature(self, logits, sampling_temp, restrict_to_topk):
         if sampling_temp == 0.0:
-          # To avoid divide-by-zero errors, just take the argmax.
-          topk_scores, topk_ids = logits.topk(1, dim=-1)
+            # To avoid divide-by-zero errors, just take the argmax.
+            topk_scores, topk_ids = logits.topk(1, dim=-1)
         else:
-          logits = torch.div(logits, sampling_temp)
+            logits = torch.div(logits, sampling_temp)
 
-          top_values, top_indices = torch.topk(logits, restrict_to_topk, dim=1)
-          kth_best = top_values[:, -1].view([-1, 1])
-          kth_best = kth_best.repeat([1, logits.shape[1]])
-          kth_best = kth_best.type(torch.cuda.FloatTensor)
+            top_values, top_indices = torch.topk(
+                logits, restrict_to_topk, dim=1)
+            kth_best = top_values[:, -1].view([-1, 1])
+            kth_best = kth_best.repeat([1, logits.shape[1]])
+            kth_best = kth_best.type(torch.cuda.FloatTensor)
 
-          # Set all logits that are not in the top-k to -1000.
-          # This puts the probabilities close to 0.
-          keep = torch.ge(logits, kth_best).type(torch.cuda.FloatTensor)
-          logits = (keep * logits) + ((1-keep) * -10000)
+            # Set all logits that are not in the top-k to -1000.
+            # This puts the probabilities close to 0.
+            keep = torch.ge(logits, kth_best).type(torch.cuda.FloatTensor)
+            logits = (keep * logits) + ((1-keep) * -10000)
 
-          dist = torch.distributions.Multinomial(logits=logits, total_count=1)
-          topk_ids = torch.argmax(dist.sample(), dim=1, keepdim=True)
-          topk_scores = logits.gather(dim=1, index=topk_ids) 
+            dist = torch.distributions.Multinomial(
+                logits=logits, total_count=1)
+            topk_ids = torch.argmax(dist.sample(), dim=1, keepdim=True)
+            topk_scores = logits.gather(dim=1, index=topk_ids)
         return topk_ids, topk_scores
 
     def _translate_random_sampling(
@@ -369,12 +371,10 @@ class Translator(object):
         else:
             mb_device = memory_bank.device
 
-        seq_so_far = torch.full([batch_size, 1], start_token, dtype=torch.long,
-            device=mb_device)
+        # seq_so_far contains chosen tokens; on each step, dim 1 grows by one.
+        seq_so_far = torch.full(
+            [batch_size, 1], start_token, dtype=torch.long, device=mb_device)
         alive_attn = None
-
-        # Structure that holds finished sequence for each batch index.
-        hypotheses = [[] for _ in range(batch_size)]  # noqa: F812
 
         for step in range(max_length):
             decoder_input = seq_so_far[:, -1].view(1, -1, 1)
@@ -390,19 +390,15 @@ class Translator(object):
                 batch_offset=torch.arange(batch_size, dtype=torch.long)
             )
 
-            vocab_size = log_probs.size(-1)
-
             if step < min_length:
                 log_probs[:, end_token] = -1e20
 
             # Note that what this code calls log_probs are actual logits.
             topk_ids, topk_scores = self.sample_with_temperature(
-                    log_probs, sampling_temp, keep_topk) 
+                    log_probs, sampling_temp, keep_topk)
 
             # Append last prediction.
-            seq_so_far = torch.cat(
-                [seq_so_far,
-                topk_ids.view(-1, 1)], -1)
+            seq_so_far = torch.cat([seq_so_far, topk_ids.view(-1, 1)], -1)
             if return_attention:
                 current_attn = attn
                 if alive_attn is None:
@@ -417,11 +413,13 @@ class Translator(object):
             if alive_attn is not None else None)
 
         for i in range(topk_scores.size(0)):
-            # Store finished hypotheses for this batch.
-            # Unlike in beam search, there will only ever be one hypothesis per example.
+            # Store finished hypotheses for this batch. Unlike in beam search,
+            # there will only ever be 1 hypothesis per example.
             score = topk_scores[i, 0]
             pred = predictions[i, 0, 1:]  # Ignore start_token.
-            attn = attention[:, i, 0, :memory_lengths[i]] if attention is not None else None
+            mem_length = memory_lengths[i]
+            attn = (attention[:, i, 0, :mem_length]
+                    if attention is not None else None)
 
             results["scores"][i].append(score)
             results["predictions"][i].append(pred)
@@ -445,14 +443,14 @@ class Translator(object):
         """
         with torch.no_grad():
             if self.beam_size == 1:
-              return self._translate_random_sampling(
-                      batch,
-                      data,
-                      self.max_length,
-                      min_length=self.min_length,
-                      sampling_temp=self.sampling_temp,
-                      keep_topk=self.sample_from_topk,
-                      return_attention=attn_debug or self.replace_unk)
+                return self._translate_random_sampling(
+                    batch,
+                    data,
+                    self.max_length,
+                    min_length=self.min_length,
+                    sampling_temp=self.sampling_temp,
+                    keep_topk=self.sample_from_topk,
+                    return_attention=attn_debug or self.replace_unk)
             if fast:
                 return self._fast_translate_batch(
                     batch,

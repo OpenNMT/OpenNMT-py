@@ -531,9 +531,9 @@ def translate_opts(parser):
               default=False, type=bool,
               help="If True, do random sampling instead of beam search.")
     group.add('--sampling_temp', '-sampling_temp',
-               default=1., type=float,
-               help="""If doing random sampling, divide the logits by
-                    this before computing softmax during decoding.""")
+              default=1., type=float,
+              help="""If doing random sampling, divide the logits by
+                       this before computing softmax during decoding.""")
     group.add('--sample_from_topk', '-sample_from_topk',
               default=-1, type=int,
               help="""If doing random sampling, only sample from
