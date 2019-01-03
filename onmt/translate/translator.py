@@ -297,15 +297,16 @@ class Translator(object):
         else:
             logits = torch.div(logits, sampling_temp)
 
-            top_values, top_indices = torch.topk(logits, keep_topk, dim=1)
-            kth_best = top_values[:, -1].view([-1, 1])
-            kth_best = kth_best.repeat([1, logits.shape[1]])
-            kth_best = kth_best.type(torch.cuda.FloatTensor)
+            if keep_topk > 0:
+                top_values, top_indices = torch.topk(logits, keep_topk, dim=1)
+                kth_best = top_values[:, -1].view([-1, 1])
+                kth_best = kth_best.repeat([1, logits.shape[1]])
+                kth_best = kth_best.type(torch.cuda.FloatTensor)
 
-            # Set all logits that are not in the top-k to -1000.
-            # This puts the probabilities close to 0.
-            keep = torch.ge(logits, kth_best).type(torch.cuda.FloatTensor)
-            logits = (keep * logits) + ((1-keep) * -10000)
+                # Set all logits that are not in the top-k to -1000.
+                # This puts the probabilities close to 0.
+                keep = torch.ge(logits, kth_best).type(torch.cuda.FloatTensor)
+                logits = (keep * logits) + ((1-keep) * -10000)
 
             dist = torch.distributions.Multinomial(
                 logits=logits, total_count=1)
@@ -344,7 +345,7 @@ class Translator(object):
         use_src_map = data.data_type == 'text' and self.copy_attn
 
         results = {}
-        results["predictions"] = [[] * range(batch_size)]  # noqa: F812
+        results["predictions"] = [[] for _ in range(batch_size)]  # noqa: F812
         results["scores"] = [[] for _ in range(batch_size)]  # noqa: F812
         results["attention"] = [[] for _ in range(batch_size)]  # noqa: F812
         results["batch"] = batch

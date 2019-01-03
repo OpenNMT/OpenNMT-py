@@ -537,7 +537,8 @@ def translate_opts(parser):
     group.add('--sample_from_topk', '-sample_from_topk',
               default=-1, type=int,
               help="""If doing random sampling, only sample from
-                      this many of the most likely next tokens.""")
+                      this many of the most likely next tokens. To sample
+                      from full distribution, keep this value at -1.""")
 
     group = parser.add_argument_group('Beam')
     group.add('--fast', '-fast', action="store_true",
