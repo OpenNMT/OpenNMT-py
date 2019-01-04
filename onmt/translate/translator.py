@@ -96,7 +96,7 @@ class Translator(object):
             # Beam search with size 1 is equivalent to random sampling with
             # samplihg_temp = 0.0.
             self.sampling_temp = 0.0
-            self.sample_from_top_k = -1
+            self.sample_from_top_k = 1
 
         self.min_length = opt.min_length
         self.stepwise_penalty = opt.stepwise_penalty
@@ -324,12 +324,11 @@ class Translator(object):
         keep_topk=-1,
         return_attention=False
     ):
-        """Alternative to beam search. Do random-sampling at each step."""
+        """Alternative to beam search. Do random sampling at each step."""
 
         assert self.beam_size == 1
 
         # TODO: support these blacklisted features.
-        assert not self.use_filter_pred
         assert self.block_ngram_repeat == 0
 
         batch_size = batch.batch_size
