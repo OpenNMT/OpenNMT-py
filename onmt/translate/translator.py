@@ -85,18 +85,12 @@ class Translator(object):
         self.n_best = opt.n_best
         self.max_length = opt.max_length
 
-        if opt.beam_size != 1 and opt.do_random_sampling:
+        if opt.beam_size != 1 and opt.random_sampling_topk != 1:
             raise ValueError('Can either do beam search OR random sampling.')
 
         self.beam_size = opt.beam_size
-        self.sampling_temp = opt.sampling_temp
-        self.sample_from_topk = opt.sample_from_topk
-
-        if not opt.do_random_sampling and self.beam_size == 1:
-            # Beam search with size 1 is equivalent to random sampling with
-            # samplihg_temp = 0.0.
-            self.sampling_temp = 0.0
-            self.sample_from_top_k = 1
+        self.random_sampling_temp = opt.random_sampling_temp
+        self.sample_from_topk = opt.random_sampling_topk
 
         self.min_length = opt.min_length
         self.stepwise_penalty = opt.stepwise_penalty
@@ -291,8 +285,9 @@ class Translator(object):
         return all_scores, all_predictions
 
     def sample_with_temperature(self, logits, sampling_temp, keep_topk):
-        if sampling_temp == 0.0:
-            # To avoid divide-by-zero errors, just take the argmax.
+        if sampling_temp == 0.0 or keep_topk == 1:
+            # For temp=0.0, take the argmax to avoid divide-by-zero errors.
+            # keep_topk=1 is also equivalent to argmax.
             topk_scores, topk_ids = logits.topk(1, dim=-1)
         else:
             logits = torch.div(logits, sampling_temp)
@@ -444,7 +439,7 @@ class Translator(object):
                     data,
                     self.max_length,
                     min_length=self.min_length,
-                    sampling_temp=self.sampling_temp,
+                    sampling_temp=self.random_sampling_temp,
                     keep_topk=self.sample_from_topk,
                     return_attention=attn_debug or self.replace_unk)
             if fast:
