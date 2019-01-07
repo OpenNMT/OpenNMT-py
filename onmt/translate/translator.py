@@ -84,7 +84,14 @@ class Translator(object):
 
         self.n_best = opt.n_best
         self.max_length = opt.max_length
+
+        if opt.beam_size != 1 and opt.random_sampling_topk != 1:
+            raise ValueError('Can either do beam search OR random sampling.')
+
         self.beam_size = opt.beam_size
+        self.random_sampling_temp = opt.random_sampling_temp
+        self.sample_from_topk = opt.random_sampling_topk
+
         self.min_length = opt.min_length
         self.stepwise_penalty = opt.stepwise_penalty
         self.dump_beam = opt.dump_beam
@@ -277,6 +284,140 @@ class Translator(object):
                       codecs.open(self.dump_beam, 'w', 'utf-8'))
         return all_scores, all_predictions
 
+    def sample_with_temperature(self, logits, sampling_temp, keep_topk):
+        if sampling_temp == 0.0 or keep_topk == 1:
+            # For temp=0.0, take the argmax to avoid divide-by-zero errors.
+            # keep_topk=1 is also equivalent to argmax.
+            topk_scores, topk_ids = logits.topk(1, dim=-1)
+        else:
+            logits = torch.div(logits, sampling_temp)
+
+            if keep_topk > 0:
+                top_values, top_indices = torch.topk(logits, keep_topk, dim=1)
+                kth_best = top_values[:, -1].view([-1, 1])
+                kth_best = kth_best.repeat([1, logits.shape[1]])
+                kth_best = kth_best.type(torch.cuda.FloatTensor)
+
+                # Set all logits that are not in the top-k to -1000.
+                # This puts the probabilities close to 0.
+                keep = torch.ge(logits, kth_best).type(torch.cuda.FloatTensor)
+                logits = (keep * logits) + ((1-keep) * -10000)
+
+            dist = torch.distributions.Multinomial(
+                logits=logits, total_count=1)
+            topk_ids = torch.argmax(dist.sample(), dim=1, keepdim=True)
+            topk_scores = logits.gather(dim=1, index=topk_ids)
+        return topk_ids, topk_scores
+
+    def _translate_random_sampling(
+        self,
+        batch,
+        data,
+        max_length,
+        min_length=0,
+        sampling_temp=1.0,
+        keep_topk=-1,
+        return_attention=False
+    ):
+        """Alternative to beam search. Do random sampling at each step."""
+
+        assert self.beam_size == 1
+
+        # TODO: support these blacklisted features.
+        assert self.block_ngram_repeat == 0
+
+        batch_size = batch.batch_size
+        vocab = self.fields["tgt"].vocab
+        start_token = vocab.stoi[self.fields["tgt"].init_token]
+        end_token = vocab.stoi[self.fields["tgt"].eos_token]
+
+        # Encoder forward.
+        src, enc_states, memory_bank, src_lengths = self._run_encoder(
+            batch, data.data_type)
+        self.model.decoder.init_state(src, memory_bank, enc_states)
+
+        use_src_map = data.data_type == 'text' and self.copy_attn
+
+        results = {}
+        results["predictions"] = [[] for _ in range(batch_size)]  # noqa: F812
+        results["scores"] = [[] for _ in range(batch_size)]  # noqa: F812
+        results["attention"] = [[] for _ in range(batch_size)]  # noqa: F812
+        results["batch"] = batch
+        if "tgt" in batch.__dict__:
+            results["gold_score"] = self._score_target(
+                batch,
+                memory_bank,
+                src_lengths,
+                data,
+                batch.src_map if use_src_map else None
+            )
+            self.model.decoder.init_state(src, memory_bank, enc_states)
+        else:
+            results["gold_score"] = [0] * batch_size
+
+        memory_lengths = src_lengths
+        src_map = batch.src_map if use_src_map else None
+
+        if isinstance(memory_bank, tuple):
+            mb_device = memory_bank[0].device
+        else:
+            mb_device = memory_bank.device
+
+        # seq_so_far contains chosen tokens; on each step, dim 1 grows by one.
+        seq_so_far = torch.full(
+            [batch_size, 1], start_token, dtype=torch.long, device=mb_device)
+        alive_attn = None
+
+        for step in range(max_length):
+            decoder_input = seq_so_far[:, -1].view(1, -1, 1)
+
+            log_probs, attn = self._decode_and_generate(
+                decoder_input,
+                memory_bank,
+                batch,
+                data,
+                memory_lengths=memory_lengths,
+                src_map=src_map,
+                step=step,
+                batch_offset=torch.arange(batch_size, dtype=torch.long)
+            )
+
+            if step < min_length:
+                log_probs[:, end_token] = -1e20
+
+            # Note that what this code calls log_probs are actually logits.
+            topk_ids, topk_scores = self.sample_with_temperature(
+                    log_probs, sampling_temp, keep_topk)
+
+            # Append last prediction.
+            seq_so_far = torch.cat([seq_so_far, topk_ids.view(-1, 1)], -1)
+            if return_attention:
+                current_attn = attn
+                if alive_attn is None:
+                    alive_attn = current_attn
+                else:
+                    alive_attn = torch.cat([alive_attn, current_attn], 0)
+
+        predictions = seq_so_far.view(-1, 1, seq_so_far.size(-1))
+        attention = (
+            alive_attn.view(
+                alive_attn.size(0), -1, 1, alive_attn.size(-1))
+            if alive_attn is not None else None)
+
+        for i in range(topk_scores.size(0)):
+            # Store finished hypotheses for this batch. Unlike in beam search,
+            # there will only ever be 1 hypothesis per example.
+            score = topk_scores[i, 0]
+            pred = predictions[i, 0, 1:]  # Ignore start_token.
+            m_len = memory_lengths[i]
+            attn = attention[:, i, 0, :m_len] if attention is not None else []
+
+            results["scores"][i].append(score)
+            results["predictions"][i].append(pred)
+            results["attention"][i].append(attn)
+
+        return results
+
     def translate_batch(self, batch, data, attn_debug, fast=False):
         """
         Translate a batch of sentences.
@@ -292,6 +433,15 @@ class Translator(object):
            Shouldn't need the original dataset.
         """
         with torch.no_grad():
+            if self.beam_size == 1:
+                return self._translate_random_sampling(
+                    batch,
+                    data,
+                    self.max_length,
+                    min_length=self.min_length,
+                    sampling_temp=self.random_sampling_temp,
+                    keep_topk=self.sample_from_topk,
+                    return_attention=attn_debug or self.replace_unk)
             if fast:
                 return self._fast_translate_batch(
                     batch,
@@ -376,7 +526,6 @@ class Translator(object):
             log_probs = scores.squeeze(0).log()
             # returns [(batch_size x beam_size) , vocab ] when 1 step
             # or [ tgt_len, batch_size, vocab ] when full sentence
-
         return log_probs, attn
 
     def _fast_translate_batch(
@@ -388,8 +537,6 @@ class Translator(object):
         n_best=1,
         return_attention=False
     ):
-        # TODO: faster code path for beam_size == 1.
-
         # TODO: support these blacklisted features.
         assert not self.dump_beam
         assert not self.use_filter_pred
