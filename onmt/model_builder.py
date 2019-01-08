@@ -227,7 +227,7 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
     # Share the embedding matrix - preprocess with share_vocab required.
     if model_opt.share_embeddings:
         # src/tgt vocab should be the same if `-share_vocab` is specified.
-        assert fields['src'].vocab == fields['tgt'].vocab, \
+        assert src_fields[0].vocab == tgt_fields[0].vocab, \
             "preprocess with -share_vocab if you use share_embeddings"
 
         tgt_emb.word_lut.weight = src_emb.word_lut.weight
