@@ -166,7 +166,7 @@
            <div itemprop="articleBody">
             
   <div class="section" id="example-image-to-text">
-<span id="example-image-to-text"></span><h1>Example: Image to Text<a class="headerlink" href="#example-image-to-text" title="Permalink to this headline">¶</a></h1>
+<h1>Example: Image to Text<a class="headerlink" href="#example-image-to-text" title="Permalink to this headline">¶</a></h1>
 <p>A deep learning-based approach to learning the image-to-text conversion, built on top of the <a href="http://opennmt.net/">OpenNMT</a> system. It is completely data-driven, hence can be used for a variety of image-to-text problems, such as image captioning, optical character recognition and LaTeX decompilation.</p>
 <p>Take LaTeX decompilation as an example, given a formula image:</p>
 <p align="center"><img src="http://lstm.seas.harvard.edu/latex/results/website/images/119b93a445-orig.png"></p><p>The goal is to infer the LaTeX source that can be compiled to such an image:</p>
@@ -175,14 +175,14 @@
 </div>
 <p>The paper <a class="reference external" href="https://arxiv.org/pdf/1609.04938.pdf">[What You Get Is What You See: A Visual Markup Decompiler]</a> provides more technical details of this model.</p>
 <div class="section" id="dependencies">
-<span id="dependencies"></span><h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h2>
+<h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><code class="docutils literal notranslate"><span class="pre">torchvision</span></code>: <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">install</span> <span class="pre">torchvision</span></code></li>
 <li><code class="docutils literal notranslate"><span class="pre">Pillow</span></code>: <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">Pillow</span></code></li>
 </ul>
 </div>
 <div class="section" id="quick-start">
-<span id="quick-start"></span><h2>Quick Start<a class="headerlink" href="#quick-start" title="Permalink to this headline">¶</a></h2>
+<h2>Quick Start<a class="headerlink" href="#quick-start" title="Permalink to this headline">¶</a></h2>
 <p>To get started, we provide a toy Math-to-LaTex example. We assume that the working directory is <code class="docutils literal notranslate"><span class="pre">OpenNMT-py</span></code> throughout this document.</p>
 <p>Im2Text consists of four commands:</p>
 <ol class="simple">
@@ -195,29 +195,29 @@
 <li>Preprocess the data.</li>
 </ol>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">preprocess</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">data_type</span> <span class="n">img</span> <span class="o">-</span><span class="n">src_dir</span> <span class="n">data</span><span class="o">/</span><span class="n">im2text</span><span class="o">/</span><span class="n">images</span><span class="o">/</span> <span class="o">-</span><span class="n">train_src</span> <span class="n">data</span><span class="o">/</span><span class="n">im2text</span><span class="o">/</span><span class="n">src</span><span class="o">-</span><span class="n">train</span><span class="o">.</span><span class="n">txt</span> \
-                     <span class="o">-</span><span class="n">train_tgt</span> <span class="n">data</span><span class="o">/</span><span class="n">im2text</span><span class="o">/</span><span class="n">tgt</span><span class="o">-</span><span class="n">train</span><span class="o">.</span><span class="n">txt</span> <span class="o">-</span><span class="n">valid_src</span> <span class="n">data</span><span class="o">/</span><span class="n">im2text</span><span class="o">/</span><span class="n">src</span><span class="o">-</span><span class="n">val</span><span class="o">.</span><span class="n">txt</span> \
-                     <span class="o">-</span><span class="n">valid_tgt</span> <span class="n">data</span><span class="o">/</span><span class="n">im2text</span><span class="o">/</span><span class="n">tgt</span><span class="o">-</span><span class="n">val</span><span class="o">.</span><span class="n">txt</span> <span class="o">-</span><span class="n">save_data</span> <span class="n">data</span><span class="o">/</span><span class="n">im2text</span><span class="o">/</span><span class="n">demo</span> \
-                     <span class="o">-</span><span class="n">tgt_seq_length</span> <span class="mi">150</span> <span class="o">-</span><span class="n">tgt_words_min_frequency</span> <span class="mi">2</span> <span class="o">-</span><span class="n">shard_size</span> <span class="mi">500</span> <span class="o">-</span><span class="n">image_channel_size</span> <span class="mi">1</span>
+					 <span class="o">-</span><span class="n">train_tgt</span> <span class="n">data</span><span class="o">/</span><span class="n">im2text</span><span class="o">/</span><span class="n">tgt</span><span class="o">-</span><span class="n">train</span><span class="o">.</span><span class="n">txt</span> <span class="o">-</span><span class="n">valid_src</span> <span class="n">data</span><span class="o">/</span><span class="n">im2text</span><span class="o">/</span><span class="n">src</span><span class="o">-</span><span class="n">val</span><span class="o">.</span><span class="n">txt</span> \
+					 <span class="o">-</span><span class="n">valid_tgt</span> <span class="n">data</span><span class="o">/</span><span class="n">im2text</span><span class="o">/</span><span class="n">tgt</span><span class="o">-</span><span class="n">val</span><span class="o">.</span><span class="n">txt</span> <span class="o">-</span><span class="n">save_data</span> <span class="n">data</span><span class="o">/</span><span class="n">im2text</span><span class="o">/</span><span class="n">demo</span> \
+					 <span class="o">-</span><span class="n">tgt_seq_length</span> <span class="mi">150</span> <span class="o">-</span><span class="n">tgt_words_min_frequency</span> <span class="mi">2</span> <span class="o">-</span><span class="n">shard_size</span> <span class="mi">500</span> <span class="o">-</span><span class="n">image_channel_size</span> <span class="mi">1</span>
 </pre></div>
 </div>
 <ol class="simple">
 <li>Train the model.</li>
 </ol>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">train</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">model_type</span> <span class="n">img</span> <span class="o">-</span><span class="n">data</span> <span class="n">data</span><span class="o">/</span><span class="n">im2text</span><span class="o">/</span><span class="n">demo</span> <span class="o">-</span><span class="n">save_model</span> <span class="n">demo</span><span class="o">-</span><span class="n">model</span> <span class="o">-</span><span class="n">gpu_ranks</span> <span class="mi">0</span> <span class="o">-</span><span class="n">batch_size</span> <span class="mi">20</span> \
-                <span class="o">-</span><span class="n">max_grad_norm</span> <span class="mi">20</span> <span class="o">-</span><span class="n">learning_rate</span> <span class="mf">0.1</span> <span class="o">-</span><span class="n">word_vec_size</span> <span class="mi">80</span> <span class="o">-</span><span class="n">encoder_type</span> <span class="n">brnn</span> <span class="o">-</span><span class="n">image_channel_size</span> <span class="mi">1</span>
+				<span class="o">-</span><span class="n">max_grad_norm</span> <span class="mi">20</span> <span class="o">-</span><span class="n">learning_rate</span> <span class="mf">0.1</span> <span class="o">-</span><span class="n">word_vec_size</span> <span class="mi">80</span> <span class="o">-</span><span class="n">encoder_type</span> <span class="n">brnn</span> <span class="o">-</span><span class="n">image_channel_size</span> <span class="mi">1</span>
 </pre></div>
 </div>
 <ol class="simple">
 <li>Translate the images.</li>
 </ol>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">translate</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">data_type</span> <span class="n">img</span> <span class="o">-</span><span class="n">model</span> <span class="n">demo</span><span class="o">-</span><span class="n">model_acc_x_ppl_x_e13</span><span class="o">.</span><span class="n">pt</span> <span class="o">-</span><span class="n">src_dir</span> <span class="n">data</span><span class="o">/</span><span class="n">im2text</span><span class="o">/</span><span class="n">images</span> \
-                    <span class="o">-</span><span class="n">src</span> <span class="n">data</span><span class="o">/</span><span class="n">im2text</span><span class="o">/</span><span class="n">src</span><span class="o">-</span><span class="n">test</span><span class="o">.</span><span class="n">txt</span> <span class="o">-</span><span class="n">output</span> <span class="n">pred</span><span class="o">.</span><span class="n">txt</span> <span class="o">-</span><span class="n">max_length</span> <span class="mi">150</span> <span class="o">-</span><span class="n">beam_size</span> <span class="mi">5</span> <span class="o">-</span><span class="n">gpu</span> <span class="mi">0</span> <span class="o">-</span><span class="n">verbose</span>
+					<span class="o">-</span><span class="n">src</span> <span class="n">data</span><span class="o">/</span><span class="n">im2text</span><span class="o">/</span><span class="n">src</span><span class="o">-</span><span class="n">test</span><span class="o">.</span><span class="n">txt</span> <span class="o">-</span><span class="n">output</span> <span class="n">pred</span><span class="o">.</span><span class="n">txt</span> <span class="o">-</span><span class="n">max_length</span> <span class="mi">150</span> <span class="o">-</span><span class="n">beam_size</span> <span class="mi">5</span> <span class="o">-</span><span class="n">gpu</span> <span class="mi">0</span> <span class="o">-</span><span class="n">verbose</span>
 </pre></div>
 </div>
 <p>The above dataset is sampled from the <a class="reference external" href="http://lstm.seas.harvard.edu/latex/im2text.tgz">im2latex-100k-dataset</a>. We provide a trained model <a class="reference external" href="http://lstm.seas.harvard.edu/latex/py-model.pt">[link]</a> on this dataset.</p>
 </div>
 <div class="section" id="options">
-<span id="options"></span><h2>Options<a class="headerlink" href="#options" title="Permalink to this headline">¶</a></h2>
+<h2>Options<a class="headerlink" href="#options" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><code class="docutils literal notranslate"><span class="pre">-src_dir</span></code>: The directory containing the images.</li>
 <li><code class="docutils literal notranslate"><span class="pre">-train_tgt</span></code>: The file storing the tokenized labels, one label per line. It shall look like:</li>

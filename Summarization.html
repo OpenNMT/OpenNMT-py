@@ -100,8 +100,8 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#scores-and-models">Scores and Models</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#cnn-dm">CNN-DM</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#gigaword">Gigaword</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id1">CNN-DM</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id2">Gigaword</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#references">References</a></li>
@@ -177,7 +177,7 @@
            <div itemprop="articleBody">
             
   <div class="section" id="example-summarization">
-<span id="example-summarization"></span><h1>Example: Summarization<a class="headerlink" href="#example-summarization" title="Permalink to this headline">¶</a></h1>
+<h1>Example: Summarization<a class="headerlink" href="#example-summarization" title="Permalink to this headline">¶</a></h1>
 <p>Note: The process and results below are presented in our paper <code class="docutils literal notranslate"><span class="pre">Bottom-Up</span> <span class="pre">Abstractive</span> <span class="pre">Summarization</span></code>. Please consider citing it if you follow these instructions.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@inproceedings</span><span class="p">{</span><span class="n">gehrmann2018bottom</span><span class="p">,</span>
   <span class="n">title</span><span class="o">=</span><span class="p">{</span><span class="n">Bottom</span><span class="o">-</span><span class="n">Up</span> <span class="n">Abstractive</span> <span class="n">Summarization</span><span class="p">},</span>
@@ -196,7 +196,7 @@ In the following, we assume access to a tokenized form of the corpus split into 
 <p><strong>Output</strong>
 <em>australian current account deficit narrows sharply</em></p>
 <div class="section" id="preprocessing-the-data">
-<span id="preprocessing-the-data"></span><h2>Preprocessing the data<a class="headerlink" href="#preprocessing-the-data" title="Permalink to this headline">¶</a></h2>
+<h2>Preprocessing the data<a class="headerlink" href="#preprocessing-the-data" title="Permalink to this headline">¶</a></h2>
 <p>Since we are using copy-attention [1] in the model, we need to preprocess the dataset such that source and target are aligned and use the same dictionary. This is achieved by using the options <code class="docutils literal notranslate"><span class="pre">dynamic_dict</span></code> and <code class="docutils literal notranslate"><span class="pre">share_vocab</span></code>.
 We additionally turn off truncation of the source to ensure that inputs longer than 50 words are not truncated.
 For CNN-DM we follow See et al. [2] and additionally truncate the source length at 400 tokens and the target at 100. We also note that in CNN-DM, we found models to work better if the target surrounds sentences with tags such that a sentence looks like <code class="docutils literal notranslate"><span class="pre">&lt;t&gt;</span> <span class="pre">w1</span> <span class="pre">w2</span> <span class="pre">w3</span> <span class="pre">.</span> <span class="pre">&lt;/t&gt;</span></code>. If you use this formatting, you can remove the tags after the inference step with the commands <code class="docutils literal notranslate"><span class="pre">sed</span> <span class="pre">-i</span> <span class="pre">'s/</span> <span class="pre">&lt;\/t&gt;//g'</span> <span class="pre">FILE.txt</span></code> and <code class="docutils literal notranslate"><span class="pre">sed</span> <span class="pre">-i</span> <span class="pre">'s/&lt;t&gt;</span> <span class="pre">//g'</span> <span class="pre">FILE.txt</span></code>.</p>
@@ -230,7 +230,7 @@ For CNN-DM we follow See et al. [2] and additionally truncate the source length 
 </div>
 </div>
 <div class="section" id="training">
-<span id="training"></span><h2>Training<a class="headerlink" href="#training" title="Permalink to this headline">¶</a></h2>
+<h2>Training<a class="headerlink" href="#training" title="Permalink to this headline">¶</a></h2>
 <p>The training procedure described in this section for the most part follows parameter choices and implementation similar to that of See et al. [2]. We describe notable options in the following list:</p>
 <ul class="simple">
 <li><code class="docutils literal notranslate"><span class="pre">copy_attn</span></code>: This is the most important option, since it allows the model to copy words from the source.</li>
@@ -314,7 +314,7 @@ For CNN-DM we follow See et al. [2] and additionally truncate the source length 
 </div>
 </div>
 <div class="section" id="inference">
-<span id="inference"></span><h2>Inference<a class="headerlink" href="#inference" title="Permalink to this headline">¶</a></h2>
+<h2>Inference<a class="headerlink" href="#inference" title="Permalink to this headline">¶</a></h2>
 <p>During inference, we use beam-search with a beam-size of 10. We also added specific penalties that we can use during decoding, described in the following.</p>
 <ul class="simple">
 <li><code class="docutils literal notranslate"><span class="pre">stepwise_penalty</span></code>: Applies penalty at every step</li>
@@ -347,9 +347,9 @@ For CNN-DM we follow See et al. [2] and additionally truncate the source length 
 </div>
 </div>
 <div class="section" id="evaluation">
-<span id="evaluation"></span><h2>Evaluation<a class="headerlink" href="#evaluation" title="Permalink to this headline">¶</a></h2>
+<h2>Evaluation<a class="headerlink" href="#evaluation" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="cnn-dm">
-<span id="cnn-dm"></span><h3>CNN-DM<a class="headerlink" href="#cnn-dm" title="Permalink to this headline">¶</a></h3>
+<h3>CNN-DM<a class="headerlink" href="#cnn-dm" title="Permalink to this headline">¶</a></h3>
 <p>To evaluate the ROUGE scores on CNN-DM, we extended the pyrouge wrapper with additional evaluations such as the amount of repeated n-grams (typically found in models with copy attention), found <a class="reference external" href="https://github.com/sebastianGehrmann/rouge-baselines">here</a>. The repository includes a sub-repo called pyrouge. Make sure to clone the code with the <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">clone</span> <span class="pre">--recurse-submodules</span> <span class="pre">https://github.com/sebastianGehrmann/rouge-baselines</span></code> command to check this out as well and follow the installation instructions on the pyrouge repository before calling this script.
 The installation instructions can be found <a class="reference external" href="https://github.com/falcondai/pyrouge/tree/9cdbfbda8b8d96e7c2646ffd048743ddcf417ed9#installation">here</a>. Note that on MacOS, we found that the pointer to your perl installation in line 1 of <code class="docutils literal notranslate"><span class="pre">pyrouge/RELEASE-1.5.5/ROUGE-1.5.5.pl</span></code> might be different from the one you have installed. A simple fix is to change this line to <code class="docutils literal notranslate"><span class="pre">#!/usr/local/bin/perl</span> <span class="pre">-w</span></code> if it fails.</p>
 <p>It can be run with the following command:</p>
@@ -359,35 +359,35 @@ The installation instructions can be found <a class="reference external" href="h
 <p>The <code class="docutils literal notranslate"><span class="pre">sent_tag_verbatim</span></code> option strips <code class="docutils literal notranslate"><span class="pre">&lt;t&gt;</span></code> and <code class="docutils literal notranslate"><span class="pre">&lt;/t&gt;</span></code> tags around sentences - when a sentence previously was <code class="docutils literal notranslate"><span class="pre">&lt;t&gt;</span> <span class="pre">w</span> <span class="pre">w</span> <span class="pre">w</span> <span class="pre">w</span> <span class="pre">.</span> <span class="pre">&lt;/t&gt;</span></code>, it becomes <code class="docutils literal notranslate"><span class="pre">w</span> <span class="pre">w</span> <span class="pre">w</span> <span class="pre">w</span> <span class="pre">.</span></code>.</p>
 </div>
 <div class="section" id="gigaword">
-<span id="gigaword"></span><h3>Gigaword<a class="headerlink" href="#gigaword" title="Permalink to this headline">¶</a></h3>
+<h3>Gigaword<a class="headerlink" href="#gigaword" title="Permalink to this headline">¶</a></h3>
 <p>For evaluation of large test sets such as Gigaword, we use the a parallel python wrapper around ROUGE, found <a class="reference external" href="https://github.com/pltrdy/files2rouge">here</a>.</p>
 <p><strong>command used</strong>:
 <code class="docutils literal notranslate"><span class="pre">files2rouge</span> <span class="pre">giga.out</span> <span class="pre">test.title.txt</span> <span class="pre">--verbose</span></code></p>
 </div>
 </div>
 <div class="section" id="scores-and-models">
-<span id="scores-and-models"></span><h2>Scores and Models<a class="headerlink" href="#scores-and-models" title="Permalink to this headline">¶</a></h2>
-<p>The website generator has trouble rendering tables, if you can’t read the results, please go <a class="reference external" href="https://github.com/OpenNMT/OpenNMT-py/blob/master/docs/source/Summarization.md">here</a> for correct format.</p>
-<div class="section" id="cnn-dm">
-<span id="id1"></span><h3>CNN-DM<a class="headerlink" href="#cnn-dm" title="Permalink to this headline">¶</a></h3>
+<h2>Scores and Models<a class="headerlink" href="#scores-and-models" title="Permalink to this headline">¶</a></h2>
+<p>The website generator has trouble rendering tables, if you can’t read the results, please go <a class="reference external" href="https://github.com/OpenNMT/OpenNMT-py/blob/master/docs/source/Summarization">here</a> for correct format.</p>
+<div class="section" id="id1">
+<h3>CNN-DM<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
 <p>| Model Type    | Model    | R1 R  | R1 P  | R1 F  | R2 R  | R2 P  | R2 F  | RL R  | RL P  | RL F  |
 | ————- |  ——– | —–:| —–:| —–:|——:| —–:| —–:|—–: | —–:| —–:|
-| Pointer-Generator + Coverage [2]     | <a class="reference external" href="https://github.com/abisee/pointer-generator">link</a>  | 39.05 | 43.02 | 39.53 | 17.16 | 18.77 | 17.28  | 35.98 | 39.56 | 36.38 |
+| Pointer-Generator + Coverage [2]     | <a class="reference external" href="https://github.com/abisee/pointer-generator">link</a>  | 39.05 |	43.02 |	39.53 |	17.16 | 18.77 | 17.28  | 35.98 | 39.56 | 36.38 |
 | Pointer-Generator [2]  |  <a class="reference external" href="https://github.com/abisee/pointer-generator">link</a>  | 37.76 | 37.60| 36.44| 16.31| 16.12| 15.66| 34.66| 34.46| 33.42 |
-| OpenNMT BRNN  (1 layer, emb 128, hid 512)  |  <a class="reference external" href="https://s3.amazonaws.com/opennmt-models/Summary/ada6_bridge_oldcopy_tagged_acc_54.17_ppl_11.17_e20.pt">link</a>     | 40.90| 40.20|   39.02|  17.91|  17.99|  17.25|  37.76   | 37.18|    36.05 |
-| OpenNMT BRNN  (1 layer, emb 128, hid 512, shared embeddings)  |  <a class="reference external" href="https://s3.amazonaws.com/opennmt-models/Summary/ada6_bridge_oldcopy_tagged_share_acc_54.50_ppl_10.89_e20.pt">link</a>     | 38.59  | 40.60 | 37.97 | 16.75 | 17.93 | 16.59 | 35.67 | 37.60 | 35.13 |
-| OpenNMT BRNN (2 layer, emb 256, hid 1024)   |  <a class="reference external" href="https://s3.amazonaws.com/opennmt-models/Summary/ada6_bridge_oldcopy_tagged_larger_acc_54.84_ppl_10.58_e17.ptt">link</a>     | 40.41  | 40.94 | 39.12 | 17.76 | 18.38 | 17.35 | 37.27 | 37.83 | 36.12 |
-| OpenNMT Transformer  |  <a class="reference external" href="https://s3.amazonaws.com/opennmt-models/sum_transformer_model_acc_57.25_ppl_9.22_e16.pt">link</a>  | 40.31  | 41.09 | 39.25 | 17.97 | 18.46 | 17.54 | 37.41 | 38.18 | 36.45 |</p>
+| OpenNMT BRNN  (1 layer, emb 128, hid 512)  |  <a class="reference external" href="https://s3.amazonaws.com/opennmt-models/Summary/ada6_bridge_oldcopy_tagged_acc_54.17_ppl_11.17_e20.pt">link</a>     | 40.90| 40.20| 	39.02| 	17.91| 	17.99| 	17.25| 	37.76	| 37.18| 	36.05 |
+| OpenNMT BRNN  (1 layer, emb 128, hid 512, shared embeddings)  |  <a class="reference external" href="https://s3.amazonaws.com/opennmt-models/Summary/ada6_bridge_oldcopy_tagged_share_acc_54.50_ppl_10.89_e20.pt">link</a>     | 38.59	| 40.60	| 37.97	| 16.75	| 17.93	| 16.59	| 35.67	| 37.60	| 35.13 |
+| OpenNMT BRNN (2 layer, emb 256, hid 1024)   |  <a class="reference external" href="https://s3.amazonaws.com/opennmt-models/Summary/ada6_bridge_oldcopy_tagged_larger_acc_54.84_ppl_10.58_e17.ptt">link</a>     | 40.41	| 40.94 | 39.12 | 17.76 | 18.38 | 17.35 | 37.27 | 37.83 | 36.12 |
+| OpenNMT Transformer  |  <a class="reference external" href="https://s3.amazonaws.com/opennmt-models/sum_transformer_model_acc_57.25_ppl_9.22_e16.pt">link</a>  | 40.31	| 41.09	| 39.25	| 17.97	| 18.46	| 17.54	| 37.41	| 38.18	| 36.45 |</p>
 </div>
-<div class="section" id="gigaword">
-<span id="id2"></span><h3>Gigaword<a class="headerlink" href="#gigaword" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id2">
+<h3>Gigaword<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
 <p>| Model Type    | Model    | R1 R  | R1 P  | R1 F  | R2 R  | R2 P  | R2 F  | RL R  | RL P  | RL F  |
 | ————- |  ——– | —–:| —–:| —–:|——:| —–:| —–:|—–: | —–:| —–:|
-| OpenNMT, no penalties | <a class="reference external" href="https://s3.amazonaws.com/opennmt-models/gigaword_copy_acc_51.78_ppl_11.71_e20.pt">link</a>  | ? |   ? | 35.51 | ? | ? | 17.35  | ? | ? | 33.17 |</p>
+| OpenNMT, no penalties | <a class="reference external" href="https://s3.amazonaws.com/opennmt-models/gigaword_copy_acc_51.78_ppl_11.71_e20.pt">link</a>  | ? |	? |	35.51 |	? | ? | 17.35  | ? | ? | 33.17 |</p>
 </div>
 </div>
 <div class="section" id="references">
-<span id="references"></span><h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
+<h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
 <p>[1] Vinyals, O., Fortunato, M. and Jaitly, N., 2015. Pointer Network. NIPS</p>
 <p>[2] See, A., Liu, P.J. and Manning, C.D., 2017. Get To The Point: Summarization with Pointer-Generator Networks. ACL</p>
 <p>[3] Bahdanau, D., Cho, K. and Bengio, Y., 2014. Neural machine translation by jointly learning to align and translate. ICLR</p>

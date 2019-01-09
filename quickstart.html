@@ -166,9 +166,9 @@
            <div itemprop="articleBody">
             
   <div class="section" id="quickstart">
-<span id="quickstart"></span><h1>Quickstart<a class="headerlink" href="#quickstart" title="Permalink to this headline">¶</a></h1>
+<h1>Quickstart<a class="headerlink" href="#quickstart" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="step-1-preprocess-the-data">
-<span id="step-1-preprocess-the-data"></span><h2>Step 1: Preprocess the data<a class="headerlink" href="#step-1-preprocess-the-data" title="Permalink to this headline">¶</a></h2>
+<h2>Step 1: Preprocess the data<a class="headerlink" href="#step-1-preprocess-the-data" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python preprocess.py -train_src data/src-train.txt -train_tgt data/tgt-train.txt -valid_src data/src-val.txt -valid_tgt data/tgt-val.txt -save_data data/demo
 </pre></div>
 </div>
@@ -189,7 +189,7 @@ Federal Master Trainer and Senior Instructor of the Italian Federation of Aerobi
 </div>
 </div>
 <div class="section" id="step-2-train-the-model">
-<span id="step-2-train-the-model"></span><h2>Step 2: Train the model<a class="headerlink" href="#step-2-train-the-model" title="Permalink to this headline">¶</a></h2>
+<h2>Step 2: Train the model<a class="headerlink" href="#step-2-train-the-model" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python train.py -data data/demo -save_model demo-model
 </pre></div>
 </div>
@@ -202,7 +202,7 @@ CUDA_VISIBLE_DEVICES=1,3
 To know more about distributed training on single or multi nodes, read the FAQ section.</p>
 </div>
 <div class="section" id="step-3-translate">
-<span id="step-3-translate"></span><h2>Step 3: Translate<a class="headerlink" href="#step-3-translate" title="Permalink to this headline">¶</a></h2>
+<h2>Step 3: Translate<a class="headerlink" href="#step-3-translate" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python translate.py -model demo-model_XYZ.pt -src data/src-test.txt -output pred.txt -replace_unk -verbose
 </pre></div>
 </div>

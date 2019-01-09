@@ -174,10 +174,10 @@
             
   <!--- This file was automatically generated. Do not modify it manually but use the docs/options/generate.sh script instead. --><p>train.py</p>
 <div class="section" id="options-train-py">
-<span id="options-train-py"></span><h1>Options: train.py:<a class="headerlink" href="#options-train-py" title="Permalink to this headline">¶</a></h1>
+<h1>Options: train.py:<a class="headerlink" href="#options-train-py" title="Permalink to this headline">¶</a></h1>
 <p>train.py</p>
 <div class="section" id="model-embeddings">
-<span id="model-embeddings"></span><h2><strong>Model-Embeddings</strong>:<a class="headerlink" href="#model-embeddings" title="Permalink to this headline">¶</a></h2>
+<h2><strong>Model-Embeddings</strong>:<a class="headerlink" href="#model-embeddings" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><strong>-src_word_vec_size [500]</strong>
 Word embedding size for src.</li>
@@ -196,7 +196,7 @@ Use a sin to mark relative words positions. Necessary for non-RNN style models.<
 </ul>
 </div>
 <div class="section" id="model-embedding-features">
-<span id="model-embedding-features"></span><h2><strong>Model-Embedding Features</strong>:<a class="headerlink" href="#model-embedding-features" title="Permalink to this headline">¶</a></h2>
+<h2><strong>Model-Embedding Features</strong>:<a class="headerlink" href="#model-embedding-features" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><strong>-feat_merge [concat]</strong>
 Merge action for incorporating features embeddings. Options [concat|sum|mlp].</li>
@@ -209,7 +209,7 @@ N^feat_vec_exponent where N is the number of values the feature takes.</li>
 </ul>
 </div>
 <div class="section" id="model-encoder-decoder">
-<span id="model-encoder-decoder"></span><h2><strong>Model- Encoder-Decoder</strong>:<a class="headerlink" href="#model-encoder-decoder" title="Permalink to this headline">¶</a></h2>
+<h2><strong>Model- Encoder-Decoder</strong>:<a class="headerlink" href="#model-encoder-decoder" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><strong>-model_type [text]</strong>
 Type of source model to use. Allows the system to incorporate non-text inputs.
@@ -256,7 +256,7 @@ Type of context gate to use. Do not select for no context gate.</li>
 </ul>
 </div>
 <div class="section" id="model-attention">
-<span id="model-attention"></span><h2><strong>Model- Attention</strong>:<a class="headerlink" href="#model-attention" title="Permalink to this headline">¶</a></h2>
+<h2><strong>Model- Attention</strong>:<a class="headerlink" href="#model-attention" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><strong>-global_attention [general]</strong>
 The attention type to use: dotprod or general (Luong) or MLP (Bahdanau)</li>
@@ -286,7 +286,7 @@ Lambda value for coverage.</li>
 </ul>
 </div>
 <div class="section" id="general">
-<span id="general"></span><h2><strong>General</strong>:<a class="headerlink" href="#general" title="Permalink to this headline">¶</a></h2>
+<h2><strong>General</strong>:<a class="headerlink" href="#general" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><strong>-data []</strong>
 Path prefix to the “.train.pt” and “.valid.pt” file path from preprocess.py</li>
@@ -322,7 +322,7 @@ Random seed used for the experiments reproducibility.</li>
 </ul>
 </div>
 <div class="section" id="initialization">
-<span id="initialization"></span><h2><strong>Initialization</strong>:<a class="headerlink" href="#initialization" title="Permalink to this headline">¶</a></h2>
+<h2><strong>Initialization</strong>:<a class="headerlink" href="#initialization" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><strong>-param_init [0.1]</strong>
 Parameters are initialized over uniform distribution with support (-param_init,
@@ -345,7 +345,7 @@ Fix word embeddings on the decoder side.</li>
 </ul>
 </div>
 <div class="section" id="optimization-type">
-<span id="optimization-type"></span><h2><strong>Optimization- Type</strong>:<a class="headerlink" href="#optimization-type" title="Permalink to this headline">¶</a></h2>
+<h2><strong>Optimization- Type</strong>:<a class="headerlink" href="#optimization-type" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><strong>-batch_size [64]</strong>
 Maximum batch size for training</li>
@@ -400,7 +400,7 @@ For more detailed information, see: https://arxiv.org/abs/1512.00567</li>
 </ul>
 </div>
 <div class="section" id="optimization-rate">
-<span id="optimization-rate"></span><h2><strong>Optimization- Rate</strong>:<a class="headerlink" href="#optimization-rate" title="Permalink to this headline">¶</a></h2>
+<h2><strong>Optimization- Rate</strong>:<a class="headerlink" href="#optimization-rate" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><strong>-learning_rate [1.0]</strong>
 Starting learning rate. Recommended settings: sgd = 1, adagrad = 0.1, adadelta =
@@ -420,7 +420,7 @@ Number of warmup steps for custom decay.</li>
 </ul>
 </div>
 <div class="section" id="logging">
-<span id="logging"></span><h2><strong>Logging</strong>:<a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h2>
+<h2><strong>Logging</strong>:<a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><strong>-report_every [50]</strong>
 Print stats at this interval.</li>
@@ -438,7 +438,7 @@ Log directory for Tensorboard. This is also the name of the run.</li>
 </ul>
 </div>
 <div class="section" id="speech">
-<span id="speech"></span><h2><strong>Speech</strong>:<a class="headerlink" href="#speech" title="Permalink to this headline">¶</a></h2>
+<h2><strong>Speech</strong>:<a class="headerlink" href="#speech" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><strong>-sample_rate [16000]</strong>
 Sample rate.</li>
