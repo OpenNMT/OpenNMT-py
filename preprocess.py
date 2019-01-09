@@ -83,9 +83,6 @@ def build_save_dataset(corpus_type, fields, opt):
             src_dir=opt.src_dir,
             src_seq_len=opt.src_seq_length,
             tgt_seq_len=opt.tgt_seq_length,
-            src_seq_length_trunc=opt.src_seq_length_trunc,
-            tgt_seq_length_trunc=opt.tgt_seq_length_trunc,
-            dynamic_dict=opt.dynamic_dict,
             sample_rate=opt.sample_rate,
             window_size=opt.window_size,
             window_stride=opt.window_stride,
@@ -118,7 +115,7 @@ def build_save_vocab(train_dataset, fields, opt):
     )
 
     vocab_path = opt.save_data + '.vocab.pt'
-    torch.save(inputters.save_fields_to_vocab(fields), vocab_path)
+    torch.save(fields, vocab_path)
 
 
 def count_features(path):
@@ -158,7 +155,13 @@ def main():
     logger.info(" * number of target features: %d." % tgt_nfeats)
 
     logger.info("Building `Fields` object...")
-    fields = inputters.get_fields(opt.data_type, src_nfeats, tgt_nfeats)
+    fields = inputters.get_fields(
+        opt.data_type,
+        src_nfeats,
+        tgt_nfeats,
+        dynamic_dict=opt.dynamic_dict,
+        src_truncate=opt.src_seq_length_trunc,
+        tgt_truncate=opt.tgt_seq_length_trunc)
 
     logger.info("Building & saving training data...")
     train_dataset_files = build_save_dataset('train', fields, opt)

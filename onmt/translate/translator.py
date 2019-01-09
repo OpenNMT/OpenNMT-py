@@ -175,7 +175,6 @@ class Translator(object):
             window=self.window,
             use_filter_pred=self.use_filter_pred,
             image_channel_size=self.image_channel_size,
-            dynamic_dict=self.copy_attn
         )
 
         cur_device = "cuda" if self.cuda else "cpu"
@@ -483,11 +482,12 @@ class Translator(object):
         batch_offset=None
     ):
 
-        unk_idx = self.fields["tgt"].vocab.stoi[self.fields["tgt"].unk_token]
+        tgt_field = self.fields["tgt"][0][1]
+        unk_idx = tgt_field.vocab.stoi[tgt_field.unk_token]
         if self.copy_attn:
             # Turn any copied words into UNKs.
             decoder_in = decoder_in.masked_fill(
-                decoder_in.gt(len(self.fields["tgt"].vocab) - 1), unk_idx
+                decoder_in.gt(len(tgt_field.vocab) - 1), unk_idx
             )
 
         # Decoder forward, takes [tgt_len, batch, nfeats] as input
@@ -517,7 +517,7 @@ class Translator(object):
             scores = data.collapse_copy_scores(
                 scores,
                 batch,
-                self.fields["tgt"].vocab,
+                tgt_field.vocab,
                 data.src_vocabs,
                 batch_dim=0,
                 batch_offset=batch_offset
@@ -545,9 +545,10 @@ class Translator(object):
 
         beam_size = self.beam_size
         batch_size = batch.batch_size
-        vocab = self.fields["tgt"].vocab
-        start_token = vocab.stoi[self.fields["tgt"].init_token]
-        end_token = vocab.stoi[self.fields["tgt"].eos_token]
+        tgt_field = self.fields['tgt'][0][1]
+        vocab = tgt_field.vocab
+        start_token = vocab.stoi[tgt_field.init_token]
+        end_token = vocab.stoi[tgt_field.eos_token]
 
         # Encoder forward.
         src, enc_states, memory_bank, src_lengths = self._run_encoder(
@@ -740,14 +741,15 @@ class Translator(object):
         beam_size = self.beam_size
         batch_size = batch.batch_size
         data_type = data.data_type
-        vocab = self.fields["tgt"].vocab
+        tgt_field = self.fields['tgt'][0][1]
+        vocab = tgt_field.vocab
 
         # Define a set of tokens to exclude from ngram-blocking
         exclusion_tokens = {vocab.stoi[t] for t in self.ignore_when_blocking}
 
-        pad = vocab.stoi[self.fields['tgt'].pad_token]
-        eos = vocab.stoi[self.fields['tgt'].eos_token]
-        bos = vocab.stoi[self.fields['tgt'].init_token]
+        pad = vocab.stoi[tgt_field.pad_token]
+        eos = vocab.stoi[tgt_field.eos_token]
+        bos = vocab.stoi[tgt_field.init_token]
         beam = [onmt.translate.Beam(beam_size, n_best=self.n_best,
                                     cuda=self.cuda,
                                     global_scorer=self.global_scorer,
@@ -841,7 +843,8 @@ class Translator(object):
         log_probs, attn = self._decode_and_generate(
             tgt_in, memory_bank, batch, data,
             memory_lengths=src_lengths, src_map=src_map)
-        tgt_pad = self.fields["tgt"].vocab.stoi[self.fields["tgt"].pad_token]
+        tgt_field = self.fields["tgt"][0][1]
+        tgt_pad = tgt_field.vocab.stoi[tgt_field.pad_token]
 
         log_probs[:, :, tgt_pad] = 0
         gold = batch.tgt[1:].unsqueeze(2)

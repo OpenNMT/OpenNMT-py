@@ -8,12 +8,14 @@ import configargparse
 import os
 import glob
 import random
+from itertools import chain
+
 import torch
 
 import onmt.opts as opts
 
 from onmt.inputters.inputter import build_dataset_iter, \
-    load_fields, _collect_report_features
+    load_fields_from_vocab, old_style_vocab
 from onmt.model_builder import build_model
 from onmt.utils.optimizers import build_optim
 from onmt.trainer import build_trainer
@@ -104,9 +106,12 @@ def main(opt, device_id):
 
         model_opt = default_opt
         model_opt.__dict__.update(checkpoint['opt'].__dict__)
+        logger.info('Loading vocab from checkpoint at %s.' % opt.train_from)
+        vocab = checkpoint['vocab']
     else:
         checkpoint = None
         model_opt = opt
+        vocab = torch.load(opt.data + '.vocab.pt')
 
     # Load a shard dataset to determine the data_type.
     # (All datasets have the same data_type).
@@ -114,18 +119,18 @@ def main(opt, device_id):
     first_dataset = torch.load(glob.glob(opt.data + '.train*.pt')[0])
     data_type = first_dataset.data_type
 
-    # Load fields generated from preprocess phase.
-    fields = load_fields(first_dataset, opt, checkpoint)
+    # check for code where vocab is saved instead of fields
+    # (in the future this will be done in a smarter way
+    if old_style_vocab(vocab):
+        fields = load_fields_from_vocab(vocab, data_type)
+    else:
+        fields = vocab
 
-    # Report src/tgt features.
-
-    src_features, tgt_features = _collect_report_features(fields)
-    for j, feat in enumerate(src_features):
-        logger.info(' * src feature %d size = %d'
-                    % (j, len(fields[feat].vocab)))
-    for j, feat in enumerate(tgt_features):
-        logger.info(' * tgt feature %d size = %d'
-                    % (j, len(fields[feat].vocab)))
+    # Report src and tgt vocab sizes, including for features
+    for side in ['src', 'tgt']:
+        for name, f in fields[side]:
+            if f.use_vocab:
+                logger.info(' * %s vocab size = %d' % (name, len(f.vocab)))
 
     # Build model.
     model = build_model(model_opt, opt, fields, checkpoint)
@@ -144,8 +149,13 @@ def main(opt, device_id):
     trainer = build_trainer(opt, device_id, model, fields,
                             optim, data_type, model_saver=model_saver)
 
-    train_iter = build_dataset_iter("train", fields, opt)
-    valid_iter = build_dataset_iter("valid", fields, opt, is_train=False)
+    # this line is kind of a temporary kludge because different objects expect
+    # fields to have a different structure
+    dataset_fields = dict(chain.from_iterable(fields.values()))
+
+    train_iter = build_dataset_iter("train", dataset_fields, opt)
+    valid_iter = build_dataset_iter(
+        "valid", dataset_fields, opt, is_train=False)
 
     if len(opt.gpu_ranks):
         logger.info('Starting training on GPU: %s' % opt.gpu_ranks)
