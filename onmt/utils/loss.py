@@ -86,7 +86,8 @@ class LossComputeBase(nn.Module):
     def padding_idx(self):
         return self.criterion.ignore_index
 
-    def _make_shard_state(self, batch, output, range_, attns=None):
+    def _make_shard_state(self, batch, output, range_, attns=None,
+                          bleu=None):
         """
         Make shard state dictionary for shards() to return iterable
         shards for efficient loss computation. Subclass must define
@@ -113,7 +114,7 @@ class LossComputeBase(nn.Module):
         """
         return NotImplementedError
 
-    def monolithic_compute_loss(self, batch, output, attns):
+    def monolithic_compute_loss(self, batch, output, attns, bleu):
         """
         Compute the forward loss for the batch.
 
@@ -128,7 +129,8 @@ class LossComputeBase(nn.Module):
             :obj:`onmt.utils.Statistics`: loss statistics
         """
         range_ = (0, batch.tgt.size(0))
-        shard_state = self._make_shard_state(batch, output, range_, attns)
+        shard_state = self._make_shard_state(batch, output, range_, attns,
+                                             bleu)
         _, batch_stats = self._compute_loss(batch, **shard_state)
 
         return batch_stats
@@ -233,13 +235,14 @@ class NMTLossCompute(LossComputeBase):
     def __init__(self, criterion, generator, normalization="sents"):
         super(NMTLossCompute, self).__init__(criterion, generator)
 
-    def _make_shard_state(self, batch, output, range_, attns=None):
+    def _make_shard_state(self, batch, output, range_, attns=None, bleu=None):
         return {
             "output": output,
             "target": batch.tgt[range_[0] + 1: range_[1]],
+            "bleu": bleu
         }
 
-    def _compute_loss(self, batch, output, target):
+    def _compute_loss(self, batch, output, target, bleu=None):
         bottled_output = self._bottle(output)
 
         scores = self.generator(bottled_output)
@@ -247,7 +250,11 @@ class NMTLossCompute(LossComputeBase):
 
         loss = self.criterion(scores, gtruth)
         stats = self._stats(loss.clone(), scores, gtruth)
-
+        pred = scores.max(1)[1]
+        if bleu is not None:
+            bleu.__call__(
+                torch.transpose(pred.view(-1, batch.tgt.size(1)), 0, 1),
+                torch.transpose(gtruth.view(-1, batch.tgt.size(1)), 0, 1))
         return loss, stats
 
 

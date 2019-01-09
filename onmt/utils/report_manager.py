@@ -84,7 +84,8 @@ class ReportMgrBase(object):
         """ To be overridden """
         raise NotImplementedError()
 
-    def report_step(self, lr, step, train_stats=None, valid_stats=None):
+    def report_step(self, lr, step, train_stats=None, valid_stats=None,
+                    bleu=None):
         """
         Report stats of a step
 
@@ -92,9 +93,11 @@ class ReportMgrBase(object):
             train_stats(Statistics): training stats
             valid_stats(Statistics): validation stats
             lr(float): current learning rate
+            bleu(Bleu): Bleu object
         """
         self._report_step(
-            lr, step, train_stats=train_stats, valid_stats=valid_stats)
+            lr, step, train_stats=train_stats, valid_stats=valid_stats,
+            bleu=bleu)
 
     def _report_step(self, *args, **kwargs):
         raise NotImplementedError()
@@ -136,7 +139,8 @@ class ReportMgr(ReportMgrBase):
 
         return report_stats
 
-    def _report_step(self, lr, step, train_stats=None, valid_stats=None):
+    def _report_step(self, lr, step, train_stats=None, valid_stats=None,
+                     bleu=None):
         """
         See base class method `ReportMgrBase.report_step`.
         """
@@ -152,6 +156,7 @@ class ReportMgr(ReportMgrBase):
         if valid_stats is not None:
             self.log('Validation perplexity: %g' % valid_stats.ppl())
             self.log('Validation accuracy: %g' % valid_stats.accuracy())
+            self.log('Validation bleu: %g' % bleu.get_metric())
 
             self.maybe_log_tensorboard(valid_stats,
                                        "valid",
