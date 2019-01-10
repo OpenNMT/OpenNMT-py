@@ -187,6 +187,10 @@ class LossComputeBase(nn.Module):
             :obj:`onmt.utils.Statistics` : statistics for this batch.
         """
         pred = scores.max(1)[1]
+        precision_matches = Counter()
+        precision_totals = Counter()
+        prediction_lengths = 0
+        reference_lengths = 0
 
         if batch_sz is not None:
             precision_matches, precision_totals, \
