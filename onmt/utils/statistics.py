@@ -110,7 +110,7 @@ class Statistics(object):
         if update_n_src_words:
             self.n_src_words += stat.n_src_words
 
-    def _get_brevity_penalty(self) -> float:
+    def _get_brevity_penalty(self):
         if self.prediction_lengths > self.reference_lengths:
             return 1.0
         if self.reference_lengths == 0 or self.prediction_lengths == 0:

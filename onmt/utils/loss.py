@@ -235,7 +235,7 @@ class LossComputeBase(nn.Module):
             reference_lengths
 
     @staticmethod
-    def unwrap_to_tensors(*tensors: torch.Tensor):
+    def unwrap_to_tensors(*tensors):
         """
         If you actually passed gradient-tracking Tensors to this,
         there will be a huge memory leak, because it will prevent
