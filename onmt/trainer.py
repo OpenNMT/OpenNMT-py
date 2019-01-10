@@ -12,7 +12,6 @@
 import torch
 import onmt.inputters as inputters
 import onmt.utils
-from onmt.utils.bleu import Bleu
 from onmt.utils.logging import logger
 
 
@@ -186,7 +185,7 @@ class Trainer(object):
                             if self.gpu_verbose_level > 0:
                                 logger.info('GpuRank %d: validate step %d'
                                             % (self.gpu_rank, step))
-                            valid_stats, bleu = self.validate(valid_iter)
+                            valid_stats = self.validate(valid_iter)
                             if self.gpu_verbose_level > 0:
                                 logger.info('GpuRank %d: gather valid stat \
                                             step %d' % (self.gpu_rank, step))
@@ -196,7 +195,7 @@ class Trainer(object):
                                             % (self.gpu_rank, step))
                             self._report_step(self.optim.learning_rate,
                                               step, valid_stats=valid_stats,
-                                              bleu=bleu)
+                                              )
 
                         if self.gpu_rank == 0:
                             self._maybe_save(step)
@@ -219,9 +218,8 @@ class Trainer(object):
         self.model.eval()
 
         with torch.no_grad():
-            stats = onmt.utils.Statistics()
-            padding_idx = self.valid_loss.padding_idx
-            bleu = Bleu(exclude_indices={padding_idx})
+            stats = onmt.utils.Statistics(
+                exclude_indices={self.valid_loss.padding_idx})
 
             for batch in valid_iter:
                 src = inputters.make_features(batch, 'src', self.data_type)
@@ -239,7 +237,7 @@ class Trainer(object):
 
                 # Compute loss.
                 batch_stats = self.valid_loss.monolithic_compute_loss(
-                    batch, outputs, attns, bleu)
+                    batch, outputs, attns)
 
                 # Update statistics.
                 stats.update(batch_stats)
@@ -247,7 +245,7 @@ class Trainer(object):
         # Set model back to training mode.
         self.model.train()
 
-        return stats, bleu
+        return stats
 
     def _gradient_accumulation(self, true_batchs, normalization, total_stats,
                                report_stats):
@@ -357,7 +355,7 @@ class Trainer(object):
                 multigpu=self.n_gpu > 1)
 
     def _report_step(self, learning_rate, step, train_stats=None,
-                     valid_stats=None, bleu=None):
+                     valid_stats=None):
         """
         Simple function to report stats (if report_manager is set)
         see `onmt.utils.ReportManagerBase.report_step` for doc
@@ -365,7 +363,7 @@ class Trainer(object):
         if self.report_manager is not None:
             return self.report_manager.report_step(
                 learning_rate, step, train_stats=train_stats,
-                valid_stats=valid_stats, bleu=bleu)
+                valid_stats=valid_stats)
 
     def _maybe_save(self, step):
         """

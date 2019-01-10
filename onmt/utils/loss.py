@@ -10,6 +10,7 @@ import torch.nn.functional as F
 import onmt
 from onmt.modules.sparse_losses import SparsemaxLoss
 from onmt.modules.sparse_activations import LogSparsemax
+from collections import Counter
 
 
 def build_loss_compute(model, tgt_field, opt, train=True):
@@ -87,7 +88,7 @@ class LossComputeBase(nn.Module):
         return self.criterion.ignore_index
 
     def _make_shard_state(self, batch, output, range_, attns=None,
-                          bleu=None):
+                          ):
         """
         Make shard state dictionary for shards() to return iterable
         shards for efficient loss computation. Subclass must define
@@ -114,7 +115,7 @@ class LossComputeBase(nn.Module):
         """
         return NotImplementedError
 
-    def monolithic_compute_loss(self, batch, output, attns, bleu):
+    def monolithic_compute_loss(self, batch, output, attns):
         """
         Compute the forward loss for the batch.
 
@@ -130,7 +131,7 @@ class LossComputeBase(nn.Module):
         """
         range_ = (0, batch.tgt.size(0))
         shard_state = self._make_shard_state(batch, output, range_, attns,
-                                             bleu)
+                                             )
         _, batch_stats = self._compute_loss(batch, **shard_state)
 
         return batch_stats
@@ -174,21 +175,132 @@ class LossComputeBase(nn.Module):
             batch_stats.update(stats)
         return batch_stats
 
-    def _stats(self, loss, scores, target):
+    def _stats(self, loss, scores, target, batch_sz=None):
         """
         Args:
             loss (:obj:`FloatTensor`): the loss computed by the loss criterion.
             scores (:obj:`FloatTensor`): a score for each possible output
             target (:obj:`FloatTensor`): true targets
+            batch_sz (:'int'): batch size
 
         Returns:
             :obj:`onmt.utils.Statistics` : statistics for this batch.
         """
         pred = scores.max(1)[1]
+
+        if batch_sz is not None:
+            precision_matches, precision_totals, \
+                prediction_lengths, reference_lengths = \
+                self._bleu_calculations(
+                    torch.transpose(pred.view(-1, batch_sz), 0, 1),
+                    torch.transpose(target.view(-1, batch_sz), 0, 1),
+                    4,
+                    {self.padding_idx})
         non_padding = target.ne(self.padding_idx)
         num_correct = pred.eq(target).masked_select(non_padding).sum().item()
         num_non_padding = non_padding.sum().item()
-        return onmt.utils.Statistics(loss.item(), num_non_padding, num_correct)
+        return onmt.utils.Statistics(loss.item(), num_non_padding, num_correct,
+                                     precision_matches, precision_totals,
+                                     prediction_lengths, reference_lengths)
+
+    def _bleu_calculations(self, predictions, gold_targets, ngram,
+                           exclude_indices=None):
+        _precision_matches = Counter()
+        _precision_totals = Counter()
+        prediction_lengths = 0
+        reference_lengths = 0
+
+        predictions, gold_targets = self.unwrap_to_tensors(
+            predictions, gold_targets)
+        for ngram_size in range(1, ngram+1):
+            precision_matches, precision_totals = \
+                self._get_modified_precision_counts(
+                    predictions, gold_targets, ngram_size, exclude_indices)
+            _precision_matches[ngram_size] += precision_matches
+            _precision_totals[ngram_size] += precision_totals
+
+        if exclude_indices is None:
+            prediction_lengths += predictions.size(0) *\
+                predictions.size(1)
+            reference_lengths += gold_targets.size(0) *\
+                gold_targets.size(1)
+        else:
+            valid_predictions_mask = self._get_valid_tokens_mask(
+                predictions, exclude_indices)
+            prediction_lengths += valid_predictions_mask.sum().item()
+            valid_gold_targets_mask = self._get_valid_tokens_mask(
+                gold_targets, exclude_indices)
+            reference_lengths += valid_gold_targets_mask.sum().item()
+        return _precision_matches, _precision_totals, prediction_lengths,\
+            reference_lengths
+
+    @staticmethod
+    def unwrap_to_tensors(*tensors: torch.Tensor):
+        """
+        If you actually passed gradient-tracking Tensors to this,
+        there will be a huge memory leak, because it will prevent
+        garbage collection for the computation graph. This method
+        ensures that you're using tensors directly and that they
+        are on the CPU.
+        """
+        return (x.detach().cpu() if isinstance(x, torch.Tensor)
+                else x for x in tensors)
+
+    def _get_modified_precision_counts(self,
+                                       predicted_tokens,
+                                       reference_tokens,
+                                       ngram_size,
+                                       exclude_indices=None):
+        """
+        Compare the predicted tokens to the reference (gold) tokens
+        at the desired ngram size and calculate the numerator and
+        denominator for a modified form of precision.
+
+        The numerator is the number of ngrams in the predicted
+        sentences that match with an ngram in the corresponding
+        reference sentence, clipped by the total count of that
+        ngram in the reference sentence. The denominator is just
+        the total count of predicted ngrams.
+        """
+        clipped_matches = 0
+        total_predicted = 0
+        for batch_num in range(predicted_tokens.size(0)):
+            predicted_row = predicted_tokens[batch_num, :]
+            reference_row = reference_tokens[batch_num, :]
+            predicted_ngram_counts = self._ngrams(
+                predicted_row, ngram_size, exclude_indices)
+            reference_ngram_counts = self._ngrams(
+                reference_row, ngram_size, exclude_indices)
+            for ngram, count in predicted_ngram_counts.items():
+                clipped_matches += min(
+                    count, reference_ngram_counts[ngram])
+                total_predicted += count
+        return clipped_matches, total_predicted
+
+    def _ngrams(self,
+                tensor,
+                ngram_size,
+                exclude_indices=None):
+        ngram_counts = Counter()
+        if ngram_size > tensor.size(-1):
+            return ngram_counts
+        for start_position in range(ngram_size):
+            for tensor_slice in tensor[start_position:].split(
+                    ngram_size, dim=-1):
+                if tensor_slice.size(-1) < ngram_size:
+                    break
+                ngram = tuple(x.item() for x in tensor_slice)
+                if any(x in exclude_indices for x in ngram):
+                    continue
+                ngram_counts[ngram] += 1
+        return ngram_counts
+
+    def _get_valid_tokens_mask(self, tensor,
+                               exclude_indices=None):
+        valid_tokens_mask = torch.ones(tensor.size(), dtype=torch.uint8)
+        for index in exclude_indices:
+            valid_tokens_mask = valid_tokens_mask & (tensor != index)
+        return valid_tokens_mask
 
     def _bottle(self, _v):
         return _v.view(-1, _v.size(2))
@@ -235,26 +347,20 @@ class NMTLossCompute(LossComputeBase):
     def __init__(self, criterion, generator, normalization="sents"):
         super(NMTLossCompute, self).__init__(criterion, generator)
 
-    def _make_shard_state(self, batch, output, range_, attns=None, bleu=None):
+    def _make_shard_state(self, batch, output, range_, attns=None):
         return {
             "output": output,
             "target": batch.tgt[range_[0] + 1: range_[1]],
-            "bleu": bleu
         }
 
-    def _compute_loss(self, batch, output, target, bleu=None):
+    def _compute_loss(self, batch, output, target):
         bottled_output = self._bottle(output)
 
         scores = self.generator(bottled_output)
         gtruth = target.view(-1)
 
         loss = self.criterion(scores, gtruth)
-        stats = self._stats(loss.clone(), scores, gtruth)
-        pred = scores.max(1)[1]
-        if bleu is not None:
-            bleu.__call__(
-                torch.transpose(pred.view(-1, batch.tgt.size(1)), 0, 1),
-                torch.transpose(gtruth.view(-1, batch.tgt.size(1)), 0, 1))
+        stats = self._stats(loss.clone(), scores, gtruth, batch.tgt.size(1))
         return loss, stats
 
 

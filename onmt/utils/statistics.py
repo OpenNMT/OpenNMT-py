@@ -7,6 +7,7 @@ import sys
 from torch.distributed import get_rank
 from onmt.utils.distributed import all_gather_list
 from onmt.utils.logging import logger
+from collections import Counter
 
 
 class Statistics(object):
@@ -16,14 +17,25 @@ class Statistics(object):
 
     * accuracy
     * perplexity
+    * bleu
     * elapsed time
     """
 
-    def __init__(self, loss=0, n_words=0, n_correct=0):
+    def __init__(self, loss=0, n_words=0, n_correct=0,
+                 precision_matches=Counter(), precision_totals=Counter(),
+                 prediction_lengths=0, reference_lengths=0,
+                 ngram_weights=(0.25, 0.25, 0.25, 0.25),
+                 exclude_indices=None):
         self.loss = loss
         self.n_words = n_words
         self.n_correct = n_correct
         self.n_src_words = 0
+        self._ngram_weights = ngram_weights
+        self._exclude_indices = exclude_indices or set()
+        self.precision_matches = precision_matches
+        self.precision_totals = precision_totals
+        self.prediction_lengths = prediction_lengths
+        self.reference_lengths = reference_lengths
         self.start_time = time.time()
 
     @staticmethod
@@ -80,9 +92,41 @@ class Statistics(object):
         self.loss += stat.loss
         self.n_words += stat.n_words
         self.n_correct += stat.n_correct
+        self.precision_matches = {key:
+                                  self.precision_matches.get(key, 0)
+                                  + stat.precision_matches.get(key, 0)
+                                  for key in
+                                  set(self.precision_matches) |
+                                  set(stat.precision_matches)}
 
+        self.precision_totals = {key:
+                                 self.precision_totals.get(key, 0)
+                                 + stat.precision_totals.get(key, 0)
+                                 for key in
+                                 set(self.precision_totals) |
+                                 set(stat.precision_totals)}
+        self.prediction_lengths += stat.prediction_lengths
+        self.reference_lengths += stat.reference_lengths
         if update_n_src_words:
             self.n_src_words += stat.n_src_words
+
+    def _get_brevity_penalty(self) -> float:
+        if self.prediction_lengths > self.reference_lengths:
+            return 1.0
+        if self.reference_lengths == 0 or self.prediction_lengths == 0:
+            return 0.0
+        return math.exp(1.0 - self.reference_lengths /
+                        self.prediction_lengths)
+
+    def bleu(self):
+        brevity_penalty = self._get_brevity_penalty()
+        ngram_scores = (weight *
+                        (math.log(self.precision_matches[n] + 1e-13) -
+                            math.log(self.precision_totals[n] + 1e-13))
+                        for n, weight in
+                        enumerate(self._ngram_weights, start=1))
+        bleu = brevity_penalty * math.exp(sum(ngram_scores))
+        return bleu
 
     def accuracy(self):
         """ compute accuracy """
