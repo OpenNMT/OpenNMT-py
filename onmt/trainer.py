@@ -194,8 +194,7 @@ class Trainer(object):
                                 logger.info('GpuRank %d: report stat step %d'
                                             % (self.gpu_rank, step))
                             self._report_step(self.optim.learning_rate,
-                                              step, valid_stats=valid_stats,
-                                              )
+                                              step, valid_stats=valid_stats)
 
                         if self.gpu_rank == 0:
                             self._maybe_save(step)
