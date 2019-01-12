@@ -1,8 +1,10 @@
-import torch
 import argparse
+
+import torch
+
 import onmt
 import onmt.model_builder
-import onmt.inputters
+import onmt.inputters as inputters
 import onmt.opts
 
 from onmt.utils.misc import use_gpu
@@ -41,18 +43,13 @@ def main():
                             map_location=lambda storage, loc: storage)
     model_opt = checkpoint['opt']
 
-    src_dict, tgt_dict = None, None
-
-    # the vocab object is a list of tuple (name, torchtext.Vocab)
-    # we iterate over this list and associate vocabularies based on the name
-    for vocab in checkpoint['vocab']:
-        if vocab[0] == 'src':
-            src_dict = vocab[1]
-        if vocab[0] == 'tgt':
-            tgt_dict = vocab[1]
-    assert src_dict is not None and tgt_dict is not None
-
-    fields = onmt.inputters.load_fields_from_vocab(checkpoint['vocab'])
+    vocab = checkpoint['vocab']
+    if inputters.old_style_vocab(vocab):
+        fields = onmt.inputters.load_fields_from_vocab(vocab)
+    else:
+        fields = vocab
+    src_dict = fields['src'][0][1].vocab
+    tgt_dict = fields['tgt'][0][1].vocab
 
     model_opt = checkpoint['opt']
     for arg in dummy_opt.__dict__:

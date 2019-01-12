@@ -57,7 +57,7 @@ class TextDataset(DatasetBase):
         return scores
 
     @classmethod
-    def make_examples(cls, sequences, truncate, side):
+    def make_examples(cls, sequences, side):
         """
         Args:
             sequences: path to corpus file or iterable
@@ -72,19 +72,8 @@ class TextDataset(DatasetBase):
         if isinstance(sequences, str):
             sequences = cls._read_file(sequences)
         for i, seq in enumerate(sequences):
-            # the implicit assumption here is that data that does not come
-            # from a file is already at least semi-tokenized, i.e. split on
-            # whitespace. We cannot do modular/user-specified tokenization
-            # until that is no longer the case. The fields should handle this.
-            seq = seq.strip().split()
-            if truncate:
-                seq = seq[:truncate]
+            yield {side: seq, "indices": i}
 
-            words, feats, _ = TextDataset.extract_text_features(seq)
-
-            example_dict = {side: words, "indices": i}
-            if feats:
-                prefix = side + "_feat_"
-                example_dict.update((prefix + str(j), f)
-                                    for j, f in enumerate(feats))
-            yield example_dict
+    @property
+    def can_copy(self):
+        return "src_map" in self.fields and "alignment" in self.fields

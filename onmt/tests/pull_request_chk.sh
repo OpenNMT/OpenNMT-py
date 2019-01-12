@@ -186,7 +186,7 @@ ${PYTHON} preprocess.py -train_src /tmp/src-val.txt \
 		     -save_data /tmp/q           \
 		     -src_vocab_size 1000        \
 		     -tgt_vocab_size 1000        \
-		     -max_shard_size 1           \
+		     -shard_size 1           \
              -dynamic_dict               >> ${LOG_FILE} 2>&1
 ${PYTHON} train.py -data /tmp/q -rnn_size 2 -batch_size 10 \
 		-word_vec_size 5 -report_every 5        \
