@@ -259,7 +259,7 @@ class Trainer(object):
             else:
                 trunc_size = target_size
 
-            # dec_state = None
+            dec_state = None
             src = inputters.make_features(batch, 'src', self.data_type)
             if self.data_type == 'text':
                 _, src_lengths = batch.src
@@ -278,8 +278,8 @@ class Trainer(object):
                 # 2. F-prop all but generator.
                 if self.grad_accum_count == 1:
                     self.model.zero_grad()
-                outputs, attns = \
-                    self.model(src, tgt, src_lengths)
+                outputs, attns, dec_state = \
+                    self.model(src, tgt, src_lengths, dec_state=dec_state)
 
                 # 3. Compute loss in shards for memory efficiency.
                 batch_stats = self.train_loss.sharded_compute_loss(
