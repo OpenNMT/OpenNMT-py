@@ -5,27 +5,49 @@ from collections import Counter
 import codecs
 
 import torch
-import torchtext
+from torchtext.data import Example, Dataset
 from torchtext.vocab import Vocab
 
-PAD_WORD = '<blank>'
-UNK_WORD = '<unk>'
-BOS_WORD = '<s>'
-EOS_WORD = '</s>'
 
-
-class DatasetBase(torchtext.data.Dataset):
+class DatasetBase(Dataset):
     """
-    A dataset basically supports iteration over all the examples
-    it contains. We currently have 3 datasets inheriting this base
-    for 3 types of corpus respectively: "text", "img", "audio".
+    A dataset is an object that accepts sequences of raw data (sentence pairs
+    in the case of machine translation) and fields which describe how this
+    raw data should be processed to produce tensors. When a dataset is
+    instantiated, it applies the fields' preprocessing pipeline (but not
+    the bit that numericalizes it or turns it into batch tensors) to the raw
+    data, producing a list of torchtext.data.Example objects. torchtext's
+    iterators then know how to use these examples to make batches.
 
-    Internally it initializes an `torchtext.data.Dataset` object with
-    the following attributes:
+    Datasets in OpenNMT take three positional arguments:
 
-     `examples`: a sequence of `torchtext.data.Example` objects.
-     `fields`: a dictionary associating str keys with `torchtext.data.Field`
-        objects, and not necessarily having the same keys as the input fields.
+    `fields`: a dict with the structure returned by inputters.get_fields().
+        keys match the keys of items yielded by the src_examples_iter or
+        tgt_examples_iter, while values are lists of (name, Field) pairs.
+        An attribute with this name will be created for each Example object,
+        and its value will be the result of applying the Field to the data
+        that matches the key. The advantage of having sequences of fields
+        for each piece of raw input is that it allows for the dataset to store
+        multiple `views` of each input, which allows for easy implementation
+        of token-level features, mixed word- and character-level models, and
+        so on.
+    `src_examples_iter`: a sequence of dicts. Each dict's keys should be a
+        subset of the keys in `fields`.
+    `tgt_examples_iter`: like `src_examples_iter`, but may be None (this is
+        the case at translation time if no target is specified).
+
+    `filter_pred` if specified, a function that accepts Example objects and
+        returns a boolean value indicating whether to include that example
+        in the dataset.
+
+    The resulting dataset will have three attributes (todo: also src_vocabs):
+
+     `examples`: a list of `torchtext.data.Example` objects with attributes as
+        described above.
+     `fields`: a dictionary whose keys are strings with the same names as the
+        attributes of the elements of `examples` and whose values are
+        the corresponding `torchtext.data.Field` objects. NOTE: this is not
+        the same structure as in the fields argument passed to the constructor.
     """
 
     def __getstate__(self):
@@ -39,33 +61,32 @@ class DatasetBase(torchtext.data.Dataset):
         return super(DatasetBase, self).__reduce_ex__()
 
     def __init__(self, fields, src_examples_iter, tgt_examples_iter,
-                 dynamic_dict=False, filter_pred=None):
+                 filter_pred=None):
 
-        # Each element of an example is a dictionary whose keys represents
-        # at minimum the src tokens and their indices and potentially also
-        # the src and tgt features and alignment information.
+        dynamic_dict = 'src_map' in fields and 'alignment' in fields
+
         if tgt_examples_iter is not None:
             examples_iter = (self._join_dicts(src, tgt) for src, tgt in
                              zip(src_examples_iter, tgt_examples_iter))
         else:
             examples_iter = src_examples_iter
 
-        # self.src_vocabs is used in collapse_copy_scores and in Translator.py
+        # self.src_vocabs is used in collapse_copy_scores and Translator.py
         self.src_vocabs = []
-        if dynamic_dict:
-            unk, pad = fields['src'].unk_token, fields['src'].pad_token
-            examples_iter = (self._dynamic_dict(ex, unk, pad)
-                             for ex in examples_iter)
+        examples = []
+        for ex_dict in examples_iter:
+            if dynamic_dict:
+                src_field = fields['src'][0][1]
+                tgt_field = fields['tgt'][0][1]
+                src_vocab, ex_dict = self._dynamic_dict(
+                    ex_dict, src_field, tgt_field)
+                self.src_vocabs.append(src_vocab)
+            ex_fields = {k: v for k, v in fields.items() if k in ex_dict}
+            ex = Example.fromdict(ex_dict, ex_fields)
+            examples.append(ex)
 
-        # Peek at the first to see which fields are used.
-        ex, examples_iter = self._peek(examples_iter)
-        keys = ex.keys()
-
-        # why do we need to use different keys from the ones passed in?
-        fields = [(k, fields[k]) if k in fields else (k, None) for k in keys]
-        example_values = ([ex[k] for k in keys] for ex in examples_iter)
-        examples = [self._construct_example_fromlist(ex_values, fields)
-                    for ex_values in example_values]
+        # the dataset's self.fields should have the same attributes as examples
+        fields = dict(chain.from_iterable(ex_fields.values()))
 
         super(DatasetBase, self).__init__(examples, fields, filter_pred)
 
@@ -73,38 +94,6 @@ class DatasetBase(torchtext.data.Dataset):
         if remove_fields:
             self.fields = []
         torch.save(self, path)
-
-    @staticmethod
-    def extract_text_features(tokens):
-        """
-        Args:
-            tokens: A list of tokens, where each token consists of a word,
-                optionally followed by u"￨"-delimited features.
-        Returns:
-            A sequence of words, a sequence of features, and num of features.
-        """
-        if not tokens:
-            return [], [], -1
-
-        specials = [PAD_WORD, UNK_WORD, BOS_WORD, EOS_WORD]
-        words = []
-        features = []
-        n_feats = None
-        for token in tokens:
-            split_token = token.split(u"￨")
-            assert all([special != split_token[0] for special in specials]), \
-                "Dataset cannot contain Special Tokens"
-
-            if split_token[0]:
-                words += [split_token[0]]
-                features += [split_token[1:]]
-
-                if n_feats is None:
-                    n_feats = len(split_token)
-                assert len(split_token) == n_feats, \
-                    "all words must have the same number of features"
-        features = list(zip(*features))
-        return tuple(words), features, n_feats - 1
 
     def _join_dicts(self, *args):
         """
@@ -116,56 +105,26 @@ class DatasetBase(torchtext.data.Dataset):
         """
         return dict(chain(*[d.items() for d in args]))
 
-    def _peek(self, seq):
-        """
-        Args:
-            seq: an iterator.
-
-        Returns:
-            the first thing returned by calling next() on the iterator
-            and an iterator created by re-chaining that value to the beginning
-            of the iterator.
-        """
-        first = next(seq)
-        return first, chain([first], seq)
-
-    def _construct_example_fromlist(self, data, fields):
-        """
-        Args:
-            data: the data to be set as the value of the attributes of
-                the to-be-created `Example`, associating with respective
-                `Field` objects with same key.
-            fields: a dict of `torchtext.data.Field` objects. The keys
-                are attributes of the to-be-created `Example`.
-
-        Returns:
-            the created `Example` object.
-        """
-        # why does this exist?
-        ex = torchtext.data.Example()
-        for (name, field), val in zip(fields, data):
-            if field is not None:
-                setattr(ex, name, field.preprocess(val))
-            else:
-                setattr(ex, name, val)
-        return ex
-
-    def _dynamic_dict(self, example, unk, pad):
-        # it would not be necessary to pass unk and pad if the method were
-        # called after fields becomes an attribute of self
-        src = example["src"]
+    def _dynamic_dict(self, example, src_field, tgt_field):
+        src = src_field.tokenize(example["src"])
+        # make a small vocab containing just the tokens in the source sequence
+        unk = src_field.unk_token
+        pad = src_field.pad_token
         src_vocab = Vocab(Counter(src), specials=[unk, pad])
-        self.src_vocabs.append(src_vocab)
         # Map source tokens to indices in the dynamic dict.
         src_map = torch.LongTensor([src_vocab.stoi[w] for w in src])
         example["src_map"] = src_map
 
         if "tgt" in example:
-            tgt = example["tgt"]
+            tgt = tgt_field.tokenize(example["tgt"])
             mask = torch.LongTensor(
                 [0] + [src_vocab.stoi[w] for w in tgt] + [0])
             example["alignment"] = mask
-        return example
+        return src_vocab, example
+
+    @property
+    def can_copy(self):
+        return False
 
     @classmethod
     def _read_file(cls, path):

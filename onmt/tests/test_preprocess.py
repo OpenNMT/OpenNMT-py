@@ -108,7 +108,7 @@ test_databuild = [[],
                   [('dynamic_dict', True),
                    ('share_vocab', True)],
                   [('dynamic_dict', True),
-                   ('max_shard_size', 500000)],
+                   ('shard_size', 500000)],
                   [('src_vocab', '/tmp/src_vocab.txt'),
                    ('tgt_vocab', '/tmp/tgt_vocab.txt')],
                   ]
