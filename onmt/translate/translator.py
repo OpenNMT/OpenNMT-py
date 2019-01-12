@@ -16,6 +16,7 @@ import onmt.translate.beam
 import onmt.inputters as inputters
 import onmt.opts as opts
 import onmt.decoders.ensemble
+from onmt.utils.misc import set_random_seed
 
 
 def build_translator(opt, report_score=True, logger=None, out_file=None):
@@ -127,6 +128,8 @@ class Translator(object):
                 "beam_parent_ids": [],
                 "scores": [],
                 "log_probs": []}
+
+        set_random_seed(opt.seed, self.cuda)
 
     def translate(
         self,

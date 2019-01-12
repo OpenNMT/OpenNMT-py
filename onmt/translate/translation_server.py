@@ -14,6 +14,7 @@ import torch
 import onmt.opts
 
 from onmt.utils.logging import init_logger
+from onmt.utils.misc import set_random_seed
 from onmt.translate.translator import build_translator
 
 
@@ -206,6 +207,8 @@ class ServerModel:
         self.loading_lock = threading.Event()
         self.loading_lock.set()
         self.running_lock = threading.Semaphore(value=1)
+
+        set_random_seed(opt.seed, opt.cuda)
 
         if load:
             self.load()
