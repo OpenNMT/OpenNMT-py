@@ -186,7 +186,7 @@ ${PYTHON} preprocess.py -train_src /tmp/src-val.txt \
 		     -save_data /tmp/q           \
 		     -src_vocab_size 1000        \
 		     -tgt_vocab_size 1000        \
-		     -shard_size 1           \
+		     -max_shard_size 1           \
              -dynamic_dict               >> ${LOG_FILE} 2>&1
 ${PYTHON} train.py -data /tmp/q -rnn_size 2 -batch_size 10 \
 		-word_vec_size 5 -report_every 5        \
@@ -205,7 +205,7 @@ ${PYTHON} preprocess.py -data_type img \
 		     -train_tgt /tmp/im2text/tgt-val-head.txt \
 		     -valid_src /tmp/im2text/src-val-head.txt \
 		     -valid_tgt /tmp/im2text/tgt-val-head.txt \
-             -shard_size 5 \
+             -max_shard_size 5 \
 		     -save_data /tmp/im2text/q  >> ${LOG_FILE} 2>&1
 ${PYTHON} train.py -model_type img \
 	        -data /tmp/im2text/q -rnn_size 2 -batch_size 10 \
