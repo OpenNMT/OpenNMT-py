@@ -171,6 +171,18 @@ ${PYTHON} translate.py -model ${TEST_DIR}/test_model2.pt  \
 		    -out /tmp/trans             >> ${LOG_FILE} 2>&1
 diff ${DATA_DIR}/morph/tgt.valid /tmp/trans
 [ "$?" -eq 0 ] || error_exit
+
+${PYTHON} translate.py -model ${TEST_DIR}/test_model2.pt  \
+		    -src ${DATA_DIR}/morph/src.valid   \
+		    -verbose -batch_size 10     \
+		    -beam_size 1                \
+        -seed 1                     \
+        -random_sampling_topk=-1    \
+        -random_sampling_temp=0.0001    \
+		    -tgt ${DATA_DIR}/morph/tgt.valid   \
+		    -out /tmp/trans             >> ${LOG_FILE} 2>&1
+diff ${DATA_DIR}/morph/tgt.valid /tmp/trans
+[ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 
 
@@ -186,7 +198,7 @@ ${PYTHON} preprocess.py -train_src /tmp/src-val.txt \
 		     -save_data /tmp/q           \
 		     -src_vocab_size 1000        \
 		     -tgt_vocab_size 1000        \
-		     -max_shard_size 1           \
+		     -shard_size 1           \
              -dynamic_dict               >> ${LOG_FILE} 2>&1
 ${PYTHON} train.py -data /tmp/q -rnn_size 2 -batch_size 10 \
 		-word_vec_size 5 -report_every 5        \
@@ -205,7 +217,7 @@ ${PYTHON} preprocess.py -data_type img \
 		     -train_tgt /tmp/im2text/tgt-val-head.txt \
 		     -valid_src /tmp/im2text/src-val-head.txt \
 		     -valid_tgt /tmp/im2text/tgt-val-head.txt \
-             -max_shard_size 5 \
+             -shard_size 5 \
 		     -save_data /tmp/im2text/q  >> ${LOG_FILE} 2>&1
 ${PYTHON} train.py -model_type img \
 	        -data /tmp/im2text/q -rnn_size 2 -batch_size 10 \

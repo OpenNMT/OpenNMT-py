@@ -297,12 +297,11 @@ class Translator(object):
             if keep_topk > 0:
                 top_values, top_indices = torch.topk(logits, keep_topk, dim=1)
                 kth_best = top_values[:, -1].view([-1, 1])
-                kth_best = kth_best.repeat([1, logits.shape[1]])
-                kth_best = kth_best.type(torch.cuda.FloatTensor)
+                kth_best = kth_best.repeat([1, logits.shape[1]]).float()
 
                 # Set all logits that are not in the top-k to -1000.
                 # This puts the probabilities close to 0.
-                keep = torch.ge(logits, kth_best).type(torch.cuda.FloatTensor)
+                keep = torch.ge(logits, kth_best).float()
                 logits = (keep * logits) + ((1-keep) * -10000)
 
             dist = torch.distributions.Multinomial(
@@ -329,9 +328,12 @@ class Translator(object):
         assert self.block_ngram_repeat == 0
 
         batch_size = batch.batch_size
-        vocab = self.fields["tgt"].vocab
-        start_token = vocab.stoi[self.fields["tgt"].init_token]
-        end_token = vocab.stoi[self.fields["tgt"].eos_token]
+
+        tgt_field = self.fields['tgt'][0][1]
+        vocab = tgt_field.vocab
+
+        start_token = vocab.stoi[tgt_field.init_token]
+        end_token = vocab.stoi[tgt_field.eos_token]
 
         # Encoder forward.
         src, enc_states, memory_bank, src_lengths = self._run_encoder(
