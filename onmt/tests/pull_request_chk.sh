@@ -176,9 +176,9 @@ ${PYTHON} translate.py -model ${TEST_DIR}/test_model2.pt  \
 		    -src ${DATA_DIR}/morph/src.valid   \
 		    -verbose -batch_size 10     \
 		    -beam_size 1                \
-        -seed 1                     \
-        -random_sampling_topk=-1    \
-        -random_sampling_temp=0.0001    \
+		    -seed 1                     \
+		    -random_sampling_topk=-1    \
+		    -random_sampling_temp=0.0001    \
 		    -tgt ${DATA_DIR}/morph/tgt.valid   \
 		    -out /tmp/trans             >> ${LOG_FILE} 2>&1
 diff ${DATA_DIR}/morph/tgt.valid /tmp/trans
