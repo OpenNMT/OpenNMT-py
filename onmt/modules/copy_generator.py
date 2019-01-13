@@ -200,8 +200,10 @@ class CopyGeneratorLossCompute(LossComputeBase):
         # Compute sum of perplexities for stats
 
         stats = self._stats(loss.sum().clone(),
-                            scores_data.view(-1,batch.batch_size, scores_data.size(1)),
-                            target_data.view(-1,batch.batch_size))
+                            scores_data.view(
+                                -1, batch.batch_size, scores_data.size(1)),
+                            target_data.view(
+                                -1, batch.batch_size))
 
         # this part looks like it belongs in CopyGeneratorLoss
         if self.normalize_by_length:
