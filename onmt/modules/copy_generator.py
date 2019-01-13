@@ -172,6 +172,7 @@ class CopyGeneratorLossCompute(LossComputeBase):
             copy_attn: the copy attention value.
             align: the align info.
         """
+
         target = target.view(-1)
         align = align.view(-1)
         scores = self.generator(
@@ -196,9 +197,11 @@ class CopyGeneratorLossCompute(LossComputeBase):
         correct_mask = (target_data == unk) & (align != unk)
         offset_align = align[correct_mask] + len(self.tgt_vocab)
         target_data[correct_mask] += offset_align
-
         # Compute sum of perplexities for stats
-        stats = self._stats(loss.sum().clone(), scores_data, target_data)
+
+        stats = self._stats(loss.sum().clone(),
+                            scores_data.view(-1,batch.batch_size, scores_data.size(1)),
+                            target_data.view(-1,batch.batch_size))
 
         # this part looks like it belongs in CopyGeneratorLoss
         if self.normalize_by_length:
