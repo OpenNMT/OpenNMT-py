@@ -10,7 +10,7 @@ import torch.nn.functional as F
 import onmt
 from onmt.modules.sparse_losses import SparsemaxLoss
 from onmt.modules.sparse_activations import LogSparsemax
-from collections import Counter
+from onmt.utils.bleu import bleu_calculations
 
 
 def build_loss_compute(model, tgt_field, opt, train=True):
@@ -173,7 +173,7 @@ class LossComputeBase(nn.Module):
             batch_stats.update(stats)
         return batch_stats
 
-    def _stats(self, loss, scores, target, batch_sz=None):
+    def _stats(self, loss, scores, target):
         """
         Args:
             loss (:obj:`FloatTensor`): the loss computed by the loss criterion.
@@ -184,125 +184,22 @@ class LossComputeBase(nn.Module):
         Returns:
             :obj:`onmt.utils.Statistics` : statistics for this batch.
         """
-        pred = scores.max(1)[1]
-        precision_matches = Counter()
-        precision_totals = Counter()
-        prediction_lengths = 0
-        reference_lengths = 0
-
-        if batch_sz is not None:
-            precision_matches, precision_totals, \
-                prediction_lengths, reference_lengths = \
-                self._bleu_calculations(
-                    torch.transpose(pred.view(-1, batch_sz), 0, 1),
-                    torch.transpose(target.view(-1, batch_sz), 0, 1),
+        pred = scores.max(2)[1]
+        precision_matches, precision_totals, \
+            prediction_lengths, reference_lengths = \
+            bleu_calculations(
+                    pred,
+                    target,
                     4,
                     {self.padding_idx})
-        non_padding = target.ne(self.padding_idx)
-        num_correct = pred.eq(target).masked_select(non_padding).sum().item()
+
+        non_padding = target.view(-1).ne(self.padding_idx)
+        num_correct = pred.view(-1).eq(target.view(-1)).\
+            masked_select(non_padding).sum().item()
         num_non_padding = non_padding.sum().item()
         return onmt.utils.Statistics(loss.item(), num_non_padding, num_correct,
                                      precision_matches, precision_totals,
                                      prediction_lengths, reference_lengths)
-
-    def _bleu_calculations(self, predictions, gold_targets, ngram,
-                           exclude_indices=None):
-        _precision_matches = Counter()
-        _precision_totals = Counter()
-        prediction_lengths = 0
-        reference_lengths = 0
-
-        predictions, gold_targets = self.unwrap_to_tensors(
-            predictions, gold_targets)
-        for ngram_size in range(1, ngram+1):
-            precision_matches, precision_totals = \
-                self._get_modified_precision_counts(
-                    predictions, gold_targets, ngram_size, exclude_indices)
-            _precision_matches[ngram_size] += precision_matches
-            _precision_totals[ngram_size] += precision_totals
-
-        if exclude_indices is None:
-            prediction_lengths += predictions.size(0) *\
-                predictions.size(1)
-            reference_lengths += gold_targets.size(0) *\
-                gold_targets.size(1)
-        else:
-            valid_predictions_mask = self._get_valid_tokens_mask(
-                predictions, exclude_indices)
-            prediction_lengths += valid_predictions_mask.sum().item()
-            valid_gold_targets_mask = self._get_valid_tokens_mask(
-                gold_targets, exclude_indices)
-            reference_lengths += valid_gold_targets_mask.sum().item()
-        return _precision_matches, _precision_totals, prediction_lengths,\
-            reference_lengths
-
-    @staticmethod
-    def unwrap_to_tensors(*tensors):
-        """
-        If you actually passed gradient-tracking Tensors to this,
-        there will be a huge memory leak, because it will prevent
-        garbage collection for the computation graph. This method
-        ensures that you're using tensors directly and that they
-        are on the CPU.
-        """
-        return (x.detach().cpu() if isinstance(x, torch.Tensor)
-                else x for x in tensors)
-
-    def _get_modified_precision_counts(self,
-                                       predicted_tokens,
-                                       reference_tokens,
-                                       ngram_size,
-                                       exclude_indices=None):
-        """
-        Compare the predicted tokens to the reference (gold) tokens
-        at the desired ngram size and calculate the numerator and
-        denominator for a modified form of precision.
-
-        The numerator is the number of ngrams in the predicted
-        sentences that match with an ngram in the corresponding
-        reference sentence, clipped by the total count of that
-        ngram in the reference sentence. The denominator is just
-        the total count of predicted ngrams.
-        """
-        clipped_matches = 0
-        total_predicted = 0
-        for batch_num in range(predicted_tokens.size(0)):
-            predicted_row = predicted_tokens[batch_num, :]
-            reference_row = reference_tokens[batch_num, :]
-            predicted_ngram_counts = self._ngrams(
-                predicted_row, ngram_size, exclude_indices)
-            reference_ngram_counts = self._ngrams(
-                reference_row, ngram_size, exclude_indices)
-            for ngram, count in predicted_ngram_counts.items():
-                clipped_matches += min(
-                    count, reference_ngram_counts[ngram])
-                total_predicted += count
-        return clipped_matches, total_predicted
-
-    def _ngrams(self,
-                tensor,
-                ngram_size,
-                exclude_indices=None):
-        ngram_counts = Counter()
-        if ngram_size > tensor.size(-1):
-            return ngram_counts
-        for start_position in range(ngram_size):
-            for tensor_slice in tensor[start_position:].split(
-                    ngram_size, dim=-1):
-                if tensor_slice.size(-1) < ngram_size:
-                    break
-                ngram = tuple(x.item() for x in tensor_slice)
-                if any(x in exclude_indices for x in ngram):
-                    continue
-                ngram_counts[ngram] += 1
-        return ngram_counts
-
-    def _get_valid_tokens_mask(self, tensor,
-                               exclude_indices=None):
-        valid_tokens_mask = torch.ones(tensor.size(), dtype=torch.uint8)
-        for index in exclude_indices:
-            valid_tokens_mask = valid_tokens_mask & (tensor != index)
-        return valid_tokens_mask
 
     def _bottle(self, _v):
         return _v.view(-1, _v.size(2))
@@ -362,7 +259,9 @@ class NMTLossCompute(LossComputeBase):
         gtruth = target.view(-1)
 
         loss = self.criterion(scores, gtruth)
-        stats = self._stats(loss.clone(), scores, gtruth, batch.tgt.size(1))
+
+        scores = scores.view(-1, batch.tgt.size(1), scores.size(1))
+        stats = self._stats(loss.clone(), scores, target)
         return loss, stats
 
 
