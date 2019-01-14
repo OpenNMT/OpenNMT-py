@@ -418,7 +418,7 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">trunc_size</span> <span class="o">=</span> <span class="n">target_size</span>
 
-            <span class="c1"># dec_state = None</span>
+            <span class="n">bptt</span> <span class="o">=</span> <span class="kc">False</span>
             <span class="n">src</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">make_features</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="s1">&#39;src&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span><span class="p">)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span> <span class="o">==</span> <span class="s1">&#39;text&#39;</span><span class="p">:</span>
                 <span class="n">_</span><span class="p">,</span> <span class="n">src_lengths</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">src</span>
@@ -438,7 +438,8 @@
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_accum_count</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
                 <span class="n">outputs</span><span class="p">,</span> <span class="n">attns</span> <span class="o">=</span> \
-                    <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">,</span> <span class="n">bptt</span><span class="o">=</span><span class="n">bptt</span><span class="p">)</span>
+                <span class="n">bptt</span> <span class="o">=</span> <span class="kc">True</span>
 
                 <span class="c1"># 3. Compute loss in shards for memory efficiency.</span>
                 <span class="n">batch_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_loss</span><span class="o">.</span><span class="n">sharded_compute_loss</span><span class="p">(</span>
