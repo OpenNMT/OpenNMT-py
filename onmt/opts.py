@@ -538,6 +538,8 @@ def translate_opts(parser):
               default=1., type=float,
               help="""If doing random sampling, divide the logits by
                        this before computing softmax during decoding.""")
+    group.add('--seed', '-seed', type=int, default=829,
+              help="Random seed")
 
     group = parser.add_argument_group('Beam')
     group.add('--fast', '-fast', action="store_true",

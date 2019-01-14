@@ -7,7 +7,6 @@ import configargparse
 
 import os
 import glob
-import random
 from itertools import chain
 
 import torch
@@ -18,6 +17,7 @@ from onmt.inputters.inputter import build_dataset_iter, \
     load_fields_from_vocab, old_style_vocab
 from onmt.model_builder import build_model
 from onmt.utils.optimizers import build_optim
+from onmt.utils.misc import set_random_seed
 from onmt.trainer import build_trainer
 from onmt.models import build_model_saver
 from onmt.utils.logging import init_logger, logger
@@ -70,20 +70,9 @@ def training_opt_postprocessing(opt, device_id):
         logger.info("WARNING: You have a CUDA device, \
                     should run with -gpu_ranks")
 
-    if opt.seed > 0:
-        torch.manual_seed(opt.seed)
-        # this one is needed for torchtext random call (shuffled iterator)
-        # in multi gpu it ensures datasets are read in the same order
-        random.seed(opt.seed)
-        # some cudnn methods can be random even after fixing the seed
-        # unless you tell it to be deterministic
-        torch.backends.cudnn.deterministic = True
-
     if device_id >= 0:
         torch.cuda.set_device(device_id)
-        if opt.seed > 0:
-            # These ensure same initialization in multi gpu mode
-            torch.cuda.manual_seed(opt.seed)
+    set_random_seed(opt.seed, device_id >= 0)
 
     return opt
 

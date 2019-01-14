@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import torch
+import random
 
 
 def aeq(*args):
@@ -53,3 +54,19 @@ def use_gpu(opt):
     """
     return (hasattr(opt, 'gpu_ranks') and len(opt.gpu_ranks) > 0) or \
         (hasattr(opt, 'gpu') and opt.gpu > -1)
+
+
+def set_random_seed(seed, is_cuda):
+    """Sets the random seed."""
+    if seed > 0:
+        torch.manual_seed(seed)
+        # this one is needed for torchtext random call (shuffled iterator)
+        # in multi gpu it ensures datasets are read in the same order
+        random.seed(seed)
+        # some cudnn methods can be random even after fixing the seed
+        # unless you tell it to be deterministic
+        torch.backends.cudnn.deterministic = True
+
+    if is_cuda and seed > 0:
+        # These ensure same initialization in multi gpu mode
+        torch.cuda.manual_seed(seed)
