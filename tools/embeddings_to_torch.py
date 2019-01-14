@@ -8,23 +8,20 @@ import numpy as np
 import argparse
 import torch
 from onmt.utils.logging import init_logger, logger
+from onmt.inputters.inputter import old_style_vocab
 
 
-def get_vocabs(dict_file):
-    vocabs = torch.load(dict_file)
+def get_vocabs(dict_path):
+    fields = torch.load(dict_path)
 
-    enc_vocab, dec_vocab = None, None
+    if old_style_vocab(fields):
+        enc_vocab = next((v for n, v in fields if n == 'src'), None)
+        dec_vocab = next((v for n, v in fields if n == 'tgt'), None)
+    else:
+        enc_vocab = fields['src'][0][1].vocab
+        dec_vocab = fields['tgt'][0][1].vocab
 
-    # the vocab object is a list of tuple (name, torchtext.Vocab)
-    # we iterate over this list and associate vocabularies based on the name
-    for vocab in vocabs:
-        if vocab[0] == 'src':
-            enc_vocab = vocab[1]
-        if vocab[0] == 'tgt':
-            dec_vocab = vocab[1]
-    assert enc_vocab is not None and dec_vocab is not None
-
-    logger.info("From: %s" % dict_file)
+    logger.info("From: %s" % dict_path)
     logger.info("\t* source vocab: %d words" % len(enc_vocab))
     logger.info("\t* target vocab: %d words" % len(dec_vocab))
 
@@ -81,9 +78,6 @@ def match_embeddings(vocab, emb, opt):
     return torch.Tensor(filtered_embeddings), count
 
 
-TYPES = ["GloVe", "word2vec"]
-
-
 def main():
 
     parser = argparse.ArgumentParser(description='embeddings_to_torch.py')
@@ -98,7 +92,8 @@ def main():
     parser.add_argument('-verbose', action="store_true", default=False)
     parser.add_argument('-skip_lines', type=int, default=0,
                         help="Skip first lines of the embedding file")
-    parser.add_argument('-type', choices=TYPES, default="GloVe")
+    parser.add_argument('-type', choices=["GloVe", "word2vec"],
+                        default="GloVe")
     opt = parser.parse_args()
 
     enc_vocab, dec_vocab = get_vocabs(opt.dict_file)
@@ -108,12 +103,10 @@ def main():
     embeddings_enc = get_embeddings(opt.emb_file_enc, opt, flag='enc')
     embeddings_dec = get_embeddings(opt.emb_file_dec, opt, flag='dec')
 
-    filtered_enc_embeddings, enc_count = match_embeddings(enc_vocab,
-                                                          embeddings_enc,
-                                                          opt)
-    filtered_dec_embeddings, dec_count = match_embeddings(dec_vocab,
-                                                          embeddings_dec,
-                                                          opt)
+    filtered_enc_embeddings, enc_count = match_embeddings(
+        enc_vocab, embeddings_enc, opt)
+    filtered_dec_embeddings, dec_count = match_embeddings(
+        dec_vocab, embeddings_dec, opt)
     logger.info("\nMatching: ")
     match_percent = [_['match'] / (_['match'] + _['miss']) * 100
                      for _ in [enc_count, dec_count]]
