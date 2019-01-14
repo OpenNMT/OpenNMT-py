@@ -259,7 +259,7 @@ class Trainer(object):
             else:
                 trunc_size = target_size
 
-            # dec_state = None
+            bptt = False
             src = inputters.make_features(batch, 'src', self.data_type)
             if self.data_type == 'text':
                 _, src_lengths = batch.src
@@ -279,7 +279,8 @@ class Trainer(object):
                 if self.grad_accum_count == 1:
                     self.model.zero_grad()
                 outputs, attns = \
-                    self.model(src, tgt, src_lengths)
+                    self.model(src, tgt, src_lengths, bptt=bptt)
+                bptt = True
 
                 # 3. Compute loss in shards for memory efficiency.
                 batch_stats = self.train_loss.sharded_compute_loss(
