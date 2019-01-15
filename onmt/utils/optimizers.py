@@ -196,8 +196,8 @@ class Optimizer(object):
             ckpt_opt = checkpoint['opt']
             ckpt_state_dict = {}
             if isinstance(optim, Optimizer):  # Backward compatibility.
-                ckpt_state_dict['training_step'] = optim._step
-                ckpt_state_dict['decay_step'] = optim._step
+                ckpt_state_dict['training_step'] = optim._step + 1
+                ckpt_state_dict['decay_step'] = optim._step + 1
                 ckpt_state_dict['optimizer'] = optim.optimizer.state_dict()
             else:
                 ckpt_state_dict = optim
