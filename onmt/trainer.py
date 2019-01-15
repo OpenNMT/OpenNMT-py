@@ -131,7 +131,7 @@ class Trainer(object):
         """
         logger.info('Start training...')
 
-        step = self.optim._step + 1
+        step = self.optim.training_step
         true_batchs = []
         accum = 0
         normalization = 0
@@ -176,7 +176,7 @@ class Trainer(object):
 
                         report_stats = self._maybe_report_training(
                             step, train_steps,
-                            self.optim.learning_rate,
+                            self.optim.learning_rate(),
                             report_stats)
 
                         true_batchs = []
@@ -194,7 +194,7 @@ class Trainer(object):
                             if self.gpu_verbose_level > 0:
                                 logger.info('GpuRank %d: report stat step %d'
                                             % (self.gpu_rank, step))
-                            self._report_step(self.optim.learning_rate,
+                            self._report_step(self.optim.learning_rate(),
                                               step, valid_stats=valid_stats)
 
                         if self.gpu_rank == 0:
