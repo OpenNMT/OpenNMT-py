@@ -180,11 +180,12 @@ class Optimizer(object):
         self._training_step = 1
         self._decay_step = 1
 
-    @staticmethod
-    def from_options(model, opt, checkpoint=None):
+    @classmethod
+    def from_options(cls, model, opt, checkpoint=None):
         """Builds the optimizer from options.
 
         Args:
+          cls: The ``Optimizer`` class to instantiate.
           model: The model to optimize.
           opt: The dict of user options.
           checkpoint: An optional checkpoint to load states from.
@@ -223,7 +224,7 @@ class Optimizer(object):
                 optim_state_dict = ckpt_state_dict
                 del optim_state_dict['decay_step']
 
-        optimizer = Optimizer(
+        optimizer = cls(
             make_optimizer(model, optim_opt),
             optim_opt.learning_rate,
             learning_rate_decay_fn=make_learning_rate_decay_fn(optim_opt),
