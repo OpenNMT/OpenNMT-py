@@ -82,28 +82,32 @@ def make_optimizer(model, opt):
 def make_learning_rate_decay_fn(opt):
     """Returns the learning decay function from options."""
     if opt.decay_method == 'noam':
-        return noam_decay_fn(opt.warmup_steps, opt.rnn_size)
+        return functools.partial(
+            noam_decay,
+            warmup_steps=opt.warmup_steps,
+            model_size=opt.rnn_size)
     elif opt.start_decay_steps is not None:
-        return exponential_decay_fn(
-            opt.learning_rate_decay, opt.decay_steps, opt.start_decay_steps)
+        return functools.partial(
+            exponential_decay,
+            rate=opt.learning_rate_decay,
+            decay_steps=opt.decay_steps,
+            start_step=opt.start_decay_steps)
 
 
-def noam_decay_fn(warmup_steps, model_size):
+def noam_decay(step, warmup_steps, model_size):
     """Learning rate schedule described in
     https://arxiv.org/pdf/1706.03762.pdf.
     """
-    return lambda step: (
+    return (
         model_size ** (-0.5) *
-        min(step ** (-0.5),
-            step * warmup_steps**(-1.5)))
+        min(step ** (-0.5), step * warmup_steps**(-1.5)))
 
 
-def exponential_decay_fn(rate, decay_steps, start_step=0):
+def exponential_decay(step, rate, decay_steps, start_step=0):
     """A standard exponential decay, scaling the learning rate by :obj:`rate`
     every :obj:`decay_steps` steps.
     """
-    return lambda step: (
-        rate ** (max(step - start_step + decay_steps, 0) // decay_steps))
+    return rate ** (max(step - start_step + decay_steps, 0) // decay_steps)
 
 
 class MultipleOptimizer(object):
