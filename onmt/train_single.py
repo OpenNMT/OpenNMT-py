@@ -14,7 +14,7 @@ import torch
 import onmt.opts as opts
 
 from onmt.inputters.inputter import build_dataset_iter, \
-    load_fields_from_vocab, old_style_vocab
+    load_old_vocab, old_style_vocab
 from onmt.model_builder import build_model
 from onmt.utils.optimizers import Optimizer
 from onmt.utils.misc import set_random_seed
@@ -109,9 +109,9 @@ def main(opt, device_id):
     data_type = first_dataset.data_type
 
     # check for code where vocab is saved instead of fields
-    # (in the future this will be done in a smarter way
+    # (in the future this will be done in a smarter way)
     if old_style_vocab(vocab):
-        fields = load_fields_from_vocab(vocab, data_type)
+        fields = load_old_vocab(vocab, data_type, dynamic_dict=opt.copy_attn)
     else:
         fields = vocab
 

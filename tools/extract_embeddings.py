@@ -45,7 +45,7 @@ def main():
 
     vocab = checkpoint['vocab']
     if inputters.old_style_vocab(vocab):
-        fields = onmt.inputters.load_fields_from_vocab(vocab)
+        fields = onmt.inputters.load_old_vocab(vocab)
     else:
         fields = vocab
     src_dict = fields['src'][0][1].vocab

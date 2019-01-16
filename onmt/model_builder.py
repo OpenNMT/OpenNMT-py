@@ -149,13 +149,14 @@ def load_test_model(opt, dummy_opt, model_path=None):
     checkpoint = torch.load(model_path,
                             map_location=lambda storage, loc: storage)
 
+    model_opt = checkpoint['opt']
     vocab = checkpoint['vocab']
     if inputters.old_style_vocab(vocab):
-        fields = inputters.load_fields_from_vocab(vocab, opt.data_type)
+        fields = inputters.load_old_vocab(
+            vocab, opt.data_type, dynamic_dict=model_opt.copy_attn
+        )
     else:
         fields = vocab
-
-    model_opt = checkpoint['opt']
 
     for arg in dummy_opt:
         if arg not in model_opt:
