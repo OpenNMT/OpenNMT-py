@@ -16,7 +16,7 @@ import onmt.opts as opts
 from onmt.inputters.inputter import build_dataset_iter, \
     load_fields_from_vocab, old_style_vocab
 from onmt.model_builder import build_model
-from onmt.utils.optimizers import build_optim
+from onmt.utils.optimizers import Optimizer
 from onmt.utils.misc import set_random_seed
 from onmt.trainer import build_trainer
 from onmt.models import build_model_saver
@@ -130,7 +130,7 @@ def main(opt, device_id):
     _check_save_model_path(opt)
 
     # Build optimizer.
-    optim = build_optim(model, opt, checkpoint)
+    optim = Optimizer.from_opt(model, opt, checkpoint=checkpoint)
 
     # Build model saver
     model_saver = build_model_saver(model_opt, opt, model, fields, optim)
