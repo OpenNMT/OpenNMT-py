@@ -173,19 +173,20 @@ def get_fields(
     return fields
 
 
-def load_fields_from_vocab(vocab, data_type="text"):
+def load_old_vocab(vocab, data_type="text", dynamic_dict=False):
     """
-    vocab: a list of (field name, torchtext.vocab.Vocab) pairs
+    vocab: a list of (field name, torchtext.vocab.Vocab) pairs. This is the
+           format formerly saved in *.vocab.pt files.
     data_type: text, img, or audio
     returns: a dictionary whose keys are the field names and whose values
-             are field objects with the vocab set to the corresponding vocab
-             object from the input.
+             are lists of (name, Field) pairs
     """
     vocab = dict(vocab)
     n_src_features = sum('src_feat_' in k for k in vocab)
     n_tgt_features = sum('tgt_feat_' in k for k in vocab)
-    fields = get_fields(data_type, n_src_features, n_tgt_features)
-
+    fields = get_fields(
+        data_type, n_src_features, n_tgt_features, dynamic_dict=dynamic_dict
+    )
     for k, vals in fields.items():
         for n, f in vals:
             if n in vocab:

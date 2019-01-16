@@ -151,7 +151,7 @@ def load_test_model(opt, dummy_opt, model_path=None):
 
     vocab = checkpoint['vocab']
     if inputters.old_style_vocab(vocab):
-        fields = inputters.load_fields_from_vocab(vocab, opt.data_type)
+        fields = inputters.load_old_vocab(vocab, opt.data_type)
     else:
         fields = vocab
 
