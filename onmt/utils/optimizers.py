@@ -8,7 +8,7 @@ from copy import copy
 from math import sqrt
 
 
-def make_optimizer(model, opt):
+def build_torch_optimizer(model, opt):
     """Builds the PyTorch optimizer.
 
     We use the default parameters for Adam that are suggested by
@@ -181,7 +181,7 @@ class Optimizer(object):
         self._decay_step = 1
 
     @classmethod
-    def from_options(cls, model, opt, checkpoint=None):
+    def from_opt(cls, model, opt, checkpoint=None):
         """Builds the optimizer from options.
 
         Args:
@@ -225,7 +225,7 @@ class Optimizer(object):
                 del optim_state_dict['decay_step']
 
         optimizer = cls(
-            make_optimizer(model, optim_opt),
+            build_torch_optimizer(model, optim_opt),
             optim_opt.learning_rate,
             learning_rate_decay_fn=make_learning_rate_decay_fn(optim_opt),
             max_grad_norm=optim_opt.max_grad_norm)

@@ -130,7 +130,7 @@ def main(opt, device_id):
     _check_save_model_path(opt)
 
     # Build optimizer.
-    optim = Optimizer.from_options(model, opt, checkpoint=checkpoint)
+    optim = Optimizer.from_opt(model, opt, checkpoint=checkpoint)
 
     # Build model saver
     model_saver = build_model_saver(model_opt, opt, model, fields, optim)
