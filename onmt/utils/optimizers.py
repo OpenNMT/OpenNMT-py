@@ -86,6 +86,9 @@ def make_learning_rate_decay_fn(opt):
             noam_decay,
             warmup_steps=opt.warmup_steps,
             model_size=opt.rnn_size)
+    elif opt.decay_method == 'rsqrt':
+        return functools.partial(
+            rsqrt_decay, warmup_steps=opt.warmup_steps)
     elif opt.start_decay_steps is not None:
         return functools.partial(
             exponential_decay,
@@ -108,6 +111,11 @@ def exponential_decay(step, rate, decay_steps, start_step=0):
     every :obj:`decay_steps` steps.
     """
     return rate ** (max(step - start_step + decay_steps, 0) // decay_steps)
+
+
+def rsqrt_decay(step, warmup_steps):
+    """Decay based on the reciprocal of the step square root."""
+    return 1.0 / sqrt(max(step, warmup_steps))
 
 
 class MultipleOptimizer(object):
@@ -268,8 +276,7 @@ class Optimizer(object):
         """
         learning_rate = self.learning_rate()
         for group in self._optimizer.param_groups:
-            if not isinstance(self._optimizer, AdaFactor):
-                group['lr'] = learning_rate
+            group['lr'] = learning_rate
             if self._max_grad_norm is not None and self._max_grad_norm > 0:
                 clip_grad_norm_(group['params'], self._max_grad_norm)
         self._optimizer.step()
@@ -392,12 +399,8 @@ class AdaFactor(torch.optim.Optimizer):
                     exp_avg_sq_hat = state['exp_avg_sq_hat']
 
                 state['step'] += 1
-                if group['lr'] is None:
-                    # default value from paper
-                    lr_t = min(1e-2, 1 / sqrt(state['step']))
-                    lr_t *= max(group['eps2'], self._rms(p.data))
-                else:
-                    lr_t = group['lr']
+                lr_t = group['lr']
+                lr_t *= max(group['eps2'], self._rms(p.data))
 
                 if group['enable_momentum']:
                     if group['non_constant_decay']:
