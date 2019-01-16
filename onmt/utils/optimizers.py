@@ -2,87 +2,120 @@
 import torch
 import torch.optim as optim
 from torch.nn.utils import clip_grad_norm_
-from onmt.utils import use_gpu
 import operator
 import functools
 from copy import copy
 from math import sqrt
 
 
-def build_optim(model, opt, checkpoint):
-    """ Build optimizer """
-    saved_optimizer_state_dict = None
+def build_torch_optimizer(model, opt):
+    """Builds the PyTorch optimizer.
 
-    if opt.train_from and opt.reset_optim != 'all':
-        optim = checkpoint['optim']
-        # We need to save a copy of optim.optimizer.state_dict() for setting
-        # the, optimizer state later on in Stage 2 in this method, since
-        # the method optim.set_parameters(model) will overwrite
-        # optim.optimizer, and with ith the values stored in
-        # optim.optimizer.state_dict()
-        if opt.reset_optim != 'states':
-            saved_optimizer_state_dict = optim.optimizer.state_dict()
-            if opt.reset_optim == 'keep_states':
-                optim.method = opt.optim
-                optim.learning_rate = opt.learning_rate
-                optim.original_lr = opt.learning_rate
-                optim.max_grad_norm = opt.max_grad_norm
-                optim.lr_decay = opt.learning_rate_decay
-                optim.start_decay_steps = opt.start_decay_steps
-                optim.decay_steps = opt.decay_steps
-                optim.betas = [opt.adam_beta1, opt.adam_beta2]
-                optim.adagrad_accum = opt.adagrad_accumulator_init
-                optim.decay_method = opt.decay_method
-                optim.warmup_steps = opt.warmup_steps
-                optim.model_size = opt.rnn_size
+    We use the default parameters for Adam that are suggested by
+    the original paper https://arxiv.org/pdf/1412.6980.pdf
+    These values are also used by other established implementations,
+    e.g. https://www.tensorflow.org/api_docs/python/tf/train/AdamOptimizer
+    https://keras.io/optimizers/
+    Recently there are slightly different values used in the paper
+    "Attention is all you need"
+    https://arxiv.org/pdf/1706.03762.pdf, particularly the value beta2=0.98
+    was used there however, beta2=0.999 is still arguably the more
+    established value, so we use that here as well
+
+    Args:
+      model: The model to optimize.
+      opt. The dictionary of options.
+
+    Returns:
+      A ``torch.optim.Optimizer`` instance.
+    """
+    params = [p for p in model.parameters() if p.requires_grad]
+    betas = [opt.adam_beta1, opt.adam_beta2]
+    if opt.optim == 'sgd':
+        optimizer = optim.SGD(params, lr=opt.learning_rate)
+    elif opt.optim == 'adagrad':
+        optimizer = optim.Adagrad(
+            params,
+            lr=opt.learning_rate,
+            initial_accumulator_value=opt.adagrad_accumulator_init)
+    elif opt.optim == 'adadelta':
+        optimizer = optim.Adadelta(params, lr=opt.learning_rate)
+    elif opt.optim == 'adafactor':
+        optimizer = AdaFactor(
+            params,
+            non_constant_decay=True,
+            enable_factorization=True,
+            weight_decay=0)
+    elif opt.optim == 'adam':
+        optimizer = optim.Adam(
+            params,
+            lr=opt.learning_rate,
+            betas=betas,
+            eps=1e-9)
+    elif opt.optim == 'sparseadam':
+        dense = []
+        sparse = []
+        for name, param in model.named_parameters():
+            if not param.requires_grad:
+                continue
+            # TODO: Find a better way to check for sparse gradients.
+            if 'embed' in name:
+                sparse.append(param)
+            else:
+                dense.append(param)
+        optimizer = MultipleOptimizer(
+            [optim.Adam(
+                dense,
+                lr=opt.learning_rate,
+                betas=betas,
+                eps=1e-8),
+             optim.SparseAdam(
+                 sparse,
+                 lr=opt.learning_rate,
+                 betas=betas,
+                 eps=1e-8)])
     else:
-        optim = Optimizer(
-            opt.optim, opt.learning_rate, opt.max_grad_norm,
-            lr_decay=opt.learning_rate_decay,
-            start_decay_steps=opt.start_decay_steps,
-            decay_steps=opt.decay_steps,
-            beta1=opt.adam_beta1,
-            beta2=opt.adam_beta2,
-            adagrad_accum=opt.adagrad_accumulator_init,
-            decay_method=opt.decay_method,
+        raise ValueError('Invalid optimizer type: ' + opt.optim)
+    return optimizer
+
+
+def make_learning_rate_decay_fn(opt):
+    """Returns the learning decay function from options."""
+    if opt.decay_method == 'noam':
+        return functools.partial(
+            noam_decay,
             warmup_steps=opt.warmup_steps,
             model_size=opt.rnn_size)
+    elif opt.decay_method == 'rsqrt':
+        return functools.partial(
+            rsqrt_decay, warmup_steps=opt.warmup_steps)
+    elif opt.start_decay_steps is not None:
+        return functools.partial(
+            exponential_decay,
+            rate=opt.learning_rate_decay,
+            decay_steps=opt.decay_steps,
+            start_step=opt.start_decay_steps)
 
-    # Stage 1:
-    # Essentially optim.set_parameters (re-)creates and optimizer using
-    # model.paramters() as parameters that will be stored in the
-    # optim.optimizer.param_groups field of the torch optimizer class.
-    # Importantly, this method does not yet load the optimizer state, as
-    # essentially it builds a new optimizer with empty optimizer state and
-    # parameters from the model.
-    optim.set_parameters(model)
 
-    if opt.train_from and (opt.reset_optim in ['none', 'keep_states']):
-        # Stage 2: In this stage, which is only performed when loading an
-        # optimizer from a checkpoint, we load the saved_optimizer_state_dict
-        # into the re-created optimizer, to set the optim.optimizer.state
-        # field, which was previously empty. For this, we use the optimizer
-        # state saved in the "saved_optimizer_state_dict" variable for
-        # this purpose.
-        # See also: https://github.com/pytorch/pytorch/issues/2830
-        optim.optimizer.load_state_dict(saved_optimizer_state_dict)
-        # Convert back the state values to cuda type if applicable
-        if use_gpu(opt):
-            for state in optim.optimizer.state.values():
-                for k, v in state.items():
-                    if torch.is_tensor(v):
-                        state[k] = v.cuda()
+def noam_decay(step, warmup_steps, model_size):
+    """Learning rate schedule described in
+    https://arxiv.org/pdf/1706.03762.pdf.
+    """
+    return (
+        model_size ** (-0.5) *
+        min(step ** (-0.5), step * warmup_steps**(-1.5)))
 
-        # We want to make sure that indeed we have a non-empty optimizer state
-        # when we loaded an existing model. This should be at least the case
-        # for Adam, which saves "exp_avg" and "exp_avg_sq" state
-        # (Exponential moving average of gradient and squared gradient values)
-        if (optim.method == 'adam') and (len(optim.optimizer.state) < 1):
-            raise RuntimeError(
-                "Error: loaded Adam optimizer from existing model" +
-                " but optimizer state is empty")
 
-    return optim
+def exponential_decay(step, rate, decay_steps, start_step=0):
+    """A standard exponential decay, scaling the learning rate by :obj:`rate`
+    every :obj:`decay_steps` steps.
+    """
+    return rate ** (max(step - start_step + decay_steps, 0) // decay_steps)
+
+
+def rsqrt_decay(step, warmup_steps):
+    """Decay based on the reciprocal of the step square root."""
+    return 1.0 / sqrt(max(step, warmup_steps))
 
 
 class MultipleOptimizer(object):
@@ -132,89 +165,108 @@ class Optimizer(object):
     rate scheduling beyond what is currently available.
     Also implements necessary methods for training RNNs such
     as grad manipulations.
-
-    Args:
-      method (:obj:`str`): one of [sgd, adagrad, adadelta, adam]
-      lr (float): learning rate
-      lr_decay (float, optional): learning rate decay multiplier
-      start_decay_steps (int, optional): step to start learning rate decay
-      beta1, beta2 (float, optional): parameters for adam
-      adagrad_accum (float, optional): initialization parameter for adagrad
-      decay_method (str, option): custom decay options
-      warmup_steps (int, option): parameter for `noam` decay
-      model_size (int, option): parameter for `noam` decay
-
-    We use the default parameters for Adam that are suggested by
-    the original paper https://arxiv.org/pdf/1412.6980.pdf
-    These values are also used by other established implementations,
-    e.g. https://www.tensorflow.org/api_docs/python/tf/train/AdamOptimizer
-    https://keras.io/optimizers/
-    Recently there are slightly different values used in the paper
-    "Attention is all you need"
-    https://arxiv.org/pdf/1706.03762.pdf, particularly the value beta2=0.98
-    was used there however, beta2=0.999 is still arguably the more
-    established value, so we use that here as well
     """
 
-    def __init__(self, method, learning_rate, max_grad_norm,
-                 lr_decay=1, start_decay_steps=None, decay_steps=None,
-                 beta1=0.9, beta2=0.999,
-                 adagrad_accum=0.0,
-                 decay_method=None,
-                 warmup_steps=4000,
-                 model_size=None):
-        self.last_ppl = None
-        self.learning_rate = learning_rate
-        self.original_lr = learning_rate
-        self.max_grad_norm = max_grad_norm
-        self.method = method
-        self.lr_decay = lr_decay
-        self.start_decay_steps = start_decay_steps
-        self.decay_steps = decay_steps
-        self._step = 0
-        self.betas = [beta1, beta2]
-        self.adagrad_accum = adagrad_accum
-        self.decay_method = decay_method
-        self.warmup_steps = warmup_steps
-        self.model_size = model_size
+    def __init__(self,
+                 optimizer,
+                 learning_rate,
+                 learning_rate_decay_fn=None,
+                 max_grad_norm=None):
+        """Initializes the controller.
 
-    def set_parameters(self, model):
-        """ ? """
-        params = [p for p in model.parameters() if p.requires_grad]
-        if self.method == 'sgd':
-            self.optimizer = optim.SGD(params, lr=self.learning_rate)
-        elif self.method == 'adagrad':
-            self.optimizer = optim.Adagrad(
-                params,
-                lr=self.learning_rate,
-                initial_accumulator_value=self.adagrad_accum)
-        elif self.method == 'adadelta':
-            self.optimizer = optim.Adadelta(params, lr=self.learning_rate)
-        elif self.method == 'adafactor':
-            self.optimizer = AdaFactor(params, non_constant_decay=True,
-                                       enable_factorization=True,
-                                       weight_decay=0)
-        elif self.method == 'adam':
-            self.optimizer = optim.Adam(params, lr=self.learning_rate,
-                                        betas=self.betas, eps=1e-9)
-        elif self.method == 'sparseadam':
-            dense = []
-            sparse = []
-            for name, param in model.named_parameters():
-                if not param.requires_grad:
-                    continue
-                # TODO: Find a better way to check for sparse gradients.
-                if 'embed' in name:
-                    sparse.append(param)
-                else:
-                    dense.append(param)
-            self.optimizer = MultipleOptimizer(
-                [optim.Adam(dense, lr=self.learning_rate,
-                            betas=self.betas, eps=1e-8),
-                 optim.SparseAdam(sparse, lr=self.learning_rate,
-                                  betas=self.betas, eps=1e-8)])
-        else:
-            raise RuntimeError("Invalid optim method: " + self.method)
+       Args:
+         optimizer: A ``torch.optim.Optimizer`` instance.
+         learning_rate: The initial learning rate.
+         learning_rate_decay_fn: An optional callable taking the current step
+           as argument and return a learning rate scaling factor.
+         max_grad_norm: Clip gradients to this global norm.
+        """
+        self._optimizer = optimizer
+        self._learning_rate = learning_rate
+        self._learning_rate_decay_fn = learning_rate_decay_fn
+        self._max_grad_norm = max_grad_norm
+        self._training_step = 1
+        self._decay_step = 1
+
+    @classmethod
+    def from_opt(cls, model, opt, checkpoint=None):
+        """Builds the optimizer from options.
+
+        Args:
+          cls: The ``Optimizer`` class to instantiate.
+          model: The model to optimize.
+          opt: The dict of user options.
+          checkpoint: An optional checkpoint to load states from.
+
+        Returns:
+          An ``Optimizer`` instance.
+        """
+        optim_opt = opt
+        optim_state_dict = None
+
+        if opt.train_from and checkpoint is not None:
+            optim = checkpoint['optim']
+            ckpt_opt = checkpoint['opt']
+            ckpt_state_dict = {}
+            if isinstance(optim, Optimizer):  # Backward compatibility.
+                ckpt_state_dict['training_step'] = optim._step + 1
+                ckpt_state_dict['decay_step'] = optim._step + 1
+                ckpt_state_dict['optimizer'] = optim.optimizer.state_dict()
+            else:
+                ckpt_state_dict = optim
+
+            if opt.reset_optim == 'none':
+                # Load everything from the checkpoint.
+                optim_opt = ckpt_opt
+                optim_state_dict = ckpt_state_dict
+            elif opt.reset_optim == 'all':
+                # Build everything from scratch.
+                pass
+            elif opt.reset_optim == 'states':
+                # Reset optimizer, keep options.
+                optim_opt = ckpt_opt
+                optim_state_dict = ckpt_state_dict
+                del optim_state_dict['optimizer']
+            elif opt.reset_optim == 'keep_states':
+                # Reset options, keep optimizer.
+                optim_state_dict = ckpt_state_dict
+                del optim_state_dict['decay_step']
+
+        optimizer = cls(
+            build_torch_optimizer(model, optim_opt),
+            optim_opt.learning_rate,
+            learning_rate_decay_fn=make_learning_rate_decay_fn(optim_opt),
+            max_grad_norm=optim_opt.max_grad_norm)
+        if optim_state_dict:
+            optimizer.load_state_dict(optim_state_dict)
+        return optimizer
+
+    @property
+    def training_step(self):
+        """The current training step."""
+        return self._training_step
+
+    def learning_rate(self):
+        """Returns the current learning rate."""
+        if self._learning_rate_decay_fn is None:
+            return self._learning_rate
+        scale = self._learning_rate_decay_fn(self._decay_step)
+        return scale * self._learning_rate
+
+    def state_dict(self):
+        return {
+            'training_step': self._training_step,
+            'decay_step': self._decay_step,
+            'optimizer': self._optimizer.state_dict()
+        }
+
+    def load_state_dict(self, state_dict):
+        self._training_step = state_dict['training_step']
+        # State can be partially restored.
+        if 'decay_step' in state_dict:
+            self._decay_step = state_dict['decay_step']
+        if 'optimizer' in state_dict:
+            self._optimizer.load_state_dict(state_dict['optimizer'])
 
     def step(self):
         """Update the model parameters based on current gradients.
@@ -222,29 +274,14 @@ class Optimizer(object):
         Optionally, will employ gradient modification or update learning
         rate.
         """
-        self._step += 1
-
-        # Decay method used in tensor2tensor.
-        if self.decay_method == "noam":
-            lr_scale = (
-                self.model_size ** (-0.5) *
-                min(self._step ** (-0.5),
-                    self._step * self.warmup_steps**(-1.5)))
-        # Decay based on start_decay_steps every decay_steps
-        elif self.start_decay_steps is not None:
-            step = self._step - self.start_decay_steps
-            lr_scale = (self.lr_decay ** (
-                max(step + self.decay_steps, 0) // self.decay_steps))
-        else:
-            lr_scale = 1
-
-        self.learning_rate = lr_scale * self.original_lr
-        for group in self.optimizer.param_groups:
-            if self.method != 'adafactor':
-                group['lr'] = self.learning_rate
-            if self.max_grad_norm:
-                clip_grad_norm_(group['params'], self.max_grad_norm)
-        self.optimizer.step()
+        learning_rate = self.learning_rate()
+        for group in self._optimizer.param_groups:
+            group['lr'] = learning_rate
+            if self._max_grad_norm is not None and self._max_grad_norm > 0:
+                clip_grad_norm_(group['params'], self._max_grad_norm)
+        self._optimizer.step()
+        self._decay_step += 1
+        self._training_step += 1
 
 # Code below is an implementation of https://arxiv.org/pdf/1804.04235.pdf
 # inspired but modified from https://github.com/DeadAt0m/adafactor-pytorch
@@ -362,12 +399,8 @@ class AdaFactor(torch.optim.Optimizer):
                     exp_avg_sq_hat = state['exp_avg_sq_hat']
 
                 state['step'] += 1
-                if group['lr'] is None:
-                    # default value from paper
-                    lr_t = min(1e-2, 1 / sqrt(state['step']))
-                    lr_t *= max(group['eps2'], self._rms(p.data))
-                else:
-                    lr_t = group['lr']
+                lr_t = group['lr']
+                lr_t *= max(group['eps2'], self._rms(p.data))
 
                 if group['enable_momentum']:
                     if group['non_constant_decay']:

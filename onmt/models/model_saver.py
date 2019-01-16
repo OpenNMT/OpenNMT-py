@@ -109,7 +109,7 @@ class ModelSaver(ModelSaverBase):
             'generator': generator_state_dict,
             'vocab': self.fields,
             'opt': self.model_opt,
-            'optim': self.optim,
+            'optim': self.optim.state_dict(),
         }
 
         logger.info("Saving checkpoint %s_step_%d.pt" % (self.base_path, step))
