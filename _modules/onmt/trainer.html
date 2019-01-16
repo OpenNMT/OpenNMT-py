@@ -290,7 +290,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Start training...&#39;</span><span class="p">)</span>
 
-        <span class="n">step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">_step</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">training_step</span>
         <span class="n">true_batchs</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">accum</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">normalization</span> <span class="o">=</span> <span class="mi">0</span>
@@ -335,7 +335,7 @@
 
                         <span class="n">report_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_maybe_report_training</span><span class="p">(</span>
                             <span class="n">step</span><span class="p">,</span> <span class="n">train_steps</span><span class="p">,</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">(),</span>
                             <span class="n">report_stats</span><span class="p">)</span>
 
                         <span class="n">true_batchs</span> <span class="o">=</span> <span class="p">[]</span>
@@ -353,7 +353,7 @@
                             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpu_verbose_level</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;GpuRank </span><span class="si">%d</span><span class="s1">: report stat step </span><span class="si">%d</span><span class="s1">&#39;</span>
                                             <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gpu_rank</span><span class="p">,</span> <span class="n">step</span><span class="p">))</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">_report_step</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_report_step</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">(),</span>
                                               <span class="n">step</span><span class="p">,</span> <span class="n">valid_stats</span><span class="o">=</span><span class="n">valid_stats</span><span class="p">)</span>
 
                         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpu_rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
