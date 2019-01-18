@@ -2,6 +2,7 @@
 from __future__ import unicode_literals, print_function
 
 import torch
+from onmt.inputters.text_dataset import TextDataset
 
 
 class TranslationBuilder(object):
@@ -63,8 +64,7 @@ class TranslationBuilder(object):
 
         # Sorting
         inds, perm = torch.sort(batch.indices)
-        data_type = self.data.data_type
-        if data_type == 'text':
+        if isinstance(self.data, TextDataset):
             src = batch.src[0].index_select(1, perm)
         else:
             src = None
@@ -72,7 +72,7 @@ class TranslationBuilder(object):
 
         translations = []
         for b in range(batch_size):
-            if data_type == 'text':
+            if isinstance(self.data, TextDataset):
                 src_vocab = self.data.src_vocabs[inds[b]] \
                     if self.data.src_vocabs else None
                 src_raw = self.data.examples[inds[b]].src
