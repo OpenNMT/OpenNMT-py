@@ -19,7 +19,6 @@ class TextDataset(DatasetBase):
             dictionary iterator.
         dynamic_dict (bool)
     """
-    data_type = 'text'  # get rid of this class attribute asap
 
     @staticmethod
     def sort_key(ex):

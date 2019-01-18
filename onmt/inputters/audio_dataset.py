@@ -8,7 +8,6 @@ from onmt.inputters.dataset_base import DatasetBase
 
 
 class AudioDataset(DatasetBase):
-    data_type = 'audio'  # get rid of this class attribute asap
 
     @staticmethod
     def sort_key(ex):

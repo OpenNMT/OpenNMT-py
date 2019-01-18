@@ -15,6 +15,7 @@ import onmt.opts as opts
 
 from onmt.inputters.inputter import build_dataset_iter, \
     load_old_vocab, old_style_vocab
+from onmt.inputters import TextDataset, ImageDataset, AudioDataset
 from onmt.model_builder import build_model
 from onmt.utils.optimizers import Optimizer
 from onmt.utils.misc import set_random_seed
@@ -106,7 +107,13 @@ def main(opt, device_id):
     # (All datasets have the same data_type).
     # this should be refactored out of existence reasonably soon
     first_dataset = torch.load(glob.glob(opt.data + '.train*.pt')[0])
-    data_type = first_dataset.data_type
+    if isinstance(first_dataset, ImageDataset):
+        data_type = 'image'
+    elif isinstance(first_dataset, AudioDataset):
+        data_type = 'audio'
+    else:
+        assert isinstance(first_dataset, TextDataset)
+        data_type = 'text'
 
     # check for code where vocab is saved instead of fields
     # (in the future this will be done in a smarter way)
