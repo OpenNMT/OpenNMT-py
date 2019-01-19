@@ -460,12 +460,16 @@ class Translator(object):
                 return self._translate_batch(batch, data)
 
     def _run_encoder(self, batch):
-        src = inputters.make_features(batch, 'src', self.data_type)
-        src_lengths = None
-        if self.data_type == 'text':
+        if isinstance(batch.src, tuple):
+            src = inputters.make_features(batch, 'src')
             _, src_lengths = batch.src
-        elif self.data_type == 'audio':
-            src_lengths = batch.src_lengths
+        else:
+            src = batch.src
+            if hasattr(batch, 'src_lengths'):
+                src_lengths = batch.src_lengths
+            else:
+                src_lengths = None
+
         enc_states, memory_bank, src_lengths = self.model.encoder(
             src, src_lengths)
         if src_lengths is None:
