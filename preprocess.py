@@ -17,6 +17,10 @@ import onmt.inputters as inputters
 import onmt.opts as opts
 
 
+class PtFilesExistError(Exception):
+    pass
+
+
 def check_existing_pt_files(opt):
     """ Check if there are existing .pt files to avoid overwriting them """
     pattern = opt.save_data + '.{}*.pt'
@@ -27,7 +31,7 @@ def check_existing_pt_files(opt):
             files_exist.append(path)
 
     if files_exist:
-        raise FileExistsError(
+        raise PtFilesExistError(
             "Cannot write files matching '{}' because they "
             "already exist. Please backup and/or delete "
             "the existing files.".format(", ".join(files_exist)))
