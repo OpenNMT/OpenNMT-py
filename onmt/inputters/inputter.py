@@ -208,17 +208,7 @@ def old_style_vocab(vocab):
         any(isinstance(v[1], Vocab) for v in vocab)
 
 
-def make_features(batch, side, data_type='text'):
-    """
-    Args:
-        batch (Tensor): a batch of source or target data.
-        side (str): for source or for target.
-        data_type (str): type of the source input.
-            Options are [text|img|audio].
-    Returns:
-        A sequence of src/tgt tensors with optional feature tensors
-        of size (len x batch).
-    """
+def make_features(batch, side):
     assert side in ['src', 'tgt']
     if isinstance(batch.__dict__[side], tuple):
         data = batch.__dict__[side][0]
@@ -230,10 +220,7 @@ def make_features(batch, side, data_type='text'):
     features = [batch.__dict__[k] for k in keys]
     levels = [data] + features
 
-    if data_type == 'text':
-        return torch.cat([level.unsqueeze(2) for level in levels], 2)
-    else:
-        return levels[0]
+    return torch.cat([level.unsqueeze(2) for level in levels], 2)
 
 
 def filter_example(ex, use_src_len=True, use_tgt_len=True,

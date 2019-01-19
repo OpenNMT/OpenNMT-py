@@ -142,8 +142,8 @@ def main(opt, device_id):
     # Build model saver
     model_saver = build_model_saver(model_opt, opt, model, fields, optim)
 
-    trainer = build_trainer(opt, device_id, model, fields,
-                            optim, data_type, model_saver=model_saver)
+    trainer = build_trainer(
+        opt, device_id, model, fields, optim, model_saver=model_saver)
 
     # this line is kind of a temporary kludge because different objects expect
     # fields to have a different structure
