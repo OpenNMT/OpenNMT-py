@@ -209,18 +209,31 @@ def old_style_vocab(vocab):
 
 
 def make_features(batch, side):
+    """
+    batch: a batch object
+    side: 'src' or 'tgt'
+    returns the tensor with features concatenated, and the lengths (if present)
+        or None.
+    """
     assert side in ['src', 'tgt']
     if isinstance(batch.__dict__[side], tuple):
-        data = batch.__dict__[side][0]
+        data, lengths = batch.__dict__[side]
     else:
         data = batch.__dict__[side]
+        if side == 'src' and hasattr(batch, 'src_lengths'):
+            lengths = batch.src_lengths
+        else:
+            lengths = None
 
-    feat_start = side + "_feat_"
-    keys = sorted([k for k in batch.__dict__ if feat_start in k])
-    features = [batch.__dict__[k] for k in keys]
-    levels = [data] + features
+    if isinstance(batch.__dict__[side], tuple) or side == 'tgt':
+        # cat together layers, producing a 3d output tensor for src text
+        # and for tgt (which is assumed to be text)
+        feat_start = side + "_feat_"
+        feat_names = sorted(k for k in batch.__dict__ if feat_start in k)
+        levels = [data] + [batch.__dict__[k] for k in feat_names]
+        data = torch.cat([level.unsqueeze(2) for level in levels], 2)
 
-    return torch.cat([level.unsqueeze(2) for level in levels], 2)
+    return data, lengths
 
 
 def filter_example(ex, use_src_len=True, use_tgt_len=True,
