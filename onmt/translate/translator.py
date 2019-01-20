@@ -838,7 +838,8 @@ class Translator(object):
         return results
 
     def _score_target(self, batch, memory_bank, src_lengths, data, src_map):
-        tgt_in, _ = inputters.make_features(batch, 'tgt')[:-1]
+        tgt, _ = inputters.make_features(batch, 'tgt')
+        tgt_in = tgt[:-1]
 
         log_probs, attn = self._decode_and_generate(
             tgt_in, memory_bank, batch, data,
