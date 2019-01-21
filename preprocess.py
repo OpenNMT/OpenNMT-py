@@ -6,6 +6,7 @@
 
 import configargparse
 import glob
+import sys
 import gc
 import os
 import codecs
@@ -24,17 +25,12 @@ class PtFilesExistError(Exception):
 def check_existing_pt_files(opt):
     """ Check if there are existing .pt files to avoid overwriting them """
     pattern = opt.save_data + '.{}*.pt'
-    files_exist = []
     for t in ['train', 'valid', 'vocab']:
         path = pattern.format(t)
         if glob.glob(path):
-            files_exist.append(path)
-
-    if files_exist:
-        raise PtFilesExistError(
-            "Cannot write files matching '{}' because they "
-            "already exist. Please backup and/or delete "
-            "the existing files.".format(", ".join(files_exist)))
+            sys.stderr.write("Please backup existing pt files: %s, "
+                             "to avoid overwriting them!\n" % path)
+            sys.exit(1)
 
 
 def parse_args():
