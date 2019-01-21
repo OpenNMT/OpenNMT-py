@@ -175,8 +175,7 @@
 <span class="kn">from</span> <span class="nn">onmt.utils.logging</span> <span class="k">import</span> <span class="n">logger</span>
 
 
-<span class="k">def</span> <span class="nf">build_trainer</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">device_id</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span>
-                  <span class="n">optim</span><span class="p">,</span> <span class="n">data_type</span><span class="p">,</span> <span class="n">model_saver</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">build_trainer</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">device_id</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">optim</span><span class="p">,</span> <span class="n">model_saver</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Simplify `Trainer` creation based on user `opt`s*</span>
 
@@ -209,7 +208,7 @@
 
     <span class="n">report_manager</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">build_report_manager</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
     <span class="n">trainer</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">Trainer</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">train_loss</span><span class="p">,</span> <span class="n">valid_loss</span><span class="p">,</span> <span class="n">optim</span><span class="p">,</span> <span class="n">trunc_size</span><span class="p">,</span>
-                           <span class="n">shard_size</span><span class="p">,</span> <span class="n">data_type</span><span class="p">,</span> <span class="n">norm_method</span><span class="p">,</span>
+                           <span class="n">shard_size</span><span class="p">,</span> <span class="n">norm_method</span><span class="p">,</span>
                            <span class="n">grad_accum_count</span><span class="p">,</span> <span class="n">n_gpu</span><span class="p">,</span> <span class="n">gpu_rank</span><span class="p">,</span>
                            <span class="n">gpu_verbose_level</span><span class="p">,</span> <span class="n">report_manager</span><span class="p">,</span>
                            <span class="n">model_saver</span><span class="o">=</span><span class="n">model_saver</span><span class="p">)</span>
@@ -242,7 +241,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">train_loss</span><span class="p">,</span> <span class="n">valid_loss</span><span class="p">,</span> <span class="n">optim</span><span class="p">,</span>
-                 <span class="n">trunc_size</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">shard_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">data_type</span><span class="o">=</span><span class="s1">&#39;text&#39;</span><span class="p">,</span>
+                 <span class="n">trunc_size</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">shard_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span>
                  <span class="n">norm_method</span><span class="o">=</span><span class="s2">&quot;sents&quot;</span><span class="p">,</span> <span class="n">grad_accum_count</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_gpu</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">gpu_rank</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
                  <span class="n">gpu_verbose_level</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">report_manager</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">model_saver</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="c1"># Basic attributes.</span>
@@ -252,7 +251,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">optim</span> <span class="o">=</span> <span class="n">optim</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">trunc_size</span> <span class="o">=</span> <span class="n">trunc_size</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">shard_size</span> <span class="o">=</span> <span class="n">shard_size</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span> <span class="o">=</span> <span class="n">data_type</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">norm_method</span> <span class="o">=</span> <span class="n">norm_method</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">grad_accum_count</span> <span class="o">=</span> <span class="n">grad_accum_count</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_gpu</span> <span class="o">=</span> <span class="n">n_gpu</span>
@@ -263,7 +261,7 @@
 
         <span class="k">assert</span> <span class="n">grad_accum_count</span> <span class="o">&gt;</span> <span class="mi">0</span>
         <span class="k">if</span> <span class="n">grad_accum_count</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">assert</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">trunc_size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">),</span> \
+            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">trunc_size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> \
                 <span class="sd">&quot;&quot;&quot;To enable accumulated gradients,</span>
 <span class="sd">                   you must disable target sequence truncating.&quot;&quot;&quot;</span>
 
@@ -291,7 +289,7 @@
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Start training...&#39;</span><span class="p">)</span>
 
         <span class="n">step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">training_step</span>
-        <span class="n">true_batchs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">true_batches</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">accum</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">normalization</span> <span class="o">=</span> <span class="mi">0</span>
 
@@ -308,7 +306,7 @@
                         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;GpuRank </span><span class="si">%d</span><span class="s2">: index: </span><span class="si">%d</span><span class="s2"> accum: </span><span class="si">%d</span><span class="s2">&quot;</span>
                                     <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gpu_rank</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">accum</span><span class="p">))</span>
 
-                    <span class="n">true_batchs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+                    <span class="n">true_batches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
 
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">norm_method</span> <span class="o">==</span> <span class="s2">&quot;tokens&quot;</span><span class="p">:</span>
                         <span class="n">num_tokens</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">tgt</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">ne</span><span class="p">(</span>
@@ -323,14 +321,14 @@
                             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;GpuRank </span><span class="si">%d</span><span class="s2">: reduce_counter: </span><span class="si">%d</span><span class="s2"> </span><span class="se">\</span>
 <span class="s2">                                        n_minibatch </span><span class="si">%d</span><span class="s2">&quot;</span>
                                         <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gpu_rank</span><span class="p">,</span> <span class="n">reduce_counter</span><span class="p">,</span>
-                                           <span class="nb">len</span><span class="p">(</span><span class="n">true_batchs</span><span class="p">)))</span>
+                                           <span class="nb">len</span><span class="p">(</span><span class="n">true_batches</span><span class="p">)))</span>
                         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_gpu</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
                             <span class="n">normalization</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">distributed</span>
                                                 <span class="o">.</span><span class="n">all_gather_list</span>
                                                 <span class="p">(</span><span class="n">normalization</span><span class="p">))</span>
 
                         <span class="bp">self</span><span class="o">.</span><span class="n">_gradient_accumulation</span><span class="p">(</span>
-                            <span class="n">true_batchs</span><span class="p">,</span> <span class="n">normalization</span><span class="p">,</span> <span class="n">total_stats</span><span class="p">,</span>
+                            <span class="n">true_batches</span><span class="p">,</span> <span class="n">normalization</span><span class="p">,</span> <span class="n">total_stats</span><span class="p">,</span>
                             <span class="n">report_stats</span><span class="p">)</span>
 
                         <span class="n">report_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_maybe_report_training</span><span class="p">(</span>
@@ -338,7 +336,7 @@
                             <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">(),</span>
                             <span class="n">report_stats</span><span class="p">)</span>
 
-                        <span class="n">true_batchs</span> <span class="o">=</span> <span class="p">[]</span>
+                        <span class="n">true_batches</span> <span class="o">=</span> <span class="p">[]</span>
                         <span class="n">accum</span> <span class="o">=</span> <span class="mi">0</span>
                         <span class="n">normalization</span> <span class="o">=</span> <span class="mi">0</span>
                         <span class="k">if</span> <span class="p">(</span><span class="n">step</span> <span class="o">%</span> <span class="n">valid_steps</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
@@ -380,15 +378,8 @@
             <span class="n">stats</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">Statistics</span><span class="p">()</span>
 
             <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">valid_iter</span><span class="p">:</span>
-                <span class="n">src</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">make_features</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="s1">&#39;src&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span><span class="p">)</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span> <span class="o">==</span> <span class="s1">&#39;text&#39;</span><span class="p">:</span>
-                    <span class="n">_</span><span class="p">,</span> <span class="n">src_lengths</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">src</span>
-                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span> <span class="o">==</span> <span class="s1">&#39;audio&#39;</span><span class="p">:</span>
-                    <span class="n">src_lengths</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">src_lengths</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">src_lengths</span> <span class="o">=</span> <span class="kc">None</span>
-
-                <span class="n">tgt</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">make_features</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="s1">&#39;tgt&#39;</span><span class="p">)</span>
+                <span class="n">src</span><span class="p">,</span> <span class="n">src_lengths</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">make_features</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="s1">&#39;src&#39;</span><span class="p">)</span>
+                <span class="n">tgt</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">make_features</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="s1">&#39;tgt&#39;</span><span class="p">)</span>
 
                 <span class="c1"># F-prop through the model.</span>
                 <span class="n">outputs</span><span class="p">,</span> <span class="n">attns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">)</span>
@@ -405,12 +396,12 @@
 
         <span class="k">return</span> <span class="n">stats</span></div>
 
-    <span class="k">def</span> <span class="nf">_gradient_accumulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">true_batchs</span><span class="p">,</span> <span class="n">normalization</span><span class="p">,</span> <span class="n">total_stats</span><span class="p">,</span>
+    <span class="k">def</span> <span class="nf">_gradient_accumulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">true_batches</span><span class="p">,</span> <span class="n">normalization</span><span class="p">,</span> <span class="n">total_stats</span><span class="p">,</span>
                                <span class="n">report_stats</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_accum_count</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
 
-        <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">true_batchs</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">true_batches</span><span class="p">:</span>
             <span class="n">target_size</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">tgt</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
             <span class="c1"># Truncated BPTT: reminder not compatible with accum &gt; 1</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">trunc_size</span><span class="p">:</span>
@@ -418,18 +409,12 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">trunc_size</span> <span class="o">=</span> <span class="n">target_size</span>
 
+            <span class="n">src</span><span class="p">,</span> <span class="n">src_lengths</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">make_features</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="s1">&#39;src&#39;</span><span class="p">)</span>
+
+            <span class="c1"># this method unsqueezes its input</span>
+            <span class="n">tgt_outer</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">make_features</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="s1">&#39;tgt&#39;</span><span class="p">)</span>
+
             <span class="n">bptt</span> <span class="o">=</span> <span class="kc">False</span>
-            <span class="n">src</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">make_features</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="s1">&#39;src&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span><span class="p">)</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span> <span class="o">==</span> <span class="s1">&#39;text&#39;</span><span class="p">:</span>
-                <span class="n">_</span><span class="p">,</span> <span class="n">src_lengths</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">src</span>
-                <span class="n">report_stats</span><span class="o">.</span><span class="n">n_src_words</span> <span class="o">+=</span> <span class="n">src_lengths</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
-            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span> <span class="o">==</span> <span class="s1">&#39;audio&#39;</span><span class="p">:</span>
-                <span class="n">src_lengths</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">src_lengths</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">src_lengths</span> <span class="o">=</span> <span class="kc">None</span>
-
-            <span class="n">tgt_outer</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">make_features</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="s1">&#39;tgt&#39;</span><span class="p">)</span>
-
             <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">target_size</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">trunc_size</span><span class="p">):</span>
                 <span class="c1"># 1. Create truncated target.</span>
                 <span class="n">tgt</span> <span class="o">=</span> <span class="n">tgt_outer</span><span class="p">[</span><span class="n">j</span><span class="p">:</span> <span class="n">j</span> <span class="o">+</span> <span class="n">trunc_size</span><span class="p">]</span>
@@ -437,8 +422,7 @@
                 <span class="c1"># 2. F-prop all but generator.</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_accum_count</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
-                <span class="n">outputs</span><span class="p">,</span> <span class="n">attns</span> <span class="o">=</span> \
-                    <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">,</span> <span class="n">bptt</span><span class="o">=</span><span class="n">bptt</span><span class="p">)</span>
+                <span class="n">outputs</span><span class="p">,</span> <span class="n">attns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">,</span> <span class="n">bptt</span><span class="o">=</span><span class="n">bptt</span><span class="p">)</span>
                 <span class="n">bptt</span> <span class="o">=</span> <span class="kc">True</span>
 
                 <span class="c1"># 3. Compute loss in shards for memory efficiency.</span>

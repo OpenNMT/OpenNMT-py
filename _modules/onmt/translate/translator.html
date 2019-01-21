@@ -495,11 +495,10 @@
         <span class="n">end_token</span> <span class="o">=</span> <span class="n">vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">tgt_field</span><span class="o">.</span><span class="n">eos_token</span><span class="p">]</span>
 
         <span class="c1"># Encoder forward.</span>
-        <span class="n">src</span><span class="p">,</span> <span class="n">enc_states</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_lengths</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_encoder</span><span class="p">(</span>
-            <span class="n">batch</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">data_type</span><span class="p">)</span>
+        <span class="n">src</span><span class="p">,</span> <span class="n">enc_states</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_lengths</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_encoder</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">init_state</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">enc_states</span><span class="p">)</span>
 
-        <span class="n">use_src_map</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">data_type</span> <span class="o">==</span> <span class="s1">&#39;text&#39;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span>
+        <span class="n">use_src_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span>
 
         <span class="n">results</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">results</span><span class="p">[</span><span class="s2">&quot;predictions&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)]</span>  <span class="c1"># noqa: F812</span>
@@ -616,13 +615,9 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_batch</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">_run_encoder</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">data_type</span><span class="p">):</span>
-        <span class="n">src</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">make_features</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="s1">&#39;src&#39;</span><span class="p">,</span> <span class="n">data_type</span><span class="p">)</span>
-        <span class="n">src_lengths</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">if</span> <span class="n">data_type</span> <span class="o">==</span> <span class="s1">&#39;text&#39;</span><span class="p">:</span>
-            <span class="n">_</span><span class="p">,</span> <span class="n">src_lengths</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">src</span>
-        <span class="k">elif</span> <span class="n">data_type</span> <span class="o">==</span> <span class="s1">&#39;audio&#39;</span><span class="p">:</span>
-            <span class="n">src_lengths</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">src_lengths</span>
+    <span class="k">def</span> <span class="nf">_run_encoder</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">):</span>
+        <span class="n">src</span><span class="p">,</span> <span class="n">src_lengths</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">make_features</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="s1">&#39;src&#39;</span><span class="p">)</span>
+
         <span class="n">enc_states</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_lengths</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">encoder</span><span class="p">(</span>
             <span class="n">src</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">src_lengths</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -715,11 +710,10 @@
         <span class="n">end_token</span> <span class="o">=</span> <span class="n">vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">tgt_field</span><span class="o">.</span><span class="n">eos_token</span><span class="p">]</span>
 
         <span class="c1"># Encoder forward.</span>
-        <span class="n">src</span><span class="p">,</span> <span class="n">enc_states</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_lengths</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_encoder</span><span class="p">(</span>
-            <span class="n">batch</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">data_type</span><span class="p">)</span>
+        <span class="n">src</span><span class="p">,</span> <span class="n">enc_states</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_lengths</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_encoder</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">init_state</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">enc_states</span><span class="p">)</span>
 
-        <span class="n">use_src_map</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">data_type</span> <span class="o">==</span> <span class="s1">&#39;text&#39;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span>
+        <span class="n">use_src_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span>
 
         <span class="n">results</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">results</span><span class="p">[</span><span class="s2">&quot;predictions&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)]</span>  <span class="c1"># noqa: F812</span>
@@ -904,7 +898,6 @@
         <span class="c1"># And helper method for reducing verbosity.</span>
         <span class="n">beam_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span>
         <span class="n">batch_size</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">batch_size</span>
-        <span class="n">data_type</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">data_type</span>
         <span class="n">tgt_field</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
         <span class="n">vocab</span> <span class="o">=</span> <span class="n">tgt_field</span><span class="o">.</span><span class="n">vocab</span>
 
@@ -925,8 +918,7 @@
                 <span class="k">for</span> <span class="n">__</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)]</span>
 
         <span class="c1"># (1) Run the encoder on the src.</span>
-        <span class="n">src</span><span class="p">,</span> <span class="n">enc_states</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_lengths</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_encoder</span><span class="p">(</span>
-            <span class="n">batch</span><span class="p">,</span> <span class="n">data_type</span><span class="p">)</span>
+        <span class="n">src</span><span class="p">,</span> <span class="n">enc_states</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_lengths</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_encoder</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">init_state</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">enc_states</span><span class="p">)</span>
 
         <span class="n">results</span> <span class="o">=</span> <span class="p">{}</span>
@@ -937,7 +929,7 @@
         <span class="k">if</span> <span class="s2">&quot;tgt&quot;</span> <span class="ow">in</span> <span class="n">batch</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">:</span>
             <span class="n">results</span><span class="p">[</span><span class="s2">&quot;gold_score&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_score_target</span><span class="p">(</span>
                 <span class="n">batch</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">batch</span><span class="o">.</span><span class="n">src_map</span>
-                <span class="k">if</span> <span class="n">data_type</span> <span class="o">==</span> <span class="s1">&#39;text&#39;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">init_state</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">enc_states</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">results</span><span class="p">[</span><span class="s2">&quot;gold_score&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">batch_size</span>
@@ -945,7 +937,7 @@
         <span class="c1"># (2) Repeat src objects `beam_size` times.</span>
         <span class="c1"># We use now  batch_size x beam_size (same as fast mode)</span>
         <span class="n">src_map</span> <span class="o">=</span> <span class="p">(</span><span class="n">tile</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">src_map</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-                   <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">data_type</span> <span class="o">==</span> <span class="s1">&#39;text&#39;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+                   <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">map_state</span><span class="p">(</span>
             <span class="k">lambda</span> <span class="n">state</span><span class="p">,</span> <span class="n">dim</span><span class="p">:</span> <span class="n">tile</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">))</span>
 
@@ -991,7 +983,7 @@
         <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">beam</span><span class="p">:</span>
             <span class="n">scores</span><span class="p">,</span> <span class="n">ks</span> <span class="o">=</span> <span class="n">b</span><span class="o">.</span><span class="n">sort_finished</span><span class="p">(</span><span class="n">minimum</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_best</span><span class="p">)</span>
             <span class="n">hyps</span><span class="p">,</span> <span class="n">attn</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">times</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ks</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">n_best</span><span class="p">]):</span>
+            <span class="k">for</span> <span class="n">times</span><span class="p">,</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">ks</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">n_best</span><span class="p">]:</span>
                 <span class="n">hyp</span><span class="p">,</span> <span class="n">att</span> <span class="o">=</span> <span class="n">b</span><span class="o">.</span><span class="n">get_hyp</span><span class="p">(</span><span class="n">times</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
                 <span class="n">hyps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hyp</span><span class="p">)</span>
                 <span class="n">attn</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">att</span><span class="p">)</span>
@@ -1002,7 +994,8 @@
         <span class="k">return</span> <span class="n">results</span>
 
     <span class="k">def</span> <span class="nf">_score_target</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">src_map</span><span class="p">):</span>
-        <span class="n">tgt_in</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">make_features</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="s1">&#39;tgt&#39;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">tgt</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">make_features</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="s1">&#39;tgt&#39;</span><span class="p">)</span>
+        <span class="n">tgt_in</span> <span class="o">=</span> <span class="n">tgt</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 
         <span class="n">log_probs</span><span class="p">,</span> <span class="n">attn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decode_and_generate</span><span class="p">(</span>
             <span class="n">tgt_in</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
