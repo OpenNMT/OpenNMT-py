@@ -12,9 +12,9 @@ import torchtext.data
 from torchtext.data import Field
 from torchtext.vocab import Vocab
 
-from onmt.inputters.text_dataset import TextDataset
-from onmt.inputters.image_dataset import ImageDataset
-from onmt.inputters.audio_dataset import AudioDataset
+from onmt.datatypes.text_dataset import TextDataset
+from onmt.datatypes.image_dataset import ImageDataset
+from onmt.datatypes.audio_dataset import AudioDataset
 from onmt.utils.logging import logger
 
 import gc

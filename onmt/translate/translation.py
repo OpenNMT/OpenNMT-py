@@ -2,7 +2,7 @@
 from __future__ import unicode_literals, print_function
 
 import torch
-from onmt.inputters.text_dataset import TextDataset
+from onmt.datatypes.text_dataset import TextDataset
 
 
 class TranslationBuilder(object):
