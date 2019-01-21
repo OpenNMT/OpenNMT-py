@@ -67,6 +67,8 @@ class Dataset(TorchTextDataset):
         self.src_datatype = src_datatype
         self.tgt_datatype = tgt_datatype
 
+        self.sort_key = src_datatype.sort_key
+
         dynamic_dict = 'src_map' in fields and 'alignment' in fields
 
         if tgt_examples_iter is not None:
