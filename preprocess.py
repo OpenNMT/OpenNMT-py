@@ -74,7 +74,7 @@ def build_readers(src_dtype, tgt_dtype, opt):
 
 
 def build_save_dataset(corpus_type, fields, src_reader, tgt_reader,
-                       src_datatype, opt):
+                       src_datatype, tgt_datatype, opt):
     assert corpus_type in ['train', 'valid']
 
     if corpus_type == 'train':
@@ -98,9 +98,11 @@ def build_save_dataset(corpus_type, fields, src_reader, tgt_reader,
             fields,
             src,
             src_reader,
+            src_datatype,
             src_dir=opt.src_dir,
             tgt=tgt_shard,
             tgt_reader=tgt_reader,
+            tgt_datatype=tgt_datatype,
             tgt_dir=opt.tgt_dir,
             src_seq_len=opt.src_seq_length,
             tgt_seq_len=opt.tgt_seq_length,
@@ -186,11 +188,11 @@ def main():
 
     logger.info("Building & saving training data...")
     train_dataset_files = build_save_dataset(
-        'train', fields, src_reader, tgt_reader, src_dtype, opt)
+        'train', fields, src_reader, tgt_reader, src_dtype, tgt_dtype, opt)
 
     logger.info("Building & saving validation data...")
     build_save_dataset(
-        'valid', fields, src_reader, tgt_reader, src_dtype, opt)
+        'valid', fields, src_reader, tgt_reader, src_dtype, tgt_dtype, opt)
 
     logger.info("Building & saving vocabulary...")
     build_save_vocab(train_dataset_files, fields, src_dtype, opt)
