@@ -12,6 +12,7 @@ import torch
 
 import onmt.opts as opts
 
+import onmt.datatypes as dtypes
 from onmt.inputters.inputter import build_dataset_iter, \
     load_old_vocab, old_style_vocab
 from onmt.model_builder import build_model
@@ -102,9 +103,10 @@ def main(opt, device_id):
 
     # check for code where vocab is saved instead of fields
     # (in the future this will be done in a smarter way)
+    src_datatype = dtypes.str2datatype[opt.model_type]
     if old_style_vocab(vocab):
-        data_type = opt.model_type
-        fields = load_old_vocab(vocab, data_type, dynamic_dict=opt.copy_attn)
+        fields = load_old_vocab(vocab, src_datatype, dtypes.text,
+                                dynamic_dict=opt.copy_attn)
     else:
         fields = vocab
 
