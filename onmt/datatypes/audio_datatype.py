@@ -127,3 +127,13 @@ class AudioDataReader(DataReaderBase):
 def audio_sort_key(ex):
     """ Sort using duration time of the sound spectrogram. """
     return ex.src.size(1)
+
+
+def batch_audio(data, vocab):
+    """ batch audio data """
+    nfft = data[0].size(0)
+    t = max([t.size(1) for t in data])
+    sounds = torch.zeros(len(data), 1, nfft, t)
+    for i, spect in enumerate(data):
+        sounds[i, :, :, 0:spect.size(1)] = spect
+    return sounds

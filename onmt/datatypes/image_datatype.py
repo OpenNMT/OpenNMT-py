@@ -2,6 +2,8 @@
 
 import os
 
+import torch
+
 from onmt.datatypes.datareader_base import DataReaderBase
 
 # imports of datatype-specific dependencies
@@ -82,3 +84,12 @@ def image_sort_key(ex):
     """ Sort using the size of the image: (width, height)."""
     return ex.src.size(2), ex.src.size(1)
 
+
+def batch_img(data, vocab):
+    c = data[0].size(0)
+    h = max([t.size(1) for t in data])
+    w = max([t.size(2) for t in data])
+    imgs = torch.zeros(len(data), c, h, w).fill_(1)
+    for i, img in enumerate(data):
+        imgs[i, :, 0:img.size(1), 0:img.size(2)] = img
+    return imgs

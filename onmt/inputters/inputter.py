@@ -51,26 +51,6 @@ def make_tgt(data, vocab):
     return alignment
 
 
-def make_img(data, vocab):
-    c = data[0].size(0)
-    h = max([t.size(1) for t in data])
-    w = max([t.size(2) for t in data])
-    imgs = torch.zeros(len(data), c, h, w).fill_(1)
-    for i, img in enumerate(data):
-        imgs[i, :, 0:img.size(1), 0:img.size(2)] = img
-    return imgs
-
-
-def make_audio(data, vocab):
-    """ batch audio data """
-    nfft = data[0].size(0)
-    t = max([t.size(1) for t in data])
-    sounds = torch.zeros(len(data), 1, nfft, t)
-    for i, spect in enumerate(data):
-        sounds[i, :, :, 0:spect.size(1)] = spect
-    return sounds
-
-
 # mix this with partial
 def _feature_tokenize(
         string, layer=0, tok_delim=None, feat_delim=None, truncate=None):
