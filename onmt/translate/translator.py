@@ -14,6 +14,7 @@ from onmt.utils.misc import tile
 import onmt.model_builder
 import onmt.translate.beam
 import onmt.inputters as inputters
+import onmt.datatypes as dtypes
 import onmt.opts as opts
 import onmt.decoders.ensemble
 from onmt.utils.misc import set_random_seed
@@ -104,7 +105,10 @@ class Translator(object):
         self.window = opt.window
         self.image_channel_size = opt.image_channel_size
         self.replace_unk = opt.replace_unk
-        self.data_type = opt.data_type
+        self.src_datatype = dtypes.str2datatype[opt.data_type]
+        self.tgt_datatype = dtypes.text
+        self._src_reader = self.src_datatype.reader.from_opt(opt)
+        self._tgt_reader = self.tgt_datatype.reader.from_opt(opt)
         self.verbose = opt.verbose
         self.report_bleu = opt.report_bleu
         self.report_rouge = opt.report_rouge
@@ -168,16 +172,14 @@ class Translator(object):
 
         data = inputters.build_dataset(
             self.fields,
-            self.data_type,
-            src=src,
-            tgt=tgt,
+            src,
+            self._src_reader,
+            self.src_datatype,
             src_dir=src_dir,
-            sample_rate=self.sample_rate,
-            window_size=self.window_size,
-            window_stride=self.window_stride,
-            window=self.window,
+            tgt=tgt,
+            tgt_reader=self._tgt_reader,
+            tgt_datatype=self.tgt_datatype,
             use_filter_pred=self.use_filter_pred,
-            image_channel_size=self.image_channel_size,
         )
 
         cur_device = "cuda" if self.cuda else "cpu"
@@ -236,7 +238,7 @@ class Translator(object):
                     preds = trans.pred_sents[0]
                     preds.append('</s>')
                     attns = trans.attns[0].tolist()
-                    if self.data_type == 'text':
+                    if self.src_datatype is dtypes.text:
                         srcs = trans.src_raw
                     else:
                         srcs = [str(item) for item in range(len(attns[0]))]
