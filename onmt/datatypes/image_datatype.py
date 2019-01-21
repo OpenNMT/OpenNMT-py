@@ -4,6 +4,14 @@ import os
 
 from onmt.datatypes.datareader_base import DataReaderBase
 
+# imports of datatype-specific dependencies
+try:
+    from PIL import Image
+    from torchvision import transforms
+    import cv2
+except ImportError:
+    Image, transforms, cv2 = None, None, None
+
 
 class ImageDataReader(DataReaderBase):
     """Create an image dataset reader.
@@ -17,6 +25,7 @@ class ImageDataReader(DataReaderBase):
 
     def __init__(self, truncate=None, channel_size=3):
         super(ImageDataReader, self).__init__()
+        self._check_deps()
         self.truncate = truncate
         self.channel_size = channel_size
 
@@ -24,6 +33,12 @@ class ImageDataReader(DataReaderBase):
     def from_opt(cls, opt):
         """Alternative constructor."""
         return cls(channel_size=opt.image_channel_size)
+
+    @staticmethod
+    def _check_deps():
+        if any([Image is None, transforms is None, cv2 is None]):
+            ImageDataReader._raise_missing_dep(
+                "PIL", "torchvision", "cv2")
 
     @staticmethod
     def sort_key(ex):
@@ -43,10 +58,6 @@ class ImageDataReader(DataReaderBase):
         Yields:
             a dictionary containing image data, path and index for each line.
         """
-
-        from PIL import Image
-        from torchvision import transforms
-        import cv2
 
         if isinstance(im_files, str):
             im_files = self._read_file(im_files)

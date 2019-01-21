@@ -6,6 +6,14 @@ import torch
 
 from onmt.datatypes.datareader_base import DataReaderBase
 
+# imports of datatype-specific dependencies
+try:
+    import torchaudio
+    import librosa
+    import numpy as np
+except ImportError:
+    torchaudio, librosa, np = None, None, None
+
 
 class AudioDataReader(DataReaderBase):
     """Create a dataset reader.
@@ -23,6 +31,7 @@ class AudioDataReader(DataReaderBase):
 
     def __init__(self, sample_rate, window_size,
                  window_stride, window, normalize_audio, truncate=None):
+        self._check_deps()
         super(AudioDataReader, self).__init__()
         self.sample_rate = sample_rate
         self.window_size = window_size
@@ -38,14 +47,17 @@ class AudioDataReader(DataReaderBase):
                    opt.window_stride, opt.window, True, None)
 
     @staticmethod
+    def _check_deps():
+        if any([torchaudio is None, librosa is None, np is None]):
+            AudioDataReader._raise_missing_dep(
+                "torchaudio", "librosa", "numpy")
+
+    @staticmethod
     def sort_key(ex):
         """ Sort using duration time of the sound spectrogram. """
         return ex.src.size(1)
 
     def extract_features(self, audio_path):
-        import torchaudio
-        import librosa
-        import numpy as np
         # torchaudio loading options recently changed. It's probably
         # straightforward to rewrite the audio handling to make use of
         # up-to-date torchaudio, but in the meantime there is a legacy
