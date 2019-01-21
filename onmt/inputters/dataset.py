@@ -5,11 +5,11 @@ from collections import Counter
 import codecs
 
 import torch
-from torchtext.data import Example, Dataset
+from torchtext.data import Example, TorchTextDataset
 from torchtext.vocab import Vocab
 
 
-class DatasetBase(Dataset):
+class Dataset(TorchTextDataset):
     """
     A dataset is an object that accepts sequences of raw data (sentence pairs
     in the case of machine translation) and fields which describe how this
@@ -58,7 +58,7 @@ class DatasetBase(Dataset):
 
     def __reduce_ex__(self, proto):
         # This is a hack. Something is broken with torch pickle.
-        return super(DatasetBase, self).__reduce_ex__()
+        return super(Dataset, self).__reduce_ex__()
 
     def __init__(self, fields, src_examples_iter, tgt_examples_iter,
                  filter_pred=None):
@@ -88,7 +88,7 @@ class DatasetBase(Dataset):
         # the dataset's self.fields should have the same attributes as examples
         fields = dict(chain.from_iterable(ex_fields.values()))
 
-        super(DatasetBase, self).__init__(examples, fields, filter_pred)
+        super(Dataset, self).__init__(examples, fields, filter_pred)
 
     def save(self, path, remove_fields=True):
         if remove_fields:
