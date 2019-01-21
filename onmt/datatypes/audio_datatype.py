@@ -3,6 +3,7 @@ import os
 from tqdm import tqdm
 
 import torch
+from torchtext.data import Field
 
 from onmt.datatypes.datareader_base import DataReaderBase
 
@@ -137,3 +138,13 @@ def batch_audio(data, vocab):
     for i, spect in enumerate(data):
         sounds[i, :, :, 0:spect.size(1)] = spect
     return sounds
+
+
+def audio_fields(base_name, **kwargs):
+    audio = Field(
+        use_vocab=False, dtype=torch.float,
+        postprocessing=batch_audio, sequential=False)
+
+    length = Field(use_vocab=False, dtype=torch.long, sequential=False)
+
+    return [(base_name + "_lengths", length)], [(base_name, audio)]
