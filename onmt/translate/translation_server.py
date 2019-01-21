@@ -208,7 +208,7 @@ class ServerModel:
         self.loading_lock.set()
         self.running_lock = threading.Semaphore(value=1)
 
-        set_random_seed(opt.seed, opt.cuda)
+        set_random_seed(self.opt.seed, self.opt.cuda)
 
         if load:
             self.load()
