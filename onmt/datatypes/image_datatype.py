@@ -2,10 +2,10 @@
 
 import os
 
-from onmt.inputters.dataset import DatasetBase
+from onmt.datatypes.datareader_base import DataReaderBase
 
 
-class ImageDataset(DatasetBase):
+class ImageDataReader(DataReaderBase):
 
     @staticmethod
     def sort_key(ex):

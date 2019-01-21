@@ -4,10 +4,10 @@ from tqdm import tqdm
 
 import torch
 
-from onmt.inputters.dataset import DatasetBase
+from onmt.datatypes.datareader_base import DataReaderBase
 
 
-class AudioDataset(DatasetBase):
+class AudioDataReader(DataReaderBase):
 
     @staticmethod
     def sort_key(ex):

@@ -2,10 +2,10 @@
 
 import torch
 
-from onmt.inputters.dataset import DatasetBase
+from onmt.datatypes.datareader_base import DataReaderBase
 
 
-class TextDataset(DatasetBase):
+class TextDataReader(DataReaderBase):
     """
     Build `Example` objects, `Field` objects, and filter_pred function
     from text corpus.
