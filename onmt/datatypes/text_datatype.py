@@ -34,12 +34,6 @@ class TextDataReader(DataReaderBase):
             yield {side: seq, "indices": i}
 
     @staticmethod
-    def sort_key(ex):
-        if hasattr(ex, "tgt"):
-            return len(ex.src), len(ex.tgt)
-        return len(ex.src)
-
-    @staticmethod
     def collapse_copy_scores(scores, batch, tgt_vocab, src_vocabs,
                              batch_dim=1, batch_offset=None):
         """
@@ -67,3 +61,9 @@ class TextDataReader(DataReaderBase):
                 score.index_add_(1, fill, score.index_select(1, blank))
                 score.index_fill_(1, blank, 1e-10)
         return scores
+
+
+def text_sort_key(ex):
+    if hasattr(ex, "tgt"):
+        return len(ex.src), len(ex.tgt)
+    return len(ex.src)

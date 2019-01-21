@@ -52,11 +52,6 @@ class AudioDataReader(DataReaderBase):
             AudioDataReader._raise_missing_dep(
                 "torchaudio", "librosa", "numpy")
 
-    @staticmethod
-    def sort_key(ex):
-        """ Sort using duration time of the sound spectrogram. """
-        return ex.src.size(1)
-
     def extract_features(self, audio_path):
         # torchaudio loading options recently changed. It's probably
         # straightforward to rewrite the audio handling to make use of
@@ -127,3 +122,8 @@ class AudioDataReader(DataReaderBase):
 
             yield {side: spect, side + '_path': line.strip(),
                    side + '_lengths': spect.size(1), 'indices': i}
+
+
+def audio_sort_key(ex):
+    """ Sort using duration time of the sound spectrogram. """
+    return ex.src.size(1)

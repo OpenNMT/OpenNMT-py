@@ -40,11 +40,6 @@ class ImageDataReader(DataReaderBase):
             ImageDataReader._raise_missing_dep(
                 "PIL", "torchvision", "cv2")
 
-    @staticmethod
-    def sort_key(ex):
-        """ Sort using the size of the image: (width, height)."""
-        return ex.src.size(2), ex.src.size(1)
-
     def read(self, im_files, side, src_dir=None):
         """Read images.
 
@@ -81,3 +76,9 @@ class ImageDataReader(DataReaderBase):
                         and img.size(2) <= self.truncate[1]):
                     continue
             yield {side: img, side + '_path': filename, 'indices': i}
+
+
+def image_sort_key(ex):
+    """ Sort using the size of the image: (width, height)."""
+    return ex.src.size(2), ex.src.size(1)
+
