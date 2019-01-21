@@ -67,3 +67,14 @@ def text_sort_key(ex):
     if hasattr(ex, "tgt"):
         return len(ex.src), len(ex.tgt)
     return len(ex.src)
+
+
+# mix this with partial
+def _feature_tokenize(
+        string, layer=0, tok_delim=None, feat_delim=None, truncate=None):
+    tokens = string.split(tok_delim)
+    if truncate is not None:
+        tokens = tokens[:truncate]
+    if feat_delim is not None:
+        tokens = [t.split(feat_delim)[layer] for t in tokens]
+    return tokens
