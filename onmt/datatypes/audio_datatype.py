@@ -4,7 +4,7 @@ from tqdm import tqdm
 
 import torch
 
-from onmt.inputters.dataset_base import DatasetBase
+from onmt.inputters.dataset import DatasetBase
 
 
 class AudioDataset(DatasetBase):

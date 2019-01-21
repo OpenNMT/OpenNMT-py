@@ -2,7 +2,7 @@
 
 import os
 
-from onmt.inputters.dataset_base import DatasetBase
+from onmt.inputters.dataset import DatasetBase
 
 
 class ImageDataset(DatasetBase):
