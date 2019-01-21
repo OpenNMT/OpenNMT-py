@@ -18,10 +18,6 @@ import onmt.inputters as inputters
 import onmt.opts as opts
 
 
-class PtFilesExistError(Exception):
-    pass
-
-
 def check_existing_pt_files(opt):
     """ Check if there are existing .pt files to avoid overwriting them """
     pattern = opt.save_data + '.{}*.pt'
