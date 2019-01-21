@@ -73,10 +73,6 @@ def get_fields(
         pairs, where the name is a string which will become the name of
         an attribute of an example.
     """
-    assert src_datatype in dtypes.str2datatype, \
-        "Source data type {:s} not implemented".format(src_datatype.name)
-    assert tgt_datatype is dtypes.text, \
-        "Target data type must be text"
     assert not dynamic_dict or src_datatype is dtypes.text, \
         'it is not possible to use dynamic_dict with non-text input'
     fields = {'src': [], 'tgt': []}
@@ -105,6 +101,18 @@ def get_fields(
 
     indices = Field(use_vocab=False, dtype=torch.long, sequential=False)
     fields["indices"] = [('indices', indices)]
+
+    if dynamic_dict:
+        src_map = Field(
+            use_vocab=False, dtype=torch.float,
+            postprocessing=make_src, sequential=False)
+        fields["src_map"] = [("src_map", src_map)]
+
+        align = Field(
+            use_vocab=False, dtype=torch.long,
+            postprocessing=make_tgt, sequential=False)
+        fields["alignment"] = [('alignment', align)]
+
     return fields
 
 
