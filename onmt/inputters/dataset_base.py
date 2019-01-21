@@ -50,16 +50,6 @@ class DatasetBase(Dataset):
         the same structure as in the fields argument passed to the constructor.
     """
 
-    def __getstate__(self):
-        return self.__dict__
-
-    def __setstate__(self, _d):
-        self.__dict__.update(_d)
-
-    def __reduce_ex__(self, proto):
-        # This is a hack. Something is broken with torch pickle.
-        return super(DatasetBase, self).__reduce_ex__()
-
     def __init__(self, fields, src_examples_iter, tgt_examples_iter,
                  filter_pred=None):
 
@@ -89,6 +79,15 @@ class DatasetBase(Dataset):
         fields = dict(chain.from_iterable(ex_fields.values()))
 
         super(DatasetBase, self).__init__(examples, fields, filter_pred)
+
+    def __getattr__(self, attr):
+        # avoid infinite recursion when fields isn't defined
+        if 'fields' not in vars(self):
+            raise AttributeError
+        if attr in self.fields:
+            return (getattr(x, attr) for x in self.examples)
+        else:
+            raise AttributeError
 
     def save(self, path, remove_fields=True):
         if remove_fields:
