@@ -5,6 +5,7 @@ import torch
 import onmt
 import onmt.model_builder
 import onmt.inputters as inputters
+import onmt.datatypes as dtypes
 import onmt.opts
 
 from onmt.utils.misc import use_gpu
@@ -45,7 +46,7 @@ def main():
 
     vocab = checkpoint['vocab']
     if inputters.old_style_vocab(vocab):
-        fields = onmt.inputters.load_old_vocab(vocab)
+        fields = onmt.inputters.load_old_vocab(vocab, dtypes.text, dtypes.text)
     else:
         fields = vocab
     src_dict = fields['src'][0][1].vocab
