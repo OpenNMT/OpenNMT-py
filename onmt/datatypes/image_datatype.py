@@ -6,6 +6,7 @@ import torch
 from torchtext.data import Field
 
 from onmt.datatypes.datareader_base import DataReaderBase
+from onmt.datatypes.datatype_base import Datatype
 
 # imports of datatype-specific dependencies
 try:
@@ -101,3 +102,6 @@ def image_fields(base_name, **kwargs):
         use_vocab=False, dtype=torch.float,
         postprocessing=batch_image, sequential=False)
     return [], [(base_name, img)]
+
+
+image = Datatype("img", ImageDataReader, image_sort_key, image_fields)

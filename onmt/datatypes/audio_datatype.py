@@ -6,6 +6,7 @@ import torch
 from torchtext.data import Field
 
 from onmt.datatypes.datareader_base import DataReaderBase
+from onmt.datatypes.datatype_base import Datatype
 
 # imports of datatype-specific dependencies
 try:
@@ -148,3 +149,6 @@ def audio_fields(base_name, **kwargs):
     length = Field(use_vocab=False, dtype=torch.long, sequential=False)
 
     return [(base_name + "_lengths", length)], [(base_name, audio)]
+
+
+audio = Datatype("audio", AudioDataReader, audio_sort_key, audio_fields)

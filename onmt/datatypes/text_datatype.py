@@ -5,6 +5,7 @@ import torch
 from torchtext.data import Field
 
 from onmt.datatypes.datareader_base import DataReaderBase
+from onmt.datatypes.datatype_base import Datatype
 
 
 class TextDataReader(DataReaderBase):
@@ -117,3 +118,6 @@ def text_fields(base_name, **kwargs):
             include_lengths=use_len)
         fields_.append((name, feat))
     return [], fields_
+
+
+text = Datatype("text", TextDataReader, text_sort_key, text_fields)
