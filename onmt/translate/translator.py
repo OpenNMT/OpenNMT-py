@@ -180,9 +180,6 @@ class Translator(object):
             image_channel_size=self.image_channel_size,
         )
 
-        assert not self.copy_attn or data.can_copy, \
-            "Copy attention is set, but dataset was trained without it"
-
         cur_device = "cuda" if self.cuda else "cpu"
 
         data_iter = inputters.OrderedIterator(
@@ -342,7 +339,7 @@ class Translator(object):
         src, enc_states, memory_bank, src_lengths = self._run_encoder(batch)
         self.model.decoder.init_state(src, memory_bank, enc_states)
 
-        use_src_map = data.can_copy and self.copy_attn
+        use_src_map = self.copy_attn
 
         results = {}
         results["predictions"] = [[] for _ in range(batch_size)]  # noqa: F812
@@ -557,7 +554,7 @@ class Translator(object):
         src, enc_states, memory_bank, src_lengths = self._run_encoder(batch)
         self.model.decoder.init_state(src, memory_bank, enc_states)
 
-        use_src_map = data.can_copy and self.copy_attn
+        use_src_map = self.copy_attn
 
         results = {}
         results["predictions"] = [[] for _ in range(batch_size)]  # noqa: F812
@@ -773,7 +770,7 @@ class Translator(object):
         if "tgt" in batch.__dict__:
             results["gold_score"] = self._score_target(
                 batch, memory_bank, src_lengths, data, batch.src_map
-                if data.can_copy and self.copy_attn else None)
+                if self.copy_attn else None)
             self.model.decoder.init_state(src, memory_bank, enc_states)
         else:
             results["gold_score"] = [0] * batch_size
@@ -781,7 +778,7 @@ class Translator(object):
         # (2) Repeat src objects `beam_size` times.
         # We use now  batch_size x beam_size (same as fast mode)
         src_map = (tile(batch.src_map, beam_size, dim=1)
-                   if data.can_copy and self.copy_attn else None)
+                   if self.copy_attn else None)
         self.model.decoder.map_state(
             lambda state, dim: tile(state, beam_size, dim=dim))
 
