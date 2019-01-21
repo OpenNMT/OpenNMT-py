@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from functools import partial
 
-import torch
 from torchtext.data import Field
 
 from onmt.datatypes.datareader_base import DataReaderBase

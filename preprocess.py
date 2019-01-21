@@ -57,7 +57,7 @@ def split_corpus(path, shard_size):
             yield shard
 
 
- def get_dtypes(opt):
+def get_dtypes(opt):
     try:
         src_dtype = dtypes.str2datatype[opt.data_type]
     except KeyError:
