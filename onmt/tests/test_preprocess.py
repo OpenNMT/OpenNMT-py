@@ -41,6 +41,10 @@ class TestData(unittest.TestCase):
     def dataset_build(self, opt):
         src_dtype = dtypes.str2datatype[opt.data_type]
         tgt_dtype = dtypes.text
+
+        src_reader = src_dtype.reader.from_opt(opt)
+        tgt_reader = tgt_dtype.reader.from_opt(opt)
+
         fields = onmt.inputters.get_fields(
             src_dtype, tgt_dtype, 0, 0)
 
@@ -52,14 +56,14 @@ class TestData(unittest.TestCase):
                 f.write('a\nb\nc\nd\ne\nf\n')
 
         train_data_files = preprocess.build_save_dataset(
-            'train', fields, src_dtype.reader.from_opt(opt),
-            tgt_dtype.reader(), src_dtype, opt)
+            'train', fields, src_reader,
+            tgt_reader, src_dtype, tgt_dtype, opt)
 
         preprocess.build_save_vocab(train_data_files, fields, src_dtype, opt)
 
         preprocess.build_save_dataset(
-            'valid', fields, tgt_dtype.reader.from_opt(opt),
-            tgt_dtype.reader.from_opt(opt), src_dtype, opt)
+            'valid', fields, src_reader,
+            tgt_reader, src_dtype, tgt_dtype, opt)
 
         # Remove the generated *pt files.
         for pt in glob.glob(SAVE_DATA_PREFIX + '*.pt'):

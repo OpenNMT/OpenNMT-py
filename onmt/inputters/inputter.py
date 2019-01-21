@@ -186,12 +186,10 @@ def filter_example(ex, use_src_len=True, use_tgt_len=True,
         (not use_tgt_len or min_tgt_len <= len(ex.tgt) <= max_tgt_len)
 
 
-def build_dataset(fields, src_datatype, src, src_reader, src_dir=None,
-                  tgt_datatype=None, tgt=None, tgt_reader=None, tgt_dir=None,
+def build_dataset(fields, src, src_reader, src_datatype, src_dir=None,
+                  tgt=None, tgt_reader=None, tgt_datatype=None, tgt_dir=None,
                   src_seq_len=50, tgt_seq_len=50,
-                  sample_rate=0, window_size=0, window_stride=0, window=None,
-                  normalize_audio=True, use_filter_pred=True,
-                  image_channel_size=3):
+                  use_filter_pred=True, filter_with_src_len=True):
     """
     src: path to corpus file or iterator over source data
     tgt: path to corpus file, iterator over target data, or None
@@ -212,14 +210,15 @@ def build_dataset(fields, src_datatype, src, src_reader, src_dir=None,
     # if there is no target data
     if use_filter_pred and has_tgt:
         filter_pred = partial(
-            filter_example, use_src_len=src_datatype is dtypes.text,
+            filter_example, use_src_len=filter_with_src_len,
             max_src_len=src_seq_len, max_tgt_len=tgt_seq_len
         )
     else:
         filter_pred = None
 
     dataset = Dataset(
-        fields, src_examples_iter, tgt_examples_iter, filter_pred=filter_pred)
+        fields, src_datatype, tgt_datatype,
+        src_examples_iter, tgt_examples_iter, filter_pred=filter_pred)
     return dataset
 
 
