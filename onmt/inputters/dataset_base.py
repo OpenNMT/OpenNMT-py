@@ -122,10 +122,6 @@ class DatasetBase(Dataset):
             example["alignment"] = mask
         return src_vocab, example
 
-    @property
-    def can_copy(self):
-        return False
-
     @classmethod
     def _read_file(cls, path):
         with codecs.open(path, "r", "utf-8") as f:

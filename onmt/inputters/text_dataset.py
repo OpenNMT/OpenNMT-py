@@ -19,7 +19,6 @@ class TextDataset(DatasetBase):
             dictionary iterator.
         dynamic_dict (bool)
     """
-    data_type = 'text'  # get rid of this class attribute asap
 
     @staticmethod
     def sort_key(ex):
@@ -73,7 +72,3 @@ class TextDataset(DatasetBase):
             sequences = cls._read_file(sequences)
         for i, seq in enumerate(sequences):
             yield {side: seq, "indices": i}
-
-    @property
-    def can_copy(self):
-        return "src_map" in self.fields and "alignment" in self.fields

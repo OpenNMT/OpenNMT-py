@@ -208,32 +208,32 @@ def old_style_vocab(vocab):
         any(isinstance(v[1], Vocab) for v in vocab)
 
 
-def make_features(batch, side, data_type='text'):
+def make_features(batch, side):
     """
-    Args:
-        batch (Tensor): a batch of source or target data.
-        side (str): for source or for target.
-        data_type (str): type of the source input.
-            Options are [text|img|audio].
-    Returns:
-        A sequence of src/tgt tensors with optional feature tensors
-        of size (len x batch).
+    batch: a batch object
+    side: 'src' or 'tgt'
+    returns the tensor with features concatenated, and the lengths (if present)
+        or None.
     """
     assert side in ['src', 'tgt']
     if isinstance(batch.__dict__[side], tuple):
-        data = batch.__dict__[side][0]
+        data, lengths = batch.__dict__[side]
     else:
         data = batch.__dict__[side]
+        if side == 'src' and hasattr(batch, 'src_lengths'):
+            lengths = batch.src_lengths
+        else:
+            lengths = None
 
-    feat_start = side + "_feat_"
-    keys = sorted([k for k in batch.__dict__ if feat_start in k])
-    features = [batch.__dict__[k] for k in keys]
-    levels = [data] + features
+    if isinstance(batch.__dict__[side], tuple) or side == 'tgt':
+        # cat together layers, producing a 3d output tensor for src text
+        # and for tgt (which is assumed to be text)
+        feat_start = side + "_feat_"
+        feat_names = sorted(k for k in batch.__dict__ if feat_start in k)
+        levels = [data] + [batch.__dict__[k] for k in feat_names]
+        data = torch.cat([level.unsqueeze(2) for level in levels], 2)
 
-    if data_type == 'text':
-        return torch.cat([level.unsqueeze(2) for level in levels], 2)
-    else:
-        return levels[0]
+    return data, lengths
 
 
 def filter_example(ex, use_src_len=True, use_tgt_len=True,
