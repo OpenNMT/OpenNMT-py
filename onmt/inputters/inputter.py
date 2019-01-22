@@ -163,8 +163,7 @@ def make_features(batch, side):
         data = batch.__dict__[side]
         lengths = None
 
-    if not data.dim() == 4 and (
-            isinstance(batch.__dict__[side], tuple) or side == 'tgt'):
+    if batch.src_is_text or side == 'tgt':  # this is temporary, see #1196
         # cat together layers, producing a 3d output tensor for src text
         # and for tgt (which is assumed to be text)
         feat_start = side + "_feat_"
@@ -384,6 +383,12 @@ class OrderedIterator(torchtext.data.Iterator):
             for b in torchtext.data.batch(self.data(), self.batch_size,
                                           self.batch_size_fn):
                 self.batches.append(sorted(b, key=self.sort_key))
+
+    def __iter__(self):
+        # temporary fix: See #1196
+        for batch in super(OrderedIterator, self).__iter__():
+            batch.src_is_text = isinstance(self.dataset, TextDataset)
+            yield batch
 
 
 class DatasetLazyIter(object):
