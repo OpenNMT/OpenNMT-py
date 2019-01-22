@@ -9,6 +9,12 @@ from torchtext.data import Example, Dataset
 from torchtext.vocab import Vocab
 
 
+# several data readers need optional dependencies. There's no
+# appropriate builtin exception
+class MissingDependencyException(Exception):
+    pass
+
+
 class DatasetBase(Dataset):
     """
     A dataset is an object that accepts sequences of raw data (sentence pairs
@@ -79,6 +85,13 @@ class DatasetBase(Dataset):
         fields = dict(chain.from_iterable(ex_fields.values()))
 
         super(DatasetBase, self).__init__(examples, fields, filter_pred)
+
+    @staticmethod
+    def _raise_missing_dep(*missing_deps):
+        """Raise missing dep exception with standard error message."""
+        raise MissingDependencyException(
+            "Could not create reader. Be sure to install "
+            "the following dependencies: " + ", ".join(missing_deps))
 
     def __getattr__(self, attr):
         # avoid infinite recursion when fields isn't defined

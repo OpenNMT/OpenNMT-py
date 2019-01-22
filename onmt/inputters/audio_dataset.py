@@ -6,8 +6,21 @@ import torch
 
 from onmt.inputters.dataset_base import DatasetBase
 
+# imports of datatype-specific dependencies
+try:
+    import torchaudio
+    import librosa
+    import numpy as np
+except ImportError:
+    torchaudio, librosa, np = None, None, None
+
 
 class AudioDataset(DatasetBase):
+    @staticmethod
+    def _check_deps():
+        if any([torchaudio is None, librosa is None, np is None]):
+            AudioDataset._raise_missing_dep(
+                "torchaudio", "librosa", "numpy")
 
     @staticmethod
     def sort_key(ex):
@@ -17,13 +30,11 @@ class AudioDataset(DatasetBase):
     @staticmethod
     def extract_features(audio_path, sample_rate, truncate, window_size,
                          window_stride, window, normalize_audio):
-        import torchaudio
-        import librosa
-        import numpy as np
         # torchaudio loading options recently changed. It's probably
         # straightforward to rewrite the audio handling to make use of
         # up-to-date torchaudio, but in the meantime there is a legacy
         # method which uses the old defaults
+        AudioDataset._check_deps()
         sound, sample_rate_ = torchaudio.legacy.load(audio_path)
         if truncate and truncate > 0:
             if sound.size(0) > truncate:

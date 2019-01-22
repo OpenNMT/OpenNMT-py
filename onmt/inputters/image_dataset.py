@@ -4,8 +4,21 @@ import os
 
 from onmt.inputters.dataset_base import DatasetBase
 
+# domain specific dependencies
+try:
+    from PIL import Image
+    from torchvision import transforms
+    import cv2
+except ImportError:
+    Image, transforms, cv2 = None, None, None
+
 
 class ImageDataset(DatasetBase):
+    @staticmethod
+    def _check_deps():
+        if any([Image is None, transforms is None, cv2 is None]):
+            ImageDataset._raise_missing_dep(
+                "PIL", "torchvision", "cv2")
 
     @staticmethod
     def sort_key(ex):
@@ -25,9 +38,7 @@ class ImageDataset(DatasetBase):
         Yields:
             a dictionary containing image data, path and index for each line.
         """
-        from PIL import Image
-        from torchvision import transforms
-        import cv2
+        ImageDataset._check_deps()
 
         if isinstance(images, str):
             images = cls._read_file(images)
