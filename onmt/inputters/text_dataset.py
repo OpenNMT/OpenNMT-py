@@ -90,4 +90,4 @@ def text_fields(base_name, **kwargs):
             pad_token=pad, tokenize=tokenize,
             include_lengths=use_len)
         fields_.append((name, feat))
-    return [], fields_
+    return fields_

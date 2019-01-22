@@ -87,23 +87,15 @@ def get_fields(
                         "include_lengths": True,
                         "pad": pad, "bos": None, "eos": None,
                         "truncate": src_truncate}
-    toplevel_fields, fields["src"] = fields_getters[src_data_type](
+    fields["src"] = fields_getters[src_data_type](
         'src', **src_field_kwargs)
-    for name, field in toplevel_fields:
-        assert name not in fields, \
-            "Field name {:s} is already in use".format(name)
-        fields[name] = [(name, field)]
 
     tgt_field_kwargs = {"n_feats": n_tgt_feats,
                         "include_lengths": False,
                         "pad": pad, "bos": bos, "eos": eos,
                         "truncate": tgt_truncate}
-    toplevel_fields, fields['tgt'] = fields_getters["text"](
+    fields['tgt'] = fields_getters["text"](
         'tgt', **tgt_field_kwargs)
-    for name, field in toplevel_fields:
-        assert name not in fields, \
-            "Field name {:s} is already in use".format(name)
-        fields[name] = [(name, field)]
 
     indices = Field(use_vocab=False, dtype=torch.long, sequential=False)
     fields["indices"] = [('indices', indices)]
@@ -169,12 +161,10 @@ def make_features(batch, side):
         data, lengths = batch.__dict__[side]
     else:
         data = batch.__dict__[side]
-        if side == 'src' and hasattr(batch, 'src_lengths'):
-            lengths = batch.src_lengths
-        else:
-            lengths = None
+        lengths = None
 
-    if isinstance(batch.__dict__[side], tuple) or side == 'tgt':
+    if not data.dim() == 4 and (
+            isinstance(batch.__dict__[side], tuple) or side == 'tgt'):
         # cat together layers, producing a 3d output tensor for src text
         # and for tgt (which is assumed to be text)
         feat_start = side + "_feat_"

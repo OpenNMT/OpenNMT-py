@@ -120,21 +120,58 @@ class AudioDataset(DatasetBase):
                    side + '_lengths': spect.size(1), 'indices': i}
 
 
-def batch_audio(data, vocab):
-    """ batch audio data """
-    nfft = data[0].size(0)
-    t = max([t.size(1) for t in data])
-    sounds = torch.zeros(len(data), 1, nfft, t)
-    for i, spect in enumerate(data):
-        sounds[i, :, :, 0:spect.size(1)] = spect
-    return sounds
+class AudioSeqField(Field):
+    def __init__(self, preprocessing=None, postprocessing=None,
+                 include_lengths=False, batch_first=False, pad_index=0,
+                 is_target=False):
+        super(AudioSeqField, self).__init__(
+            sequential=True, use_vocab=False, init_token=None,
+            eos_token=None, fix_length=False, dtype=torch.float,
+            preprocessing=preprocessing, postprocessing=postprocessing,
+            lower=False, tokenize=None, include_lengths=include_lengths,
+            batch_first=batch_first, pad_token=pad_index, unk_token=None,
+            pad_first=False, truncate_first=False, stop_words=None,
+            is_target=is_target
+        )
+
+    def pad(self, minibatch):
+        assert not self.pad_first and not self.truncate_first \
+               and not self.fix_length and self.sequential
+        minibatch = list(minibatch)
+        lengths = [x.size(1) for x in minibatch]
+        max_len = max(lengths)
+        nfft = minibatch[0].size(0)
+        sounds = torch.full((len(minibatch), 1, nfft, max_len), self.pad_token)
+        for i, (spect, len_) in enumerate(zip(minibatch, lengths)):
+            sounds[i, :, :, 0:len_] = spect
+        if self.include_lengths:
+            return (sounds, lengths)
+        return sounds
+
+    def numericalize(self, arr, device=None):
+        assert self.use_vocab is False
+        if self.include_lengths and not isinstance(arr, tuple):
+            raise ValueError("Field has include_lengths set to True, but "
+                             "input data is not a tuple of "
+                             "(data batch, batch lengths).")
+        if isinstance(arr, tuple):
+            arr, lengths = arr
+            lengths = torch.tensor(lengths, dtype=self.dtype, device=device)
+
+        if self.postprocessing is not None:
+            arr = self.postprocessing(arr, None)
+
+        if self.sequential and not self.batch_first:
+            arr.permute(3, 0, 1, 2)
+        if self.sequential:
+            arr = arr.contiguous()
+
+        if self.include_lengths:
+            return arr, lengths
+        return arr
 
 
 def audio_fields(base_name, **kwargs):
-    audio = Field(
-        use_vocab=False, dtype=torch.float,
-        postprocessing=batch_audio, sequential=False)
+    audio = AudioSeqField(pad_index=0, batch_first=True, include_lengths=True)
 
-    length = Field(use_vocab=False, dtype=torch.long, sequential=False)
-
-    return [(base_name + "_lengths", length)], [(base_name, audio)]
+    return [(base_name, audio)]
