@@ -3,21 +3,11 @@
 
 from __future__ import unicode_literals
 import configargparse
-import codecs
-from itertools import islice
 from onmt.utils.logging import init_logger
+from onmt.utils.misc import split_corpus
 from onmt.translate.translator import build_translator
 
 import onmt.opts as opts
-
-
-def split_corpus(path, shard_size):
-    with codecs.open(path, "r", encoding="utf-8") as f:
-        while True:
-            shard = list(islice(f, shard_size))
-            if not shard:
-                break
-            yield shard
 
 
 def main(opt):
