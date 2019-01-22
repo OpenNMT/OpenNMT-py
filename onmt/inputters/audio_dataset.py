@@ -156,7 +156,7 @@ class AudioSeqField(Field):
                              "(data batch, batch lengths).")
         if isinstance(arr, tuple):
             arr, lengths = arr
-            lengths = torch.tensor(lengths, dtype=self.dtype, device=device)
+            lengths = torch.tensor(lengths, dtype=torch.int, device=device)
 
         if self.postprocessing is not None:
             arr = self.postprocessing(arr, None)
