@@ -116,8 +116,7 @@ class AudioDataset(DatasetBase):
                 window_stride, window, normalize_audio
             )
 
-            yield {side: spect, side + '_path': line.strip(),
-                   side + '_lengths': spect.size(1), 'indices': i}
+            yield {side: spect, side + '_path': line.strip(), 'indices': i}
 
 
 class AudioSeqField(Field):
