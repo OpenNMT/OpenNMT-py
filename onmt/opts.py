@@ -512,6 +512,14 @@ def translate_opts(parser):
               help='Source directory for image or audio files')
     group.add('--tgt', '-tgt',
                        help='True target sequence (optional)')
+    group.add('--shard_size', '-shard_size', type=int, default=10000,
+              help="""Divide src and tgt (if applicable) into
+                       smaller multiple src and tgt files, then
+                       build shards, each shard will have
+                       opt.shard_size samples except last shard.
+                       shard_size=0 means no segmentation
+                       shard_size>0 means segment dataset into multiple shards,
+                       each shard has shard_size samples""")
     group.add('--output', '-output', default='pred.txt',
               help="""Path to output the predictions (each line will
                        be the decoded sequence""")
