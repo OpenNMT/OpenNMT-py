@@ -12,9 +12,9 @@ import torchtext.data
 from torchtext.data import Field
 from torchtext.vocab import Vocab
 
-from onmt.inputters.text_dataset import TextDataset
-from onmt.inputters.image_dataset import ImageDataset
-from onmt.inputters.audio_dataset import AudioDataset
+from onmt.inputters.text_dataset import TextDataset, text_fields
+from onmt.inputters.image_dataset import ImageDataset, image_fields
+from onmt.inputters.audio_dataset import AudioDataset, audio_fields
 from onmt.utils.logging import logger
 
 import gc
@@ -49,26 +49,6 @@ def make_tgt(data, vocab):
     for i, sent in enumerate(data):
         alignment[:sent.size(0), i] = sent
     return alignment
-
-
-def make_img(data, vocab):
-    c = data[0].size(0)
-    h = max([t.size(1) for t in data])
-    w = max([t.size(2) for t in data])
-    imgs = torch.zeros(len(data), c, h, w).fill_(1)
-    for i, img in enumerate(data):
-        imgs[i, :, 0:img.size(1), 0:img.size(2)] = img
-    return imgs
-
-
-def make_audio(data, vocab):
-    """ batch audio data """
-    nfft = data[0].size(0)
-    t = max([t.size(1) for t in data])
-    sounds = torch.zeros(len(data), 1, nfft, t)
-    for i, spect in enumerate(data):
-        sounds[i, :, :, 0:spect.size(1)] = spect
-    return sounds
 
 
 # mix this with partial
@@ -110,51 +90,31 @@ def get_fields(
         'it is not possible to use dynamic_dict with non-text input'
     fields = {'src': [], 'tgt': []}
 
-    if src_data_type == 'text':
-        feat_delim = u"￨" if n_src_feats > 0 else None
-        for i in range(n_src_feats + 1):
-            name = "src_feat_" + str(i - 1) if i > 0 else "src"
-            tokenize = partial(
-                _feature_tokenize,
-                layer=i,
-                truncate=src_truncate,
-                feat_delim=feat_delim)
-            use_len = i == 0
-            feat = Field(
-                pad_token=pad, tokenize=tokenize, include_lengths=use_len)
-            fields['src'].append((name, feat))
-    elif src_data_type == 'img':
-        img = Field(
-            use_vocab=False, dtype=torch.float,
-            postprocessing=make_img, sequential=False)
-        fields["src"].append(('src', img))
-    else:
-        audio = Field(
-            use_vocab=False, dtype=torch.float,
-            postprocessing=make_audio, sequential=False)
-        fields["src"].append(('src', audio))
+    fields_getters = {"text": text_fields,
+                      "img": image_fields,
+                      "audio": audio_fields}
 
-    if src_data_type == 'audio':
-        # only audio has src_lengths
-        length = Field(use_vocab=False, dtype=torch.long, sequential=False)
-        fields["src_lengths"] = [("src_lengths", length)]
+    src_field_kwargs = {"n_feats": n_src_feats,
+                        "include_lengths": True,
+                        "pad": pad, "bos": None, "eos": None,
+                        "truncate": src_truncate}
+    toplevel_fields, fields["src"] = fields_getters[src_data_type](
+        'src', **src_field_kwargs)
+    for name, field in toplevel_fields:
+        assert name not in fields, \
+            "Field name {:s} is already in use".format(name)
+        fields[name] = [(name, field)]
 
-    # below this: things defined no matter what the data source type is
-    feat_delim = u"￨" if n_tgt_feats > 0 else None
-    for i in range(n_tgt_feats + 1):
-        name = "tgt_feat_" + str(i - 1) if i > 0 else "tgt"
-        tokenize = partial(
-            _feature_tokenize,
-            layer=i,
-            truncate=tgt_truncate,
-            feat_delim=feat_delim)
-
-        feat = Field(
-            init_token=bos,
-            eos_token=eos,
-            pad_token=pad,
-            tokenize=tokenize)
-        fields['tgt'].append((name, feat))
+    tgt_field_kwargs = {"n_feats": n_tgt_feats,
+                        "include_lengths": False,
+                        "pad": pad, "bos": bos, "eos": eos,
+                        "truncate": tgt_truncate}
+    toplevel_fields, fields['tgt'] = fields_getters["text"](
+        'tgt', **tgt_field_kwargs)
+    for name, field in toplevel_fields:
+        assert name not in fields, \
+            "Field name {:s} is already in use".format(name)
+        fields[name] = [(name, field)]
 
     indices = Field(use_vocab=False, dtype=torch.long, sequential=False)
     fields["indices"] = [('indices', indices)]
