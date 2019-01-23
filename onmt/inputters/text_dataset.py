@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 from functools import partial
 
-from torchtext.data import Field
+import torch
+from torchtext.data import Field, RawField
 
 from onmt.inputters.dataset_base import DatasetBase
 
@@ -24,8 +25,8 @@ class TextDataset(DatasetBase):
     @staticmethod
     def sort_key(ex):
         if hasattr(ex, "tgt"):
-            return len(ex.src), len(ex.tgt)
-        return len(ex.src)
+            return len(ex.src[0]), len(ex.tgt[0])
+        return len(ex.src[0])
 
     @classmethod
     def make_examples(cls, sequences, side):
@@ -55,6 +56,37 @@ def _feature_tokenize(
     if feat_delim is not None:
         tokens = [t.split(feat_delim)[layer] for t in tokens]
     return tokens
+
+
+class TextMultiField(RawField):
+    def __init__(self, base_field, feats_fields):
+        super(TextMultiField, self).__init__()
+        self.base_field = base_field
+        self.feats_fields = []
+        for name, ff in sorted(feats_fields, key=lambda kv: kv[0]):
+            self.feats_fields.append((name, ff))
+
+    def process(self, batch, device=None):
+        batch_by_feat = list(zip(*batch))
+        if self.base_field.include_lengths:
+            base_data, lengths = self.base_field.process(
+                batch_by_feat[0], device=device)
+        else:
+            base_data = self.base_field.process(
+                batch_by_feat[0], device=device)
+        feats = [ff.process(batch[i+1], device=device)
+                 for i, (_, ff) in enumerate(self.feats_fields)]
+        levels = [base_data] + feats
+        data = torch.stack(levels, 2)
+        if self.base_field.include_lengths:
+            return data, lengths
+        else:
+            return data
+
+    def preprocess(self, x):
+        base_preprocesses = self.base_field.preprocess(x)
+        feat_preprocesses = [ff.preprocess(x) for _, ff in self.feats_fields]
+        return [base_preprocesses] + feat_preprocesses
 
 
 def text_fields(base_name, **kwargs):
@@ -90,4 +122,6 @@ def text_fields(base_name, **kwargs):
             pad_token=pad, tokenize=tokenize,
             include_lengths=use_len)
         fields_.append((name, feat))
-    return fields_
+    assert fields_[0][0] == base_name
+    field = TextMultiField(fields_[0][1], fields_[1:])
+    return [(base_name, field)]

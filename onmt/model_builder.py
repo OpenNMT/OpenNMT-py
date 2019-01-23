@@ -25,7 +25,7 @@ from onmt.utils.misc import use_gpu
 from onmt.utils.logging import logger
 
 
-def build_embeddings(opt, word_field, feat_fields, for_encoder=True):
+def build_embeddings(opt, text_field, for_encoder=True):
     """
     Args:
         opt: the option in current environment.
@@ -35,11 +35,13 @@ def build_embeddings(opt, word_field, feat_fields, for_encoder=True):
     """
     emb_dim = opt.src_word_vec_size if for_encoder else opt.tgt_word_vec_size
 
-    word_padding_idx = word_field.vocab.stoi[word_field.pad_token]
-    num_word_embeddings = len(word_field.vocab)
+    word_padding_idx = text_field.base_field.vocab.stoi[
+        text_field.base_field.pad_token]
+    num_word_embeddings = len(text_field.base_field.vocab)
 
-    feat_pad_indices = [ff.vocab.stoi[ff.pad_token] for ff in feat_fields]
-    num_feat_embeddings = [len(ff.vocab) for ff in feat_fields]
+    feat_pad_indices = [ff.vocab.stoi[ff.pad_token]
+                        for _, ff in text_field.feats_fields]
+    num_feat_embeddings = [len(ff.vocab) for _, ff in text_field.feats_fields]
 
     emb = Embeddings(
         word_vec_size=emb_dim,
@@ -189,7 +191,9 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
     # Build encoder.
     if model_opt.model_type == "text":
         src_fields = [f for n, f in fields['src']]
-        src_emb = build_embeddings(model_opt, src_fields[0], src_fields[1:])
+        assert len(src_fields) == 1
+        src_field = src_fields[0]
+        src_emb = build_embeddings(model_opt, src_field)
         encoder = build_encoder(model_opt, src_emb)
     elif model_opt.model_type == "img":
         # why is build_encoder not used here?
@@ -222,13 +226,15 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
 
     # Build decoder.
     tgt_fields = [f for n, f in fields['tgt']]
+    assert len(tgt_fields) == 1
+    tgt_field = tgt_fields[0]
     tgt_emb = build_embeddings(
-        model_opt, tgt_fields[0], tgt_fields[1:], for_encoder=False)
+        model_opt, tgt_field, for_encoder=False)
 
     # Share the embedding matrix - preprocess with share_vocab required.
     if model_opt.share_embeddings:
         # src/tgt vocab should be the same if `-share_vocab` is specified.
-        assert src_fields[0].vocab == tgt_fields[0].vocab, \
+        assert src_field.base_field.vocab == tgt_field.base_field.vocab, \
             "preprocess with -share_vocab if you use share_embeddings"
 
         tgt_emb.word_lut.weight = src_emb.word_lut.weight
@@ -246,14 +252,16 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
         else:
             gen_func = nn.LogSoftmax(dim=-1)
         generator = nn.Sequential(
-            nn.Linear(model_opt.dec_rnn_size, len(fields["tgt"][0][1].vocab)),
+            nn.Linear(model_opt.dec_rnn_size,
+                      len(fields["tgt"][0][1].base_field.vocab)),
             gen_func
         )
         if model_opt.share_decoder_embeddings:
             generator[0].weight = decoder.embeddings.word_lut.weight
     else:
-        vocab_size = len(fields["tgt"][0][1].vocab)
-        pad_idx = fields["tgt"][0][1].vocab.stoi[fields["tgt"][0][1].pad_token]
+        vocab_size = len(fields["tgt"][0][1].base_field.vocab)
+        pad_idx = fields["tgt"][0][1].base_field.vocab.stoi[
+            fields["tgt"][0][1].base_field.pad_token]
         generator = CopyGenerator(model_opt.dec_rnn_size, vocab_size, pad_idx)
 
     # Load the model states from checkpoint or initialize them.

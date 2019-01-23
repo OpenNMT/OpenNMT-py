@@ -12,7 +12,8 @@ import torchtext.data
 from torchtext.data import Field
 from torchtext.vocab import Vocab
 
-from onmt.inputters.text_dataset import TextDataset, text_fields
+from onmt.inputters.text_dataset import TextDataset, text_fields,\
+    TextMultiField
 from onmt.inputters.image_dataset import ImageDataset, image_fields
 from onmt.inputters.audio_dataset import AudioDataset, audio_fields
 from onmt.utils.logging import logger
@@ -130,8 +131,14 @@ def load_old_vocab(vocab, data_type="text", dynamic_dict=False):
     )
     for k, vals in fields.items():
         for n, f in vals:
-            if n in vocab:
-                f.vocab = vocab[n]
+            if isinstance(f, TextMultiField):
+                for sub_name, sub_f in [(n, f.base_field)] +\
+                        f.feats_fields:
+                    if sub_name in vocab:
+                        sub_f.vocab = vocab[sub_name]
+            else:
+                if n in vocab:
+                    f.vocab = vocab[n]
     return fields
 
 
@@ -163,13 +170,13 @@ def make_features(batch, side):
         data = batch.__dict__[side]
         lengths = None
 
-    if batch.src_is_text or side == 'tgt':  # this is temporary, see #1196
-        # cat together layers, producing a 3d output tensor for src text
-        # and for tgt (which is assumed to be text)
-        feat_start = side + "_feat_"
-        feat_names = sorted(k for k in batch.__dict__ if feat_start in k)
-        levels = [data] + [batch.__dict__[k] for k in feat_names]
-        data = torch.cat([level.unsqueeze(2) for level in levels], 2)
+    # if batch.src_is_text or side == 'tgt':  # this is temporary, see #1196
+    #     # cat together layers, producing a 3d output tensor for src text
+    #     # and for tgt (which is assumed to be text)
+    #     feat_start = side + "_feat_"
+    #     feat_names = sorted(k for k in batch.__dict__ if feat_start in k)
+    #     levels = [data] + [batch.__dict__[k] for k in feat_names]
+    #     data = torch.cat([level.unsqueeze(2) for level in levels], 2)
 
     return data, lengths
 
@@ -295,11 +302,30 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
         logger.info(" * reloading %s." % path)
         for ex in dataset.examples:
             for name, field in chain.from_iterable(fields.values()):
-                has_vocab = (name == 'src' and src_vocab) or \
-                    (name == 'tgt' and tgt_vocab)
-                if field.sequential and not has_vocab:
-                    val = getattr(ex, name, None)
-                    counters[name].update(val)
+                if isinstance(field, TextMultiField):
+                    all_data = getattr(ex, name)
+                    base_data = all_data[0]
+                    feats_data = all_data[1:]
+                    has_vocab = (name == 'src' and src_vocab) or \
+                        (name == 'tgt' and tgt_vocab)
+                    if field.base_field.sequential and not has_vocab:
+                        val = base_data
+                        counters[name].update(val)
+                    for (sub_n, sub_f), fd in zip(
+                            field.feats_fields, feats_data):
+                        # has_vocab for subs should always be false but...
+                        has_vocab = (sub_n == 'src' and src_vocab) or \
+                            (sub_n == 'tgt' and tgt_vocab)
+                        if sub_f.sequential and not has_vocab:
+                            val = fd
+                            counters[sub_n].update(val)
+                else:
+                    # shouldn't have vocab, but may as well check
+                    has_vocab = (name == 'src' and src_vocab) or \
+                                (name == 'tgt' and tgt_vocab)
+                    if field.sequential and not has_vocab:
+                        val = getattr(ex, name, None)
+                        counters[name].update(val)
 
         # Drop the none-using from memory but keep the last
         if i < len(train_dataset_files) - 1:
@@ -310,18 +336,26 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
             del dataset
             gc.collect()
 
-    for name, field in fields["tgt"]:
+    assert len(fields["tgt"]) == 1
+    base_name, multifield = fields["tgt"][0]
+    _build_field_vocab(multifield.base_field, counters[base_name])
+    for name, field in [(base_name, multifield.base_field)] + \
+            multifield.feats_fields:
         _build_field_vocab(field, counters[name])
         logger.info(" * %s vocab size: %d." % (name, len(field.vocab)))
     if data_type == 'text':
-        for name, field in fields["src"]:
+        assert len(fields["src"]) == 1
+        base_name, multifield = fields["src"][0]
+        _build_field_vocab(multifield.base_field, counters[base_name])
+        for name, field in [(base_name, multifield.base_field)] + \
+                multifield.feats_fields:
             _build_field_vocab(field, counters[name])
             logger.info(" * %s vocab size: %d." % (name, len(field.vocab)))
         if share_vocab:
             # `tgt_vocab_size` is ignored when sharing vocabularies
             logger.info(" * merging src and tgt vocab...")
-            src_field = fields['src'][0][1]
-            tgt_field = fields['tgt'][0][1]
+            src_field = fields['src'][0][1].base_field
+            tgt_field = fields['tgt'][0][1].base_field
             _merge_field_vocabs(
                 src_field, tgt_field, vocab_size=src_vocab_size,
                 min_freq=src_words_min_frequency)

@@ -29,7 +29,7 @@ class TestModel(unittest.TestCase):
 
     def get_field(self):
         src = onmt.inputters.get_fields("text", 0, 0)["src"][0][1]
-        src.build_vocab([])
+        src.base_field.build_vocab([])
         return src
 
     def get_batch(self, source_l=3, bsize=1):
@@ -65,8 +65,7 @@ class TestModel(unittest.TestCase):
             bsize: Batchsize of generated input
         '''
         word_field = self.get_field()
-        feature_fields = []
-        emb = build_embeddings(opt, word_field, feature_fields)
+        emb = build_embeddings(opt, word_field)
         test_src, _, __ = self.get_batch(source_l=source_l, bsize=bsize)
         if opt.decoder_type == 'transformer':
             input = torch.cat([test_src, test_src], 0)
@@ -91,8 +90,7 @@ class TestModel(unittest.TestCase):
         if opt.rnn_size > 0:
             opt.enc_rnn_size = opt.rnn_size
         word_field = self.get_field()
-        feature_fields = []
-        embeddings = build_embeddings(opt, word_field, feature_fields)
+        embeddings = build_embeddings(opt, word_field)
         enc = build_encoder(opt, embeddings)
 
         test_src, test_tgt, test_length = self.get_batch(source_l=source_l,
@@ -125,12 +123,11 @@ class TestModel(unittest.TestCase):
             opt.enc_rnn_size = opt.rnn_size
             opt.dec_rnn_size = opt.rnn_size
         word_field = self.get_field()
-        feature_fields = []
 
-        embeddings = build_embeddings(opt, word_field, feature_fields)
+        embeddings = build_embeddings(opt, word_field)
         enc = build_encoder(opt, embeddings)
 
-        embeddings = build_embeddings(opt, word_field, feature_fields,
+        embeddings = build_embeddings(opt, word_field,
                                       for_encoder=False)
         dec = build_decoder(opt, embeddings)
 
@@ -158,12 +155,11 @@ class TestModel(unittest.TestCase):
             return
 
         word_field = self.get_field()
-        feature_fields = []
 
         enc = ImageEncoder(
             opt.enc_layers, opt.brnn, opt.enc_rnn_size, opt.dropout)
 
-        embeddings = build_embeddings(opt, word_field, feature_fields,
+        embeddings = build_embeddings(opt, word_field,
                                       for_encoder=False)
         dec = build_decoder(opt, embeddings)
 
@@ -195,14 +191,13 @@ class TestModel(unittest.TestCase):
             return
 
         word_field = self.get_field()
-        feature_fields = []
 
         enc = AudioEncoder(opt.rnn_type, opt.enc_layers, opt.dec_layers,
                            opt.brnn, opt.enc_rnn_size, opt.dec_rnn_size,
                            opt.audio_enc_pooling, opt.dropout,
                            opt.sample_rate, opt.window_size)
 
-        embeddings = build_embeddings(opt, word_field, feature_fields,
+        embeddings = build_embeddings(opt, word_field,
                                       for_encoder=False)
         dec = build_decoder(opt, embeddings)
 

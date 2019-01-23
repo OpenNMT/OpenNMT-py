@@ -329,7 +329,7 @@ class Translator(object):
 
         batch_size = batch.batch_size
 
-        tgt_field = self.fields['tgt'][0][1]
+        tgt_field = self.fields['tgt'][0][1].base_field
         vocab = tgt_field.vocab
 
         start_token = vocab.stoi[tgt_field.init_token]
@@ -482,7 +482,7 @@ class Translator(object):
         batch_offset=None
     ):
 
-        tgt_field = self.fields["tgt"][0][1]
+        tgt_field = self.fields["tgt"][0][1].base_field
         unk_idx = tgt_field.vocab.stoi[tgt_field.unk_token]
         if self.copy_attn:
             # Turn any copied words into UNKs.
@@ -545,7 +545,7 @@ class Translator(object):
 
         beam_size = self.beam_size
         batch_size = batch.batch_size
-        tgt_field = self.fields['tgt'][0][1]
+        tgt_field = self.fields['tgt'][0][1].base_field
         vocab = tgt_field.vocab
         start_token = vocab.stoi[tgt_field.init_token]
         end_token = vocab.stoi[tgt_field.eos_token]
@@ -739,7 +739,7 @@ class Translator(object):
         # And helper method for reducing verbosity.
         beam_size = self.beam_size
         batch_size = batch.batch_size
-        tgt_field = self.fields['tgt'][0][1]
+        tgt_field = self.fields['tgt'][0][1].base_field
         vocab = tgt_field.vocab
 
         # Define a set of tokens to exclude from ngram-blocking
@@ -841,11 +841,11 @@ class Translator(object):
         log_probs, attn = self._decode_and_generate(
             tgt_in, memory_bank, batch, data,
             memory_lengths=src_lengths, src_map=src_map)
-        tgt_field = self.fields["tgt"][0][1]
+        tgt_field = self.fields["tgt"][0][1].base_field
         tgt_pad = tgt_field.vocab.stoi[tgt_field.pad_token]
 
         log_probs[:, :, tgt_pad] = 0
-        gold = batch.tgt[1:].unsqueeze(2)
+        gold = tgt_in
         gold_scores = log_probs.gather(2, gold)
         gold_scores = gold_scores.sum(dim=0).view(-1)
 

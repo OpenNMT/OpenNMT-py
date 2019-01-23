@@ -13,7 +13,7 @@ import torch
 import onmt.opts as opts
 
 from onmt.inputters.inputter import build_dataset_iter, \
-    load_old_vocab, old_style_vocab
+    load_old_vocab, old_style_vocab, TextMultiField
 from onmt.model_builder import build_model
 from onmt.utils.optimizers import Optimizer
 from onmt.utils.misc import set_random_seed
@@ -111,8 +111,14 @@ def main(opt, device_id):
     # Report src and tgt vocab sizes, including for features
     for side in ['src', 'tgt']:
         for name, f in fields[side]:
-            if f.use_vocab:
-                logger.info(' * %s vocab size = %d' % (name, len(f.vocab)))
+            if isinstance(f, TextMultiField):
+                for sub_name, sub_f in [(name, f.base_field)] + f.feats_fields:
+                    if sub_f.use_vocab:
+                        logger.info(
+                            ' * %s vocab size = %d' % (name, len(sub_f.vocab)))
+            else:
+                if f.use_vocab:
+                    logger.info(' * %s vocab size = %d' % (name, len(f.vocab)))
 
     # Build model.
     model = build_model(model_opt, opt, fields, checkpoint)
