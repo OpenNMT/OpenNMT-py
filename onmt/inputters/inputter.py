@@ -413,12 +413,6 @@ class OrderedIterator(torchtext.data.Iterator):
                                           self.batch_size_fn):
                 self.batches.append(sorted(b, key=self.sort_key))
 
-    def __iter__(self):
-        # temporary fix: See #1196
-        for batch in super(OrderedIterator, self).__iter__():
-            batch.src_is_text = isinstance(self.dataset, TextDataset)
-            yield batch
-
 
 class DatasetLazyIter(object):
     """
