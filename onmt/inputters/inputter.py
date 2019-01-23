@@ -18,6 +18,8 @@ from onmt.inputters.audio_dataset import AudioDataset, audio_fields
 from onmt.utils.logging import logger
 # backwards compatibility
 from onmt.inputters.text_dataset import _feature_tokenize  # noqa: F401
+from onmt.inputters.image_dataset import (  # noqa: F401
+    batch_img as make_img)
 
 import gc
 
