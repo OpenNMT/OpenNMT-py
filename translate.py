@@ -3,8 +3,8 @@
 
 from __future__ import unicode_literals
 import configargparse
-
 from onmt.utils.logging import init_logger
+from onmt.utils.misc import split_corpus
 from onmt.translate.translator import build_translator
 
 import onmt.opts as opts
@@ -12,13 +12,20 @@ import onmt.opts as opts
 
 def main(opt):
     translator = build_translator(opt, report_score=True)
-    translator.translate(
-        src=opt.src,
-        tgt=opt.tgt,
-        src_dir=opt.src_dir,
-        batch_size=opt.batch_size,
-        attn_debug=opt.attn_debug
-    )
+    src_shards = split_corpus(opt.src, opt.shard_size)
+    tgt_shards = split_corpus(opt.tgt, opt.shard_size) \
+        if opt.tgt is not None else [None]*opt.shard_size
+    shard_pairs = zip(src_shards, tgt_shards)
+
+    for i, (src_shard, tgt_shard) in enumerate(shard_pairs):
+        logger.info("Translating shard %d." % i)
+        translator.translate(
+            src=src_shard,
+            tgt=tgt_shard,
+            src_dir=opt.src_dir,
+            batch_size=opt.batch_size,
+            attn_debug=opt.attn_debug
+            )
 
 
 if __name__ == "__main__":

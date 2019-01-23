@@ -17,6 +17,10 @@ from onmt.inputters.text_dataset import TextDataset, text_fields,\
 from onmt.inputters.image_dataset import ImageDataset, image_fields
 from onmt.inputters.audio_dataset import AudioDataset, audio_fields
 from onmt.utils.logging import logger
+# backwards compatibility
+from onmt.inputters.text_dataset import _feature_tokenize  # noqa: F401
+from onmt.inputters.image_dataset import (  # noqa: F401
+    batch_img as make_img)
 
 import gc
 
@@ -169,7 +173,6 @@ def make_features(batch, side):
     else:
         data = batch.__dict__[side]
         lengths = None
-
     return data, lengths
 
 
@@ -409,6 +412,12 @@ class OrderedIterator(torchtext.data.Iterator):
             for b in torchtext.data.batch(self.data(), self.batch_size,
                                           self.batch_size_fn):
                 self.batches.append(sorted(b, key=self.sort_key))
+
+    def __iter__(self):
+        # temporary fix: See #1196
+        for batch in super(OrderedIterator, self).__iter__():
+            batch.src_is_text = isinstance(self.dataset, TextDataset)
+            yield batch
 
 
 class DatasetLazyIter(object):

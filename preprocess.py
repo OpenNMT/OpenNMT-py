@@ -3,17 +3,15 @@
 """
     Pre-process Data / features files and build vocabulary
 """
-
+import codecs
 import configargparse
 import glob
 import sys
 import gc
 import os
-import codecs
-from itertools import islice
 import torch
 from onmt.utils.logging import init_logger, logger
-
+from onmt.utils.misc import split_corpus
 import onmt.inputters as inputters
 import onmt.opts as opts
 
@@ -45,15 +43,6 @@ def parse_args():
     check_existing_pt_files(opt)
 
     return opt
-
-
-def split_corpus(path, shard_size):
-    with codecs.open(path, "r", encoding="utf-8") as f:
-        while True:
-            shard = list(islice(f, shard_size))
-            if not shard:
-                break
-            yield shard
 
 
 def build_save_dataset(corpus_type, fields, opt):

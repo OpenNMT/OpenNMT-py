@@ -19,9 +19,7 @@ def build_loss_compute(model, tgt_field, opt, train=True):
     object allows this loss to be computed in shards and passes the relevant
     data to a Statistics object which handles training/validation logging.
     Currently, the NMTLossCompute class handles all loss computation except
-    for when using a copy mechanism. Despite their name, LossCompute objects
-    do not merely compute the loss but also perform the backward pass inside
-    their sharded_compute_loss method.
+    for when using a copy mechanism.
     """
     device = torch.device("cuda" if onmt.utils.misc.use_gpu(opt) else "cpu")
 
@@ -113,35 +111,19 @@ class LossComputeBase(nn.Module):
         """
         return NotImplementedError
 
-    def monolithic_compute_loss(self, batch, output, attns):
-        """
-        Compute the forward loss for the batch.
-
-        Args:
-          batch (batch): batch of labeled examples
-          output (:obj:`FloatTensor`):
-              output of decoder model `[tgt_len x batch x hidden]`
-          attns (dict of :obj:`FloatTensor`) :
-              dictionary of attention distributions
-              `[tgt_len x batch x src_len]`
-        Returns:
-            :obj:`onmt.utils.Statistics`: loss statistics
-        """
-        range_ = (0, batch.tgt.size(0))
-        shard_state = self._make_shard_state(batch, output, range_, attns)
-        _, batch_stats = self._compute_loss(batch, **shard_state)
-
-        return batch_stats
-
-    def sharded_compute_loss(self, batch, output, attns,
-                             cur_trunc, trunc_size, shard_size,
-                             normalization):
-        """Compute the forward loss and backpropagate.  Computation is done
-        with shards and optionally truncation for memory efficiency.
+    def __call__(self,
+                 batch,
+                 output,
+                 attns,
+                 normalization=1.0,
+                 shard_size=0,
+                 trunc_start=0,
+                 trunc_size=None):
+        """Compute the forward loss, possibly in shards.
 
         Also supports truncated BPTT for long sequences by taking a
         range in the decoder output sequence to back propagate in.
-        Range is from `(cur_trunc, cur_trunc + trunc_size)`.
+        Range is from `(trunc_start, trunc_start + trunc_size)`.
 
         Note sharding is an exact efficiency trick to relieve memory
         required for the generation buffers. Truncation is an
@@ -154,23 +136,29 @@ class LossComputeBase(nn.Module):
               output of decoder model `[tgt_len x batch x hidden]`
           attns (dict) : dictionary of attention distributions
               `[tgt_len x batch x src_len]`
-          cur_trunc (int) : starting position of truncation window
-          trunc_size (int) : length of truncation window
+          normalization: Optional normalization factor.
           shard_size (int) : maximum number of examples in a shard
-          normalization (int) : Loss is divided by this number
+          trunc_start (int) : starting position of truncation window
+          trunc_size (int) : length of truncation window
 
         Returns:
-            :obj:`onmt.utils.Statistics`: validation loss statistics
-
+            A tuple with the loss and a :obj:`onmt.utils.Statistics` instance.
         """
+        if trunc_size is None:
+            trunc_size = batch.tgt.size(0) - trunc_start
+        trunc_range = (trunc_start, trunc_start + trunc_size)
+        shard_state = self._make_shard_state(batch, output, trunc_range, attns)
+        all_shards = (
+            shards(shard_state, shard_size)
+            if shard_size > 0 else (shard_state,))
+        total_loss = 0
         batch_stats = onmt.utils.Statistics()
-        range_ = (cur_trunc, cur_trunc + trunc_size)
-        shard_state = self._make_shard_state(batch, output, range_, attns)
-        for shard in shards(shard_state, shard_size):
+        for i, shard in enumerate(all_shards):
             loss, stats = self._compute_loss(batch, **shard)
-            loss.div(float(normalization)).backward()
+            total_loss += loss
             batch_stats.update(stats)
-        return batch_stats
+        total_loss /= float(normalization)
+        return total_loss, batch_stats
 
     def _stats(self, loss, scores, target):
         """
@@ -259,10 +247,7 @@ def filter_shard_state(state, shard_size=None):
         if v is not None:
             v_split = []
             if isinstance(v, torch.Tensor):
-                for v_chunk in torch.split(v, shard_size):
-                    v_chunk = v_chunk.data.clone()
-                    v_chunk.requires_grad = v.requires_grad
-                    v_split.append(v_chunk)
+                v_split.extend(torch.split(v, shard_size))
             yield k, (v, v_split)
 
 
@@ -278,9 +263,6 @@ def shards(state, shard_size, eval_only=False):
 
     Yields:
         Each yielded shard is a dict.
-
-    Side effect:
-        After the last shard, this function does back-propagation.
     """
     if eval_only:
         yield filter_shard_state(state)
@@ -294,7 +276,7 @@ def shards(state, shard_size, eval_only=False):
         # want a sequence of dictionaries of tensors.
         # First, unzip the dictionary into a sequence of keys and a
         # sequence of tensor-like sequences.
-        keys, values = zip(*((k, [v_chunk for v_chunk in v_split])
+        keys, values = zip(*((k, reversed(v_split))
                              for k, (_, v_split) in non_none.items()))
 
         # Now, yield a dictionary for each shard. The keys are always
@@ -305,12 +287,3 @@ def shards(state, shard_size, eval_only=False):
         # with the keys.
         for shard_tensors in zip(*values):
             yield dict(zip(keys, shard_tensors))
-
-        # Assumed backprop'd
-        variables = []
-        for k, (v, v_split) in non_none.items():
-            if isinstance(v, torch.Tensor) and state[k].requires_grad:
-                variables.extend(zip(torch.split(state[k], shard_size),
-                                     [v_chunk.grad for v_chunk in v_split]))
-        inputs, grads = zip(*variables)
-        torch.autograd.backward(inputs, grads)
