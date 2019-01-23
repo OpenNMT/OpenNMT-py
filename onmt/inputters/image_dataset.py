@@ -2,9 +2,6 @@
 
 import os
 
-import torch
-from torchtext.data import Field
-
 from onmt.inputters.dataset_base import DatasetBase
 
 # domain specific dependencies
@@ -65,20 +62,3 @@ class ImageDataset(DatasetBase):
                         and img.size(2) <= truncate[1]):
                     continue
             yield {side: img, side + '_path': filename, 'indices': i}
-
-
-def batch_img(data, vocab):
-    c = data[0].size(0)
-    h = max([t.size(1) for t in data])
-    w = max([t.size(2) for t in data])
-    imgs = torch.zeros(len(data), c, h, w).fill_(1)
-    for i, img in enumerate(data):
-        imgs[i, :, 0:img.size(1), 0:img.size(2)] = img
-    return imgs
-
-
-def image_fields(base_name, **kwargs):
-    img = Field(
-        use_vocab=False, dtype=torch.float,
-        postprocessing=batch_img, sequential=False)
-    return [(base_name, img)]
