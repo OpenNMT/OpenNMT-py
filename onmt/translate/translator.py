@@ -19,6 +19,7 @@ import onmt.decoders.ensemble
 from onmt.utils.misc import set_random_seed
 from onmt.modules.copy_generator import collapse_copy_scores
 
+
 def build_translator(opt, report_score=True, logger=None, out_file=None):
     if out_file is None:
         out_file = codecs.open(opt.output, 'w+', 'utf-8')
