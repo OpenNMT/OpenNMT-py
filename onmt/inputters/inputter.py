@@ -16,6 +16,8 @@ from onmt.inputters.text_dataset import TextDataset, text_fields
 from onmt.inputters.image_dataset import ImageDataset, image_fields
 from onmt.inputters.audio_dataset import AudioDataset, audio_fields
 from onmt.utils.logging import logger
+# backwards compatibility
+from onmt.inputters.text_dataset import _feature_tokenize  # noqa: F401
 
 import gc
 
