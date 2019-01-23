@@ -12,10 +12,14 @@ import torchtext.data
 from torchtext.data import Field
 from torchtext.vocab import Vocab
 
-from onmt.inputters.text_dataset import TextDataset
-from onmt.inputters.image_dataset import ImageDataset
-from onmt.inputters.audio_dataset import AudioDataset
+from onmt.inputters.text_dataset import TextDataset, text_fields
+from onmt.inputters.image_dataset import ImageDataset, image_fields
+from onmt.inputters.audio_dataset import AudioDataset, audio_fields
 from onmt.utils.logging import logger
+# backwards compatibility
+from onmt.inputters.text_dataset import _feature_tokenize  # noqa: F401
+from onmt.inputters.image_dataset import (  # noqa: F401
+    batch_img as make_img)
 
 import gc
 
@@ -51,37 +55,6 @@ def make_tgt(data, vocab):
     return alignment
 
 
-def make_img(data, vocab):
-    c = data[0].size(0)
-    h = max([t.size(1) for t in data])
-    w = max([t.size(2) for t in data])
-    imgs = torch.zeros(len(data), c, h, w).fill_(1)
-    for i, img in enumerate(data):
-        imgs[i, :, 0:img.size(1), 0:img.size(2)] = img
-    return imgs
-
-
-def make_audio(data, vocab):
-    """ batch audio data """
-    nfft = data[0].size(0)
-    t = max([t.size(1) for t in data])
-    sounds = torch.zeros(len(data), 1, nfft, t)
-    for i, spect in enumerate(data):
-        sounds[i, :, :, 0:spect.size(1)] = spect
-    return sounds
-
-
-# mix this with partial
-def _feature_tokenize(
-        string, layer=0, tok_delim=None, feat_delim=None, truncate=None):
-    tokens = string.split(tok_delim)
-    if truncate is not None:
-        tokens = tokens[:truncate]
-    if feat_delim is not None:
-        tokens = [t.split(feat_delim)[layer] for t in tokens]
-    return tokens
-
-
 def get_fields(
     src_data_type,
     n_src_feats,
@@ -110,51 +83,23 @@ def get_fields(
         'it is not possible to use dynamic_dict with non-text input'
     fields = {'src': [], 'tgt': []}
 
-    if src_data_type == 'text':
-        feat_delim = u"￨" if n_src_feats > 0 else None
-        for i in range(n_src_feats + 1):
-            name = "src_feat_" + str(i - 1) if i > 0 else "src"
-            tokenize = partial(
-                _feature_tokenize,
-                layer=i,
-                truncate=src_truncate,
-                feat_delim=feat_delim)
-            use_len = i == 0
-            feat = Field(
-                pad_token=pad, tokenize=tokenize, include_lengths=use_len)
-            fields['src'].append((name, feat))
-    elif src_data_type == 'img':
-        img = Field(
-            use_vocab=False, dtype=torch.float,
-            postprocessing=make_img, sequential=False)
-        fields["src"].append(('src', img))
-    else:
-        audio = Field(
-            use_vocab=False, dtype=torch.float,
-            postprocessing=make_audio, sequential=False)
-        fields["src"].append(('src', audio))
+    fields_getters = {"text": text_fields,
+                      "img": image_fields,
+                      "audio": audio_fields}
 
-    if src_data_type == 'audio':
-        # only audio has src_lengths
-        length = Field(use_vocab=False, dtype=torch.long, sequential=False)
-        fields["src_lengths"] = [("src_lengths", length)]
+    src_field_kwargs = {"n_feats": n_src_feats,
+                        "include_lengths": True,
+                        "pad": pad, "bos": None, "eos": None,
+                        "truncate": src_truncate}
+    fields["src"] = fields_getters[src_data_type](
+        'src', **src_field_kwargs)
 
-    # below this: things defined no matter what the data source type is
-    feat_delim = u"￨" if n_tgt_feats > 0 else None
-    for i in range(n_tgt_feats + 1):
-        name = "tgt_feat_" + str(i - 1) if i > 0 else "tgt"
-        tokenize = partial(
-            _feature_tokenize,
-            layer=i,
-            truncate=tgt_truncate,
-            feat_delim=feat_delim)
-
-        feat = Field(
-            init_token=bos,
-            eos_token=eos,
-            pad_token=pad,
-            tokenize=tokenize)
-        fields['tgt'].append((name, feat))
+    tgt_field_kwargs = {"n_feats": n_tgt_feats,
+                        "include_lengths": False,
+                        "pad": pad, "bos": bos, "eos": eos,
+                        "truncate": tgt_truncate}
+    fields['tgt'] = fields_getters["text"](
+        'tgt', **tgt_field_kwargs)
 
     indices = Field(use_vocab=False, dtype=torch.long, sequential=False)
     fields["indices"] = [('indices', indices)]
@@ -220,12 +165,9 @@ def make_features(batch, side):
         data, lengths = batch.__dict__[side]
     else:
         data = batch.__dict__[side]
-        if side == 'src' and hasattr(batch, 'src_lengths'):
-            lengths = batch.src_lengths
-        else:
-            lengths = None
+        lengths = None
 
-    if isinstance(batch.__dict__[side], tuple) or side == 'tgt':
+    if batch.src_is_text or side == 'tgt':  # this is temporary, see #1196
         # cat together layers, producing a 3d output tensor for src text
         # and for tgt (which is assumed to be text)
         feat_start = side + "_feat_"
@@ -445,6 +387,12 @@ class OrderedIterator(torchtext.data.Iterator):
             for b in torchtext.data.batch(self.data(), self.batch_size,
                                           self.batch_size_fn):
                 self.batches.append(sorted(b, key=self.sort_key))
+
+    def __iter__(self):
+        # temporary fix: See #1196
+        for batch in super(OrderedIterator, self).__iter__():
+            batch.src_is_text = isinstance(self.dataset, TextDataset)
+            yield batch
 
 
 class DatasetLazyIter(object):
