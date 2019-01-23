@@ -4,7 +4,7 @@ import time
 import math
 import sys
 
-from torch.distributed import get_rank
+from torch.distributed.deprecated import get_rank
 from onmt.utils.distributed import all_gather_list
 from onmt.utils.logging import logger
 
