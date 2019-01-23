@@ -17,6 +17,7 @@ import onmt.inputters as inputters
 import onmt.opts as opts
 import onmt.decoders.ensemble
 from onmt.utils.misc import set_random_seed
+from onmt.modules.copy_generator import collapse_copy_scores
 
 
 def build_translator(opt, report_score=True, logger=None, out_file=None):
@@ -514,7 +515,7 @@ class Translator(object):
                 scores = scores.view(batch.batch_size, -1, scores.size(-1))
             else:
                 scores = scores.view(-1, self.beam_size, scores.size(-1))
-            scores = data.collapse_copy_scores(
+            scores = collapse_copy_scores(
                 scores,
                 batch,
                 tgt_field.vocab,
