@@ -14,6 +14,7 @@ from onmt.encoders import str2enc
 from onmt.decoders import str2dec
 
 from onmt.modules import Embeddings, CopyGenerator
+from onmt.modules.util_class import Cast
 from onmt.utils.misc import use_gpu
 from onmt.utils.logging import logger
 
@@ -161,6 +162,7 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
         generator = nn.Sequential(
             nn.Linear(model_opt.dec_rnn_size,
                       len(fields["tgt"][0][1].base_field.vocab)),
+            Cast(torch.float32),
             gen_func
         )
         if model_opt.share_decoder_embeddings:
@@ -211,6 +213,8 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
 
     model.generator = generator
     model.to(device)
+    if model_opt.model_dtype == 'fp16':
+        model.half()
 
     return model
 

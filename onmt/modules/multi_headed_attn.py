@@ -165,14 +165,14 @@ class MultiHeadedAttention(nn.Module):
 
         # 2) Calculate and scale scores.
         query = query / math.sqrt(dim_per_head)
-        scores = torch.matmul(query, key.transpose(2, 3))
+        scores = torch.matmul(query, key.transpose(2, 3)).float()
 
         if mask is not None:
             mask = mask.unsqueeze(1)  # [B, 1, 1, T_values]
             scores = scores.masked_fill(mask, -1e18)
 
         # 3) Apply attention dropout and compute context vectors.
-        attn = self.softmax(scores)
+        attn = self.softmax(scores).to(query.dtype)
         drop_attn = self.dropout(attn)
         context = unshape(torch.matmul(drop_attn, value))
 

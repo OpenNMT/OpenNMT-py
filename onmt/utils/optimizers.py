@@ -76,6 +76,10 @@ def build_torch_optimizer(model, opt):
                  eps=1e-8)])
     else:
         raise ValueError('Invalid optimizer type: ' + opt.optim)
+    if opt.model_dtype == 'fp16':
+        import apex  # Make apex dependency optional.
+        optimizer = apex.fp16_utils.FP16_Optimizer(
+            optimizer, dynamic_loss_scale=True)
     return optimizer
 
 
@@ -184,9 +188,11 @@ class Optimizer(object):
         self._optimizer = optimizer
         self._learning_rate = learning_rate
         self._learning_rate_decay_fn = learning_rate_decay_fn
-        self._max_grad_norm = max_grad_norm
+        self._max_grad_norm = max_grad_norm or 0
         self._training_step = 1
         self._decay_step = 1
+        self._with_fp16_wrapper = (
+            optimizer.__class__.__name__ == "FP16_Optimizer")
 
     @classmethod
     def from_opt(cls, model, opt, checkpoint=None):
@@ -267,6 +273,18 @@ class Optimizer(object):
         if 'optimizer' in state_dict:
             self._optimizer.load_state_dict(state_dict['optimizer'])
 
+    def zero_grad(self):
+        """Zero the gradients of optimized parameters."""
+        self._optimizer.zero_grad()
+
+    def backward(self, loss):
+        """Wrapper for backward pass. Some optimizer requires ownership of the
+        backward pass."""
+        if self._with_fp16_wrapper:
+            self._optimizer.backward(loss, update_master_grads=False)
+        else:
+            loss.backward()
+
     def step(self):
         """Update the model parameters based on current gradients.
 
@@ -274,9 +292,13 @@ class Optimizer(object):
         rate.
         """
         learning_rate = self.learning_rate()
+        if self._with_fp16_wrapper:
+            self._optimizer.update_master_grads()
+            if self._max_grad_norm > 0:
+                self._optimizer.clip_master_grads(self._max_grad_norm)
         for group in self._optimizer.param_groups:
             group['lr'] = learning_rate
-            if self._max_grad_norm is not None and self._max_grad_norm > 0:
+            if not self._with_fp16_wrapper and self._max_grad_norm > 0:
                 clip_grad_norm_(group['params'], self._max_grad_norm)
         self._optimizer.step()
         self._decay_step += 1

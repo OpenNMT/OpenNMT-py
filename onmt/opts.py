@@ -65,6 +65,9 @@ def model_opts(parser):
               help="""Type of source model to use. Allows
                        the system to incorporate non-text inputs.
                        Options are [text|img|audio].""")
+    group.add('--model_dtype', '-model_dtype', default='fp32',
+              choices=['fp32', 'fp16'],
+              help='Data type of the model.')
 
     group.add('--encoder_type', '-encoder_type', type=str, default='rnn',
               choices=['rnn', 'brnn', 'mean', 'transformer', 'cnn'],

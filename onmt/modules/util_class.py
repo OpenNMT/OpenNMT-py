@@ -32,3 +32,17 @@ class Elementwise(nn.ModuleList):
             return sum(outputs)
         else:
             return outputs
+
+
+class Cast(nn.Module):
+    """
+    Basic layer that casts its input to a specific data type. The same tensor
+    is returned if the data type is already correct.
+    """
+
+    def __init__(self, dtype):
+        super(Cast, self).__init__()
+        self._dtype = dtype
+
+    def forward(self, x):
+        return x.to(self._dtype)
