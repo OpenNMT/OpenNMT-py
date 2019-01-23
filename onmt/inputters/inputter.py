@@ -384,7 +384,7 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
         for name, field in fields["src"]:
             if name == "src":
                 _build_field_vocab(
-                    field, counters[name], max_size=src_vocab_size, 
+                    field, counters[name], max_size=src_vocab_size,
                     min_freq=src_words_min_frequency)
             else:
                 _build_field_vocab(field, counters[name])
