@@ -373,11 +373,19 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
             gc.collect()
 
     for name, field in fields["tgt"]:
-        _build_field_vocab(field, counters[name])
+        if name == "tgt":
+            _build_field_vocab(field, counters[name], max_size=tgt_vocab_size,
+                min_freq=tgt_words_min_frequency)
+        else:
+            _build_field_vocab(field, counters[name])
         logger.info(" * %s vocab size: %d." % (name, len(field.vocab)))
     if data_type == 'text':
         for name, field in fields["src"]:
-            _build_field_vocab(field, counters[name])
+            if name == "src":
+                _build_field_vocab(field, counters[name],
+                    max_size=src_vocab_size, min_freq=src_words_min_frequency)
+            else:
+                _build_field_vocab(field, counters[name])
             logger.info(" * %s vocab size: %d." % (name, len(field.vocab)))
         if share_vocab:
             # `tgt_vocab_size` is ignored when sharing vocabularies
