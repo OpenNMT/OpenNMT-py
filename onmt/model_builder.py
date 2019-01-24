@@ -41,6 +41,9 @@ def build_embeddings(opt, word_field, feat_fields, for_encoder=True):
     feat_pad_indices = [ff.vocab.stoi[ff.pad_token] for ff in feat_fields]
     num_feat_embeddings = [len(ff.vocab) for ff in feat_fields]
 
+    fix_word_vecs = opt.fix_word_vecs_enc if for_encoder \
+        else opt.fix_word_vecs_dec
+
     emb = Embeddings(
         word_vec_size=emb_dim,
         position_encoding=opt.position_encoding,
@@ -52,7 +55,8 @@ def build_embeddings(opt, word_field, feat_fields, for_encoder=True):
         feat_padding_idx=feat_pad_indices,
         word_vocab_size=num_word_embeddings,
         feat_vocab_sizes=num_feat_embeddings,
-        sparse=opt.optim == "sparseadam"
+        sparse=opt.optim == "sparseadam",
+        fix_word_vecs=fix_word_vecs
     )
     return emb
 
@@ -288,10 +292,10 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
 
         if hasattr(model.encoder, 'embeddings'):
             model.encoder.embeddings.load_pretrained_vectors(
-                model_opt.pre_word_vecs_enc, model_opt.fix_word_vecs_enc)
+                model_opt.pre_word_vecs_enc)
         if hasattr(model.decoder, 'embeddings'):
             model.decoder.embeddings.load_pretrained_vectors(
-                model_opt.pre_word_vecs_dec, model_opt.fix_word_vecs_dec)
+                model_opt.pre_word_vecs_dec)
 
     model.generator = generator
     model.to(device)
