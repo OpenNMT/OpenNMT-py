@@ -3,8 +3,13 @@
 
 
 ## [Unreleased]
+### Fixes and improvements
+## [0.7.1](https://github.com/OpenNMT/OpenNMT-py/tree/0.7.1) (2019-01-24)
+* Many fixes and code refactoring thanks @bpopeters, @flauted, @guillaumekln
 
 ### New features
+* Random sampling thanks @daphnei
+* Enable sharding for huge files at translation
 
 ### Fixes and improvements
 ## [0.7.0](https://github.com/OpenNMT/OpenNMT-py/tree/0.7.0) (2019-01-02)
