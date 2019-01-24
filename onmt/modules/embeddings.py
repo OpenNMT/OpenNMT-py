@@ -156,7 +156,7 @@ class Embeddings(nn.Module):
         if self.position_encoding:
             pe = PositionalEncoding(dropout, self.embedding_size)
             self.make_embedding.add_module('pe', pe)
-        
+
         if fix_word_vecs:
             self.word_lut.weight.requires_grad = False
 
