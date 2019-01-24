@@ -250,6 +250,8 @@ class Trainer(object):
                 trunc_size = target_size
 
             src, src_lengths = inputters.make_features(batch, 'src')
+            if src_lengths is not None:
+                report_stats.n_src_words += src_lengths.sum().item()
 
             # this method unsqueezes its input
             tgt_outer, _ = inputters.make_features(batch, 'tgt')
