@@ -145,8 +145,6 @@ class TransformerDecoder(nn.Module):
                  copy_attn, self_attn_type, dropout, embeddings):
         super(TransformerDecoder, self).__init__()
 
-        # Basic attributes.
-        self.decoder_type = 'transformer'
         self.num_layers = num_layers
         self.embeddings = embeddings
         self.self_attn_type = self_attn_type
@@ -161,7 +159,7 @@ class TransformerDecoder(nn.Module):
              for _ in range(num_layers)])
 
         # TransformerDecoder has its own attention mechanism.
-        # Set up a separated copy attention layer, if needed.
+        # Set up a separate copy attention layer if needed.
         self._copy = False
         if copy_attn:
             self.copy_attn = onmt.modules.GlobalAttention(
@@ -203,13 +201,11 @@ class TransformerDecoder(nn.Module):
         src_batch, src_len = src_words.size()
         tgt_batch, tgt_len = tgt_words.size()
 
-        # Initialize return variables.
         dec_outs = []
         attns = {"std": []}
         if self._copy:
             attns["copy"] = []
 
-        # Run the forward pass of the TransformerDecoder.
         emb = self.embeddings(tgt, step=step)
         assert emb.dim() == 3  # len x batch x embedding_dim
 

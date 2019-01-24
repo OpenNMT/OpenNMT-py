@@ -62,8 +62,6 @@ class RNNDecoderBase(nn.Module):
                  reuse_copy_attn=False):
         super(RNNDecoderBase, self).__init__()
 
-        # Basic attributes.
-        self.decoder_type = 'rnn'
         self.bidirectional_encoder = bidirectional_encoder
         self.num_layers = num_layers
         self.hidden_size = hidden_size
@@ -134,13 +132,11 @@ class RNNDecoderBase(nn.Module):
         self.state["input_feed"] = fn(self.state["input_feed"], 1)
 
     def detach_state(self):
-        """ Need to document this """
         self.state["hidden"] = tuple([_.detach()
                                      for _ in self.state["hidden"]])
         self.state["input_feed"] = self.state["input_feed"].detach()
 
-    def forward(self, tgt, memory_bank, memory_lengths=None,
-                step=None):
+    def forward(self, tgt, memory_bank, memory_lengths=None, step=None):
         """
         Args:
             tgt (`LongTensor`): sequences of padded tokens
@@ -223,7 +219,6 @@ class StdRNNDecoder(RNNDecoderBase):
         assert not self._copy  # TODO, no support yet.
         assert not self._coverage  # TODO, no support yet.
 
-        # Initialize local and return variables.
         attns = {}
         emb = self.embeddings(tgt)
 
@@ -238,7 +233,6 @@ class StdRNNDecoder(RNNDecoderBase):
         output_len, output_batch, _ = rnn_output.size()
         aeq(tgt_len, output_len)
         aeq(tgt_batch, output_batch)
-        # END
 
         # Calculate the attention.
         dec_outs, p_attn = self.attn(
@@ -267,9 +261,6 @@ class StdRNNDecoder(RNNDecoderBase):
 
     @property
     def _input_size(self):
-        """
-        Private helper returning the number of expected features.
-        """
         return self.embeddings.embedding_size
 
 
@@ -362,7 +353,7 @@ class InputFeedRNNDecoder(RNNDecoderBase):
                 attns["copy"] += [copy_attn]
             elif self._copy:
                 attns["copy"] = attns["std"]
-        # Return result.
+
         return dec_state, dec_outs, attns
 
     def _build_rnn(self, rnn_type, input_size,

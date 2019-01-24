@@ -23,8 +23,6 @@ class CNNDecoder(nn.Module):
                  copy_attn, cnn_kernel_width, dropout, embeddings):
         super(CNNDecoder, self).__init__()
 
-        # Basic attributes.
-        self.decoder_type = 'cnn'
         self.num_layers = num_layers
         self.hidden_size = hidden_size
         self.cnn_kernel_width = cnn_kernel_width
@@ -49,7 +47,7 @@ class CNNDecoder(nn.Module):
                 onmt.modules.ConvMultiStepAttention(self.hidden_size))
 
         # CNNDecoder has its own attention mechanism.
-        # Set up a separated copy attention layer, if needed.
+        # Set up a separate copy attention layer if needed.
         self._copy = False
         if copy_attn:
             self.copy_attn = onmt.modules.GlobalAttention(
@@ -79,7 +77,6 @@ class CNNDecoder(nn.Module):
         if self.state["previous_input"] is not None:
             tgt = torch.cat([self.state["previous_input"], tgt], 0)
 
-        # Initialize return variables.
         dec_outs = []
         attns = {"std": []}
         assert not self._copy, "Copy mechanism not yet tested in conv2conv"
@@ -95,15 +92,13 @@ class CNNDecoder(nn.Module):
         # The combination of output of CNNEncoder and source embeddings.
         src_memory_bank_c = self.state["src"].transpose(0, 1).contiguous()
 
-        # Run the forward pass of the CNNDecoder.
         emb_reshape = tgt_emb.contiguous().view(
             tgt_emb.size(0) * tgt_emb.size(1), -1)
         linear_out = self.linear(emb_reshape)
         x = linear_out.view(tgt_emb.size(0), tgt_emb.size(1), -1)
         x = shape_transform(x)
 
-        pad = torch.zeros(x.size(0), x.size(1),
-                          self.cnn_kernel_width - 1, 1)
+        pad = torch.zeros(x.size(0), x.size(1), self.cnn_kernel_width - 1, 1)
 
         pad = pad.type_as(x)
         base_target_emb = x
