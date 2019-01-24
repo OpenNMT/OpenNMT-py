@@ -251,6 +251,8 @@ class Trainer(object):
 
             src, src_lengths = batch.src if isinstance(batch.src, tuple) \
                 else (batch.src, None)
+            if src_lengths is not None:
+                report_stats.n_src_words += src_lengths.sum().item()
 
             tgt_outer = batch.tgt
 

@@ -95,7 +95,8 @@ class Embeddings(nn.Module):
                  feat_padding_idx=[],
                  feat_vocab_sizes=[],
                  dropout=0,
-                 sparse=False):
+                 sparse=False,
+                 fix_word_vecs=False):
 
         if feat_padding_idx is None:
             feat_padding_idx = []
@@ -156,6 +157,9 @@ class Embeddings(nn.Module):
             pe = PositionalEncoding(dropout, self.embedding_size)
             self.make_embedding.add_module('pe', pe)
 
+        if fix_word_vecs:
+            self.word_lut.weight.requires_grad = False
+
     @property
     def word_lut(self):
         """ word look-up table """
@@ -166,7 +170,7 @@ class Embeddings(nn.Module):
         """ embedding look-up table """
         return self.make_embedding[0]
 
-    def load_pretrained_vectors(self, emb_file, fixed):
+    def load_pretrained_vectors(self, emb_file):
         """Load in pretrained embeddings.
 
         Args:
@@ -183,8 +187,6 @@ class Embeddings(nn.Module):
                     .copy_(pretrained[:, :self.word_vec_size])
             else:
                 self.word_lut.weight.data.copy_(pretrained)
-            if fixed:
-                self.word_lut.weight.requires_grad = False
 
     def forward(self, source, step=None):
         """

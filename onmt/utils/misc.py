@@ -8,11 +8,14 @@ from itertools import islice
 
 def split_corpus(path, shard_size):
     with codecs.open(path, "r", encoding="utf-8") as f:
-        while True:
-            shard = list(islice(f, shard_size))
-            if not shard:
-                break
-            yield shard
+        if shard_size <= 0:
+            yield f.readlines()
+        else:
+            while True:
+                shard = list(islice(f, shard_size))
+                if not shard:
+                    break
+                yield shard
 
 
 def aeq(*args):
