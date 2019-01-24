@@ -10,7 +10,6 @@
 """
 
 import torch
-import onmt.inputters as inputters
 import onmt.utils
 
 from onmt.utils.logging import logger
@@ -219,8 +218,9 @@ class Trainer(object):
             stats = onmt.utils.Statistics()
 
             for batch in valid_iter:
-                src, src_lengths = inputters.make_features(batch, 'src')
-                tgt, _ = inputters.make_features(batch, 'tgt')
+                src, src_lengths = batch.src if isinstance(batch.src, tuple) \
+                                   else (batch.src, None)
+                tgt = batch.tgt
 
                 # F-prop through the model.
                 outputs, attns = self.model(src, tgt, src_lengths)
@@ -249,10 +249,10 @@ class Trainer(object):
             else:
                 trunc_size = target_size
 
-            src, src_lengths = inputters.make_features(batch, 'src')
+            src, src_lengths = batch.src if isinstance(batch.src, tuple) \
+                else (batch.src, None)
 
-            # this method unsqueezes its input
-            tgt_outer, _ = inputters.make_features(batch, 'tgt')
+            tgt_outer = batch.tgt
 
             bptt = False
             for j in range(0, target_size-1, trunc_size):

@@ -158,22 +158,6 @@ def old_style_vocab(vocab):
         any(isinstance(v[1], Vocab) for v in vocab)
 
 
-def make_features(batch, side):
-    """
-    batch: a batch object
-    side: 'src' or 'tgt'
-    returns the tensor with features concatenated, and the lengths (if present)
-        or None.
-    """
-    assert side in ['src', 'tgt']
-    if isinstance(batch.__dict__[side], tuple):
-        data, lengths = batch.__dict__[side]
-    else:
-        data = batch.__dict__[side]
-        lengths = None
-    return data, lengths
-
-
 def filter_example(ex, use_src_len=True, use_tgt_len=True,
                    min_src_len=1, max_src_len=float('inf'),
                    min_tgt_len=1, max_tgt_len=float('inf')):

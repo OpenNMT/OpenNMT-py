@@ -458,7 +458,8 @@ class Translator(object):
                 return self._translate_batch(batch, data)
 
     def _run_encoder(self, batch):
-        src, src_lengths = inputters.make_features(batch, 'src')
+        src, src_lengths = batch.src if isinstance(batch.src, tuple) \
+                           else (batch.src, None)
 
         enc_states, memory_bank, src_lengths = self.model.encoder(
             src, src_lengths)
@@ -836,7 +837,7 @@ class Translator(object):
         return results
 
     def _score_target(self, batch, memory_bank, src_lengths, data, src_map):
-        tgt, _ = inputters.make_features(batch, 'tgt')
+        tgt = batch.tgt
         tgt_in = tgt[:-1]
 
         log_probs, attn = self._decode_and_generate(
