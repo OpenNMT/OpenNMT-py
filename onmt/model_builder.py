@@ -29,19 +29,16 @@ def build_embeddings(opt, text_field, for_encoder=True):
     """
     Args:
         opt: the option in current environment.
-        word_dict(Vocab): words dictionary.
-        feature_dicts([Vocab], optional): a list of feature dictionary.
+        text_field(TextMultiField): word and feats field.
         for_encoder(bool): build Embeddings for encoder or decoder?
     """
     emb_dim = opt.src_word_vec_size if for_encoder else opt.tgt_word_vec_size
 
-    word_padding_idx = text_field.base_field.vocab.stoi[
-        text_field.base_field.pad_token]
-    num_word_embeddings = len(text_field.base_field.vocab)
+    pad_indices = [f.vocab.stoi[f.pad_token] for _, f in text_field]
+    word_padding_idx, feat_pad_indices = pad_indices[0], pad_indices[1:]
 
-    feat_pad_indices = [ff.vocab.stoi[ff.pad_token]
-                        for _, ff in text_field.feats_fields]
-    num_feat_embeddings = [len(ff.vocab) for _, ff in text_field.feats_fields]
+    num_embs = [len(f.vocab) for _, f in text_field]
+    num_word_embeddings, num_feat_embeddings = num_embs[0], num_embs[1:]
 
     emb = Embeddings(
         word_vec_size=emb_dim,

@@ -246,6 +246,24 @@ def _build_field_vocab(field, counter, **kwargs):
     field.vocab = field.vocab_cls(counter, specials=specials, **kwargs)
 
 
+def _load_vocab(vocab_path, name, counters):
+    # counters changes in place
+    vocab = _read_vocab_file(vocab_path, name)
+    vocab_size = len(vocab)
+    logger.info('Loaded %s vocab has %d tokens.' % (name, vocab_size))
+    for i, token in enumerate(vocab):
+        # keep the order of tokens specified in the vocab file by
+        # adding them to the counter with decreasing counting values
+        counters[name][token] = vocab_size - i
+    return vocab, vocab_size
+
+
+def _build_fv_from_multifield(multifield, counters, build_fv_args):
+    for name, field in multifield:
+        _build_field_vocab(field, counters[name], **build_fv_args[name])
+        logger.info(" * %s vocab size: %d." % (name, len(field.vocab)))
+
+
 def build_vocab(train_dataset_files, fields, data_type, share_vocab,
                 src_vocab_path, src_vocab_size, src_words_min_frequency,
                 tgt_vocab_path, tgt_vocab_size, tgt_words_min_frequency):
@@ -271,22 +289,14 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
 
     # Load vocabulary
     if src_vocab_path:
-        src_vocab = _read_vocab_file(src_vocab_path, "src")
-        src_vocab_size = len(src_vocab)
-        logger.info('Loaded source vocab has %d tokens.' % src_vocab_size)
-        for i, token in enumerate(src_vocab):
-            # keep the order of tokens specified in the vocab file by
-            # adding them to the counter with decreasing counting values
-            counters['src'][token] = src_vocab_size - i
+        src_vocab, src_vocab_size = _load_vocab(
+            src_vocab_path, "src", counters)
     else:
         src_vocab = None
 
     if tgt_vocab_path:
-        tgt_vocab = _read_vocab_file(tgt_vocab_path, "tgt")
-        tgt_vocab_size = len(tgt_vocab)
-        logger.info('Loaded source vocab has %d tokens.' % tgt_vocab_size)
-        for i, token in enumerate(tgt_vocab):
-            counters['tgt'][token] = tgt_vocab_size - i
+        tgt_vocab, tgt_vocab_size = _load_vocab(
+            tgt_vocab_path, "tgt", counters)
     else:
         tgt_vocab = None
 
@@ -319,27 +329,27 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
             del dataset
             gc.collect()
 
+    build_fv_args = defaultdict(dict)
+    build_fv_args["src"] = dict(
+        max_size=src_vocab_size, min_freq=src_words_min_frequency)
+    build_fv_args["tgt"] = dict(
+        max_size=tgt_vocab_size, min_freq=tgt_words_min_frequency)
     assert len(fields["tgt"]) == 1
     tgt_multifield = fields["tgt"][0][1]
-    for tgt_name, tgt_field in tgt_multifield:
-        _build_field_vocab(tgt_field, counters[tgt_name])
-        logger.info(" * %s vocab size: %d." % (tgt_name, len(tgt_field.vocab)))
-        if data_type == 'text':
-            assert len(fields["src"]) == 1
-            src_multifield = fields["src"][0][1]
-            for src_name, src_field in src_multifield:
-                _build_field_vocab(src_field, counters[src_name])
-                logger.info(" * %s vocab size: %d." %
-                            (src_name, len(src_field.vocab)))
-            if share_vocab:
-                # `tgt_vocab_size` is ignored when sharing vocabularies
-                logger.info(" * merging src and tgt vocab...")
-                src_field = src_multifield.base_field
-                tgt_field = tgt_multifield.base_field
-                _merge_field_vocabs(
-                    src_field, tgt_field, vocab_size=src_vocab_size,
-                    min_freq=src_words_min_frequency)
-                logger.info(" * merged vocab size: %d." % len(src_field.vocab))
+    _build_fv_from_multifield(tgt_multifield, counters, build_fv_args)
+    if data_type == 'text':
+        assert len(fields["src"]) == 1
+        src_multifield = fields["src"][0][1]
+        _build_fv_from_multifield(src_multifield, counters, build_fv_args)
+        if share_vocab:
+            # `tgt_vocab_size` is ignored when sharing vocabularies
+            logger.info(" * merging src and tgt vocab...")
+            src_field = src_multifield.base_field
+            tgt_field = tgt_multifield.base_field
+            _merge_field_vocabs(
+                src_field, tgt_field, vocab_size=src_vocab_size,
+                min_freq=src_words_min_frequency)
+            logger.info(" * merged vocab size: %d." % len(src_field.vocab))
     return fields  # is the return necessary?
 
 

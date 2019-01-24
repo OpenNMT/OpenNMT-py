@@ -61,11 +61,13 @@ def _feature_tokenize(
 class TextMultiField(RawField):
     def __init__(self, base_name, base_field, feats_fields):
         super(TextMultiField, self).__init__()
-        self.base_field = base_field
-        self.feats_fields = []
+        self.fields = [(base_name, base_field)]
         for name, ff in sorted(feats_fields, key=lambda kv: kv[0]):
-            self.feats_fields.append((name, ff))
-        self.all_fields = [(base_name, self.base_field)] + self.feats_fields
+            self.fields.append((name, ff))
+
+    @property
+    def base_field(self):
+        return self.fields[0][1]
 
     def process(self, batch, device=None):
         batch_by_feat = list(zip(*batch))
@@ -74,7 +76,7 @@ class TextMultiField(RawField):
             base_data, lengths = base_data
 
         feats = [ff.process(batch[i], device=device)
-                 for i, (_, ff) in enumerate(self.feats_fields, 1)]
+                 for i, (_, ff) in enumerate(self.fields[1:], 1)]
         levels = [base_data] + feats
         data = torch.stack(levels, 2)
         if self.base_field.include_lengths:
@@ -83,10 +85,10 @@ class TextMultiField(RawField):
             return data
 
     def preprocess(self, x):
-        return [f.preprocess(x) for _, f in self.all_fields]
+        return [f.preprocess(x) for _, f in self.fields]
 
     def __getitem__(self, item):
-        return self.all_fields[item]
+        return self.fields[item]
 
 
 def text_fields(base_name, **kwargs):
