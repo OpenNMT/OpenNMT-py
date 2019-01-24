@@ -178,7 +178,7 @@
 <h2>Core Modules<a class="headerlink" href="#core-modules" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.modules.Embeddings">
-<em class="property">class </em><code class="descclassname">onmt.modules.</code><code class="descname">Embeddings</code><span class="sig-paren">(</span><em>word_vec_size</em>, <em>word_vocab_size</em>, <em>word_padding_idx</em>, <em>position_encoding=False</em>, <em>feat_merge='concat'</em>, <em>feat_vec_exponent=0.7</em>, <em>feat_vec_size=-1</em>, <em>feat_padding_idx=[]</em>, <em>feat_vocab_sizes=[]</em>, <em>dropout=0</em>, <em>sparse=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/modules/embeddings.html#Embeddings"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.modules.Embeddings" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.modules.</code><code class="descname">Embeddings</code><span class="sig-paren">(</span><em>word_vec_size</em>, <em>word_vocab_size</em>, <em>word_padding_idx</em>, <em>position_encoding=False</em>, <em>feat_merge='concat'</em>, <em>feat_vec_exponent=0.7</em>, <em>feat_vec_size=-1</em>, <em>feat_padding_idx=[]</em>, <em>feat_vocab_sizes=[]</em>, <em>dropout=0</em>, <em>sparse=False</em>, <em>fix_word_vecs=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/modules/embeddings.html#Embeddings"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.modules.Embeddings" title="Permalink to this definition">¶</a></dt>
 <dd><p>Words embeddings for encoder/decoder.</p>
 <p>Additionally includes ability to add sparse input features
 based on “Linguistic Input Features Improve Neural Machine Translation”
@@ -253,7 +253,7 @@ number of values of feature takes.</li>
 
 <dl class="method">
 <dt id="onmt.modules.Embeddings.load_pretrained_vectors">
-<code class="descname">load_pretrained_vectors</code><span class="sig-paren">(</span><em>emb_file</em>, <em>fixed</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/modules/embeddings.html#Embeddings.load_pretrained_vectors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.modules.Embeddings.load_pretrained_vectors" title="Permalink to this definition">¶</a></dt>
+<code class="descname">load_pretrained_vectors</code><span class="sig-paren">(</span><em>emb_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/modules/embeddings.html#Embeddings.load_pretrained_vectors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.modules.Embeddings.load_pretrained_vectors" title="Permalink to this definition">¶</a></dt>
 <dd><p>Load in pretrained embeddings.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />

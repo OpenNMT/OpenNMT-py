@@ -254,7 +254,8 @@
                  <span class="n">feat_padding_idx</span><span class="o">=</span><span class="p">[],</span>
                  <span class="n">feat_vocab_sizes</span><span class="o">=</span><span class="p">[],</span>
                  <span class="n">dropout</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                 <span class="n">sparse</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+                 <span class="n">sparse</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">fix_word_vecs</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 
         <span class="k">if</span> <span class="n">feat_padding_idx</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">feat_padding_idx</span> <span class="o">=</span> <span class="p">[]</span>
@@ -315,6 +316,9 @@
             <span class="n">pe</span> <span class="o">=</span> <span class="n">PositionalEncoding</span><span class="p">(</span><span class="n">dropout</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_size</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">make_embedding</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s1">&#39;pe&#39;</span><span class="p">,</span> <span class="n">pe</span><span class="p">)</span>
 
+        <span class="k">if</span> <span class="n">fix_word_vecs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">word_lut</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="kc">False</span>
+
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">word_lut</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; word look-up table &quot;&quot;&quot;</span>
@@ -325,7 +329,7 @@
         <span class="sd">&quot;&quot;&quot; embedding look-up table &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_embedding</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
-<div class="viewcode-block" id="Embeddings.load_pretrained_vectors"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.Embeddings.load_pretrained_vectors">[docs]</a>    <span class="k">def</span> <span class="nf">load_pretrained_vectors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">emb_file</span><span class="p">,</span> <span class="n">fixed</span><span class="p">):</span>
+<div class="viewcode-block" id="Embeddings.load_pretrained_vectors"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.Embeddings.load_pretrained_vectors">[docs]</a>    <span class="k">def</span> <span class="nf">load_pretrained_vectors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">emb_file</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Load in pretrained embeddings.</span>
 
 <span class="sd">        Args:</span>
@@ -341,9 +345,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">word_lut</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span> \
                     <span class="o">.</span><span class="n">copy_</span><span class="p">(</span><span class="n">pretrained</span><span class="p">[:,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">word_vec_size</span><span class="p">])</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">word_lut</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">copy_</span><span class="p">(</span><span class="n">pretrained</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">fixed</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">word_lut</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="kc">False</span></div>
+                <span class="bp">self</span><span class="o">.</span><span class="n">word_lut</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">copy_</span><span class="p">(</span><span class="n">pretrained</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Embeddings.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.Embeddings.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
