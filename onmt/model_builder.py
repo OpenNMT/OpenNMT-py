@@ -259,9 +259,10 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
         if model_opt.share_decoder_embeddings:
             generator[0].weight = decoder.embeddings.word_lut.weight
     else:
-        vocab_size = len(fields["tgt"][0][1].base_field.vocab)
-        pad_idx = fields["tgt"][0][1].base_field.vocab.stoi[
-            fields["tgt"][0][1].base_field.pad_token]
+        assert len(fields["tgt"]) == 1
+        tgt_base_field = fields["tgt"][0][1].base_field
+        vocab_size = len(tgt_base_field.vocab)
+        pad_idx = tgt_base_field.vocab.stoi[tgt_base_field.pad_token]
         generator = CopyGenerator(model_opt.dec_rnn_size, vocab_size, pad_idx)
 
     # Load the model states from checkpoint or initialize them.

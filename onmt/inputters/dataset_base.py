@@ -74,8 +74,9 @@ class DatasetBase(Dataset):
             if dynamic_dict:
                 src_field = fields['src'][0][1]
                 tgt_field = fields['tgt'][0][1]
+                # this assumes src_field and tgt_field are both text
                 src_vocab, ex_dict = self._dynamic_dict(
-                    ex_dict, src_field, tgt_field)
+                    ex_dict, src_field.base_field, tgt_field.base_field)
                 self.src_vocabs.append(src_vocab)
             ex_fields = {k: v for k, v in fields.items() if k in ex_dict}
             ex = Example.fromdict(ex_dict, ex_fields)
@@ -118,17 +119,17 @@ class DatasetBase(Dataset):
         return dict(chain(*[d.items() for d in args]))
 
     def _dynamic_dict(self, example, src_field, tgt_field):
-        src = src_field.base_field.tokenize(example["src"])
+        src = src_field.tokenize(example["src"])
         # make a small vocab containing just the tokens in the source sequence
-        unk = src_field.base_field.unk_token
-        pad = src_field.base_field.pad_token
+        unk = src_field.unk_token
+        pad = src_field.pad_token
         src_vocab = Vocab(Counter(src), specials=[unk, pad])
         # Map source tokens to indices in the dynamic dict.
         src_map = torch.LongTensor([src_vocab.stoi[w] for w in src])
         example["src_map"] = src_map
 
         if "tgt" in example:
-            tgt = tgt_field.base_field.tokenize(example["tgt"])
+            tgt = tgt_field.tokenize(example["tgt"])
             mask = torch.LongTensor(
                 [0] + [src_vocab.stoi[w] for w in tgt] + [0])
             example["alignment"] = mask

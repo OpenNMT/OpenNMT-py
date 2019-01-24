@@ -59,23 +59,22 @@ def _feature_tokenize(
 
 
 class TextMultiField(RawField):
-    def __init__(self, base_field, feats_fields):
+    def __init__(self, base_name, base_field, feats_fields):
         super(TextMultiField, self).__init__()
         self.base_field = base_field
         self.feats_fields = []
         for name, ff in sorted(feats_fields, key=lambda kv: kv[0]):
             self.feats_fields.append((name, ff))
+        self.all_fields = [(base_name, self.base_field)] + self.feats_fields
 
     def process(self, batch, device=None):
         batch_by_feat = list(zip(*batch))
+        base_data = self.base_field.process(batch_by_feat[0], device=device)
         if self.base_field.include_lengths:
-            base_data, lengths = self.base_field.process(
-                batch_by_feat[0], device=device)
-        else:
-            base_data = self.base_field.process(
-                batch_by_feat[0], device=device)
-        feats = [ff.process(batch[i+1], device=device)
-                 for i, (_, ff) in enumerate(self.feats_fields)]
+            base_data, lengths = base_data
+
+        feats = [ff.process(batch[i], device=device)
+                 for i, (_, ff) in enumerate(self.feats_fields, 1)]
         levels = [base_data] + feats
         data = torch.stack(levels, 2)
         if self.base_field.include_lengths:
@@ -84,9 +83,10 @@ class TextMultiField(RawField):
             return data
 
     def preprocess(self, x):
-        base_preprocesses = self.base_field.preprocess(x)
-        feat_preprocesses = [ff.preprocess(x) for _, ff in self.feats_fields]
-        return [base_preprocesses] + feat_preprocesses
+        return [f.preprocess(x) for _, f in self.all_fields]
+
+    def __getitem__(self, item):
+        return self.all_fields[item]
 
 
 def text_fields(base_name, **kwargs):
@@ -122,6 +122,6 @@ def text_fields(base_name, **kwargs):
             pad_token=pad, tokenize=tokenize,
             include_lengths=use_len)
         fields_.append((name, feat))
-    assert fields_[0][0] == base_name
-    field = TextMultiField(fields_[0][1], fields_[1:])
+    assert fields_[0][0] == base_name  # sanity check
+    field = TextMultiField(fields_[0][0], fields_[0][1], fields_[1:])
     return [(base_name, field)]

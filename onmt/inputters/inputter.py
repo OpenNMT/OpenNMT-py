@@ -12,8 +12,7 @@ import torchtext.data
 from torchtext.data import Field
 from torchtext.vocab import Vocab
 
-from onmt.inputters.text_dataset import TextDataset, text_fields,\
-    TextMultiField
+from onmt.inputters.text_dataset import TextDataset, text_fields
 from onmt.inputters.image_dataset import ImageDataset, image_fields
 from onmt.inputters.audio_dataset import AudioDataset, audio_fields
 from onmt.utils.logging import logger
@@ -135,14 +134,13 @@ def load_old_vocab(vocab, data_type="text", dynamic_dict=False):
     )
     for k, vals in fields.items():
         for n, f in vals:
-            if isinstance(f, TextMultiField):
-                for sub_name, sub_f in [(n, f.base_field)] +\
-                        f.feats_fields:
-                    if sub_name in vocab:
-                        sub_f.vocab = vocab[sub_name]
-            else:
-                if n in vocab:
-                    f.vocab = vocab[n]
+            try:
+                f_iter = iter(f)
+            except TypeError:
+                f_iter = [(n, f)]
+            for sub_n, sub_f in f_iter:
+                if sub_n in vocab:
+                    sub_f.vocab = vocab[sub_n]
     return fields
 
 
@@ -297,30 +295,20 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
         logger.info(" * reloading %s." % path)
         for ex in dataset.examples:
             for name, field in chain.from_iterable(fields.values()):
-                if isinstance(field, TextMultiField):
-                    all_data = getattr(ex, name)
-                    base_data = all_data[0]
-                    feats_data = all_data[1:]
-                    has_vocab = (name == 'src' and src_vocab) or \
-                        (name == 'tgt' and tgt_vocab)
-                    if field.base_field.sequential and not has_vocab:
-                        val = base_data
-                        counters[name].update(val)
-                    for (sub_n, sub_f), fd in zip(
-                            field.feats_fields, feats_data):
-                        # has_vocab for subs should always be false but...
-                        has_vocab = (sub_n == 'src' and src_vocab) or \
-                            (sub_n == 'tgt' and tgt_vocab)
-                        if sub_f.sequential and not has_vocab:
-                            val = fd
-                            counters[sub_n].update(val)
+                try:
+                    f_iter = iter(field)
+                except TypeError:
+                    f_iter = [(name, field)]
+                    all_data = [getattr(ex, name, None)]
                 else:
-                    # shouldn't have vocab, but may as well check
-                    has_vocab = (name == 'src' and src_vocab) or \
-                                (name == 'tgt' and tgt_vocab)
-                    if field.sequential and not has_vocab:
-                        val = getattr(ex, name, None)
-                        counters[name].update(val)
+                    all_data = getattr(ex, name)
+                for (sub_n, sub_f), fd in zip(
+                        f_iter, all_data):
+                    has_vocab = (sub_n == 'src' and src_vocab) or \
+                                (sub_n == 'tgt' and tgt_vocab)
+                    if sub_f.sequential and not has_vocab:
+                        val = fd
+                        counters[sub_n].update(val)
 
         # Drop the none-using from memory but keep the last
         if i < len(train_dataset_files) - 1:
@@ -332,30 +320,26 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
             gc.collect()
 
     assert len(fields["tgt"]) == 1
-    base_name, multifield = fields["tgt"][0]
-    _build_field_vocab(multifield.base_field, counters[base_name])
-    for name, field in [(base_name, multifield.base_field)] + \
-            multifield.feats_fields:
-        _build_field_vocab(field, counters[name])
-        logger.info(" * %s vocab size: %d." % (name, len(field.vocab)))
-    if data_type == 'text':
-        assert len(fields["src"]) == 1
-        base_name, multifield = fields["src"][0]
-        _build_field_vocab(multifield.base_field, counters[base_name])
-        for name, field in [(base_name, multifield.base_field)] + \
-                multifield.feats_fields:
-            _build_field_vocab(field, counters[name])
-            logger.info(" * %s vocab size: %d." % (name, len(field.vocab)))
-        if share_vocab:
-            # `tgt_vocab_size` is ignored when sharing vocabularies
-            logger.info(" * merging src and tgt vocab...")
-            src_field = fields['src'][0][1].base_field
-            tgt_field = fields['tgt'][0][1].base_field
-            _merge_field_vocabs(
-                src_field, tgt_field, vocab_size=src_vocab_size,
-                min_freq=src_words_min_frequency)
-            logger.info(" * merged vocab size: %d." % len(src_field.vocab))
-
+    tgt_multifield = fields["tgt"][0][1]
+    for tgt_name, tgt_field in tgt_multifield:
+        _build_field_vocab(tgt_field, counters[tgt_name])
+        logger.info(" * %s vocab size: %d." % (tgt_name, len(tgt_field.vocab)))
+        if data_type == 'text':
+            assert len(fields["src"]) == 1
+            src_multifield = fields["src"][0][1]
+            for src_name, src_field in src_multifield:
+                _build_field_vocab(src_field, counters[src_name])
+                logger.info(" * %s vocab size: %d." %
+                            (src_name, len(src_field.vocab)))
+            if share_vocab:
+                # `tgt_vocab_size` is ignored when sharing vocabularies
+                logger.info(" * merging src and tgt vocab...")
+                src_field = src_multifield.base_field
+                tgt_field = tgt_multifield.base_field
+                _merge_field_vocabs(
+                    src_field, tgt_field, vocab_size=src_vocab_size,
+                    min_freq=src_words_min_frequency)
+                logger.info(" * merged vocab size: %d." % len(src_field.vocab))
     return fields  # is the return necessary?
 
 
