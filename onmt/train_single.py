@@ -111,8 +111,13 @@ def main(opt, device_id):
     # Report src and tgt vocab sizes, including for features
     for side in ['src', 'tgt']:
         for name, f in fields[side]:
-            if f.use_vocab:
-                logger.info(' * %s vocab size = %d' % (name, len(f.vocab)))
+            try:
+                f_iter = iter(f)
+            except TypeError:
+                f_iter = [(name, f)]
+            for sn, sf in f_iter:
+                if sf.use_vocab:
+                    logger.info(' * %s vocab size = %d' % (sn, len(sf.vocab)))
 
     # Build model.
     model = build_model(model_opt, opt, fields, checkpoint)
