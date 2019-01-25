@@ -28,8 +28,6 @@ class TransformerDecoderLayer(nn.Module):
                  self_attn_type="scaled-dot"):
         super(TransformerDecoderLayer, self).__init__()
 
-        self.self_attn_type = self_attn_type
-
         if self_attn_type == "scaled-dot":
             self.self_attn = MultiHeadedAttention(
                 heads, d_model, dropout=dropout)
@@ -71,12 +69,12 @@ class TransformerDecoderLayer(nn.Module):
 
         input_norm = self.layer_norm_1(inputs)
 
-        if self.self_attn_type == "scaled-dot":
+        if isinstance(self.self_attn, MultiHeadedAttention):
             query, attn = self.self_attn(input_norm, input_norm, input_norm,
                                          mask=dec_mask,
                                          layer_cache=layer_cache,
                                          type="self")
-        elif self.self_attn_type == "average":
+        elif isinstance(self.self_attn, AverageAttention):
             query, attn = self.self_attn(input_norm, mask=dec_mask,
                                          layer_cache=layer_cache, step=step)
 
@@ -144,19 +142,18 @@ class TransformerDecoder(nn.Module):
         super(TransformerDecoder, self).__init__()
 
         self.embeddings = embeddings
-        self.self_attn_type = self_attn_type
 
         # Decoder State
         self.state = {}
 
-        # Build TransformerDecoder.
         self.transformer_layers = nn.ModuleList(
             [TransformerDecoderLayer(d_model, heads, d_ff, dropout,
              self_attn_type=self_attn_type)
              for i in range(num_layers)])
 
-        # TransformerDecoder has its own attention mechanism.
-        # Set up a separate copy attention layer if needed.
+        # previously, there was a GlobalAttention module here for copy
+        # attention. But it was never actually used -- the "copy" attention
+        # just reuses the context attention.
         self._copy = copy_attn
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
 
@@ -181,10 +178,7 @@ class TransformerDecoder(nn.Module):
     def detach_state(self):
         self.state["src"] = self.state["src"].detach()
 
-    def forward(self, tgt, memory_bank, memory_lengths=None, step=None):
-        """
-        See :obj:`onmt.modules.RNNDecoderBase.forward()`
-        """
+    def forward(self, tgt, memory_bank, step=None, **kwargs):
         if step == 0:
             self._init_cache(memory_bank)
 
@@ -216,8 +210,6 @@ class TransformerDecoder(nn.Module):
                 step=step)
 
         output = self.layer_norm(output)
-
-        # Process the result and update the attentions.
         dec_outs = output.transpose(0, 1).contiguous()
         attn = attn.transpose(0, 1).contiguous()
 
@@ -235,7 +227,7 @@ class TransformerDecoder(nn.Module):
 
         for i in range(len(self.transformer_layers)):
             layer_cache = {"memory_keys": None, "memory_values": None}
-            if self.self_attn_type == "average":
+            if isinstance(self.self_attn, AverageAttention):
                 layer_cache["prev_g"] = torch.zeros((batch_size, 1, depth))
             else:
                 layer_cache["self_keys"] = None
