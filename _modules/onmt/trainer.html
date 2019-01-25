@@ -169,7 +169,6 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">onmt.inputters</span> <span class="k">as</span> <span class="nn">inputters</span>
 <span class="kn">import</span> <span class="nn">onmt.utils</span>
 
 <span class="kn">from</span> <span class="nn">onmt.utils.logging</span> <span class="k">import</span> <span class="n">logger</span>
@@ -189,7 +188,7 @@
 <span class="sd">        model_saver(:obj:`onmt.models.ModelSaverBase`): the utility object</span>
 <span class="sd">            used to save the model</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">tgt_field</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">tgt_field</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">base_field</span>
     <span class="n">train_loss</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">loss</span><span class="o">.</span><span class="n">build_loss_compute</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">tgt_field</span><span class="p">,</span> <span class="n">opt</span><span class="p">)</span>
     <span class="n">valid_loss</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">loss</span><span class="o">.</span><span class="n">build_loss_compute</span><span class="p">(</span>
         <span class="n">model</span><span class="p">,</span> <span class="n">tgt_field</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">train</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
@@ -309,7 +308,7 @@
                     <span class="n">true_batches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
 
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">norm_method</span> <span class="o">==</span> <span class="s2">&quot;tokens&quot;</span><span class="p">:</span>
-                        <span class="n">num_tokens</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">tgt</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">ne</span><span class="p">(</span>
+                        <span class="n">num_tokens</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">tgt</span><span class="p">[</span><span class="mi">1</span><span class="p">:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">ne</span><span class="p">(</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">train_loss</span><span class="o">.</span><span class="n">padding_idx</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
                         <span class="n">normalization</span> <span class="o">+=</span> <span class="n">num_tokens</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
                     <span class="k">else</span><span class="p">:</span>
@@ -378,8 +377,9 @@
             <span class="n">stats</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">Statistics</span><span class="p">()</span>
 
             <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">valid_iter</span><span class="p">:</span>
-                <span class="n">src</span><span class="p">,</span> <span class="n">src_lengths</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">make_features</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="s1">&#39;src&#39;</span><span class="p">)</span>
-                <span class="n">tgt</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">make_features</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="s1">&#39;tgt&#39;</span><span class="p">)</span>
+                <span class="n">src</span><span class="p">,</span> <span class="n">src_lengths</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">src</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">src</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> \
+                                   <span class="k">else</span> <span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">src</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="n">tgt</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">tgt</span>
 
                 <span class="c1"># F-prop through the model.</span>
                 <span class="n">outputs</span><span class="p">,</span> <span class="n">attns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">)</span>
@@ -408,12 +408,12 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">trunc_size</span> <span class="o">=</span> <span class="n">target_size</span>
 
-            <span class="n">src</span><span class="p">,</span> <span class="n">src_lengths</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">make_features</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="s1">&#39;src&#39;</span><span class="p">)</span>
+            <span class="n">src</span><span class="p">,</span> <span class="n">src_lengths</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">src</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">src</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> \
+                <span class="k">else</span> <span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">src</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">src_lengths</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">report_stats</span><span class="o">.</span><span class="n">n_src_words</span> <span class="o">+=</span> <span class="n">src_lengths</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
 
-            <span class="c1"># this method unsqueezes its input</span>
-            <span class="n">tgt_outer</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">make_features</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="s1">&#39;tgt&#39;</span><span class="p">)</span>
+            <span class="n">tgt_outer</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">tgt</span>
 
             <span class="n">bptt</span> <span class="o">=</span> <span class="kc">False</span>
             <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">target_size</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">trunc_size</span><span class="p">):</span>
