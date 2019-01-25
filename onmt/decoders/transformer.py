@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-import onmt
+from onmt.modules import MultiHeadedAttention, AverageAttention
 from onmt.modules.position_ffn import PositionwiseFeedForward
 
 MAX_SIZE = 5000
@@ -20,7 +20,7 @@ class TransformerDecoderLayer(nn.Module):
                        the first-layer of the PositionwiseFeedForward.
       heads (int): the number of heads for MultiHeadedAttention.
       d_ff (int): the second-layer of the PositionwiseFeedForward.
-      dropout (float): dropout probability(0-1.0).
+      dropout (float): dropout probability.
       self_attn_type (string): type of self-attention scaled-dot, average
     """
 
@@ -31,18 +31,16 @@ class TransformerDecoderLayer(nn.Module):
         self.self_attn_type = self_attn_type
 
         if self_attn_type == "scaled-dot":
-            self.self_attn = onmt.modules.MultiHeadedAttention(
+            self.self_attn = MultiHeadedAttention(
                 heads, d_model, dropout=dropout)
         elif self_attn_type == "average":
-            self.self_attn = onmt.modules.AverageAttention(
-                d_model, dropout=dropout)
+            self.self_attn = AverageAttention(d_model, dropout=dropout)
 
-        self.context_attn = onmt.modules.MultiHeadedAttention(
+        self.context_attn = MultiHeadedAttention(
             heads, d_model, dropout=dropout)
         self.feed_forward = PositionwiseFeedForward(d_model, d_ff, dropout)
         self.layer_norm_1 = nn.LayerNorm(d_model, eps=1e-6)
         self.layer_norm_2 = nn.LayerNorm(d_model, eps=1e-6)
-        self.dropout = dropout
         self.drop = nn.Dropout(dropout)
         mask = self._get_attn_subsequent_mask(MAX_SIZE)
         # Register self.mask as a buffer in TransformerDecoderLayer, so
@@ -145,7 +143,6 @@ class TransformerDecoder(nn.Module):
                  copy_attn, self_attn_type, dropout, embeddings):
         super(TransformerDecoder, self).__init__()
 
-        self.num_layers = num_layers
         self.embeddings = embeddings
         self.self_attn_type = self_attn_type
 
@@ -156,15 +153,11 @@ class TransformerDecoder(nn.Module):
         self.transformer_layers = nn.ModuleList(
             [TransformerDecoderLayer(d_model, heads, d_ff, dropout,
              self_attn_type=self_attn_type)
-             for _ in range(num_layers)])
+             for i in range(num_layers)])
 
         # TransformerDecoder has its own attention mechanism.
         # Set up a separate copy attention layer if needed.
-        self._copy = False
-        if copy_attn:
-            self.copy_attn = onmt.modules.GlobalAttention(
-                d_model, attn_type=attn_type)
-            self._copy = True
+        self._copy = copy_attn
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
 
     def init_state(self, src, memory_bank, enc_hidden):
@@ -193,18 +186,13 @@ class TransformerDecoder(nn.Module):
         See :obj:`onmt.modules.RNNDecoderBase.forward()`
         """
         if step == 0:
-            self._init_cache(memory_bank, self.num_layers, self.self_attn_type)
+            self._init_cache(memory_bank)
 
         src = self.state["src"]
         src_words = src[:, :, 0].transpose(0, 1)
         tgt_words = tgt[:, :, 0].transpose(0, 1)
         src_batch, src_len = src_words.size()
         tgt_batch, tgt_len = tgt_words.size()
-
-        dec_outs = []
-        attns = {"std": []}
-        if self._copy:
-            attns["copy"] = []
 
         emb = self.embeddings(tgt, step=step)
         assert emb.dim() == 3  # len x batch x embedding_dim
@@ -216,15 +204,15 @@ class TransformerDecoder(nn.Module):
         src_pad_mask = src_words.data.eq(pad_idx).unsqueeze(1)  # [B, 1, T_src]
         tgt_pad_mask = tgt_words.data.eq(pad_idx).unsqueeze(1)  # [B, 1, T_tgt]
 
-        for i in range(self.num_layers):
-            output, attn = self.transformer_layers[i](
+        for i, layer in enumerate(self.transformer_layers):
+            layer_cache = self.state["cache"]["layer_{}".format(i)] \
+                if step is not None else None
+            output, attn = layer(
                 output,
                 src_memory_bank,
                 src_pad_mask,
                 tgt_pad_mask,
-                layer_cache=(
-                    self.state["cache"]["layer_{}".format(i)]
-                    if step is not None else None),
+                layer_cache=layer_cache,
                 step=step)
 
         output = self.layer_norm(output)
@@ -233,29 +221,23 @@ class TransformerDecoder(nn.Module):
         dec_outs = output.transpose(0, 1).contiguous()
         attn = attn.transpose(0, 1).contiguous()
 
-        attns["std"] = attn
+        attns = {"std": attn}
         if self._copy:
             attns["copy"] = attn
 
         # TODO change the way attns is returned dict => list or tuple (onnx)
         return dec_outs, attns
 
-    def _init_cache(self, memory_bank, num_layers, self_attn_type):
+    def _init_cache(self, memory_bank):
         self.state["cache"] = {}
         batch_size = memory_bank.size(1)
         depth = memory_bank.size(-1)
 
-        for l in range(num_layers):
-            layer_cache = {
-                "memory_keys": None,
-                "memory_values": None
-            }
-            if self_attn_type == "scaled-dot":
-                layer_cache["self_keys"] = None
-                layer_cache["self_values"] = None
-            elif self_attn_type == "average":
+        for i in range(len(self.transformer_layers)):
+            layer_cache = {"memory_keys": None, "memory_values": None}
+            if self.self_attn_type == "average":
                 layer_cache["prev_g"] = torch.zeros((batch_size, 1, depth))
             else:
                 layer_cache["self_keys"] = None
                 layer_cache["self_values"] = None
-            self.state["cache"]["layer_{}".format(l)] = layer_cache
+            self.state["cache"]["layer_{}".format(i)] = layer_cache
