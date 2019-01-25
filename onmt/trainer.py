@@ -10,7 +10,6 @@
 """
 
 import torch
-import onmt.inputters as inputters
 import onmt.utils
 
 from onmt.utils.logging import logger
@@ -30,7 +29,7 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
         model_saver(:obj:`onmt.models.ModelSaverBase`): the utility object
             used to save the model
     """
-    tgt_field = fields['tgt'][0][1]
+    tgt_field = fields['tgt'][0][1].base_field
     train_loss = onmt.utils.loss.build_loss_compute(model, tgt_field, opt)
     valid_loss = onmt.utils.loss.build_loss_compute(
         model, tgt_field, opt, train=False)
@@ -150,7 +149,7 @@ class Trainer(object):
                     true_batches.append(batch)
 
                     if self.norm_method == "tokens":
-                        num_tokens = batch.tgt[1:].ne(
+                        num_tokens = batch.tgt[1:, :, 0].ne(
                             self.train_loss.padding_idx).sum()
                         normalization += num_tokens.item()
                     else:
@@ -219,8 +218,9 @@ class Trainer(object):
             stats = onmt.utils.Statistics()
 
             for batch in valid_iter:
-                src, src_lengths = inputters.make_features(batch, 'src')
-                tgt, _ = inputters.make_features(batch, 'tgt')
+                src, src_lengths = batch.src if isinstance(batch.src, tuple) \
+                                   else (batch.src, None)
+                tgt = batch.tgt
 
                 # F-prop through the model.
                 outputs, attns = self.model(src, tgt, src_lengths)
@@ -249,12 +249,12 @@ class Trainer(object):
             else:
                 trunc_size = target_size
 
-            src, src_lengths = inputters.make_features(batch, 'src')
+            src, src_lengths = batch.src if isinstance(batch.src, tuple) \
+                else (batch.src, None)
             if src_lengths is not None:
                 report_stats.n_src_words += src_lengths.sum().item()
 
-            # this method unsqueezes its input
-            tgt_outer, _ = inputters.make_features(batch, 'tgt')
+            tgt_outer = batch.tgt
 
             bptt = False
             for j in range(0, target_size-1, trunc_size):

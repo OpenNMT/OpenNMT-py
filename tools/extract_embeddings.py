@@ -48,8 +48,8 @@ def main():
         fields = onmt.inputters.load_old_vocab(vocab)
     else:
         fields = vocab
-    src_dict = fields['src'][0][1].vocab
-    tgt_dict = fields['tgt'][0][1].vocab
+    src_dict = fields['src'][0][1].base_field.vocab
+    tgt_dict = fields['tgt'][0][1].base_field.vocab
 
     model_opt = checkpoint['opt']
     for arg in dummy_opt.__dict__:

@@ -74,8 +74,9 @@ class DatasetBase(Dataset):
             if dynamic_dict:
                 src_field = fields['src'][0][1]
                 tgt_field = fields['tgt'][0][1]
+                # this assumes src_field and tgt_field are both text
                 src_vocab, ex_dict = self._dynamic_dict(
-                    ex_dict, src_field, tgt_field)
+                    ex_dict, src_field.base_field, tgt_field.base_field)
                 self.src_vocabs.append(src_vocab)
             ex_fields = {k: v for k, v in fields.items() if k in ex_dict}
             ex = Example.fromdict(ex_dict, ex_fields)

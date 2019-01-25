@@ -30,7 +30,7 @@ class TranslationBuilder(object):
         self.has_tgt = has_tgt
 
     def _build_target_tokens(self, src, src_vocab, src_raw, pred, attn):
-        tgt_field = self.fields["tgt"][0][1]
+        tgt_field = self.fields["tgt"][0][1].base_field
         vocab = tgt_field.vocab
         tokens = []
         for tok in pred:
@@ -65,17 +65,18 @@ class TranslationBuilder(object):
         # Sorting
         inds, perm = torch.sort(batch.indices)
         if isinstance(self.data, TextDataset):
-            src = batch.src[0].index_select(1, perm)
+            src = batch.src[0][:, :, 0].index_select(1, perm)
         else:
             src = None
-        tgt = batch.tgt.index_select(1, perm) if self.has_tgt else None
+        tgt = batch.tgt[:, :, 0].index_select(1, perm) \
+            if self.has_tgt else None
 
         translations = []
         for b in range(batch_size):
             if isinstance(self.data, TextDataset):
                 src_vocab = self.data.src_vocabs[inds[b]] \
                     if self.data.src_vocabs else None
-                src_raw = self.data.examples[inds[b]].src
+                src_raw = self.data.examples[inds[b]].src[0]
             else:
                 src_vocab = None
                 src_raw = None
