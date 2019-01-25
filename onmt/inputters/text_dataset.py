@@ -70,14 +70,17 @@ class TextMultiField(RawField):
         return self.fields[0][1]
 
     def process(self, batch, device=None):
+        # batch (list(list(list))): batch_size x len(self.fields) x seq_len
         batch_by_feat = list(zip(*batch))
         base_data = self.base_field.process(batch_by_feat[0], device=device)
         if self.base_field.include_lengths:
+            # lengths: batch_size
             base_data, lengths = base_data
 
-        feats = [ff.process(batch[i], device=device)
+        feats = [ff.process(batch_by_feat[i], device=device)
                  for i, (_, ff) in enumerate(self.fields[1:], 1)]
         levels = [base_data] + feats
+        # data: seq_len x batch_size x len(self.fields)
         data = torch.stack(levels, 2)
         if self.base_field.include_lengths:
             return data, lengths

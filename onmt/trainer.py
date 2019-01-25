@@ -149,7 +149,7 @@ class Trainer(object):
                     true_batches.append(batch)
 
                     if self.norm_method == "tokens":
-                        num_tokens = batch.tgt[1:].ne(
+                        num_tokens = batch.tgt[1:, :, 0].ne(
                             self.train_loss.padding_idx).sum()
                         normalization += num_tokens.item()
                     else:

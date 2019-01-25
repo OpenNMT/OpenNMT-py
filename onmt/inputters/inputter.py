@@ -269,7 +269,7 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
     Returns:
         Dict of Fields
     """
-    counters = {k: Counter() for k, v in chain.from_iterable(fields.values())}
+    counters = defaultdict(Counter)
 
     # Load vocabulary
     if src_vocab_path:
