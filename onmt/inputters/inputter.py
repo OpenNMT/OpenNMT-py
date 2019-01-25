@@ -12,7 +12,8 @@ import torchtext.data
 from torchtext.data import Field
 from torchtext.vocab import Vocab
 
-from onmt.inputters.text_dataset import TextDataset, text_fields
+from onmt.inputters.text_dataset import TextDataset, text_fields,\
+    TextMultiField
 from onmt.inputters.image_dataset import ImageDataset, image_fields
 from onmt.inputters.audio_dataset import AudioDataset, audio_fields
 from onmt.utils.logging import logger
@@ -126,6 +127,15 @@ def load_old_vocab(vocab, data_type="text", dynamic_dict=False):
     returns: a dictionary whose keys are the field names and whose values
              are lists of (name, Field) pairs
     """
+    if _old_style_field_list(vocab):  # upgrade to multifield
+        fields = vocab
+        for base_name, vals in fields.items():
+            if ((base_name == 'src' and data_type == 'text') or
+                    base_name == 'tgt'):
+                assert not isinstance(vals[0][1], TextMultiField)
+                fields[base_name] = [(base_name, TextMultiField(
+                    vals[0][0], vals[0][1], vals[1:]))]
+        return fields
     vocab = dict(vocab)
     n_src_features = sum('src_feat_' in k for k in vocab)
     n_tgt_features = sum('tgt_feat_' in k for k in vocab)
@@ -144,7 +154,7 @@ def load_old_vocab(vocab, data_type="text", dynamic_dict=False):
     return fields
 
 
-def old_style_vocab(vocab):
+def _old_style_vocab(vocab):
     """
     vocab: some object loaded from a *.vocab.pt file
     returns: whether the object is a list of pairs where the second object
@@ -156,6 +166,16 @@ def old_style_vocab(vocab):
     """
     return isinstance(vocab, list) and \
         any(isinstance(v[1], Vocab) for v in vocab)
+
+
+def _old_style_field_list(vocab):
+    # if tgt isn't using TextMultiField, then no text field is.
+    return not _old_style_vocab(vocab) and not isinstance(
+        vocab['tgt'][0][1], TextMultiField)
+
+
+def old_style_vocab(vocab):
+    return _old_style_vocab(vocab) or _old_style_field_list(vocab)
 
 
 def filter_example(ex, use_src_len=True, use_tgt_len=True,
