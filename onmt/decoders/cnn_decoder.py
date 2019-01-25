@@ -5,7 +5,7 @@ Implementation of the CNN Decoder part of
 import torch
 import torch.nn as nn
 
-import onmt.modules
+from onmt.modules import ConvMultiStepAttention, GlobalAttention
 from onmt.utils.cnn_factory import shape_transform, GatedConv
 
 SCALE_WEIGHT = 0.5 ** 0.5
@@ -15,7 +15,6 @@ class CNNDecoder(nn.Module):
     """
     Decoder built on CNN, based on :cite:`DBLP:journals/corr/GehringAGYD17`.
 
-
     Consists of residual convolutional layers, with ConvMultiStepAttention.
     """
 
@@ -23,36 +22,29 @@ class CNNDecoder(nn.Module):
                  copy_attn, cnn_kernel_width, dropout, embeddings):
         super(CNNDecoder, self).__init__()
 
-        self.num_layers = num_layers
-        self.hidden_size = hidden_size
         self.cnn_kernel_width = cnn_kernel_width
         self.embeddings = embeddings
-        self.dropout = dropout
 
         # Decoder State
         self.state = {}
 
-        # Build the CNN.
         input_size = self.embeddings.embedding_size
-        self.linear = nn.Linear(input_size, self.hidden_size)
-        self.conv_layers = nn.ModuleList()
-        for _ in range(self.num_layers):
-            self.conv_layers.append(
-                GatedConv(self.hidden_size, self.cnn_kernel_width,
-                          self.dropout, True))
-
-        self.attn_layers = nn.ModuleList()
-        for _ in range(self.num_layers):
-            self.attn_layers.append(
-                onmt.modules.ConvMultiStepAttention(self.hidden_size))
+        self.linear = nn.Linear(input_size, hidden_size)
+        self.conv_layers = nn.ModuleList(
+            [GatedConv(hidden_size, cnn_kernel_width, dropout, True)
+             for i in range(num_layers)]
+        )
+        self.attn_layers = nn.ModuleList(
+            [ConvMultiStepAttention(hidden_size) for i in range(num_layers)]
+        )
 
         # CNNDecoder has its own attention mechanism.
         # Set up a separate copy attention layer if needed.
-        self._copy = False
+        assert not copy_attn, "Copy mechanism not yet tested in conv2conv"
         if copy_attn:
-            self.copy_attn = onmt.modules.GlobalAttention(
-                hidden_size, attn_type=attn_type)
-            self._copy = True
+            self.copy_attn = GlobalAttention(hidden_size, attn_type=attn_type)
+        else:
+            self.copy_attn = None
 
     def init_state(self, _, memory_bank, enc_hidden):
         """
@@ -69,18 +61,15 @@ class CNNDecoder(nn.Module):
     def detach_state(self):
         self.state["previous_input"] = self.state["previous_input"].detach()
 
-    def forward(self, tgt, memory_bank, memory_lengths=None, step=None):
+    def forward(self, tgt, memory_bank, step=None, **kwargs):
         """ See :obj:`onmt.modules.RNNDecoderBase.forward()`"""
-        # NOTE: memory_lengths is only here for compatibility reasons
-        #       with onmt.modules.RNNDecoderBase.forward()
 
         if self.state["previous_input"] is not None:
             tgt = torch.cat([self.state["previous_input"], tgt], 0)
 
         dec_outs = []
         attns = {"std": []}
-        assert not self._copy, "Copy mechanism not yet tested in conv2conv"
-        if self._copy:
+        if self.copy_attn is not None:
             attns["copy"] = []
 
         emb = self.embeddings(tgt)
@@ -118,7 +107,7 @@ class CNNDecoder(nn.Module):
             attn = attn[:, self.state["previous_input"].size(0):].squeeze()
             attn = torch.stack([attn])
         attns["std"] = attn
-        if self._copy:
+        if self.copy_attn is not None:
             attns["copy"] = attn
 
         # Update the state.
