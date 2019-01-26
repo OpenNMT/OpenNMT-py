@@ -1,5 +1,8 @@
 #!/bin/bash
 # Run this script and fix *any* error before sending PR.
+# For repeated runs, set the environment variables
+# SKIP_DOWNLOADS=1  If files/uncompressed dirs exist don't download (if compressed files exist, just untar).
+# SKIP_FULL_CLEAN=1  Don't remove anything downloaded/uncompressed.
 
 LOG_FILE=/tmp/$$_pull_request_chk.log
 echo > ${LOG_FILE} # Empty the log file.
@@ -11,10 +14,22 @@ PYTHON="python"
 
 clean_up()
 {
-    rm ${LOG_FILE}
-    rm -rf /tmp/*pt
-    rm -rf /tmp/im2text
-    rm -rf /tm/speech
+    if [[ "$1" != "error" ]]; then
+        rm ${LOG_FILE}
+    fi
+    if [[ "${SKIP_FULL_CLEAN}" == "1" ]]; then
+        # delete any .pt's that weren't downloaded
+        ls /tmp/*.pt | grep -vE "test_model_speech.pt|test_model_im2text.pt" | xargs -I {} rm -f /tmp/{}
+    else
+        # delete all .pt's
+        rm -f /tmp/*.pt
+    fi
+    if [[ "${SKIP_FULL_CLEAN}" != "1" ]]; then
+        rm -rf /tmp/im2text
+        rm -rf /tm/speech
+    fi
+    rm -f /tmp/im2text.tgz
+    rm -f /tmp/speech.tgz
 }
 trap clean_up SIGINT SIGQUIT SIGKILL
 
@@ -22,30 +37,42 @@ error_exit()
 {
     echo "Failed !" | tee -a ${LOG_FILE}
     echo "[!] Check ${LOG_FILE} for detail."
+    clean_up error
     exit 1
 }
 
 environment_prepare()
 {
   # Download img2text corpus
-  wget -q -O /tmp/im2text.tgz http://lstm.seas.harvard.edu/latex/im2text_small.tgz
-  tar zxf /tmp/im2text.tgz -C /tmp/
+  if [[ "${SKIP_DOWNLOADS}" != "1" || ! -d /tmp/im2text ]]; then
+    if [[ "${SKIP_DOWNLOADS}" != "1" || ! -f /tmp/im2text.tgz ]]; then
+      wget -q -O /tmp/im2text.tgz http://lstm.seas.harvard.edu/latex/im2text_small.tgz
+    fi
+    tar zxf /tmp/im2text.tgz -C /tmp/
+  fi
   head /tmp/im2text/src-train.txt > /tmp/im2text/src-train-head.txt
   head /tmp/im2text/tgt-train.txt > /tmp/im2text/tgt-train-head.txt
   head /tmp/im2text/src-val.txt > /tmp/im2text/src-val-head.txt
   head /tmp/im2text/tgt-val.txt > /tmp/im2text/tgt-val-head.txt
 
-  wget -q -O /tmp/test_model_speech.pt http://lstm.seas.harvard.edu/latex/model_step_2760.pt
-
+  if [[ "${SKIP_DOWNLOADS}" != "1" || ! -f /tmp/test_model_speech.pt ]]; then
+    wget -q -O /tmp/test_model_speech.pt http://lstm.seas.harvard.edu/latex/model_step_2760.pt
+  fi
   # Download speech2text corpus
-  wget -q -O /tmp/speech.tgz http://lstm.seas.harvard.edu/latex/speech.tgz
-  tar zxf /tmp/speech.tgz -C /tmp/
+  if [[ "${SKIP_DOWNLOADS}" != "1" || ! -d /tmp/speech ]]; then
+    if [[ "${SKIP_DOWNLOADS}" != "1" || ! -f /tmp/speech.tgz ]]; then
+      wget -q -O /tmp/speech.tgz http://lstm.seas.harvard.edu/latex/speech.tgz
+    fi
+    tar zxf /tmp/speech.tgz -C /tmp/
+  fi
   head /tmp/speech/src-train.txt > /tmp/speech/src-train-head.txt
   head /tmp/speech/tgt-train.txt > /tmp/speech/tgt-train-head.txt
   head /tmp/speech/src-val.txt > /tmp/speech/src-val-head.txt
   head /tmp/speech/tgt-val.txt > /tmp/speech/tgt-val-head.txt
 
-  wget -q -O /tmp/test_model_im2text.pt http://lstm.seas.harvard.edu/latex/test_model_im2text.pt
+  if [[ "${SKIP_DOWNLOADS}" != "1" || ! -f /tmp/test_model_im2text.pt ]]; then
+    wget -q -O /tmp/test_model_im2text.pt http://lstm.seas.harvard.edu/latex/test_model_im2text.pt
+  fi
 }
 
 # flake8 check
