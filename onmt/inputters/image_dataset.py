@@ -8,7 +8,6 @@ from torchtext.data import Field
 from onmt.inputters.dataset_base import DatasetBase
 from onmt.inputters.datareader_base import DataReaderBase
 
-
 # domain specific dependencies
 try:
     from PIL import Image
