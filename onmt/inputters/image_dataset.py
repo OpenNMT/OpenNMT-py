@@ -25,13 +25,14 @@ class ImageDataReader(DataReaderBase):
     """
 
     def __init__(self, truncate=None, channel_size=3, **kwargs):
+        self._check_deps()
         self.truncate = truncate
         self.channel_size = channel_size
 
-    @staticmethod
-    def _check_deps():
+    @classmethod
+    def _check_deps(cls):
         if any([Image is None, transforms is None, cv2 is None]):
-            ImageDataReader._raise_missing_dep(
+            cls._raise_missing_dep(
                 "PIL", "torchvision", "cv2")
 
     def read(self, images, side, img_dir=None):
@@ -43,8 +44,6 @@ class ImageDataReader(DataReaderBase):
         Yields:
             a dictionary containing image data, path and index for each line.
         """
-        ImageDataReader._check_deps()
-
         if isinstance(images, str):
             images = DataReaderBase._read_file(images)
 

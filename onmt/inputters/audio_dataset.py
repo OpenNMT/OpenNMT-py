@@ -32,6 +32,7 @@ class AudioDataReader(DataReaderBase):
 
     def __init__(self, sample_rate=0, window_size=0, window_stride=0,
                  window=None, normalize_audio=True, truncate=None, **kwargs):
+        self._check_deps()
         self.sample_rate = sample_rate
         self.window_size = window_size
         self.window_stride = window_stride
@@ -39,10 +40,10 @@ class AudioDataReader(DataReaderBase):
         self.normalize_audio = normalize_audio
         self.truncate = truncate
 
-    @staticmethod
-    def _check_deps():
+    @classmethod
+    def _check_deps(cls):
         if any([torchaudio is None, librosa is None, np is None]):
-            AudioDataReader._raise_missing_dep(
+            cls._raise_missing_dep(
                 "torchaudio", "librosa", "numpy")
 
     def extract_features(self, audio_path):
@@ -50,7 +51,6 @@ class AudioDataReader(DataReaderBase):
         # straightforward to rewrite the audio handling to make use of
         # up-to-date torchaudio, but in the meantime there is a legacy
         # method which uses the old defaults
-        AudioDataReader._check_deps()
         sound, sample_rate_ = torchaudio.legacy.load(audio_path)
         if self.truncate and self.truncate > 0:
             if sound.size(0) > self.truncate:
