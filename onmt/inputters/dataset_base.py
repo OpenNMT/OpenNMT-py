@@ -2,17 +2,10 @@
 
 from itertools import chain
 from collections import Counter
-import codecs
 
 import torch
 from torchtext.data import Example, Dataset
 from torchtext.vocab import Vocab
-
-
-# several data readers need optional dependencies. There's no
-# appropriate builtin exception
-class MissingDependencyException(Exception):
-    pass
 
 
 class DatasetBase(Dataset):
@@ -87,13 +80,6 @@ class DatasetBase(Dataset):
 
         super(DatasetBase, self).__init__(examples, fields, filter_pred)
 
-    @staticmethod
-    def _raise_missing_dep(*missing_deps):
-        """Raise missing dep exception with standard error message."""
-        raise MissingDependencyException(
-            "Could not create reader. Be sure to install "
-            "the following dependencies: " + ", ".join(missing_deps))
-
     def __getattr__(self, attr):
         # avoid infinite recursion when fields isn't defined
         if 'fields' not in vars(self):
@@ -134,9 +120,3 @@ class DatasetBase(Dataset):
                 [0] + [src_vocab.stoi[w] for w in tgt] + [0])
             example["alignment"] = mask
         return src_vocab, example
-
-    @classmethod
-    def _read_file(cls, path):
-        with codecs.open(path, "r", "utf-8") as f:
-            for line in f:
-                yield line
