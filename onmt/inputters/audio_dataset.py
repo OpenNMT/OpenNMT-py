@@ -117,25 +117,6 @@ class AudioDataset(DatasetBase):
         """ Sort using duration time of the sound spectrogram. """
         return ex.src.size(1)
 
-    @classmethod
-    def make_examples(
-            cls,
-            data,
-            src_dir,
-            side,
-            sample_rate,
-            window_size,
-            window_stride,
-            window,
-            normalize_audio,
-            truncate=None):
-        reader = AudioDataReader(
-            sample_rate=sample_rate, window_size=window_size,
-            window_stride=window_stride, window=window,
-            normalize_audio=normalize_audio, truncate=truncate)
-        for x in reader.read(data, side, src_dir):
-            yield x
-
 
 class AudioSeqField(Field):
     def __init__(self, preprocessing=None, postprocessing=None,

@@ -191,12 +191,9 @@ def filter_example(ex, use_src_len=True, use_tgt_len=True,
         (not use_tgt_len or min_tgt_len <= len(ex.tgt) <= max_tgt_len)
 
 
-def build_dataset(fields, data_type, src,
-                  src_dir=None, tgt=None,
-                  src_seq_len=50, tgt_seq_len=50,
-                  sample_rate=0, window_size=0, window_stride=0, window=None,
-                  normalize_audio=True, use_filter_pred=True,
-                  image_channel_size=3):
+def build_dataset(fields, data_type, src, src_reader,
+                  src_dir=None, tgt=None, tgt_reader=None,
+                  src_seq_len=50, tgt_seq_len=50, use_filter_pred=True):
     """
     src: path to corpus file or iterator over source data
     tgt: path to corpus file, iterator over target data, or None
@@ -206,24 +203,8 @@ def build_dataset(fields, data_type, src,
     }
     assert data_type in dataset_classes
     assert src is not None
-    if data_type == 'text':
-        src_examples_iter = TextDataset.make_examples(src, "src")
-    elif data_type == 'img':
-        # there is a truncate argument as well, but it was never set to
-        # anything besides None before
-        src_examples_iter = ImageDataset.make_examples(
-            src, src_dir, 'src', channel_size=image_channel_size
-        )
-    else:
-        src_examples_iter = AudioDataset.make_examples(
-            src, src_dir, "src", sample_rate,
-            window_size, window_stride, window,
-            normalize_audio, None)
-
-    if tgt is None:
-        tgt_examples_iter = None
-    else:
-        tgt_examples_iter = TextDataset.make_examples(tgt, "tgt")
+    src_examples_iter = src_reader.read(src, "src", src_dir)
+    tgt_examples_iter = None if tgt is None else tgt_reader.read(tgt, "tgt")
 
     # the second conjunct means nothing will be filtered at translation time
     # if there is no target data

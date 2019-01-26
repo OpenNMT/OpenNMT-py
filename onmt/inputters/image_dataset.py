@@ -35,7 +35,7 @@ class ImageDataReader(DataReaderBase):
             ImageDataReader._raise_missing_dep(
                 "PIL", "torchvision", "cv2")
 
-    def read(self, images, side, src_dir=None):
+    def read(self, images, side, img_dir=None):
         """
         Args:
             images (str): location of a src file containing image paths
@@ -51,7 +51,7 @@ class ImageDataReader(DataReaderBase):
 
         for i, filename in enumerate(images):
             filename = filename.strip()
-            img_path = os.path.join(src_dir, filename)
+            img_path = os.path.join(img_dir, filename)
             if not os.path.exists(img_path):
                 img_path = filename
 
@@ -75,23 +75,6 @@ class ImageDataset(DatasetBase):
     def sort_key(ex):
         """ Sort using the size of the image: (width, height)."""
         return ex.src.size(2), ex.src.size(1)
-
-    @classmethod
-    def make_examples(
-            cls, images, src_dir, side, truncate=None, channel_size=3
-    ):
-        """
-        Args:
-            path (str): location of a src file containing image paths
-            src_dir (str): location of source images
-            side (str): 'src' or 'tgt'
-            truncate: maximum img size ((0,0) or None for unlimited)
-        Yields:
-            a dictionary containing image data, path and index for each line.
-        """
-        reader = ImageDataReader(truncate=truncate, channel_size=channel_size)
-        for x in reader.read(images, side, src_dir):
-            yield x
 
 
 def batch_img(data, vocab):

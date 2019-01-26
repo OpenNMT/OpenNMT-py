@@ -12,7 +12,7 @@ class TextDataReader(DataReaderBase):
     def __init__(self, **kwargs):
         pass
 
-    def read(self, sequences, side, src_dir=None):
+    def read(self, sequences, side, _dir=None):
         """
         Args:
             sequences: path to corpus file or iterable
@@ -24,7 +24,8 @@ class TextDataReader(DataReaderBase):
             values are more or less the result of tokenizing with those
             fields.
         """
-        assert src_dir is None, "Cannot use src_dir with TextDataReader."
+        assert _dir is None or _dir == "", \
+            "Cannot use _dir with TextDataReader."
         if isinstance(sequences, str):
             sequences = DataReaderBase._read_file(sequences)
         for i, seq in enumerate(sequences):
@@ -42,12 +43,6 @@ class TextDataset(DatasetBase):
         if hasattr(ex, "tgt"):
             return len(ex.src[0]), len(ex.tgt[0])
         return len(ex.src[0])
-
-    @classmethod
-    def make_examples(cls, sequences, side):
-        reader = TextDataReader()
-        for x in reader.read(sequences, side):
-            yield x
 
 
 # mix this with partial

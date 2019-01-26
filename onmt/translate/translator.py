@@ -99,11 +99,12 @@ class Translator(object):
         self.dump_beam = opt.dump_beam
         self.block_ngram_repeat = opt.block_ngram_repeat
         self.ignore_when_blocking = set(opt.ignore_when_blocking)
-        self.sample_rate = opt.sample_rate
-        self.window_size = opt.window_size
-        self.window_stride = opt.window_stride
-        self.window = opt.window
-        self.image_channel_size = opt.image_channel_size
+        reader_args = dict(
+            sample_rate=opt.sample_rate, window_size=opt.window_size,
+            window_stride=opt.window_stride, window=opt.window,
+            channel_size=opt.image_channel_size)
+        self.src_reader = inputters.str2reader[opt.data_type](**reader_args)
+        self.tgt_reader = inputters.str2reader["text"]()
         self.replace_unk = opt.replace_unk
         self.data_type = opt.data_type
         self.verbose = opt.verbose
@@ -171,14 +172,11 @@ class Translator(object):
             self.fields,
             self.data_type,
             src=src,
+            src_reader=self.src_reader,
             tgt=tgt,
+            tgt_reader=self.tgt_reader,
             src_dir=src_dir,
-            sample_rate=self.sample_rate,
-            window_size=self.window_size,
-            window_stride=self.window_stride,
-            window=self.window,
             use_filter_pred=self.use_filter_pred,
-            image_channel_size=self.image_channel_size,
         )
 
         cur_device = "cuda" if self.cuda else "cpu"
