@@ -9,9 +9,6 @@ from onmt.inputters.datareader_base import DataReaderBase
 
 
 class TextDataReader(DataReaderBase):
-    def __init__(self, **kwargs):
-        pass
-
     def read(self, sequences, side, _dir=None):
         """
         Args:
