@@ -164,6 +164,7 @@
 <span class="kn">import</span> <span class="nn">codecs</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">time</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
 
@@ -268,6 +269,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">verbose</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">report_bleu</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">report_bleu</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">report_rouge</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">report_rouge</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">report_time</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">report_time</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fast</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">fast</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span> <span class="o">=</span> <span class="n">model_opt</span><span class="o">.</span><span class="n">copy_attn</span>
@@ -290,6 +292,12 @@
                 <span class="s2">&quot;log_probs&quot;</span><span class="p">:</span> <span class="p">[]}</span>
 
         <span class="n">set_random_seed</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">seed</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cuda</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Translator.translate"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.Translator.translate">[docs]</a>    <span class="k">def</span> <span class="nf">translate</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -364,6 +372,8 @@
         <span class="n">all_scores</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">all_predictions</span> <span class="o">=</span> <span class="p">[]</span>
 
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
         <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">data_iter</span><span class="p">:</span>
             <span class="n">batch_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translate_batch</span><span class="p">(</span>
                 <span class="n">batch</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">attn_debug</span><span class="p">,</span> <span class="n">fast</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fast</span>
@@ -413,6 +423,8 @@
                         <span class="n">row_format</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{:&gt;10.10}</span><span class="s2"> &quot;</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="si">{:&gt;10.7f}</span><span class="s2"> &quot;</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">srcs</span><span class="p">)</span>
                     <span class="n">os</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">output</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span>
 
+        <span class="n">end_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_score</span><span class="p">:</span>
             <span class="n">msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_report_score</span><span class="p">(</span><span class="s1">&#39;PRED&#39;</span><span class="p">,</span> <span class="n">pred_score_total</span><span class="p">,</span>
                                      <span class="n">pred_words_total</span><span class="p">)</span>
@@ -439,6 +451,14 @@
                         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="nb">print</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_time</span><span class="p">:</span>
+            <span class="n">total_time</span> <span class="o">=</span> <span class="n">end_time</span> <span class="o">-</span> <span class="n">start_time</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span><span class="s2">&quot;Total translation time (s): </span><span class="si">%f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">total_time</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span><span class="s2">&quot;Average translation time (s): </span><span class="si">%f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="n">total_time</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_predictions</span><span class="p">)))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span><span class="s2">&quot;Tokens per second: </span><span class="si">%f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="n">pred_words_total</span> <span class="o">/</span> <span class="n">total_time</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dump_beam</span><span class="p">:</span>
             <span class="kn">import</span> <span class="nn">json</span>
