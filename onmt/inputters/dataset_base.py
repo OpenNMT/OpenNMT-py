@@ -49,11 +49,12 @@ class DatasetBase(Dataset):
         the same structure as in the fields argument passed to the constructor.
     """
 
-    def __init__(self, fields, readers, data, dirs, filter_pred=None):
+    def __init__(self, fields, data, dirs, filter_pred=None):
         dynamic_dict = 'src_map' in fields and 'alignment' in fields
 
+        # raises AttributeError if set_readers has not been called.
         read_iters = [r.read(dat[1], dat[0], dir_) for r, dat, dir_
-                      in zip(readers, data, dirs)]
+                      in zip(self.readers, data, dirs)]
 
         # self.src_vocabs is used in collapse_copy_scores and Translator.py
         self.src_vocabs = []
@@ -74,6 +75,10 @@ class DatasetBase(Dataset):
         fields = dict(chain.from_iterable(ex_fields.values()))
 
         super(DatasetBase, self).__init__(examples, fields, filter_pred)
+
+    @classmethod
+    def set_readers(cls, *args):
+        cls.readers = args
 
     def __getattr__(self, attr):
         # avoid infinite recursion when fields isn't defined
