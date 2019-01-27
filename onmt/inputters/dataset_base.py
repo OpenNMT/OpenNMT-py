@@ -1,6 +1,6 @@
 # coding: utf-8
 
-from itertools import chain
+from itertools import chain, starmap
 from collections import Counter
 
 import torch
@@ -49,21 +49,16 @@ class DatasetBase(Dataset):
         the same structure as in the fields argument passed to the constructor.
     """
 
-    def __init__(self, fields, src_examples_iter, tgt_examples_iter,
-                 filter_pred=None):
-
+    def __init__(self, fields, readers, data, dirs, filter_pred=None):
         dynamic_dict = 'src_map' in fields and 'alignment' in fields
 
-        if tgt_examples_iter is not None:
-            examples_iter = (self._join_dicts(src, tgt) for src, tgt in
-                             zip(src_examples_iter, tgt_examples_iter))
-        else:
-            examples_iter = src_examples_iter
+        read_iters = [r.read(dat[1], dat[0], dir_) for r, dat, dir_
+                      in zip(readers, data, dirs)]
 
         # self.src_vocabs is used in collapse_copy_scores and Translator.py
         self.src_vocabs = []
         examples = []
-        for ex_dict in examples_iter:
+        for ex_dict in starmap(self._join_dicts, zip(*read_iters)):
             if dynamic_dict:
                 src_field = fields['src'][0][1]
                 tgt_field = fields['tgt'][0][1]

@@ -203,12 +203,10 @@ def build_dataset(fields, data_type, src, src_reader,
     }
     assert data_type in dataset_classes
     assert src is not None
-    src_examples_iter = src_reader.read(src, "src", src_dir)
-    tgt_examples_iter = None if tgt is None else tgt_reader.read(tgt, "tgt")
 
     # the second conjunct means nothing will be filtered at translation time
     # if there is no target data
-    if use_filter_pred and tgt_examples_iter is not None:
+    if use_filter_pred and tgt is not None:
         filter_pred = partial(
             filter_example, use_src_len=data_type == 'text',
             max_src_len=src_seq_len, max_tgt_len=tgt_seq_len
@@ -216,10 +214,12 @@ def build_dataset(fields, data_type, src, src_reader,
     else:
         filter_pred = None
 
-    dataset_cls = dataset_classes[data_type]
-    dataset = dataset_cls(
-        fields, src_examples_iter, tgt_examples_iter, filter_pred=filter_pred)
-    return dataset
+    return dataset_classes[data_type](
+        fields,
+        readers=[src_reader, tgt_reader] if tgt else [src_reader],
+        data=[("src", src), ("tgt", tgt)] if tgt else [("src", src)],
+        dirs=[src_dir, None] if tgt else [src_dir],
+        filter_pred=filter_pred)
 
 
 def _build_field_vocab(field, counter, **kwargs):
