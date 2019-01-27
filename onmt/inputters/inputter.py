@@ -191,7 +191,8 @@ def filter_example(ex, use_src_len=True, use_tgt_len=True,
         (not use_tgt_len or min_tgt_len <= len(ex.tgt) <= max_tgt_len)
 
 
-def build_dataset(fields, data_type, src, src_dir=None, tgt=None,
+def build_dataset(fields, data_type, src, src_reader,
+                  src_dir=None, tgt=None, tgt_reader=None,
                   src_seq_len=50, tgt_seq_len=50, use_filter_pred=True):
     """
     src: path to corpus file or iterator over source data
@@ -215,6 +216,7 @@ def build_dataset(fields, data_type, src, src_dir=None, tgt=None,
 
     return dataset_classes[data_type](
         fields,
+        readers=[src_reader, tgt_reader] if tgt else [src_reader],
         data=[("src", src), ("tgt", tgt)] if tgt else [("src", src)],
         dirs=[src_dir, None] if tgt else [src_dir],
         filter_pred=filter_pred)

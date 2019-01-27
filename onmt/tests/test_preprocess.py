@@ -53,12 +53,13 @@ class TestData(unittest.TestCase):
             channel_size=opt.image_channel_size)
         src_reader = onmt.inputters.str2reader[opt.data_type](**reader_args)
         tgt_reader = onmt.inputters.str2reader["text"]()
-        onmt.inputters.DatasetBase.set_readers(src_reader, tgt_reader)
-        train_data_files = preprocess.build_save_dataset('train', fields, opt)
+        train_data_files = preprocess.build_save_dataset(
+            'train', fields, src_reader, tgt_reader, opt)
 
         preprocess.build_save_vocab(train_data_files, fields, opt)
 
-        preprocess.build_save_dataset('valid', fields, opt)
+        preprocess.build_save_dataset(
+            'valid', fields, src_reader, tgt_reader, opt)
 
         # Remove the generated *pt files.
         for pt in glob.glob(SAVE_DATA_PREFIX + '*.pt'):

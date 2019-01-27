@@ -168,16 +168,13 @@ class Translator(object):
         if batch_size is None:
             raise ValueError("batch_size must be set")
 
-        if tgt:
-            inputters.DatasetBase.set_readers(self.src_reader, self.tgt_reader)
-        else:
-            inputters.DatasetBase.set_readers(self.src_reader)
-
         data = inputters.build_dataset(
             self.fields,
             self.data_type,
             src=src,
+            src_reader=self.src_reader,
             tgt=tgt,
+            tgt_reader=self.tgt_reader,
             src_dir=src_dir,
             use_filter_pred=self.use_filter_pred,
         )

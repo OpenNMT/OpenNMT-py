@@ -45,7 +45,7 @@ def parse_args():
     return opt
 
 
-def build_save_dataset(corpus_type, fields, opt):
+def build_save_dataset(corpus_type, fields, src_reader, tgt_reader, opt):
     assert corpus_type in ['train', 'valid']
 
     if corpus_type == 'train':
@@ -67,7 +67,9 @@ def build_save_dataset(corpus_type, fields, opt):
         dataset = inputters.build_dataset(
             fields, opt.data_type,
             src=src_shard,
+            src_reader=src_reader,
             tgt=tgt_shard,
+            tgt_reader=tgt_reader,
             src_dir=opt.src_dir,
             src_seq_len=opt.src_seq_length,
             tgt_seq_len=opt.tgt_seq_length,
@@ -153,12 +155,12 @@ def main():
     src_reader = inputters.str2reader[opt.data_type](**reader_args)
     tgt_reader = inputters.str2reader["text"]()
 
-    inputters.DatasetBase.set_readers(src_reader, tgt_reader)
     logger.info("Building & saving training data...")
-    train_dataset_files = build_save_dataset('train', fields, opt)
+    train_dataset_files = build_save_dataset(
+        'train', fields, src_reader, tgt_reader, opt)
 
     logger.info("Building & saving validation data...")
-    build_save_dataset('valid', fields, opt)
+    build_save_dataset('valid', fields, src_reader, tgt_reader, opt)
 
     logger.info("Building & saving vocabulary...")
     build_save_vocab(train_dataset_files, fields, opt)
