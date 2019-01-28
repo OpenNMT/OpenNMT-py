@@ -24,10 +24,14 @@ class ImageDataReader(DataReaderBase):
         channel_size: Number of channels per image.
     """
 
-    def __init__(self, truncate=None, channel_size=3, **kwargs):
+    def __init__(self, truncate=None, channel_size=3):
         self._check_deps()
         self.truncate = truncate
         self.channel_size = channel_size
+
+    @classmethod
+    def from_opt(cls, opt):
+        return cls(channel_size=opt.image_channel_size)
 
     @classmethod
     def _check_deps(cls):

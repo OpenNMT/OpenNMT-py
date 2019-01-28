@@ -31,7 +31,7 @@ class AudioDataReader(DataReaderBase):
     """
 
     def __init__(self, sample_rate=0, window_size=0, window_stride=0,
-                 window=None, normalize_audio=True, truncate=None, **kwargs):
+                 window=None, normalize_audio=True, truncate=None):
         self._check_deps()
         self.sample_rate = sample_rate
         self.window_size = window_size
@@ -39,6 +39,11 @@ class AudioDataReader(DataReaderBase):
         self.window = window
         self.normalize_audio = normalize_audio
         self.truncate = truncate
+
+    @classmethod
+    def from_opt(cls, opt):
+        return cls(sample_rate=opt.sample_rate, window_size=opt.window_size,
+                   window_stride=opt.window_stride, window=opt.window)
 
     @classmethod
     def _check_deps(cls):

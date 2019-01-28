@@ -148,12 +148,8 @@ def main():
         src_truncate=opt.src_seq_length_trunc,
         tgt_truncate=opt.tgt_seq_length_trunc)
 
-    reader_args = dict(
-        sample_rate=opt.sample_rate, window_size=opt.window_size,
-        window_stride=opt.window_stride, window=opt.window,
-        channel_size=opt.image_channel_size)
-    src_reader = inputters.str2reader[opt.data_type](**reader_args)
-    tgt_reader = inputters.str2reader["text"]()
+    src_reader = inputters.str2reader[opt.data_type].from_opt(opt)
+    tgt_reader = inputters.str2reader["text"].from_opt(opt)
 
     logger.info("Building & saving training data...")
     train_dataset_files = build_save_dataset(

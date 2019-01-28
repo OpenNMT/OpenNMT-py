@@ -10,15 +10,10 @@ class MissingDependencyException(Exception):
 
 
 class DataReaderBase(object):
-    """Read data from file system and yield as dicts.
-
-    Subclasses' ``__init__`` should take arbitrary kwargs. DataReaders
-    are expected to take the union of all DataReader args and take
-    only the ones they need. The rest should be ignored as
-    ``**kwargs``.
-    """
-    def __init__(self, **kwargs):
-        pass
+    """Read data from file system and yield as dicts."""
+    @classmethod
+    def from_opt(cls, opt):
+        return cls()
 
     @classmethod
     def _read_file(cls, path):

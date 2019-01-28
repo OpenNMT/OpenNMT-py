@@ -47,12 +47,8 @@ class TestData(unittest.TestCase):
             with codecs.open(opt.tgt_vocab, 'w', 'utf-8') as f:
                 f.write('a\nb\nc\nd\ne\nf\n')
 
-        reader_args = dict(
-            sample_rate=opt.sample_rate, window_size=opt.window_size,
-            window_stride=opt.window_stride, window=opt.window,
-            channel_size=opt.image_channel_size)
-        src_reader = onmt.inputters.str2reader[opt.data_type](**reader_args)
-        tgt_reader = onmt.inputters.str2reader["text"]()
+        src_reader = onmt.inputters.str2reader[opt.data_type].from_opt(opt)
+        tgt_reader = onmt.inputters.str2reader["text"].from_opt(opt)
         train_data_files = preprocess.build_save_dataset(
             'train', fields, src_reader, tgt_reader, opt)
 

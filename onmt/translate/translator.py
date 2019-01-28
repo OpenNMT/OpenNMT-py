@@ -99,12 +99,8 @@ class Translator(object):
         self.dump_beam = opt.dump_beam
         self.block_ngram_repeat = opt.block_ngram_repeat
         self.ignore_when_blocking = set(opt.ignore_when_blocking)
-        reader_args = dict(
-            sample_rate=opt.sample_rate, window_size=opt.window_size,
-            window_stride=opt.window_stride, window=opt.window,
-            channel_size=opt.image_channel_size)
-        self.src_reader = inputters.str2reader[opt.data_type](**reader_args)
-        self.tgt_reader = inputters.str2reader["text"]()
+        self.src_reader = inputters.str2reader[opt.data_type].from_opt(opt)
+        self.tgt_reader = inputters.str2reader["text"].from_opt(opt)
         self.replace_unk = opt.replace_unk
         self.data_type = opt.data_type
         self.verbose = opt.verbose
