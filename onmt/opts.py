@@ -215,6 +215,9 @@ def preprocess_opts(parser):
               help="Size of the source vocabulary")
     group.add('--tgt_vocab_size', '-tgt_vocab_size', type=int, default=50000,
               help="Size of the target vocabulary")
+    group.add('--vocab_size_multiple', '-vocab_size_multiple',
+              type=int, default=1,
+              help="Make the vocabulary size a multiple of this value")
 
     group.add('--src_words_min_frequency',
               '-src_words_min_frequency', type=int, default=0)
