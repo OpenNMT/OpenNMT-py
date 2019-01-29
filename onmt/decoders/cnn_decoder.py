@@ -7,11 +7,12 @@ import torch.nn as nn
 
 from onmt.modules import ConvMultiStepAttention, GlobalAttention
 from onmt.utils.cnn_factory import shape_transform, GatedConv
+from onmt.decoders.decoder import DecoderBase
 
 SCALE_WEIGHT = 0.5 ** 0.5
 
 
-class CNNDecoder(nn.Module):
+class CNNDecoder(DecoderBase):
     """
     Decoder built on CNN, based on :cite:`DBLP:journals/corr/GehringAGYD17`.
 
@@ -45,6 +46,17 @@ class CNNDecoder(nn.Module):
             self.copy_attn = GlobalAttention(hidden_size, attn_type=attn_type)
         else:
             self.copy_attn = None
+
+    @classmethod
+    def from_opt(cls, opt, embeddings):
+        return cls(
+            opt.dec_layers,
+            opt.dec_rnn_size,
+            opt.global_attention,
+            opt.copy_attn,
+            opt.cnn_kernel_width,
+            opt.dropout,
+            embeddings)
 
     def init_state(self, _, memory_bank, enc_hidden):
         """

@@ -8,7 +8,13 @@ from onmt.utils.rnn_factory import rnn_factory
 from onmt.utils.misc import aeq
 
 
-class RNNDecoderBase(nn.Module):
+class DecoderBase(nn.Module):
+    @classmethod
+    def from_opt(cls, opt, embeddings):
+        raise NotImplementedError
+
+
+class RNNDecoderBase(DecoderBase):
     """
     Base recurrent attention-based decoder class.
     Specifies the interface used by different decoder types
@@ -101,6 +107,22 @@ class RNNDecoderBase(nn.Module):
             self.copy_attn = None
 
         self._reuse_copy_attn = reuse_copy_attn and copy_attn
+
+    @classmethod
+    def from_opt(cls, opt, embeddings):
+        return cls(
+            opt.rnn_type,
+            opt.brnn,
+            opt.dec_layers,
+            opt.dec_rnn_size,
+            opt.global_attention,
+            opt.global_attention_function,
+            opt.coverage_attn,
+            opt.context_gate,
+            opt.copy_attn,
+            opt.dropout,
+            embeddings,
+            opt.reuse_copy_attn)
 
     def init_state(self, src, memory_bank, encoder_final):
         """ Init decoder state with last state of the encoder """

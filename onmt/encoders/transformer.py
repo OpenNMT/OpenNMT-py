@@ -89,6 +89,16 @@ class TransformerEncoder(EncoderBase):
              for i in range(num_layers)])
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
 
+    @classmethod
+    def from_opt(cls, opt, embeddings):
+        return cls(
+            opt.enc_layers,
+            opt.enc_rnn_size,
+            opt.heads,
+            opt.transformer_ff,
+            opt.dropout,
+            embeddings)
+
     def forward(self, src, lengths=None):
         """ See :obj:`EncoderBase.forward()`"""
         self._check_args(src, lengths)
