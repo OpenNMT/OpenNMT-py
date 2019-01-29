@@ -469,10 +469,10 @@ def max_tok_len(new, count, sofar):
     if count == 1:
         max_src_in_batch = 0
         max_tgt_in_batch = 0
-    # Src: <bos> w1 ... wN <eos>
-    max_src_in_batch = max(max_src_in_batch, len(new.src) + 2)
-    # Tgt: w1 ... wN <eos>
-    max_tgt_in_batch = max(max_tgt_in_batch, len(new.tgt) + 1)
+    # Src: [<bos> w1 ... wN <eos>]
+    max_src_in_batch = max(max_src_in_batch, len(new.src[0]) + 2)
+    # Tgt: [w1 ... wN <eos>]
+    max_tgt_in_batch = max(max_tgt_in_batch, len(new.tgt[0]) + 1)
     src_elements = count * max_src_in_batch
     tgt_elements = count * max_tgt_in_batch
     return max(src_elements, tgt_elements)
