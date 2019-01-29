@@ -72,7 +72,7 @@ matrix:
   include:
     - env: LINT_CHECK
       python: "2.7"
-      install: pip install flake8 pep8-naming==0.6.0
+      install: pip install flake8 pep8-naming==0.7.0
       script: flake8
     - python: "3.5"
       install:
