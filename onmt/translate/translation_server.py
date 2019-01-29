@@ -31,7 +31,6 @@ def critical(func):
         except (Exception, RuntimeError):
             server_model.running_lock.release()
             raise
-
         server_model.running_lock.release()
         return o
     return wrapper
