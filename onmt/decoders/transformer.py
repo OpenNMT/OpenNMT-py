@@ -6,8 +6,6 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-
-import onmt
 from onmt.decoders.decoder import DecoderBase
 from onmt.modules import MultiHeadedAttention, AverageAttention
 from onmt.modules.position_ffn import PositionwiseFeedForward
