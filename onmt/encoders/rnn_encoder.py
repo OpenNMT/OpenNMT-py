@@ -48,6 +48,17 @@ class RNNEncoder(EncoderBase):
                                     hidden_size,
                                     num_layers)
 
+    @classmethod
+    def from_opt(cls, opt, embeddings):
+        return cls(
+            opt.rnn_type,
+            opt.brnn,
+            opt.enc_layers,
+            opt.enc_rnn_size,
+            opt.dropout,
+            embeddings,
+            opt.bridge)
+
     def forward(self, src, lengths=None):
         "See :obj:`EncoderBase.forward()`"
         self._check_args(src, lengths)

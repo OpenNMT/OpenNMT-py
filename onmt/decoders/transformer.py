@@ -7,6 +7,7 @@ import torch.nn as nn
 import numpy as np
 
 import onmt
+from onmt.decoders.decoder import DecoderBase
 from onmt.modules.position_ffn import PositionwiseFeedForward
 
 MAX_SIZE = 5000
@@ -111,7 +112,7 @@ class TransformerDecoderLayer(nn.Module):
         return subsequent_mask
 
 
-class TransformerDecoder(nn.Module):
+class TransformerDecoder(DecoderBase):
     """
     The Transformer decoder from "Attention is All You Need".
 
@@ -168,6 +169,19 @@ class TransformerDecoder(nn.Module):
                 d_model, attn_type=attn_type)
             self._copy = True
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
+
+    @classmethod
+    def from_opt(cls, opt, embeddings):
+        return cls(
+            opt.dec_layers,
+            opt.dec_rnn_size,
+            opt.heads,
+            opt.transformer_ff,
+            opt.global_attention,
+            opt.copy_attn,
+            opt.self_attn_type,
+            opt.dropout,
+            embeddings)
 
     def init_state(self, src, memory_bank, enc_hidden):
         """ Init decoder state """

@@ -15,6 +15,12 @@ class MeanEncoder(EncoderBase):
         self.num_layers = num_layers
         self.embeddings = embeddings
 
+    @classmethod
+    def from_opt(cls, opt, embeddings):
+        return cls(
+            opt.enc_layers,
+            embeddings)
+
     def forward(self, src, lengths=None):
         "See :obj:`EncoderBase.forward()`"
         self._check_args(src, lengths)

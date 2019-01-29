@@ -3,8 +3,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch
 
+from onmt.encoders.encoder import EncoderBase
 
-class ImageEncoder(nn.Module):
+
+class ImageEncoder(EncoderBase):
     """
     A simple encoder convolutional -> recurrent neural network for
     image src.
@@ -46,6 +48,23 @@ class ImageEncoder(nn.Module):
                            dropout=dropout,
                            bidirectional=bidirectional)
         self.pos_lut = nn.Embedding(1000, src_size)
+
+    @classmethod
+    def from_opt(cls, opt, embeddings=None):
+        if embeddings is not None:
+            raise ValueError("Cannot use embeddings with ImageEncoder.")
+        # why is the model_opt.__dict__ check necessary?
+        if "image_channel_size" not in opt.__dict__:
+            image_channel_size = 3
+        else:
+            image_channel_size = opt.image_channel_size
+        return cls(
+            opt.enc_layers,
+            opt.brnn,
+            opt.enc_rnn_size,
+            opt.dropout,
+            image_channel_size
+        )
 
     def load_pretrained_vectors(self, opt):
         """ Pass in needed options only when modify function definition."""

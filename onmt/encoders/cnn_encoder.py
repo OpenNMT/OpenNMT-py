@@ -25,6 +25,15 @@ class CNNEncoder(EncoderBase):
         self.cnn = StackedCNN(num_layers, hidden_size,
                               cnn_kernel_width, dropout)
 
+    @classmethod
+    def from_opt(cls, opt, embeddings):
+        return cls(
+            opt.enc_layers,
+            opt.enc_rnn_size,
+            opt.cnn_kernel_width,
+            opt.dropout,
+            embeddings)
+
     def forward(self, input, lengths=None, hidden=None):
         """ See :obj:`onmt.modules.EncoderBase.forward()`"""
         self._check_args(input, lengths, hidden)
