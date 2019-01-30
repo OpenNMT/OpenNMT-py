@@ -2,7 +2,6 @@
 
 from itertools import chain
 from collections import Counter
-import codecs
 
 import torch
 from torchtext.data import Example, Dataset
@@ -137,6 +136,6 @@ class DatasetBase(Dataset):
 
     @classmethod
     def _read_file(cls, path):
-        with codecs.open(path, "r", "utf-8") as f:
+        with open(path, "rb") as f:
             for line in f:
                 yield line

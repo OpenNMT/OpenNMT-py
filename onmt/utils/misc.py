@@ -2,12 +2,11 @@
 
 import torch
 import random
-import codecs
 from itertools import islice
 
 
 def split_corpus(path, shard_size):
-    with codecs.open(path, "r", encoding="utf-8") as f:
+    with open(path, "rb") as f:
         if shard_size <= 0:
             yield f.readlines()
         else:

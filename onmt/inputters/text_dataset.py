@@ -44,7 +44,7 @@ class TextDataset(DatasetBase):
         if isinstance(sequences, str):
             sequences = cls._read_file(sequences)
         for i, seq in enumerate(sequences):
-            yield {side: seq, "indices": i}
+            yield {side: seq.decode("utf-8"), "indices": i}
 
 
 # mix this with partial
