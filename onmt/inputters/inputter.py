@@ -188,8 +188,10 @@ def filter_example(ex, use_src_len=True, use_tgt_len=True,
     argument to a dataset, it should be partially evaluated with everything
     specified except the value of the example.
     """
-    return (not use_src_len or min_src_len <= len(ex.src) <= max_src_len) and \
-        (not use_tgt_len or min_tgt_len <= len(ex.tgt) <= max_tgt_len)
+    src_len = len(ex.src[0])
+    tgt_len = len(ex.tgt[0])
+    return (not use_src_len or min_src_len <= src_len <= max_src_len) and \
+        (not use_tgt_len or min_tgt_len <= tgt_len <= max_tgt_len)
 
 
 def build_dataset(fields, data_type, src,
