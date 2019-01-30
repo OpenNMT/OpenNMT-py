@@ -7,9 +7,10 @@ from torch.nn.utils.rnn import pack_padded_sequence as pack
 from torch.nn.utils.rnn import pad_packed_sequence as unpack
 
 from onmt.utils.rnn_factory import rnn_factory
+from onmt.encoders.encoder import EncoderBase
 
 
-class AudioEncoder(nn.Module):
+class AudioEncoder(EncoderBase):
     """
     A simple encoder convolutional -> recurrent neural network for
     audio input.
@@ -74,6 +75,22 @@ class AudioEncoder(nn.Module):
             setattr(self, 'pool_%d' % (l + 1),
                     nn.MaxPool1d(enc_pooling[l + 1]))
             setattr(self, 'batchnorm_%d' % (l + 1), batchnorm)
+
+    @classmethod
+    def from_opt(cls, opt, embeddings=None):
+        if embeddings is not None:
+            raise ValueError("Cannot use embeddings with AudioEncoder.")
+        return cls(
+            opt.rnn_type,
+            opt.enc_layers,
+            opt.dec_layers,
+            opt.brnn,
+            opt.enc_rnn_size,
+            opt.dec_rnn_size,
+            opt.audio_enc_pooling,
+            opt.dropout,
+            opt.sample_rate,
+            opt.window_size)
 
     def forward(self, src, lengths=None):
         "See :obj:`onmt.encoders.encoder.EncoderBase.forward()`"

@@ -215,6 +215,9 @@ def preprocess_opts(parser):
               help="Size of the source vocabulary")
     group.add('--tgt_vocab_size', '-tgt_vocab_size', type=int, default=50000,
               help="Size of the target vocabulary")
+    group.add('--vocab_size_multiple', '-vocab_size_multiple',
+              type=int, default=1,
+              help="Make the vocabulary size a multiple of this value")
 
     group.add('--src_words_min_frequency',
               '-src_words_min_frequency', type=int, default=0)
@@ -529,6 +532,8 @@ def translate_opts(parser):
     group.add('--report_rouge', '-report_rouge', action='store_true',
               help="""Report rouge 1/2/3/L/SU4 score after translation
                        call tools/test_rouge.py on command line""")
+    group.add('--report_time', '-report_time', action='store_true',
+              help="Report some translation time metrics")
 
     # Options most relevant to summarization.
     group.add('--dynamic_dict', '-dynamic_dict', action='store_true',

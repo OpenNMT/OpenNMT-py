@@ -52,7 +52,7 @@ class ImageDataReader(DataReaderBase):
             images = DataReaderBase._read_file(images)
 
         for i, filename in enumerate(images):
-            filename = filename.strip()
+            filename = filename.decode("utf-8").strip()
             img_path = os.path.join(img_dir, filename)
             if not os.path.exists(img_path):
                 img_path = filename

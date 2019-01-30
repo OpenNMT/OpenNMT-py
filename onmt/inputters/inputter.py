@@ -2,6 +2,7 @@
 import glob
 import os
 import codecs
+import math
 
 from collections import Counter, defaultdict
 from itertools import chain, cycle
@@ -187,8 +188,10 @@ def filter_example(ex, use_src_len=True, use_tgt_len=True,
     argument to a dataset, it should be partially evaluated with everything
     specified except the value of the example.
     """
-    return (not use_src_len or min_src_len <= len(ex.src) <= max_src_len) and \
-        (not use_tgt_len or min_tgt_len <= len(ex.tgt) <= max_tgt_len)
+    src_len = len(ex.src[0])
+    tgt_len = len(ex.tgt[0])
+    return (not use_src_len or min_src_len <= src_len <= max_src_len) and \
+        (not use_tgt_len or min_tgt_len <= tgt_len <= max_tgt_len)
 
 
 def build_dataset(fields, data_type, src, src_reader,
@@ -222,13 +225,26 @@ def build_dataset(fields, data_type, src, src_reader,
         filter_pred=filter_pred)
 
 
-def _build_field_vocab(field, counter, **kwargs):
+def _pad_vocab_to_multiple(vocab, multiple):
+    vocab_size = len(vocab)
+    if vocab_size % multiple == 0:
+        return
+    target_size = int(math.ceil(vocab_size / multiple)) * multiple
+    padding_tokens = [
+        "averyunlikelytoken%d" % i for i in range(target_size - vocab_size)]
+    vocab.extend(Vocab(Counter(), specials=padding_tokens))
+    return vocab
+
+
+def _build_field_vocab(field, counter, size_multiple=1, **kwargs):
     # this is basically copy-pasted from torchtext.
     all_specials = [
         field.unk_token, field.pad_token, field.init_token, field.eos_token
     ]
     specials = [tok for tok in all_specials if tok is not None]
     field.vocab = field.vocab_cls(counter, specials=specials, **kwargs)
+    if size_multiple > 1:
+        _pad_vocab_to_multiple(field.vocab, size_multiple)
 
 
 def _load_vocab(vocab_path, name, counters):
@@ -243,15 +259,21 @@ def _load_vocab(vocab_path, name, counters):
     return vocab, vocab_size
 
 
-def _build_fv_from_multifield(multifield, counters, build_fv_args):
+def _build_fv_from_multifield(multifield, counters, build_fv_args,
+                              size_multiple=1):
     for name, field in multifield:
-        _build_field_vocab(field, counters[name], **build_fv_args[name])
+        _build_field_vocab(
+            field,
+            counters[name],
+            size_multiple=size_multiple,
+            **build_fv_args[name])
         logger.info(" * %s vocab size: %d." % (name, len(field.vocab)))
 
 
 def build_vocab(train_dataset_files, fields, data_type, share_vocab,
                 src_vocab_path, src_vocab_size, src_words_min_frequency,
-                tgt_vocab_path, tgt_vocab_size, tgt_words_min_frequency):
+                tgt_vocab_path, tgt_vocab_size, tgt_words_min_frequency,
+                vocab_size_multiple=1):
     """
     Args:
         train_dataset_files: a list of train dataset pt file.
@@ -266,6 +288,8 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
         tgt_vocab_size(int): size of the target vocabulary.
         tgt_words_min_frequency(int): the minimum frequency needed to
                 include a target word in the vocabulary.
+        vocab_size_multiple(int): ensure that the vocabulary size is a multiple
+                of this value.
 
     Returns:
         Dict of Fields
@@ -321,11 +345,19 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
         max_size=tgt_vocab_size, min_freq=tgt_words_min_frequency)
     assert len(fields["tgt"]) == 1
     tgt_multifield = fields["tgt"][0][1]
-    _build_fv_from_multifield(tgt_multifield, counters, build_fv_args)
+    _build_fv_from_multifield(
+        tgt_multifield,
+        counters,
+        build_fv_args,
+        size_multiple=vocab_size_multiple if not share_vocab else 1)
     if data_type == 'text':
         assert len(fields["src"]) == 1
         src_multifield = fields["src"][0][1]
-        _build_fv_from_multifield(src_multifield, counters, build_fv_args)
+        _build_fv_from_multifield(
+            src_multifield,
+            counters,
+            build_fv_args,
+            size_multiple=vocab_size_multiple if not share_vocab else 1)
         if share_vocab:
             # `tgt_vocab_size` is ignored when sharing vocabularies
             logger.info(" * merging src and tgt vocab...")
@@ -333,12 +365,14 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
             tgt_field = tgt_multifield.base_field
             _merge_field_vocabs(
                 src_field, tgt_field, vocab_size=src_vocab_size,
-                min_freq=src_words_min_frequency)
+                min_freq=src_words_min_frequency,
+                vocab_size_multiple=vocab_size_multiple)
             logger.info(" * merged vocab size: %d." % len(src_field.vocab))
     return fields  # is the return necessary?
 
 
-def _merge_field_vocabs(src_field, tgt_field, vocab_size, min_freq):
+def _merge_field_vocabs(src_field, tgt_field, vocab_size, min_freq,
+                        vocab_size_multiple):
     # in the long run, shouldn't it be possible to do this by calling
     # build_vocab with both the src and tgt data?
     specials = [tgt_field.unk_token, tgt_field.pad_token,
@@ -350,6 +384,8 @@ def _merge_field_vocabs(src_field, tgt_field, vocab_size, min_freq):
         merged, specials=specials,
         max_size=vocab_size, min_freq=min_freq
     )
+    if vocab_size_multiple > 1:
+        _pad_vocab_to_multiple(merged_vocab, vocab_size_multiple)
     src_field.vocab = merged_vocab
     tgt_field.vocab = merged_vocab
     assert len(src_field.vocab) == len(tgt_field.vocab)
@@ -450,10 +486,10 @@ def max_tok_len(new, count, sofar):
     if count == 1:
         max_src_in_batch = 0
         max_tgt_in_batch = 0
-    # Src: <bos> w1 ... wN <eos>
-    max_src_in_batch = max(max_src_in_batch, len(new.src) + 2)
-    # Tgt: w1 ... wN <eos>
-    max_tgt_in_batch = max(max_tgt_in_batch, len(new.tgt) + 1)
+    # Src: [<bos> w1 ... wN <eos>]
+    max_src_in_batch = max(max_src_in_batch, len(new.src[0]) + 2)
+    # Tgt: [w1 ... wN <eos>]
+    max_tgt_in_batch = max(max_tgt_in_batch, len(new.tgt[0]) + 1)
     src_elements = count * max_src_in_batch
     tgt_elements = count * max_tgt_in_batch
     return max(src_elements, tgt_elements)

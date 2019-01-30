@@ -9,16 +9,9 @@ from torch.nn.init import xavier_uniform_
 
 import onmt.inputters as inputters
 import onmt.modules
-from onmt.encoders.rnn_encoder import RNNEncoder
-from onmt.encoders.transformer import TransformerEncoder
-from onmt.encoders.cnn_encoder import CNNEncoder
-from onmt.encoders.mean_encoder import MeanEncoder
-from onmt.encoders.audio_encoder import AudioEncoder
-from onmt.encoders.image_encoder import ImageEncoder
+from onmt.encoders import str2enc
 
-from onmt.decoders.decoder import InputFeedRNNDecoder, StdRNNDecoder
-from onmt.decoders.transformer import TransformerDecoder
-from onmt.decoders.cnn_decoder import CNNDecoder
+from onmt.decoders import str2dec
 
 from onmt.modules import Embeddings, CopyGenerator
 from onmt.utils.misc import use_gpu
@@ -67,35 +60,8 @@ def build_encoder(opt, embeddings):
         opt: the option in current environment.
         embeddings (Embeddings): vocab embeddings for this encoder.
     """
-    if opt.encoder_type == "transformer":
-        encoder = TransformerEncoder(
-            opt.enc_layers,
-            opt.enc_rnn_size,
-            opt.heads,
-            opt.transformer_ff,
-            opt.dropout,
-            embeddings
-        )
-    elif opt.encoder_type == "cnn":
-        encoder = CNNEncoder(
-            opt.enc_layers,
-            opt.enc_rnn_size,
-            opt.cnn_kernel_width,
-            opt.dropout,
-            embeddings)
-    elif opt.encoder_type == "mean":
-        encoder = MeanEncoder(opt.enc_layers, embeddings)
-    else:
-        encoder = RNNEncoder(
-            opt.rnn_type,
-            opt.brnn,
-            opt.enc_layers,
-            opt.enc_rnn_size,
-            opt.dropout,
-            embeddings,
-            opt.bridge
-        )
-    return encoder
+    enc_type = opt.encoder_type if opt.model_type == "text" else opt.model_type
+    return str2enc[enc_type].from_opt(opt, embeddings)
 
 
 def build_decoder(opt, embeddings):
@@ -105,45 +71,9 @@ def build_decoder(opt, embeddings):
         opt: the option in current environment.
         embeddings (Embeddings): vocab embeddings for this decoder.
     """
-    if opt.decoder_type == "transformer":
-        decoder = TransformerDecoder(
-            opt.dec_layers,
-            opt.dec_rnn_size,
-            opt.heads,
-            opt.transformer_ff,
-            opt.global_attention,
-            opt.copy_attn,
-            opt.self_attn_type,
-            opt.dropout,
-            embeddings
-        )
-    elif opt.decoder_type == "cnn":
-        decoder = CNNDecoder(
-            opt.dec_layers,
-            opt.dec_rnn_size,
-            opt.global_attention,
-            opt.copy_attn,
-            opt.cnn_kernel_width,
-            opt.dropout,
-            embeddings
-        )
-    else:
-        dec_class = InputFeedRNNDecoder if opt.input_feed else StdRNNDecoder
-        decoder = dec_class(
-            opt.rnn_type,
-            opt.brnn,
-            opt.dec_layers,
-            opt.dec_rnn_size,
-            opt.global_attention,
-            opt.global_attention_function,
-            opt.coverage_attn,
-            opt.context_gate,
-            opt.copy_attn,
-            opt.dropout,
-            embeddings,
-            opt.reuse_copy_attn
-        )
-    return decoder
+    dec_type = "ifrnn" if opt.decoder_type == "rnn" and opt.input_feed \
+               else opt.decoder_type
+    return str2dec[dec_type].from_opt(opt, embeddings)
 
 
 def load_test_model(opt, dummy_opt, model_path=None):
@@ -189,41 +119,17 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
         model_opt.enc_rnn_size = model_opt.rnn_size
         model_opt.dec_rnn_size = model_opt.rnn_size
 
-    # Build encoder.
+    # Build embeddings.
     if model_opt.model_type == "text":
         src_fields = [f for n, f in fields['src']]
         assert len(src_fields) == 1
         src_field = src_fields[0]
         src_emb = build_embeddings(model_opt, src_field)
-        encoder = build_encoder(model_opt, src_emb)
-    elif model_opt.model_type == "img":
-        # why is build_encoder not used here?
-        # why is the model_opt.__dict__ check necessary?
-        if "image_channel_size" not in model_opt.__dict__:
-            image_channel_size = 3
-        else:
-            image_channel_size = model_opt.image_channel_size
+    else:
+        src_emb = None
 
-        encoder = ImageEncoder(
-            model_opt.enc_layers,
-            model_opt.brnn,
-            model_opt.enc_rnn_size,
-            model_opt.dropout,
-            image_channel_size
-        )
-    elif model_opt.model_type == "audio":
-        encoder = AudioEncoder(
-            model_opt.rnn_type,
-            model_opt.enc_layers,
-            model_opt.dec_layers,
-            model_opt.brnn,
-            model_opt.enc_rnn_size,
-            model_opt.dec_rnn_size,
-            model_opt.audio_enc_pooling,
-            model_opt.dropout,
-            model_opt.sample_rate,
-            model_opt.window_size
-        )
+    # Build encoder.
+    encoder = build_encoder(model_opt, src_emb)
 
     # Build decoder.
     tgt_fields = [f for n, f in fields['tgt']]

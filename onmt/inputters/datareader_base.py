@@ -1,7 +1,5 @@
 # coding: utf-8
 
-import codecs
-
 
 # several data readers need optional dependencies. There's no
 # appropriate builtin exception
@@ -17,7 +15,7 @@ class DataReaderBase(object):
 
     @classmethod
     def _read_file(cls, path):
-        with codecs.open(path, "r", "utf-8") as f:
+        with open(path, "rb") as f:
             for line in f:
                 yield line
 

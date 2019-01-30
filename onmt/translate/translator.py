@@ -5,6 +5,7 @@ import configargparse
 import codecs
 import os
 import math
+import time
 
 import torch
 
@@ -106,6 +107,7 @@ class Translator(object):
         self.verbose = opt.verbose
         self.report_bleu = opt.report_bleu
         self.report_rouge = opt.report_rouge
+        self.report_time = opt.report_time
         self.fast = opt.fast
 
         self.copy_attn = model_opt.copy_attn
@@ -128,6 +130,12 @@ class Translator(object):
                 "log_probs": []}
 
         set_random_seed(opt.seed, self.cuda)
+
+    def _log(self, msg):
+        if self.logger:
+            self.logger.info(msg)
+        else:
+            print(msg)
 
     def translate(
         self,
@@ -199,6 +207,8 @@ class Translator(object):
         all_scores = []
         all_predictions = []
 
+        start_time = time.time()
+
         for batch in data_iter:
             batch_data = self.translate_batch(
                 batch, data, attn_debug, fast=self.fast
@@ -248,6 +258,8 @@ class Translator(object):
                         row_format = "{:>10.10} " + "{:>10.7f} " * len(srcs)
                     os.write(1, output.encode('utf-8'))
 
+        end_time = time.time()
+
         if self.report_score:
             msg = self._report_score('PRED', pred_score_total,
                                      pred_words_total)
@@ -274,6 +286,14 @@ class Translator(object):
                         self.logger.info(msg)
                     else:
                         print(msg)
+
+        if self.report_time:
+            total_time = end_time - start_time
+            self._log("Total translation time (s): %f" % total_time)
+            self._log("Average translation time (s): %f" % (
+                total_time / len(all_predictions)))
+            self._log("Tokens per second: %f" % (
+                pred_words_total / total_time))
 
         if self.dump_beam:
             import json

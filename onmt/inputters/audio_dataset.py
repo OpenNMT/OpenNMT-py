@@ -105,15 +105,16 @@ class AudioDataReader(DataReaderBase):
             data = DataReaderBase._read_file(data)
 
         for i, line in enumerate(tqdm(data)):
-            audio_path = os.path.join(src_dir, line.strip())
+            line = line.decode("utf-8").strip()
+            audio_path = os.path.join(src_dir, line)
             if not os.path.exists(audio_path):
-                audio_path = line.strip()
+                audio_path = line
 
             assert os.path.exists(audio_path), \
-                'audio path %s not found' % (line.strip())
+                'audio path %s not found' % line
 
             spect = self.extract_features(audio_path)
-            yield {side: spect, side + '_path': line.strip(), 'indices': i}
+            yield {side: spect, side + '_path': line, 'indices': i}
 
 
 class AudioDataset(DatasetBase):

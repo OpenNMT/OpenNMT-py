@@ -26,7 +26,11 @@ def critical(func):
         if not server_model.running_lock.acquire(blocking=True, timeout=120):
             raise ServerModelError("Model %d running lock timeout"
                                    % server_model.model_id)
-        o = func(server_model, *args, **kwargs)
+        try:
+            o = func(server_model, *args, **kwargs)
+        except (Exception, RuntimeError):
+            server_model.running_lock.release()
+            raise
         server_model.running_lock.release()
         return o
     return wrapper
