@@ -120,17 +120,12 @@ class Translator(object):
         self.report_score = report_score
         self.logger = logger
 
-        self.use_filter_pred = False
-
-        # for debugging
-        self.beam_trace = self.dump_beam != ""
-        self.beam_accum = None
-        if self.beam_trace:
+        if self.dump_beam != "":
             self.beam_accum = {
-                "predicted_ids": [],
-                "beam_parent_ids": [],
-                "scores": [],
-                "log_probs": []}
+                "predicted_ids": [], "beam_parent_ids": [], "scores": []
+            }
+        else:
+            self.beam_accum = None
 
         set_random_seed(opt.seed, self.cuda)
 
@@ -185,7 +180,7 @@ class Translator(object):
             window_size=self.window_size,
             window_stride=self.window_stride,
             window=self.window,
-            use_filter_pred=self.use_filter_pred,
+            use_filter_pred=False,
             image_channel_size=self.image_channel_size,
         )
 
@@ -561,7 +556,6 @@ class Translator(object):
     ):
         # TODO: support these blacklisted features.
         assert not self.dump_beam
-        assert not self.use_filter_pred
         assert self.block_ngram_repeat == 0
         assert self.global_scorer.beta == 0
 
@@ -761,6 +755,8 @@ class Translator(object):
         # And helper method for reducing verbosity.
         beam_size = self.beam_size
         batch_size = batch.batch_size
+        assert self.beam_accum is None or batch_size == 1, \
+            "Beam visualization currently only works with batch_size == 1"
         tgt_field = self.fields['tgt'][0][1].base_field
         vocab = tgt_field.vocab
 
