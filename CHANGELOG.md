@@ -4,6 +4,14 @@
 
 ## [Unreleased]
 ### Fixes and improvements
+
+## [0.7.2](https://github.com/OpenNMT/OpenNMT-py/tree/0.7.2) (2019-01-31)
+* Many fixes and code cleaning thanks @bpopeters, @flauted, @guillaumekln
+
+### New features
+* Multilevel fields for better handling of text featuer embeddinggs. 
+
+
 ## [0.7.1](https://github.com/OpenNMT/OpenNMT-py/tree/0.7.1) (2019-01-24)
 * Many fixes and code refactoring thanks @bpopeters, @flauted, @guillaumekln
 
@@ -11,7 +19,6 @@
 * Random sampling thanks @daphnei
 * Enable sharding for huge files at translation
 
-### Fixes and improvements
 ## [0.7.0](https://github.com/OpenNMT/OpenNMT-py/tree/0.7.0) (2019-01-02)
 * Many fixes and code refactoring thanks @benopeters
 * Migrated to Pytorch 1.0
