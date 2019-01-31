@@ -6,12 +6,7 @@ from copy import deepcopy
 
 import torch
 
-
-def product_dict(**kwargs):
-    keys = kwargs.keys()
-    vals = kwargs.values()
-    for instance in itertools.product(*vals):
-        yield dict(zip(keys, instance))
+from onmt.tests.utils_for_tests import product_dict
 
 
 class TestEmbeddings(unittest.TestCase):
