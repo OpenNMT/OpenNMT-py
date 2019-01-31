@@ -1,5 +1,6 @@
 """ Embeddings module """
 import math
+import warnings
 
 import torch
 import torch.nn as nn
@@ -21,6 +22,9 @@ class PositionalEncoding(nn.Module):
     """
 
     def __init__(self, dropout, dim, max_len=5000):
+        if dim % 2 != 0:
+            raise ValueError("Cannot use sin/cos positional encoding with "
+                             "odd dim (got dim={:d})".format(dim))
         pe = torch.zeros(max_len, dim)
         position = torch.arange(0, max_len).unsqueeze(1)
         div_term = torch.exp((torch.arange(0, dim, 2, dtype=torch.float) *
@@ -80,7 +84,7 @@ class Embeddings(nn.Module):
                     concat, sum or mlp.
         feat_vec_exponent (float): when using `-feat_merge concat`, feature
                     embedding size is N^feat_dim_exponent, where N is the
-                    number of values of feature takes.
+                    number of values the feature takes.
         feat_vec_size (int): embedding dimension for features when using
                     `-feat_merge mlp`
         dropout (float): dropout probability.
@@ -91,12 +95,15 @@ class Embeddings(nn.Module):
                  word_padding_idx,
                  position_encoding=False,
                  feat_merge="concat",
-                 feat_vec_exponent=0.7, feat_vec_size=-1,
+                 feat_vec_exponent=0.7,
+                 feat_vec_size=-1,
                  feat_padding_idx=[],
                  feat_vocab_sizes=[],
                  dropout=0,
                  sparse=False,
                  fix_word_vecs=False):
+        self._validate_args(feat_merge, feat_vocab_sizes, feat_vec_exponent,
+                            feat_vec_size, feat_padding_idx)
 
         if feat_padding_idx is None:
             feat_padding_idx = []
@@ -147,8 +154,7 @@ class Embeddings(nn.Module):
 
         if feat_merge == 'mlp' and len(feat_vocab_sizes) > 0:
             in_dim = sum(emb_dims)
-            out_dim = word_vec_size
-            mlp = nn.Sequential(nn.Linear(in_dim, out_dim), nn.ReLU())
+            mlp = nn.Sequential(nn.Linear(in_dim, word_vec_size), nn.ReLU())
             self.make_embedding.add_module('mlp', mlp)
 
         self.position_encoding = position_encoding
@@ -159,6 +165,33 @@ class Embeddings(nn.Module):
 
         if fix_word_vecs:
             self.word_lut.weight.requires_grad = False
+
+    def _validate_args(self, feat_merge, feat_vocab_sizes, feat_vec_exponent,
+                       feat_vec_size, feat_padding_idx):
+        if feat_merge == "sum":
+            # features must use word_vec_size
+            if feat_vec_exponent != 0.7:
+                warnings.warn("Merging with sum, but got non-default "
+                              "feat_vec_exponent. It will be unused.")
+            if feat_vec_size != -1:
+                warnings.warn("Merging with sum, but got non-default "
+                              "feat_vec_size. It will be unused.")
+        elif feat_vec_size > 0:
+            # features will use feat_vec_size
+            if feat_vec_exponent != -1:
+                warnings.warn("Not merging with sum and positive "
+                              "feat_vec_size, but got non-default "
+                              "feat_vec_exponent. It will be unused.")
+        else:
+            if feat_vec_exponent <= 0:
+                raise ValueError("Using feat_vec_exponent to determine "
+                                 "feature vec size, but got feat_vec_exponent "
+                                 "less than or equal to 0.")
+        n_feats = len(feat_vocab_sizes)
+        if n_feats != len(feat_padding_idx):
+            raise ValueError("Got unequal number of feat_vocab_sizes and "
+                             "feat_padding_idx ({:d} != {:d})".format(
+                                n_feats, len(feat_padding_idx)))
 
     @property
     def word_lut(self):
