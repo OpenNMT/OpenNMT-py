@@ -276,7 +276,10 @@ class Trainer(object):
                     shard_size=self.shard_size,
                     trunc_start=j,
                     trunc_size=trunc_size)
-                self.optim.backward(loss)
+
+                if loss is not None:
+                    self.optim.backward(loss)
+
                 total_stats.update(batch_stats)
                 report_stats.update(batch_stats)
 
