@@ -7,18 +7,23 @@ import numpy as np
 import argparse
 import torch
 from onmt.utils.logging import init_logger, logger
-from onmt.inputters.inputter import old_style_vocab
+from onmt.inputters.inputter import _old_style_vocab
 
 
 def get_vocabs(dict_path):
     fields = torch.load(dict_path)
 
-    if old_style_vocab(fields):
-        enc_vocab = next((v for n, v in fields if n == 'src'), None)
-        dec_vocab = next((v for n, v in fields if n == 'tgt'), None)
-    else:
-        enc_vocab = fields['src'][0][1].vocab
-        dec_vocab = fields['tgt'][0][1].vocab
+    vocs = []
+    for side in ['src', 'tgt']:
+        if _old_style_vocab(fields):
+            vocab = next((v for n, v in fields if n == side), None)
+        else:
+            try:
+                vocab = fields[side][0][1].base_field.vocab
+            except AttributeError:
+                vocab = fields[side][0][1].vocab
+        vocs.append(vocab)
+    enc_vocab, dec_vocab = vocs
 
     logger.info("From: %s" % dict_path)
     logger.info("\t* source vocab: %d words" % len(enc_vocab))

@@ -73,14 +73,25 @@ def main():
                 f.write("{0}\n".format(w))
     else:
         import torch
+        from onmt.inputters.inputter import _old_style_vocab
         print("Reading input file...")
+        if not len(opt.file) == 1:
+            raise ValueError("If using -file_type='field', only pass one "
+                             "argument for -file.")
         vocabs = torch.load(opt.file[0])
-        word_list = dict(vocabs)[opt.side].itos
+        voc = dict(vocabs)[opt.side]
+        if _old_style_vocab(voc):
+            word_list = voc.itos
+        else:
+            try:
+                word_list = voc[0][1].base_field.vocab.itos
+            except AttributeError:
+                word_list = voc[0][1].vocab.itos
 
         print("Writing vocabulary file...")
-        with open(opt.out_file, "w") as f:
+        with open(opt.out_file, "wb") as f:
             for w in word_list:
-                f.write("{0}\n".format(w))
+                f.write(u"{0}\n".format(w).encode("utf-8"))
 
 
 if __name__ == "__main__":
