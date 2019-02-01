@@ -298,6 +298,8 @@
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scores</span><span class="p">,</span> <span class="n">align</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        scores (FloatTensor): (batch_size*tgt_len) x dynamic vocab size</span>
+<span class="sd">            whose sum along dim 1 is less than or equal to 1, i.e. cols</span>
+<span class="sd">            softmaxed.</span>
 <span class="sd">        align (LongTensor): (batch_size*tgt_len)</span>
 <span class="sd">        target (LongTensor): (batch_size*tgt_len)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
