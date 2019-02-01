@@ -6,13 +6,7 @@ from copy import deepcopy
 
 from torchtext.data import Field
 
-
-def product_dict(**kwargs):
-    # after #1247 this should be imported from utils for tests.
-    keys = kwargs.keys()
-    vals = kwargs.values()
-    for instance in itertools.product(*vals):
-        yield dict(zip(keys, instance))
+from onmt.tests.utils_for_tests import product_dict
 
 
 class TestTextMultiField(unittest.TestCase):
