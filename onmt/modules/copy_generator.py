@@ -139,6 +139,8 @@ class CopyGeneratorLoss(nn.Module):
     def forward(self, scores, align, target):
         """
         scores (FloatTensor): (batch_size*tgt_len) x dynamic vocab size
+            whose sum along dim 1 is less than or equal to 1, i.e. cols
+            softmaxed.
         align (LongTensor): (batch_size*tgt_len)
         target (LongTensor): (batch_size*tgt_len)
         """
