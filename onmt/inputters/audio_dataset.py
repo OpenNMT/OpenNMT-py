@@ -121,6 +121,10 @@ class AudioDataset(DatasetBase):
 
 
 class AudioSeqField(Field):
+    """Defines an audio datatype and instructions for converting to Tensor.
+
+    See :class:`Fields` for attribute descriptions.
+    """
     def __init__(self, preprocessing=None, postprocessing=None,
                  include_lengths=False, batch_first=False, pad_index=0,
                  is_target=False):
@@ -135,8 +139,20 @@ class AudioSeqField(Field):
         )
 
     def pad(self, minibatch):
+        """Pad a batch of examples to the length of the longest example.
+
+        Args:
+            minibatch (list[torch.FloatTensor]): A list of audio data,
+                each having shape 1 x n_feats x len where len is variable.
+
+        Returns:
+            torch.FloatTensor or Tuple[torch.FloatTensor, List[int]]: The
+                padded tensor of shape batch_size x 1 x n_feats x max_len
+                and a list of the lengths if `self.include_lengths` is `True`
+                else just returns the padded tensor.
+        """
         assert not self.pad_first and not self.truncate_first \
-               and not self.fix_length and self.sequential
+            and not self.fix_length and self.sequential
         minibatch = list(minibatch)
         lengths = [x.size(1) for x in minibatch]
         max_len = max(lengths)
@@ -149,6 +165,20 @@ class AudioSeqField(Field):
         return sounds
 
     def numericalize(self, arr, device=None):
+        """Turn a batch of examples that use this field into a Variable.
+
+        If the field has include_lengths=True, a tensor of lengths will be
+        included in the return value.
+
+        Args:
+            arr (torch.FloatTensor, or Tuple(torch.FloatTensor, List[int])):
+                List of tokenized and padded examples, or tuple of List of
+                tokenized and padded examples and List of lengths of each
+                example if self.include_lengths is True. Examples have shape
+                batch_size x 1 x n_feats x max_len if `self.batch_first`
+                else max_len x batch_size x 1 x n_feats.
+            device (str or torch.device): See `Field.numericalize`.
+        """
         assert self.use_vocab is False
         if self.include_lengths and not isinstance(arr, tuple):
             raise ValueError("Field has include_lengths set to True, but "
@@ -162,7 +192,7 @@ class AudioSeqField(Field):
             arr = self.postprocessing(arr, None)
 
         if self.sequential and not self.batch_first:
-            arr.permute(3, 0, 1, 2)
+            arr = arr.permute(3, 0, 1, 2)
         if self.sequential:
             arr = arr.contiguous()
 
