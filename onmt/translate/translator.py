@@ -120,17 +120,12 @@ class Translator(object):
         self.report_score = report_score
         self.logger = logger
 
-        self.use_filter_pred = False
-
-        # for debugging
-        self.beam_trace = self.dump_beam != ""
-        self.beam_accum = None
-        if self.beam_trace:
+        if self.dump_beam != "":
             self.beam_accum = {
-                "predicted_ids": [],
-                "beam_parent_ids": [],
-                "scores": [],
-                "log_probs": []}
+                "predicted_ids": [], "beam_parent_ids": [], "scores": []
+            }
+        else:
+            self.beam_accum = None
 
         set_random_seed(opt.seed, self.cuda)
 
@@ -185,7 +180,7 @@ class Translator(object):
             window_size=self.window_size,
             window_stride=self.window_stride,
             window=self.window,
-            use_filter_pred=self.use_filter_pred,
+            use_filter_pred=False,
             image_channel_size=self.image_channel_size,
         )
 
@@ -303,8 +298,8 @@ class Translator(object):
 
         if self.dump_beam:
             import json
-            json.dump(self.translator.beam_accum,
-                      codecs.open(self.dump_beam, 'w', 'utf-8'))
+            with codecs.open(self.dump_beam, 'w', 'utf-8') as f:
+                json.dump(self.beam_accum, f)
         return all_scores, all_predictions
 
     def sample_with_temperature(self, logits, sampling_temp, keep_topk):
@@ -561,7 +556,6 @@ class Translator(object):
     ):
         # TODO: support these blacklisted features.
         assert not self.dump_beam
-        assert not self.use_filter_pred
         assert self.block_ngram_repeat == 0
         assert self.global_scorer.beta == 0
 
@@ -761,6 +755,8 @@ class Translator(object):
         # And helper method for reducing verbosity.
         beam_size = self.beam_size
         batch_size = batch.batch_size
+        assert self.beam_accum is None or batch_size == 1, \
+            "Beam visualization currently only works with batch_size == 1"
         tgt_field = self.fields['tgt'][0][1].base_field
         vocab = tgt_field.vocab
 
@@ -833,8 +829,7 @@ class Translator(object):
             select_indices_array = []
             # Loop over the batch_size number of beam
             for j, b in enumerate(beam):
-                b.advance(out[j, :],
-                          beam_attn.data[j, :, :memory_lengths[j]])
+                b.advance(out[j, :], beam_attn.data[j, :, :memory_lengths[j]])
                 select_indices_array.append(
                     b.get_current_origin() + j * beam_size)
             select_indices = torch.cat(select_indices_array)
@@ -853,6 +848,17 @@ class Translator(object):
             results["predictions"].append(hyps)
             results["scores"].append(scores)
             results["attention"].append(attn)
+
+            if self.beam_accum is not None:
+                self.beam_accum["beam_parent_ids"].append(
+                    [t.tolist() for t in b.prev_ks])
+                self.beam_accum["scores"].append([
+                    ["%4f" % s for s in t.tolist()]
+                    for t in b.all_scores][1:])
+                # ok, so what was the tgt_dict?
+                self.beam_accum["predicted_ids"].append(
+                    [[vocab.itos[i] for i in t.tolist()]
+                     for t in b.next_ys][1:])
 
         return results
 
