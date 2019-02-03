@@ -129,7 +129,6 @@ class TestBeam(unittest.TestCase):
         # repeating is acceptable
         beam_sz = 5
         n_words = 100
-        _base_idx = 47
         _non_eos_idxs = [47, 51, 13, 88, 99]
         valid_score_dist = torch.log_softmax(torch.tensor(
             [6., 5., 4., 3., 2., 1.]), dim=0)
@@ -182,7 +181,6 @@ class TestBeam(unittest.TestCase):
         # repeating is acceptable
         beam_sz = 5
         n_words = 100
-        _base_idx = 47
         _non_eos_idxs = [47, 51, 13, 88, 99]
         valid_score_dist = torch.log_softmax(torch.tensor(
             [6., 5., 4., 3., 2., 1.]), dim=0)
