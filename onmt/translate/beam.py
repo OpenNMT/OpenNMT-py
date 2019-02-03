@@ -63,12 +63,13 @@ class Beam(object):
         self.block_ngram_repeat = block_ngram_repeat
         self.exclusion_tokens = exclusion_tokens
 
-    def get_current_state(self):
-        "Get the outputs for the current timestep."
+    @property
+    def current_predictions(self):
         return self.next_ys[-1]
 
-    def get_current_origin(self):
-        "Get the backpointers for the current timestep."
+    @property
+    def current_origin(self):
+        """Get the backpointers for the current timestep."""
         return self.prev_ks[-1]
 
     def advance(self, word_probs, attn_out):
@@ -149,6 +150,7 @@ class Beam(object):
             self.all_scores.append(self.scores)
             self.eos_top = True
 
+    @property
     def done(self):
         return self.eos_top and len(self.finished) >= self.n_best
 

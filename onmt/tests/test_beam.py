@@ -225,17 +225,17 @@ class TestBeam(unittest.TestCase):
             attns = torch.randn(beam_sz)
             beam.advance(word_probs, attns)
             if i < min_length:
-                self.assertFalse(beam.done())
+                self.assertFalse(beam.done)
             elif i == min_length:
                 # beam 1 dies on min_length
                 self.assertEqual(beam.finished[0][1], beam.min_length)
                 self.assertEqual(beam.finished[0][2], 1)
-                self.assertFalse(beam.done())
+                self.assertFalse(beam.done)
             else:  # i > min_length
                 # beam 0 dies on the step after beam 1 dies
                 self.assertEqual(beam.finished[1][1], beam.min_length + 1)
                 self.assertEqual(beam.finished[1][2], 0)
-                self.assertTrue(beam.done())
+                self.assertTrue(beam.done)
 
 
 class TestBeamAgainstReferenceCase(unittest.TestCase):
@@ -254,7 +254,7 @@ class TestBeamAgainstReferenceCase(unittest.TestCase):
         self.assertTrue(beam.scores.allclose(expected_beam_scores))
         self.assertTrue(beam.next_ys[-1].equal(expected_preds_0[0]))
         self.assertFalse(beam.eos_top)
-        self.assertFalse(beam.done())
+        self.assertFalse(beam.done)
         return expected_beam_scores
 
     def first_step(self, beam, expected_beam_scores):
@@ -286,7 +286,7 @@ class TestBeamAgainstReferenceCase(unittest.TestCase):
         self.assertEqual(beam.finished[0][0],  # finished with correct score
                          expected_beam_scores[2])
         self.assertFalse(beam.eos_top)
-        self.assertFalse(beam.done())
+        self.assertFalse(beam.done)
         return expected_beam_scores
 
     def second_step(self, beam, expected_beam_scores):
@@ -308,6 +308,7 @@ class TestBeamAgainstReferenceCase(unittest.TestCase):
         expected_bptr_2 = unreduced_preds / self.N_WORDS
         # [5, 3, 2, 6, 0], so beam 2 predicts EOS!
         expected_preds_2 = unreduced_preds - expected_bptr_2 * self.N_WORDS
+        # [-2.4879, -3.8910, -4.1010, -4.2010, -4.4010]
         self.assertTrue(beam.scores.allclose(expected_beam_scores))
         self.assertTrue(beam.next_ys[-1].equal(expected_preds_2))
         self.assertTrue(beam.prev_ks[-1].equal(expected_bptr_2))
@@ -320,7 +321,7 @@ class TestBeamAgainstReferenceCase(unittest.TestCase):
         self.assertEqual(beam.finished[1][0],  # finished with correct score
                          expected_beam_scores[0])
         self.assertTrue(beam.eos_top)
-        self.assertFalse(beam.done())
+        self.assertFalse(beam.done)
         return expected_beam_scores
 
     def third_step(self, beam, expected_beam_scores):
@@ -354,7 +355,7 @@ class TestBeamAgainstReferenceCase(unittest.TestCase):
         self.assertEqual(beam.finished[2][0],  # finished with correct score
                          expected_beam_scores[1])
         self.assertTrue(beam.eos_top)
-        self.assertTrue(beam.done())
+        self.assertTrue(beam.done)
         return expected_beam_scores
 
     def test_beam_advance_against_known_reference(self):
