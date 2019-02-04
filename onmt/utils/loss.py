@@ -119,7 +119,9 @@ class LossComputeBase(nn.Module):
                  shard_size=0,
                  trunc_start=0,
                  trunc_size=None):
-        """Compute the forward loss, possibly in shards.
+        """Compute the forward loss, possibly in shards in which case this
+        method also runs the backward pass and returns ``None`` as the loss
+        value.
 
         Also supports truncated BPTT for long sequences by taking a
         range in the decoder output sequence to back propagate in.
@@ -148,17 +150,15 @@ class LossComputeBase(nn.Module):
             trunc_size = batch.tgt.size(0) - trunc_start
         trunc_range = (trunc_start, trunc_start + trunc_size)
         shard_state = self._make_shard_state(batch, output, trunc_range, attns)
-        all_shards = (
-            shards(shard_state, shard_size)
-            if shard_size > 0 else (shard_state,))
-        total_loss = 0
+        if shard_size == 0:
+            loss, stats = self._compute_loss(batch, **shard_state)
+            return loss / float(normalization), stats
         batch_stats = onmt.utils.Statistics()
-        for i, shard in enumerate(all_shards):
+        for shard in shards(shard_state, shard_size):
             loss, stats = self._compute_loss(batch, **shard)
-            total_loss += loss
+            loss.div(float(normalization)).backward()
             batch_stats.update(stats)
-        total_loss /= float(normalization)
-        return total_loss, batch_stats
+        return None, batch_stats
 
     def _stats(self, loss, scores, target):
         """
@@ -247,7 +247,10 @@ def filter_shard_state(state, shard_size=None):
         if v is not None:
             v_split = []
             if isinstance(v, torch.Tensor):
-                v_split.extend(torch.split(v, shard_size))
+                for v_chunk in torch.split(v, shard_size):
+                    v_chunk = v_chunk.data.clone()
+                    v_chunk.requires_grad = v.requires_grad
+                    v_split.append(v_chunk)
             yield k, (v, v_split)
 
 
@@ -263,6 +266,9 @@ def shards(state, shard_size, eval_only=False):
 
     Yields:
         Each yielded shard is a dict.
+
+    Side effect:
+        After the last shard, this function does back-propagation.
     """
     if eval_only:
         yield filter_shard_state(state)
@@ -276,7 +282,7 @@ def shards(state, shard_size, eval_only=False):
         # want a sequence of dictionaries of tensors.
         # First, unzip the dictionary into a sequence of keys and a
         # sequence of tensor-like sequences.
-        keys, values = zip(*((k, reversed(v_split))
+        keys, values = zip(*((k, [v_chunk for v_chunk in v_split])
                              for k, (_, v_split) in non_none.items()))
 
         # Now, yield a dictionary for each shard. The keys are always
@@ -287,3 +293,12 @@ def shards(state, shard_size, eval_only=False):
         # with the keys.
         for shard_tensors in zip(*values):
             yield dict(zip(keys, shard_tensors))
+
+        # Assumed backprop'd
+        variables = []
+        for k, (v, v_split) in non_none.items():
+            if isinstance(v, torch.Tensor) and state[k].requires_grad:
+                variables.extend(zip(torch.split(state[k], shard_size),
+                                     [v_chunk.grad for v_chunk in v_split]))
+        inputs, grads = zip(*variables)
+        torch.autograd.backward(inputs, grads)
