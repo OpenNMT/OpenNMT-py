@@ -1,7 +1,8 @@
 import unittest
-from onmt.inputters.text_dataset import TextMultiField
+from onmt.inputters.text_dataset import TextMultiField, TextDataReader
 
 import itertools
+import os
 from copy import deepcopy
 
 from torchtext.data import Field
@@ -135,3 +136,42 @@ class TestTextMultiField(unittest.TestCase):
             nfields = len(init_case["feats_fields"]) + 1
             with self.assertRaises(IndexError):
                 mf[nfields]
+
+
+class TestTextDataReader(unittest.TestCase):
+    def test_read(self):
+        strings = [
+            "hello world".encode("utf-8"),
+            "this's a string with punctuation .".encode("utf-8"),
+            "ThIs Is A sTrInG wItH oDD CapitALIZAtion".encode("utf-8")
+        ]
+        rdr = TextDataReader()
+        for i, ex in enumerate(rdr.read(strings, "src")):
+            self.assertEqual(ex["src"], strings[i].decode("utf-8"))
+
+
+class TestTextDataReaderFromFS(unittest.TestCase):
+    # this test touches the file system, so it could be considered an
+    # integration test
+    STRINGS = [
+            "hello world\n".encode("utf-8"),
+            "this's a string with punctuation . \n".encode("utf-8"),
+            "ThIs Is A sTrInG wItH oDD CapitALIZAtion\n".encode("utf-8")
+    ]
+    FILE_NAME = "test_strings.txt"
+
+    @classmethod
+    def setUpClass(cls):
+        # write utf-8 bytes
+        with open(cls.FILE_NAME, "wb") as f:
+            for str_ in cls.STRINGS:
+                f.write(str_)
+
+    @classmethod
+    def tearDownClass(cls):
+        os.remove(cls.FILE_NAME)
+
+    def test_read(self):
+        rdr = TextDataReader()
+        for i, ex in enumerate(rdr.read(self.FILE_NAME, "src")):
+            self.assertEqual(ex["src"], self.STRINGS[i].decode("utf-8"))
