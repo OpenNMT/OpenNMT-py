@@ -45,7 +45,7 @@ def parse_args():
     return opt
 
 
-def build_save_dataset(corpus_type, fields, opt):
+def build_save_dataset(corpus_type, fields, src_reader, tgt_reader, opt):
     assert corpus_type in ['train', 'valid']
 
     if corpus_type == 'train':
@@ -61,22 +61,18 @@ def build_save_dataset(corpus_type, fields, opt):
     tgt_shards = split_corpus(tgt, opt.shard_size)
     shard_pairs = zip(src_shards, tgt_shards)
     dataset_paths = []
-
     for i, (src_shard, tgt_shard) in enumerate(shard_pairs):
         assert len(src_shard) == len(tgt_shard)
         logger.info("Building shard %d." % i)
         dataset = inputters.build_dataset(
             fields, opt.data_type,
             src=src_shard,
+            src_reader=src_reader,
             tgt=tgt_shard,
+            tgt_reader=tgt_reader,
             src_dir=opt.src_dir,
             src_seq_len=opt.src_seq_length,
             tgt_seq_len=opt.tgt_seq_length,
-            sample_rate=opt.sample_rate,
-            window_size=opt.window_size,
-            window_stride=opt.window_stride,
-            window=opt.window,
-            image_channel_size=opt.image_channel_size,
             use_filter_pred=corpus_type == 'train' or opt.filter_valid
         )
 
@@ -153,11 +149,15 @@ def main():
         src_truncate=opt.src_seq_length_trunc,
         tgt_truncate=opt.tgt_seq_length_trunc)
 
+    src_reader = inputters.str2reader[opt.data_type].from_opt(opt)
+    tgt_reader = inputters.str2reader["text"].from_opt(opt)
+
     logger.info("Building & saving training data...")
-    train_dataset_files = build_save_dataset('train', fields, opt)
+    train_dataset_files = build_save_dataset(
+        'train', fields, src_reader, tgt_reader, opt)
 
     logger.info("Building & saving validation data...")
-    build_save_dataset('valid', fields, opt)
+    build_save_dataset('valid', fields, src_reader, tgt_reader, opt)
 
     logger.info("Building & saving vocabulary...")
     build_save_vocab(train_dataset_files, fields, opt)

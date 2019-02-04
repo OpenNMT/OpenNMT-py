@@ -279,8 +279,7 @@ Starting learning rate. Recommended settings: sgd = 1, adagrad = 0.1, adadelta =
 1, adam = 0.001
 
 * **-learning_rate_decay [0.5]** 
-If update_learning_rate, decay learning rate by this much if (i) perplexity does
-not decrease on the validation set or (ii) steps have gone past
+If update_learning_rate, decay learning rate by this much if steps have gone past
 start_decay_steps
 
 * **-start_decay_steps [50000]** 
