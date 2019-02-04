@@ -35,7 +35,7 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
         model, tgt_field, opt, train=False)
 
     trunc_size = opt.truncated_decoder  # Badly named...
-    shard_size = opt.max_generator_batches
+    shard_size = opt.max_generator_batches if opt.model_dtype == 'fp32' else 0
     norm_method = opt.normalization
     grad_accum_count = opt.accum_count
     n_gpu = opt.world_size
