@@ -14,7 +14,7 @@ from onmt.utils.misc import tile
 
 import onmt.model_builder
 import onmt.translate.beam
-from onmt.translate.fast_beam import BeamSearch
+from onmt.translate.beam_search import BeamSearch
 import onmt.inputters as inputters
 import onmt.opts as opts
 import onmt.decoders.ensemble

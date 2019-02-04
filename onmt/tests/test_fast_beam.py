@@ -1,5 +1,5 @@
 import unittest
-from onmt.translate.fast_beam import BeamSearch
+from onmt.translate.beam_search import BeamSearch
 
 from copy import deepcopy
 
