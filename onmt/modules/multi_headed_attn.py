@@ -121,14 +121,6 @@ class MultiHeadedAttention(nn.Module):
         query_len = query.size(1)
         device = key.device
 
-        if self.max_relative_positions > 0:
-            relative_positions_matrix = generate_relative_positions_matrix(
-                key_len, self.max_relative_positions)
-            relations_keys = self.relative_positions_embeddings(
-                relative_positions_matrix.to(device))
-            relations_values = self.relative_positions_embeddings(
-                relative_positions_matrix.to(device))
-
         def shape(x):
             """  projection """
             return x.view(batch_size, -1, head_count, dim_per_head) \
@@ -175,6 +167,15 @@ class MultiHeadedAttention(nn.Module):
             query = self.linear_query(query)
             key = shape(key)
             value = shape(value)
+
+        if self.max_relative_positions > 0 and type == "self":
+            key_len = key.size(2)
+            relative_positions_matrix = generate_relative_positions_matrix(
+                key_len, self.max_relative_positions)
+            relations_keys = self.relative_positions_embeddings(
+                relative_positions_matrix.to(device))
+            relations_values = self.relative_positions_embeddings(
+                relative_positions_matrix.to(device))
 
         query = shape(query)
 
