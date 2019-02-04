@@ -22,11 +22,13 @@ class TransformerEncoderLayer(nn.Module):
         dropout (float): dropout probability(0-1.0).
     """
 
-    def __init__(self, d_model, heads, d_ff, dropout, max_relative_positions=0):
+    def __init__(self, d_model, heads, d_ff, dropout,
+                 max_relative_positions=0):
         super(TransformerEncoderLayer, self).__init__()
 
-        self.self_attn = MultiHeadedAttention(heads, d_model, dropout=dropout,
-                                              max_relative_positions=max_relative_positions)
+        self.self_attn = MultiHeadedAttention(
+            heads, d_model, dropout=dropout,
+            max_relative_positions=max_relative_positions)
         self.feed_forward = PositionwiseFeedForward(d_model, d_ff, dropout)
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
         self.dropout = nn.Dropout(dropout)
