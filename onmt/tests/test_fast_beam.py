@@ -77,7 +77,7 @@ class TestFastBeamAgainstReferenceCase(unittest.TestCase):
     # in each batch.
     BEAM_SZ = 5
     EOS_IDX = 2  # don't change this - all the scores would need updated
-    N_WORDS = 8  # again don't change
+    N_WORDS = 8  # also don't change for same reason
     N_BEST = 3
     DEAD_SCORE = -1e20
     BATCH_SZ = 3
@@ -154,9 +154,9 @@ class TestFastBeamAgainstReferenceCase(unittest.TestCase):
             .view(self.BATCH_SZ, self.BEAM_SZ * self.N_WORDS)\
             .topk(self.BEAM_SZ, -1)
         expected_bptr_2 = unreduced_preds / self.N_WORDS
-        # [5, 3, 2, 6, 0], so beam 2 predicts EOS!
+        # [2, 5, 3, 6, 0] repeat self.BATCH_SZ, so beam 0 predicts EOS!
         expected_preds_2 = unreduced_preds - expected_bptr_2 * self.N_WORDS
-        # [-2.4879, -3.8910, -4.1010, -4.2010, -4.4010] repeat self.BEAM_SIZE
+        # [-2.4879, -3.8910, -4.1010, -4.2010, -4.4010] repeat self.BATCH_SZ
         self.assertTrue(beam.topk_log_probs.allclose(expected_beam_scores))
         self.assertTrue(beam.topk_ids.equal(expected_preds_2))
         self.assertTrue(beam.current_backptr.equal(expected_bptr_2))
@@ -174,7 +174,7 @@ class TestFastBeamAgainstReferenceCase(unittest.TestCase):
     def third_step(self, beam, expected_beam_scores):
         # assumes beam 0 finished on last step
         scores_3 = torch.log_softmax(torch.tensor(
-            [[0, 0,  5000, 0,   5000, .51, .2, 0],  # beam 1 shouldn't cont
+            [[0, 0,  5000, 0,   5000, .51, .2, 0],  # beam 0 shouldn't cont
              [0, 0, 0,  0,   0,   0,  0, 0],
              [0, 0,  0,  0, 0, 5000,  0, 0],
              [0, 0, 0, .2, .2, .2, .2, .2],
@@ -190,7 +190,7 @@ class TestFastBeamAgainstReferenceCase(unittest.TestCase):
             .view(self.BATCH_SZ, self.BEAM_SZ * self.N_WORDS)\
             .topk(self.BEAM_SZ, -1)
         expected_bptr_3 = unreduced_preds / self.N_WORDS
-        # [5, 3, 2, 6, 0], so beam 2 predicts EOS!
+        # [5, 2, 6, 1, 0] repeat self.BATCH_SZ, so beam 1 predicts EOS!
         expected_preds_3 = unreduced_preds - expected_bptr_3 * self.N_WORDS
         self.assertTrue(beam.topk_log_probs.allclose(expected_beam_scores))
         self.assertTrue(beam.topk_ids.equal(expected_preds_3))
@@ -206,8 +206,6 @@ class TestFastBeamAgainstReferenceCase(unittest.TestCase):
         return expected_beam_scores
 
     def test_beam_advance_against_known_reference(self):
-        # this is also a test that when block_ngram_repeat=0,
-        # repeating is acceptable
         beam = BeamSearch(
             self.BEAM_SZ, self.BATCH_SZ, 0, 1, 2, self.N_BEST,
             torch.device("cpu"), GlobalScorerStub(),
