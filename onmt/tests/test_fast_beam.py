@@ -1,5 +1,5 @@
 import unittest
-from onmt.translate.fast_beam import FastBeamBatch
+from onmt.translate.fast_beam import BeamSearch
 
 from copy import deepcopy
 
@@ -30,10 +30,10 @@ class TestFastBeam(unittest.TestCase):
             eos_idx = 2
             # beam includes start token in cur_len count.
             # Add one to its min_length to compensate
-            beam = FastBeamBatch(beam_sz, batch_sz, 0, 1, 2, 2,
-                                 torch.device("cpu"), GlobalScorerStub(),
-                                 min_length + 1, 30, False,
-                                 torch.randint(0, 30, (batch_sz,)))
+            beam = BeamSearch(beam_sz, batch_sz, 0, 1, 2, 2,
+                              torch.device("cpu"), GlobalScorerStub(),
+                              min_length + 1, 30, False,
+                              torch.randint(0, 30, (batch_sz,)))
             for i in range(min_length + 4):
                 # non-interesting beams are going to get dummy values
                 word_probs = torch.full(
@@ -208,7 +208,7 @@ class TestFastBeamAgainstReferenceCase(unittest.TestCase):
     def test_beam_advance_against_known_reference(self):
         # this is also a test that when block_ngram_repeat=0,
         # repeating is acceptable
-        beam = FastBeamBatch(
+        beam = BeamSearch(
             self.BEAM_SZ, self.BATCH_SZ, 0, 1, 2, self.N_BEST,
             torch.device("cpu"), GlobalScorerStub(),
             0, 30, False,

@@ -1,7 +1,7 @@
 import torch
 
 
-class FastBeamBatch(object):
+class BeamSearch(object):
     def __init__(self, beam_size, batch_size, pad, bos, eos, n_best, mb_device,
                  global_scorer, min_length, max_length, return_attention,
                  memory_lengths):

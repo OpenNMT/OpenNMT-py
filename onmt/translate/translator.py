@@ -14,7 +14,7 @@ from onmt.utils.misc import tile
 
 import onmt.model_builder
 import onmt.translate.beam
-from onmt.translate.fast_beam import FastBeamBatch
+from onmt.translate.fast_beam import BeamSearch
 import onmt.inputters as inputters
 import onmt.opts as opts
 import onmt.decoders.ensemble
@@ -541,8 +541,7 @@ class Translator(object):
     ):
         # TODO: support these blacklisted features.
         assert not self.dump_beam
-        assert not self.use_filter_pred
-        # assert self.block_ngram_repeat == 0
+        assert self.block_ngram_repeat == 0
         assert self.global_scorer.beta == 0
 
         # (0) Prep the components of the search.
@@ -593,9 +592,9 @@ class Translator(object):
         memory_lengths = tile(src_lengths, beam_size)
 
         # (0) pt 2, prep the beam object
-        beam = FastBeamBatch(beam_size, batch_size, pad, bos, eos, n_best,
-                             mb_device, self.global_scorer, min_length,
-                             max_length, return_attention, memory_lengths)
+        beam = BeamSearch(beam_size, batch_size, pad, bos, eos, n_best,
+                          mb_device, self.global_scorer, min_length,
+                          max_length, return_attention, memory_lengths)
 
         for step in range(max_length):
             decoder_input = beam.current_predictions.view(1, -1, 1)
@@ -612,24 +611,30 @@ class Translator(object):
             )
 
             beam.advance(log_probs, attn)
-            if beam.is_finished.any():
+            any_beam_is_finished = beam.is_finished.any()
+            if any_beam_is_finished:
                 beam.update_finished()
-            if beam.done:
-                break
+                if beam.done:
+                    break
+
             select_indices = beam.current_origin
 
-            # Reorder states.
-            if isinstance(memory_bank, tuple):
-                memory_bank = tuple(x.index_select(1, select_indices)
-                                    for x in memory_bank)
-            else:
-                memory_bank = memory_bank.index_select(1, select_indices)
+            if any_beam_is_finished:
+                # Reorder states.
+                if isinstance(memory_bank, tuple):
+                    memory_bank = tuple(x.index_select(1, select_indices)
+                                        for x in memory_bank)
+                else:
+                    memory_bank = memory_bank.index_select(1, select_indices)
 
-            memory_lengths = memory_lengths.index_select(0, select_indices)
+                memory_lengths = memory_lengths.index_select(0, select_indices)
+
+                if src_map is not None:
+                    src_map = src_map.index_select(1, select_indices)
+
             self.model.decoder.map_state(
                 lambda state, dim: state.index_select(dim, select_indices))
-            if src_map is not None:
-                src_map = src_map.index_select(1, select_indices)
+
         results["scores"] = beam.scores
         results["predictions"] = beam.predictions
         results["attention"] = beam.attention
