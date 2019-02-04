@@ -22,10 +22,11 @@ class TransformerEncoderLayer(nn.Module):
         dropout (float): dropout probability(0-1.0).
     """
 
-    def __init__(self, d_model, heads, d_ff, dropout):
+    def __init__(self, d_model, heads, d_ff, dropout, max_relative_positions=0):
         super(TransformerEncoderLayer, self).__init__()
 
-        self.self_attn = MultiHeadedAttention(heads, d_model, dropout=dropout)
+        self.self_attn = MultiHeadedAttention(heads, d_model, dropout=dropout,
+                                              max_relative_positions=max_relative_positions)
         self.feed_forward = PositionwiseFeedForward(d_model, d_ff, dropout)
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
         self.dropout = nn.Dropout(dropout)
@@ -80,12 +81,15 @@ class TransformerEncoder(EncoderBase):
         * memory_bank `[src_len x batch_size x model_dim]`
     """
 
-    def __init__(self, num_layers, d_model, heads, d_ff, dropout, embeddings):
+    def __init__(self, num_layers, d_model, heads, d_ff, dropout, embeddings,
+                 max_relative_positions):
         super(TransformerEncoder, self).__init__()
 
         self.embeddings = embeddings
         self.transformer = nn.ModuleList(
-            [TransformerEncoderLayer(d_model, heads, d_ff, dropout)
+            [TransformerEncoderLayer(
+                d_model, heads, d_ff, dropout,
+                max_relative_positions=max_relative_positions)
              for i in range(num_layers)])
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
 
@@ -97,7 +101,8 @@ class TransformerEncoder(EncoderBase):
             opt.heads,
             opt.transformer_ff,
             opt.dropout,
-            embeddings)
+            embeddings,
+            opt.max_relative_positions)
 
     def forward(self, src, lengths=None):
         """ See :obj:`EncoderBase.forward()`"""
