@@ -170,10 +170,13 @@ class MultiHeadedAttention(nn.Module):
 
         if self.max_relative_positions > 0 and type == "self":
             key_len = key.size(2)
+            # 1 x key_len
             relative_positions_matrix = generate_relative_positions_matrix(
                 key_len, self.max_relative_positions)
+            # 1 x key_len x dim_per_head
             relations_keys = self.relative_positions_embeddings(
                 relative_positions_matrix.to(device))
+            # 1 x key_len x dim_per_head
             relations_values = self.relative_positions_embeddings(
                 relative_positions_matrix.to(device))
 
@@ -184,6 +187,7 @@ class MultiHeadedAttention(nn.Module):
 
         # 2) Calculate and scale scores.
         query = query / math.sqrt(dim_per_head)
+        # batch x num_heads x 1 x key_len
         query_key = torch.matmul(query, key.transpose(2, 3))
 
         if self.max_relative_positions > 0 and type == "self":
