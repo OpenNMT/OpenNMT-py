@@ -88,9 +88,7 @@ def set_random_seed(seed, is_cuda):
 def generate_relative_positions_matrix(length, max_relative_positions):
     """Generate the clipped relative positions matrix
        for a given length and maximum relative positions"""
-    range_vec = torch.arange(length)
-    range_mat = range_vec.unsqueeze(-1).expand(-1, length).transpose(0, 1)
-    distance_mat = range_mat - range_mat.transpose(0, 1)
+    distance_mat = torch.arange(-length+1, 1, 1).unsqueeze(0)
     distance_mat_clipped = torch.clamp(distance_mat,
                                        min=-max_relative_positions,
                                        max=max_relative_positions)
@@ -100,7 +98,7 @@ def generate_relative_positions_matrix(length, max_relative_positions):
 
 
 def relative_matmul(x, z, transpose):
-    """Helper function for relative positions attention"""
+    """Helper function for relative positions attention."""
     batch_size = x.shape[0]
     heads = x.shape[1]
     length = x.shape[2]
