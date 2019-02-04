@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
 import unittest
-from onmt.inputters.audio_dataset import AudioSeqField
+from onmt.inputters.audio_dataset import AudioSeqField, AudioDataReader
 
 import itertools
+import os
+import shutil
 
 import torch
+import torchaudio
 
 from onmt.tests.utils_for_tests import product_dict
 
@@ -145,3 +148,80 @@ class TestAudioField(unittest.TestCase):
                     lengths = torch.tensor(lengths, dtype=torch.int)
                     _, outp_lengths = field.process(fake_input)
                     self.assertTrue(outp_lengths.eq(lengths).all())
+
+
+class TestAudioDataReader(unittest.TestCase):
+    # this test touches the file system, so it could be considered an
+    # integration test
+    _THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+    _AUDIO_DATA_DIRNAME = "test_audio_data"
+    _AUDIO_DATA_DIR = os.path.join(_THIS_DIR, _AUDIO_DATA_DIRNAME)
+    _AUDIO_DATA_FMT = "test_noise_{:d}.wav"
+    _AUDIO_DATA_PATH_FMT = os.path.join(_AUDIO_DATA_DIR, _AUDIO_DATA_FMT)
+
+    _AUDIO_LIST_DIR = "test_audio_filenames"
+    # file to hold full paths to audio data
+    _AUDIO_LIST_PATHS_FNAME = "test_files.txt"
+    _AUDIO_LIST_PATHS_PATH = os.path.join(
+        _AUDIO_LIST_DIR, _AUDIO_LIST_PATHS_FNAME)
+    # file to hold audio paths relative to _AUDIO_DATA_DIR (i.e. file names)
+    _AUDIO_LIST_FNAMES_FNAME = "test_fnames.txt"
+    _AUDIO_LIST_FNAMES_PATH = os.path.join(
+        _AUDIO_LIST_DIR, _AUDIO_LIST_FNAMES_FNAME)
+
+    # it's ok if non-audio files co-exist with audio files in the data dir
+    _JUNK_FILE = os.path.join(
+        _AUDIO_DATA_DIR, "this_is_junk.txt")
+
+    _N_EXAMPLES = 20
+    _SAMPLE_RATE = 48000
+    _N_CHANNELS = 2
+
+    @classmethod
+    def setUpClass(cls):
+        if not os.path.exists(cls._AUDIO_DATA_DIR):
+            os.makedirs(cls._AUDIO_DATA_DIR)
+        if not os.path.exists(cls._AUDIO_LIST_DIR):
+            os.makedirs(cls._AUDIO_LIST_DIR)
+
+        with open(cls._JUNK_FILE, "w") as f:
+            f.write("this is some garbage\nShould have no impact.")
+
+        with open(cls._AUDIO_LIST_PATHS_PATH, "w") as f_list_fnames, \
+                open(cls._AUDIO_LIST_FNAMES_PATH, "w") as f_list_paths:
+            lengths = torch.randint(int(.5e5), int(1.5e6), (cls._N_EXAMPLES,))
+            for i in range(cls._N_EXAMPLES):
+                # dividing gets the noise in [-1, 1]
+                white_noise = torch.randn((cls._N_CHANNELS, lengths[i])) / 10
+                f_path = cls._AUDIO_DATA_PATH_FMT.format(i)
+                torchaudio.save(f_path, white_noise, cls._SAMPLE_RATE)
+                f_name_short = cls._AUDIO_DATA_FMT.format(i)
+                f_list_fnames.write(f_name_short + "\n")
+                f_list_paths.write(f_path + "\n")
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls._AUDIO_DATA_DIR)
+        shutil.rmtree(cls._AUDIO_LIST_DIR)
+
+    def test_read_from_dir_and_data_file_containing_filenames(self):
+        rdr = AudioDataReader(self._SAMPLE_RATE, window="hamming",
+                              window_size=0.02, window_stride=0.01)
+        i = 0  # initialize since there's a sanity check on i
+        for i, aud in enumerate(rdr.read(
+                self._AUDIO_LIST_FNAMES_PATH, "src", self._AUDIO_DATA_DIR)):
+            self.assertEqual(aud["src"].shape[0], 481)
+            self.assertEqual(aud["src_path"],
+                             self._AUDIO_DATA_PATH_FMT.format(i))
+        self.assertGreater(i, 0, "No audio data was read.")
+
+    def test_read_from_dir_and_data_file_containing_paths(self):
+        rdr = AudioDataReader(self._SAMPLE_RATE, window="hamming",
+                              window_size=0.02, window_stride=0.01)
+        i = 0  # initialize since there's a sanity check on i
+        for i, aud in enumerate(rdr.read(
+                self._AUDIO_LIST_PATHS_PATH, "src", self._AUDIO_DATA_DIR)):
+            self.assertEqual(aud["src"].shape[0], 481)
+            self.assertEqual(aud["src_path"],
+                             self._AUDIO_DATA_FMT.format(i))
+        self.assertGreater(i, 0, "No audio data was read.")

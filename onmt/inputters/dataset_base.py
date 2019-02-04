@@ -1,17 +1,11 @@
 # coding: utf-8
 
-from itertools import chain
+from itertools import chain, starmap
 from collections import Counter
 
 import torch
 from torchtext.data import Example, Dataset
 from torchtext.vocab import Vocab
-
-
-# several data readers need optional dependencies. There's no
-# appropriate builtin exception
-class MissingDependencyException(Exception):
-    pass
 
 
 class DatasetBase(Dataset):
@@ -55,21 +49,16 @@ class DatasetBase(Dataset):
         the same structure as in the fields argument passed to the constructor.
     """
 
-    def __init__(self, fields, src_examples_iter, tgt_examples_iter,
-                 filter_pred=None):
-
+    def __init__(self, fields, readers, data, dirs, filter_pred=None):
         dynamic_dict = 'src_map' in fields and 'alignment' in fields
 
-        if tgt_examples_iter is not None:
-            examples_iter = (self._join_dicts(src, tgt) for src, tgt in
-                             zip(src_examples_iter, tgt_examples_iter))
-        else:
-            examples_iter = src_examples_iter
+        read_iters = [r.read(dat[1], dat[0], dir_) for r, dat, dir_
+                      in zip(readers, data, dirs)]
 
         # self.src_vocabs is used in collapse_copy_scores and Translator.py
         self.src_vocabs = []
         examples = []
-        for ex_dict in examples_iter:
+        for ex_dict in starmap(self._join_dicts, zip(*read_iters)):
             if dynamic_dict:
                 src_field = fields['src'][0][1]
                 tgt_field = fields['tgt'][0][1]
@@ -85,13 +74,6 @@ class DatasetBase(Dataset):
         fields = dict(chain.from_iterable(ex_fields.values()))
 
         super(DatasetBase, self).__init__(examples, fields, filter_pred)
-
-    @staticmethod
-    def _raise_missing_dep(*missing_deps):
-        """Raise missing dep exception with standard error message."""
-        raise MissingDependencyException(
-            "Could not create reader. Be sure to install "
-            "the following dependencies: " + ", ".join(missing_deps))
 
     def __getattr__(self, attr):
         # avoid infinite recursion when fields isn't defined
@@ -133,9 +115,3 @@ class DatasetBase(Dataset):
                 [0] + [src_vocab.stoi[w] for w in tgt] + [0])
             example["alignment"] = mask
         return src_vocab, example
-
-    @classmethod
-    def _read_file(cls, path):
-        with open(path, "rb") as f:
-            for line in f:
-                yield line

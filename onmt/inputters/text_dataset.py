@@ -5,31 +5,11 @@ import torch
 from torchtext.data import Field, RawField
 
 from onmt.inputters.dataset_base import DatasetBase
+from onmt.inputters.datareader_base import DataReaderBase
 
 
-class TextDataset(DatasetBase):
-    """
-    Build `Example` objects, `Field` objects, and filter_pred function
-    from text corpus.
-
-    Args:
-        fields (dict): a dictionary of `torchtext.data.Field`.
-            Keys are like 'src', 'tgt', 'src_map', and 'alignment'.
-        src_examples_iter (dict iter): preprocessed source example
-            dictionary iterator.
-        tgt_examples_iter (dict iter): preprocessed target example
-            dictionary iterator.
-        dynamic_dict (bool)
-    """
-
-    @staticmethod
-    def sort_key(ex):
-        if hasattr(ex, "tgt"):
-            return len(ex.src[0]), len(ex.tgt[0])
-        return len(ex.src[0])
-
-    @classmethod
-    def make_examples(cls, sequences, side):
+class TextDataReader(DataReaderBase):
+    def read(self, sequences, side, _dir=None):
         """
         Args:
             sequences: path to corpus file or iterable
@@ -41,10 +21,25 @@ class TextDataset(DatasetBase):
             values are more or less the result of tokenizing with those
             fields.
         """
+        assert _dir is None or _dir == "", \
+            "Cannot use _dir with TextDataReader."
         if isinstance(sequences, str):
-            sequences = cls._read_file(sequences)
+            sequences = DataReaderBase._read_file(sequences)
         for i, seq in enumerate(sequences):
             yield {side: seq.decode("utf-8"), "indices": i}
+
+
+class TextDataset(DatasetBase):
+    """
+    Build `Example` objects, `Field` objects, and filter_pred function
+    from text corpus.
+    """
+
+    @staticmethod
+    def sort_key(ex):
+        if hasattr(ex, "tgt"):
+            return len(ex.src[0]), len(ex.tgt[0])
+        return len(ex.src[0])
 
 
 # mix this with partial
