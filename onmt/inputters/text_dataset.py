@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from functools import partial
 
+import six
 import torch
 from torchtext.data import Field, RawField
 
@@ -26,7 +27,9 @@ class TextDataReader(DataReaderBase):
         if isinstance(sequences, str):
             sequences = DataReaderBase._read_file(sequences)
         for i, seq in enumerate(sequences):
-            yield {side: seq.decode("utf-8"), "indices": i}
+            if isinstance(seq, six.binary_type):
+                seq = seq.decode("utf-8")
+            yield {side: seq, "indices": i}
 
 
 class TextDataset(DatasetBase):
