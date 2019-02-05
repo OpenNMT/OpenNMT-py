@@ -160,18 +160,15 @@ class Trainer(object):
             train_iter = itertools.islice(
                 train_iter, self.gpu_rank, None, self.n_gpu)
 
-        reduce_counter = 0
         for i, (batches, normalization) in enumerate(
                 self._accum_batches(train_iter)):
             if self.gpu_verbose_level > 1:
                 logger.info("GpuRank %d: index: %d", self.gpu_rank, i)
-
-            reduce_counter += 1
             if self.gpu_verbose_level > 0:
                 logger.info("GpuRank %d: reduce_counter: %d \
                             n_minibatch %d"
-                            % (self.gpu_rank, reduce_counter,
-                               len(batches)))
+                            % (self.gpu_rank, i + 1, len(batches)))
+
             if self.n_gpu > 1:
                 normalization = sum(onmt.utils.distributed
                                     .all_gather_list
