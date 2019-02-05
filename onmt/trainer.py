@@ -108,25 +108,29 @@ class Trainer(object):
         # Set model in training mode.
         self.model.train()
 
-    def train(self, train_iter, valid_iter, train_steps, valid_steps):
+    def train(self,
+              train_iter,
+              train_steps,
+              valid_iter=None,
+              valid_steps=10000):
         """
-        The main training loops.
-        by iterating over training data (i.e. `train_iter_fct`)
-        and running validation (i.e. iterating over `valid_iter_fct`
+        The main training loop by iterating over `train_iter` and possibly
+        running validation on `valid_iter`.
 
         Args:
-            train_iter_fct(function): a function that returns the train
-                iterator. e.g. something like
-                train_iter_fct = lambda: generator(*args, **kwargs)
-            valid_iter_fct(function): same as train_iter_fct, for valid data
-            train_steps(int):
-            valid_steps(int):
-            save_checkpoint_steps(int):
+            train_iter: A generator that returns the next training batch.
+            train_steps: Run training for this many iterations.
+            valid_iter: A generator that returns the next validation batch.
+            valid_steps: Run evaluation every this many iterations.
 
-        Return:
-            None
+        Returns:
+            The gathered statistics.
         """
-        logger.info('Start training...')
+        if valid_iter is None:
+            logger.info('Start training loop without validation...')
+        else:
+            logger.info('Start training loop and validate every %d steps...',
+                        valid_steps)
 
         step = self.optim.training_step
         true_batches = []
@@ -179,7 +183,7 @@ class Trainer(object):
                         true_batches = []
                         accum = 0
                         normalization = 0
-                        if (step % valid_steps == 0):
+                        if valid_iter is not None and step % valid_steps == 0:
                             if self.gpu_verbose_level > 0:
                                 logger.info('GpuRank %d: validate step %d'
                                             % (self.gpu_rank, step))

@@ -128,8 +128,10 @@ def main():
     assert os.path.isfile(opt.train_src) and os.path.isfile(opt.train_tgt), \
         "Please check path of your train src and tgt files!"
 
-    assert os.path.isfile(opt.valid_src) and os.path.isfile(opt.valid_tgt), \
-        "Please check path of your valid src and tgt files!"
+    assert not opt.valid_src or os.path.isfile(opt.valid_src), \
+        "Please check path of your valid src file!"
+    assert not opt.valid_tgt or os.path.isfile(opt.valid_tgt), \
+        "Please check path of your valid tgt file!"
 
     init_logger(opt.log_file)
     logger.info("Extracting features...")
@@ -156,8 +158,9 @@ def main():
     train_dataset_files = build_save_dataset(
         'train', fields, src_reader, tgt_reader, opt)
 
-    logger.info("Building & saving validation data...")
-    build_save_dataset('valid', fields, src_reader, tgt_reader, opt)
+    if opt.valid_src and opt.valid_tgt:
+        logger.info("Building & saving validation data...")
+        build_save_dataset('valid', fields, src_reader, tgt_reader, opt)
 
     logger.info("Building & saving vocabulary...")
     build_save_vocab(train_dataset_files, fields, opt)

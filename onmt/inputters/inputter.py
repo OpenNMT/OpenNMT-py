@@ -501,7 +501,10 @@ def build_dataset_iter(corpus_type, fields, opt, is_train=True):
     to iterate over. We implement simple ordered iterator strategy here,
     but more sophisticated strategy like curriculum learning is ok too.
     """
-    dataset_paths = sorted(glob.glob(opt.data + '.' + corpus_type + '*.pt'))
+    dataset_paths = list(sorted(
+        glob.glob(opt.data + '.' + corpus_type + '*.pt')))
+    if not dataset_paths:
+        return None
     batch_size = opt.batch_size if is_train else opt.valid_batch_size
     batch_fn = max_tok_len if is_train and opt.batch_type == "tokens" else None
 
