@@ -4,7 +4,7 @@ import torch
 class BeamSearch(object):
     def __init__(self, beam_size, batch_size, pad, bos, eos, n_best, mb_device,
                  global_scorer, min_length, max_length, return_attention,
-                 memory_lengths):
+                 block_ngram_repeat, exclusion_tokens, memory_lengths):
         # magic indices
         self.pad = pad
         self.eos = eos
@@ -18,6 +18,8 @@ class BeamSearch(object):
         self.return_attention = return_attention
         self.n_best = n_best
         self.batch_size = batch_size
+        self.block_ngram_repeat = block_ngram_repeat
+        self.exclusion_tokens = exclusion_tokens
 
         # result caching
         self.hypotheses = [[] for _ in range(batch_size)]
@@ -63,14 +65,33 @@ class BeamSearch(object):
     def advance(self, log_probs, attn):
         vocab_size = log_probs.size(-1)
 
+        # force the output to be longer than self.min_length
         step = self.alive_seq.shape[1]
         if step < self.min_length:
-            # original Beam calculates step including initial tokens,
-            # so this "step" is one delayed from it.
             log_probs[:, self.eos] = -1e20
 
         # Multiply probs by the beam probability.
         log_probs += self.topk_log_probs.view(-1).unsqueeze(1)
+
+        # block ngram repeats
+        if self.block_ngram_repeat > 0 and step > 1:
+            # iterate over all batches, over all beams
+            for bk in range(self.alive_seq.shape[0]):
+                hyp = self.alive_seq[bk, 1:]
+                ngrams = set()
+                fail = False
+                gram = []
+                for i in range(step - 1):
+                    # Last n tokens, n = block_ngram_repeat
+                    gram = (gram + [hyp[i].item()])[-self.block_ngram_repeat:]
+                    # skip the blocking if any token in gram is excluded
+                    if set(gram) & self.exclusion_tokens:
+                        continue
+                    if tuple(gram) in ngrams:
+                        fail = True
+                    ngrams.add(tuple(gram))
+                if fail:
+                    log_probs[bk] = -10e20
 
         alpha = self.global_scorer.alpha
         length_penalty = ((5.0 + (self.alive_seq.shape[1])) / 6.0) ** alpha

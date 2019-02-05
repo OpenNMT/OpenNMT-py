@@ -83,6 +83,14 @@ class Translator(object):
 
         self.model = model
         self.fields = fields
+        tgt_field = self.fields["tgt"][0][1].base_field
+        self._tgt_vocab = tgt_field.vocab
+        self._tgt_eos_idx = self._tgt_vocab.stoi[tgt_field.eos_token]
+        self._tgt_pad_idx = self._tgt_vocab.stoi[tgt_field.pad_token]
+        self._tgt_bos_idx = self._tgt_vocab.stoi[tgt_field.init_token]
+        self._tgt_unk_idx = self._tgt_vocab.stoi[tgt_field.unk_token]
+        self._tgt_vocab_len = len(self._tgt_vocab)
+
         self.gpu = opt.gpu
         self.cuda = opt.gpu > -1
 
@@ -101,6 +109,8 @@ class Translator(object):
         self.dump_beam = opt.dump_beam
         self.block_ngram_repeat = opt.block_ngram_repeat
         self.ignore_when_blocking = set(opt.ignore_when_blocking)
+        self._exclusion_idxs = {
+            self._tgt_vocab.stoi[t] for t in self.ignore_when_blocking}
         self.src_reader = inputters.str2reader[opt.data_type].from_opt(opt)
         self.tgt_reader = inputters.str2reader["text"].from_opt(opt)
         self.replace_unk = opt.replace_unk
@@ -333,11 +343,7 @@ class Translator(object):
 
         batch_size = batch.batch_size
 
-        tgt_field = self.fields['tgt'][0][1].base_field
-        vocab = tgt_field.vocab
-
-        start_token = vocab.stoi[tgt_field.init_token]
-        end_token = vocab.stoi[tgt_field.eos_token]
+        end_token = self._tgt_eos_idx
 
         # Encoder forward.
         src, enc_states, memory_bank, src_lengths = self._run_encoder(batch)
@@ -372,7 +378,8 @@ class Translator(object):
 
         # seq_so_far contains chosen tokens; on each step, dim 1 grows by one.
         seq_so_far = torch.full(
-            [batch_size, 1], start_token, dtype=torch.long, device=mb_device)
+            [batch_size, 1], self._tgt_bos_idx,
+            dtype=torch.long, device=mb_device)
         alive_attn = None
 
         for step in range(max_length):
@@ -483,13 +490,10 @@ class Translator(object):
         step=None,
         batch_offset=None
     ):
-
-        tgt_field = self.fields["tgt"][0][1].base_field
-        unk_idx = tgt_field.vocab.stoi[tgt_field.unk_token]
         if self.copy_attn:
             # Turn any copied words into UNKs.
             decoder_in = decoder_in.masked_fill(
-                decoder_in.gt(len(tgt_field.vocab) - 1), unk_idx
+                decoder_in.gt(self._tgt_vocab_len - 1), self._tgt_unk_idx
             )
 
         # Decoder forward, takes [tgt_len, batch, nfeats] as input
@@ -519,7 +523,7 @@ class Translator(object):
             scores = collapse_copy_scores(
                 scores,
                 batch,
-                tgt_field.vocab,
+                self._tgt_vocab,
                 src_vocabs,
                 batch_dim=0,
                 batch_offset=batch_offset
@@ -541,19 +545,12 @@ class Translator(object):
     ):
         # TODO: support these blacklisted features.
         assert not self.dump_beam
-        assert self.block_ngram_repeat == 0
         assert self.global_scorer.beta == 0
 
         # (0) Prep the components of the search.
         use_src_map = self.copy_attn
         beam_size = self.beam_size
         batch_size = batch.batch_size
-        tgt_field = self.fields['tgt'][0][1].base_field
-        vocab = tgt_field.vocab
-
-        pad = vocab.stoi[tgt_field.pad_token]
-        bos = vocab.stoi[tgt_field.init_token]
-        eos = vocab.stoi[tgt_field.eos_token]
 
         # (1) Run the encoder on the src.
         src, enc_states, memory_bank, src_lengths = self._run_encoder(batch)
@@ -592,9 +589,21 @@ class Translator(object):
         memory_lengths = tile(src_lengths, beam_size)
 
         # (0) pt 2, prep the beam object
-        beam = BeamSearch(beam_size, batch_size, pad, bos, eos, n_best,
-                          mb_device, self.global_scorer, min_length,
-                          max_length, return_attention, memory_lengths)
+        beam = BeamSearch(
+            beam_size,
+            n_best=n_best,
+            batch_size=batch_size,
+            global_scorer=self.global_scorer,
+            pad=self._tgt_pad_idx,
+            eos=self._tgt_eos_idx,
+            bos=self._tgt_bos_idx,
+            min_length=min_length,
+            max_length=max_length,
+            mb_device=mb_device,
+            return_attention=return_attention,
+            block_ngram_repeat=self.block_ngram_repeat,
+            exclusion_tokens=self._exclusion_idxs,
+            memory_lengths=memory_lengths)
 
         for step in range(max_length):
             decoder_input = beam.current_predictions.view(1, -1, 1)
@@ -646,24 +655,20 @@ class Translator(object):
         use_src_map = self.copy_attn
         beam_size = self.beam_size
         batch_size = batch.batch_size
-        tgt_field = self.fields['tgt'][0][1].base_field
-        vocab = tgt_field.vocab
 
-        # Define a set of tokens to exclude from ngram-blocking
-        exclusion_tokens = {vocab.stoi[t] for t in self.ignore_when_blocking}
-
-        pad = vocab.stoi[tgt_field.pad_token]
-        eos = vocab.stoi[tgt_field.eos_token]
-        bos = vocab.stoi[tgt_field.init_token]
-        beam = [onmt.translate.Beam(beam_size, n_best=self.n_best,
-                                    cuda=self.cuda,
-                                    global_scorer=self.global_scorer,
-                                    pad=pad, eos=eos, bos=bos,
-                                    min_length=self.min_length,
-                                    stepwise_penalty=self.stepwise_penalty,
-                                    block_ngram_repeat=self.block_ngram_repeat,
-                                    exclusion_tokens=exclusion_tokens)
-                for __ in range(batch_size)]
+        beam = [onmt.translate.Beam(
+            beam_size,
+            n_best=self.n_best,
+            cuda=self.cuda,
+            global_scorer=self.global_scorer,
+            pad=self._tgt_pad_idx,
+            eos=self._tgt_eos_idx,
+            bos=self._tgt_bos_idx,
+            min_length=self.min_length,
+            stepwise_penalty=self.stepwise_penalty,
+            block_ngram_repeat=self.block_ngram_repeat,
+            exclusion_tokens=self._exclusion_idxs)
+            for __ in range(batch_size)]
 
         # (1) Run the encoder on the src.
         src, enc_states, memory_bank, src_lengths = self._run_encoder(batch)
@@ -749,10 +754,8 @@ class Translator(object):
         log_probs, attn = self._decode_and_generate(
             tgt_in, memory_bank, batch, src_vocabs,
             memory_lengths=src_lengths, src_map=src_map)
-        tgt_field = self.fields["tgt"][0][1].base_field
-        tgt_pad = tgt_field.vocab.stoi[tgt_field.pad_token]
 
-        log_probs[:, :, tgt_pad] = 0
+        log_probs[:, :, self._tgt_pad_idx] = 0
         gold = tgt_in
         gold_scores = log_probs.gather(2, gold)
         gold_scores = gold_scores.sum(dim=0).view(-1)

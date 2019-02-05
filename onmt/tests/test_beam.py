@@ -107,7 +107,7 @@ class TestBeam(unittest.TestCase):
             if i <= ngram_repeat:
                 self.assertFalse(beam.scores[0].eq(self.BLOCKED_SCORE))
                 self.assertFalse(beam.scores[1].eq(self.BLOCKED_SCORE))
-                self.assertFalse(beam.scores[0].eq(self.BLOCKED_SCORE))
+                self.assertFalse(beam.scores[2].eq(self.BLOCKED_SCORE))
             else:
                 # now beam 0 dies, beam 1 -> beam 0, beam 2 -> beam 1
                 # and the rest die
@@ -116,7 +116,7 @@ class TestBeam(unittest.TestCase):
                 # that the beam is the correct idx by checking that
                 # the curr score is the initial score
                 self.assertTrue(beam.scores[0].eq(-2.3))
-                self.assertFalse(beam.scores[0].eq(self.BLOCKED_SCORE))
+                self.assertFalse(beam.scores[1].eq(self.BLOCKED_SCORE))
                 self.assertTrue(beam.scores[1].eq(-5.0))
                 self.assertTrue(
                     beam.scores[2:].equal(torch.tensor(
