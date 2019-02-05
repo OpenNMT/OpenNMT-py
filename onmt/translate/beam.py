@@ -63,12 +63,13 @@ class Beam(object):
         self.block_ngram_repeat = block_ngram_repeat
         self.exclusion_tokens = exclusion_tokens
 
-    def get_current_state(self):
-        "Get the outputs for the current timestep."
+    @property
+    def current_predictions(self):
         return self.next_ys[-1]
 
-    def get_current_origin(self):
-        "Get the backpointers for the current timestep."
+    @property
+    def current_origin(self):
+        """Get the backpointers for the current timestep."""
         return self.prev_ks[-1]
 
     def advance(self, word_probs, attn_out):
@@ -89,6 +90,8 @@ class Beam(object):
         # force the output to be longer than self.min_length
         cur_len = len(self.next_ys)
         if cur_len < self.min_length:
+            # assumes there are len(word_probs) predictions OTHER
+            # than EOS that are greater than -1e20
             for k in range(len(word_probs)):
                 word_probs[k][self._eos] = -1e20
         # Sum the previous scores.
@@ -101,7 +104,6 @@ class Beam(object):
 
             # Block ngram repeats
             if self.block_ngram_repeat > 0:
-                ngrams = []
                 le = len(self.next_ys)
                 for j in range(self.next_ys[-1].size(0)):
                     hyp, _ = self.get_hyp(le - 1, j)
@@ -148,6 +150,7 @@ class Beam(object):
             self.all_scores.append(self.scores)
             self.eos_top = True
 
+    @property
     def done(self):
         return self.eos_top and len(self.finished) >= self.n_best
 
