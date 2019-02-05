@@ -176,9 +176,9 @@ def preprocess_opts(parser):
               help="Path to the training source data")
     group.add('--train_tgt', '-train_tgt', required=True,
               help="Path to the training target data")
-    group.add('--valid_src', '-valid_src', required=True,
+    group.add('--valid_src', '-valid_src',
               help="Path to the validation source data")
-    group.add('--valid_tgt', '-valid_tgt', required=True,
+    group.add('--valid_tgt', '-valid_tgt',
               help="Path to the validation target data")
 
     group.add('--src_dir', '-src_dir', default="",
