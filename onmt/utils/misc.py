@@ -90,7 +90,7 @@ def generate_relative_positions_matrix(length, max_relative_positions,
     """Generate the clipped relative positions matrix
        for a given length and maximum relative positions"""
     if cache:
-        distance_mat = torch.arange(-length+1, 1 , 1).unsqueeze(0)
+        distance_mat = torch.arange(-length+1, 1, 1).unsqueeze(0)
     else:
         range_vec = torch.arange(length)
         range_mat = range_vec.unsqueeze(-1).expand(-1, length).transpose(0, 1)
