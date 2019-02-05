@@ -173,6 +173,7 @@
 
 <span class="kn">import</span> <span class="nn">onmt.model_builder</span>
 <span class="kn">import</span> <span class="nn">onmt.translate.beam</span>
+<span class="kn">from</span> <span class="nn">onmt.translate.beam_search</span> <span class="k">import</span> <span class="n">BeamSearch</span>
 <span class="kn">import</span> <span class="nn">onmt.inputters</span> <span class="k">as</span> <span class="nn">inputters</span>
 <span class="kn">import</span> <span class="nn">onmt.opts</span> <span class="k">as</span> <span class="nn">opts</span>
 <span class="kn">import</span> <span class="nn">onmt.decoders.ensemble</span>
@@ -241,6 +242,14 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fields</span> <span class="o">=</span> <span class="n">fields</span>
+        <span class="n">tgt_field</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">base_field</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_vocab</span> <span class="o">=</span> <span class="n">tgt_field</span><span class="o">.</span><span class="n">vocab</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_eos_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">tgt_field</span><span class="o">.</span><span class="n">eos_token</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_pad_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">tgt_field</span><span class="o">.</span><span class="n">pad_token</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_bos_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">tgt_field</span><span class="o">.</span><span class="n">init_token</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_unk_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">tgt_field</span><span class="o">.</span><span class="n">unk_token</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_vocab_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_vocab</span><span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">gpu</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">gpu</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cuda</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">gpu</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">1</span>
 
@@ -259,6 +268,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">dump_beam</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">dump_beam</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">block_ngram_repeat</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">block_ngram_repeat</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ignore_when_blocking</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">ignore_when_blocking</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_exclusion_idxs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignore_when_blocking</span><span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">src_reader</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">str2reader</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">data_type</span><span class="p">]</span><span class="o">.</span><span class="n">from_opt</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tgt_reader</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">str2reader</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">from_opt</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">replace_unk</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">replace_unk</span>
@@ -370,7 +381,7 @@
 
         <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">data_iter</span><span class="p">:</span>
             <span class="n">batch_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translate_batch</span><span class="p">(</span>
-                <span class="n">batch</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">attn_debug</span><span class="p">,</span> <span class="n">fast</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fast</span>
+                <span class="n">batch</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">src_vocabs</span><span class="p">,</span> <span class="n">attn_debug</span><span class="p">,</span> <span class="n">fast</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fast</span>
             <span class="p">)</span>
             <span class="n">translations</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="n">from_batch</span><span class="p">(</span><span class="n">batch_data</span><span class="p">)</span>
 
@@ -422,29 +433,17 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_score</span><span class="p">:</span>
             <span class="n">msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_report_score</span><span class="p">(</span><span class="s1">&#39;PRED&#39;</span><span class="p">,</span> <span class="n">pred_score_total</span><span class="p">,</span>
                                      <span class="n">pred_words_total</span><span class="p">)</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">tgt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_report_score</span><span class="p">(</span><span class="s1">&#39;GOLD&#39;</span><span class="p">,</span> <span class="n">gold_score_total</span><span class="p">,</span>
                                          <span class="n">gold_words_total</span><span class="p">)</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="nb">print</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_bleu</span><span class="p">:</span>
                     <span class="n">msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_report_bleu</span><span class="p">(</span><span class="n">tgt</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="p">:</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="nb">print</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_rouge</span><span class="p">:</span>
                     <span class="n">msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_report_rouge</span><span class="p">(</span><span class="n">tgt</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="p">:</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="nb">print</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_time</span><span class="p">:</span>
             <span class="n">total_time</span> <span class="o">=</span> <span class="n">end_time</span> <span class="o">-</span> <span class="n">start_time</span>
@@ -487,7 +486,7 @@
     <span class="k">def</span> <span class="nf">_translate_random_sampling</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">batch</span><span class="p">,</span>
-        <span class="n">data</span><span class="p">,</span>
+        <span class="n">src_vocabs</span><span class="p">,</span>
         <span class="n">max_length</span><span class="p">,</span>
         <span class="n">min_length</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
         <span class="n">sampling_temp</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
@@ -503,11 +502,7 @@
 
         <span class="n">batch_size</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">batch_size</span>
 
-        <span class="n">tgt_field</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">base_field</span>
-        <span class="n">vocab</span> <span class="o">=</span> <span class="n">tgt_field</span><span class="o">.</span><span class="n">vocab</span>
-
-        <span class="n">start_token</span> <span class="o">=</span> <span class="n">vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">tgt_field</span><span class="o">.</span><span class="n">init_token</span><span class="p">]</span>
-        <span class="n">end_token</span> <span class="o">=</span> <span class="n">vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">tgt_field</span><span class="o">.</span><span class="n">eos_token</span><span class="p">]</span>
+        <span class="n">end_token</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_eos_idx</span>
 
         <span class="c1"># Encoder forward.</span>
         <span class="n">src</span><span class="p">,</span> <span class="n">enc_states</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_lengths</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_encoder</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
@@ -525,7 +520,7 @@
                 <span class="n">batch</span><span class="p">,</span>
                 <span class="n">memory_bank</span><span class="p">,</span>
                 <span class="n">src_lengths</span><span class="p">,</span>
-                <span class="n">data</span><span class="p">,</span>
+                <span class="n">src_vocabs</span><span class="p">,</span>
                 <span class="n">batch</span><span class="o">.</span><span class="n">src_map</span> <span class="k">if</span> <span class="n">use_src_map</span> <span class="k">else</span> <span class="kc">None</span>
             <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">init_state</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">enc_states</span><span class="p">)</span>
@@ -542,7 +537,8 @@
 
         <span class="c1"># seq_so_far contains chosen tokens; on each step, dim 1 grows by one.</span>
         <span class="n">seq_so_far</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">full</span><span class="p">(</span>
-            <span class="p">[</span><span class="n">batch_size</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">start_token</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">mb_device</span><span class="p">)</span>
+            <span class="p">[</span><span class="n">batch_size</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_bos_idx</span><span class="p">,</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">mb_device</span><span class="p">)</span>
         <span class="n">alive_attn</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_length</span><span class="p">):</span>
@@ -552,7 +548,7 @@
                 <span class="n">decoder_input</span><span class="p">,</span>
                 <span class="n">memory_bank</span><span class="p">,</span>
                 <span class="n">batch</span><span class="p">,</span>
-                <span class="n">data</span><span class="p">,</span>
+                <span class="n">src_vocabs</span><span class="p">,</span>
                 <span class="n">memory_lengths</span><span class="o">=</span><span class="n">memory_lengths</span><span class="p">,</span>
                 <span class="n">src_map</span><span class="o">=</span><span class="n">src_map</span><span class="p">,</span>
                 <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">,</span>
@@ -595,7 +591,7 @@
 
         <span class="k">return</span> <span class="n">results</span>
 
-<div class="viewcode-block" id="Translator.translate_batch"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.Translator.translate_batch">[docs]</a>    <span class="k">def</span> <span class="nf">translate_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">attn_debug</span><span class="p">,</span> <span class="n">fast</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="Translator.translate_batch"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.Translator.translate_batch">[docs]</a>    <span class="k">def</span> <span class="nf">translate_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">src_vocabs</span><span class="p">,</span> <span class="n">attn_debug</span><span class="p">,</span> <span class="n">fast</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Translate a batch of sentences.</span>
 
@@ -605,15 +601,12 @@
 <span class="sd">           batch (:obj:`Batch`): a batch from a dataset object</span>
 <span class="sd">           data (:obj:`Dataset`): the dataset object</span>
 <span class="sd">           fast (bool): enables fast beam search (may not support all features)</span>
-
-<span class="sd">        Todo:</span>
-<span class="sd">           Shouldn&#39;t need the original dataset.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_random_sampling</span><span class="p">(</span>
                     <span class="n">batch</span><span class="p">,</span>
-                    <span class="n">data</span><span class="p">,</span>
+                    <span class="n">src_vocabs</span><span class="p">,</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">max_length</span><span class="p">,</span>
                     <span class="n">min_length</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">min_length</span><span class="p">,</span>
                     <span class="n">sampling_temp</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_sampling_temp</span><span class="p">,</span>
@@ -622,13 +615,13 @@
             <span class="k">if</span> <span class="n">fast</span><span class="p">:</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fast_translate_batch</span><span class="p">(</span>
                     <span class="n">batch</span><span class="p">,</span>
-                    <span class="n">data</span><span class="p">,</span>
+                    <span class="n">src_vocabs</span><span class="p">,</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">max_length</span><span class="p">,</span>
                     <span class="n">min_length</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">min_length</span><span class="p">,</span>
                     <span class="n">n_best</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_best</span><span class="p">,</span>
                     <span class="n">return_attention</span><span class="o">=</span><span class="n">attn_debug</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">replace_unk</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_batch</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span></div>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_batch</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">src_vocabs</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">_run_encoder</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">):</span>
         <span class="n">src</span><span class="p">,</span> <span class="n">src_lengths</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">src</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">src</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> \
@@ -650,19 +643,16 @@
         <span class="n">decoder_in</span><span class="p">,</span>
         <span class="n">memory_bank</span><span class="p">,</span>
         <span class="n">batch</span><span class="p">,</span>
-        <span class="n">data</span><span class="p">,</span>
+        <span class="n">src_vocabs</span><span class="p">,</span>
         <span class="n">memory_lengths</span><span class="p">,</span>
         <span class="n">src_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">batch_offset</span><span class="o">=</span><span class="kc">None</span>
     <span class="p">):</span>
-
-        <span class="n">tgt_field</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">base_field</span>
-        <span class="n">unk_idx</span> <span class="o">=</span> <span class="n">tgt_field</span><span class="o">.</span><span class="n">vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">tgt_field</span><span class="o">.</span><span class="n">unk_token</span><span class="p">]</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span><span class="p">:</span>
             <span class="c1"># Turn any copied words into UNKs.</span>
             <span class="n">decoder_in</span> <span class="o">=</span> <span class="n">decoder_in</span><span class="o">.</span><span class="n">masked_fill</span><span class="p">(</span>
-                <span class="n">decoder_in</span><span class="o">.</span><span class="n">gt</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tgt_field</span><span class="o">.</span><span class="n">vocab</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="n">unk_idx</span>
+                <span class="n">decoder_in</span><span class="o">.</span><span class="n">gt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_vocab_len</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_unk_idx</span>
             <span class="p">)</span>
 
         <span class="c1"># Decoder forward, takes [tgt_len, batch, nfeats] as input</span>
@@ -692,8 +682,8 @@
             <span class="n">scores</span> <span class="o">=</span> <span class="n">collapse_copy_scores</span><span class="p">(</span>
                 <span class="n">scores</span><span class="p">,</span>
                 <span class="n">batch</span><span class="p">,</span>
-                <span class="n">tgt_field</span><span class="o">.</span><span class="n">vocab</span><span class="p">,</span>
-                <span class="n">data</span><span class="o">.</span><span class="n">src_vocabs</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_vocab</span><span class="p">,</span>
+                <span class="n">src_vocabs</span><span class="p">,</span>
                 <span class="n">batch_dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                 <span class="n">batch_offset</span><span class="o">=</span><span class="n">batch_offset</span>
             <span class="p">)</span>
@@ -706,7 +696,7 @@
     <span class="k">def</span> <span class="nf">_fast_translate_batch</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">batch</span><span class="p">,</span>
-        <span class="n">data</span><span class="p">,</span>
+        <span class="n">src_vocabs</span><span class="p">,</span>
         <span class="n">max_length</span><span class="p">,</span>
         <span class="n">min_length</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
         <span class="n">n_best</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
@@ -714,224 +704,130 @@
     <span class="p">):</span>
         <span class="c1"># TODO: support these blacklisted features.</span>
         <span class="k">assert</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">dump_beam</span>
-        <span class="k">assert</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_filter_pred</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_ngram_repeat</span> <span class="o">==</span> <span class="mi">0</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">global_scorer</span><span class="o">.</span><span class="n">beta</span> <span class="o">==</span> <span class="mi">0</span>
 
+        <span class="c1"># (0) Prep the components of the search.</span>
+        <span class="n">use_src_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span>
         <span class="n">beam_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span>
         <span class="n">batch_size</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">batch_size</span>
-        <span class="n">tgt_field</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">base_field</span>
-        <span class="n">vocab</span> <span class="o">=</span> <span class="n">tgt_field</span><span class="o">.</span><span class="n">vocab</span>
-        <span class="n">start_token</span> <span class="o">=</span> <span class="n">vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">tgt_field</span><span class="o">.</span><span class="n">init_token</span><span class="p">]</span>
-        <span class="n">end_token</span> <span class="o">=</span> <span class="n">vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">tgt_field</span><span class="o">.</span><span class="n">eos_token</span><span class="p">]</span>
 
-        <span class="c1"># Encoder forward.</span>
+        <span class="c1"># (1) Run the encoder on the src.</span>
         <span class="n">src</span><span class="p">,</span> <span class="n">enc_states</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_lengths</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_encoder</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">init_state</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">enc_states</span><span class="p">)</span>
 
-        <span class="n">use_src_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span>
-
         <span class="n">results</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="n">results</span><span class="p">[</span><span class="s2">&quot;predictions&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)]</span>  <span class="c1"># noqa: F812</span>
-        <span class="n">results</span><span class="p">[</span><span class="s2">&quot;scores&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)]</span>  <span class="c1"># noqa: F812</span>
-        <span class="n">results</span><span class="p">[</span><span class="s2">&quot;attention&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)]</span>  <span class="c1"># noqa: F812</span>
+        <span class="n">results</span><span class="p">[</span><span class="s2">&quot;predictions&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">results</span><span class="p">[</span><span class="s2">&quot;scores&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">results</span><span class="p">[</span><span class="s2">&quot;attention&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">results</span><span class="p">[</span><span class="s2">&quot;batch&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">batch</span>
         <span class="k">if</span> <span class="s2">&quot;tgt&quot;</span> <span class="ow">in</span> <span class="n">batch</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">:</span>
             <span class="n">results</span><span class="p">[</span><span class="s2">&quot;gold_score&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_score_target</span><span class="p">(</span>
                 <span class="n">batch</span><span class="p">,</span>
                 <span class="n">memory_bank</span><span class="p">,</span>
                 <span class="n">src_lengths</span><span class="p">,</span>
-                <span class="n">data</span><span class="p">,</span>
+                <span class="n">src_vocabs</span><span class="p">,</span>
                 <span class="n">batch</span><span class="o">.</span><span class="n">src_map</span> <span class="k">if</span> <span class="n">use_src_map</span> <span class="k">else</span> <span class="kc">None</span>
             <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">init_state</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">enc_states</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">results</span><span class="p">[</span><span class="s2">&quot;gold_score&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">batch_size</span>
 
-        <span class="c1"># Tile states and memory beam_size times.</span>
+        <span class="c1"># (2) Repeat src objects `beam_size` times.</span>
+        <span class="c1"># We use batch_size x beam_size</span>
+        <span class="n">src_map</span> <span class="o">=</span> <span class="p">(</span><span class="n">tile</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">src_map</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                   <span class="k">if</span> <span class="n">use_src_map</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">map_state</span><span class="p">(</span>
             <span class="k">lambda</span> <span class="n">state</span><span class="p">,</span> <span class="n">dim</span><span class="p">:</span> <span class="n">tile</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">))</span>
+
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">memory_bank</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
             <span class="n">memory_bank</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">tile</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">memory_bank</span><span class="p">)</span>
             <span class="n">mb_device</span> <span class="o">=</span> <span class="n">memory_bank</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">device</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">memory_bank</span> <span class="o">=</span> <span class="n">tile</span><span class="p">(</span><span class="n">memory_bank</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
             <span class="n">mb_device</span> <span class="o">=</span> <span class="n">memory_bank</span><span class="o">.</span><span class="n">device</span>
-
         <span class="n">memory_lengths</span> <span class="o">=</span> <span class="n">tile</span><span class="p">(</span><span class="n">src_lengths</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">)</span>
-        <span class="n">src_map</span> <span class="o">=</span> <span class="p">(</span><span class="n">tile</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">src_map</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-                   <span class="k">if</span> <span class="n">use_src_map</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
 
-        <span class="n">top_beam_finished</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">batch_size</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
-        <span class="n">batch_offset</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
-        <span class="n">beam_offset</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span>
-            <span class="mi">0</span><span class="p">,</span> <span class="n">batch_size</span> <span class="o">*</span> <span class="n">beam_size</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">beam_size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span>
-            <span class="n">device</span><span class="o">=</span><span class="n">mb_device</span><span class="p">)</span>
-        <span class="n">alive_seq</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">full</span><span class="p">(</span>
-            <span class="p">[</span><span class="n">batch_size</span> <span class="o">*</span> <span class="n">beam_size</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">start_token</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span>
-            <span class="n">device</span><span class="o">=</span><span class="n">mb_device</span><span class="p">)</span>
-        <span class="n">alive_attn</span> <span class="o">=</span> <span class="kc">None</span>
-
-        <span class="c1"># Give full probability to the first beam on the first step.</span>
-        <span class="n">topk_log_probs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
-            <span class="p">[</span><span class="mf">0.0</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;-inf&quot;</span><span class="p">)]</span> <span class="o">*</span> <span class="p">(</span><span class="n">beam_size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="n">mb_device</span>
-        <span class="p">)</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)</span>
-
-        <span class="c1"># Structure that holds finished hypotheses.</span>
-        <span class="n">hypotheses</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)]</span>  <span class="c1"># noqa: F812</span>
+        <span class="c1"># (0) pt 2, prep the beam object</span>
+        <span class="n">beam</span> <span class="o">=</span> <span class="n">BeamSearch</span><span class="p">(</span>
+            <span class="n">beam_size</span><span class="p">,</span>
+            <span class="n">n_best</span><span class="o">=</span><span class="n">n_best</span><span class="p">,</span>
+            <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
+            <span class="n">global_scorer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">global_scorer</span><span class="p">,</span>
+            <span class="n">pad</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_pad_idx</span><span class="p">,</span>
+            <span class="n">eos</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_eos_idx</span><span class="p">,</span>
+            <span class="n">bos</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_bos_idx</span><span class="p">,</span>
+            <span class="n">min_length</span><span class="o">=</span><span class="n">min_length</span><span class="p">,</span>
+            <span class="n">max_length</span><span class="o">=</span><span class="n">max_length</span><span class="p">,</span>
+            <span class="n">mb_device</span><span class="o">=</span><span class="n">mb_device</span><span class="p">,</span>
+            <span class="n">return_attention</span><span class="o">=</span><span class="n">return_attention</span><span class="p">,</span>
+            <span class="n">block_ngram_repeat</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">block_ngram_repeat</span><span class="p">,</span>
+            <span class="n">exclusion_tokens</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_exclusion_idxs</span><span class="p">,</span>
+            <span class="n">memory_lengths</span><span class="o">=</span><span class="n">memory_lengths</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_length</span><span class="p">):</span>
-            <span class="n">decoder_input</span> <span class="o">=</span> <span class="n">alive_seq</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">decoder_input</span> <span class="o">=</span> <span class="n">beam</span><span class="o">.</span><span class="n">current_predictions</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 
             <span class="n">log_probs</span><span class="p">,</span> <span class="n">attn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decode_and_generate</span><span class="p">(</span>
                 <span class="n">decoder_input</span><span class="p">,</span>
                 <span class="n">memory_bank</span><span class="p">,</span>
                 <span class="n">batch</span><span class="p">,</span>
-                <span class="n">data</span><span class="p">,</span>
+                <span class="n">src_vocabs</span><span class="p">,</span>
                 <span class="n">memory_lengths</span><span class="o">=</span><span class="n">memory_lengths</span><span class="p">,</span>
                 <span class="n">src_map</span><span class="o">=</span><span class="n">src_map</span><span class="p">,</span>
                 <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">,</span>
-                <span class="n">batch_offset</span><span class="o">=</span><span class="n">batch_offset</span>
+                <span class="n">batch_offset</span><span class="o">=</span><span class="n">beam</span><span class="o">.</span><span class="n">batch_offset</span>
             <span class="p">)</span>
 
-            <span class="n">vocab_size</span> <span class="o">=</span> <span class="n">log_probs</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-
-            <span class="k">if</span> <span class="n">step</span> <span class="o">&lt;</span> <span class="n">min_length</span><span class="p">:</span>
-                <span class="n">log_probs</span><span class="p">[:,</span> <span class="n">end_token</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1e20</span>
-
-            <span class="c1"># Multiply probs by the beam probability.</span>
-            <span class="n">log_probs</span> <span class="o">+=</span> <span class="n">topk_log_probs</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-
-            <span class="n">alpha</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">global_scorer</span><span class="o">.</span><span class="n">alpha</span>
-            <span class="n">length_penalty</span> <span class="o">=</span> <span class="p">((</span><span class="mf">5.0</span> <span class="o">+</span> <span class="p">(</span><span class="n">step</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span> <span class="o">/</span> <span class="mf">6.0</span><span class="p">)</span> <span class="o">**</span> <span class="n">alpha</span>
-
-            <span class="c1"># Flatten probs into a list of possibilities.</span>
-            <span class="n">curr_scores</span> <span class="o">=</span> <span class="n">log_probs</span> <span class="o">/</span> <span class="n">length_penalty</span>
-            <span class="n">curr_scores</span> <span class="o">=</span> <span class="n">curr_scores</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">beam_size</span> <span class="o">*</span> <span class="n">vocab_size</span><span class="p">)</span>
-            <span class="n">topk_scores</span><span class="p">,</span> <span class="n">topk_ids</span> <span class="o">=</span> <span class="n">curr_scores</span><span class="o">.</span><span class="n">topk</span><span class="p">(</span><span class="n">beam_size</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-
-            <span class="c1"># Recover log probs.</span>
-            <span class="n">topk_log_probs</span> <span class="o">=</span> <span class="n">topk_scores</span> <span class="o">*</span> <span class="n">length_penalty</span>
-
-            <span class="c1"># Resolve beam origin and true word ids.</span>
-            <span class="n">topk_beam_index</span> <span class="o">=</span> <span class="n">topk_ids</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="n">vocab_size</span><span class="p">)</span>
-            <span class="n">topk_ids</span> <span class="o">=</span> <span class="n">topk_ids</span><span class="o">.</span><span class="n">fmod</span><span class="p">(</span><span class="n">vocab_size</span><span class="p">)</span>
-
-            <span class="c1"># Map beam_index to batch_index in the flat representation.</span>
-            <span class="n">batch_index</span> <span class="o">=</span> <span class="p">(</span>
-                    <span class="n">topk_beam_index</span>
-                    <span class="o">+</span> <span class="n">beam_offset</span><span class="p">[:</span><span class="n">topk_beam_index</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)]</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
-            <span class="n">select_indices</span> <span class="o">=</span> <span class="n">batch_index</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-
-            <span class="c1"># Append last prediction.</span>
-            <span class="n">alive_seq</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span>
-                <span class="p">[</span><span class="n">alive_seq</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">select_indices</span><span class="p">),</span>
-                 <span class="n">topk_ids</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">return_attention</span><span class="p">:</span>
-                <span class="n">current_attn</span> <span class="o">=</span> <span class="n">attn</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">select_indices</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">alive_attn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">alive_attn</span> <span class="o">=</span> <span class="n">current_attn</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">alive_attn</span> <span class="o">=</span> <span class="n">alive_attn</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">select_indices</span><span class="p">)</span>
-                    <span class="n">alive_attn</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">alive_attn</span><span class="p">,</span> <span class="n">current_attn</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
-
-            <span class="n">is_finished</span> <span class="o">=</span> <span class="n">topk_ids</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">end_token</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">step</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">==</span> <span class="n">max_length</span><span class="p">:</span>
-                <span class="n">is_finished</span><span class="o">.</span><span class="n">fill_</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-
-            <span class="c1"># Save finished hypotheses.</span>
-            <span class="k">if</span> <span class="n">is_finished</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
-                <span class="c1"># Penalize beams that finished.</span>
-                <span class="n">topk_log_probs</span><span class="o">.</span><span class="n">masked_fill_</span><span class="p">(</span><span class="n">is_finished</span><span class="p">,</span> <span class="o">-</span><span class="mf">1e10</span><span class="p">)</span>
-                <span class="n">is_finished</span> <span class="o">=</span> <span class="n">is_finished</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
-                <span class="n">top_beam_finished</span> <span class="o">|=</span> <span class="n">is_finished</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-                <span class="n">predictions</span> <span class="o">=</span> <span class="n">alive_seq</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">,</span> <span class="n">alive_seq</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
-                <span class="n">attention</span> <span class="o">=</span> <span class="p">(</span>
-                    <span class="n">alive_attn</span><span class="o">.</span><span class="n">view</span><span class="p">(</span>
-                        <span class="n">alive_attn</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">,</span> <span class="n">alive_attn</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
-                    <span class="k">if</span> <span class="n">alive_attn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
-                <span class="n">non_finished_batch</span> <span class="o">=</span> <span class="p">[]</span>
-                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">is_finished</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)):</span>
-                    <span class="n">b</span> <span class="o">=</span> <span class="n">batch_offset</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-                    <span class="n">finished_hyp</span> <span class="o">=</span> <span class="n">is_finished</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-                    <span class="c1"># Store finished hypotheses for this batch.</span>
-                    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">finished_hyp</span><span class="p">:</span>
-                        <span class="n">hypotheses</span><span class="p">[</span><span class="n">b</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">((</span>
-                            <span class="n">topk_scores</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">],</span>
-                            <span class="n">predictions</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="mi">1</span><span class="p">:],</span>  <span class="c1"># Ignore start_token.</span>
-                            <span class="n">attention</span><span class="p">[:,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="p">:</span><span class="n">memory_lengths</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
-                            <span class="k">if</span> <span class="n">attention</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">))</span>
-                    <span class="c1"># End condition is the top beam finished and we can return</span>
-                    <span class="c1"># n_best hypotheses.</span>
-                    <span class="k">if</span> <span class="n">top_beam_finished</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">hypotheses</span><span class="p">[</span><span class="n">b</span><span class="p">])</span> <span class="o">&gt;=</span> <span class="n">n_best</span><span class="p">:</span>
-                        <span class="n">best_hyp</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
-                            <span class="n">hypotheses</span><span class="p">[</span><span class="n">b</span><span class="p">],</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                        <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="p">(</span><span class="n">score</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="n">attn</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">best_hyp</span><span class="p">):</span>
-                            <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;=</span> <span class="n">n_best</span><span class="p">:</span>
-                                <span class="k">break</span>
-                            <span class="n">results</span><span class="p">[</span><span class="s2">&quot;scores&quot;</span><span class="p">][</span><span class="n">b</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>
-                            <span class="n">results</span><span class="p">[</span><span class="s2">&quot;predictions&quot;</span><span class="p">][</span><span class="n">b</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pred</span><span class="p">)</span>
-                            <span class="n">results</span><span class="p">[</span><span class="s2">&quot;attention&quot;</span><span class="p">][</span><span class="n">b</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                                <span class="n">attn</span> <span class="k">if</span> <span class="n">attn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[])</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="n">non_finished_batch</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
-                <span class="n">non_finished</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">non_finished_batch</span><span class="p">)</span>
-                <span class="c1"># If all sentences are translated, no need to go further.</span>
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">non_finished</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">beam</span><span class="o">.</span><span class="n">advance</span><span class="p">(</span><span class="n">log_probs</span><span class="p">,</span> <span class="n">attn</span><span class="p">)</span>
+            <span class="n">any_beam_is_finished</span> <span class="o">=</span> <span class="n">beam</span><span class="o">.</span><span class="n">is_finished</span><span class="o">.</span><span class="n">any</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">any_beam_is_finished</span><span class="p">:</span>
+                <span class="n">beam</span><span class="o">.</span><span class="n">update_finished</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">beam</span><span class="o">.</span><span class="n">done</span><span class="p">:</span>
                     <span class="k">break</span>
-                <span class="c1"># Remove finished batches for the next step.</span>
-                <span class="n">top_beam_finished</span> <span class="o">=</span> <span class="n">top_beam_finished</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span>
-                    <span class="mi">0</span><span class="p">,</span> <span class="n">non_finished</span><span class="p">)</span>
-                <span class="n">batch_offset</span> <span class="o">=</span> <span class="n">batch_offset</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">non_finished</span><span class="p">)</span>
-                <span class="n">non_finished</span> <span class="o">=</span> <span class="n">non_finished</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">topk_ids</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
-                <span class="n">topk_log_probs</span> <span class="o">=</span> <span class="n">topk_log_probs</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">non_finished</span><span class="p">)</span>
-                <span class="n">batch_index</span> <span class="o">=</span> <span class="n">batch_index</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">non_finished</span><span class="p">)</span>
-                <span class="n">select_indices</span> <span class="o">=</span> <span class="n">batch_index</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-                <span class="n">alive_seq</span> <span class="o">=</span> <span class="n">predictions</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">non_finished</span><span class="p">)</span> \
-                    <span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">alive_seq</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
-                <span class="k">if</span> <span class="n">alive_attn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">alive_attn</span> <span class="o">=</span> <span class="n">attention</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">non_finished</span><span class="p">)</span> \
-                        <span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">alive_attn</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
-                              <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">alive_attn</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
 
-            <span class="c1"># Reorder states.</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">memory_bank</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
-                <span class="n">memory_bank</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">select_indices</span><span class="p">)</span>
-                                    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">memory_bank</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">memory_bank</span> <span class="o">=</span> <span class="n">memory_bank</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">select_indices</span><span class="p">)</span>
+            <span class="n">select_indices</span> <span class="o">=</span> <span class="n">beam</span><span class="o">.</span><span class="n">current_origin</span>
 
-            <span class="n">memory_lengths</span> <span class="o">=</span> <span class="n">memory_lengths</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">select_indices</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">any_beam_is_finished</span><span class="p">:</span>
+                <span class="c1"># Reorder states.</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">memory_bank</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+                    <span class="n">memory_bank</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">select_indices</span><span class="p">)</span>
+                                        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">memory_bank</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">memory_bank</span> <span class="o">=</span> <span class="n">memory_bank</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">select_indices</span><span class="p">)</span>
+
+                <span class="n">memory_lengths</span> <span class="o">=</span> <span class="n">memory_lengths</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">select_indices</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">src_map</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">src_map</span> <span class="o">=</span> <span class="n">src_map</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">select_indices</span><span class="p">)</span>
+
             <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">map_state</span><span class="p">(</span>
                 <span class="k">lambda</span> <span class="n">state</span><span class="p">,</span> <span class="n">dim</span><span class="p">:</span> <span class="n">state</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">select_indices</span><span class="p">))</span>
-            <span class="k">if</span> <span class="n">src_map</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">src_map</span> <span class="o">=</span> <span class="n">src_map</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">select_indices</span><span class="p">)</span>
 
+        <span class="n">results</span><span class="p">[</span><span class="s2">&quot;scores&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">beam</span><span class="o">.</span><span class="n">scores</span>
+        <span class="n">results</span><span class="p">[</span><span class="s2">&quot;predictions&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">beam</span><span class="o">.</span><span class="n">predictions</span>
+        <span class="n">results</span><span class="p">[</span><span class="s2">&quot;attention&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">beam</span><span class="o">.</span><span class="n">attention</span>
         <span class="k">return</span> <span class="n">results</span>
 
-    <span class="k">def</span> <span class="nf">_translate_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_translate_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">src_vocabs</span><span class="p">):</span>
         <span class="c1"># (0) Prep each of the components of the search.</span>
         <span class="c1"># And helper method for reducing verbosity.</span>
+        <span class="n">use_src_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span>
         <span class="n">beam_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span>
         <span class="n">batch_size</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">batch_size</span>
-        <span class="n">tgt_field</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">base_field</span>
-        <span class="n">vocab</span> <span class="o">=</span> <span class="n">tgt_field</span><span class="o">.</span><span class="n">vocab</span>
 
-        <span class="c1"># Define a set of tokens to exclude from ngram-blocking</span>
-        <span class="n">exclusion_tokens</span> <span class="o">=</span> <span class="p">{</span><span class="n">vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignore_when_blocking</span><span class="p">}</span>
-
-        <span class="n">pad</span> <span class="o">=</span> <span class="n">vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">tgt_field</span><span class="o">.</span><span class="n">pad_token</span><span class="p">]</span>
-        <span class="n">eos</span> <span class="o">=</span> <span class="n">vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">tgt_field</span><span class="o">.</span><span class="n">eos_token</span><span class="p">]</span>
-        <span class="n">bos</span> <span class="o">=</span> <span class="n">vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">tgt_field</span><span class="o">.</span><span class="n">init_token</span><span class="p">]</span>
-        <span class="n">beam</span> <span class="o">=</span> <span class="p">[</span><span class="n">onmt</span><span class="o">.</span><span class="n">translate</span><span class="o">.</span><span class="n">Beam</span><span class="p">(</span><span class="n">beam_size</span><span class="p">,</span> <span class="n">n_best</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_best</span><span class="p">,</span>
-                                    <span class="n">cuda</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cuda</span><span class="p">,</span>
-                                    <span class="n">global_scorer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">global_scorer</span><span class="p">,</span>
-                                    <span class="n">pad</span><span class="o">=</span><span class="n">pad</span><span class="p">,</span> <span class="n">eos</span><span class="o">=</span><span class="n">eos</span><span class="p">,</span> <span class="n">bos</span><span class="o">=</span><span class="n">bos</span><span class="p">,</span>
-                                    <span class="n">min_length</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">min_length</span><span class="p">,</span>
-                                    <span class="n">stepwise_penalty</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">stepwise_penalty</span><span class="p">,</span>
-                                    <span class="n">block_ngram_repeat</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">block_ngram_repeat</span><span class="p">,</span>
-                                    <span class="n">exclusion_tokens</span><span class="o">=</span><span class="n">exclusion_tokens</span><span class="p">)</span>
-                <span class="k">for</span> <span class="n">__</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)]</span>
+        <span class="n">beam</span> <span class="o">=</span> <span class="p">[</span><span class="n">onmt</span><span class="o">.</span><span class="n">translate</span><span class="o">.</span><span class="n">Beam</span><span class="p">(</span>
+            <span class="n">beam_size</span><span class="p">,</span>
+            <span class="n">n_best</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_best</span><span class="p">,</span>
+            <span class="n">cuda</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cuda</span><span class="p">,</span>
+            <span class="n">global_scorer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">global_scorer</span><span class="p">,</span>
+            <span class="n">pad</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_pad_idx</span><span class="p">,</span>
+            <span class="n">eos</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_eos_idx</span><span class="p">,</span>
+            <span class="n">bos</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_bos_idx</span><span class="p">,</span>
+            <span class="n">min_length</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">min_length</span><span class="p">,</span>
+            <span class="n">stepwise_penalty</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">stepwise_penalty</span><span class="p">,</span>
+            <span class="n">block_ngram_repeat</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">block_ngram_repeat</span><span class="p">,</span>
+            <span class="n">exclusion_tokens</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_exclusion_idxs</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">__</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)]</span>
 
         <span class="c1"># (1) Run the encoder on the src.</span>
         <span class="n">src</span><span class="p">,</span> <span class="n">enc_states</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_lengths</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_encoder</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
@@ -944,8 +840,8 @@
         <span class="n">results</span><span class="p">[</span><span class="s2">&quot;batch&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">batch</span>
         <span class="k">if</span> <span class="s2">&quot;tgt&quot;</span> <span class="ow">in</span> <span class="n">batch</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">:</span>
             <span class="n">results</span><span class="p">[</span><span class="s2">&quot;gold_score&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_score_target</span><span class="p">(</span>
-                <span class="n">batch</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">batch</span><span class="o">.</span><span class="n">src_map</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="n">batch</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">,</span> <span class="n">src_vocabs</span><span class="p">,</span>
+                <span class="n">batch</span><span class="o">.</span><span class="n">src_map</span> <span class="k">if</span> <span class="n">use_src_map</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">init_state</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">enc_states</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">results</span><span class="p">[</span><span class="s2">&quot;gold_score&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">batch_size</span>
@@ -953,7 +849,7 @@
         <span class="c1"># (2) Repeat src objects `beam_size` times.</span>
         <span class="c1"># We use now  batch_size x beam_size (same as fast mode)</span>
         <span class="n">src_map</span> <span class="o">=</span> <span class="p">(</span><span class="n">tile</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">src_map</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-                   <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+                   <span class="k">if</span> <span class="n">use_src_map</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">map_state</span><span class="p">(</span>
             <span class="k">lambda</span> <span class="n">state</span><span class="p">,</span> <span class="n">dim</span><span class="p">:</span> <span class="n">tile</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">))</span>
 
@@ -965,19 +861,19 @@
 
         <span class="c1"># (3) run the decoder to generate sentences, using beam search.</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_length</span><span class="p">):</span>
-            <span class="k">if</span> <span class="nb">all</span><span class="p">((</span><span class="n">b</span><span class="o">.</span><span class="n">done</span><span class="p">()</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">beam</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="nb">all</span><span class="p">((</span><span class="n">b</span><span class="o">.</span><span class="n">done</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">beam</span><span class="p">)):</span>
                 <span class="k">break</span>
 
             <span class="c1"># (a) Construct batch x beam_size nxt words.</span>
             <span class="c1"># Get all the pending current beam words and arrange for forward.</span>
 
-            <span class="n">inp</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">b</span><span class="o">.</span><span class="n">get_current_state</span><span class="p">()</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">beam</span><span class="p">])</span>
+            <span class="n">inp</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">b</span><span class="o">.</span><span class="n">current_predictions</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">beam</span><span class="p">])</span>
             <span class="n">inp</span> <span class="o">=</span> <span class="n">inp</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 
             <span class="c1"># (b) Decode and forward</span>
             <span class="n">out</span><span class="p">,</span> <span class="n">beam_attn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decode_and_generate</span><span class="p">(</span>
-                <span class="n">inp</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">memory_lengths</span><span class="o">=</span><span class="n">memory_lengths</span><span class="p">,</span>
-                <span class="n">src_map</span><span class="o">=</span><span class="n">src_map</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">i</span>
+                <span class="n">inp</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">src_vocabs</span><span class="p">,</span>
+                <span class="n">memory_lengths</span><span class="o">=</span><span class="n">memory_lengths</span><span class="p">,</span> <span class="n">src_map</span><span class="o">=</span><span class="n">src_map</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">i</span>
             <span class="p">)</span>
             <span class="n">out</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
             <span class="n">beam_attn</span> <span class="o">=</span> <span class="n">beam_attn</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
@@ -989,7 +885,7 @@
                 <span class="n">b</span><span class="o">.</span><span class="n">advance</span><span class="p">(</span><span class="n">out</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="p">:],</span>
                           <span class="n">beam_attn</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:</span><span class="n">memory_lengths</span><span class="p">[</span><span class="n">j</span><span class="p">]])</span>
                 <span class="n">select_indices_array</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                    <span class="n">b</span><span class="o">.</span><span class="n">get_current_origin</span><span class="p">()</span> <span class="o">+</span> <span class="n">j</span> <span class="o">*</span> <span class="n">beam_size</span><span class="p">)</span>
+                    <span class="n">b</span><span class="o">.</span><span class="n">current_origin</span> <span class="o">+</span> <span class="n">j</span> <span class="o">*</span> <span class="n">beam_size</span><span class="p">)</span>
             <span class="n">select_indices</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">select_indices_array</span><span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">map_state</span><span class="p">(</span>
@@ -1009,17 +905,16 @@
 
         <span class="k">return</span> <span class="n">results</span>
 
-    <span class="k">def</span> <span class="nf">_score_target</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">src_map</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_score_target</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">,</span>
+                      <span class="n">src_vocabs</span><span class="p">,</span> <span class="n">src_map</span><span class="p">):</span>
         <span class="n">tgt</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">tgt</span>
         <span class="n">tgt_in</span> <span class="o">=</span> <span class="n">tgt</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 
         <span class="n">log_probs</span><span class="p">,</span> <span class="n">attn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decode_and_generate</span><span class="p">(</span>
-            <span class="n">tgt_in</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
+            <span class="n">tgt_in</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">src_vocabs</span><span class="p">,</span>
             <span class="n">memory_lengths</span><span class="o">=</span><span class="n">src_lengths</span><span class="p">,</span> <span class="n">src_map</span><span class="o">=</span><span class="n">src_map</span><span class="p">)</span>
-        <span class="n">tgt_field</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">base_field</span>
-        <span class="n">tgt_pad</span> <span class="o">=</span> <span class="n">tgt_field</span><span class="o">.</span><span class="n">vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">tgt_field</span><span class="o">.</span><span class="n">pad_token</span><span class="p">]</span>
 
-        <span class="n">log_probs</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">tgt_pad</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">log_probs</span><span class="p">[:,</span> <span class="p">:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_pad_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">gold</span> <span class="o">=</span> <span class="n">tgt_in</span>
         <span class="n">gold_scores</span> <span class="o">=</span> <span class="n">log_probs</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">gold</span><span class="p">)</span>
         <span class="n">gold_scores</span> <span class="o">=</span> <span class="n">gold_scores</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>

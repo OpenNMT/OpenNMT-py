@@ -345,7 +345,7 @@ Note: one of (‘src_path’, ‘src_data_iter’) must not be None</p>
 
 <dl class="method">
 <dt id="onmt.translate.Translator.translate_batch">
-<code class="descname">translate_batch</code><span class="sig-paren">(</span><em>batch</em>, <em>data</em>, <em>attn_debug</em>, <em>fast=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translator.html#Translator.translate_batch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translator.translate_batch" title="Permalink to this definition">¶</a></dt>
+<code class="descname">translate_batch</code><span class="sig-paren">(</span><em>batch</em>, <em>src_vocabs</em>, <em>attn_debug</em>, <em>fast=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translator.html#Translator.translate_batch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translator.translate_batch" title="Permalink to this definition">¶</a></dt>
 <dd><p>Translate a batch of sentences.</p>
 <p>Mostly a wrapper around <a class="reference internal" href="#onmt.translate.Beam" title="onmt.translate.Beam"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Beam</span></code></a>.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -425,16 +425,10 @@ Problem in Neural Machine Translation” <a class="reference internal" href="ref
 <p>Returns: True if beam search is complete.</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="onmt.translate.Beam.get_current_origin">
-<code class="descname">get_current_origin</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam.html#Beam.get_current_origin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Beam.get_current_origin" title="Permalink to this definition">¶</a></dt>
+<dl class="attribute">
+<dt id="onmt.translate.Beam.current_origin">
+<code class="descname">current_origin</code><a class="headerlink" href="#onmt.translate.Beam.current_origin" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the backpointers for the current timestep.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="onmt.translate.Beam.get_current_state">
-<code class="descname">get_current_state</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam.html#Beam.get_current_state"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Beam.get_current_state" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get the outputs for the current timestep.</p>
 </dd></dl>
 
 <dl class="method">
