@@ -126,7 +126,11 @@ class Trainer(object):
         Returns:
             The gathered statistics.
         """
-        logger.info('Start training...')
+        if valid_iter is None:
+            logger.info('Start training loop without validation...')
+        else:
+            logger.info('Start training loop and validate every %d steps...',
+                        valid_steps)
 
         step = self.optim.training_step
         true_batches = []
