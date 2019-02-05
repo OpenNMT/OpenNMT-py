@@ -151,7 +151,6 @@ class Trainer(object):
             logger.info('Start training loop and validate every %d steps...',
                         valid_steps)
 
-        step = self.optim.training_step
         total_stats = onmt.utils.Statistics()
         report_stats = onmt.utils.Statistics()
         self._start_report_manager(start_time=total_stats.start_time)
@@ -162,6 +161,8 @@ class Trainer(object):
 
         for i, (batches, normalization) in enumerate(
                 self._accum_batches(train_iter)):
+            step = self.optim.training_step
+
             if self.gpu_verbose_level > 1:
                 logger.info("GpuRank %d: index: %d", self.gpu_rank, i)
             if self.gpu_verbose_level > 0:
@@ -200,8 +201,7 @@ class Trainer(object):
 
             if self.gpu_rank == 0:
                 self._maybe_save(step)
-            step += 1
-            if step > train_steps:
+            if step >= train_steps:
                 break
 
         return total_stats
