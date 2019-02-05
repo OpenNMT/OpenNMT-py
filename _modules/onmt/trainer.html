@@ -267,25 +267,29 @@
         <span class="c1"># Set model in training mode.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
 
-<div class="viewcode-block" id="Trainer.train"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.train">[docs]</a>    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_iter</span><span class="p">,</span> <span class="n">valid_iter</span><span class="p">,</span> <span class="n">train_steps</span><span class="p">,</span> <span class="n">valid_steps</span><span class="p">):</span>
+<div class="viewcode-block" id="Trainer.train"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.train">[docs]</a>    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+              <span class="n">train_iter</span><span class="p">,</span>
+              <span class="n">train_steps</span><span class="p">,</span>
+              <span class="n">valid_iter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+              <span class="n">valid_steps</span><span class="o">=</span><span class="mi">10000</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        The main training loops.</span>
-<span class="sd">        by iterating over training data (i.e. `train_iter_fct`)</span>
-<span class="sd">        and running validation (i.e. iterating over `valid_iter_fct`</span>
+<span class="sd">        The main training loop by iterating over `train_iter` and possibly</span>
+<span class="sd">        running validation on `valid_iter`.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            train_iter_fct(function): a function that returns the train</span>
-<span class="sd">                iterator. e.g. something like</span>
-<span class="sd">                train_iter_fct = lambda: generator(*args, **kwargs)</span>
-<span class="sd">            valid_iter_fct(function): same as train_iter_fct, for valid data</span>
-<span class="sd">            train_steps(int):</span>
-<span class="sd">            valid_steps(int):</span>
-<span class="sd">            save_checkpoint_steps(int):</span>
+<span class="sd">            train_iter: A generator that returns the next training batch.</span>
+<span class="sd">            train_steps: Run training for this many iterations.</span>
+<span class="sd">            valid_iter: A generator that returns the next validation batch.</span>
+<span class="sd">            valid_steps: Run evaluation every this many iterations.</span>
 
-<span class="sd">        Return:</span>
-<span class="sd">            None</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            The gathered statistics.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Start training...&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">valid_iter</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Start training loop without validation...&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Start training loop and validate every </span><span class="si">%d</span><span class="s1"> steps...&#39;</span><span class="p">,</span>
+                        <span class="n">valid_steps</span><span class="p">)</span>
 
         <span class="n">step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">training_step</span>
         <span class="n">true_batches</span> <span class="o">=</span> <span class="p">[]</span>
@@ -338,7 +342,7 @@
                         <span class="n">true_batches</span> <span class="o">=</span> <span class="p">[]</span>
                         <span class="n">accum</span> <span class="o">=</span> <span class="mi">0</span>
                         <span class="n">normalization</span> <span class="o">=</span> <span class="mi">0</span>
-                        <span class="k">if</span> <span class="p">(</span><span class="n">step</span> <span class="o">%</span> <span class="n">valid_steps</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+                        <span class="k">if</span> <span class="n">valid_iter</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">step</span> <span class="o">%</span> <span class="n">valid_steps</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpu_verbose_level</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;GpuRank </span><span class="si">%d</span><span class="s1">: validate step </span><span class="si">%d</span><span class="s1">&#39;</span>
                                             <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gpu_rank</span><span class="p">,</span> <span class="n">step</span><span class="p">))</span>
