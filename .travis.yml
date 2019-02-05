@@ -1,30 +1,21 @@
+dist: xenial
 language: python
 python:
   - "2.7"
   - "3.5"
-cache: pip
+addons:
+  apt:
+    packages:
+      # Additional dependencies for im2text and speech2text
+      - libsox-dev
+      - libsox-fmt-all
+      - sox
 before_install:
-  - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-  - sudo apt-get update
-  - sudo apt-get install -y gcc-5 g++-5
-  - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-5 60 --slave /usr/bin/g++ g++ /usr/bin/g++-5
-  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
-  - bash miniconda.sh -b -p $HOME/miniconda
-  - export PATH="$HOME/miniconda/bin:$PATH"
-  - hash -r
-  - conda config --set always_yes yes --set changeps1 no
-  - conda update -q conda
-  # Useful for debugging any issues with conda
-  - conda info -a
-  # freeze the supported pytorch version for consistency
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION pytorch=1.0.0 cuda100 -c pytorch
-  - source activate test-environment
-  # use requirements.txt for dependencies
+  # Install CPU version of PyTorch.
+  - if [[ $TRAVIS_PYTHON_VERSION == 2.7 ]]; then pip install https://download.pytorch.org/whl/cpu/torch-1.0.1-cp27-cp27mu-linux_x86_64.whl; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == 3.5 ]]; then pip install https://download.pytorch.org/whl/cpu/torch-1.0.1-cp35-cp35m-linux_x86_64.whl; fi
   - pip install -r requirements.txt
-  # optional dependencies for im2text and speech2text
-  - sudo apt-get install -y sox libsox-dev libsox-fmt-all
   - pip install -r requirements.opt.txt
-
 install:
   - python setup.py install
 
