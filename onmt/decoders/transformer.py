@@ -147,7 +147,6 @@ class TransformerDecoder(DecoderBase):
             opt.dec_rnn_size,
             opt.heads,
             opt.transformer_ff,
-            opt.global_attention,
             opt.copy_attn,
             opt.self_attn_type,
             opt.dropout,
