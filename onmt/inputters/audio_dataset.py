@@ -18,16 +18,22 @@ except ImportError:
 
 
 class AudioDataReader(DataReaderBase):
-    """
+    """Read audio data from disk.
+
     Args:
         sample_rate (int): sample_rate.
         window_size (float) : window size for spectrogram in seconds.
         window_stride (float): window stride for spectrogram in seconds.
-        window (str): window type for spectrogram generation.
+        window (str): window type for spectrogram generation. See
+            :func:`librosa.stft()` ``window`` for more details.
         normalize_audio (bool): subtract spectrogram by mean and divide
             by std or not.
         truncate (int or NoneType): maximum audio length
             (0 or None for unlimited).
+
+    Raises:
+        onmt.inputters.datareader_base.MissingDependencyException: If
+            importing any of ``torchaudio``, ``librosa``, or ``numpy`` fail.
     """
 
     def __init__(self, sample_rate=0, window_size=0, window_stride=0,
@@ -89,15 +95,21 @@ class AudioDataReader(DataReaderBase):
         return spect
 
     def read(self, data, side, src_dir=None):
-        """
+        """Read data into dicts.
+
         Args:
-            data: sequence of audio paths or path containing these sequences
-            src_dir (str): location of source audio files.
-            side (str): 'src' or 'tgt'.
+            data (str or Iterable[str]): Sequence of audio paths or
+                path to file containing audio paths.
+                In either case, the filenames may be relative to ``src_dir``
+                (default behavior) or absolute.
+            side (str): Prefix used in return dict. Usually
+                ``"src"`` or ``"tgt"``.
+            src_dir (str): Location of source audio files. See ``data``.
 
         Yields:
-            a dictionary containing audio data for each line.
+            A dictionary containing audio data for each line.
         """
+
         assert src_dir is not None and os.path.exists(src_dir),\
             "src_dir must be a valid directory if data_type is audio"
 
@@ -120,7 +132,7 @@ class AudioDataReader(DataReaderBase):
 class AudioDataset(DatasetBase):
     @staticmethod
     def sort_key(ex):
-        """ Sort using duration time of the sound spectrogram. """
+        """Sort using duration time of the sound spectrogram."""
         return ex.src.size(1)
 
 
@@ -129,6 +141,7 @@ class AudioSeqField(Field):
 
     See :class:`Fields` for attribute descriptions.
     """
+
     def __init__(self, preprocessing=None, postprocessing=None,
                  include_lengths=False, batch_first=False, pad_index=0,
                  is_target=False):
@@ -146,7 +159,7 @@ class AudioSeqField(Field):
         """Pad a batch of examples to the length of the longest example.
 
         Args:
-            minibatch (list[torch.FloatTensor]): A list of audio data,
+            minibatch (List[torch.FloatTensor]): A list of audio data,
                 each having shape 1 x n_feats x len where len is variable.
 
         Returns:
@@ -155,6 +168,7 @@ class AudioSeqField(Field):
                 and a list of the lengths if `self.include_lengths` is `True`
                 else just returns the padded tensor.
         """
+
         assert not self.pad_first and not self.truncate_first \
             and not self.fix_length and self.sequential
         minibatch = list(minibatch)
@@ -171,11 +185,11 @@ class AudioSeqField(Field):
     def numericalize(self, arr, device=None):
         """Turn a batch of examples that use this field into a Variable.
 
-        If the field has include_lengths=True, a tensor of lengths will be
+        If the field has ``include_lengths=True``, a tensor of lengths will be
         included in the return value.
 
         Args:
-            arr (torch.FloatTensor, or Tuple(torch.FloatTensor, List[int])):
+            arr (torch.FloatTensor or Tuple(torch.FloatTensor, List[int])):
                 List of tokenized and padded examples, or tuple of List of
                 tokenized and padded examples and List of lengths of each
                 example if self.include_lengths is True. Examples have shape
@@ -183,6 +197,7 @@ class AudioSeqField(Field):
                 else max_len x batch_size x 1 x n_feats.
             device (str or torch.device): See `Field.numericalize`.
         """
+
         assert self.use_vocab is False
         if self.include_lengths and not isinstance(arr, tuple):
             raise ValueError("Field has include_lengths set to True, but "
@@ -207,5 +222,4 @@ class AudioSeqField(Field):
 
 def audio_fields(base_name, **kwargs):
     audio = AudioSeqField(pad_index=0, batch_first=True, include_lengths=True)
-
     return [(base_name, audio)]

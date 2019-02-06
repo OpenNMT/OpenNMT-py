@@ -69,16 +69,33 @@ def get_fields(
     tgt_truncate=None
 ):
     """
-    src_data_type: type of the source input. Options are [text|img|audio].
-    n_src_feats, n_tgt_feats: the number of source and target features to
-        create a `torchtext.data.Field` for.
-    pad, bos, eos: special symbols to use for fields.
-    returns: A dictionary. The keys are strings whose names correspond to the
+    Args:
+        src_data_type: type of the source input. Options are [text|img|audio].
+        n_src_feats (int): the number of source features (not counting tokens)
+            to create a :class:`torchtext.data.Field` for. (If
+            ``src_data_type=="text"``, these fields are stored together
+            as a ``TextMultiField``).
+        n_tgt_feats (int): See above.
+        pad (str): Special pad symbol. Used on src and tgt side.
+        bos (str): Special beginning of sequence symbol. Only relevant
+            for tgt.
+        eos (str): Special end of sequence symbol. Only relevant
+            for tgt.
+        dynamic_dict (bool): Whether or not to include source map and
+            alignment fields.
+        src_truncate: Cut off src sequences beyond this (passed to
+            ``src_data_type``'s data reader - see there for more details).
+        tgt_truncate: Cut off tgt sequences beyond this (passed to
+            :class:`TextDataReader` - see there for more details).
+
+    Returns:
+        A dictionary. The keys are strings whose names correspond to the
         keys of the dictionaries yielded by the make_examples methods of
         various dataset classes. The values are lists of (name, Field)
         pairs, where the name is a string which will become the name of
         an attribute of an example.
     """
+
     assert src_data_type in ['text', 'img', 'audio'], \
         "Data type not implemented"
     assert not dynamic_dict or src_data_type == 'text', \
@@ -121,13 +138,20 @@ def get_fields(
 
 
 def load_old_vocab(vocab, data_type="text", dynamic_dict=False):
+    """Update a legacy vocab/field format.
+
+    Args:
+        vocab: a list of (field name, torchtext.vocab.Vocab) pairs. This is the
+            format formerly saved in *.vocab.pt files. Or, text data
+            not using a :class:`TextMultiField`.
+        data_type (str): text, img, or audio
+        dynamic_dict (str): Used for copy attention.
+    Returns:
+        a dictionary whose keys are the field names and whose values
+        are lists of (name, Field) pairs, using :class:`TextMultiField`s
+        as appropriate.
     """
-    vocab: a list of (field name, torchtext.vocab.Vocab) pairs. This is the
-           format formerly saved in *.vocab.pt files.
-    data_type: text, img, or audio
-    returns: a dictionary whose keys are the field names and whose values
-             are lists of (name, Field) pairs
-    """
+
     if _old_style_field_list(vocab):  # upgrade to multifield
         fields = vocab
         for base_name, vals in fields.items():
@@ -156,26 +180,40 @@ def load_old_vocab(vocab, data_type="text", dynamic_dict=False):
 
 
 def _old_style_vocab(vocab):
-    """
-    vocab: some object loaded from a *.vocab.pt file
-    returns: whether the object is a list of pairs where the second object
-        is a torchtext.vocab.Vocab object.
+    """Detect old-style vocabs.
+
+    Args:
+        vocab: some object loaded from a *.vocab.pt file
+    Returns:
+        Whether ``vocab`` is a list of pairs where the second object
+        is a :class:`torchtext.vocab.Vocab` object.
 
     This exists because previously only the vocab objects from the fields
     were saved directly, not the fields themselves, and the fields needed to
     be reconstructed at training and translation time.
     """
+
     return isinstance(vocab, list) and \
         any(isinstance(v[1], Vocab) for v in vocab)
 
 
 def _old_style_field_list(vocab):
+    """Detect old-style text fields.
+
+    Args:
+        vocab: some object loaded from a *.vocab.pt file
+    Returns:
+        Whether ``vocab`` is not an :func:`_old_style_vocab` and not
+        a :class:`TextMultiField` (using an old-style text representation).
+    """
+
     # if tgt isn't using TextMultiField, then no text field is.
     return not _old_style_vocab(vocab) and not isinstance(
         vocab['tgt'][0][1], TextMultiField)
 
 
 def old_style_vocab(vocab):
+    """:func:`_old_style_vocab()` OR :func:`_old_style_field_list()`."""
     return _old_style_vocab(vocab) or _old_style_field_list(vocab)
 
 
@@ -294,6 +332,7 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
     Returns:
         Dict of Fields
     """
+
     counters = defaultdict(Counter)
 
     # Load vocabulary
