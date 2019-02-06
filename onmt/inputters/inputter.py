@@ -476,7 +476,7 @@ def _read_vocab_file(vocab_path, tag):
     logger.info("Loading {} vocabulary from {}".format(tag, vocab_path))
 
     if not os.path.exists(vocab_path):
-        raise FileNotFoundError(
+        raise RuntimeError(
             "{} vocabulary not found at {}".format(tag, vocab_path))
     else:
         with codecs.open(vocab_path, 'r', 'utf-8') as f:
