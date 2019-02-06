@@ -10,7 +10,6 @@ class NMTModel(nn.Module):
     Args:
       encoder (:obj:`EncoderBase`): an encoder object
       decoder (:obj:`RNNDecoderBase`): a decoder object
-      multi<gpu (bool): setup for multigpu support
     """
 
     def __init__(self, encoder, decoder):

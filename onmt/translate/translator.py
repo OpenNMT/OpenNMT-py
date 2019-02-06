@@ -58,14 +58,12 @@ class Translator(object):
        model (:obj:`onmt.modules.NMTModel`):
           NMT model to use for translation
        fields (dict of Fields): data fields
-       beam_size (int): size of beam to use
-       n_best (int): number of translations produced
-       max_length (int): maximum length output to produce
+       opt (obj): command line options
+       model_opt (obj): model options
        global_scores (:obj:`GlobalScorer`):
          object to rescore final translations
-       copy_attn (bool): use copy attention during translation
-       cuda (bool): use cuda
-       beam_trace (bool): trace beam search for debugging
+       out_file : Output File
+       report_score (bool) : Whether to report scores
        logger(logging.Logger): logger.
     """
 
@@ -432,7 +430,7 @@ class Translator(object):
 
         return results
 
-    def translate_batch(self, batch, src_vocabs, attn_debug, fast=False):
+    def translate_batch(self, batch, src_vocabs, attn_debug, fast=True):
         """
         Translate a batch of sentences.
 
@@ -454,7 +452,7 @@ class Translator(object):
                     keep_topk=self.sample_from_topk,
                     return_attention=attn_debug or self.replace_unk)
             if fast:
-                return self._fast_translate_batch(
+                return self._translate_batch(
                     batch,
                     src_vocabs,
                     self.max_length,
@@ -462,7 +460,7 @@ class Translator(object):
                     n_best=self.n_best,
                     return_attention=attn_debug or self.replace_unk)
             else:
-                return self._translate_batch(batch, src_vocabs)
+                return self._translate_batch_deprecated(batch, src_vocabs)
 
     def _run_encoder(self, batch):
         src, src_lengths = batch.src if isinstance(batch.src, tuple) \
@@ -534,7 +532,7 @@ class Translator(object):
             # or [ tgt_len, batch_size, vocab ] when full sentence
         return log_probs, attn
 
-    def _fast_translate_batch(
+    def _translate_batch(
         self,
         batch,
         src_vocabs,
@@ -649,7 +647,7 @@ class Translator(object):
         results["attention"] = beam.attention
         return results
 
-    def _translate_batch(self, batch, src_vocabs):
+    def _translate_batch_deprecated(self, batch, src_vocabs):
         # (0) Prep each of the components of the search.
         # And helper method for reducing verbosity.
         use_src_map = self.copy_attn

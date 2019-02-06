@@ -54,11 +54,13 @@ class RNNDecoderBase(DecoderBase):
        num_layers (int) : number of stacked layers
        hidden_size (int) : hidden size of each layer
        attn_type (str) : see :obj:`onmt.modules.GlobalAttention`
+       attn_func (str) : see :obj:`onmt.modules.GlobalAttention`
        coverage_attn (str): see :obj:`onmt.modules.GlobalAttention`
        context_gate (str): see :obj:`onmt.modules.ContextGate`
        copy_attn (bool): setup a separate copy attention mechanism
        dropout (float) : dropout value for :obj:`nn.Dropout`
        embeddings (:obj:`onmt.modules.Embeddings`): embedding module to use
+       reuse_copy_attns (bool): reuse the attention for copying
     """
 
     def __init__(self, rnn_type, bidirectional_encoder, num_layers,
