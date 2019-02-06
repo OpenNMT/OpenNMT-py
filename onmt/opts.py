@@ -138,6 +138,12 @@ def model_opts(parser):
               type=str, default="scaled-dot",
               help="""Self attention type in Transformer decoder
                        layer -- currently "scaled-dot" or "average" """)
+    group.add('--max_relative_positions', '-max_relative_positions',
+              type=int, default=0,
+              help="""Maximum distance between inputs in relative
+                      positions representations.
+                      For more detailed information, see:
+                      https://arxiv.org/pdf/1803.02155.pdf""")
     group.add('--heads', '-heads', type=int, default=8,
               help='Number of heads for transformer self-attention')
     group.add('--transformer_ff', '-transformer_ff', type=int, default=2048,
