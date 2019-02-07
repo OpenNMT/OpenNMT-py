@@ -191,11 +191,12 @@ class Trainer(object):
                                    for params in self.model.parameters()]
                     self.moving_average = copy_params
                 else:
+                    average_decay = max(self.average_decay, 1 - (i + 1)/(i + 10))
                     for (i, avg), cpt in zip(enumerate(self.moving_average),
                                              self.model.parameters()):
                         self.moving_average[i] = \
-                            (1 - self.average_decay) * avg + \
-                            self.average_decay * cpt.detach()
+                            (1 - average_decay) * avg + \
+                            average_decay * cpt.detach()
 
             report_stats = self._maybe_report_training(
                 step, train_steps,
@@ -233,14 +234,14 @@ class Trainer(object):
         """
         if moving_average:
             valid_model = deepcopy(self.model)
-            for avg, param in zip(self.moving_average, valid_model.parameters()):
+            for avg, param in zip(self.moving_average,
+                                  valid_model.parameters()):
                 param.data = avg.data
         else:
             valid_model = self.model
 
         # Set model in validating mode.
         valid_model.eval()
-
 
         with torch.no_grad():
             stats = onmt.utils.Statistics()
