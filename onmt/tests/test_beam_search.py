@@ -9,6 +9,9 @@ import torch
 class GlobalScorerStub(object):
     alpha = 0
 
+    def __init__(self):
+        self.length_penalty = lambda x, alpha: 1.
+
     def update_global_state(self, beam):
         pass
 
