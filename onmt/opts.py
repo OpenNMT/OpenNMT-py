@@ -437,6 +437,10 @@ def train_opts(parser):
               help="""Moving average decay.
                       #TODO Cite Marian Here.
                       Set to other than 0 (e.g. 1e-4) to activate.""")
+    group.add('--average_every', '-average_every', type=int, default=1,
+              help="""Step for moving average.
+                      Default is every update,
+                      if -average_decay is set.""")
 
     # learning rate
     group = parser.add_argument_group('Optimization- Rate')

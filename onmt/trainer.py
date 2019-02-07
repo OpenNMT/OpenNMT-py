@@ -42,6 +42,7 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
     grad_accum_count = opt.accum_count
     n_gpu = opt.world_size
     average_decay = opt.average_decay
+    average_every = opt.average_every
     if device_id >= 0:
         gpu_rank = opt.gpu_ranks[device_id]
     else:
@@ -55,7 +56,8 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
                            grad_accum_count, n_gpu, gpu_rank,
                            gpu_verbose_level, report_manager,
                            model_saver=model_saver if gpu_rank == 0 else None,
-                           average_decay=average_decay)
+                           average_decay=average_decay,
+                           average_every=average_every)
     return trainer
 
 
@@ -88,7 +90,7 @@ class Trainer(object):
                  trunc_size=0, shard_size=32,
                  norm_method="sents", grad_accum_count=1, n_gpu=1, gpu_rank=1,
                  gpu_verbose_level=0, report_manager=None, model_saver=None,
-                 average_decay=0):
+                 average_decay=0, average_every=1):
         # Basic attributes.
         self.model = model
         self.train_loss = train_loss
@@ -105,6 +107,7 @@ class Trainer(object):
         self.model_saver = model_saver
         self.average_decay = average_decay
         self.moving_average = None
+        self.average_every = average_every
 
         assert grad_accum_count > 0
         if grad_accum_count > 1:
@@ -188,7 +191,7 @@ class Trainer(object):
                 batches, normalization, total_stats,
                 report_stats)
 
-            if self.average_decay > 0:
+            if self.average_decay > 0 and i % self.average_every == 0:
                 if self.moving_average is None:
                     copy_params = [params.detach()
                                    for params in self.model.parameters()]
