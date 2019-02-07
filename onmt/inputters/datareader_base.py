@@ -8,13 +8,26 @@ class MissingDependencyException(Exception):
 
 
 class DataReaderBase(object):
-    """Read data from file system and yield as dicts."""
+    """Read data from file system and yield as dicts.
+
+    Raises:
+        MissingDependencyException: A number of DataReaders need specific
+            additional packages. If any are missing, this will be raised.
+    """
+
     @classmethod
     def from_opt(cls, opt):
+        """Alternative constructor.
+
+        Args:
+            opt (argparse.Namespace): The parsed arguments.
+        """
+
         return cls()
 
     @classmethod
     def _read_file(cls, path):
+        """Line-by-line read a file as bytes."""
         with open(path, "rb") as f:
             for line in f:
                 yield line
@@ -27,4 +40,5 @@ class DataReaderBase(object):
             "the following dependencies: " + ", ".join(missing_deps))
 
     def read(self, data, side, src_dir):
+        """Read data from file system and yield as dicts."""
         raise NotImplementedError()

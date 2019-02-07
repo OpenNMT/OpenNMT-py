@@ -26,6 +26,7 @@ from onmt.inputters.image_dataset import (  # noqa: F401
 import gc
 
 
+# monkey-patch to make torchtext Vocab's pickleable
 def _getstate(self):
     return dict(self.__dict__, stoi=dict(self.stoi))
 
@@ -69,16 +70,33 @@ def get_fields(
     tgt_truncate=None
 ):
     """
-    src_data_type: type of the source input. Options are [text|img|audio].
-    n_src_feats, n_tgt_feats: the number of source and target features to
-        create a `torchtext.data.Field` for.
-    pad, bos, eos: special symbols to use for fields.
-    returns: A dictionary. The keys are strings whose names correspond to the
+    Args:
+        src_data_type: type of the source input. Options are [text|img|audio].
+        n_src_feats (int): the number of source features (not counting tokens)
+            to create a :class:`torchtext.data.Field` for. (If
+            ``src_data_type=="text"``, these fields are stored together
+            as a ``TextMultiField``).
+        n_tgt_feats (int): See above.
+        pad (str): Special pad symbol. Used on src and tgt side.
+        bos (str): Special beginning of sequence symbol. Only relevant
+            for tgt.
+        eos (str): Special end of sequence symbol. Only relevant
+            for tgt.
+        dynamic_dict (bool): Whether or not to include source map and
+            alignment fields.
+        src_truncate: Cut off src sequences beyond this (passed to
+            ``src_data_type``'s data reader - see there for more details).
+        tgt_truncate: Cut off tgt sequences beyond this (passed to
+            :class:`TextDataReader` - see there for more details).
+
+    Returns:
+        A dictionary. The keys are strings whose names correspond to the
         keys of the dictionaries yielded by the make_examples methods of
         various dataset classes. The values are lists of (name, Field)
         pairs, where the name is a string which will become the name of
         an attribute of an example.
     """
+
     assert src_data_type in ['text', 'img', 'audio'], \
         "Data type not implemented"
     assert not dynamic_dict or src_data_type == 'text', \
@@ -121,13 +139,20 @@ def get_fields(
 
 
 def load_old_vocab(vocab, data_type="text", dynamic_dict=False):
+    """Update a legacy vocab/field format.
+
+    Args:
+        vocab: a list of (field name, torchtext.vocab.Vocab) pairs. This is the
+            format formerly saved in *.vocab.pt files. Or, text data
+            not using a :class:`TextMultiField`.
+        data_type (str): text, img, or audio
+        dynamic_dict (str): Used for copy attention.
+    Returns:
+        a dictionary whose keys are the field names and whose values
+        are lists of (name, Field) pairs, using :class:`TextMultiField`s
+        as appropriate.
     """
-    vocab: a list of (field name, torchtext.vocab.Vocab) pairs. This is the
-           format formerly saved in *.vocab.pt files.
-    data_type: text, img, or audio
-    returns: a dictionary whose keys are the field names and whose values
-             are lists of (name, Field) pairs
-    """
+
     if _old_style_field_list(vocab):  # upgrade to multifield
         fields = vocab
         for base_name, vals in fields.items():
@@ -156,38 +181,67 @@ def load_old_vocab(vocab, data_type="text", dynamic_dict=False):
 
 
 def _old_style_vocab(vocab):
-    """
-    vocab: some object loaded from a *.vocab.pt file
-    returns: whether the object is a list of pairs where the second object
-        is a torchtext.vocab.Vocab object.
+    """Detect old-style vocabs.
+
+    Args:
+        vocab: some object loaded from a *.vocab.pt file
+
+    Returns:
+        Whether ``vocab`` is a list of pairs where the second object
+        is a :class:`torchtext.vocab.Vocab` object.
 
     This exists because previously only the vocab objects from the fields
     were saved directly, not the fields themselves, and the fields needed to
     be reconstructed at training and translation time.
     """
+
     return isinstance(vocab, list) and \
         any(isinstance(v[1], Vocab) for v in vocab)
 
 
 def _old_style_field_list(vocab):
+    """Detect old-style text fields.
+
+    Args:
+        vocab: some object loaded from a *.vocab.pt file
+
+    Returns:
+        Whether ``vocab`` is not an :func:`_old_style_vocab` and not
+        a :class:`TextMultiField` (using an old-style text representation).
+    """
+
     # if tgt isn't using TextMultiField, then no text field is.
     return not _old_style_vocab(vocab) and not isinstance(
         vocab['tgt'][0][1], TextMultiField)
 
 
 def old_style_vocab(vocab):
+    """:func:`_old_style_vocab()` OR :func:`_old_style_field_list()`."""
     return _old_style_vocab(vocab) or _old_style_field_list(vocab)
 
 
 def filter_example(ex, use_src_len=True, use_tgt_len=True,
                    min_src_len=1, max_src_len=float('inf'),
                    min_tgt_len=1, max_tgt_len=float('inf')):
+    """Return whether an example is an acceptable length.
+
+    If used with a dataset as ``filter_pred``, use :func:`partial()`
+    for all keyword arguments.
+
+    Args:
+        ex (torchtext.data.Example): An object with a ``src`` and ``tgt``
+            property.
+        use_src_len (bool): Filter based on the length of ``ex.src``.
+        use_tgt_len (bool): Similar to above.
+        min_src_len (int): A non-negative minimally acceptable length
+            (examples of exactly this length will be included).
+        min_tgt_len (int): Similar to above.
+        max_src_len (int or float): A non-negative (possibly infinite)
+            maximally acceptable length (examples of exactly this length
+            will be included).
+        max_tgt_len (int or float): Similar to above.
     """
-    A generalized function for filtering examples based on the length of their
-    src or tgt values. Rather than being used by itself as the filter_pred
-    argument to a dataset, it should be partially evaluated with everything
-    specified except the value of the example.
-    """
+
     src_len = len(ex.src[0])
     tgt_len = len(ex.tgt[0])
     return (not use_src_len or min_src_len <= src_len <= max_src_len) and \
@@ -197,10 +251,25 @@ def filter_example(ex, use_src_len=True, use_tgt_len=True,
 def build_dataset(fields, data_type, src, src_reader,
                   src_dir=None, tgt=None, tgt_reader=None,
                   src_seq_len=50, tgt_seq_len=50, use_filter_pred=True):
+    """Create a dataset from data on disk.
+
+    Args:
+        fields (dict[str, List[Tuple[str, Field]]]): A dict with top-level
+            keys for the sides (e.x., ``'src'``, ``'tgt'``) mapping to
+            lists of (name, Field) pairs.
+        data_type (str): A supported datatype.
+        src: See :func:`src_reader.read()` for details.
+        src_reader (onmt.inputters.DataReaderBase): The disk-to-dict
+            reader for src data.
+        src_dir: See :func:`src_reader.read()` for details.
+        tgt: See :func:`tgt_reader.read()` for details.
+        tgt_reader (onmt.inputters.TextDataReader): Similar to above.
+        src_seq_len: Max acceptable src sequence length. See
+            :func:`filter_example()` for details.
+        tgt_seq_len: Similar to above.
+        use_filter_pred (bool): Whether or not to apply length filtering.
     """
-    src: path to corpus file or iterator over source data
-    tgt: path to corpus file, iterator over target data, or None
-    """
+
     dataset_classes = {
         'text': TextDataset, 'img': ImageDataset, 'audio': AudioDataset
     }
@@ -274,26 +343,28 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
                 src_vocab_path, src_vocab_size, src_words_min_frequency,
                 tgt_vocab_path, tgt_vocab_size, tgt_words_min_frequency,
                 vocab_size_multiple=1):
-    """
+    """Build the fields for all data sides.
+
     Args:
         train_dataset_files: a list of train dataset pt file.
-        fields (dict): fields to build vocab for.
-        data_type: "text", "img" or "audio"?
-        share_vocab(bool): share source and target vocabulary?
-        src_vocab_path(string): Path to src vocabulary file.
-        src_vocab_size(int): size of the source vocabulary.
-        src_words_min_frequency(int): the minimum frequency needed to
-                include a source word in the vocabulary.
-        tgt_vocab_path(string): Path to tgt vocabulary file.
-        tgt_vocab_size(int): size of the target vocabulary.
-        tgt_words_min_frequency(int): the minimum frequency needed to
-                include a target word in the vocabulary.
-        vocab_size_multiple(int): ensure that the vocabulary size is a multiple
-                of this value.
+        fields (dict[str, List[Tuple[str, Field]]]): fields to build vocab for.
+        data_type (str): A supported data type string.
+        share_vocab (bool): share source and target vocabulary?
+        src_vocab_path (str): Path to src vocabulary file.
+        src_vocab_size (int): size of the source vocabulary.
+        src_words_min_frequency (int): the minimum frequency needed to
+            include a source word in the vocabulary.
+        tgt_vocab_path (str): Path to tgt vocabulary file.
+        tgt_vocab_size (int): size of the target vocabulary.
+        tgt_words_min_frequency (int): the minimum frequency needed to
+            include a target word in the vocabulary.
+        vocab_size_multiple (int): ensure that the vocabulary size is a
+            multiple of this value.
 
     Returns:
         Dict of Fields
     """
+
     counters = defaultdict(Counter)
 
     # Load vocabulary
@@ -392,12 +463,16 @@ def _merge_field_vocabs(src_field, tgt_field, vocab_size, min_freq,
 
 
 def _read_vocab_file(vocab_path, tag):
+    """Loads a vocabulary from the given path.
+
+    Args:
+        vocab_path (str): Path to utf-8 text file containing vocabulary.
+            Each token should be on a line by itself. Tokens must not
+            contain whitespace (else only before the whitespace
+            is considered).
+        tag (str): Used for logging which vocab is being read.
     """
-    Loads a vocabulary from the given path.
-    :param vocabulary_path: path to load vocabulary from
-    :param tag: tag for vocabulary (only used for logging)
-    :return: vocabulary or None if path is null
-    """
+
     logger.info("Loading {} vocabulary from {}".format(tag, vocab_path))
 
     if not os.path.exists(vocab_path):
@@ -411,7 +486,6 @@ def _read_vocab_file(vocab_path, tag):
 class OrderedIterator(torchtext.data.Iterator):
 
     def create_batches(self):
-        """ Create batches """
         if self.train:
             def _pool(data, random_shuffler):
                 for p in torchtext.data.batch(data, self.batch_size * 100):
@@ -430,13 +504,16 @@ class OrderedIterator(torchtext.data.Iterator):
 
 
 class DatasetLazyIter(object):
-    """
-    dataset_paths: a list containing the locations of datasets
-    fields (dict): fields dict for the datasets.
-    batch_size (int): batch size.
-    batch_size_fn: custom batch process function.
-    device: the GPU device.
-    is_train (bool): train or valid?
+    """Yield data from sharded dataset files.
+
+    Args:
+        dataset_paths: a list containing the locations of dataset files.
+        fields (dict[str, List[Tuple[str, Field]]]): fields dict for the
+            datasets.
+        batch_size (int): batch size.
+        batch_size_fn: custom batch process function.
+        device: See :class:`OrderedIterator` ``device``.
+        is_train (bool): train or valid?
     """
 
     def __init__(self, dataset_paths, fields, batch_size, batch_size_fn,
@@ -481,14 +558,14 @@ def max_tok_len(new, count, sofar):
     in a batch <= batch_size
     """
     # Maintains the longest src and tgt length in the current batch
-    global max_src_in_batch, max_tgt_in_batch
+    global max_src_in_batch, max_tgt_in_batch  # this is a hack
     # Reset current longest length at a new batch (count=1)
     if count == 1:
         max_src_in_batch = 0
         max_tgt_in_batch = 0
     # Src: [<bos> w1 ... wN <eos>]
     max_src_in_batch = max(max_src_in_batch, len(new.src[0]) + 2)
-    # Tgt: [w1 ... wN <eos>]
+    # Tgt: [w1 ... wM <eos>]
     max_tgt_in_batch = max(max_tgt_in_batch, len(new.tgt[0]) + 1)
     src_elements = count * max_src_in_batch
     tgt_elements = count * max_tgt_in_batch

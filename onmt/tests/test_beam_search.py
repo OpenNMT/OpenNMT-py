@@ -9,6 +9,9 @@ import torch
 class GlobalScorerStub(object):
     alpha = 0
 
+    def __init__(self):
+        self.length_penalty = lambda x, alpha: 1.
+
     def update_global_state(self, beam):
         pass
 
@@ -164,7 +167,7 @@ class TestBeamSearch(unittest.TestCase):
             # Add one to its min_length to compensate
             beam = BeamSearch(beam_sz, batch_sz, 0, 1, 2, 2,
                               torch.device("cpu"), GlobalScorerStub(),
-                              min_length + 1, 30, False, 0, set(),
+                              min_length, 30, False, 0, set(),
                               torch.randint(0, 30, (batch_sz,)))
             for i in range(min_length + 4):
                 # non-interesting beams are going to get dummy values
@@ -219,7 +222,7 @@ class TestBeamSearch(unittest.TestCase):
         beam = BeamSearch(
             beam_sz, batch_sz, 0, 1, 2, 2,
             torch.device("cpu"), GlobalScorerStub(),
-            min_length + 1, 30, False, 0, set(),
+            min_length, 30, False, 0, set(),
             torch.randint(0, 30, (batch_sz,)))
         for i in range(min_length + 4):
             # non-interesting beams are going to get dummy values
