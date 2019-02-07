@@ -5,7 +5,6 @@ import six
 import torch
 from torchtext.data import Field, RawField
 
-from onmt.inputters.dataset_base import DatasetBase
 from onmt.inputters.datareader_base import DataReaderBase
 
 
@@ -36,13 +35,11 @@ class TextDataReader(DataReaderBase):
             yield {side: seq, "indices": i}
 
 
-class TextDataset(DatasetBase):
-    @staticmethod
-    def sort_key(ex):
-        """Sort using the number of tokens in the sequence."""
-        if hasattr(ex, "tgt"):
-            return len(ex.src[0]), len(ex.tgt[0])
-        return len(ex.src[0])
+def text_sort_key(ex):
+    """Sort using the number of tokens in the sequence."""
+    if hasattr(ex, "tgt"):
+        return len(ex.src[0]), len(ex.tgt[0])
+    return len(ex.src[0])
 
 
 # mix this with partial

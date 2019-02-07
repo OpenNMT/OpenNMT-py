@@ -13,10 +13,11 @@ import torchtext.data
 from torchtext.data import Field
 from torchtext.vocab import Vocab
 
-from onmt.inputters.text_dataset import TextDataset, text_fields,\
+from onmt.inputters.dataset_base import Dataset
+from onmt.inputters.text_dataset import text_sort_key, text_fields,\
     TextMultiField
-from onmt.inputters.image_dataset import ImageDataset, image_fields
-from onmt.inputters.audio_dataset import AudioDataset, audio_fields
+from onmt.inputters.image_dataset import img_sort_key, image_fields
+from onmt.inputters.audio_dataset import audio_sort_key, audio_fields
 from onmt.utils.logging import logger
 # backwards compatibility
 from onmt.inputters.text_dataset import _feature_tokenize  # noqa: F401
@@ -270,10 +271,10 @@ def build_dataset(fields, data_type, src, src_reader,
         use_filter_pred (bool): Whether or not to apply length filtering.
     """
 
-    dataset_classes = {
-        'text': TextDataset, 'img': ImageDataset, 'audio': AudioDataset
+    sort_keys = {
+        'text': text_sort_key, 'img': img_sort_key, 'audio': audio_sort_key
     }
-    assert data_type in dataset_classes
+    assert data_type in sort_keys
     assert src is not None
 
     # the second conjunct means nothing will be filtered at translation time
@@ -286,11 +287,12 @@ def build_dataset(fields, data_type, src, src_reader,
     else:
         filter_pred = None
 
-    return dataset_classes[data_type](
+    return Dataset(
         fields,
         readers=[src_reader, tgt_reader] if tgt else [src_reader],
         data=[("src", src), ("tgt", tgt)] if tgt else [("src", src)],
         dirs=[src_dir, None] if tgt else [src_dir],
+        sort_key=sort_keys[data_type],
         filter_pred=filter_pred)
 
 

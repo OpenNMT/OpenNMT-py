@@ -4,11 +4,12 @@ from itertools import chain, starmap
 from collections import Counter
 
 import torch
-from torchtext.data import Example, Dataset
+from torchtext.data import Dataset as TorchtextDataset
+from torchtext.data import Example
 from torchtext.vocab import Vocab
 
 
-class DatasetBase(Dataset):
+class Dataset(TorchtextDataset):
     """
     A dataset is an object that accepts sequences of raw data (sentence pairs
     in the case of machine translation) and fields which describe how this
@@ -50,7 +51,9 @@ class DatasetBase(Dataset):
         the same structure as in the fields argument passed to the constructor.
     """
 
-    def __init__(self, fields, readers, data, dirs, filter_pred=None):
+    def __init__(self, fields, readers, data, dirs, sort_key,
+                 filter_pred=None):
+        self.sort_key = sort_key
         dynamic_dict = 'src_map' in fields and 'alignment' in fields
 
         read_iters = [r.read(dat[1], dat[0], dir_) for r, dat, dir_
@@ -74,7 +77,7 @@ class DatasetBase(Dataset):
         # the dataset's self.fields should have the same attributes as examples
         fields = dict(chain.from_iterable(ex_fields.values()))
 
-        super(DatasetBase, self).__init__(examples, fields, filter_pred)
+        super(Dataset, self).__init__(examples, fields, filter_pred)
 
     def __getattr__(self, attr):
         # avoid infinite recursion when fields isn't defined
