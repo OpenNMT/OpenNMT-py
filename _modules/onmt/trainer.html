@@ -211,7 +211,7 @@
                            <span class="n">shard_size</span><span class="p">,</span> <span class="n">norm_method</span><span class="p">,</span>
                            <span class="n">grad_accum_count</span><span class="p">,</span> <span class="n">n_gpu</span><span class="p">,</span> <span class="n">gpu_rank</span><span class="p">,</span>
                            <span class="n">gpu_verbose_level</span><span class="p">,</span> <span class="n">report_manager</span><span class="p">,</span>
-                           <span class="n">model_saver</span><span class="o">=</span><span class="n">model_saver</span><span class="p">)</span>
+                           <span class="n">model_saver</span><span class="o">=</span><span class="n">model_saver</span> <span class="k">if</span> <span class="n">gpu_rank</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">trainer</span>
 
 
@@ -289,6 +289,7 @@
 <div class="viewcode-block" id="Trainer.train"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.train">[docs]</a>    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
               <span class="n">train_iter</span><span class="p">,</span>
               <span class="n">train_steps</span><span class="p">,</span>
+              <span class="n">save_checkpoint_steps</span><span class="o">=</span><span class="mi">5000</span><span class="p">,</span>
               <span class="n">valid_iter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
               <span class="n">valid_steps</span><span class="o">=</span><span class="mi">10000</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -298,6 +299,8 @@
 <span class="sd">        Args:</span>
 <span class="sd">            train_iter: A generator that returns the next training batch.</span>
 <span class="sd">            train_steps: Run training for this many iterations.</span>
+<span class="sd">            save_checkpoint_steps: Save a checkpoint every this many</span>
+<span class="sd">              iterations.</span>
 <span class="sd">            valid_iter: A generator that returns the next validation batch.</span>
 <span class="sd">            valid_steps: Run evaluation every this many iterations.</span>
 
@@ -358,8 +361,12 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_report_step</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">(),</span>
                                   <span class="n">step</span><span class="p">,</span> <span class="n">valid_stats</span><span class="o">=</span><span class="n">valid_stats</span><span class="p">)</span>
 
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpu_rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_maybe_save</span><span class="p">(</span><span class="n">step</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_saver</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="ow">and</span> <span class="p">(</span><span class="n">step</span> <span class="o">==</span> <span class="n">train_steps</span>
+                     <span class="ow">or</span> <span class="p">(</span><span class="n">save_checkpoint_steps</span> <span class="o">!=</span> <span class="mi">0</span>
+                         <span class="ow">and</span> <span class="n">step</span> <span class="o">%</span> <span class="n">save_checkpoint_steps</span> <span class="o">==</span> <span class="mi">0</span><span class="p">))):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model_saver</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">step</span><span class="p">)</span>
+
             <span class="k">if</span> <span class="n">step</span> <span class="o">&gt;=</span> <span class="n">train_steps</span><span class="p">:</span>
                 <span class="k">break</span>
 
@@ -515,14 +522,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_manager</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_manager</span><span class="o">.</span><span class="n">report_step</span><span class="p">(</span>
                 <span class="n">learning_rate</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">train_stats</span><span class="o">=</span><span class="n">train_stats</span><span class="p">,</span>
-                <span class="n">valid_stats</span><span class="o">=</span><span class="n">valid_stats</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">_maybe_save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Save the model if a model saver is set</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_saver</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">model_saver</span><span class="o">.</span><span class="n">maybe_save</span><span class="p">(</span><span class="n">step</span><span class="p">)</span></div>
+                <span class="n">valid_stats</span><span class="o">=</span><span class="n">valid_stats</span><span class="p">)</span></div>
 </pre></div>
 
            </div>
