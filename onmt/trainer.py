@@ -52,7 +52,7 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
                            shard_size, norm_method,
                            grad_accum_count, n_gpu, gpu_rank,
                            gpu_verbose_level, report_manager,
-                           model_saver=model_saver)
+                           model_saver=model_saver if gpu_rank == 0 else None)
     return trainer
 
 
@@ -130,6 +130,7 @@ class Trainer(object):
     def train(self,
               train_iter,
               train_steps,
+              save_checkpoint_steps=5000,
               valid_iter=None,
               valid_steps=10000):
         """
@@ -139,6 +140,8 @@ class Trainer(object):
         Args:
             train_iter: A generator that returns the next training batch.
             train_steps: Run training for this many iterations.
+            save_checkpoint_steps: Save a checkpoint every this many
+              iterations.
             valid_iter: A generator that returns the next validation batch.
             valid_steps: Run evaluation every this many iterations.
 
@@ -199,8 +202,12 @@ class Trainer(object):
                 self._report_step(self.optim.learning_rate(),
                                   step, valid_stats=valid_stats)
 
-            if self.gpu_rank == 0:
-                self._maybe_save(step)
+            if (self.model_saver is not None
+                and (step == train_steps
+                     or (save_checkpoint_steps != 0
+                         and step % save_checkpoint_steps == 0))):
+                self.model_saver.save(step)
+
             if step >= train_steps:
                 break
 
@@ -357,10 +364,3 @@ class Trainer(object):
             return self.report_manager.report_step(
                 learning_rate, step, train_stats=train_stats,
                 valid_stats=valid_stats)
-
-    def _maybe_save(self, step):
-        """
-        Save the model if a model saver is set
-        """
-        if self.model_saver is not None:
-            self.model_saver.maybe_save(step)
