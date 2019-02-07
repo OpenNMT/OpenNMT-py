@@ -203,14 +203,15 @@ class Trainer(object):
                                   step, valid_stats=valid_stats)
 
             if (self.model_saver is not None
-                and (step == train_steps
-                     or (save_checkpoint_steps != 0
-                         and step % save_checkpoint_steps == 0))):
+                and (save_checkpoint_steps != 0
+                     and step % save_checkpoint_steps == 0)):
                 self.model_saver.save(step)
 
-            if step >= train_steps:
+            if train_steps > 0 and step >= train_steps:
                 break
 
+        if self.model_saver is not None:
+            self.model_saver.save(step)
         return total_stats
 
     def validate(self, valid_iter):

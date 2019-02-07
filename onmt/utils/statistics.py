@@ -110,10 +110,13 @@ class Statistics(object):
            start (int): start time of step.
         """
         t = self.elapsed_time()
+        step_fmt = "%2d" % step
+        if num_steps > 0:
+            step_fmt = "%s/%5d" % (step_fmt, num_steps)
         logger.info(
-            ("Step %2d/%5d; acc: %6.2f; ppl: %5.2f; xent: %4.2f; " +
+            ("Step %s; acc: %6.2f; ppl: %5.2f; xent: %4.2f; " +
              "lr: %7.5f; %3.0f/%3.0f tok/s; %6.0f sec")
-            % (step, num_steps,
+            % (step_fmt,
                self.accuracy(),
                self.ppl(),
                self.xent(),
