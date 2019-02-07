@@ -193,7 +193,7 @@
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">models</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">onmt</span><span class="o">.</span><span class="n">model_builder</span><span class="o">.</span><span class="n">load_test_model</span>
     <span class="n">fields</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">model_opt</span> <span class="o">=</span> <span class="n">load_test_model</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">dummy_opt</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">)</span>
 
-    <span class="n">scorer</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">translate</span><span class="o">.</span><span class="n">GNMTGlobalScorer</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
+    <span class="n">scorer</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">translate</span><span class="o">.</span><span class="n">GNMTGlobalScorer</span><span class="o">.</span><span class="n">from_opt</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
 
     <span class="n">translator</span> <span class="o">=</span> <span class="n">Translator</span><span class="p">(</span>
         <span class="n">model</span><span class="p">,</span>

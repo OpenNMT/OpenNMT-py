@@ -402,11 +402,21 @@ Problem in Neural Machine Translation” <a class="reference internal" href="ref
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>size</strong> (<em>int</em>) – beam size</li>
-<li><strong>bos</strong><strong>, </strong><strong>eos</strong> (<em>pad</em><em>,</em>) – indices of padding, beginning, and ending.</li>
-<li><strong>n_best</strong> (<em>int</em>) – nbest size to use</li>
+<li><strong>beam_size</strong> (<em>int</em>) – Number of beams to use.</li>
+<li><strong>pad</strong> (<em>int</em>) – Magic integer in output vocab.</li>
+<li><strong>bos</strong> (<em>int</em>) – Magic integer in output vocab.</li>
+<li><strong>eos</strong> (<em>int</em>) – Magic integer in output vocab.</li>
+<li><strong>n_best</strong> (<em>int</em>) – Don’t stop until at least this many beams have
+reached EOS.</li>
 <li><strong>cuda</strong> (<em>bool</em>) – use gpu</li>
-<li><strong>global_scorer</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">GlobalScorer</span></code>) – </li>
+<li><strong>global_scorer</strong> (<a class="reference internal" href="#onmt.translate.GNMTGlobalScorer" title="onmt.translate.GNMTGlobalScorer"><em>onmt.translate.GNMTGlobalScorer</em></a>) – Scorer instance.</li>
+<li><strong>min_length</strong> (<em>int</em>) – Shortest acceptable generation, not counting
+begin-of-sentence or end-of-sentence.</li>
+<li><strong>stepwise_penalty</strong> (<em>bool</em>) – Apply coverage penalty at every step.</li>
+<li><strong>block_ngram_repeat</strong> (<em>int</em>) – Block beams where
+<code class="docutils literal notranslate"><span class="pre">block_ngram_repeat</span></code>-grams repeat.</li>
+<li><strong>exclusion_tokens</strong> (<em>set</em><em>[</em><em>str</em><em>]</em>) – If a gram contains any of these
+tokens, it may repeat.</li>
 </ul>
 </td>
 </tr>
@@ -441,21 +451,78 @@ Problem in Neural Machine Translation” <a class="reference internal" href="ref
 
 <dl class="class">
 <dt id="onmt.translate.GNMTGlobalScorer">
-<em class="property">class </em><code class="descclassname">onmt.translate.</code><code class="descname">GNMTGlobalScorer</code><span class="sig-paren">(</span><em>opt</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam.html#GNMTGlobalScorer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.GNMTGlobalScorer" title="Permalink to this definition">¶</a></dt>
-<dd><p>NMT re-ranking score from
-“Google’s Neural Machine Translation System” <a class="reference internal" href="ref.html#wu2016google" id="id2">[WSC+16]</a></p>
+<em class="property">class </em><code class="descclassname">onmt.translate.</code><code class="descname">GNMTGlobalScorer</code><span class="sig-paren">(</span><em>alpha</em>, <em>beta</em>, <em>length_penalty</em>, <em>coverage_penalty</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam.html#GNMTGlobalScorer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.GNMTGlobalScorer" title="Permalink to this definition">¶</a></dt>
+<dd><p>NMT re-ranking.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>alpha</strong> (<em>float</em>) – length parameter</li>
-<li><strong>beta</strong> (<em>float</em>) – coverage parameter</li>
+<li><strong>alpha</strong> (<em>float</em>) – Length parameter.</li>
+<li><strong>beta</strong> (<em>float</em>) – Coverage parameter.</li>
+<li><strong>length_penalty</strong> (<em>str</em>) – Length penalty strategy.</li>
+<li><strong>coverage_penalty</strong> (<em>str</em>) – Coverage penalty strategy.</li>
 </ul>
 </td>
 </tr>
 </tbody>
 </table>
+<dl class="attribute">
+<dt id="onmt.translate.GNMTGlobalScorer.alpha">
+<code class="descname">alpha</code><a class="headerlink" href="#onmt.translate.GNMTGlobalScorer.alpha" title="Permalink to this definition">¶</a></dt>
+<dd><p>See above.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="onmt.translate.GNMTGlobalScorer.beta">
+<code class="descname">beta</code><a class="headerlink" href="#onmt.translate.GNMTGlobalScorer.beta" title="Permalink to this definition">¶</a></dt>
+<dd><p>See above.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="onmt.translate.GNMTGlobalScorer.length_penalty">
+<code class="descname">length_penalty</code><a class="headerlink" href="#onmt.translate.GNMTGlobalScorer.length_penalty" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <code class="xref py py-class docutils literal notranslate"><span class="pre">penalties.PenaltyBuilder</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">callable</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="onmt.translate.GNMTGlobalScorer.coverage_penalty">
+<code class="descname">coverage_penalty</code><a class="headerlink" href="#onmt.translate.GNMTGlobalScorer.coverage_penalty" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <code class="xref py py-class docutils literal notranslate"><span class="pre">penalties.PenaltyBuilder</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">callable</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 <dl class="method">
 <dt id="onmt.translate.GNMTGlobalScorer.score">
 <code class="descname">score</code><span class="sig-paren">(</span><em>beam</em>, <em>logprobs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam.html#GNMTGlobalScorer.score"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.GNMTGlobalScorer.score" title="Permalink to this definition">¶</a></dt>
