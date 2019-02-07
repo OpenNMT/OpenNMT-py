@@ -182,20 +182,34 @@ class Beam(object):
 
 
 class GNMTGlobalScorer(object):
-    """
-    NMT re-ranking score from
-    "Google's Neural Machine Translation System" :cite:`wu2016google`
+    """NMT re-ranking.
 
     Args:
-       alpha (float): length parameter
-       beta (float):  coverage parameter
+       alpha (float): Length parameter.
+       beta (float):  Coverage parameter.
+       length_penalty (str): Length penalty strategy.
+       coverage_penalty (str): Coverage penalty strategy.
+
+    Attributes:
+        alpha (float): See above.
+        beta (float): See above.
+        length_penalty (callable): See :class:`penalties.PenaltyBuilder`.
+        coverage_penalty (callable): See :class:`penalties.PenaltyBuilder`.
     """
 
-    def __init__(self, opt):
-        self.alpha = opt.alpha
-        self.beta = opt.beta
-        penalty_builder = penalties.PenaltyBuilder(opt.coverage_penalty,
-                                                   opt.length_penalty)
+    @classmethod
+    def from_opt(cls, opt):
+        return cls(
+            opt.alpha,
+            opt.beta,
+            opt.length_penalty,
+            opt.coverage_penalty)
+
+    def __init__(self, alpha, beta, length_penalty, coverage_penalty):
+        self.alpha = alpha
+        self.beta = beta
+        penalty_builder = penalties.PenaltyBuilder(coverage_penalty,
+                                                   length_penalty)
         # Term will be subtracted from probability
         self.cov_penalty = penalty_builder.coverage_penalty()
         # Probability will be divided by this
@@ -205,12 +219,10 @@ class GNMTGlobalScorer(object):
         """
         Rescores a prediction based on penalty functions
         """
-        normalized_probs = self.length_penalty(beam,
-                                               logprobs,
-                                               self.alpha)
+        len_pen = self.length_penalty(len(beam.next_ys), self.alpha)
+        normalized_probs = logprobs / len_pen
         if not beam.stepwise_penalty:
-            penalty = self.cov_penalty(beam,
-                                       beam.global_state["coverage"],
+            penalty = self.cov_penalty(beam.global_state["coverage"],
                                        self.beta)
             normalized_probs -= penalty
 
@@ -222,8 +234,7 @@ class GNMTGlobalScorer(object):
         """
         if "prev_penalty" in beam.global_state.keys():
             beam.scores.add_(beam.global_state["prev_penalty"])
-            penalty = self.cov_penalty(beam,
-                                       beam.global_state["coverage"] + attn,
+            penalty = self.cov_penalty(beam.global_state["coverage"] + attn,
                                        self.beta)
             beam.scores.sub_(penalty)
 
@@ -239,7 +250,6 @@ class GNMTGlobalScorer(object):
             beam.global_state["coverage"] = beam.global_state["coverage"] \
                 .index_select(0, beam.prev_ks[-1]).add(beam.attn[-1])
 
-            prev_penalty = self.cov_penalty(beam,
-                                            beam.global_state["coverage"],
+            prev_penalty = self.cov_penalty(beam.global_state["coverage"],
                                             self.beta)
             beam.global_state["prev_penalty"] = prev_penalty

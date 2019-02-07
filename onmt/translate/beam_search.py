@@ -93,8 +93,8 @@ class BeamSearch(object):
                 if fail:
                     log_probs[bk] = -10e20
 
-        alpha = self.global_scorer.alpha
-        length_penalty = ((5.0 + (self.alive_seq.shape[1])) / 6.0) ** alpha
+        length_penalty = self.global_scorer.length_penalty(
+            step, alpha=self.global_scorer.alpha)
 
         # Flatten probs into a list of possibilities.
         curr_scores = log_probs / length_penalty
