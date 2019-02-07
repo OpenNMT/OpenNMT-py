@@ -9,10 +9,11 @@
           users of this library) for the strategy things we do.
 """
 
+from copy import deepcopy
 import itertools
 import torch
-import onmt.utils
 
+import onmt.utils
 from onmt.utils.logging import logger
 
 
@@ -103,8 +104,7 @@ class Trainer(object):
         self.report_manager = report_manager
         self.model_saver = model_saver
         self.average_decay = average_decay
-        if average_decay > 0:
-            self.moving_average = None
+        self.moving_average = None
 
         assert grad_accum_count > 0
         if grad_accum_count > 1:
@@ -206,7 +206,8 @@ class Trainer(object):
                 if self.gpu_verbose_level > 0:
                     logger.info('GpuRank %d: validate step %d'
                                 % (self.gpu_rank, step))
-                valid_stats = self.validate(valid_iter)
+                valid_stats = self.validate(
+                    valid_iter, moving_average=self.moving_average)
                 if self.gpu_verbose_level > 0:
                     logger.info('GpuRank %d: gather valid stat \
                                 step %d' % (self.gpu_rank, step))
@@ -224,14 +225,22 @@ class Trainer(object):
 
         return total_stats
 
-    def validate(self, valid_iter):
+    def validate(self, valid_iter, moving_average=None):
         """ Validate model.
             valid_iter: validate data iterator
         Returns:
             :obj:`nmt.Statistics`: validation loss statistics
         """
+        if moving_average:
+            valid_model = deepcopy(self.model)
+            for avg, param in zip(self.moving_average, valid_model.parameters()):
+                param.data = avg.data
+        else:
+            valid_model = self.model
+
         # Set model in validating mode.
-        self.model.eval()
+        valid_model.eval()
+
 
         with torch.no_grad():
             stats = onmt.utils.Statistics()
@@ -242,7 +251,7 @@ class Trainer(object):
                 tgt = batch.tgt
 
                 # F-prop through the model.
-                outputs, attns = self.model(src, tgt, src_lengths)
+                outputs, attns = valid_model(src, tgt, src_lengths)
 
                 # Compute loss.
                 _, batch_stats = self.valid_loss(batch, outputs, attns)
@@ -250,8 +259,11 @@ class Trainer(object):
                 # Update statistics.
                 stats.update(batch_stats)
 
-        # Set model back to training mode.
-        self.model.train()
+        if moving_average:
+            del valid_model
+        else:
+            # Set model back to training mode.
+            valid_model.train()
 
         return stats
 
