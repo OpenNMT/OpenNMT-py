@@ -40,6 +40,7 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
     norm_method = opt.normalization
     grad_accum_count = opt.accum_count
     n_gpu = opt.world_size
+    average_decay = opt.average_decay
     if device_id >= 0:
         gpu_rank = opt.gpu_ranks[device_id]
     else:
@@ -52,7 +53,8 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
                            shard_size, norm_method,
                            grad_accum_count, n_gpu, gpu_rank,
                            gpu_verbose_level, report_manager,
-                           model_saver=model_saver)
+                           model_saver=model_saver,
+                           average_decay=average_decay)
     return trainer
 
 
@@ -84,7 +86,8 @@ class Trainer(object):
     def __init__(self, model, train_loss, valid_loss, optim,
                  trunc_size=0, shard_size=32,
                  norm_method="sents", grad_accum_count=1, n_gpu=1, gpu_rank=1,
-                 gpu_verbose_level=0, report_manager=None, model_saver=None):
+                 gpu_verbose_level=0, report_manager=None, model_saver=None,
+                 average_decay=0):
         # Basic attributes.
         self.model = model
         self.train_loss = train_loss
@@ -99,6 +102,9 @@ class Trainer(object):
         self.gpu_verbose_level = gpu_verbose_level
         self.report_manager = report_manager
         self.model_saver = model_saver
+        self.average_decay = average_decay
+        if average_decay > 0:
+            self.moving_average = None
 
         assert grad_accum_count > 0
         if grad_accum_count > 1:
@@ -178,6 +184,20 @@ class Trainer(object):
             self._gradient_accumulation(
                 batches, normalization, total_stats,
                 report_stats)
+
+            if self.average_decay > 0:
+                copy_params = [params.clone().detach()
+                               for params in self.model.parameters()]
+                for param in copy_params:
+                    param.requires_grad = False
+                if self.moving_average is None:
+                    self.moving_average = copy_params
+                else:
+                    for (i, avg), cpt in zip(enumerate(self.moving_average),
+                                             copy_params):
+                        self.moving_average[i] = \
+                            (1 - self.average_decay) * avg + \
+                            self.average_decay * cpt
 
             report_stats = self._maybe_report_training(
                 step, train_steps,

@@ -433,6 +433,11 @@ def train_opts(parser):
                        Set to zero to turn off label smoothing.
                        For more detailed information, see:
                        https://arxiv.org/abs/1512.00567""")
+    group.add('--average_decay', '-average_decay', type=float, default=0,
+              help="""Moving average decay.
+                      #TODO Cite Marian Here.
+                      Set to other than 0 (e.g. 1e-4) to activate.""")
+
     # learning rate
     group = parser.add_argument_group('Optimization- Rate')
     group.add('--learning_rate', '-learning_rate', type=float, default=1.0,
