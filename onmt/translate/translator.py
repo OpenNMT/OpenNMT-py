@@ -34,7 +34,7 @@ def build_translator(opt, report_score=True, logger=None, out_file=None):
         if len(opt.models) > 1 else onmt.model_builder.load_test_model
     fields, model, model_opt = load_test_model(opt, dummy_opt.__dict__)
 
-    scorer = onmt.translate.GNMTGlobalScorer(opt)
+    scorer = onmt.translate.GNMTGlobalScorer.from_opt(opt)
 
     translator = Translator(
         model,

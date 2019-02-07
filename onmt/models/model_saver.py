@@ -13,7 +13,6 @@ def build_model_saver(model_opt, opt, model, fields, optim):
                              model_opt,
                              fields,
                              optim,
-                             opt.save_checkpoint_steps,
                              opt.keep_checkpoint)
     return model_saver
 
@@ -27,28 +26,23 @@ class ModelSaverBase(object):
     """
 
     def __init__(self, base_path, model, model_opt, fields, optim,
-                 save_checkpoint_steps, keep_checkpoint=-1):
+                 keep_checkpoint=-1):
         self.base_path = base_path
         self.model = model
         self.model_opt = model_opt
         self.fields = fields
         self.optim = optim
         self.keep_checkpoint = keep_checkpoint
-        self.save_checkpoint_steps = save_checkpoint_steps
-
         if keep_checkpoint > 0:
             self.checkpoint_queue = deque([], maxlen=keep_checkpoint)
 
-    def maybe_save(self, step, moving_average=None):
+    def save(self, step, moving_average=None):
         """
         Main entry point for model saver
         It wraps the `_save` method with checks and apply `keep_checkpoint`
         related logic
         """
         if self.keep_checkpoint == 0:
-            return
-
-        if step % self.save_checkpoint_steps != 0:
             return
 
         if moving_average:
@@ -97,16 +91,10 @@ class ModelSaver(ModelSaverBase):
         Simple model saver to filesystem
     """
 
-    def __init__(self, base_path, model, model_opt, fields, optim,
-                 save_checkpoint_steps, keep_checkpoint=0):
-        super(ModelSaver, self).__init__(
-            base_path, model, model_opt, fields, optim,
-            save_checkpoint_steps, keep_checkpoint)
-
     def _save(self, step, model):
-        real_model = (model.module
-                      if isinstance(model, nn.DataParallel)
-                      else model)
+        real_model = (self.model.module
+                      if isinstance(self.model, nn.DataParallel)
+                      else self.model)
         real_generator = (real_model.generator.module
                           if isinstance(real_model.generator, nn.DataParallel)
                           else real_model.generator)

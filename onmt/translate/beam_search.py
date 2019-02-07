@@ -2,6 +2,31 @@ import torch
 
 
 class BeamSearch(object):
+    """Generation beam search.
+
+    Args:
+        beam_size (int): Number of beams to use.
+        batch_size (int): Current batch size.
+        pad (int): Magic integer in output vocab.
+        bos (int): Magic integer in output vocab.
+        eos (int): Magic integer in output vocab.
+        n_best (int): Don't stop until at least this many beams have
+            reached EOS.
+        mb_device (torch.device or str): Device for memory bank (encoder).
+        global_scorer (onmt.translate.GNMTGlobalScorer): Scorer instance.
+        min_length (int): Shortest acceptable generation, not counting
+            begin-of-sentence or end-of-sentence.
+        max_length (int): Longest acceptable sequence, not counting
+            begin-of-sentence (presumably there has been no EOS
+            yet if max_length is used as a cutoff).
+        return_attention (bool): Whether to work with attention too.
+        block_ngram_repeat (int): Block beams where
+            ``block_ngram_repeat``-grams repeat.
+        exclusion_tokens (set[str]): If a gram contains any of these
+            tokens, it may repeat.
+        memory_lengths (torch.LongTensor): Lengths of encodings.
+    """
+
     def __init__(self, beam_size, batch_size, pad, bos, eos, n_best, mb_device,
                  global_scorer, min_length, max_length, return_attention,
                  block_ngram_repeat, exclusion_tokens, memory_lengths):
@@ -67,7 +92,7 @@ class BeamSearch(object):
 
         # force the output to be longer than self.min_length
         step = self.alive_seq.shape[1]
-        if step < self.min_length:
+        if step <= self.min_length:
             log_probs[:, self.eos] = -1e20
 
         # Multiply probs by the beam probability.
@@ -93,8 +118,8 @@ class BeamSearch(object):
                 if fail:
                     log_probs[bk] = -10e20
 
-        alpha = self.global_scorer.alpha
-        length_penalty = ((5.0 + (self.alive_seq.shape[1])) / 6.0) ** alpha
+        length_penalty = self.global_scorer.length_penalty(
+            step, alpha=self.global_scorer.alpha)
 
         # Flatten probs into a list of possibilities.
         curr_scores = log_probs / length_penalty
