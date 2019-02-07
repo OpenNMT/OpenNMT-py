@@ -7,6 +7,7 @@ from onmt.utils.logging import logger
 
 from copy import deepcopy
 
+
 def build_model_saver(model_opt, opt, model, fields, optim):
     model_saver = ModelSaver(opt.save_model,
                              model,
