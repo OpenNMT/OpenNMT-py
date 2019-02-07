@@ -186,18 +186,16 @@ class Trainer(object):
                 report_stats)
 
             if self.average_decay > 0:
-                copy_params = [params.clone().detach()
-                               for params in self.model.parameters()]
-                for param in copy_params:
-                    param.requires_grad = False
                 if self.moving_average is None:
+                    copy_params = [params.detach()
+                                   for params in self.model.parameters()]
                     self.moving_average = copy_params
                 else:
                     for (i, avg), cpt in zip(enumerate(self.moving_average),
-                                             copy_params):
+                                             self.model.parameters()):
                         self.moving_average[i] = \
                             (1 - self.average_decay) * avg + \
-                            self.average_decay * cpt
+                            self.average_decay * cpt.detach()
 
             report_stats = self._maybe_report_training(
                 step, train_steps,
