@@ -138,7 +138,7 @@ class TestBeam(unittest.TestCase):
         # Add one to its min_length to compensate
         beam = Beam(beam_sz, 0, 1, eos_idx, n_best=2,
                     exclusion_tokens=set(),
-                    min_length=min_length + 1,
+                    min_length=min_length,
                     global_scorer=GlobalScorerStub(),
                     block_ngram_repeat=0)
         for i in range(min_length + 4):
@@ -168,7 +168,7 @@ class TestBeam(unittest.TestCase):
             elif i == min_length:
                 # now the top beam has ended and no others have
                 # first beam finished had length beam.min_length
-                self.assertEqual(beam.finished[0][1], beam.min_length)
+                self.assertEqual(beam.finished[0][1], beam.min_length + 1)
                 # first beam finished was 0
                 self.assertEqual(beam.finished[0][2], 0)
             else:  # i > min_length
@@ -190,7 +190,7 @@ class TestBeam(unittest.TestCase):
         # Add one to its min_length to compensate
         beam = Beam(beam_sz, 0, 1, eos_idx, n_best=2,
                     exclusion_tokens=set(),
-                    min_length=min_length + 1,
+                    min_length=min_length,
                     global_scorer=GlobalScorerStub(),
                     block_ngram_repeat=0)
         for i in range(min_length + 4):
@@ -226,12 +226,12 @@ class TestBeam(unittest.TestCase):
                 self.assertFalse(beam.done)
             elif i == min_length:
                 # beam 1 dies on min_length
-                self.assertEqual(beam.finished[0][1], beam.min_length)
+                self.assertEqual(beam.finished[0][1], beam.min_length + 1)
                 self.assertEqual(beam.finished[0][2], 1)
                 self.assertFalse(beam.done)
             else:  # i > min_length
                 # beam 0 dies on the step after beam 1 dies
-                self.assertEqual(beam.finished[1][1], beam.min_length + 1)
+                self.assertEqual(beam.finished[1][1], beam.min_length + 2)
                 self.assertEqual(beam.finished[1][2], 0)
                 self.assertTrue(beam.done)
 

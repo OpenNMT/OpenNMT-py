@@ -31,50 +31,41 @@ class PenaltyBuilder(object):
         else:
             return self.length_none
 
-    """
-    Below are all the different penalty terms implemented so far
-    """
+    # Below are all the different penalty terms implemented so far.
+    # Subtract coverage penalty from topk log probs.
+    # Divide topk log probs by length penalty.
 
-    def coverage_wu(self, beam, cov, beta=0.):
+    def coverage_wu(self, cov, beta=0.):
+        """GNMT coverage re-ranking score.
+
+        See "Google's Neural Machine Translation System" :cite:`wu2016google`.
         """
-        NMT coverage re-ranking score from
-        "Google's Neural Machine Translation System" :cite:`wu2016google`.
-        """
+
         penalty = -torch.min(cov, cov.clone().fill_(1.0)).log().sum(1)
         return beta * penalty
 
-    def coverage_summary(self, beam, cov, beta=0.):
-        """
-        Our summary penalty.
-        """
+    def coverage_summary(self, cov, beta=0.):
+        """Our summary penalty."""
         penalty = torch.max(cov, cov.clone().fill_(1.0)).sum(1)
         penalty -= cov.size(1)
         return beta * penalty
 
-    def coverage_none(self, beam, cov, beta=0.):
-        """
-        returns zero as penalty
-        """
-        return beam.scores.clone().fill_(0.0)
+    def coverage_none(self, cov, beta=0.):
+        """Returns zero as penalty"""
+        return 0.0
 
-    def length_wu(self, beam, logprobs, alpha=0.):
-        """
-        NMT length re-ranking score from
-        "Google's Neural Machine Translation System" :cite:`wu2016google`.
+    def length_wu(self, cur_len, alpha=0.):
+        """GNMT length re-ranking score.
+
+        See "Google's Neural Machine Translation System" :cite:`wu2016google`.
         """
 
-        modifier = (((5 + len(beam.next_ys)) ** alpha) /
-                    ((5 + 1) ** alpha))
-        return (logprobs / modifier)
+        return ((5 + cur_len) / 6.0) ** alpha
 
-    def length_average(self, beam, logprobs, alpha=0.):
-        """
-        Returns the average probability of tokens in a sequence.
-        """
-        return logprobs / len(beam.next_ys)
+    def length_average(self, cur_len, alpha=0.):
+        """Returns the current sequence length."""
+        return cur_len
 
-    def length_none(self, beam, logprobs, alpha=0., beta=0.):
-        """
-        Returns unmodified scores.
-        """
-        return logprobs
+    def length_none(self, cur_len, alpha=0.):
+        """Returns unmodified scores."""
+        return 1.0
