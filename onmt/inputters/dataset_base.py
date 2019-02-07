@@ -20,6 +20,7 @@ class DatasetBase(Dataset):
 
     Datasets in OpenNMT take three positional arguments:
 
+    Args:
     `fields`: a dict with the structure returned by inputters.get_fields().
         keys match the keys of items yielded by the src_examples_iter or
         tgt_examples_iter, while values are lists of (name, Field) pairs.

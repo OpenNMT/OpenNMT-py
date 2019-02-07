@@ -18,10 +18,16 @@ except ImportError:
 
 
 class ImageDataReader(DataReaderBase):
-    """
+    """Read image data from disk.
+
     Args:
-        truncate: maximum img size ((0,0) or None for unlimited)
-        channel_size: Number of channels per image.
+        truncate (tuple[int] or NoneType): maximum img size. Use
+            ``(0,0)`` or ``None`` for unlimited.
+        channel_size (int): Number of channels per image.
+
+    Raises:
+        onmt.inputters.datareader_base.MissingDependencyException: If
+            importing any of ``PIL``, ``torchvision``, or ``cv2`` fail.
     """
 
     def __init__(self, truncate=None, channel_size=3):
@@ -40,11 +46,17 @@ class ImageDataReader(DataReaderBase):
                 "PIL", "torchvision", "cv2")
 
     def read(self, images, side, img_dir=None):
-        """
+        """Read data into dicts.
+
         Args:
-            images (str): location of a src file containing image paths
-            src_dir (str): location of source images
-            side (str): 'src' or 'tgt'
+            images (str or Iterable[str]): Sequence of image paths or
+                path to file containing audio paths.
+                In either case, the filenames may be relative to ``src_dir``
+                (default behavior) or absolute.
+            side (str): Prefix used in return dict. Usually
+                ``"src"`` or ``"tgt"``.
+            img_dir (str): Location of source image files. See ``images``.
+
         Yields:
             a dictionary containing image data, path and index for each line.
         """
@@ -75,11 +87,12 @@ class ImageDataReader(DataReaderBase):
 class ImageDataset(DatasetBase):
     @staticmethod
     def sort_key(ex):
-        """ Sort using the size of the image: (width, height)."""
+        """Sort using the size of the image: (width, height)."""
         return ex.src.size(2), ex.src.size(1)
 
 
 def batch_img(data, vocab):
+    """Pad and batch a sequence of images."""
     c = data[0].size(0)
     h = max([t.size(1) for t in data])
     w = max([t.size(2) for t in data])
