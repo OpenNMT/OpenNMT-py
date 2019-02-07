@@ -10,11 +10,21 @@ class Beam(object):
     Takes care of beams, back pointers, and scores.
 
     Args:
-       size (int): beam size
-       pad, bos, eos (int): indices of padding, beginning, and ending.
-       n_best (int): nbest size to use
-       cuda (bool): use gpu
-       global_scorer (:obj:`GlobalScorer`)
+        beam_size (int): Number of beams to use.
+        pad (int): Magic integer in output vocab.
+        bos (int): Magic integer in output vocab.
+        eos (int): Magic integer in output vocab.
+        n_best (int): Don't stop until at least this many beams have
+            reached EOS.
+        cuda (bool): use gpu
+        global_scorer (onmt.translate.GNMTGlobalScorer): Scorer instance.
+        min_length (int): Shortest acceptable generation, not counting
+            begin-of-sentence or end-of-sentence.
+        stepwise_penalty (bool): Apply coverage penalty at every step.
+        block_ngram_repeat (int): Block beams where
+            ``block_ngram_repeat``-grams repeat.
+        exclusion_tokens (set[str]): If a gram contains any of these
+            tokens, it may repeat.
     """
 
     def __init__(self, size, pad, bos, eos,
@@ -89,7 +99,7 @@ class Beam(object):
             self.global_scorer.update_score(self, attn_out)
         # force the output to be longer than self.min_length
         cur_len = len(self.next_ys)
-        if cur_len < self.min_length:
+        if cur_len <= self.min_length:
             # assumes there are len(word_probs) predictions OTHER
             # than EOS that are greater than -1e20
             for k in range(len(word_probs)):
