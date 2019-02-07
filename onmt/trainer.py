@@ -191,7 +191,8 @@ class Trainer(object):
                                    for params in self.model.parameters()]
                     self.moving_average = copy_params
                 else:
-                    average_decay = max(self.average_decay, 1 - (i + 1)/(i + 10))
+                    average_decay = max(self.average_decay,
+                                        1 - (i + 1)/(i + 10))
                     for (i, avg), cpt in zip(enumerate(self.moving_average),
                                              self.model.parameters()):
                         self.moving_average[i] = \
@@ -394,4 +395,4 @@ class Trainer(object):
         Save the model if a model saver is set
         """
         if self.model_saver is not None:
-            self.model_saver.maybe_save(step)
+            self.model_saver.maybe_save(step, moving_average=self.moving_average)
