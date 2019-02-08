@@ -435,8 +435,11 @@ def train_opts(parser):
                        https://arxiv.org/abs/1512.00567""")
     group.add('--average_decay', '-average_decay', type=float, default=0,
               help="""Moving average decay.
-                      #TODO Cite Marian Here.
-                      Set to other than 0 (e.g. 1e-4) to activate.""")
+                      Set to other than 0 (e.g. 1e-4) to activate.
+                      Similar to Marian NMT implementation:
+                      http://www.aclweb.org/anthology/P18-4020
+                      For more detail on Exponential Moving Average:
+                      https://en.wikipedia.org/wiki/Moving_average""")
     group.add('--average_every', '-average_every', type=int, default=1,
               help="""Step for moving average.
                       Default is every update,
