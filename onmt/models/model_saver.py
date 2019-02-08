@@ -33,6 +33,7 @@ class ModelSaverBase(object):
         self.model_opt = model_opt
         self.fields = fields
         self.optim = optim
+        self.last_saved_step = None
         self.keep_checkpoint = keep_checkpoint
         if keep_checkpoint > 0:
             self.checkpoint_queue = deque([], maxlen=keep_checkpoint)
@@ -43,7 +44,7 @@ class ModelSaverBase(object):
         It wraps the `_save` method with checks and apply `keep_checkpoint`
         related logic
         """
-        if self.keep_checkpoint == 0:
+        if self.keep_checkpoint == 0 or step == self.last_saved_step:
             return
 
         if moving_average:
@@ -54,7 +55,8 @@ class ModelSaverBase(object):
             save_model = self.model
 
         chkpt, chkpt_name = self._save(step, save_model)
-
+        self.last_saved_step = step
+        
         if moving_average:
             del save_model
 

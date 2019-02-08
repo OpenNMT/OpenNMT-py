@@ -517,38 +517,61 @@ class DatasetLazyIter(object):
     """
 
     def __init__(self, dataset_paths, fields, batch_size, batch_size_fn,
-                 device, is_train):
+                 device, is_train, repeat=True, num_batches_multiple=1):
         self._paths = dataset_paths
         self.fields = fields
         self.batch_size = batch_size
         self.batch_size_fn = batch_size_fn
         self.device = device
         self.is_train = is_train
+        self.repeat = repeat
+        self.num_batches_multiple = num_batches_multiple
+
+    def _iter_dataset(self, path):
+        cur_dataset = torch.load(path)
+        logger.info('Loading dataset from %s, number of examples: %d' %
+                    (path, len(cur_dataset)))
+        cur_dataset.fields = self.fields
+        cur_iter = OrderedIterator(
+            dataset=cur_dataset,
+            batch_size=self.batch_size,
+            batch_size_fn=self.batch_size_fn,
+            device=self.device,
+            train=self.is_train,
+            sort=False,
+            sort_within_batch=True,
+            repeat=False
+        )
+        for batch in cur_iter:
+            yield batch
+
+        cur_dataset.examples = None
+        gc.collect()
+        del cur_dataset
+        gc.collect()
 
     def __iter__(self):
-        paths = cycle(self._paths) if self.is_train else self._paths
+        num_batches = 0
+        paths = self._paths
+        if self.is_train and self.repeat:
+            # Cycle through the shards indefinitely.
+            paths = cycle(paths)
         for path in paths:
-            cur_dataset = torch.load(path)
-            logger.info('Loading dataset from %s, number of examples: %d' %
-                        (path, len(cur_dataset)))
-            cur_dataset.fields = self.fields
-            cur_iter = OrderedIterator(
-                dataset=cur_dataset,
-                batch_size=self.batch_size,
-                batch_size_fn=self.batch_size_fn,
-                device=self.device,
-                train=self.is_train,
-                sort=False,
-                sort_within_batch=True,
-                repeat=False
-            )
-            for batch in cur_iter:
+            for batch in self._iter_dataset(path):
                 yield batch
-
-            cur_dataset.examples = None
-            gc.collect()
-            del cur_dataset
-            gc.collect()
+                num_batches += 1
+        if self.is_train and not self.repeat and \
+           num_batches % self.num_batches_multiple != 0:
+            # When the dataset is not repeated, we might need to ensure that
+            # the number of returned batches is the multiple of a given value.
+            # This is important for multi GPU training to ensure that all
+            # workers have the same number of batches to process.
+            for path in paths:
+                for batch in self._iter_dataset(path):
+                    yield batch
+                    num_batches += 1
+                    if num_batches % self.num_batches_multiple == 0:
+                        return
 
 
 def max_tok_len(new, count, sofar):
@@ -587,5 +610,12 @@ def build_dataset_iter(corpus_type, fields, opt, is_train=True):
 
     device = "cuda" if opt.gpu_ranks else "cpu"
 
-    return DatasetLazyIter(dataset_paths, fields, batch_size, batch_fn,
-                           device, is_train)
+    return DatasetLazyIter(
+        dataset_paths,
+        fields,
+        batch_size,
+        batch_fn,
+        device,
+        is_train,
+        repeat=not opt.single_pass,
+        num_batches_multiple=opt.accum_count * opt.world_size)
