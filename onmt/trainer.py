@@ -238,7 +238,7 @@ class Trainer(object):
                 break
 
         if self.model_saver is not None:
-            self.model_saver.save(step)
+            self.model_saver.save(step, moving_average=self.moving_average)
         return total_stats
 
     def validate(self, valid_iter, moving_average=None):
