@@ -136,6 +136,20 @@ class Trainer(object):
         if batches:
             yield batches, normalization
 
+    def _update_average(self, step):
+        if self.moving_average is None:
+            copy_params = [params.detach()
+                           for params in self.model.parameters()]
+            self.moving_average = copy_params
+        else:
+            average_decay = max(self.average_decay,
+                                1 - (step + 1)/(step + 10))
+            for (i, avg), cpt in zip(enumerate(self.moving_average),
+                                     self.model.parameters()):
+                self.moving_average[i] = \
+                    (1 - average_decay) * avg + \
+                    average_decay * cpt.detach()
+
     def train(self,
               train_iter,
               train_steps,
@@ -192,18 +206,7 @@ class Trainer(object):
                 report_stats)
 
             if self.average_decay > 0 and i % self.average_every == 0:
-                if self.moving_average is None:
-                    copy_params = [params.detach()
-                                   for params in self.model.parameters()]
-                    self.moving_average = copy_params
-                else:
-                    average_decay = max(self.average_decay,
-                                        1 - (i + 1)/(i + 10))
-                    for (i, avg), cpt in zip(enumerate(self.moving_average),
-                                             self.model.parameters()):
-                        self.moving_average[i] = \
-                            (1 - average_decay) * avg + \
-                            average_decay * cpt.detach()
+                self._update_average(step)
 
             report_stats = self._maybe_report_training(
                 step, train_steps,
