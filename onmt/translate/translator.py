@@ -104,6 +104,7 @@ class Translator(object):
 
         self.min_length = opt.min_length
         self.stepwise_penalty = opt.stepwise_penalty
+        self.coverage_penalty = opt.coverage_penalty
         self.dump_beam = opt.dump_beam
         self.block_ngram_repeat = opt.block_ngram_repeat
         self.ignore_when_blocking = set(opt.ignore_when_blocking)
@@ -449,6 +450,8 @@ class Translator(object):
                     sampling_temp=self.random_sampling_temp,
                     keep_topk=self.sample_from_topk,
                     return_attention=attn_debug or self.replace_unk)
+            elif self.coverage_penalty:
+                return self._translate_batch_deprecated(batch, src_vocabs)
             else:
                 return self._translate_batch(
                     batch,
