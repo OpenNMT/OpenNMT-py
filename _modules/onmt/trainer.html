@@ -362,14 +362,15 @@
                                   <span class="n">step</span><span class="p">,</span> <span class="n">valid_stats</span><span class="o">=</span><span class="n">valid_stats</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_saver</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-                <span class="ow">and</span> <span class="p">(</span><span class="n">step</span> <span class="o">==</span> <span class="n">train_steps</span>
-                     <span class="ow">or</span> <span class="p">(</span><span class="n">save_checkpoint_steps</span> <span class="o">!=</span> <span class="mi">0</span>
-                         <span class="ow">and</span> <span class="n">step</span> <span class="o">%</span> <span class="n">save_checkpoint_steps</span> <span class="o">==</span> <span class="mi">0</span><span class="p">))):</span>
+                <span class="ow">and</span> <span class="p">(</span><span class="n">save_checkpoint_steps</span> <span class="o">!=</span> <span class="mi">0</span>
+                     <span class="ow">and</span> <span class="n">step</span> <span class="o">%</span> <span class="n">save_checkpoint_steps</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">model_saver</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">step</span><span class="p">)</span>
 
-            <span class="k">if</span> <span class="n">step</span> <span class="o">&gt;=</span> <span class="n">train_steps</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">train_steps</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">step</span> <span class="o">&gt;=</span> <span class="n">train_steps</span><span class="p">:</span>
                 <span class="k">break</span>
 
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_saver</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model_saver</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">step</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">total_stats</span></div>
 
 <div class="viewcode-block" id="Trainer.validate"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.validate">[docs]</a>    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">valid_iter</span><span class="p">):</span>
