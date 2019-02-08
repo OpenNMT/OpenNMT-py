@@ -56,7 +56,7 @@ class ModelSaverBase(object):
 
         chkpt, chkpt_name = self._save(step, save_model)
         self.last_saved_step = step
-        
+
         if moving_average:
             del save_model
 
