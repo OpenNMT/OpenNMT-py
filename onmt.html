@@ -175,7 +175,7 @@
 <h2>Trainer<a class="headerlink" href="#trainer" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.Trainer">
-<em class="property">class </em><code class="descclassname">onmt.</code><code class="descname">Trainer</code><span class="sig-paren">(</span><em>model</em>, <em>train_loss</em>, <em>valid_loss</em>, <em>optim</em>, <em>trunc_size=0</em>, <em>shard_size=32</em>, <em>norm_method='sents'</em>, <em>grad_accum_count=1</em>, <em>n_gpu=1</em>, <em>gpu_rank=1</em>, <em>gpu_verbose_level=0</em>, <em>report_manager=None</em>, <em>model_saver=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/trainer.html#Trainer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.</code><code class="descname">Trainer</code><span class="sig-paren">(</span><em>model</em>, <em>train_loss</em>, <em>valid_loss</em>, <em>optim</em>, <em>trunc_size=0</em>, <em>shard_size=32</em>, <em>norm_method='sents'</em>, <em>grad_accum_count=1</em>, <em>n_gpu=1</em>, <em>gpu_rank=1</em>, <em>gpu_verbose_level=0</em>, <em>report_manager=None</em>, <em>model_saver=None</em>, <em>average_decay=0</em>, <em>average_every=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/trainer.html#Trainer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class that controls the training process.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -229,7 +229,7 @@ iterations.</li>
 
 <dl class="method">
 <dt id="onmt.Trainer.validate">
-<code class="descname">validate</code><span class="sig-paren">(</span><em>valid_iter</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/trainer.html#Trainer.validate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer.validate" title="Permalink to this definition">¶</a></dt>
+<code class="descname">validate</code><span class="sig-paren">(</span><em>valid_iter</em>, <em>moving_average=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/trainer.html#Trainer.validate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer.validate" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="docutils">
 <dt>Validate model.</dt>
 <dd>valid_iter: validate data iterator</dd>
