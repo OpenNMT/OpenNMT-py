@@ -113,7 +113,7 @@ class TransformerDecoder(DecoderBase):
        d_model (int): size of the model
        heads (int): number of heads
        d_ff (int): size of the inner FF layer
-       copy_attn (bool): if using a seperate copy attention
+       copy_attn (bool): if using a separate copy attention
        self_attn_type (str): type of self-attention scaled-dot, average
        dropout (float): dropout parameters
        embeddings (:obj:`onmt.modules.Embeddings`):
