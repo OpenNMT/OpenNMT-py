@@ -388,6 +388,8 @@ def train_opts(parser):
                         uses more memory. Set to 0 to disable.""")
     group.add('--train_steps', '-train_steps', type=int, default=100000,
               help='Number of training steps')
+    group.add('--single_pass', '-single_pass', action='store_true',
+              help="Make a single pass over the training dataset.")
     group.add('--epochs', '-epochs', type=int, default=0,
               help='Deprecated epochs see train_steps')
     group.add('--optim', '-optim', default='sgd',
@@ -433,6 +435,18 @@ def train_opts(parser):
                        Set to zero to turn off label smoothing.
                        For more detailed information, see:
                        https://arxiv.org/abs/1512.00567""")
+    group.add('--average_decay', '-average_decay', type=float, default=0,
+              help="""Moving average decay.
+                      Set to other than 0 (e.g. 1e-4) to activate.
+                      Similar to Marian NMT implementation:
+                      http://www.aclweb.org/anthology/P18-4020
+                      For more detail on Exponential Moving Average:
+                      https://en.wikipedia.org/wiki/Moving_average""")
+    group.add('--average_every', '-average_every', type=int, default=1,
+              help="""Step for moving average.
+                      Default is every update,
+                      if -average_decay is set.""")
+
     # learning rate
     group = parser.add_argument_group('Optimization- Rate')
     group.add('--learning_rate', '-learning_rate', type=float, default=1.0,
