@@ -5,6 +5,8 @@ import torch.nn as nn
 from collections import deque
 from onmt.utils.logging import logger
 
+from copy import deepcopy
+
 
 def build_model_saver(model_opt, opt, model, fields, optim):
     model_saver = ModelSaver(opt.save_model,
@@ -36,7 +38,7 @@ class ModelSaverBase(object):
         if keep_checkpoint > 0:
             self.checkpoint_queue = deque([], maxlen=keep_checkpoint)
 
-    def save(self, step):
+    def save(self, step, moving_average=None):
         """
         Main entry point for model saver
         It wraps the `_save` method with checks and apply `keep_checkpoint`
@@ -45,8 +47,18 @@ class ModelSaverBase(object):
         if self.keep_checkpoint == 0 or step == self.last_saved_step:
             return
 
-        chkpt, chkpt_name = self._save(step)
+        if moving_average:
+            save_model = deepcopy(self.model)
+            for avg, param in zip(moving_average, save_model.parameters()):
+                param.data.copy_(avg.data)
+        else:
+            save_model = self.model
+
+        chkpt, chkpt_name = self._save(step, save_model)
         self.last_saved_step = step
+
+        if moving_average:
+            del save_model
 
         if self.keep_checkpoint > 0:
             if len(self.checkpoint_queue) == self.checkpoint_queue.maxlen:
@@ -82,7 +94,7 @@ class ModelSaver(ModelSaverBase):
         Simple model saver to filesystem
     """
 
-    def _save(self, step):
+    def _save(self, step, model):
         real_model = (self.model.module
                       if isinstance(self.model, nn.DataParallel)
                       else self.model)

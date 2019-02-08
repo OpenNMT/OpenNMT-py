@@ -9,10 +9,11 @@
           users of this library) for the strategy things we do.
 """
 
+from copy import deepcopy
 import itertools
 import torch
-import onmt.utils
 
+import onmt.utils
 from onmt.utils.logging import logger
 
 
@@ -40,6 +41,8 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
     norm_method = opt.normalization
     grad_accum_count = opt.accum_count
     n_gpu = opt.world_size
+    average_decay = opt.average_decay
+    average_every = opt.average_every
     if device_id >= 0:
         gpu_rank = opt.gpu_ranks[device_id]
     else:
@@ -52,7 +55,9 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
                            shard_size, norm_method,
                            grad_accum_count, n_gpu, gpu_rank,
                            gpu_verbose_level, report_manager,
-                           model_saver=model_saver if gpu_rank == 0 else None)
+                           model_saver=model_saver if gpu_rank == 0 else None,
+                           average_decay=average_decay,
+                           average_every=average_every)
     return trainer
 
 
@@ -84,7 +89,8 @@ class Trainer(object):
     def __init__(self, model, train_loss, valid_loss, optim,
                  trunc_size=0, shard_size=32,
                  norm_method="sents", grad_accum_count=1, n_gpu=1, gpu_rank=1,
-                 gpu_verbose_level=0, report_manager=None, model_saver=None):
+                 gpu_verbose_level=0, report_manager=None, model_saver=None,
+                 average_decay=0, average_every=1):
         # Basic attributes.
         self.model = model
         self.train_loss = train_loss
@@ -99,6 +105,9 @@ class Trainer(object):
         self.gpu_verbose_level = gpu_verbose_level
         self.report_manager = report_manager
         self.model_saver = model_saver
+        self.average_decay = average_decay
+        self.moving_average = None
+        self.average_every = average_every
 
         assert grad_accum_count > 0
         if grad_accum_count > 1:
@@ -126,6 +135,20 @@ class Trainer(object):
                 normalization = 0
         if batches:
             yield batches, normalization
+
+    def _update_average(self, step):
+        if self.moving_average is None:
+            copy_params = [params.detach()
+                           for params in self.model.parameters()]
+            self.moving_average = copy_params
+        else:
+            average_decay = max(self.average_decay,
+                                1 - (step + 1)/(step + 10))
+            for (i, avg), cpt in zip(enumerate(self.moving_average),
+                                     self.model.parameters()):
+                self.moving_average[i] = \
+                    (1 - average_decay) * avg + \
+                    average_decay * cpt.detach()
 
     def train(self,
               train_iter,
@@ -182,6 +205,9 @@ class Trainer(object):
                 batches, normalization, total_stats,
                 report_stats)
 
+            if self.average_decay > 0 and i % self.average_every == 0:
+                self._update_average(step)
+
             report_stats = self._maybe_report_training(
                 step, train_steps,
                 self.optim.learning_rate(),
@@ -191,7 +217,8 @@ class Trainer(object):
                 if self.gpu_verbose_level > 0:
                     logger.info('GpuRank %d: validate step %d'
                                 % (self.gpu_rank, step))
-                valid_stats = self.validate(valid_iter)
+                valid_stats = self.validate(
+                    valid_iter, moving_average=self.moving_average)
                 if self.gpu_verbose_level > 0:
                     logger.info('GpuRank %d: gather valid stat \
                                 step %d' % (self.gpu_rank, step))
@@ -205,23 +232,31 @@ class Trainer(object):
             if (self.model_saver is not None
                 and (save_checkpoint_steps != 0
                      and step % save_checkpoint_steps == 0)):
-                self.model_saver.save(step)
+                self.model_saver.save(step, moving_average=self.moving_average)
 
             if train_steps > 0 and step >= train_steps:
                 break
 
         if self.model_saver is not None:
-            self.model_saver.save(step)
+            self.model_saver.save(step, moving_average=self.moving_average)
         return total_stats
 
-    def validate(self, valid_iter):
+    def validate(self, valid_iter, moving_average=None):
         """ Validate model.
             valid_iter: validate data iterator
         Returns:
             :obj:`nmt.Statistics`: validation loss statistics
         """
+        if moving_average:
+            valid_model = deepcopy(self.model)
+            for avg, param in zip(self.moving_average,
+                                  valid_model.parameters()):
+                param.data = avg.data
+        else:
+            valid_model = self.model
+
         # Set model in validating mode.
-        self.model.eval()
+        valid_model.eval()
 
         with torch.no_grad():
             stats = onmt.utils.Statistics()
@@ -232,7 +267,7 @@ class Trainer(object):
                 tgt = batch.tgt
 
                 # F-prop through the model.
-                outputs, attns = self.model(src, tgt, src_lengths)
+                outputs, attns = valid_model(src, tgt, src_lengths)
 
                 # Compute loss.
                 _, batch_stats = self.valid_loss(batch, outputs, attns)
@@ -240,8 +275,11 @@ class Trainer(object):
                 # Update statistics.
                 stats.update(batch_stats)
 
-        # Set model back to training mode.
-        self.model.train()
+        if moving_average:
+            del valid_model
+        else:
+            # Set model back to training mode.
+            valid_model.train()
 
         return stats
 
