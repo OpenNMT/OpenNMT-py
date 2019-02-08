@@ -10,6 +10,8 @@ import sys
 import gc
 import os
 import torch
+from functools import partial
+
 from onmt.utils.logging import init_logger, logger
 from onmt.utils.misc import split_corpus
 import onmt.inputters as inputters
@@ -61,19 +63,23 @@ def build_save_dataset(corpus_type, fields, src_reader, tgt_reader, opt):
     tgt_shards = split_corpus(tgt, opt.shard_size)
     shard_pairs = zip(src_shards, tgt_shards)
     dataset_paths = []
+    if (corpus_type == "train" or opt.filter_valid) and tgt is not None:
+        filter_pred = partial(
+            inputters.filter_example, use_src_len=opt.data_type == "text",
+            max_src_len=opt.src_seq_length, max_tgt_len=opt.tgt_seq_length)
+    else:
+        filter_pred = None
     for i, (src_shard, tgt_shard) in enumerate(shard_pairs):
         assert len(src_shard) == len(tgt_shard)
         logger.info("Building shard %d." % i)
-        dataset = inputters.build_dataset(
-            fields, opt.data_type,
-            src=src_shard,
-            src_reader=src_reader,
-            tgt=tgt_shard,
-            tgt_reader=tgt_reader,
-            src_dir=opt.src_dir,
-            src_seq_len=opt.src_seq_length,
-            tgt_seq_len=opt.tgt_seq_length,
-            use_filter_pred=corpus_type == 'train' or opt.filter_valid
+        dataset = inputters.Dataset(
+            fields,
+            readers=[src_reader, tgt_reader] if tgt_reader else [src_reader],
+            data=([("src", src_shard), ("tgt", tgt_shard)]
+                  if tgt_reader else [("src", src_shard)]),
+            dirs=[opt.src_dir, None] if tgt_reader else [opt.src_dir],
+            sort_key=inputters.str2sortkey[opt.data_type],
+            filter_pred=filter_pred
         )
 
         data_path = "{:s}.{:s}.{:d}.pt".format(opt.save_data, corpus_type, i)
