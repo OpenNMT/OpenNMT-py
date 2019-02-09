@@ -208,6 +208,8 @@ class GNMTGlobalScorer(object):
         beta (float): See above.
         length_penalty (callable): See :class:`penalties.PenaltyBuilder`.
         coverage_penalty (callable): See :class:`penalties.PenaltyBuilder`.
+        has_cov_pen (bool): See :class:`penalties.PenaltyBuilder`.
+        has_len_pen (bool): See :class:`penalties.PenaltyBuilder`.
     """
 
     @classmethod
@@ -234,6 +236,9 @@ class GNMTGlobalScorer(object):
 
     @classmethod
     def _validate(cls, alpha, beta, length_penalty, coverage_penalty):
+        # these warnings indicate that either the alpha/beta
+        # forces a penalty to be a no-op, or a penalty is a no-op but
+        # the alpha/beta would suggest otherwise.
         if length_penalty is None or length_penalty == "none":
             if alpha != 0:
                 warnings.warn("Non-default `alpha` with no length penalty. "
@@ -254,9 +259,7 @@ class GNMTGlobalScorer(object):
                               "is equivalent to using coverage penalty none.")
 
     def score(self, beam, logprobs):
-        """
-        Rescores a prediction based on penalty functions
-        """
+        """Rescore a prediction based on penalty functions."""
         len_pen = self.length_penalty(len(beam.next_ys), self.alpha)
         normalized_probs = logprobs / len_pen
         if not beam.stepwise_penalty:
@@ -267,9 +270,7 @@ class GNMTGlobalScorer(object):
         return normalized_probs
 
     def update_score(self, beam, attn):
-        """
-        Function to update scores of a Beam that is not finished
-        """
+        """Update scores of a Beam that is not finished."""
         if "prev_penalty" in beam.global_state.keys():
             beam.scores.add_(beam.global_state["prev_penalty"])
             penalty = self.cov_penalty(beam.global_state["coverage"] + attn,
@@ -277,7 +278,7 @@ class GNMTGlobalScorer(object):
             beam.scores.sub_(penalty)
 
     def update_global_state(self, beam):
-        "Keeps the coverage vector as sum of attentions"
+        """Keeps the coverage vector as sum of attentions."""
         if len(beam.prev_ks) == 1:
             beam.global_state["prev_penalty"] = beam.scores.clone().fill_(0.0)
             beam.global_state["coverage"] = beam.attn[-1]

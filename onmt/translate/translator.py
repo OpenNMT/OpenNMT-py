@@ -616,7 +616,7 @@ class Translator(object):
                 memory_lengths=memory_lengths,
                 src_map=src_map,
                 step=step,
-                batch_offset=beam.batch_offset
+                batch_offset=beam._batch_offset
             )
 
             beam.advance(log_probs, attn)
