@@ -412,8 +412,8 @@ begin-of-sentence or end-of-sentence.</li>
 <li><strong>stepwise_penalty</strong> (<em>bool</em>) – Apply coverage penalty at every step.</li>
 <li><strong>block_ngram_repeat</strong> (<em>int</em>) – Block beams where
 <code class="docutils literal notranslate"><span class="pre">block_ngram_repeat</span></code>-grams repeat.</li>
-<li><strong>exclusion_tokens</strong> (<em>set</em><em>[</em><em>str</em><em>]</em>) – If a gram contains any of these
-tokens, it may repeat.</li>
+<li><strong>exclusion_tokens</strong> (<em>set</em><em>[</em><em>int</em><em>]</em>) – If a gram contains any of these
+token indices, it may repeat.</li>
 </ul>
 </td>
 </tr>
@@ -520,22 +520,50 @@ tokens, it may repeat.</li>
 </table>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="onmt.translate.GNMTGlobalScorer.has_cov_pen">
+<code class="descname">has_cov_pen</code><a class="headerlink" href="#onmt.translate.GNMTGlobalScorer.has_cov_pen" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <code class="xref py py-class docutils literal notranslate"><span class="pre">penalties.PenaltyBuilder</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="onmt.translate.GNMTGlobalScorer.has_len_pen">
+<code class="descname">has_len_pen</code><a class="headerlink" href="#onmt.translate.GNMTGlobalScorer.has_len_pen" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <code class="xref py py-class docutils literal notranslate"><span class="pre">penalties.PenaltyBuilder</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 <dl class="method">
 <dt id="onmt.translate.GNMTGlobalScorer.score">
 <code class="descname">score</code><span class="sig-paren">(</span><em>beam</em>, <em>logprobs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam.html#GNMTGlobalScorer.score"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.GNMTGlobalScorer.score" title="Permalink to this definition">¶</a></dt>
-<dd><p>Rescores a prediction based on penalty functions</p>
+<dd><p>Rescore a prediction based on penalty functions.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="onmt.translate.GNMTGlobalScorer.update_global_state">
 <code class="descname">update_global_state</code><span class="sig-paren">(</span><em>beam</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam.html#GNMTGlobalScorer.update_global_state"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.GNMTGlobalScorer.update_global_state" title="Permalink to this definition">¶</a></dt>
-<dd><p>Keeps the coverage vector as sum of attentions</p>
+<dd><p>Keeps the coverage vector as sum of attentions.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="onmt.translate.GNMTGlobalScorer.update_score">
 <code class="descname">update_score</code><span class="sig-paren">(</span><em>beam</em>, <em>attn</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam.html#GNMTGlobalScorer.update_score"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.GNMTGlobalScorer.update_score" title="Permalink to this definition">¶</a></dt>
-<dd><p>Function to update scores of a Beam that is not finished</p>
+<dd><p>Update scores of a Beam that is not finished.</p>
 </dd></dl>
 
 </dd></dl>
