@@ -127,6 +127,7 @@ class Translator(object):
         self.logger = logger
 
         self.use_filter_pred = False
+        self._filter_pred = None
 
         # for debugging
         self.beam_trace = self.dump_beam != ""
@@ -181,15 +182,14 @@ class Translator(object):
         if batch_size is None:
             raise ValueError("batch_size must be set")
 
-        data = inputters.build_dataset(
+        data = inputters.Dataset(
             self.fields,
-            self.data_type,
-            src=src,
-            src_reader=self.src_reader,
-            tgt=tgt,
-            tgt_reader=self.tgt_reader,
-            src_dir=src_dir,
-            use_filter_pred=self.use_filter_pred,
+            readers=([self.src_reader, self.tgt_reader]
+                     if tgt else [self.src_reader]),
+            data=[("src", src), ("tgt", tgt)] if tgt else [("src", src)],
+            dirs=[src_dir, None] if tgt else [src_dir],
+            sort_key=inputters.str2sortkey[self.data_type],
+            filter_pred=self._filter_pred
         )
 
         cur_device = "cuda" if self.cuda else "cpu"

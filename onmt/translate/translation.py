@@ -2,7 +2,7 @@
 from __future__ import unicode_literals, print_function
 
 import torch
-from onmt.inputters.text_dataset import TextDataset
+from onmt.inputters.text_dataset import TextMultiField
 
 
 class TranslationBuilder(object):
@@ -25,6 +25,8 @@ class TranslationBuilder(object):
                  has_tgt=False):
         self.data = data
         self.fields = fields
+        self._has_text_src = isinstance(
+            self.fields["src"][0][1], TextMultiField)
         self.n_best = n_best
         self.replace_unk = replace_unk
         self.has_tgt = has_tgt
@@ -64,7 +66,7 @@ class TranslationBuilder(object):
 
         # Sorting
         inds, perm = torch.sort(batch.indices)
-        if isinstance(self.data, TextDataset):
+        if self._has_text_src:
             src = batch.src[0][:, :, 0].index_select(1, perm)
         else:
             src = None
@@ -73,7 +75,7 @@ class TranslationBuilder(object):
 
         translations = []
         for b in range(batch_size):
-            if isinstance(self.data, TextDataset):
+            if self._has_text_src:
                 src_vocab = self.data.src_vocabs[inds[b]] \
                     if self.data.src_vocabs else None
                 src_raw = self.data.examples[inds[b]].src[0]

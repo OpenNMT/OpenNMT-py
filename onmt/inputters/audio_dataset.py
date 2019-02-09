@@ -5,7 +5,6 @@ from tqdm import tqdm
 import torch
 from torchtext.data import Field
 
-from onmt.inputters.dataset_base import DatasetBase
 from onmt.inputters.datareader_base import DataReaderBase
 
 # imports of datatype-specific dependencies
@@ -129,11 +128,9 @@ class AudioDataReader(DataReaderBase):
             yield {side: spect, side + '_path': line, 'indices': i}
 
 
-class AudioDataset(DatasetBase):
-    @staticmethod
-    def sort_key(ex):
-        """Sort using duration time of the sound spectrogram."""
-        return ex.src.size(1)
+def audio_sort_key(ex):
+    """Sort using duration time of the sound spectrogram."""
+    return ex.src.size(1)
 
 
 class AudioSeqField(Field):

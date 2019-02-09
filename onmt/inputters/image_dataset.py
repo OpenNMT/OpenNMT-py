@@ -5,7 +5,6 @@ import os
 import torch
 from torchtext.data import Field
 
-from onmt.inputters.dataset_base import DatasetBase
 from onmt.inputters.datareader_base import DataReaderBase
 
 # domain specific dependencies
@@ -84,11 +83,9 @@ class ImageDataReader(DataReaderBase):
             yield {side: img, side + '_path': filename, 'indices': i}
 
 
-class ImageDataset(DatasetBase):
-    @staticmethod
-    def sort_key(ex):
-        """Sort using the size of the image: (width, height)."""
-        return ex.src.size(2), ex.src.size(1)
+def img_sort_key(ex):
+    """Sort using the size of the image: (width, height)."""
+    return ex.src.size(2), ex.src.size(1)
 
 
 def batch_img(data, vocab):

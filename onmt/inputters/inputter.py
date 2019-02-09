@@ -6,17 +6,15 @@ import math
 
 from collections import Counter, defaultdict
 from itertools import chain, cycle
-from functools import partial
 
 import torch
 import torchtext.data
 from torchtext.data import Field
 from torchtext.vocab import Vocab
 
-from onmt.inputters.text_dataset import TextDataset, text_fields,\
-    TextMultiField
-from onmt.inputters.image_dataset import ImageDataset, image_fields
-from onmt.inputters.audio_dataset import AudioDataset, audio_fields
+from onmt.inputters.text_dataset import text_fields, TextMultiField
+from onmt.inputters.image_dataset import image_fields
+from onmt.inputters.audio_dataset import audio_fields
 from onmt.utils.logging import logger
 # backwards compatibility
 from onmt.inputters.text_dataset import _feature_tokenize  # noqa: F401
@@ -246,52 +244,6 @@ def filter_example(ex, use_src_len=True, use_tgt_len=True,
     tgt_len = len(ex.tgt[0])
     return (not use_src_len or min_src_len <= src_len <= max_src_len) and \
         (not use_tgt_len or min_tgt_len <= tgt_len <= max_tgt_len)
-
-
-def build_dataset(fields, data_type, src, src_reader,
-                  src_dir=None, tgt=None, tgt_reader=None,
-                  src_seq_len=50, tgt_seq_len=50, use_filter_pred=True):
-    """Create a dataset from data on disk.
-
-    Args:
-        fields (dict[str, List[Tuple[str, Field]]]): A dict with top-level
-            keys for the sides (e.x., ``'src'``, ``'tgt'``) mapping to
-            lists of (name, Field) pairs.
-        data_type (str): A supported datatype.
-        src: See :func:`src_reader.read()` for details.
-        src_reader (onmt.inputters.DataReaderBase): The disk-to-dict
-            reader for src data.
-        src_dir: See :func:`src_reader.read()` for details.
-        tgt: See :func:`tgt_reader.read()` for details.
-        tgt_reader (onmt.inputters.TextDataReader): Similar to above.
-        src_seq_len: Max acceptable src sequence length. See
-            :func:`filter_example()` for details.
-        tgt_seq_len: Similar to above.
-        use_filter_pred (bool): Whether or not to apply length filtering.
-    """
-
-    dataset_classes = {
-        'text': TextDataset, 'img': ImageDataset, 'audio': AudioDataset
-    }
-    assert data_type in dataset_classes
-    assert src is not None
-
-    # the second conjunct means nothing will be filtered at translation time
-    # if there is no target data
-    if use_filter_pred and tgt is not None:
-        filter_pred = partial(
-            filter_example, use_src_len=data_type == 'text',
-            max_src_len=src_seq_len, max_tgt_len=tgt_seq_len
-        )
-    else:
-        filter_pred = None
-
-    return dataset_classes[data_type](
-        fields,
-        readers=[src_reader, tgt_reader] if tgt else [src_reader],
-        data=[("src", src), ("tgt", tgt)] if tgt else [("src", src)],
-        dirs=[src_dir, None] if tgt else [src_dir],
-        filter_pred=filter_pred)
 
 
 def _pad_vocab_to_multiple(vocab, multiple):
