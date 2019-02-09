@@ -4,6 +4,11 @@ import torch
 class BeamSearch(object):
     """Generation beam search.
 
+    Note that the attributes list is not exhaustive. Rather, it highlights
+    tensors to document their shape. (Since the state variables' "batch"
+    size decreases as beams finish, we denote this axis with a B rather than
+    ``batch_size``).
+
     Args:
         beam_size (int): Number of beams to use.
         batch_size (int): Current batch size.
@@ -24,12 +29,53 @@ class BeamSearch(object):
             ``block_ngram_repeat``-grams repeat.
         exclusion_tokens (set[str]): If a gram contains any of these
             tokens, it may repeat.
-        memory_lengths (torch.LongTensor): Lengths of encodings.
+        memory_lengths (torch.LongTensor): Lengths of encodings. Used for
+            masking attentions.
+
+    Attributes:
+        top_beam_finished (torch.ByteTensor): Shape ``(B,)``.
+        _batch_offset (torch.LongTensor): Shape ``(B,)``.
+        _beam_offset (torch.LongTensor): Shape ``(batch_size x beam_size)``.
+        alive_seq (torch.LongTensor): Shape ``(B x beam_size, step)``. This
+            sequence grows in the ``step`` axis on each call to
+            :func:`advance()`.
+        topk_log_probs (torch.FloatTensor): Shape ``(B x beam_size,)``. These
+            are the scores used for the topk operation.
+        alive_attn (torch.FloatTensor or NoneType): If tensor, shape is
+            ``(step, B x beam_size, inp_seq_len)``, where ``inp_seq_len``
+            is the (max) length of the input sequence.
+        select_indices (torch.LongTensor or NoneType): Shape
+            ``(B x beam_size,)``. Initialized to ``None``.
+        is_finished (torch.ByteTensor or NoneType): Shape
+            ``(B, beam_size)``. Initialized to ``None``.
+        topk_scores (torch.FloatTensor or NoneType): Shape
+            ``(B, beam_size)``. Initialized to ``None``. These are the
+            scores a sequence will receive if it finishes.
+        topk_ids (torch.LongTensor or NoneType): Shape
+            ``(B, beam_size)``. Initialized to ``None``. These are the
+            word indices of the topk predictions.
+        _batch_index (torch.LongTensor or NoneType): Shape
+            ``(B, beam_size)``. Initialized to ``None``.
+        _prev_penalty (torch.FloatTensor or NoneType): Shape
+            ``(B, beam_size)``. Initialized to ``None``.
+        _coverage (torch.FloatTensor or NoneType): Shape
+            ``(1, B x beam_size, inp_seq_len)``.
+        hypotheses (list[list[Tuple[torch.Tensor]]]): Contains a tuple
+            of score (float), sequence (long), and attention (float or None).
+        scores (list[list[torch.FloatTensor]]): For each batch, holds a
+            list of beam scores.
+        predictions (list[list[torch.LongTensor]]): For each batch, holds a
+            list of beam prediction sequences.
+        attention (list[list[torch.FloatTensor or list[]]]): For each batch,
+            holds a list of beam attention sequence tensors (or empty lists)
+            having shape ``(step, inp_seq_len)`` where ``inp_seq_len`` is the
+            length of the sample (not the max length of all inp seqs).
     """
 
     def __init__(self, beam_size, batch_size, pad, bos, eos, n_best, mb_device,
                  global_scorer, min_length, max_length, return_attention,
-                 block_ngram_repeat, exclusion_tokens, memory_lengths):
+                 block_ngram_repeat, exclusion_tokens, memory_lengths,
+                 stepwise_penalty):
         # magic indices
         self.pad = pad
         self.eos = eos
@@ -54,8 +100,8 @@ class BeamSearch(object):
 
         # beam state
         self.top_beam_finished = torch.zeros([batch_size], dtype=torch.uint8)
-        self.batch_offset = torch.arange(batch_size, dtype=torch.long)
-        self.beam_offset = torch.arange(
+        self._batch_offset = torch.arange(batch_size, dtype=torch.long)
+        self._beam_offset = torch.arange(
             0, batch_size * beam_size, step=beam_size, dtype=torch.long,
             device=mb_device)
         self.alive_seq = torch.full(
@@ -68,10 +114,19 @@ class BeamSearch(object):
         self.select_indices = None
         self.is_finished = None
         self.topk_scores = None
-        self.memory_lengths = memory_lengths
+        self._memory_lengths = memory_lengths
         self.topk_ids = None
-        self.batch_index = None
+        self._batch_index = None
         self.done = False
+        # "global state" of the old beam
+        self._prev_penalty = None
+        self._coverage = None
+
+        self._stepwise_cov_pen = (
+                stepwise_penalty and self.global_scorer.has_cov_pen)
+        self._vanilla_cov_pen = (
+            not stepwise_penalty and self.global_scorer.has_cov_pen)
+        self._cov_pen = self.global_scorer.has_cov_pen
 
     @property
     def current_predictions(self):
@@ -89,6 +144,12 @@ class BeamSearch(object):
 
     def advance(self, log_probs, attn):
         vocab_size = log_probs.size(-1)
+
+        if self._stepwise_cov_pen and self._prev_penalty is not None:
+            self.topk_log_probs += self._prev_penalty
+            self.topk_log_probs -= self.global_scorer.cov_penalty(
+                self._coverage + attn, self.global_scorer.beta).view(
+                -1, self.beam_size)
 
         # force the output to be longer than self.min_length
         step = self.alive_seq.shape[1]
@@ -118,8 +179,10 @@ class BeamSearch(object):
                 if fail:
                     log_probs[bk] = -10e20
 
+        # if the sequence ends now, then the penalty is the current
+        # length + 1, to include the EOS token
         length_penalty = self.global_scorer.length_penalty(
-            step, alpha=self.global_scorer.alpha)
+            step + 1, alpha=self.global_scorer.alpha)
 
         # Flatten probs into a list of possibilities.
         curr_scores = log_probs / length_penalty
@@ -128,6 +191,8 @@ class BeamSearch(object):
             self.beam_size, dim=-1)
 
         # Recover log probs.
+        # Length penalty is just a scalar. It doesn't matter if it's applied
+        # before or after the topk.
         self.topk_log_probs = self.topk_scores * length_penalty
 
         # Resolve beam origin and true word ids.
@@ -135,23 +200,40 @@ class BeamSearch(object):
         self.topk_ids = self.topk_ids.fmod(vocab_size)
 
         # Map beam_index to batch_index in the flat representation.
-        self.batch_index = (
+        self._batch_index = (
                 topk_beam_index
-                + self.beam_offset[:topk_beam_index.size(0)].unsqueeze(1))
-        self.select_indices = self.batch_index.view(-1)
+                + self._beam_offset[:topk_beam_index.size(0)].unsqueeze(1))
+        self.select_indices = self._batch_index.view(-1)
 
         # Append last prediction.
         self.alive_seq = torch.cat(
             [self.alive_seq.index_select(0, self.select_indices),
              self.topk_ids.view(-1, 1)], -1)
-        if self.return_attention:
+        if self.return_attention or self._cov_pen:
             current_attn = attn.index_select(1, self.select_indices)
             if self.alive_attn is None:
                 self.alive_attn = current_attn
+                # update global state (step == 1)
+                if self.global_scorer.beta > 0:  # coverage penalty
+                    self._prev_penalty = torch.zeros_like(self.topk_log_probs)
+                    self._coverage = current_attn
             else:
                 self.alive_attn = self.alive_attn.index_select(
                     1, self.select_indices)
                 self.alive_attn = torch.cat([self.alive_attn, current_attn], 0)
+                # update global state (step > 1)
+                self._coverage = self._coverage\
+                    .index_select(1, self.select_indices) + current_attn
+                self._prev_penalty = self.global_scorer.cov_penalty(
+                    self._coverage, beta=self.global_scorer.beta).view(
+                        -1, self.beam_size)
+
+        if self._vanilla_cov_pen:
+            # shape: (batch_size x beam_size, 1)
+            cov_penalty = self.global_scorer.cov_penalty(
+                self._coverage,
+                beta=self.global_scorer.beta)
+            self.topk_scores -= cov_penalty.view(*self.topk_scores.shape)
 
         self.is_finished = self.topk_ids.eq(self.eos)
         if step == self.max_length:
@@ -161,7 +243,7 @@ class BeamSearch(object):
         # Penalize beams that finished.
         self.topk_log_probs.masked_fill_(self.is_finished, -1e10)
         # on real data (newstest2017) with the pretrained transformer,
-        # it's faster to not move this to the original device
+        # it's faster to not move this back to the original device
         self.is_finished = self.is_finished.to('cpu')
         self.top_beam_finished |= self.is_finished[:, 0].eq(1)
         predictions = self.alive_seq.view(
@@ -173,14 +255,14 @@ class BeamSearch(object):
             if self.alive_attn is not None else None)
         non_finished_batch = []
         for i in range(self.is_finished.size(0)):
-            b = self.batch_offset[i]
+            b = self._batch_offset[i]
             finished_hyp = self.is_finished[i].nonzero().view(-1)
             # Store finished hypotheses for this batch.
             for j in finished_hyp:
                 self.hypotheses[b].append((
                     self.topk_scores[i, j],
                     predictions[i, j, 1:],  # Ignore start_token.
-                    attention[:, i, j, :self.memory_lengths[i]]
+                    attention[:, i, j, :self._memory_lengths[i]]
                     if attention is not None else None))
             # End condition is the top beam finished and we can return
             # n_best hypotheses.
@@ -205,15 +287,22 @@ class BeamSearch(object):
         # Remove finished batches for the next step.
         self.top_beam_finished = self.top_beam_finished.index_select(
             0, non_finished)
-        self.batch_offset = self.batch_offset.index_select(0, non_finished)
+        self._batch_offset = self._batch_offset.index_select(0, non_finished)
         non_finished = non_finished.to(self.topk_ids.device)
         self.topk_log_probs = self.topk_log_probs.index_select(0,
                                                                non_finished)
-        self.batch_index = self.batch_index.index_select(0, non_finished)
-        self.select_indices = self.batch_index.view(-1)
+        self._batch_index = self._batch_index.index_select(0, non_finished)
+        self.select_indices = self._batch_index.view(-1)
         self.alive_seq = predictions.index_select(0, non_finished) \
             .view(-1, self.alive_seq.size(-1))
         if self.alive_attn is not None:
             self.alive_attn = attention.index_select(1, non_finished) \
                 .view(self.alive_attn.size(0),
                       -1, self.alive_attn.size(-1))
+            cov = (
+                self._coverage.view(
+                    1, -1, self.beam_size, self._coverage.size(-1)))
+            self._coverage = cov.index_select(1, non_finished) \
+                .view(1, -1, self._coverage.size(-1))
+            self._prev_penalty = self._prev_penalty.index_select(
+                0, non_finished)

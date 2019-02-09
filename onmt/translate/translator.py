@@ -542,7 +542,6 @@ class Translator(object):
     ):
         # TODO: support these blacklisted features.
         assert not self.dump_beam
-        assert self.global_scorer.beta == 0
 
         # (0) Prep the components of the search.
         use_src_map = self.copy_attn
@@ -598,6 +597,7 @@ class Translator(object):
             max_length=max_length,
             mb_device=mb_device,
             return_attention=return_attention,
+            stepwise_penalty=self.stepwise_penalty,
             block_ngram_repeat=self.block_ngram_repeat,
             exclusion_tokens=self._exclusion_idxs,
             memory_lengths=memory_lengths)
@@ -613,7 +613,7 @@ class Translator(object):
                 memory_lengths=memory_lengths,
                 src_map=src_map,
                 step=step,
-                batch_offset=beam.batch_offset
+                batch_offset=beam._batch_offset
             )
 
             beam.advance(log_probs, attn)
@@ -721,8 +721,9 @@ class Translator(object):
             select_indices_array = []
             # Loop over the batch_size number of beam
             for j, b in enumerate(beam):
-                b.advance(out[j, :],
-                          beam_attn.data[j, :, :memory_lengths[j]])
+                if not b.done:
+                    b.advance(out[j, :],
+                              beam_attn.data[j, :, :memory_lengths[j]])
                 select_indices_array.append(
                     b.current_origin + j * beam_size)
             select_indices = torch.cat(select_indices_array)
