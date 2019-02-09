@@ -214,6 +214,8 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
     model.generator = generator
     model.to(device)
     if model_opt.model_dtype == 'fp16':
+        logger.warning('FP16 is experimental, the generated checkpoints may '
+                       'be incompatible with a future version')
         model.half()
 
     return model
