@@ -52,11 +52,9 @@ class BeamSearch(object):
         topk_scores (torch.FloatTensor): Shape
             ``(B, beam_size)``. These are the
             scores a sequence will receive if it finishes.
-        topk_ids (torch.LongTensor): Shape
-            ``(B, beam_size)``. These are the
+        topk_ids (torch.LongTensor): Shape `(B, beam_size)``. These are the
             word indices of the topk predictions.
-        _batch_index (torch.LongTensor or NoneType): Shape
-            ``(B, beam_size)``.
+        _batch_index (torch.LongTensor): Shape ``(B, beam_size)``.
         _prev_penalty (torch.FloatTensor or NoneType): Shape
             ``(B, beam_size)``. Initialized to ``None``.
         _coverage (torch.FloatTensor or NoneType): Shape
