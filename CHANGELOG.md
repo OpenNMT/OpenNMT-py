@@ -4,6 +4,16 @@
 
 ## [Unreleased]
 ### Fixes and improvements
+## [0.8.0](https://github.com/OpenNMT/OpenNMT-py/tree/0.8.0) (2019-02-09)
+* Many fixes and code cleaning thanks @flauted, @guillaumekln
+* Datasets code refactor (thanks @flauted) you need to r-preeprocess datasets
+
+### New features
+* FP16 Support: Experimental, using Apex, Checkpoints may break in future version.
+* Continuous exponential moving average (thanks @francoishernandez, and Marian)
+* Relative positions encoding (thanks @francoishernanndez, and Google T2T)
+* Deprecate the old beam search, fast batched beam search supports all options
+
 
 ## [0.7.2](https://github.com/OpenNMT/OpenNMT-py/tree/0.7.2) (2019-01-31)
 * Many fixes and code cleaning thanks @bpopeters, @flauted, @guillaumekln
