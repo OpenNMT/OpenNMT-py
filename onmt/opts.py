@@ -141,6 +141,12 @@ def model_opts(parser):
               type=str, default="scaled-dot",
               help="""Self attention type in Transformer decoder
                        layer -- currently "scaled-dot" or "average" """)
+    group.add('--max_relative_positions', '-max_relative_positions',
+              type=int, default=0,
+              help="""Maximum distance between inputs in relative
+                      positions representations.
+                      For more detailed information, see:
+                      https://arxiv.org/pdf/1803.02155.pdf""")
     group.add('--heads', '-heads', type=int, default=8,
               help='Number of heads for transformer self-attention')
     group.add('--transformer_ff', '-transformer_ff', type=int, default=2048,
@@ -179,9 +185,9 @@ def preprocess_opts(parser):
               help="Path to the training source data")
     group.add('--train_tgt', '-train_tgt', required=True,
               help="Path to the training target data")
-    group.add('--valid_src', '-valid_src', required=True,
+    group.add('--valid_src', '-valid_src',
               help="Path to the validation source data")
-    group.add('--valid_tgt', '-valid_tgt', required=True,
+    group.add('--valid_tgt', '-valid_tgt',
               help="Path to the validation target data")
 
     group.add('--src_dir', '-src_dir', default="",
@@ -385,6 +391,8 @@ def train_opts(parser):
                         uses more memory. Set to 0 to disable.""")
     group.add('--train_steps', '-train_steps', type=int, default=100000,
               help='Number of training steps')
+    group.add('--single_pass', '-single_pass', action='store_true',
+              help="Make a single pass over the training dataset.")
     group.add('--epochs', '-epochs', type=int, default=0,
               help='Deprecated epochs see train_steps')
     group.add('--optim', '-optim', default='sgd',
@@ -430,6 +438,18 @@ def train_opts(parser):
                        Set to zero to turn off label smoothing.
                        For more detailed information, see:
                        https://arxiv.org/abs/1512.00567""")
+    group.add('--average_decay', '-average_decay', type=float, default=0,
+              help="""Moving average decay.
+                      Set to other than 0 (e.g. 1e-4) to activate.
+                      Similar to Marian NMT implementation:
+                      http://www.aclweb.org/anthology/P18-4020
+                      For more detail on Exponential Moving Average:
+                      https://en.wikipedia.org/wiki/Moving_average""")
+    group.add('--average_every', '-average_every', type=int, default=1,
+              help="""Step for moving average.
+                      Default is every update,
+                      if -average_decay is set.""")
+
     # learning rate
     group = parser.add_argument_group('Optimization- Rate')
     group.add('--learning_rate', '-learning_rate', type=float, default=1.0,

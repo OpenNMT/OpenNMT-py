@@ -6,6 +6,7 @@ import torch
 from torchtext.data import Field
 
 from onmt.inputters.dataset_base import DatasetBase
+from onmt.inputters.datareader_base import DataReaderBase
 
 # imports of datatype-specific dependencies
 try:
@@ -16,34 +17,59 @@ except ImportError:
     torchaudio, librosa, np = None, None, None
 
 
-class AudioDataset(DatasetBase):
-    @staticmethod
-    def _check_deps():
+class AudioDataReader(DataReaderBase):
+    """Read audio data from disk.
+
+    Args:
+        sample_rate (int): sample_rate.
+        window_size (float) : window size for spectrogram in seconds.
+        window_stride (float): window stride for spectrogram in seconds.
+        window (str): window type for spectrogram generation. See
+            :func:`librosa.stft()` ``window`` for more details.
+        normalize_audio (bool): subtract spectrogram by mean and divide
+            by std or not.
+        truncate (int or NoneType): maximum audio length
+            (0 or None for unlimited).
+
+    Raises:
+        onmt.inputters.datareader_base.MissingDependencyException: If
+            importing any of ``torchaudio``, ``librosa``, or ``numpy`` fail.
+    """
+
+    def __init__(self, sample_rate=0, window_size=0, window_stride=0,
+                 window=None, normalize_audio=True, truncate=None):
+        self._check_deps()
+        self.sample_rate = sample_rate
+        self.window_size = window_size
+        self.window_stride = window_stride
+        self.window = window
+        self.normalize_audio = normalize_audio
+        self.truncate = truncate
+
+    @classmethod
+    def from_opt(cls, opt):
+        return cls(sample_rate=opt.sample_rate, window_size=opt.window_size,
+                   window_stride=opt.window_stride, window=opt.window)
+
+    @classmethod
+    def _check_deps(cls):
         if any([torchaudio is None, librosa is None, np is None]):
-            AudioDataset._raise_missing_dep(
+            cls._raise_missing_dep(
                 "torchaudio", "librosa", "numpy")
 
-    @staticmethod
-    def sort_key(ex):
-        """ Sort using duration time of the sound spectrogram. """
-        return ex.src.size(1)
-
-    @staticmethod
-    def extract_features(audio_path, sample_rate, truncate, window_size,
-                         window_stride, window, normalize_audio):
+    def extract_features(self, audio_path):
         # torchaudio loading options recently changed. It's probably
         # straightforward to rewrite the audio handling to make use of
         # up-to-date torchaudio, but in the meantime there is a legacy
         # method which uses the old defaults
-        AudioDataset._check_deps()
         sound, sample_rate_ = torchaudio.legacy.load(audio_path)
-        if truncate and truncate > 0:
-            if sound.size(0) > truncate:
-                sound = sound[:truncate]
+        if self.truncate and self.truncate > 0:
+            if sound.size(0) > self.truncate:
+                sound = sound[:self.truncate]
 
-        assert sample_rate_ == sample_rate, \
+        assert sample_rate_ == self.sample_rate, \
             'Sample rate of %s != -sample_rate (%d vs %d)' \
-            % (audio_path, sample_rate_, sample_rate)
+            % (audio_path, sample_rate_, self.sample_rate)
 
         sound = sound.numpy()
         if len(sound.shape) > 1:
@@ -52,56 +78,43 @@ class AudioDataset(DatasetBase):
             else:
                 sound = sound.mean(axis=1)  # average multiple channels
 
-        n_fft = int(sample_rate * window_size)
+        n_fft = int(self.sample_rate * self.window_size)
         win_length = n_fft
-        hop_length = int(sample_rate * window_stride)
+        hop_length = int(self.sample_rate * self.window_stride)
         # STFT
         d = librosa.stft(sound, n_fft=n_fft, hop_length=hop_length,
-                         win_length=win_length, window=window)
+                         win_length=win_length, window=self.window)
         spect, _ = librosa.magphase(d)
         spect = np.log1p(spect)
         spect = torch.FloatTensor(spect)
-        if normalize_audio:
+        if self.normalize_audio:
             mean = spect.mean()
             std = spect.std()
             spect.add_(-mean)
             spect.div_(std)
         return spect
 
-    @classmethod
-    def make_examples(
-        cls,
-        data,
-        src_dir,
-        side,
-        sample_rate,
-        window_size,
-        window_stride,
-        window,
-        normalize_audio,
-        truncate=None
-    ):
-        """
+    def read(self, data, side, src_dir=None):
+        """Read data into dicts.
+
         Args:
-            data: sequence of audio paths or path containing these sequences
-            src_dir (str): location of source audio files.
-            side (str): 'src' or 'tgt'.
-            sample_rate (int): sample_rate.
-            window_size (float) : window size for spectrogram in seconds.
-            window_stride (float): window stride for spectrogram in seconds.
-            window (str): window type for spectrogram generation.
-            normalize_audio (bool): subtract spectrogram by mean and divide
-                by std or not.
-            truncate (int): maximum audio length (0 or None for unlimited).
+            data (str or Iterable[str]): Sequence of audio paths or
+                path to file containing audio paths.
+                In either case, the filenames may be relative to ``src_dir``
+                (default behavior) or absolute.
+            side (str): Prefix used in return dict. Usually
+                ``"src"`` or ``"tgt"``.
+            src_dir (str): Location of source audio files. See ``data``.
 
         Yields:
-            a dictionary containing audio data for each line.
+            A dictionary containing audio data for each line.
         """
+
         assert src_dir is not None and os.path.exists(src_dir),\
             "src_dir must be a valid directory if data_type is audio"
 
         if isinstance(data, str):
-            data = cls._read_file(data)
+            data = DataReaderBase._read_file(data)
 
         for i, line in enumerate(tqdm(data)):
             line = line.decode("utf-8").strip()
@@ -112,12 +125,15 @@ class AudioDataset(DatasetBase):
             assert os.path.exists(audio_path), \
                 'audio path %s not found' % line
 
-            spect = AudioDataset.extract_features(
-                audio_path, sample_rate, truncate, window_size,
-                window_stride, window, normalize_audio
-            )
-
+            spect = self.extract_features(audio_path)
             yield {side: spect, side + '_path': line, 'indices': i}
+
+
+class AudioDataset(DatasetBase):
+    @staticmethod
+    def sort_key(ex):
+        """Sort using duration time of the sound spectrogram."""
+        return ex.src.size(1)
 
 
 class AudioSeqField(Field):
@@ -125,6 +141,7 @@ class AudioSeqField(Field):
 
     See :class:`Fields` for attribute descriptions.
     """
+
     def __init__(self, preprocessing=None, postprocessing=None,
                  include_lengths=False, batch_first=False, pad_index=0,
                  is_target=False):
@@ -142,7 +159,7 @@ class AudioSeqField(Field):
         """Pad a batch of examples to the length of the longest example.
 
         Args:
-            minibatch (list[torch.FloatTensor]): A list of audio data,
+            minibatch (List[torch.FloatTensor]): A list of audio data,
                 each having shape 1 x n_feats x len where len is variable.
 
         Returns:
@@ -151,6 +168,7 @@ class AudioSeqField(Field):
                 and a list of the lengths if `self.include_lengths` is `True`
                 else just returns the padded tensor.
         """
+
         assert not self.pad_first and not self.truncate_first \
             and not self.fix_length and self.sequential
         minibatch = list(minibatch)
@@ -167,11 +185,11 @@ class AudioSeqField(Field):
     def numericalize(self, arr, device=None):
         """Turn a batch of examples that use this field into a Variable.
 
-        If the field has include_lengths=True, a tensor of lengths will be
+        If the field has ``include_lengths=True``, a tensor of lengths will be
         included in the return value.
 
         Args:
-            arr (torch.FloatTensor, or Tuple(torch.FloatTensor, List[int])):
+            arr (torch.FloatTensor or Tuple(torch.FloatTensor, List[int])):
                 List of tokenized and padded examples, or tuple of List of
                 tokenized and padded examples and List of lengths of each
                 example if self.include_lengths is True. Examples have shape
@@ -179,6 +197,7 @@ class AudioSeqField(Field):
                 else max_len x batch_size x 1 x n_feats.
             device (str or torch.device): See `Field.numericalize`.
         """
+
         assert self.use_vocab is False
         if self.include_lengths and not isinstance(arr, tuple):
             raise ValueError("Field has include_lengths set to True, but "
@@ -203,5 +222,4 @@ class AudioSeqField(Field):
 
 def audio_fields(base_name, **kwargs):
     audio = AudioSeqField(pad_index=0, batch_first=True, include_lengths=True)
-
     return [(base_name, audio)]

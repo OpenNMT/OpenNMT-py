@@ -1,55 +1,69 @@
 # -*- coding: utf-8 -*-
 from functools import partial
 
+import six
 import torch
 from torchtext.data import Field, RawField
 
 from onmt.inputters.dataset_base import DatasetBase
+from onmt.inputters.datareader_base import DataReaderBase
 
 
-class TextDataset(DatasetBase):
-    """
-    Build `Example` objects, `Field` objects, and filter_pred function
-    from text corpus.
+class TextDataReader(DataReaderBase):
+    def read(self, sequences, side, _dir=None):
+        """Read text data from disk.
 
-    Args:
-        fields (dict): a dictionary of `torchtext.data.Field`.
-            Keys are like 'src', 'tgt', 'src_map', and 'alignment'.
-        src_examples_iter (dict iter): preprocessed source example
-            dictionary iterator.
-        tgt_examples_iter (dict iter): preprocessed target example
-            dictionary iterator.
-        dynamic_dict (bool)
-    """
-
-    @staticmethod
-    def sort_key(ex):
-        if hasattr(ex, "tgt"):
-            return len(ex.src[0]), len(ex.tgt[0])
-        return len(ex.src[0])
-
-    @classmethod
-    def make_examples(cls, sequences, side):
-        """
         Args:
-            sequences: path to corpus file or iterable
-            truncate (int): maximum sequence length (0 for unlimited).
-            side (str): "src" or "tgt".
+            sequences (str or Iterable[str]):
+                path to text file or iterable of the actual text data.
+            side (str): Prefix used in return dict. Usually
+                ``"src"`` or ``"tgt"``.
+            _dir (NoneType): Leave as ``None``. This parameter exists to
+                conform with the :func:`DataReaderBase.read()` signature.
 
         Yields:
             dictionaries whose keys are the names of fields and whose
             values are more or less the result of tokenizing with those
             fields.
         """
+        assert _dir is None or _dir == "", \
+            "Cannot use _dir with TextDataReader."
         if isinstance(sequences, str):
-            sequences = cls._read_file(sequences)
+            sequences = DataReaderBase._read_file(sequences)
         for i, seq in enumerate(sequences):
-            yield {side: seq.decode("utf-8"), "indices": i}
+            if isinstance(seq, six.binary_type):
+                seq = seq.decode("utf-8")
+            yield {side: seq, "indices": i}
+
+
+class TextDataset(DatasetBase):
+    @staticmethod
+    def sort_key(ex):
+        """Sort using the number of tokens in the sequence."""
+        if hasattr(ex, "tgt"):
+            return len(ex.src[0]), len(ex.tgt[0])
+        return len(ex.src[0])
 
 
 # mix this with partial
 def _feature_tokenize(
         string, layer=0, tok_delim=None, feat_delim=None, truncate=None):
+    """Split apart word features (like POS/NER tags) from the tokens.
+
+    Args:
+        string (str): A string with ``tok_delim`` joining tokens and
+            features joined by ``feat_delim``. For example,
+            ``"hello|NOUN|'' Earth|NOUN|PLANET"``.
+        layer (int): Which feature to extract. (Not used if there are no
+            features, indicated by ``feat_delim is None``). In the
+            example above, layer 2 is ``'' PLANET``.
+        truncate (int or NoneType): Restrict sequences to this length of
+            tokens.
+
+    Returns:
+        List[str] of tokens.
+    """
+
     tokens = string.split(tok_delim)
     if truncate is not None:
         tokens = tokens[:truncate]
@@ -59,6 +73,24 @@ def _feature_tokenize(
 
 
 class TextMultiField(RawField):
+    """Container for subfields.
+
+    Text data might use POS/NER/etc labels in addition to tokens.
+    This class associates the "base" :class:`Field` with any subfields.
+    It also handles padding the data and stacking it.
+
+    Args:
+        base_name (str): Name for the base field.
+        base_field (Field): The token field.
+        feats_fields (Iterable[Tuple[str, Field]]): A list of name-field
+            pairs.
+
+    Attributes:
+        fields (Iterable[Tuple[str, Field]]): A list of name-field pairs.
+            The order is defined as the base field first, then
+            ``feats_fields`` in alphabetical order.
+    """
+
     def __init__(self, base_name, base_field, feats_fields):
         super(TextMultiField, self).__init__()
         self.fields = [(base_name, base_field)]
@@ -70,6 +102,23 @@ class TextMultiField(RawField):
         return self.fields[0][1]
 
     def process(self, batch, device=None):
+        """Convert outputs of preprocess into Tensors.
+
+        Args:
+            batch (List[List[List[str]]]): A list of length batch size.
+                Each element is a list of the preprocess results for each
+                field (which are lists of str "words" or feature tags.
+            device (torch.device or str): The device on which the tensor(s)
+                are built.
+
+        Returns:
+            torch.LongTensor or Tuple[torch.LongTensor, torch.LongTensor]:
+                A tensor of shape ``(seq_len, batch_size, len(self.fields))``
+                where the field features are ordered like ``self.fields``.
+                If the base field returns lengths, these are also returned
+                and have shape ``(batch_size,)``.
+        """
+
         # batch (list(list(list))): batch_size x len(self.fields) x seq_len
         batch_by_feat = list(zip(*batch))
         base_data = self.base_field.process(batch_by_feat[0], device=device)
@@ -88,6 +137,17 @@ class TextMultiField(RawField):
             return data
 
     def preprocess(self, x):
+        """Preprocess data.
+
+        Args:
+            x (str): A sentence string (words joined by whitespace).
+
+        Returns:
+            List[List[str]]: A list of length ``len(self.fields)`` containing
+                lists of tokens/feature tags for the sentence. The output
+                is ordered like ``self.fields``.
+        """
+
         return [f.preprocess(x) for _, f in self.fields]
 
     def __getitem__(self, item):
@@ -96,14 +156,18 @@ class TextMultiField(RawField):
 
 def text_fields(base_name, **kwargs):
     """Create text fields.
+
     Args:
-        base_name (str)
-        n_feats (int)
-        include_lengths (bool)
-        pad (str, optional): Defaults to <blank>.
-        bos (str or NoneType, optional): Defaults to <s>
-        eos (str or NoneType, optional): Defaults to </s>
-        truncate (bool or NoneType, optional): Defaults to None.
+        base_name (str): Name associated with the field.
+        n_feats (int): Number of word level feats (not counting the tokens)
+        include_lengths (bool): Optionally return the sequence lengths.
+        pad (str, optional): Defaults to ``"<blank>"``.
+        bos (str or NoneType, optional): Defaults to ``"<s>"``.
+        eos (str or NoneType, optional): Defaults to ``"</s>"``.
+        truncate (bool or NoneType, optional): Defaults to ``None``.
+
+    Returns:
+        List[Tuple[str, TextMultiField]]
     """
 
     n_feats = kwargs["n_feats"]

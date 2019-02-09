@@ -148,7 +148,16 @@ def main(opt, device_id):
         logger.info('Starting training on GPU: %s' % opt.gpu_ranks)
     else:
         logger.info('Starting training on CPU, could be very slow')
-    trainer.train(train_iter, valid_iter, opt.train_steps, opt.valid_steps)
+    train_steps = opt.train_steps
+    if opt.single_pass and train_steps > 0:
+        logger.warning("Option single_pass is enabled, ignoring train_steps.")
+        train_steps = 0
+    trainer.train(
+        train_iter,
+        train_steps,
+        save_checkpoint_steps=opt.save_checkpoint_steps,
+        valid_iter=valid_iter,
+        valid_steps=opt.valid_steps)
 
     if opt.tensorboard:
         trainer.report_manager.tensorboard_writer.close()
