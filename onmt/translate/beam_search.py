@@ -76,7 +76,11 @@ class BeamSearch(object):
         self.prev_penalty = None
         self.coverage = None
         self.cov_total = None
-        self.stepwise_penalty = stepwise_penalty
+
+        self._stepwise_cov_pen = (
+                stepwise_penalty and self.global_scorer.has_cov_pen)
+        self._vanilla_cov_pen = (
+            not stepwise_penalty and self.global_scorer.has_cov_pen)
 
     @property
     def current_predictions(self):
@@ -95,7 +99,7 @@ class BeamSearch(object):
     def advance(self, log_probs, attn):
         vocab_size = log_probs.size(-1)
 
-        if self.stepwise_penalty and self.prev_penalty is not None:
+        if self._stepwise_cov_pen and self.prev_penalty is not None:
             self.topk_log_probs += self.prev_penalty
             self.topk_log_probs -= self.global_scorer.cov_penalty(
                 self.coverage + attn, self.global_scorer.beta).view(
@@ -178,11 +182,12 @@ class BeamSearch(object):
                     self.coverage, beta=self.global_scorer.beta).view(
                         -1, self.beam_size)
 
-        # shape: (batch_size x beam_size, 1)
-        cov_penalty = self.global_scorer.cov_penalty(
-            self.coverage,
-            beta=self.global_scorer.beta)
-        self.topk_scores -= cov_penalty.view(*self.topk_scores.shape)
+        if self._vanilla_cov_pen:
+            # shape: (batch_size x beam_size, 1)
+            cov_penalty = self.global_scorer.cov_penalty(
+                self.coverage,
+                beta=self.global_scorer.beta)
+            self.topk_scores -= cov_penalty.view(*self.topk_scores.shape)
 
         self.is_finished = self.topk_ids.eq(self.eos)
         if step == self.max_length:

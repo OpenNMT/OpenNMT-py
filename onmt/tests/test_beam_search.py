@@ -15,6 +15,8 @@ class GlobalScorerStub(object):
         self.length_penalty = lambda x, alpha: 1.
         self.cov_penalty = lambda cov, beta: torch.zeros(
             (1, cov.shape[-2]), device=cov.device, dtype=torch.float)
+        self.has_cov_pen = False
+        self.has_len_pen = False
 
     def update_global_state(self, beam):
         pass

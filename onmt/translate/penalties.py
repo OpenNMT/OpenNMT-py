@@ -14,24 +14,32 @@ class PenaltyBuilder(object):
     def __init__(self, cov_pen, length_pen):
         self.length_pen = length_pen
         self.cov_pen = cov_pen
+        self.has_cov_pen = not self._pen_is_none(self.cov_pen)
+        self.coverage_penalty = self._coverage_penalty()
+        self.has_len_pen = not self._pen_is_none(self.length_pen)
+        self.length_penalty = self._length_penalty()
 
-    def coverage_penalty(self):
+    @staticmethod
+    def _pen_is_none(pen):
+        return pen == "none" or pen is None
+
+    def _coverage_penalty(self):
         if self.cov_pen == "wu":
             return self.coverage_wu
         elif self.cov_pen == "summary":
             return self.coverage_summary
-        elif self.cov_pen == "none" or self.cov_pen is None:
+        elif self._pen_is_none(self.cov_pen):
             return self.coverage_none
         else:
             raise NotImplementedError("No '{:s}' coverage penalty.".format(
                 self.cov_pen))
 
-    def length_penalty(self):
+    def _length_penalty(self):
         if self.length_pen == "wu":
             return self.length_wu
         elif self.length_pen == "avg":
             return self.length_average
-        elif self.length_pen == "none" or self.length_pen is None:
+        elif self._pen_is_none(self.length_pen):
             return self.length_none
         else:
             raise NotImplementedError("No '{:s}' length penalty.".format(
@@ -62,7 +70,7 @@ class PenaltyBuilder(object):
 
     def coverage_none(self, cov, beta=0.):
         """Returns zero as penalty"""
-        none = torch.zeros((cov.shape[-2]), device=cov.device,
+        none = torch.zeros((1,), device=cov.device,
                            dtype=torch.float)
         if cov.dim() == 3:
             none = none.unsqueeze(0)

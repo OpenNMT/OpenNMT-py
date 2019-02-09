@@ -224,10 +224,13 @@ class GNMTGlobalScorer(object):
         self.beta = beta
         penalty_builder = penalties.PenaltyBuilder(coverage_penalty,
                                                    length_penalty)
+        self.has_cov_pen = penalty_builder.has_cov_pen
         # Term will be subtracted from probability
-        self.cov_penalty = penalty_builder.coverage_penalty()
+        self.cov_penalty = penalty_builder.coverage_penalty
+
+        self.has_len_pen = penalty_builder.has_len_pen
         # Probability will be divided by this
-        self.length_penalty = penalty_builder.length_penalty()
+        self.length_penalty = penalty_builder.length_penalty
 
     @classmethod
     def _validate(cls, alpha, beta, length_penalty, coverage_penalty):
