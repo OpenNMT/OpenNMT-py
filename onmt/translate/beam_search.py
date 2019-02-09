@@ -137,16 +137,15 @@ class BeamSearch(object):
             beta=self.global_scorer.beta).transpose(0, 1)
 
         # Flatten probs into a list of possibilities.
-        if log_probs.shape[0] == 145 and cov_penalty.shape[0] == 150:
-            print("debug")
         curr_scores = log_probs / length_penalty - cov_penalty
         curr_scores = curr_scores.reshape(-1, self.beam_size * vocab_size)
         self.topk_scores, self.topk_ids = curr_scores.topk(
             self.beam_size, dim=-1)
 
         # Recover log probs.
-        self.topk_log_probs = self.topk_scores * length_penalty \
-            + cov_penalty.view(-1, self.beam_size)
+        self.topk_log_probs = (
+            self.topk_scores + cov_penalty.view(-1, self.beam_size)) * \
+            length_penalty
 
         # Resolve beam origin and true word ids.
         topk_beam_index = self.topk_ids.div(vocab_size)

@@ -106,6 +106,7 @@ class Beam(object):
             # than EOS that are greater than -1e20
             for k in range(len(word_probs)):
                 word_probs[k][self._eos] = -1e20
+
         # Sum the previous scores.
         if len(self.prev_ks) > 0:
             beam_scores = word_probs + self.scores.unsqueeze(1)
