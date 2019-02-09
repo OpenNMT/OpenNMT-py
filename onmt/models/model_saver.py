@@ -95,9 +95,9 @@ class ModelSaver(ModelSaverBase):
     """
 
     def _save(self, step, model):
-        real_model = (self.model.module
-                      if isinstance(self.model, nn.DataParallel)
-                      else self.model)
+        real_model = (model.module
+                      if isinstance(model, nn.DataParallel)
+                      else model)
         real_generator = (real_model.generator.module
                           if isinstance(real_model.generator, nn.DataParallel)
                           else real_model.generator)
