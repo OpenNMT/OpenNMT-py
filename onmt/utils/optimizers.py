@@ -7,6 +7,8 @@ import functools
 from copy import copy
 from math import sqrt
 
+from onmt.utils.misc import fn_args
+
 
 def build_torch_optimizer(model, opt):
     """Builds the PyTorch optimizer.
@@ -74,13 +76,25 @@ def build_torch_optimizer(model, opt):
                  lr=opt.learning_rate,
                  betas=betas,
                  eps=1e-8)])
+    elif opt.optim == 'fusedadam':
+        import apex
+        optimizer = apex.optimizers.FusedAdam(
+            params,
+            lr=opt.learning_rate,
+            betas=betas)
     else:
         raise ValueError('Invalid optimizer type: ' + opt.optim)
+
     if opt.model_dtype == 'fp16':
-        import apex  # Make apex dependency optional.
+        import apex
         static_loss_scale = opt.loss_scale
         dynamic_loss_scale = opt.loss_scale == 0
-        optimizer = apex.fp16_utils.FP16_Optimizer(
+        # TODO: clean this up when APEX unify its optimizer API.
+        if opt.optim.startswith('fused'):
+            namespace = apex.optimizers  # Faster wrapper.
+        else:
+            namespace = apex.fp16_utils
+        optimizer = namespace.FP16_Optimizer(
             optimizer,
             static_loss_scale=static_loss_scale,
             dynamic_loss_scale=dynamic_loss_scale)
@@ -285,7 +299,10 @@ class Optimizer(object):
         """Wrapper for backward pass. Some optimizer requires ownership of the
         backward pass."""
         if self._with_fp16_wrapper:
-            self._optimizer.backward(loss, update_master_grads=False)
+            kwargs = {}
+            if "update_master_grads" in fn_args(self._optimizer.backward):
+                kwargs["update_master_grads"] = True
+            self._optimizer.backward(loss, **kwargs)
         else:
             loss.backward()
 
@@ -297,8 +314,10 @@ class Optimizer(object):
         """
         learning_rate = self.learning_rate()
         if self._with_fp16_wrapper:
-            self._optimizer.update_master_grads()
-            if self._max_grad_norm > 0:
+            if hasattr(self._optimizer, "update_master_grads"):
+                self._optimizer.update_master_grads()
+            if hasattr(self._optimizer, "clip_master_grads") and \
+               self._max_grad_norm > 0:
                 self._optimizer.clip_master_grads(self._max_grad_norm)
         for group in self._optimizer.param_groups:
             group['lr'] = learning_rate

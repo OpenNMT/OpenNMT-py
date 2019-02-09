@@ -400,7 +400,7 @@ def train_opts(parser):
               help='Deprecated epochs see train_steps')
     group.add('--optim', '-optim', default='sgd',
               choices=['sgd', 'adagrad', 'adadelta', 'adam',
-                       'sparseadam', 'adafactor'],
+                       'sparseadam', 'adafactor', 'fusedadam'],
               help="""Optimization method.""")
     group.add('--adagrad_accumulator_init', '-adagrad_accumulator_init',
               type=float, default=0,

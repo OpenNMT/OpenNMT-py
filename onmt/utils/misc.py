@@ -2,6 +2,7 @@
 
 import torch
 import random
+import inspect
 from itertools import islice
 
 
@@ -118,3 +119,8 @@ def relative_matmul(x, z, transpose):
     x_tz_matmul_r = x_tz_matmul.reshape(length, batch_size, heads, -1)
     x_tz_matmul_r_t = x_tz_matmul_r.permute(1, 2, 0, 3)
     return x_tz_matmul_r_t
+
+
+def fn_args(fun):
+    """Returns the list of function arguments name."""
+    return inspect.getfullargspec(fun).args
