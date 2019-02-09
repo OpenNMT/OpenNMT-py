@@ -254,7 +254,7 @@ class BeamSearch(object):
         # it's faster to not move this back to the original device
         self.is_finished = self.is_finished.to('cpu')
         self.top_beam_finished |= self.is_finished[:, 0].eq(1)
-        predictions = self.alive_seq.view( _B_old, self.beam_size, step)
+        predictions = self.alive_seq.view(_B_old, self.beam_size, step)
         attention = (
             self.alive_attn.view(
                 step - 1, _B_old, self.beam_size, self.alive_attn.size(-1))
@@ -309,8 +309,11 @@ class BeamSearch(object):
             inp_seq_len = self.alive_attn.size(-1)
             self.alive_attn = attention.index_select(1, non_finished) \
                 .view(step - 1, _B_new * self.beam_size, inp_seq_len)
-            cov = self._coverage.view(1, _B_old, self.beam_size, inp_seq_len)
-            self._coverage = cov.index_select(1, non_finished) \
-                .view(1, _B_new * self.beam_size, inp_seq_len)
-            self._prev_penalty = self._prev_penalty.index_select(
-                0, non_finished)
+            if self._cov_pen:
+                self._coverage = self._coverage \
+                    .view(1, _B_old, self.beam_size, inp_seq_len) \
+                    .index_select(1, non_finished) \
+                    .view(1, _B_new * self.beam_size, inp_seq_len)
+                if self._stepwise_cov_pen:
+                    self._prev_penalty = self._prev_penalty.index_select(
+                        0, non_finished)
