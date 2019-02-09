@@ -133,21 +133,17 @@ class BeamSearch(object):
         # length + 1, to include the EOS token
         length_penalty = self.global_scorer.length_penalty(
             step + 1, alpha=self.global_scorer.alpha)
-        # shape: (batch_size x beam_size, 1)
-        cov_penalty = self.global_scorer.cov_penalty(
-            self.coverage if self.coverage is not None else attn,
-            beta=self.global_scorer.beta).transpose(0, 1)
 
         # Flatten probs into a list of possibilities.
-        curr_scores = log_probs / length_penalty - cov_penalty
+        curr_scores = log_probs / length_penalty
         curr_scores = curr_scores.reshape(-1, self.beam_size * vocab_size)
         self.topk_scores, self.topk_ids = curr_scores.topk(
             self.beam_size, dim=-1)
 
         # Recover log probs.
-        self.topk_log_probs = (
-            self.topk_scores + cov_penalty.view(-1, self.beam_size)) * \
-            length_penalty
+        # Length penalty is just a scalar. It doesn't matter if it's applied
+        # before or after the topk.
+        self.topk_log_probs = self.topk_scores * length_penalty
 
         # Resolve beam origin and true word ids.
         topk_beam_index = self.topk_ids.div(vocab_size)
@@ -181,6 +177,12 @@ class BeamSearch(object):
                 self.prev_penalty = self.global_scorer.cov_penalty(
                     self.coverage, beta=self.global_scorer.beta).view(
                         -1, self.beam_size)
+
+        # shape: (batch_size x beam_size, 1)
+        cov_penalty = self.global_scorer.cov_penalty(
+            self.coverage,
+            beta=self.global_scorer.beta)
+        self.topk_scores -= cov_penalty.view(*self.topk_scores.shape)
 
         self.is_finished = self.topk_ids.eq(self.eos)
         if step == self.max_length:
