@@ -113,13 +113,15 @@ class TransformerDecoder(DecoderBase):
        d_model (int): size of the model
        heads (int): number of heads
        d_ff (int): size of the inner FF layer
+       copy_attn (bool): if using a separate copy attention
+       self_attn_type (str): type of self-attention scaled-dot, average
        dropout (float): dropout parameters
        embeddings (:obj:`onmt.modules.Embeddings`):
           embeddings to use, should have positional encodings
-       attn_type (str): if using a seperate copy attention
+
     """
 
-    def __init__(self, num_layers, d_model, heads, d_ff, attn_type,
+    def __init__(self, num_layers, d_model, heads, d_ff,
                  copy_attn, self_attn_type, dropout, embeddings,
                  max_relative_positions):
         super(TransformerDecoder, self).__init__()
@@ -148,7 +150,6 @@ class TransformerDecoder(DecoderBase):
             opt.dec_rnn_size,
             opt.heads,
             opt.transformer_ff,
-            opt.global_attention,
             opt.copy_attn,
             opt.self_attn_type,
             opt.dropout,

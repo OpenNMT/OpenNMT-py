@@ -64,6 +64,7 @@ class GlobalAttention(nn.Module):
        dim (int): dimensionality of query and key
        coverage (bool): use coverage term
        attn_type (str): type of attention to use, options [dot,general,mlp]
+       attn_func (str): attention function to use, options [softmax,sparsemax]
 
     """
 

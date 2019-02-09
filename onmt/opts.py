@@ -577,9 +577,6 @@ def translate_opts(parser):
               help="Random seed")
 
     group = parser.add_argument_group('Beam')
-    group.add('--fast', '-fast', action="store_true",
-              help="""Use fast beam search (some features may not be
-                       supported!)""")
     group.add('--beam_size', '-beam_size', type=int, default=5,
               help='Beam size')
     group.add('--min_length', '-min_length', type=int, default=0,

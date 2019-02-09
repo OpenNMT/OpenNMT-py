@@ -58,14 +58,12 @@ class Translator(object):
        model (:obj:`onmt.modules.NMTModel`):
           NMT model to use for translation
        fields (dict of Fields): data fields
-       beam_size (int): size of beam to use
-       n_best (int): number of translations produced
-       max_length (int): maximum length output to produce
+       opt (obj): command line options
+       model_opt (obj): model options
        global_scores (:obj:`GlobalScorer`):
          object to rescore final translations
-       copy_attn (bool): use copy attention during translation
-       cuda (bool): use cuda
-       beam_trace (bool): trace beam search for debugging
+       out_file : Output File
+       report_score (bool) : Whether to report scores
        logger(logging.Logger): logger.
     """
 
@@ -106,6 +104,7 @@ class Translator(object):
 
         self.min_length = opt.min_length
         self.stepwise_penalty = opt.stepwise_penalty
+        self.coverage_penalty = opt.coverage_penalty
         self.dump_beam = opt.dump_beam
         self.block_ngram_repeat = opt.block_ngram_repeat
         self.ignore_when_blocking = set(opt.ignore_when_blocking)
@@ -119,7 +118,6 @@ class Translator(object):
         self.report_bleu = opt.report_bleu
         self.report_rouge = opt.report_rouge
         self.report_time = opt.report_time
-        self.fast = opt.fast
 
         self.copy_attn = model_opt.copy_attn
 
@@ -222,7 +220,7 @@ class Translator(object):
 
         for batch in data_iter:
             batch_data = self.translate_batch(
-                batch, data.src_vocabs, attn_debug, fast=self.fast
+                batch, data.src_vocabs, attn_debug
             )
             translations = builder.from_batch(batch_data)
 
@@ -432,7 +430,7 @@ class Translator(object):
 
         return results
 
-    def translate_batch(self, batch, src_vocabs, attn_debug, fast=False):
+    def translate_batch(self, batch, src_vocabs, attn_debug):
         """
         Translate a batch of sentences.
 
@@ -441,7 +439,6 @@ class Translator(object):
         Args:
            batch (:obj:`Batch`): a batch from a dataset object
            data (:obj:`Dataset`): the dataset object
-           fast (bool): enables fast beam search (may not support all features)
         """
         with torch.no_grad():
             if self.beam_size == 1:
@@ -453,16 +450,16 @@ class Translator(object):
                     sampling_temp=self.random_sampling_temp,
                     keep_topk=self.sample_from_topk,
                     return_attention=attn_debug or self.replace_unk)
-            if fast:
-                return self._fast_translate_batch(
+            elif self.coverage_penalty is None:
+                return self._translate_batch_deprecated(batch, src_vocabs)
+            else:
+                return self._translate_batch(
                     batch,
                     src_vocabs,
                     self.max_length,
                     min_length=self.min_length,
                     n_best=self.n_best,
                     return_attention=attn_debug or self.replace_unk)
-            else:
-                return self._translate_batch(batch, src_vocabs)
 
     def _run_encoder(self, batch):
         src, src_lengths = batch.src if isinstance(batch.src, tuple) \
@@ -534,7 +531,7 @@ class Translator(object):
             # or [ tgt_len, batch_size, vocab ] when full sentence
         return log_probs, attn
 
-    def _fast_translate_batch(
+    def _translate_batch(
         self,
         batch,
         src_vocabs,
@@ -649,7 +646,8 @@ class Translator(object):
         results["attention"] = beam.attention
         return results
 
-    def _translate_batch(self, batch, src_vocabs):
+    # This is left in the code for now, but unsued
+    def _translate_batch_deprecated(self, batch, src_vocabs):
         # (0) Prep each of the components of the search.
         # And helper method for reducing verbosity.
         use_src_map = self.copy_attn
