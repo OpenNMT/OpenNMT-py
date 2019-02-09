@@ -129,6 +129,8 @@ class BeamSearch(object):
                 if fail:
                     log_probs[bk] = -10e20
 
+        # if the sequence ends now, then the penalty is the current
+        # length + 1, to include the EOS token
         length_penalty = self.global_scorer.length_penalty(
             step + 1, alpha=self.global_scorer.alpha)
         # shape: (batch_size x beam_size, 1)
@@ -244,10 +246,6 @@ class BeamSearch(object):
             self.alive_attn = attention.index_select(1, non_finished) \
                 .view(self.alive_attn.size(0),
                       -1, self.alive_attn.size(-1))
-            # self.coverage = self.coverage\
-            #     .view(self.beam_size, -1, self.coverage.size(2))\
-            #     .index_select(1, non_finished)\
-            #     .view(1, -1, self.coverage.size(2))
             cov = (
                 self.coverage.view(
                     1, -1, self.beam_size, self.coverage.size(-1)))
@@ -255,4 +253,3 @@ class BeamSearch(object):
                 .view(1, -1, self.coverage.size(-1))
             self.prev_penalty = self.prev_penalty.index_select(
                 0, non_finished)
-            # self.coverage = self.coverage.index_select(1, self.select_indices)
