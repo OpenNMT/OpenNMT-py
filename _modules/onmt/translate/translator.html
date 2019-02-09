@@ -609,8 +609,6 @@
                     <span class="n">sampling_temp</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_sampling_temp</span><span class="p">,</span>
                     <span class="n">keep_topk</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_from_topk</span><span class="p">,</span>
                     <span class="n">return_attention</span><span class="o">=</span><span class="n">attn_debug</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">replace_unk</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">coverage_penalty</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_batch_deprecated</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">src_vocabs</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_batch</span><span class="p">(</span>
                     <span class="n">batch</span><span class="p">,</span>
