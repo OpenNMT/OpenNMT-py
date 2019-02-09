@@ -723,8 +723,9 @@ class Translator(object):
             select_indices_array = []
             # Loop over the batch_size number of beam
             for j, b in enumerate(beam):
-                b.advance(out[j, :],
-                          beam_attn.data[j, :, :memory_lengths[j]])
+                if not b.done:
+                    b.advance(out[j, :],
+                              beam_attn.data[j, :, :memory_lengths[j]])
                 select_indices_array.append(
                     b.current_origin + j * beam_size)
             select_indices = torch.cat(select_indices_array)
