@@ -130,7 +130,7 @@ class BeamSearch(object):
                     log_probs[bk] = -10e20
 
         length_penalty = self.global_scorer.length_penalty(
-            step, alpha=self.global_scorer.alpha)
+            step + 1, alpha=self.global_scorer.alpha)
         # shape: (batch_size x beam_size, 1)
         cov_penalty = self.global_scorer.cov_penalty(
             self.coverage if self.coverage is not None else attn,

@@ -459,7 +459,6 @@ class TestBeamWithLengthPenalty(unittest.TestCase):
                          expected_beam_scores[0] / 4)
         self.assertTrue(beam.eos_top)
         self.assertFalse(beam.done)
-        return expected_beam_scores
 
         # assumes beam 0 finished on last step
         scores_3 = torch.log_softmax(torch.tensor(
@@ -492,4 +491,3 @@ class TestBeamWithLengthPenalty(unittest.TestCase):
                          expected_beam_scores[1] / 5)
         self.assertTrue(beam.eos_top)
         self.assertTrue(beam.done)
-        return expected_beam_scores
