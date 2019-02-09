@@ -450,8 +450,6 @@ class Translator(object):
                     sampling_temp=self.random_sampling_temp,
                     keep_topk=self.sample_from_topk,
                     return_attention=attn_debug or self.replace_unk)
-            elif self.coverage_penalty is None:
-                return self._translate_batch_deprecated(batch, src_vocabs)
             else:
                 return self._translate_batch(
                     batch,
