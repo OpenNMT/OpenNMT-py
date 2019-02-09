@@ -78,8 +78,12 @@ def build_torch_optimizer(model, opt):
         raise ValueError('Invalid optimizer type: ' + opt.optim)
     if opt.model_dtype == 'fp16':
         import apex  # Make apex dependency optional.
+        static_loss_scale = opt.loss_scale
+        dynamic_loss_scale = opt.loss_scale == 0
         optimizer = apex.fp16_utils.FP16_Optimizer(
-            optimizer, dynamic_loss_scale=True)
+            optimizer,
+            static_loss_scale=static_loss_scale,
+            dynamic_loss_scale=dynamic_loss_scale)
     return optimizer
 
 

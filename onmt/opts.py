@@ -171,6 +171,9 @@ def model_opts(parser):
               help='Train a coverage attention layer.')
     group.add('--lambda_coverage', '-lambda_coverage', type=float, default=1,
               help='Lambda value for coverage.')
+    group.add('--loss_scale', '-loss_scale', type=float, default=0,
+              help="""For FP16 training, the static loss scale to use. If not
+                      set, the loss scale is dynamically computed.""")
 
 
 def preprocess_opts(parser):
