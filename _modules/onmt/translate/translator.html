@@ -217,14 +217,12 @@
 <span class="sd">       model (:obj:`onmt.modules.NMTModel`):</span>
 <span class="sd">          NMT model to use for translation</span>
 <span class="sd">       fields (dict of Fields): data fields</span>
-<span class="sd">       beam_size (int): size of beam to use</span>
-<span class="sd">       n_best (int): number of translations produced</span>
-<span class="sd">       max_length (int): maximum length output to produce</span>
+<span class="sd">       opt (obj): command line options</span>
+<span class="sd">       model_opt (obj): model options</span>
 <span class="sd">       global_scores (:obj:`GlobalScorer`):</span>
 <span class="sd">         object to rescore final translations</span>
-<span class="sd">       copy_attn (bool): use copy attention during translation</span>
-<span class="sd">       cuda (bool): use cuda</span>
-<span class="sd">       beam_trace (bool): trace beam search for debugging</span>
+<span class="sd">       out_file : Output File</span>
+<span class="sd">       report_score (bool) : Whether to report scores</span>
 <span class="sd">       logger(logging.Logger): logger.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -265,6 +263,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">min_length</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">min_length</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">stepwise_penalty</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">stepwise_penalty</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coverage_penalty</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">coverage_penalty</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dump_beam</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">dump_beam</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">block_ngram_repeat</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">block_ngram_repeat</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ignore_when_blocking</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">ignore_when_blocking</span><span class="p">)</span>
@@ -278,7 +277,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">report_bleu</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">report_bleu</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">report_rouge</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">report_rouge</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">report_time</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">report_time</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fast</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">fast</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span> <span class="o">=</span> <span class="n">model_opt</span><span class="o">.</span><span class="n">copy_attn</span>
 
@@ -381,7 +379,7 @@
 
         <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">data_iter</span><span class="p">:</span>
             <span class="n">batch_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translate_batch</span><span class="p">(</span>
-                <span class="n">batch</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">src_vocabs</span><span class="p">,</span> <span class="n">attn_debug</span><span class="p">,</span> <span class="n">fast</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fast</span>
+                <span class="n">batch</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">src_vocabs</span><span class="p">,</span> <span class="n">attn_debug</span>
             <span class="p">)</span>
             <span class="n">translations</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="n">from_batch</span><span class="p">(</span><span class="n">batch_data</span><span class="p">)</span>
 
@@ -591,7 +589,7 @@
 
         <span class="k">return</span> <span class="n">results</span>
 
-<div class="viewcode-block" id="Translator.translate_batch"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.Translator.translate_batch">[docs]</a>    <span class="k">def</span> <span class="nf">translate_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">src_vocabs</span><span class="p">,</span> <span class="n">attn_debug</span><span class="p">,</span> <span class="n">fast</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="Translator.translate_batch"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.Translator.translate_batch">[docs]</a>    <span class="k">def</span> <span class="nf">translate_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">src_vocabs</span><span class="p">,</span> <span class="n">attn_debug</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Translate a batch of sentences.</span>
 
@@ -600,7 +598,6 @@
 <span class="sd">        Args:</span>
 <span class="sd">           batch (:obj:`Batch`): a batch from a dataset object</span>
 <span class="sd">           data (:obj:`Dataset`): the dataset object</span>
-<span class="sd">           fast (bool): enables fast beam search (may not support all features)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
@@ -612,16 +609,16 @@
                     <span class="n">sampling_temp</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_sampling_temp</span><span class="p">,</span>
                     <span class="n">keep_topk</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_from_topk</span><span class="p">,</span>
                     <span class="n">return_attention</span><span class="o">=</span><span class="n">attn_debug</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">replace_unk</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">fast</span><span class="p">:</span>
-                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fast_translate_batch</span><span class="p">(</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">coverage_penalty</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_batch_deprecated</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">src_vocabs</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_batch</span><span class="p">(</span>
                     <span class="n">batch</span><span class="p">,</span>
                     <span class="n">src_vocabs</span><span class="p">,</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">max_length</span><span class="p">,</span>
                     <span class="n">min_length</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">min_length</span><span class="p">,</span>
                     <span class="n">n_best</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_best</span><span class="p">,</span>
-                    <span class="n">return_attention</span><span class="o">=</span><span class="n">attn_debug</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">replace_unk</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_batch</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">src_vocabs</span><span class="p">)</span></div>
+                    <span class="n">return_attention</span><span class="o">=</span><span class="n">attn_debug</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">replace_unk</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">_run_encoder</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">):</span>
         <span class="n">src</span><span class="p">,</span> <span class="n">src_lengths</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">src</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">src</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> \
@@ -693,7 +690,7 @@
             <span class="c1"># or [ tgt_len, batch_size, vocab ] when full sentence</span>
         <span class="k">return</span> <span class="n">log_probs</span><span class="p">,</span> <span class="n">attn</span>
 
-    <span class="k">def</span> <span class="nf">_fast_translate_batch</span><span class="p">(</span>
+    <span class="k">def</span> <span class="nf">_translate_batch</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">batch</span><span class="p">,</span>
         <span class="n">src_vocabs</span><span class="p">,</span>
@@ -808,7 +805,8 @@
         <span class="n">results</span><span class="p">[</span><span class="s2">&quot;attention&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">beam</span><span class="o">.</span><span class="n">attention</span>
         <span class="k">return</span> <span class="n">results</span>
 
-    <span class="k">def</span> <span class="nf">_translate_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">src_vocabs</span><span class="p">):</span>
+    <span class="c1"># This is left in the code for now, but unsued</span>
+    <span class="k">def</span> <span class="nf">_translate_batch_deprecated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">src_vocabs</span><span class="p">):</span>
         <span class="c1"># (0) Prep each of the components of the search.</span>
         <span class="c1"># And helper method for reducing verbosity.</span>
         <span class="n">use_src_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span>

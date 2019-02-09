@@ -293,13 +293,11 @@
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>model</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.modules.NMTModel</span></code>) – NMT model to use for translation</li>
 <li><strong>fields</strong> (<em>dict of Fields</em>) – data fields</li>
-<li><strong>beam_size</strong> (<em>int</em>) – size of beam to use</li>
-<li><strong>n_best</strong> (<em>int</em>) – number of translations produced</li>
-<li><strong>max_length</strong> (<em>int</em>) – maximum length output to produce</li>
+<li><strong>opt</strong> (<em>obj</em>) – command line options</li>
+<li><strong>model_opt</strong> (<em>obj</em>) – model options</li>
 <li><strong>global_scores</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">GlobalScorer</span></code>) – object to rescore final translations</li>
-<li><strong>copy_attn</strong> (<em>bool</em>) – use copy attention during translation</li>
-<li><strong>cuda</strong> (<em>bool</em>) – use cuda</li>
-<li><strong>beam_trace</strong> (<em>bool</em>) – trace beam search for debugging</li>
+<li><strong>out_file</strong> – Output File</li>
+<li><strong>report_score</strong> (<em>bool</em>) – Whether to report scores</li>
 <li><strong>logger</strong> (<em>logging.Logger</em>) – logger.</li>
 </ul>
 </td>
@@ -345,7 +343,7 @@ Note: one of (‘src_path’, ‘src_data_iter’) must not be None</p>
 
 <dl class="method">
 <dt id="onmt.translate.Translator.translate_batch">
-<code class="descname">translate_batch</code><span class="sig-paren">(</span><em>batch</em>, <em>src_vocabs</em>, <em>attn_debug</em>, <em>fast=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translator.html#Translator.translate_batch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translator.translate_batch" title="Permalink to this definition">¶</a></dt>
+<code class="descname">translate_batch</code><span class="sig-paren">(</span><em>batch</em>, <em>src_vocabs</em>, <em>attn_debug</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translator.html#Translator.translate_batch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translator.translate_batch" title="Permalink to this definition">¶</a></dt>
 <dd><p>Translate a batch of sentences.</p>
 <p>Mostly a wrapper around <a class="reference internal" href="#onmt.translate.Beam" title="onmt.translate.Beam"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Beam</span></code></a>.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -355,7 +353,6 @@ Note: one of (‘src_path’, ‘src_data_iter’) must not be None</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>batch</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Batch</span></code>) – a batch from a dataset object</li>
 <li><strong>data</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Dataset</span></code>) – the dataset object</li>
-<li><strong>fast</strong> (<em>bool</em>) – enables fast beam search (may not support all features)</li>
 </ul>
 </td>
 </tr>
