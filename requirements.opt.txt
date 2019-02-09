@@ -7,3 +7,4 @@ git+https://github.com/pytorch/audio
 pyrouge
 pyonmttok
 opencv-python
+git+https://github.com/NVIDIA/apex

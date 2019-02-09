@@ -65,6 +65,9 @@ def model_opts(parser):
               help="""Type of source model to use. Allows
                        the system to incorporate non-text inputs.
                        Options are [text|img|audio].""")
+    group.add('--model_dtype', '-model_dtype', default='fp32',
+              choices=['fp32', 'fp16'],
+              help='Data type of the model.')
 
     group.add('--encoder_type', '-encoder_type', type=str, default='rnn',
               choices=['rnn', 'brnn', 'mean', 'transformer', 'cnn'],
@@ -168,6 +171,9 @@ def model_opts(parser):
               help='Train a coverage attention layer.')
     group.add('--lambda_coverage', '-lambda_coverage', type=float, default=1,
               help='Lambda value for coverage.')
+    group.add('--loss_scale', '-loss_scale', type=float, default=0,
+              help="""For FP16 training, the static loss scale to use. If not
+                      set, the loss scale is dynamically computed.""")
 
 
 def preprocess_opts(parser):
@@ -394,7 +400,7 @@ def train_opts(parser):
               help='Deprecated epochs see train_steps')
     group.add('--optim', '-optim', default='sgd',
               choices=['sgd', 'adagrad', 'adadelta', 'adam',
-                       'sparseadam', 'adafactor'],
+                       'sparseadam', 'adafactor', 'fusedadam'],
               help="""Optimization method.""")
     group.add('--adagrad_accumulator_init', '-adagrad_accumulator_init',
               type=float, default=0,

@@ -37,7 +37,7 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
         model, tgt_field, opt, train=False)
 
     trunc_size = opt.truncated_decoder  # Badly named...
-    shard_size = opt.max_generator_batches
+    shard_size = opt.max_generator_batches if opt.model_dtype == 'fp32' else 0
     norm_method = opt.normalization
     grad_accum_count = opt.accum_count
     n_gpu = opt.world_size
@@ -286,7 +286,7 @@ class Trainer(object):
     def _gradient_accumulation(self, true_batches, normalization, total_stats,
                                report_stats):
         if self.grad_accum_count > 1:
-            self.model.zero_grad()
+            self.optim.zero_grad()
 
         for batch in true_batches:
             target_size = batch.tgt.size(0)
@@ -310,7 +310,7 @@ class Trainer(object):
 
                 # 2. F-prop all but generator.
                 if self.grad_accum_count == 1:
-                    self.model.zero_grad()
+                    self.optim.zero_grad()
                 outputs, attns = self.model(src, tgt, src_lengths, bptt=bptt)
                 bptt = True
 
@@ -323,8 +323,10 @@ class Trainer(object):
                     shard_size=self.shard_size,
                     trunc_start=j,
                     trunc_size=trunc_size)
+
                 if loss is not None:
-                    loss.backward()
+                    self.optim.backward(loss)
+
                 total_stats.update(batch_stats)
                 report_stats.update(batch_stats)
 
