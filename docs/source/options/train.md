@@ -2,7 +2,18 @@
 
 train.py
 # Options: train.py:
-train.py
+train.py Args that start with '--' (eg. --md) can also be set in a config file
+(specified via -config). The config file uses YAML syntax and must represent a
+YAML 'mapping' (for details, see http://learn.getgrav.org/advanced/yaml). If
+an arg is specified in more than one place, then commandline values override
+config file values which override defaults.
+
+### **optional arguments**:
+* **-config []** 
+config file path
+
+* **-save_config []** 
+config file save path
 
 ### **Model-Embeddings**:
 * **-src_word_vec_size [500]** 
@@ -41,6 +52,9 @@ N^feat_vec_exponent where N is the number of values the feature takes.
 * **-model_type [text]** 
 Type of source model to use. Allows the system to incorporate non-text inputs.
 Options are [text|img|audio].
+
+* **-model_dtype [fp32]** 
+Data type of the model.
 
 * **-encoder_type [rnn]** 
 Type of encoder layer to use. Non-RNN layers are experimental. Options are
@@ -106,6 +120,10 @@ The attention type to use: dotprod or general (Luong) or MLP (Bahdanau)
 Self attention type in Transformer decoder layer -- currently "scaled-dot" or
 "average"
 
+* **-max_relative_positions []** 
+Maximum distance between inputs in relative positions representations. For more
+detailed information, see: https://arxiv.org/pdf/1803.02155.pdf
+
 * **-heads [8]** 
 Number of heads for transformer self-attention
 
@@ -134,6 +152,10 @@ Train a coverage attention layer.
 * **-lambda_coverage [1]** 
 Lambda value for coverage.
 
+* **-loss_scale []** 
+For FP16 training, the static loss scale to use. If not set, the loss scale is
+dynamically computed.
+
 ### **General**:
 * **-data []** 
 Path prefix to the ".train.pt" and ".valid.pt" file path from preprocess.py
@@ -144,13 +166,6 @@ number of steps
 
 * **-save_checkpoint_steps [5000]** 
 Save a checkpoint every X steps
-
-* **-reset_optim [none]** 
-Ability to reset optimizer. Options:
-"all": reset completely the optimizer (train_steps, type of optim, ....), 
-"states": load everything from the checkpoint except Adam states, 
-"keep_states": load Adam states from the checkpoint but apply
-command line changes
 
 * **-keep_checkpoint [-1]** 
 Keep X checkpoints (negative: keep all)
@@ -191,6 +206,9 @@ Init parameters with xavier_uniform. Required for transfomer.
 If training from a checkpoint then this is the path to the pretrained model's
 state_dict.
 
+* **-reset_optim [none]** 
+Optimization resetter when train_from.
+
 * **-pre_word_vecs_enc []** 
 If a valid path is specified, then this will load pretrained word embeddings on
 the encoder side. See README for specific formatting instructions.
@@ -228,10 +246,13 @@ Maximum batch size for validation
 
 * **-max_generator_batches [32]** 
 Maximum batches of words in a sequence to run the generator on in parallel.
-Higher is faster, but uses more memory.
+Higher is faster, but uses more memory. Set to 0 to disable.
 
 * **-train_steps [100000]** 
 Number of training steps
+
+* **-single_pass []** 
+Make a single pass over the training dataset.
 
 * **-epochs []** 
 Deprecated epochs see train_steps
@@ -273,14 +294,23 @@ Label smoothing value epsilon. Probabilities of all non-true labels will be
 smoothed by epsilon / (vocab_size - 1). Set to zero to turn off label smoothing.
 For more detailed information, see: https://arxiv.org/abs/1512.00567
 
+* **-average_decay []** 
+Moving average decay. Set to other than 0 (e.g. 1e-4) to activate. Similar to
+Marian NMT implementation: http://www.aclweb.org/anthology/P18-4020 For more
+detail on Exponential Moving Average:
+https://en.wikipedia.org/wiki/Moving_average
+
+* **-average_every [1]** 
+Step for moving average. Default is every update, if -average_decay is set.
+
 ### **Optimization- Rate**:
 * **-learning_rate [1.0]** 
 Starting learning rate. Recommended settings: sgd = 1, adagrad = 0.1, adadelta =
 1, adam = 0.001
 
 * **-learning_rate_decay [0.5]** 
-If update_learning_rate, decay learning rate by this much if steps have gone past
-start_decay_steps
+If update_learning_rate, decay learning rate by this much if steps have gone
+past start_decay_steps
 
 * **-start_decay_steps [50000]** 
 Start decaying every decay_steps after start_decay_steps
@@ -288,7 +318,7 @@ Start decaying every decay_steps after start_decay_steps
 * **-decay_steps [10000]** 
 Decay every decay_steps
 
-* **-decay_method []** 
+* **-decay_method [none]** 
 Use a custom decay rate.
 
 * **-warmup_steps [4000]** 
@@ -300,6 +330,8 @@ Print stats at this interval.
 
 * **-log_file []** 
 Output logs to a file under this path.
+
+* **-log_file_level [0]** 
 
 * **-exp_host []** 
 Send logs to this crayon server.

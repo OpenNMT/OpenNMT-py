@@ -50,11 +50,9 @@ Note that we currently only support PyTorch 1.0.0
 - ["Attention is all you need"](http://opennmt.net/OpenNMT-py/FAQ.html#how-do-i-use-the-transformer-model)
 - [Multi-GPU](http://opennmt.net/OpenNMT-py/FAQ.html##do-you-support-multi-gpu)
 - Inference time loss functions.
-
-Beta Features (committed):
-- Structured attention
 - [Conv2Conv convolution model]
 - SRU "RNNs faster than CNN" paper
+- FP16 training (mixed-precision with Apex)
 
 ## Quickstart
 

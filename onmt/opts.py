@@ -182,7 +182,7 @@ def preprocess_opts(parser):
     group = parser.add_argument_group('Data')
     group.add('--data_type', '-data_type', default="text",
               help="""Type of the source input.
-                       Options are [text|img].""")
+                       Options are [text|img|audio].""")
 
     group.add('--train_src', '-train_src', required=True,
               help="Path to the training source data")
