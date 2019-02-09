@@ -545,7 +545,6 @@ class Translator(object):
     ):
         # TODO: support these blacklisted features.
         assert not self.dump_beam
-        assert self.global_scorer.beta == 0
 
         # (0) Prep the components of the search.
         use_src_map = self.copy_attn
@@ -601,6 +600,7 @@ class Translator(object):
             max_length=max_length,
             mb_device=mb_device,
             return_attention=return_attention,
+            stepwise_penalty=self.stepwise_penalty,
             block_ngram_repeat=self.block_ngram_repeat,
             exclusion_tokens=self._exclusion_idxs,
             memory_lengths=memory_lengths)

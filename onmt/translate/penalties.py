@@ -20,16 +20,22 @@ class PenaltyBuilder(object):
             return self.coverage_wu
         elif self.cov_pen == "summary":
             return self.coverage_summary
-        else:
+        elif self.cov_pen == "none" or self.cov_pen is None:
             return self.coverage_none
+        else:
+            raise NotImplementedError("No '{:s}' coverage penalty.".format(
+                self.cov_pen))
 
     def length_penalty(self):
         if self.length_pen == "wu":
             return self.length_wu
         elif self.length_pen == "avg":
             return self.length_average
-        else:
+        elif self.length_pen == "none" or self.length_pen is None:
             return self.length_none
+        else:
+            raise NotImplementedError("No '{:s}' length penalty.".format(
+                self.length_pen))
 
     # Below are all the different penalty terms implemented so far.
     # Subtract coverage penalty from topk log probs.
@@ -39,15 +45,19 @@ class PenaltyBuilder(object):
         """GNMT coverage re-ranking score.
 
         See "Google's Neural Machine Translation System" :cite:`wu2016google`.
+        ``cov`` is expected to be sized ``(*, seq_len)``, where ``*`` is
+        probably ``batch_size x beam_size`` but could be several
+        dimensions like ``batch_size, beam_size``. If ``cov`` is attention,
+        then the ``seq_len`` axis probably sums to (almost) 1.
         """
 
-        penalty = -torch.min(cov, cov.clone().fill_(1.0)).log().sum(1)
+        penalty = -torch.min(cov, cov.clone().fill_(1.0)).log().sum(-1)
         return beta * penalty
 
     def coverage_summary(self, cov, beta=0.):
         """Our summary penalty."""
-        penalty = torch.max(cov, cov.clone().fill_(1.0)).sum(1)
-        penalty -= cov.size(1)
+        penalty = torch.max(cov, cov.clone().fill_(1.0)).sum(-1)
+        penalty -= cov.size(-1)
         return beta * penalty
 
     def coverage_none(self, cov, beta=0.):

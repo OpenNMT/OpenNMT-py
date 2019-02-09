@@ -29,7 +29,8 @@ class BeamSearch(object):
 
     def __init__(self, beam_size, batch_size, pad, bos, eos, n_best, mb_device,
                  global_scorer, min_length, max_length, return_attention,
-                 block_ngram_repeat, exclusion_tokens, memory_lengths):
+                 block_ngram_repeat, exclusion_tokens, memory_lengths,
+                 stepwise_penalty):
         # magic indices
         self.pad = pad
         self.eos = eos
@@ -72,6 +73,10 @@ class BeamSearch(object):
         self.topk_ids = None
         self.batch_index = None
         self.done = False
+        self.prev_penalty = None
+        self.coverage = None
+        self.cov_total = None
+        self.stepwise_penalty = stepwise_penalty
 
     @property
     def current_predictions(self):
@@ -89,6 +94,12 @@ class BeamSearch(object):
 
     def advance(self, log_probs, attn):
         vocab_size = log_probs.size(-1)
+
+        if self.stepwise_penalty and self.prev_penalty is not None:
+            self.topk_log_probs += self.prev_penalty
+            self.topk_log_probs -= self.global_scorer.cov_penalty(
+                self.coverage + attn, self.global_scorer.beta).view(
+                -1, self.beam_size)
 
         # force the output to be longer than self.min_length
         step = self.alive_seq.shape[1]
@@ -120,15 +131,22 @@ class BeamSearch(object):
 
         length_penalty = self.global_scorer.length_penalty(
             step, alpha=self.global_scorer.alpha)
+        # shape: (batch_size x beam_size, 1)
+        cov_penalty = self.global_scorer.cov_penalty(
+            self.coverage if self.coverage is not None else attn,
+            beta=self.global_scorer.beta).transpose(0, 1)
 
         # Flatten probs into a list of possibilities.
-        curr_scores = log_probs / length_penalty
+        if log_probs.shape[0] == 145 and cov_penalty.shape[0] == 150:
+            print("debug")
+        curr_scores = log_probs / length_penalty - cov_penalty
         curr_scores = curr_scores.reshape(-1, self.beam_size * vocab_size)
         self.topk_scores, self.topk_ids = curr_scores.topk(
             self.beam_size, dim=-1)
 
         # Recover log probs.
-        self.topk_log_probs = self.topk_scores * length_penalty
+        self.topk_log_probs = self.topk_scores * length_penalty \
+            + cov_penalty.view(-1, self.beam_size)
 
         # Resolve beam origin and true word ids.
         topk_beam_index = self.topk_ids.div(vocab_size)
@@ -144,14 +162,24 @@ class BeamSearch(object):
         self.alive_seq = torch.cat(
             [self.alive_seq.index_select(0, self.select_indices),
              self.topk_ids.view(-1, 1)], -1)
-        if self.return_attention:
+        if self.return_attention or self.global_scorer.beta > 0:
             current_attn = attn.index_select(1, self.select_indices)
             if self.alive_attn is None:
                 self.alive_attn = current_attn
+                # update global state (step == 1)
+                if self.global_scorer.beta > 0:  # coverage penalty
+                    self.prev_penalty = torch.zeros_like(self.topk_log_probs)
+                    self.coverage = current_attn
             else:
                 self.alive_attn = self.alive_attn.index_select(
                     1, self.select_indices)
                 self.alive_attn = torch.cat([self.alive_attn, current_attn], 0)
+                # update global state (step > 1)
+                self.coverage = self.coverage\
+                    .index_select(1, self.select_indices) + current_attn
+                self.prev_penalty = self.global_scorer.cov_penalty(
+                    self.coverage, beta=self.global_scorer.beta).view(
+                        -1, self.beam_size)
 
         self.is_finished = self.topk_ids.eq(self.eos)
         if step == self.max_length:
@@ -217,3 +245,15 @@ class BeamSearch(object):
             self.alive_attn = attention.index_select(1, non_finished) \
                 .view(self.alive_attn.size(0),
                       -1, self.alive_attn.size(-1))
+            # self.coverage = self.coverage\
+            #     .view(self.beam_size, -1, self.coverage.size(2))\
+            #     .index_select(1, non_finished)\
+            #     .view(1, -1, self.coverage.size(2))
+            cov = (
+                self.coverage.view(
+                    1, -1, self.beam_size, self.coverage.size(-1)))
+            self.coverage = cov.index_select(1, non_finished) \
+                .view(1, -1, self.coverage.size(-1))
+            self.prev_penalty = self.prev_penalty.index_select(
+                0, non_finished)
+            # self.coverage = self.coverage.index_select(1, self.select_indices)
