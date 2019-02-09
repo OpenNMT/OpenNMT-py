@@ -25,8 +25,8 @@ class Beam(object):
         stepwise_penalty (bool): Apply coverage penalty at every step.
         block_ngram_repeat (int): Block beams where
             ``block_ngram_repeat``-grams repeat.
-        exclusion_tokens (set[str]): If a gram contains any of these
-            tokens, it may repeat.
+        exclusion_tokens (set[int]): If a gram contains any of these
+            token indices, it may repeat.
     """
 
     def __init__(self, size, pad, bos, eos,

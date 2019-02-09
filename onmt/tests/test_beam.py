@@ -1,5 +1,5 @@
 import unittest
-from onmt.translate.beam import Beam
+from onmt.translate.beam import Beam, GNMTGlobalScorer
 
 import torch
 
@@ -367,3 +367,129 @@ class TestBeamAgainstReferenceCase(unittest.TestCase):
         expected_beam_scores = self.first_step(beam, expected_beam_scores)
         expected_beam_scores = self.second_step(beam, expected_beam_scores)
         self.third_step(beam, expected_beam_scores)
+
+
+class TestBeamWithLengthPenalty(unittest.TestCase):
+    # this could be considered an integration test because it tests
+    # interactions between the GNMT scorer and the beam
+    BEAM_SZ = 5
+    EOS_IDX = 2
+    N_BEST = 3
+    INP_SEQ_LEN = 53
+    N_WORDS = 8
+    ALPHA = 0.7
+    DEAD_SCORE = -1e20
+
+    def test_avg_length_pen(self):
+        scorer = GNMTGlobalScorer(0.7, 0., "avg", "none")
+        beam = Beam(self.BEAM_SZ, 0, 1, self.EOS_IDX, n_best=self.N_BEST,
+                    exclusion_tokens=set(),
+                    min_length=0,
+                    global_scorer=scorer,
+                    block_ngram_repeat=0)
+        init_scores = torch.log_softmax(torch.tensor(
+            [[0, 0, 0, 4, 5, 3, 2, 1]], dtype=torch.float), dim=1)
+        expected_beam_scores, expected_preds_0 = init_scores.topk(self.BEAM_SZ)
+        beam.advance(init_scores, torch.randn(self.BEAM_SZ, self.INP_SEQ_LEN))
+        self.assertTrue(beam.scores.allclose(expected_beam_scores))
+        self.assertTrue(beam.next_ys[-1].equal(expected_preds_0[0]))
+        self.assertFalse(beam.eos_top)
+        self.assertFalse(beam.done)
+
+        # no EOS's yet
+        assert len(beam.finished) == 0
+        scores_1 = torch.log_softmax(torch.tensor(
+            [[0, 0,  0, .3,   0, .51, .2, 0],
+             [0, 0, 1.5,  0,   0,   0,  0, 0],
+             [0, 0,  0,  0, .49, .48,  0, 0],
+             [0, 0, 0, .2, .2, .2, .2, .2],
+             [0, 0, 0, .2, .2, .2, .2, .2]]
+        ), dim=1)
+
+        beam.advance(scores_1, torch.randn(self.BEAM_SZ, self.INP_SEQ_LEN))
+
+        new_scores = scores_1 + expected_beam_scores.t()
+        expected_beam_scores, unreduced_preds = new_scores.view(-1).topk(
+            self.BEAM_SZ, 0, True, True)
+        expected_bptr_1 = unreduced_preds / self.N_WORDS
+        # [5, 3, 2, 6, 0], so beam 2 predicts EOS!
+        expected_preds_1 = unreduced_preds - expected_bptr_1 * self.N_WORDS
+
+        self.assertTrue(beam.scores.allclose(expected_beam_scores))
+        self.assertTrue(beam.next_ys[-1].equal(expected_preds_1))
+        self.assertTrue(beam.prev_ks[-1].equal(expected_bptr_1))
+        self.assertEqual(len(beam.finished), 1)
+        self.assertEqual(beam.finished[0][2], 2)  # beam 2 finished
+        self.assertEqual(beam.finished[0][1], 2)  # finished on second step
+        # length reg is SOS whatever EOS, so len 3
+        self.assertEqual(beam.finished[0][0],  # finished with correct score
+                         expected_beam_scores[2] / 3)
+        self.assertFalse(beam.eos_top)
+        self.assertFalse(beam.done)
+
+        # assumes beam 2 finished on last step
+        scores_2 = torch.log_softmax(torch.tensor(
+            [[0, 0,  0, .3,   0, .51, .2, 0],
+             [0, 0, 0,  0,   0,   0,  0, 0],
+             [0, 0,  0,  0, 5000, .48,  0, 0],  # beam 2 shouldn't continue
+             [0, 0, 50, .2, .2, .2, .2, .2],  # beam 3 -> beam 0 should die
+             [0, 0, 0, .2, .2, .2, .2, .2]]
+        ), dim=1)
+
+        beam.advance(scores_2, torch.randn(self.BEAM_SZ, self.INP_SEQ_LEN))
+
+        new_scores = scores_2 + expected_beam_scores.unsqueeze(1)
+        new_scores[2] = self.DEAD_SCORE  # ended beam 2 shouldn't continue
+        expected_beam_scores, unreduced_preds = new_scores.view(-1).topk(
+            self.BEAM_SZ, 0, True, True)
+        expected_bptr_2 = unreduced_preds / self.N_WORDS
+        # [2, 5, 3, 6, 0], so beam 0 predicts EOS!
+        expected_preds_2 = unreduced_preds - expected_bptr_2 * self.N_WORDS
+        # [-2.4879, -3.8910, -4.1010, -4.2010, -4.4010]
+        self.assertTrue(beam.scores.allclose(expected_beam_scores))
+        self.assertTrue(beam.next_ys[-1].equal(expected_preds_2))
+        self.assertTrue(beam.prev_ks[-1].equal(expected_bptr_2))
+        self.assertEqual(len(beam.finished), 2)
+        # new beam 0 finished
+        self.assertEqual(beam.finished[1][2], 0)
+        # new beam 0 is old beam 3
+        self.assertEqual(expected_bptr_2[0], 3)
+        self.assertEqual(beam.finished[1][1], 3)  # finished on third step
+        self.assertEqual(beam.finished[1][0],  # finished with correct score
+                         expected_beam_scores[0] / 4)
+        self.assertTrue(beam.eos_top)
+        self.assertFalse(beam.done)
+        return expected_beam_scores
+
+        # assumes beam 0 finished on last step
+        scores_3 = torch.log_softmax(torch.tensor(
+            [[0, 0,  5000, 0,   5000, .51, .2, 0],  # beam 0 shouldn't cont
+             [0, 0, 0,  0,   0,   0,  0, 0],
+             [0, 0,  0,  0, 0, 5000,  0, 0],
+             [0, 0, 0, .2, .2, .2, .2, .2],
+             [0, 0, 50, 0, .2, .2, .2, .2]]  # beam 4 -> beam 1 should die
+        ), dim=1)
+
+        beam.advance(scores_3, torch.randn(self.BEAM_SZ, self.INP_SEQ_LEN))
+
+        new_scores = scores_3 + expected_beam_scores.unsqueeze(1)
+        new_scores[0] = self.DEAD_SCORE  # ended beam 2 shouldn't continue
+        expected_beam_scores, unreduced_preds = new_scores.view(-1).topk(
+            self.BEAM_SZ, 0, True, True)
+        expected_bptr_3 = unreduced_preds / self.N_WORDS
+        # [5, 2, 6, 1, 0], so beam 1 predicts EOS!
+        expected_preds_3 = unreduced_preds - expected_bptr_3 * self.N_WORDS
+        self.assertTrue(beam.scores.allclose(expected_beam_scores))
+        self.assertTrue(beam.next_ys[-1].equal(expected_preds_3))
+        self.assertTrue(beam.prev_ks[-1].equal(expected_bptr_3))
+        self.assertEqual(len(beam.finished), 3)
+        # new beam 1 finished
+        self.assertEqual(beam.finished[2][2], 1)
+        # new beam 1 is old beam 4
+        self.assertEqual(expected_bptr_3[1], 4)
+        self.assertEqual(beam.finished[2][1], 4)  # finished on fourth step
+        self.assertEqual(beam.finished[2][0],  # finished with correct score
+                         expected_beam_scores[1] / 5)
+        self.assertTrue(beam.eos_top)
+        self.assertTrue(beam.done)
+        return expected_beam_scores

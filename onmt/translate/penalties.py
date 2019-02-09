@@ -62,8 +62,11 @@ class PenaltyBuilder(object):
 
     def coverage_none(self, cov, beta=0.):
         """Returns zero as penalty"""
-        return torch.zeros((1, cov.shape[-2]), device=cov.device,
+        none = torch.zeros((cov.shape[-2]), device=cov.device,
                            dtype=torch.float)
+        if cov.dim() == 3:
+            none = none.unsqueeze(0)
+        return none
 
     def length_wu(self, cur_len, alpha=0.):
         """GNMT length re-ranking score.
