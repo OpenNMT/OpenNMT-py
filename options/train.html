@@ -88,6 +88,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../Library.html">Library: Example</a></li>
 <li class="toctree-l1"><a class="reference internal" href="preprocess.html">Options: preprocess.py:</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Options: train.py:</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#optional-arguments"><strong>optional arguments</strong>:</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#model-embeddings"><strong>Model-Embeddings</strong>:</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#model-embedding-features"><strong>Model-Embedding Features</strong>:</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#model-encoder-decoder"><strong>Model- Encoder-Decoder</strong>:</a></li>
@@ -175,7 +176,20 @@
   <!--- This file was automatically generated. Do not modify it manually but use the docs/options/generate.sh script instead. --><p>train.py</p>
 <div class="section" id="options-train-py">
 <h1>Options: train.py:<a class="headerlink" href="#options-train-py" title="Permalink to this headline">¶</a></h1>
-<p>train.py</p>
+<p>train.py Args that start with ‘–‘ (eg. –md) can also be set in a config file
+(specified via -config). The config file uses YAML syntax and must represent a
+YAML ‘mapping’ (for details, see http://learn.getgrav.org/advanced/yaml). If
+an arg is specified in more than one place, then commandline values override
+config file values which override defaults.</p>
+<div class="section" id="optional-arguments">
+<h2><strong>optional arguments</strong>:<a class="headerlink" href="#optional-arguments" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><strong>-config []</strong>
+config file path</li>
+<li><strong>-save_config []</strong>
+config file save path</li>
+</ul>
+</div>
 <div class="section" id="model-embeddings">
 <h2><strong>Model-Embeddings</strong>:<a class="headerlink" href="#model-embeddings" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
@@ -214,6 +228,8 @@ N^feat_vec_exponent where N is the number of values the feature takes.</li>
 <li><strong>-model_type [text]</strong>
 Type of source model to use. Allows the system to incorporate non-text inputs.
 Options are [text|img|audio].</li>
+<li><strong>-model_dtype [fp32]</strong>
+Data type of the model.</li>
 <li><strong>-encoder_type [rnn]</strong>
 Type of encoder layer to use. Non-RNN layers are experimental. Options are
 [rnn|brnn|mean|transformer|cnn].</li>
@@ -264,6 +280,9 @@ The attention type to use: dotprod or general (Luong) or MLP (Bahdanau)</li>
 <li><strong>-self_attn_type [scaled-dot]</strong>
 Self attention type in Transformer decoder layer – currently “scaled-dot” or
 “average”</li>
+<li><strong>-max_relative_positions []</strong>
+Maximum distance between inputs in relative positions representations. For more
+detailed information, see: https://arxiv.org/pdf/1803.02155.pdf</li>
 <li><strong>-heads [8]</strong>
 Number of heads for transformer self-attention</li>
 <li><strong>-transformer_ff [2048]</strong>
@@ -283,6 +302,9 @@ Divide copy loss by length of sequence</li>
 Train a coverage attention layer.</li>
 <li><strong>-lambda_coverage [1]</strong>
 Lambda value for coverage.</li>
+<li><strong>-loss_scale []</strong>
+For FP16 training, the static loss scale to use. If not set, the loss scale is
+dynamically computed.</li>
 </ul>
 </div>
 <div class="section" id="general">
@@ -295,12 +317,6 @@ Model filename (the model will be saved as &lt;save_model&gt;_N.pt where N is th
 number of steps</li>
 <li><strong>-save_checkpoint_steps [5000]</strong>
 Save a checkpoint every X steps</li>
-<li><strong>-reset_optim [none]</strong>
-Ability to reset optimizer. Options:
-“all”: reset completely the optimizer (train_steps, type of optim, ….),
-“states”: load everything from the checkpoint except Adam states,
-“keep_states”: load Adam states from the checkpoint but apply
-command line changes</li>
 <li><strong>-keep_checkpoint [-1]</strong>
 Keep X checkpoints (negative: keep all)</li>
 <li><strong>-gpuid []</strong>
@@ -332,6 +348,8 @@ Init parameters with xavier_uniform. Required for transfomer.</li>
 <li><strong>-train_from []</strong>
 If training from a checkpoint then this is the path to the pretrained model’s
 state_dict.</li>
+<li><strong>-reset_optim [none]</strong>
+Optimization resetter when train_from.</li>
 <li><strong>-pre_word_vecs_enc []</strong>
 If a valid path is specified, then this will load pretrained word embeddings on
 the encoder side. See README for specific formatting instructions.</li>
@@ -363,9 +381,11 @@ Perfom validation every X steps</li>
 Maximum batch size for validation</li>
 <li><strong>-max_generator_batches [32]</strong>
 Maximum batches of words in a sequence to run the generator on in parallel.
-Higher is faster, but uses more memory.</li>
+Higher is faster, but uses more memory. Set to 0 to disable.</li>
 <li><strong>-train_steps [100000]</strong>
 Number of training steps</li>
+<li><strong>-single_pass []</strong>
+Make a single pass over the training dataset.</li>
 <li><strong>-epochs []</strong>
 Deprecated epochs see train_steps</li>
 <li><strong>-optim [sgd]</strong>
@@ -397,6 +417,13 @@ normal models / default baselines.</li>
 Label smoothing value epsilon. Probabilities of all non-true labels will be
 smoothed by epsilon / (vocab_size - 1). Set to zero to turn off label smoothing.
 For more detailed information, see: https://arxiv.org/abs/1512.00567</li>
+<li><strong>-average_decay []</strong>
+Moving average decay. Set to other than 0 (e.g. 1e-4) to activate. Similar to
+Marian NMT implementation: http://www.aclweb.org/anthology/P18-4020 For more
+detail on Exponential Moving Average:
+https://en.wikipedia.org/wiki/Moving_average</li>
+<li><strong>-average_every [1]</strong>
+Step for moving average. Default is every update, if -average_decay is set.</li>
 </ul>
 </div>
 <div class="section" id="optimization-rate">
@@ -406,13 +433,13 @@ For more detailed information, see: https://arxiv.org/abs/1512.00567</li>
 Starting learning rate. Recommended settings: sgd = 1, adagrad = 0.1, adadelta =
 1, adam = 0.001</li>
 <li><strong>-learning_rate_decay [0.5]</strong>
-If update_learning_rate, decay learning rate by this much if steps have gone past
-start_decay_steps</li>
+If update_learning_rate, decay learning rate by this much if steps have gone
+past start_decay_steps</li>
 <li><strong>-start_decay_steps [50000]</strong>
 Start decaying every decay_steps after start_decay_steps</li>
 <li><strong>-decay_steps [10000]</strong>
 Decay every decay_steps</li>
-<li><strong>-decay_method []</strong>
+<li><strong>-decay_method [none]</strong>
 Use a custom decay rate.</li>
 <li><strong>-warmup_steps [4000]</strong>
 Number of warmup steps for custom decay.</li>
@@ -425,6 +452,7 @@ Number of warmup steps for custom decay.</li>
 Print stats at this interval.</li>
 <li><strong>-log_file []</strong>
 Output logs to a file under this path.</li>
+<li><strong>-log_file_level [0]</strong></li>
 <li><strong>-exp_host []</strong>
 Send logs to this crayon server.</li>
 <li><strong>-exp []</strong>

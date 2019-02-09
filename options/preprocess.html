@@ -87,6 +87,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../onmt.io.html">Doc: Data Loaders</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../Library.html">Library: Example</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Options: preprocess.py:</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#optional-arguments"><strong>optional arguments</strong>:</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#data"><strong>Data</strong>:</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#vocab"><strong>Vocab</strong>:</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#pruning"><strong>Pruning</strong>:</a></li>
@@ -171,12 +172,26 @@
   <!--- This file was automatically generated. Do not modify it manually but use the docs/options/generate.sh script instead. --><p>preprocess.py</p>
 <div class="section" id="options-preprocess-py">
 <h1>Options: preprocess.py:<a class="headerlink" href="#options-preprocess-py" title="Permalink to this headline">¶</a></h1>
-<p>preprocess.py</p>
+<p>preprocess.py Args that start with ‘–‘ (eg. –md) can also be set in a config
+file (specified via -config). The config file uses YAML syntax and must
+represent a YAML ‘mapping’ (for details, see
+http://learn.getgrav.org/advanced/yaml). If an arg is specified in more than
+one place, then commandline values override config file values which override
+defaults.</p>
+<div class="section" id="optional-arguments">
+<h2><strong>optional arguments</strong>:<a class="headerlink" href="#optional-arguments" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><strong>-config []</strong>
+config file path</li>
+<li><strong>-save_config []</strong>
+config file save path</li>
+</ul>
+</div>
 <div class="section" id="data">
 <h2><strong>Data</strong>:<a class="headerlink" href="#data" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><strong>-data_type [text]</strong>
-Type of the source input. Options are [text|img].</li>
+Type of the source input. Options are [text|img|audio].</li>
 <li><strong>-train_src []</strong>
 Path to the training source data</li>
 <li><strong>-train_tgt []</strong>
@@ -190,15 +205,8 @@ Source directory for image or audio files.</li>
 <li><strong>-save_data []</strong>
 Output file for the prepared data</li>
 <li><strong>-max_shard_size []</strong>
-For text corpus of large volume, it will be divided into shards of this size to
-preprocess. If 0, the data will be handled as a whole. The unit is in bytes.
-Optimal value should be multiples of 64 bytes. A commonly used sharding value is</li>
-</ul>
-<ol class="simple">
-<li>It is recommended to ensure the corpus is shuffled before sharding.</li>
-</ol>
-<ul class="simple">
-<li><strong>-shard_size []</strong>
+Deprecated use shard_size instead</li>
+<li><strong>-shard_size [1000000]</strong>
 Divide src_corpus and tgt_corpus into smaller multiple src_copus and tgt corpus
 files, then build shards, each shard will have opt.shard_size samples except
 last shard. shard_size=0 means no segmentation shard_size&gt;0 means segment
@@ -218,6 +226,8 @@ Path prefix to existing features vocabularies</li>
 Size of the source vocabulary</li>
 <li><strong>-tgt_vocab_size [50000]</strong>
 Size of the target vocabulary</li>
+<li><strong>-vocab_size_multiple [1]</strong>
+Make the vocabulary size a multiple of this value</li>
 <li><strong>-src_words_min_frequency []</strong></li>
 <li><strong>-tgt_words_min_frequency []</strong></li>
 <li><strong>-dynamic_dict []</strong>
@@ -239,12 +249,14 @@ Maximum target sequence length to keep.</li>
 Truncate target sequence length.</li>
 <li><strong>-lower []</strong>
 lowercase data</li>
+<li><strong>-filter_valid []</strong>
+Filter validation data by src and/or tgt length</li>
 </ul>
 </div>
 <div class="section" id="random">
 <h2><strong>Random</strong>:<a class="headerlink" href="#random" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li><strong>-shuffle [1]</strong>
+<li><strong>-shuffle []</strong>
 Shuffle data</li>
 <li><strong>-seed [3435]</strong>
 Random seed</li>
@@ -257,6 +269,7 @@ Random seed</li>
 Report status every this many sentences</li>
 <li><strong>-log_file []</strong>
 Output logs to a file under this path.</li>
+<li><strong>-log_file_level [0]</strong></li>
 </ul>
 </div>
 <div class="section" id="speech">

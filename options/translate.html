@@ -89,8 +89,10 @@
 <li class="toctree-l1"><a class="reference internal" href="preprocess.html">Options: preprocess.py:</a></li>
 <li class="toctree-l1"><a class="reference internal" href="train.html">Options: train.py:</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Options: translate.py:</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#optional-arguments"><strong>optional arguments</strong>:</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#model"><strong>Model</strong>:</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#data"><strong>Data</strong>:</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#random-sampling"><strong>Random Sampling</strong>:</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#beam"><strong>Beam</strong>:</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#logging"><strong>Logging</strong>:</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#efficiency"><strong>Efficiency</strong>:</a></li>
@@ -171,13 +173,32 @@
   <!--- This file was automatically generated. Do not modify it manually but use the docs/options/generate.sh script instead. --><p>translate.py</p>
 <div class="section" id="options-translate-py">
 <h1>Options: translate.py:<a class="headerlink" href="#options-translate-py" title="Permalink to this headline">¶</a></h1>
-<p>translate.py</p>
+<p>translate.py Args that start with ‘–‘ (eg. –md) can also be set in a config
+file (specified via -config). The config file uses YAML syntax and must
+represent a YAML ‘mapping’ (for details, see
+http://learn.getgrav.org/advanced/yaml). If an arg is specified in more than
+one place, then commandline values override config file values which override
+defaults.</p>
+<div class="section" id="optional-arguments">
+<h2><strong>optional arguments</strong>:<a class="headerlink" href="#optional-arguments" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><strong>-config []</strong>
+config file path</li>
+<li><strong>-save_config []</strong>
+config file save path</li>
+</ul>
+</div>
 <div class="section" id="model">
 <h2><strong>Model</strong>:<a class="headerlink" href="#model" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><strong>-models []</strong>
 Path to model .pt file(s). Multiple models can be specified, for ensemble
 decoding.</li>
+<li><strong>-avg_raw_probs []</strong>
+If this is set, during ensembling scores from different models will be combined
+by averaging their raw probabilities and then taking the log. Otherwise, the log
+probabilities will be averaged directly. Necessary for models whose output
+layers can assign zero probability.</li>
 </ul>
 </div>
 <div class="section" id="data">
@@ -191,6 +212,11 @@ Source sequence to decode (one line per sequence)</li>
 Source directory for image or audio files</li>
 <li><strong>-tgt []</strong>
 True target sequence (optional)</li>
+<li><strong>-shard_size [10000]</strong>
+Divide src and tgt (if applicable) into smaller multiple src and tgt files, then
+build shards, each shard will have opt.shard_size samples except last shard.
+shard_size=0 means no segmentation shard_size&gt;0 means segment dataset into
+multiple shards, each shard has shard_size samples</li>
 <li><strong>-output [pred.txt]</strong>
 Path to output the predictions (each line will be the decoded sequence</li>
 <li><strong>-report_bleu []</strong>
@@ -198,17 +224,31 @@ Report bleu score after translation, call tools/multi-bleu.perl on command line<
 <li><strong>-report_rouge []</strong>
 Report rouge 1/2/3/L/SU4 score after translation call tools/test_rouge.py on
 command line</li>
+<li><strong>-report_time []</strong>
+Report some translation time metrics</li>
 <li><strong>-dynamic_dict []</strong>
 Create dynamic dictionaries</li>
 <li><strong>-share_vocab []</strong>
 Share source and target vocabulary</li>
 </ul>
 </div>
+<div class="section" id="random-sampling">
+<h2><strong>Random Sampling</strong>:<a class="headerlink" href="#random-sampling" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><strong>-random_sampling_topk [1]</strong>
+Set this to -1 to do random sampling from full distribution. Set this to value
+k&gt;1 to do random sampling restricted to the k most likely next tokens. Set this
+to 1 to use argmax or for doing beam search.</li>
+<li><strong>-random_sampling_temp [1.0]</strong>
+If doing random sampling, divide the logits by this before computing softmax
+during decoding.</li>
+<li><strong>-seed [829]</strong>
+Random seed</li>
+</ul>
+</div>
 <div class="section" id="beam">
 <h2><strong>Beam</strong>:<a class="headerlink" href="#beam" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li><strong>-fast []</strong>
-Use fast beam search (some features may not be supported!)</li>
 <li><strong>-beam_size [5]</strong>
 Beam size</li>
 <li><strong>-min_length []</strong>
@@ -220,9 +260,9 @@ Deprecated, use <code class="docutils literal notranslate"><span class="pre">-ma
 <li><strong>-stepwise_penalty []</strong>
 Apply penalty at every decoding step. Helpful for summary penalty.</li>
 <li><strong>-length_penalty [none]</strong>
-Length Penalty to use. Options are [wu | avg | none]</li>
+Length Penalty to use.</li>
 <li><strong>-coverage_penalty [none]</strong>
-Coverage Penalty to use. Options are [wu | summary | none]</li>
+Coverage Penalty to use.</li>
 <li><strong>-alpha []</strong>
 Google NMT length penalty parameter (higher = longer generation)</li>
 <li><strong>-beta []</strong>
@@ -247,6 +287,7 @@ source token</li>
 Print scores and predictions for each sentence</li>
 <li><strong>-log_file []</strong>
 Output logs to a file under this path.</li>
+<li><strong>-log_file_level [0]</strong></li>
 <li><strong>-attn_debug []</strong>
 Print best attn for each word</li>
 <li><strong>-dump_beam []</strong>
