@@ -286,6 +286,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logger</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">use_filter_pred</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_filter_pred</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="c1"># for debugging</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">beam_trace</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dump_beam</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span>
@@ -340,15 +341,14 @@
         <span class="k">if</span> <span class="n">batch_size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;batch_size must be set&quot;</span><span class="p">)</span>
 
-        <span class="n">data</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">build_dataset</span><span class="p">(</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span><span class="p">,</span>
-            <span class="n">src</span><span class="o">=</span><span class="n">src</span><span class="p">,</span>
-            <span class="n">src_reader</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">src_reader</span><span class="p">,</span>
-            <span class="n">tgt</span><span class="o">=</span><span class="n">tgt</span><span class="p">,</span>
-            <span class="n">tgt_reader</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tgt_reader</span><span class="p">,</span>
-            <span class="n">src_dir</span><span class="o">=</span><span class="n">src_dir</span><span class="p">,</span>
-            <span class="n">use_filter_pred</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">use_filter_pred</span><span class="p">,</span>
+            <span class="n">readers</span><span class="o">=</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">src_reader</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tgt_reader</span><span class="p">]</span>
+                     <span class="k">if</span> <span class="n">tgt</span> <span class="k">else</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">src_reader</span><span class="p">]),</span>
+            <span class="n">data</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;src&quot;</span><span class="p">,</span> <span class="n">src</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;tgt&quot;</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)]</span> <span class="k">if</span> <span class="n">tgt</span> <span class="k">else</span> <span class="p">[(</span><span class="s2">&quot;src&quot;</span><span class="p">,</span> <span class="n">src</span><span class="p">)],</span>
+            <span class="n">dirs</span><span class="o">=</span><span class="p">[</span><span class="n">src_dir</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="k">if</span> <span class="n">tgt</span> <span class="k">else</span> <span class="p">[</span><span class="n">src_dir</span><span class="p">],</span>
+            <span class="n">sort_key</span><span class="o">=</span><span class="n">inputters</span><span class="o">.</span><span class="n">str2sortkey</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">data_type</span><span class="p">],</span>
+            <span class="n">filter_pred</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_filter_pred</span>
         <span class="p">)</span>
 
         <span class="n">cur_device</span> <span class="o">=</span> <span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cuda</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span>
