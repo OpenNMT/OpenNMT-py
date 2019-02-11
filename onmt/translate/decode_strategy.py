@@ -31,9 +31,9 @@ class DecodeStrategy(object):
         predictions (list[list[torch.LongTensor]]): For each batch, holds a
             list of beam prediction sequences.
         scores (list[list[torch.FloatTensor]]): For each batch, holds a
-            list of beam scores.
+            list of scores.
         attention (list[list[torch.FloatTensor or list[]]]): For each
-            batch, holds a list of beam attention sequence tensors
+            batch, holds a list of attention sequence tensors
             (or empty lists) having shape ``(step, inp_seq_len)`` where
             ``inp_seq_len`` is the length of the sample (not the max
             length of all inp seqs).
