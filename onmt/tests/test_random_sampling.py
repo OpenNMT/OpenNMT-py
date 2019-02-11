@@ -6,9 +6,7 @@ import torch
 
 class TestRandomSampling(unittest.TestCase):
     BATCH_SZ = 3
-    N_WORDS = 8  # also don't change for same reason
     INP_SEQ_LEN = 53
-    EOS = 2
     DEAD_SCORE = -1e20
 
     BLOCKED_SCORE = -10e20
