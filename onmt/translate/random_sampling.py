@@ -96,7 +96,6 @@ class RandomSampling(DecodeStrategy):
                                            dtype=torch.long, device=device)
         self.original_batch_idx = torch.arange(self.batch_size,
                                                dtype=torch.long, device=device)
-        # self.is_alive = torch.ones_like(self.is_finished, dtype=torch.long)
 
     def advance(self, log_probs, attn):
         """Select next tokens randomly from the top k possible next tokens.
