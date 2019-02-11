@@ -125,6 +125,6 @@ class RandomSampling(DecodeStrategy):
         for b in range(self.batch_size):
             self.scores[b].append(self.topk_scores[b, 0])
             self.predictions[b].append(self.alive_seq[b, 1:])
-            self.attention[b].append( \
-                self.alive_attn[:, b, :self.memory_length[b]] \
+            self.attention[b].append(
+                self.alive_attn[:, b, :self.memory_length[b]]
                 if self.alive_attn is not None else [])

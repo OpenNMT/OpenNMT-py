@@ -16,7 +16,7 @@ import onmt.inputters as inputters
 import onmt.opts as opts
 import onmt.decoders.ensemble
 from onmt.translate.beam_search import BeamSearch
-from onmt.translate.random_sampling import RandomSampling, sample_with_temperature
+from onmt.translate.random_sampling import RandomSampling
 from onmt.utils.misc import tile, set_random_seed
 from onmt.modules.copy_generator import collapse_copy_scores
 
