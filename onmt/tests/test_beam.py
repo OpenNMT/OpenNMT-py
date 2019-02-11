@@ -134,8 +134,6 @@ class TestBeam(unittest.TestCase):
             [6., 5., 4., 3., 2., 1.]), dim=0)
         min_length = 5
         eos_idx = 2
-        # beam includes start token in cur_len count.
-        # Add one to its min_length to compensate
         beam = Beam(beam_sz, 0, 1, eos_idx, n_best=2,
                     exclusion_tokens=set(),
                     min_length=min_length,
@@ -186,8 +184,6 @@ class TestBeam(unittest.TestCase):
             [6., 5., 4., 3., 2., 1.]), dim=0)
         min_length = 5
         eos_idx = 2
-        # beam includes start token in cur_len count.
-        # Add one to its min_length to compensate
         beam = Beam(beam_sz, 0, 1, eos_idx, n_best=2,
                     exclusion_tokens=set(),
                     min_length=min_length,

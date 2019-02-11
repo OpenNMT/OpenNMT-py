@@ -95,23 +95,26 @@ def load_test_model(opt, dummy_opt, model_path=None):
     for arg in dummy_opt:
         if arg not in model_opt:
             model_opt.__dict__[arg] = dummy_opt[arg]
-    model = build_base_model(model_opt, fields, use_gpu(opt), checkpoint)
+    model = build_base_model(model_opt, fields, use_gpu(opt), checkpoint,
+                             opt.gpu)
     model.eval()
     model.generator.eval()
     return fields, model, model_opt
 
 
-def build_base_model(model_opt, fields, gpu, checkpoint=None):
+def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
     """
     Args:
         model_opt: the option loaded from checkpoint.
         fields: `Field` objects for the model.
-        gpu(bool): whether to use gpu.
+        gpu (bool): whether to use gpu.
         checkpoint: the model gnerated by train phase, or a resumed snapshot
                     model from a stopped training.
+        gpu_id (int or NoneType): Which GPU to use.
     Returns:
         the NMTModel.
     """
+
     assert model_opt.model_type in ["text", "img", "audio"], \
         "Unsupported model type %s" % model_opt.model_type
 
@@ -150,7 +153,12 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
     decoder = build_decoder(model_opt, tgt_emb)
 
     # Build NMTModel(= encoder + decoder).
-    device = torch.device("cuda" if gpu else "cpu")
+    if gpu and gpu_id is not None:
+        device = torch.device("cuda", gpu_id)
+    elif gpu and not gpu_id:
+        device = torch.device("cuda")
+    elif not gpu:
+        device = torch.device("cpu")
     model = onmt.models.NMTModel(encoder, decoder)
 
     # Build Generator.
