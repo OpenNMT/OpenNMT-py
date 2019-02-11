@@ -285,20 +285,23 @@
 <dl class="class">
 <dt id="onmt.translate.Translator">
 <em class="property">class </em><code class="descclassname">onmt.translate.</code><code class="descname">Translator</code><span class="sig-paren">(</span><em>model</em>, <em>fields</em>, <em>opt</em>, <em>model_opt</em>, <em>global_scorer=None</em>, <em>out_file=None</em>, <em>report_score=True</em>, <em>logger=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translator.html#Translator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translator" title="Permalink to this definition">¶</a></dt>
-<dd><p>Uses a model to translate a batch of sentences.</p>
+<dd><p>Translate a batch of sentences with a saved model.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>model</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.modules.NMTModel</span></code>) – NMT model to use for translation</li>
-<li><strong>fields</strong> (<em>dict of Fields</em>) – data fields</li>
-<li><strong>opt</strong> (<em>obj</em>) – command line options</li>
-<li><strong>model_opt</strong> (<em>obj</em>) – model options</li>
-<li><strong>global_scores</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">GlobalScorer</span></code>) – object to rescore final translations</li>
-<li><strong>out_file</strong> – Output File</li>
+<li><strong>model</strong> (<em>onmt.modules.NMTModel</em>) – NMT model to use for translation</li>
+<li><strong>fields</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>list</em><em>[</em><em>tuple</em><em>[</em><em>str</em><em>, </em><em>torchtext.data.Field</em><em>]</em><em>]</em><em>]</em>) – A dict
+mapping each side to its list of name-Field pairs.</li>
+<li><strong>opt</strong> (<em>argparse.Namespace</em>) – Command line options</li>
+<li><strong>model_opt</strong> (<em>argparse.Namespace</em>) – Command line options saved with
+the model checkpoint.</li>
+<li><strong>global_scorer</strong> (<a class="reference internal" href="#onmt.translate.GNMTGlobalScorer" title="onmt.translate.GNMTGlobalScorer"><em>onmt.translate.GNMTGlobalScorer</em></a>) – Translation
+scoring/reranking object.</li>
+<li><strong>out_file</strong> (<em>TextIO</em><em> or </em><em>codecs.StreamReaderWriter</em>) – Output file.</li>
 <li><strong>report_score</strong> (<em>bool</em>) – Whether to report scores</li>
-<li><strong>logger</strong> (<em>logging.Logger</em>) – logger.</li>
+<li><strong>logger</strong> (<em>logging.Logger</em><em> or </em><em>NoneType</em>) – Logger.</li>
 </ul>
 </td>
 </tr>
@@ -307,19 +310,16 @@
 <dl class="method">
 <dt id="onmt.translate.Translator.translate">
 <code class="descname">translate</code><span class="sig-paren">(</span><em>src</em>, <em>tgt=None</em>, <em>src_dir=None</em>, <em>batch_size=None</em>, <em>attn_debug=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translator.html#Translator.translate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translator.translate" title="Permalink to this definition">¶</a></dt>
-<dd><p>Translate content of <cite>src_data_iter</cite> (if not None) or <cite>src_path</cite>
-and get gold scores if one of <cite>tgt_data_iter</cite> or <cite>tgt_path</cite> is set.</p>
-<p>Note: batch_size must not be None
-Note: one of (‘src_path’, ‘src_data_iter’) must not be None</p>
+<dd><p>Translate content of <code class="docutils literal notranslate"><span class="pre">src</span></code> and get gold scores from <code class="docutils literal notranslate"><span class="pre">tgt</span></code>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>src_path</strong> (<em>str</em>) – filepath of source data</li>
-<li><strong>tgt_path</strong> (<em>str</em>) – filepath of target data or None</li>
-<li><strong>src_dir</strong> (<em>str</em>) – source directory path
-(used for Audio and Image datasets)</li>
+<li><strong>src</strong> – See <code class="xref py py-func docutils literal notranslate"><span class="pre">self.src_reader.read()</span></code>.</li>
+<li><strong>tgt</strong> – See <code class="xref py py-func docutils literal notranslate"><span class="pre">self.tgt_reader.read()</span></code>.</li>
+<li><strong>src_dir</strong> – See <code class="xref py py-func docutils literal notranslate"><span class="pre">self.src_reader.read()</span></code> (only relevant
+for certain types of data).</li>
 <li><strong>batch_size</strong> (<em>int</em>) – size of examples per mini-batch</li>
 <li><strong>attn_debug</strong> (<em>bool</em>) – enables the attention logging</li>
 </ul>
@@ -345,19 +345,6 @@ Note: one of (‘src_path’, ‘src_data_iter’) must not be None</p>
 <dt id="onmt.translate.Translator.translate_batch">
 <code class="descname">translate_batch</code><span class="sig-paren">(</span><em>batch</em>, <em>src_vocabs</em>, <em>attn_debug</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translator.html#Translator.translate_batch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translator.translate_batch" title="Permalink to this definition">¶</a></dt>
 <dd><p>Translate a batch of sentences.</p>
-<p>Mostly a wrapper around <a class="reference internal" href="#onmt.translate.Beam" title="onmt.translate.Beam"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Beam</span></code></a>.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>batch</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Batch</span></code>) – a batch from a dataset object</li>
-<li><strong>data</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Dataset</span></code>) – the dataset object</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
 </dd></dl>
 
 </dd></dl>
