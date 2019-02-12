@@ -32,6 +32,8 @@ def sample_with_temperature(logits, sampling_temp, keep_topk):
         # For temp=0.0, take the argmax to avoid divide-by-zero errors.
         # keep_topk=1 is also equivalent to argmax.
         topk_scores, topk_ids = logits.topk(1, dim=-1)
+        if sampling_temp > 0:
+            topk_scores /= sampling_temp
     else:
         logits = torch.div(logits, sampling_temp)
 
@@ -55,6 +57,10 @@ def sample_with_temperature(logits, sampling_temp, keep_topk):
 class RandomSampling(DecodeStrategy):
     """Select next tokens randomly from the top k possible next tokens.
 
+    The ``scores`` attribute's lists are the score, after applying temperature,
+    of the final prediction (either EOS or the final token in the event
+    that ``max_length`` is reached)
+
     Args:
         pad (int): See base.
         bos (int): See base.
@@ -73,11 +79,6 @@ class RandomSampling(DecodeStrategy):
             masking attention.
     """
 
-    # NOTE: Currently this class doesn't return "final" scores or any form
-    # of Pr(EOS|pred). That is to say, the scores returned by RandomSampling
-    # # are just the scores of the last token (in a batched setting, that
-    # isn't even necessarily EOS since no early stopping is implemented).
-
     def __init__(self, pad, bos, eos, batch_size, device,
                  min_length, block_ngram_repeat, exclusion_tokens,
                  return_attention, max_length, sampling_temp, keep_topk,
@@ -93,6 +94,8 @@ class RandomSampling(DecodeStrategy):
         self.batch_size = batch_size
         self.select_indices = torch.arange(self.batch_size,
                                            dtype=torch.long, device=device)
+        self.original_batch_idx = torch.arange(self.batch_size,
+                                               dtype=torch.long, device=device)
 
     def advance(self, log_probs, attn):
         """Select next tokens randomly from the top k possible next tokens.
@@ -108,8 +111,11 @@ class RandomSampling(DecodeStrategy):
         """
 
         self.ensure_min_length(log_probs)
+        self.block_ngram_repeats(log_probs)
         topk_ids, self.topk_scores = sample_with_temperature(
             log_probs, self.sampling_temp, self.keep_topk)
+
+        self.is_finished = topk_ids.eq(self.eos)
 
         self.alive_seq = torch.cat([self.alive_seq, topk_ids], -1)
         if self.return_attention:
@@ -121,10 +127,21 @@ class RandomSampling(DecodeStrategy):
 
     def update_finished(self):
         """Finalize scores and predictions."""
-        assert self.is_finished.all()
-        for b in range(self.batch_size):
-            self.scores[b].append(self.topk_scores[b, 0])
-            self.predictions[b].append(self.alive_seq[b, 1:])
-            self.attention[b].append(
+        # shape: (sum(~ self.is_finished), 1)
+        finished_batches = self.is_finished.view(-1).nonzero()
+        for b in finished_batches.view(-1):
+            b_orig = self.original_batch_idx[b]
+            self.scores[b_orig].append(self.topk_scores[b, 0])
+            self.predictions[b_orig].append(self.alive_seq[b, 1:])
+            self.attention[b_orig].append(
                 self.alive_attn[:, b, :self.memory_length[b]]
                 if self.alive_attn is not None else [])
+        self.done = self.is_finished.all()
+        if self.done:
+            return
+        is_alive = ~self.is_finished.view(-1)
+        self.alive_seq = self.alive_seq[is_alive]
+        if self.alive_attn is not None:
+            self.alive_attn = self.alive_attn[:, is_alive]
+        self.select_indices = is_alive.nonzero().view(-1)
+        self.original_batch_idx = self.original_batch_idx[is_alive]

@@ -361,8 +361,30 @@ class Translator(object):
             )
 
             random_sampler.advance(log_probs, attn)
+            any_batch_is_finished = random_sampler.is_finished.any()
+            if any_batch_is_finished:
+                random_sampler.update_finished()
+                if random_sampler.done:
+                    break
 
-        random_sampler.update_finished()
+            if any_batch_is_finished:
+                select_indices = random_sampler.select_indices
+
+                # Reorder states.
+                if isinstance(memory_bank, tuple):
+                    memory_bank = tuple(x.index_select(1, select_indices)
+                                        for x in memory_bank)
+                else:
+                    memory_bank = memory_bank.index_select(1, select_indices)
+
+                memory_lengths = memory_lengths.index_select(0, select_indices)
+
+                if src_map is not None:
+                    src_map = src_map.index_select(1, select_indices)
+
+                self.model.decoder.map_state(
+                    lambda state, dim: state.index_select(dim, select_indices))
+
         results["scores"] = random_sampler.scores
         results["predictions"] = random_sampler.predictions
         results["attention"] = random_sampler.attention
