@@ -3,6 +3,12 @@
 
 
 ## [Unreleased]
+
+## [0.8.1](https://github.com/OpenNMT/OpenNMT-py/tree/0.8.1) (2019-02-12)
+* Update documentation
+* Random sampling scores fixes
+* Bug fixes
+
 ### Fixes and improvements
 ## [0.8.0](https://github.com/OpenNMT/OpenNMT-py/tree/0.8.0) (2019-02-09)
 * Many fixes and code cleaning thanks @flauted, @guillaumekln
