@@ -520,8 +520,30 @@
             <span class="p">)</span>
 
             <span class="n">random_sampler</span><span class="o">.</span><span class="n">advance</span><span class="p">(</span><span class="n">log_probs</span><span class="p">,</span> <span class="n">attn</span><span class="p">)</span>
+            <span class="n">any_batch_is_finished</span> <span class="o">=</span> <span class="n">random_sampler</span><span class="o">.</span><span class="n">is_finished</span><span class="o">.</span><span class="n">any</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">any_batch_is_finished</span><span class="p">:</span>
+                <span class="n">random_sampler</span><span class="o">.</span><span class="n">update_finished</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">random_sampler</span><span class="o">.</span><span class="n">done</span><span class="p">:</span>
+                    <span class="k">break</span>
 
-        <span class="n">random_sampler</span><span class="o">.</span><span class="n">update_finished</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">any_batch_is_finished</span><span class="p">:</span>
+                <span class="n">select_indices</span> <span class="o">=</span> <span class="n">random_sampler</span><span class="o">.</span><span class="n">select_indices</span>
+
+                <span class="c1"># Reorder states.</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">memory_bank</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+                    <span class="n">memory_bank</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">select_indices</span><span class="p">)</span>
+                                        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">memory_bank</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">memory_bank</span> <span class="o">=</span> <span class="n">memory_bank</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">select_indices</span><span class="p">)</span>
+
+                <span class="n">memory_lengths</span> <span class="o">=</span> <span class="n">memory_lengths</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">select_indices</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">src_map</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">src_map</span> <span class="o">=</span> <span class="n">src_map</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">select_indices</span><span class="p">)</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">map_state</span><span class="p">(</span>
+                    <span class="k">lambda</span> <span class="n">state</span><span class="p">,</span> <span class="n">dim</span><span class="p">:</span> <span class="n">state</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">select_indices</span><span class="p">))</span>
+
         <span class="n">results</span><span class="p">[</span><span class="s2">&quot;scores&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">random_sampler</span><span class="o">.</span><span class="n">scores</span>
         <span class="n">results</span><span class="p">[</span><span class="s2">&quot;predictions&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">random_sampler</span><span class="o">.</span><span class="n">predictions</span>
         <span class="n">results</span><span class="p">[</span><span class="s2">&quot;attention&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">random_sampler</span><span class="o">.</span><span class="n">attention</span>
