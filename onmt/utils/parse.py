@@ -32,15 +32,15 @@ class ArgumentParser(cfargparse.ArgumentParser):
 
     @classmethod
     def update_model_opts(cls, model_opt):
-        if model_opt.word_vec_size != -1:
+        if model_opt.word_vec_size > 0:
             model_opt.src_word_vec_size = model_opt.word_vec_size
             model_opt.tgt_word_vec_size = model_opt.word_vec_size
 
-        if model_opt.layers != -1:
+        if model_opt.layers > 0:
             model_opt.enc_layers = model_opt.layers
             model_opt.dec_layers = model_opt.layers
 
-        if model_opt.rnn_size != -1:
+        if model_opt.rnn_size > 0:
             model_opt.enc_rnn_size = model_opt.rnn_size
             model_opt.dec_rnn_size = model_opt.rnn_size
 

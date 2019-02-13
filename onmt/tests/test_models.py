@@ -1,4 +1,3 @@
-import configargparse
 import copy
 import unittest
 import math
@@ -12,8 +11,9 @@ from onmt.model_builder import build_embeddings, \
     build_encoder, build_decoder
 from onmt.encoders.image_encoder import ImageEncoder
 from onmt.encoders.audio_encoder import AudioEncoder
+from onmt.utils.parse import ArgumentParser
 
-parser = configargparse.ArgumentParser(description='train.py')
+parser = ArgumentParser(description='train.py')
 onmt.opts.model_opts(parser)
 onmt.opts.train_opts(parser)
 
@@ -127,8 +127,7 @@ class TestModel(unittest.TestCase):
         embeddings = build_embeddings(opt, word_field)
         enc = build_encoder(opt, embeddings)
 
-        embeddings = build_embeddings(opt, word_field,
-                                      for_encoder=False)
+        embeddings = build_embeddings(opt, word_field, for_encoder=False)
         dec = build_decoder(opt, embeddings)
 
         model = onmt.models.model.NMTModel(enc, dec)
@@ -159,8 +158,7 @@ class TestModel(unittest.TestCase):
         enc = ImageEncoder(
             opt.enc_layers, opt.brnn, opt.enc_rnn_size, opt.dropout)
 
-        embeddings = build_embeddings(opt, word_field,
-                                      for_encoder=False)
+        embeddings = build_embeddings(opt, word_field, for_encoder=False)
         dec = build_decoder(opt, embeddings)
 
         model = onmt.models.model.NMTModel(enc, dec)
@@ -197,8 +195,7 @@ class TestModel(unittest.TestCase):
                            opt.audio_enc_pooling, opt.dropout,
                            opt.sample_rate, opt.window_size)
 
-        embeddings = build_embeddings(opt, word_field,
-                                      for_encoder=False)
+        embeddings = build_embeddings(opt, word_field, for_encoder=False)
         dec = build_decoder(opt, embeddings)
 
         model = onmt.models.model.NMTModel(enc, dec)
@@ -225,12 +222,11 @@ def _add_test(param_setting, methodname):
     """
 
     def test_method(self):
+        opt = copy.deepcopy(self.opt)
         if param_setting:
-            opt = copy.deepcopy(self.opt)
             for param, setting in param_setting:
                 setattr(opt, param, setting)
-        else:
-            opt = self.opt
+        ArgumentParser.update_model_opts(opt)
         getattr(self, methodname)(opt)
     if param_setting:
         name = 'test_' + methodname + "_" + "_".join(
@@ -305,5 +301,13 @@ for p in tests_nmtmodel:
 for p in tests_nmtmodel:
     p.append(('sample_rate', 5500))
     p.append(('window_size', 0.03))
-    p.append(('audio_enc_pooling', '2'))
+    # when reasonable, set audio_enc_pooling to 2
+    for arg, val in p:
+        if arg == "layers" and int(val) > 2:
+            # Need lengths >= audio_enc_pooling**n_layers.
+            # That condition is unrealistic for large n_layers,
+            # so leave audio_enc_pooling at 1.
+            break
+    else:
+        p.append(('audio_enc_pooling', '2'))
     _add_test(p, 'audiomodel_forward')
