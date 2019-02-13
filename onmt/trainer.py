@@ -109,7 +109,7 @@ class Trainer(object):
         self.average_decay = average_decay
         self.moving_average = None
         self.average_every = average_every
-        self.model_dtype=model_dtype
+        self.model_dtype = model_dtype
 
         assert grad_accum_count > 0
         if grad_accum_count > 1:
@@ -253,7 +253,7 @@ class Trainer(object):
             valid_model = deepcopy(self.model)
             for avg, param in zip(self.moving_average,
                                   valid_model.parameters()):
-                param.data = avg.data.half() if model_dtype == "fp16" \
+                param.data = avg.data.half() if self.model_dtype == "fp16" \
                     else avg.data
         else:
             valid_model = self.model
