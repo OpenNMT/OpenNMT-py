@@ -43,22 +43,27 @@ encoder_embeddings = onmt.modules.Embeddings(emb_size, len(src_vocab),
                                              word_padding_idx=src_padding)
 
 encoder = onmt.encoders.RNNEncoder(hidden_size=rnn_size, num_layers=1,
-                                 rnn_type="LSTM", bidirectional=True,
-                                 embeddings=encoder_embeddings)
+                                   rnn_type="LSTM", bidirectional=True,
+                                   embeddings=encoder_embeddings)
 
 decoder_embeddings = onmt.modules.Embeddings(emb_size, len(tgt_vocab),
                                              word_padding_idx=tgt_padding)
-decoder = onmt.decoders.decoder.InputFeedRNNDecoder(hidden_size=rnn_size, num_layers=1,
-                                           bidirectional_encoder=True,
-                                           rnn_type="LSTM", embeddings=decoder_embeddings)
+decoder = onmt.decoders.decoder.InputFeedRNNDecoder(
+    hidden_size=rnn_size, num_layers=1, bidirectional_encoder=True, 
+    rnn_type="LSTM", embeddings=decoder_embeddings)
+
 model = onmt.models.model.NMTModel(encoder, decoder)
 
 # Specify the tgt word generator and loss computation module
 model.generator = nn.Sequential(
-            nn.Linear(rnn_size, len(tgt_vocab)),
-            nn.LogSoftmax())
-loss = onmt.utils.loss.NMTLossCompute(criterion=nn.NLLLoss(ignore_index=tgt_padding, reduction='sum'), 
-                                        generator=model.generator)
+    nn.Linear(rnn_size, len(tgt_vocab)),
+    nn.LogSoftmax())
+builder = onmt.translate.TranslationBuilder(data=valid_data_dataset, fields=vocab_fields)
+
+loss = onmt.utils.loss.NMTLossCompute(
+    criterion=nn.NLLLoss(ignore_index=tgt_padding, reduction='sum'),
+    generator=model.generator))
+
 ```
 
 Now we set up the optimizer. Our wrapper around a core torch optim class handles learning rate updates and gradient normalization automatically.
@@ -67,7 +72,8 @@ Now we set up the optimizer. Our wrapper around a core torch optim class handles
 ```python
 lr = 1
 torch_optimizer = torch.optim.SGD(model.parameters(), lr=lr)
-optim = onmt.utils.optimizers.Optimizer(torch_optimizer, learning_rate=lr, max_grad_norm=2)
+optim = onmt.utils.optimizers.Optimizer(
+    torch_optimizer, learning_rate=lr, max_grad_norm=2)
 ```
 
 Now we load the data from disk with the values of the associated vocab fields. To iterate through the data itself we use a wrapper around a torchtext iterator class. We specify one for both the training and test data.
@@ -79,18 +85,42 @@ from itertools import chain
 train_data_file = "data/data.train.0.pt"
 valid_data_file = "data/data.valid.0.pt"
 dataset_fields = dict(chain.from_iterable(vocab_fields.values()))
-train_iter = onmt.inputters.inputter.DatasetLazyIter(dataset_paths = [train_data_file], fields = dataset_fields, batch_size=10, batch_size_multiple=1, batch_size_fn=None, device="cpu", is_train=True, repeat=False)
-valid_iter = onmt.inputters.inputter.DatasetLazyIter(dataset_paths = [valid_data_file], fields = dataset_fields, batch_size=10, batch_size_multiple=1, batch_size_fn=None, device="cpu", is_train=False, repeat=False)
+train_iter = onmt.inputters.inputter.DatasetLazyIter(dataset_paths=[train_data_file],
+                                                     fields = dataset_fields,
+                                                     batch_size=10,
+                                                     batch_size_multiple=1,
+                                                     batch_size_fn=None,
+                                                     device="cpu",
+                                                     is_train=True,
+                                                     repeat=False)
+
+valid_iter = onmt.inputters.inputter.DatasetLazyIter(dataset_paths=[valid_data_file],
+                                                     fields=dataset_fields,
+                                                     batch_size=10,
+                                                     batch_size_multiple=1,
+                                                     batch_size_fn=None,
+                                                     device="cpu",
+                                                     is_train=False,
+                                                     repeat=False)
 ```
 
 Finally we train. Keeping track of the output requires a report manager.
 
 
 ```python
-report_mgr = onmt.utils.ReportMgr(report_every=1, start_time=None, tensorboard_writer=None)
-trainer = onmt.Trainer(model=model, train_loss=loss, valid_loss=loss, optim=optim, report_manager=report_mgr)
-trainer.train(train_iter=train_iter, train_steps=20, valid_iter=valid_iter, valid_steps=10)
+report_mgr = onmt.utils.ReportMgr(
+    report_every=1, start_time=None, tensorboard_writer=None)
+trainer = onmt.Trainer(model=model,
+                       train_loss=loss,
+                       valid_loss=loss,
+                       optim=optim,
+                       report_manager=report_mgr)
+trainer.train(train_iter=train_iter,
+              train_steps=20,
+              valid_iter=valid_iter,
+              valid_steps=10)
 ```
+
 ```
 [2019-02-13 10:17:03,247 INFO] Start training loop and validate every 10 steps...
 [2019-02-13 10:17:03,329 INFO] Loading dataset from data/data.train.0.pt, number of examples: 10000
@@ -138,11 +168,19 @@ onmt.opts.translate_opts(dummy_parser)
 opt = dummy_parser.parse_args("-model dummymodel -src dummysrc")
 
 scorer = onmt.translate.GNMTGlobalScorer.from_opt(opt)
-translator = onmt.translate.Translator(model=model, fields=vocab_fields, opt=opt, model_opt=model_opt, global_scorer=scorer)
-builder = onmt.translate.TranslationBuilder(data=valid_data_dataset, fields=vocab_fields)
+translator = onmt.translate.Translator(model=model,
+                                       fields=vocab_fields,
+                                       opt=opt,
+                                       model_opt=model_opt,
+                                       global_scorer=scorer)
+
+builder = onmt.translate.TranslationBuilder(data=valid_data_dataset,
+                                            fields=vocab_fields)
 
 for batch in valid_iter:
-    trans_batch = translator.translate_batch(batch=batch, src_vocabs=valid_data_dataset.src_vocabs, attn_debug=False)
+    trans_batch = translator.translate_batch(
+        batch=batch, src_vocabs=valid_data_dataset.src_vocabs,
+        attn_debug=False)
     translations = builder.from_batch(trans_batch)
     for trans in translations:
         print(trans.log(0))
@@ -200,5 +238,3 @@ PRED SCORE: 9149.8838
 SENT 0: ['The', 'story', 'of', 'Libya', '&apos;s', 'liberation', ',', 'or', 'rebellion', ',', 'already', 'has', 'its', 'defeated', '.']
 PRED 0: <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk>
 PRED SCORE: 9153.0166
-
-```
