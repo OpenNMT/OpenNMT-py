@@ -99,7 +99,7 @@ class AudioEncoder(EncoderBase):
         src = src.transpose(0, 1).transpose(0, 3).contiguous() \
                  .view(t, batch_size, nfft)
         orig_lengths = lengths
-        lengths = lengths.float().view(-1).tolist()
+        lengths = lengths.view(-1).tolist()
 
         for l in range(self.enc_layers):
             rnn = getattr(self, 'rnn_%d' % l)
