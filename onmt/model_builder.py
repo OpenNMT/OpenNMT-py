@@ -17,6 +17,7 @@ from onmt.modules import Embeddings, CopyGenerator
 from onmt.modules.util_class import Cast
 from onmt.utils.misc import use_gpu
 from onmt.utils.logging import logger
+from onmt.utils.parse import ArgumentParser
 
 
 def build_embeddings(opt, text_field, for_encoder=True):
@@ -77,13 +78,15 @@ def build_decoder(opt, embeddings):
     return str2dec[dec_type].from_opt(opt, embeddings)
 
 
-def load_test_model(opt, dummy_opt, model_path=None):
+def load_test_model(opt, model_path=None):
     if model_path is None:
         model_path = opt.models[0]
     checkpoint = torch.load(model_path,
                             map_location=lambda storage, loc: storage)
 
-    model_opt = checkpoint['opt']
+    model_opt = ArgumentParser.ckpt_model_opts(checkpoint['opt'])
+    ArgumentParser.update_model_opts(model_opt)
+    ArgumentParser.validate_model_opts(model_opt)
     vocab = checkpoint['vocab']
     if inputters.old_style_vocab(vocab):
         fields = inputters.load_old_vocab(
@@ -92,9 +95,6 @@ def load_test_model(opt, dummy_opt, model_path=None):
     else:
         fields = vocab
 
-    for arg in dummy_opt:
-        if arg not in model_opt:
-            model_opt.__dict__[arg] = dummy_opt[arg]
     model = build_base_model(model_opt, fields, use_gpu(opt), checkpoint,
                              opt.gpu)
     model.eval()
@@ -105,7 +105,9 @@ def load_test_model(opt, dummy_opt, model_path=None):
 def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
     """
     Args:
-        model_opt: the option loaded from checkpoint.
+        model_opt: the option loaded from checkpoint. It's important that
+            the opts have been updated and validated. See
+            :class:`onmt.utils.parse.ArgumentParser`.
         fields: `Field` objects for the model.
         gpu (bool): whether to use gpu.
         checkpoint: the model gnerated by train phase, or a resumed snapshot
@@ -114,14 +116,6 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
     Returns:
         the NMTModel.
     """
-
-    assert model_opt.model_type in ["text", "img", "audio"], \
-        "Unsupported model type %s" % model_opt.model_type
-
-    # for backward compatibility
-    if model_opt.rnn_size != -1:
-        model_opt.enc_rnn_size = model_opt.rnn_size
-        model_opt.dec_rnn_size = model_opt.rnn_size
 
     # Build embeddings.
     if model_opt.model_type == "text":
@@ -222,8 +216,6 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
     model.generator = generator
     model.to(device)
     if model_opt.model_dtype == 'fp16':
-        logger.warning('FP16 is experimental, the generated checkpoints may '
-                       'be incompatible with a future version')
         model.half()
 
     return model

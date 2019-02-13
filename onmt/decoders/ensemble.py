@@ -116,16 +116,14 @@ class EnsembleModel(NMTModel):
         self.models = nn.ModuleList(models)
 
 
-def load_test_model(opt, dummy_opt):
+def load_test_model(opt):
     """ Read in multiple models for ensemble """
     shared_fields = None
     shared_model_opt = None
     models = []
     for model_path in opt.models:
         fields, model, model_opt = \
-            onmt.model_builder.load_test_model(opt,
-                                               dummy_opt,
-                                               model_path=model_path)
+            onmt.model_builder.load_test_model(opt, model_path=model_path)
         if shared_fields is None:
             shared_fields = fields
         else:

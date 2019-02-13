@@ -2,15 +2,18 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import unicode_literals
-import configargparse
 from onmt.utils.logging import init_logger
 from onmt.utils.misc import split_corpus
 from onmt.translate.translator import build_translator
 
 import onmt.opts as opts
+from onmt.utils.parse import ArgumentParser
 
 
 def main(opt):
+    ArgumentParser.validate_translate_opts(opt)
+    logger = init_logger(opt.log_file)
+
     translator = build_translator(opt, report_score=True)
     src_shards = split_corpus(opt.src, opt.shard_size)
     tgt_shards = split_corpus(opt.tgt, opt.shard_size) \
@@ -29,14 +32,10 @@ def main(opt):
 
 
 if __name__ == "__main__":
-    parser = configargparse.ArgumentParser(
-        description='translate.py',
-        config_file_parser_class=configargparse.YAMLConfigFileParser,
-        formatter_class=configargparse.ArgumentDefaultsHelpFormatter)
+    parser = ArgumentParser(description='translate.py')
+
     opts.config_opts(parser)
-    opts.add_md_help_argument(parser)
     opts.translate_opts(parser)
 
     opt = parser.parse_args()
-    logger = init_logger(opt.log_file)
     main(opt)
