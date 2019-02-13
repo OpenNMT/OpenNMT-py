@@ -17,34 +17,37 @@
   
 
   
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
 
-  
-  
     
 
   
-
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Doc: Modules" href="onmt.modules.html" />
     <link rel="prev" title="Quickstart" href="quickstart.html" /> 
-
-  
-  <script src="_static/js/modernizr.min.js"></script>
-
 </head>
 
 <body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
-
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
+        <div class="wy-side-nav-search" >
           
 
           
@@ -175,7 +178,7 @@
 <h2>Trainer<a class="headerlink" href="#trainer" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.Trainer">
-<em class="property">class </em><code class="descclassname">onmt.</code><code class="descname">Trainer</code><span class="sig-paren">(</span><em>model</em>, <em>train_loss</em>, <em>valid_loss</em>, <em>optim</em>, <em>trunc_size=0</em>, <em>shard_size=32</em>, <em>norm_method='sents'</em>, <em>grad_accum_count=1</em>, <em>n_gpu=1</em>, <em>gpu_rank=1</em>, <em>gpu_verbose_level=0</em>, <em>report_manager=None</em>, <em>model_saver=None</em>, <em>average_decay=0</em>, <em>average_every=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/trainer.html#Trainer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.</code><code class="descname">Trainer</code><span class="sig-paren">(</span><em>model</em>, <em>train_loss</em>, <em>valid_loss</em>, <em>optim</em>, <em>trunc_size=0</em>, <em>shard_size=32</em>, <em>norm_method='sents'</em>, <em>grad_accum_count=1</em>, <em>n_gpu=1</em>, <em>gpu_rank=1</em>, <em>gpu_verbose_level=0</em>, <em>report_manager=None</em>, <em>model_saver=None</em>, <em>average_decay=0</em>, <em>average_every=1</em>, <em>model_dtype='fp32'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/trainer.html#Trainer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class that controls the training process.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -274,7 +277,7 @@ iterations.</li>
         <a href="onmt.modules.html" class="btn btn-neutral float-right" title="Doc: Modules" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="quickstart.html" class="btn btn-neutral" title="Quickstart" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="quickstart.html" class="btn btn-neutral float-left" title="Quickstart" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -300,27 +303,16 @@ iterations.</li>
   
 
 
-  
-
-    
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script type="text/javascript" src="_static/language_data.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    
-
-  
-
-  <script type="text/javascript" src="_static/js/theme.js"></script>
-
   <script type="text/javascript">
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script> 
+  </script>
+
+  
+  
+    
+   
 
 </body>
 </html>

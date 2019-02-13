@@ -17,32 +17,36 @@
   
 
   
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
 
-  
-  
     
 
   
-
   <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
-
-  
-  <script src="../../_static/js/modernizr.min.js"></script>
-
 </head>
 
 <body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
-
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
+        <div class="wy-side-nav-search" >
           
 
           
@@ -216,7 +220,8 @@
                            <span class="n">gpu_verbose_level</span><span class="p">,</span> <span class="n">report_manager</span><span class="p">,</span>
                            <span class="n">model_saver</span><span class="o">=</span><span class="n">model_saver</span> <span class="k">if</span> <span class="n">gpu_rank</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
                            <span class="n">average_decay</span><span class="o">=</span><span class="n">average_decay</span><span class="p">,</span>
-                           <span class="n">average_every</span><span class="o">=</span><span class="n">average_every</span><span class="p">)</span>
+                           <span class="n">average_every</span><span class="o">=</span><span class="n">average_every</span><span class="p">,</span>
+                           <span class="n">model_dtype</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">model_dtype</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">trainer</span>
 
 
@@ -249,7 +254,7 @@
                  <span class="n">trunc_size</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">shard_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span>
                  <span class="n">norm_method</span><span class="o">=</span><span class="s2">&quot;sents&quot;</span><span class="p">,</span> <span class="n">grad_accum_count</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_gpu</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">gpu_rank</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
                  <span class="n">gpu_verbose_level</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">report_manager</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">model_saver</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">average_decay</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">average_every</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+                 <span class="n">average_decay</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">average_every</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">model_dtype</span><span class="o">=</span><span class="s1">&#39;fp32&#39;</span><span class="p">):</span>
         <span class="c1"># Basic attributes.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">train_loss</span> <span class="o">=</span> <span class="n">train_loss</span>
@@ -267,6 +272,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">average_decay</span> <span class="o">=</span> <span class="n">average_decay</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">moving_average</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">average_every</span> <span class="o">=</span> <span class="n">average_every</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_dtype</span> <span class="o">=</span> <span class="n">model_dtype</span>
 
         <span class="k">assert</span> <span class="n">grad_accum_count</span> <span class="o">&gt;</span> <span class="mi">0</span>
         <span class="k">if</span> <span class="n">grad_accum_count</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
@@ -297,7 +303,7 @@
 
     <span class="k">def</span> <span class="nf">_update_average</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">moving_average</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">copy_params</span> <span class="o">=</span> <span class="p">[</span><span class="n">params</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+            <span class="n">copy_params</span> <span class="o">=</span> <span class="p">[</span><span class="n">params</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
                            <span class="k">for</span> <span class="n">params</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">()]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">moving_average</span> <span class="o">=</span> <span class="n">copy_params</span>
         <span class="k">else</span><span class="p">:</span>
@@ -307,7 +313,7 @@
                                      <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">()):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">moving_average</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> \
                     <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">average_decay</span><span class="p">)</span> <span class="o">*</span> <span class="n">avg</span> <span class="o">+</span> \
-                    <span class="n">average_decay</span> <span class="o">*</span> <span class="n">cpt</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+                    <span class="n">cpt</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">float</span><span class="p">()</span> <span class="o">*</span> <span class="n">average_decay</span>
 
 <div class="viewcode-block" id="Trainer.train"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.train">[docs]</a>    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
               <span class="n">train_iter</span><span class="p">,</span>
@@ -410,7 +416,8 @@
             <span class="n">valid_model</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">avg</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">moving_average</span><span class="p">,</span>
                                   <span class="n">valid_model</span><span class="o">.</span><span class="n">parameters</span><span class="p">()):</span>
-                <span class="n">param</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">avg</span><span class="o">.</span><span class="n">data</span>
+                <span class="n">param</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">avg</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">half</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_dtype</span> <span class="o">==</span> <span class="s2">&quot;fp16&quot;</span> \
+                    <span class="k">else</span> <span class="n">avg</span><span class="o">.</span><span class="n">data</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">valid_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span>
 
@@ -593,28 +600,16 @@
   
 
 
-  
-
-    
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../../_static/jquery.js"></script>
-        <script type="text/javascript" src="../../_static/underscore.js"></script>
-        <script type="text/javascript" src="../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../_static/language_data.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-        <script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script>
-    
-
-  
-
-  <script type="text/javascript" src="../../_static/js/theme.js"></script>
-
   <script type="text/javascript">
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script> 
+  </script>
+
+  
+  
+    
+   
 
 </body>
 </html>
