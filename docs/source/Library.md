@@ -21,9 +21,15 @@ We begin by loading in the vocabulary for the model of interest. This will let u
 
 
 ```python
-vocab = dict(torch.load("../../data/data.vocab.pt"))
-src_padding = vocab["src"].stoi[onmt.inputters.PAD_WORD]
-tgt_padding = vocab["tgt"].stoi[onmt.inputters.PAD_WORD]
+vocab_fields = torch.load("../../data/data.vocab.pt")
+
+src_text_field = vocab_fields["src"][0][1].base_field
+src_vocab = src_text_field.vocab
+src_padding = src_vocab.stoi[src_text_field.pad_token]
+
+tgt_text_field = vocab_fields['tgt'][0][1].base_field
+tgt_vocab = tgt_text_field.vocab
+tgt_padding = tgt_vocab.stoi[tgt_text_field.pad_token]
 ```
 
 Next we specify the core model itself. Here we will build a small model with an encoder and an attention based input feeding decoder. Both models will be RNNs and the encoder will be bidirectional
@@ -33,14 +39,14 @@ Next we specify the core model itself. Here we will build a small model with an 
 emb_size = 10
 rnn_size = 6
 # Specify the core model.
-encoder_embeddings = onmt.modules.Embeddings(emb_size, len(vocab["src"]),
+encoder_embeddings = onmt.modules.Embeddings(emb_size, len(src_vocab),
                                              word_padding_idx=src_padding)
 
 encoder = onmt.encoders.RNNEncoder(hidden_size=rnn_size, num_layers=1,
                                  rnn_type="LSTM", bidirectional=True,
                                  embeddings=encoder_embeddings)
 
-decoder_embeddings = onmt.modules.Embeddings(emb_size, len(vocab["tgt"]),
+decoder_embeddings = onmt.modules.Embeddings(emb_size, len(tgt_vocab),
                                              word_padding_idx=tgt_padding)
 decoder = onmt.decoders.decoder.InputFeedRNNDecoder(hidden_size=rnn_size, num_layers=1,
                                            bidirectional_encoder=True,
@@ -49,163 +55,150 @@ model = onmt.models.model.NMTModel(encoder, decoder)
 
 # Specify the tgt word generator and loss computation module
 model.generator = nn.Sequential(
-            nn.Linear(rnn_size, len(vocab["tgt"])),
+            nn.Linear(rnn_size, len(tgt_vocab)),
             nn.LogSoftmax())
-loss = onmt.utils.loss.NMTLossCompute(model.generator, vocab["tgt"])
+loss = onmt.utils.loss.NMTLossCompute(criterion=nn.NLLLoss(ignore_index=tgt_padding, reduction='sum'), 
+                                        generator=model.generator)
 ```
 
-Now we set up the optimizer. This could be a core torch optim class, or our wrapper which handles learning rate updates and gradient normalization automatically.
+Now we set up the optimizer. Our wrapper around a core torch optim class handles learning rate updates and gradient normalization automatically.
 
 
 ```python
-optim = onmt.utils.optimizers.Optimizer(method="sgd", learning_rate=1, max_grad_norm=2)
-optim.set_parameters(model.named_parameters())
+lr = 1
+torch_optimizer = torch.optim.SGD(model.parameters(), lr=lr)
+optim = onmt.utils.optimizers.Optimizer(torch_optimizer, learning_rate=lr, max_grad_norm=2)
 ```
 
-Now we load the data from disk. Currently will need to call a function to load the fields into the data as well.
+Now we load the data from disk with the values of the associated vocab fields. To iterate through the data itself we use a wrapper around a torchtext iterator class. We specify one for both the training and test data.
 
 
 ```python
 # Load some data
-data = torch.load("../../data/data.train.1.pt")
-valid_data = torch.load("../../data/data.valid.1.pt")
-data.load_fields(vocab)
-valid_data.load_fields(vocab)
-data.examples = data.examples[:100]
+from itertools import chain
+train_data_file = "data/data.train.0.pt"
+valid_data_file = "data/data.valid.0.pt"
+dataset_fields = dict(chain.from_iterable(vocab_fields.values()))
+train_iter = onmt.inputters.inputter.DatasetLazyIter(dataset_paths = [train_data_file], fields = dataset_fields, batch_size=10, batch_size_multiple=1, batch_size_fn=None, device="cpu", is_train=True, repeat=False)
+valid_iter = onmt.inputters.inputter.DatasetLazyIter(dataset_paths = [valid_data_file], fields = dataset_fields, batch_size=10, batch_size_multiple=1, batch_size_fn=None, device="cpu", is_train=False, repeat=False)
 ```
 
-To iterate through the data itself we use a torchtext iterator class. We specify one for both the training and test data.
+Finally we train. Keeping track of the output requires a report manager.
 
 
 ```python
-train_iter = onmt.inputters.OrderedIterator(
-                dataset=data, batch_size=10,
-                device=-1,
-                repeat=False)
-valid_iter = onmt.inputters.OrderedIterator(
-                dataset=valid_data, batch_size=10,
-                device=-1,
-                train=False)
+report_mgr = onmt.utils.ReportMgr(report_every=1, start_time=None, tensorboard_writer=None)
+trainer = onmt.Trainer(model=model, train_loss=loss, valid_loss=loss, optim=optim, report_manager=report_mgr)
+trainer.train(train_iter=train_iter, train_steps=20, valid_iter=valid_iter, valid_steps=10)
+```
+```
+[2019-02-13 10:17:03,247 INFO] Start training loop and validate every 10 steps...
+[2019-02-13 10:17:03,329 INFO] Loading dataset from data/data.train.0.pt, number of examples: 10000
+[2019-02-13 10:17:03,392 INFO] Step  1/   20; acc:   0.00; ppl:  0.98; xent: -0.02; lr: 1.00000; 1046/1310 tok/s;      0 sec
+[2019-02-13 10:17:03,460 INFO] Step  2/   20; acc:  33.33; ppl:  0.46; xent: -0.78; lr: 1.00000; 2967/3088 tok/s;      0 sec
+[2019-02-13 10:17:03,497 INFO] Step  3/   20; acc:  41.71; ppl:  0.11; xent: -2.24; lr: 1.00000; 5366/4942 tok/s;      0 sec
+[2019-02-13 10:17:03,535 INFO] Step  4/   20; acc:  32.34; ppl:  0.05; xent: -3.09; lr: 1.00000; 4372/4563 tok/s;      0 sec
+[2019-02-13 10:17:03,598 INFO] Step  5/   20; acc:  33.47; ppl:  0.01; xent: -4.75; lr: 1.00000; 3304/4126 tok/s;      0 sec
+[2019-02-13 10:17:03,635 INFO] Step  6/   20; acc:  36.62; ppl:  0.00; xent: -6.94; lr: 1.00000; 3622/3956 tok/s;      0 sec
+[2019-02-13 10:17:03,685 INFO] Step  7/   20; acc:  35.00; ppl:  0.00; xent: -8.52; lr: 1.00000; 4075/4075 tok/s;      0 sec
+[2019-02-13 10:17:03,721 INFO] Step  8/   20; acc:  37.04; ppl:  0.00; xent: -11.13; lr: 1.00000; 4104/3957 tok/s;      0 sec
+[2019-02-13 10:17:03,782 INFO] Step  9/   20; acc:  29.56; ppl:  0.00; xent: -10.46; lr: 1.00000; 4983/4551 tok/s;      1 sec
+[2019-02-13 10:17:03,817 INFO] Step 10/   20; acc:  33.60; ppl:  0.00; xent: -13.94; lr: 1.00000; 2128/3746 tok/s;      1 sec
+[2019-02-13 10:17:03,852 INFO] Loading dataset from data/data.valid.0.pt, number of examples: 3000
+[2019-02-13 10:17:11,890 INFO] Validation perplexity: 9.35574e-08
+[2019-02-13 10:17:11,890 INFO] Validation accuracy: 35.5637
+[2019-02-13 10:17:11,939 INFO] Step 11/   20; acc:  31.22; ppl:  0.00; xent: -14.34; lr: 1.00000;  22/ 27 tok/s;      9 sec
+[2019-02-13 10:17:11,977 INFO] Step 12/   20; acc:  29.45; ppl:  0.00; xent: -15.54; lr: 1.00000; 3367/4573 tok/s;      9 sec
+[2019-02-13 10:17:12,043 INFO] Step 13/   20; acc:  32.09; ppl:  0.00; xent: -18.27; lr: 1.00000; 3233/4087 tok/s;      9 sec
+[2019-02-13 10:17:12,141 INFO] Step 14/   20; acc:  32.49; ppl:  0.00; xent: -19.98; lr: 1.00000; 4844/4104 tok/s;      9 sec
+[2019-02-13 10:17:12,186 INFO] Step 15/   20; acc:  32.50; ppl:  0.00; xent: -22.22; lr: 1.00000; 5148/5616 tok/s;      9 sec
+[2019-02-13 10:17:12,261 INFO] Step 16/   20; acc:  41.39; ppl:  0.00; xent: -29.82; lr: 1.00000; 4020/3291 tok/s;      9 sec
+[2019-02-13 10:17:12,342 INFO] Step 17/   20; acc:  35.77; ppl:  0.00; xent: -27.76; lr: 1.00000; 3601/3462 tok/s;      9 sec
+[2019-02-13 10:17:12,360 INFO] Step 18/   20; acc:  25.00; ppl:  0.00; xent: -22.50; lr: 1.00000; 3989/4594 tok/s;      9 sec
+[2019-02-13 10:17:12,444 INFO] Step 19/   20; acc:  33.77; ppl:  0.00; xent: -29.69; lr: 1.00000; 4752/4606 tok/s;      9 sec
+[2019-02-13 10:17:12,491 INFO] Step 20/   20; acc:  32.72; ppl:  0.00; xent: -31.11; lr: 1.00000; 4915/4848 tok/s;      9 sec
+[2019-02-13 10:17:12,530 INFO] Loading dataset from data/data.valid.0.pt, number of examples: 3000
+[2019-02-13 10:17:20,607 INFO] Validation perplexity: 4.92281e-16
+[2019-02-13 10:17:20,608 INFO] Validation accuracy: 35.5637
 ```
 
-Finally we train.
-
-
-```python
-trainer = onmt.Trainer(model, loss, loss, optim)
-
-def report_func(*args):
-    stats = args[-1]
-    stats.output(args[0], args[1], 10, 0)
-    return stats
-
-for epoch in range(2):
-    trainer.train(epoch, report_func)
-    val_stats = trainer.validate()
-
-    print("Validation")
-    val_stats.output(epoch, 11, 10, 0)
-    trainer.epoch_step(val_stats.ppl(), epoch)
-```
-
-    Epoch  0,     0/   10; acc:   0.00; ppl: 1225.23; 1320 src tok/s; 1320 tgt tok/s; 1514090454 s elapsed
-    Epoch  0,     1/   10; acc:   9.50; ppl: 996.33; 1188 src tok/s; 1194 tgt tok/s; 1514090454 s elapsed
-    Epoch  0,     2/   10; acc:  16.51; ppl: 694.48; 1265 src tok/s; 1267 tgt tok/s; 1514090454 s elapsed
-    Epoch  0,     3/   10; acc:  20.49; ppl: 470.39; 1459 src tok/s; 1420 tgt tok/s; 1514090454 s elapsed
-    Epoch  0,     4/   10; acc:  22.68; ppl: 387.03; 1511 src tok/s; 1462 tgt tok/s; 1514090454 s elapsed
-    Epoch  0,     5/   10; acc:  24.58; ppl: 345.44; 1625 src tok/s; 1509 tgt tok/s; 1514090454 s elapsed
-    Epoch  0,     6/   10; acc:  25.37; ppl: 314.39; 1586 src tok/s; 1493 tgt tok/s; 1514090454 s elapsed
-    Epoch  0,     7/   10; acc:  26.14; ppl: 291.15; 1593 src tok/s; 1520 tgt tok/s; 1514090455 s elapsed
-    Epoch  0,     8/   10; acc:  26.32; ppl: 274.79; 1606 src tok/s; 1545 tgt tok/s; 1514090455 s elapsed
-    Epoch  0,     9/   10; acc:  26.83; ppl: 247.32; 1669 src tok/s; 1614 tgt tok/s; 1514090455 s elapsed
-    Validation
-    Epoch  0,    11/   10; acc:  13.41; ppl: 111.94;   0 src tok/s; 7329 tgt tok/s; 1514090464 s elapsed
-    Epoch  1,     0/   10; acc:   6.59; ppl: 147.05; 1849 src tok/s; 1743 tgt tok/s; 1514090464 s elapsed
-    Epoch  1,     1/   10; acc:  22.10; ppl: 130.66; 2002 src tok/s; 1957 tgt tok/s; 1514090464 s elapsed
-    Epoch  1,     2/   10; acc:  20.16; ppl: 122.49; 1748 src tok/s; 1760 tgt tok/s; 1514090464 s elapsed
-    Epoch  1,     3/   10; acc:  23.52; ppl: 117.41; 1690 src tok/s; 1698 tgt tok/s; 1514090464 s elapsed
-    Epoch  1,     4/   10; acc:  24.16; ppl: 119.42; 1647 src tok/s; 1662 tgt tok/s; 1514090464 s elapsed
-    Epoch  1,     5/   10; acc:  25.44; ppl: 115.31; 1775 src tok/s; 1709 tgt tok/s; 1514090465 s elapsed
-    Epoch  1,     6/   10; acc:  24.05; ppl: 115.11; 1780 src tok/s; 1718 tgt tok/s; 1514090465 s elapsed
-    Epoch  1,     7/   10; acc:  25.32; ppl: 109.59; 1799 src tok/s; 1765 tgt tok/s; 1514090465 s elapsed
-    Epoch  1,     8/   10; acc:  25.14; ppl: 108.16; 1771 src tok/s; 1734 tgt tok/s; 1514090465 s elapsed
-    Epoch  1,     9/   10; acc:  25.58; ppl: 107.13; 1817 src tok/s; 1757 tgt tok/s; 1514090465 s elapsed
-    Validation
-    Epoch  1,    11/   10; acc:  19.58; ppl:  88.09;   0 src tok/s; 7371 tgt tok/s; 1514090474 s elapsed
-
-
-To use the model, we need to load up the translation functions
+To use the model, we need to load up the translation functions. A Translator object requires the vocab fields, a global scorer, general options and model options, here default values collected with dummy parsers.
 
 
 ```python
 import onmt.translate
-```
+import configargparse
 
+dummy_parser = configargparse.ArgumentParser()
+onmt.opts.model_opts(dummy_parser)
+model_opt = dummy_parser.parse_known_args([])[0]
 
-```python
-translator = onmt.translate.Translator(beam_size=10, fields=data.fields, model=model)
-builder = onmt.translate.TranslationBuilder(data=valid_data, fields=data.fields)
+dummy_parser = configargparse.ArgumentParser()
+onmt.opts.translate_opts(dummy_parser)
+opt = dummy_parser.parse_args("-model dummymodel -src dummysrc")
 
-valid_data.src_vocabs
+scorer = onmt.translate.GNMTGlobalScorer.from_opt(opt)
+translator = onmt.translate.Translator(model=model, fields=vocab_fields, opt=opt, model_opt=model_opt, global_scorer=scorer)
+builder = onmt.translate.TranslationBuilder(data=valid_data_dataset, fields=vocab_fields)
+
 for batch in valid_iter:
-    trans_batch = translator.translate_batch(batch=batch, data=valid_data)
+    trans_batch = translator.translate_batch(batch=batch, src_vocabs=valid_data_dataset.src_vocabs, attn_debug=False)
     translations = builder.from_batch(trans_batch)
     for trans in translations:
         print(trans.log(0))
     break
 ```
-
-    PRED SCORE: -4.0690
-
-    SENT 0: ('The', 'competitors', 'have', 'other', 'advantages', ',', 'too', '.')
-    PRED 0: .
-
-    PRED SCORE: -4.2736
-
-    SENT 0: ('The', 'company', '&apos;s', 'durability', 'goes', 'back', 'to', 'its', 'first', 'boss', ',', 'a', 'visionary', ',', 'Thomas', 'J.', 'Watson', 'Sr.')
-    PRED 0: .
-
-    PRED SCORE: -4.0144
-
-    SENT 0: ('&quot;', 'From', 'what', 'we', 'know', 'today', ',', 'you', 'have', 'to', 'ask', 'how', 'I', 'could', 'be', 'so', 'wrong', '.', '&quot;')
-    PRED 0: .
-
-    PRED SCORE: -4.1361
-
-    SENT 0: ('Boeing', 'Co', 'shares', 'rose', '1.5%', 'to', '$', '67.94', '.')
-    PRED 0: .
-
-    PRED SCORE: -4.1382
-
-    SENT 0: ('Some', 'did', 'not', 'believe', 'him', ',', 'they', 'said', 'that', 'he', 'got', 'dizzy', 'even', 'in', 'the', 'truck', ',', 'but', 'always', 'wanted', 'to', 'fulfill', 'his', 'dream', ',', 'that', 'of', 'becoming', 'a', 'pilot', '.')
-    PRED 0: .
-
-    PRED SCORE: -3.8881
-
-    SENT 0: ('In', 'your', 'opinion', ',', 'the', 'council', 'should', 'ensure', 'that', 'the', 'band', 'immediately', 'above', 'the', 'Ronda', 'de', 'Dalt', 'should', 'provide', 'in', 'its', 'entirety', ',', 'an', 'area', 'of', 'equipment', 'to', 'conduct', 'a', 'smooth', 'transition', 'between', 'the', 'city', 'and', 'the', 'green', '.')
-    PRED 0: .
-
-    PRED SCORE: -4.0778
-
-    SENT 0: ('The', 'clerk', 'of', 'the', 'court', ',', 'Jorge', 'Yanez', ',', 'went', 'to', 'the', 'jail', 'of', 'the', 'municipality', 'of', 'San', 'Nicolas', 'of', 'Garza', 'to', 'notify', 'Jonah', 'that', 'he', 'has', 'been', 'legally', 'pardoned', 'and', 'his', 'record', 'will', 'be', 'filed', '.')
-    PRED 0: .
-
-    PRED SCORE: -4.2479
-
-    SENT 0: ('&quot;', 'In', 'a', 'research', 'it', 'is', 'reported', 'that', 'there', 'are', 'no', 'parts', 'or', 'components', 'of', 'the', 'ship', 'in', 'another', 'place', ',', 'the', 'impact', 'is', 'presented', 'in', 'a', 'structural', 'way', '.')
-    PRED 0: .
-
-    PRED SCORE: -3.8585
-
-    SENT 0: ('On', 'the', 'asphalt', 'covering', ',', 'he', 'added', ',', 'is', 'placed', 'a', 'final', 'layer', 'called', 'rolling', 'covering', ',', 'which', 'is', 'made', '\u200b', '\u200b', 'of', 'a', 'fine', 'stone', 'material', ',', 'meaning', 'sand', 'also', 'dipped', 'into', 'the', 'asphalt', '.')
-    PRED 0: .
-
-    PRED SCORE: -4.2298
-
-    SENT 0: ('This', 'is', '200', 'bar', 'on', 'leaving', 'and', '100', 'bar', 'on', 'arrival', '.')
-    PRED 0: .
+```
+[2019-02-13 10:19:18,802 INFO] Loading dataset from data/data.valid.0.pt, number of examples: 3000
 
 
+SENT 0: ['Parliament', 'Does', 'Not', 'Support', 'Amendment', 'Freeing', 'Tymoshenko']
+PRED 0: <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk>
+PRED SCORE: 9153.7441
 
-    /usr/local/lib/python3.5/dist-packages/torch/tensor.py:297: UserWarning: other is not broadcastable to self, but they have the same number of elements.  Falling back to deprecated pointwise behavior.
-      return self.add_(other)
+
+SENT 0: ['Today', ',', 'the', 'Ukraine', 'parliament', 'dismissed', ',', 'within', 'the', 'Code', 'of', 'Criminal', 'Procedure', 'amendment', ',', 'the', 'motion', 'to', 'revoke', 'an', 'article', 'based', 'on', 'which', 'the', 'opposition', 'leader', ',', 'Yulia', 'Tymoshenko', ',', 'was', 'sentenced', '.']
+PRED 0: <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk>
+PRED SCORE: 9153.3516
+
+
+SENT 0: ['The', 'amendment', 'that', 'would', 'lead', 'to', 'freeing', 'the', 'imprisoned', 'former', 'Prime', 'Minister', 'was', 'revoked', 'during', 'second', 'reading', 'of', 'the', 'proposal', 'for', 'mitigation', 'of', 'sentences', 'for', 'economic', 'offences', '.']
+PRED 0: <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk>
+PRED SCORE: 9153.1836
+
+
+SENT 0: ['In', 'October', ',', 'Tymoshenko', 'was', 'sentenced', 'to', 'seven', 'years', 'in', 'prison', 'for', 'entering', 'into', 'what', 'was', 'reported', 'to', 'be', 'a', 'disadvantageous', 'gas', 'deal', 'with', 'Russia', '.']
+PRED 0: <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk>
+PRED SCORE: 9153.3281
+
+
+SENT 0: ['The', 'verdict', 'is', 'not', 'yet', 'final;', 'the', 'court', 'will', 'hear', 'Tymoshenko', '&apos;s', 'appeal', 'in', 'December', '.']
+PRED 0: <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk>
+PRED SCORE: 9153.2695
+
+
+SENT 0: ['Tymoshenko', 'claims', 'the', 'verdict', 'is', 'a', 'political', 'revenge', 'of', 'the', 'regime;', 'in', 'the', 'West', ',', 'the', 'trial', 'has', 'also', 'evoked', 'suspicion', 'of', 'being', 'biased', '.']
+PRED 0: <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk>
+PRED SCORE: 9153.6104
+
+
+SENT 0: ['The', 'proposal', 'to', 'remove', 'Article', '365', 'from', 'the', 'Code', 'of', 'Criminal', 'Procedure', ',', 'upon', 'which', 'the', 'former', 'Prime', 'Minister', 'was', 'sentenced', ',', 'was', 'supported', 'by', '147', 'members', 'of', 'parliament', '.']
+PRED 0: <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk>
+PRED SCORE: 9153.1816
+
+
+SENT 0: ['Its', 'ratification', 'would', 'require', '226', 'votes', '.']
+PRED 0: <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk>
+PRED SCORE: 9153.6611
+
+
+SENT 0: ['Libya', '&apos;s', 'Victory']
+PRED 0: <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk>
+PRED SCORE: 9149.8838
+
+
+SENT 0: ['The', 'story', 'of', 'Libya', '&apos;s', 'liberation', ',', 'or', 'rebellion', ',', 'already', 'has', 'its', 'defeated', '.']
+PRED 0: <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk>
+PRED SCORE: 9153.0166
+
+```
