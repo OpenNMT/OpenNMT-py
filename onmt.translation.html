@@ -288,7 +288,7 @@
 <h2>Translator Class<a class="headerlink" href="#translator-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.translate.Translator">
-<em class="property">class </em><code class="descclassname">onmt.translate.</code><code class="descname">Translator</code><span class="sig-paren">(</span><em>model</em>, <em>fields</em>, <em>opt</em>, <em>model_opt</em>, <em>global_scorer=None</em>, <em>out_file=None</em>, <em>report_score=True</em>, <em>logger=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translator.html#Translator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translator" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.translate.</code><code class="descname">Translator</code><span class="sig-paren">(</span><em>model</em>, <em>fields</em>, <em>src_reader</em>, <em>tgt_reader</em>, <em>gpu=-1</em>, <em>n_best=1</em>, <em>min_length=0</em>, <em>max_length=100</em>, <em>beam_size=30</em>, <em>random_sampling_topk=1</em>, <em>random_sampling_temp=1</em>, <em>stepwise_penalty=None</em>, <em>dump_beam=False</em>, <em>block_ngram_repeat=0</em>, <em>ignore_when_blocking=frozenset()</em>, <em>replace_unk=False</em>, <em>data_type='text'</em>, <em>verbose=False</em>, <em>report_bleu=False</em>, <em>report_rouge=False</em>, <em>report_time=False</em>, <em>copy_attn=False</em>, <em>global_scorer=None</em>, <em>out_file=None</em>, <em>report_score=True</em>, <em>logger=None</em>, <em>seed=-1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translator.html#Translator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Translate a batch of sentences with a saved model.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -298,9 +298,33 @@
 <li><strong>model</strong> (<em>onmt.modules.NMTModel</em>) – NMT model to use for translation</li>
 <li><strong>fields</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>list</em><em>[</em><em>tuple</em><em>[</em><em>str</em><em>, </em><em>torchtext.data.Field</em><em>]</em><em>]</em><em>]</em>) – A dict
 mapping each side to its list of name-Field pairs.</li>
-<li><strong>opt</strong> (<em>argparse.Namespace</em>) – Command line options</li>
-<li><strong>model_opt</strong> (<em>argparse.Namespace</em>) – Command line options saved with
-the model checkpoint.</li>
+<li><strong>src_reader</strong> (<em>inputters.DataReaderBase</em>) – Source reader.</li>
+<li><strong>tgt_reader</strong> (<em>inputters.TextDataReader</em>) – Target reader.</li>
+<li><strong>gpu</strong> (<em>int</em>) – GPU device. Set to negative for no GPU.</li>
+<li><strong>n_best</strong> (<em>int</em>) – How many beams to wait for.</li>
+<li><strong>min_length</strong> (<em>int</em>) – See
+<code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.translate.decode_strategy.DecodeStrategy</span></code>.</li>
+<li><strong>max_length</strong> (<em>int</em>) – See
+<code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.translate.decode_strategy.DecodeStrategy</span></code>.</li>
+<li><strong>beam_size</strong> (<em>int</em>) – Number of beams.</li>
+<li><strong>random_sampling_topk</strong> (<em>int</em>) – See
+<code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.translate.random_sampling.RandomSampling</span></code>.</li>
+<li><strong>random_sampling_temp</strong> (<em>int</em>) – See
+<code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.translate.random_sampling.RandomSampling</span></code>.</li>
+<li><strong>stepwise_penalty</strong> (<em>bool</em>) – Whether coverage penalty is applied every step
+or not.</li>
+<li><strong>dump_beam</strong> (<em>bool</em>) – Debugging option.</li>
+<li><strong>block_ngram_repeat</strong> (<em>int</em>) – See
+<code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.translate.decode_strategy.DecodeStrategy</span></code>.</li>
+<li><strong>ignore_when_blocking</strong> (<em>set</em><em> or </em><em>frozenset</em>) – See
+<code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.translate.decode_strategy.DecodeStrategy</span></code>.</li>
+<li><strong>replace_unk</strong> (<em>bool</em>) – Replace unknown token.</li>
+<li><strong>data_type</strong> (<em>str</em>) – Source data type.</li>
+<li><strong>verbose</strong> (<em>bool</em>) – Print/log every translation.</li>
+<li><strong>report_bleu</strong> (<em>bool</em>) – Print/log Bleu metric.</li>
+<li><strong>report_rouge</strong> (<em>bool</em>) – Print/log Rouge metric.</li>
+<li><strong>report_time</strong> (<em>bool</em>) – Print/log total time/frequency.</li>
+<li><strong>copy_attn</strong> (<em>bool</em>) – Use copy attention.</li>
 <li><strong>global_scorer</strong> (<a class="reference internal" href="#onmt.translate.GNMTGlobalScorer" title="onmt.translate.GNMTGlobalScorer"><em>onmt.translate.GNMTGlobalScorer</em></a>) – Translation
 scoring/reranking object.</li>
 <li><strong>out_file</strong> (<em>TextIO</em><em> or </em><em>codecs.StreamReaderWriter</em>) – Output file.</li>
@@ -311,6 +335,34 @@ scoring/reranking object.</li>
 </tr>
 </tbody>
 </table>
+<dl class="classmethod">
+<dt id="onmt.translate.Translator.from_opt">
+<em class="property">classmethod </em><code class="descname">from_opt</code><span class="sig-paren">(</span><em>model</em>, <em>fields</em>, <em>opt</em>, <em>model_opt</em>, <em>global_scorer=None</em>, <em>out_file=None</em>, <em>report_score=True</em>, <em>logger=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translator.html#Translator.from_opt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translator.from_opt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alternate constructor.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>model</strong> (<em>onmt.modules.NMTModel</em>) – See <code class="xref py py-func docutils literal notranslate"><span class="pre">__init__()</span></code>.</li>
+<li><strong>fields</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>list</em><em>[</em><em>tuple</em><em>[</em><em>str</em><em>, </em><em>torchtext.data.Field</em><em>]</em><em>]</em><em>]</em>) – See
+<code class="xref py py-func docutils literal notranslate"><span class="pre">__init__()</span></code>.</li>
+<li><strong>opt</strong> (<em>argparse.Namespace</em>) – Command line options</li>
+<li><strong>model_opt</strong> (<em>argparse.Namespace</em>) – Command line options saved with
+the model checkpoint.</li>
+<li><strong>global_scorer</strong> (<a class="reference internal" href="#onmt.translate.GNMTGlobalScorer" title="onmt.translate.GNMTGlobalScorer"><em>onmt.translate.GNMTGlobalScorer</em></a>) – See
+<code class="xref py py-func docutils literal notranslate"><span class="pre">__init__()</span></code>..</li>
+<li><strong>out_file</strong> (<em>TextIO</em><em> or </em><em>codecs.StreamReaderWriter</em>) – See
+<code class="xref py py-func docutils literal notranslate"><span class="pre">__init__()</span></code>.</li>
+<li><strong>report_score</strong> (<em>bool</em>) – See <code class="xref py py-func docutils literal notranslate"><span class="pre">__init__()</span></code>.</li>
+<li><strong>logger</strong> (<em>logging.Logger</em><em> or </em><em>NoneType</em>) – See <code class="xref py py-func docutils literal notranslate"><span class="pre">__init__()</span></code>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 <dl class="method">
 <dt id="onmt.translate.Translator.translate">
 <code class="descname">translate</code><span class="sig-paren">(</span><em>src</em>, <em>tgt=None</em>, <em>src_dir=None</em>, <em>batch_size=None</em>, <em>attn_debug=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translator.html#Translator.translate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translator.translate" title="Permalink to this definition">¶</a></dt>

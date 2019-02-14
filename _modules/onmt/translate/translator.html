@@ -198,7 +198,7 @@
 
     <span class="n">scorer</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">translate</span><span class="o">.</span><span class="n">GNMTGlobalScorer</span><span class="o">.</span><span class="n">from_opt</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
 
-    <span class="n">translator</span> <span class="o">=</span> <span class="n">Translator</span><span class="p">(</span>
+    <span class="n">translator</span> <span class="o">=</span> <span class="n">Translator</span><span class="o">.</span><span class="n">from_opt</span><span class="p">(</span>
         <span class="n">model</span><span class="p">,</span>
         <span class="n">fields</span><span class="p">,</span>
         <span class="n">opt</span><span class="p">,</span>
@@ -218,9 +218,33 @@
 <span class="sd">        model (onmt.modules.NMTModel): NMT model to use for translation</span>
 <span class="sd">        fields (dict[str, list[tuple[str, torchtext.data.Field]]]): A dict</span>
 <span class="sd">            mapping each side to its list of name-Field pairs.</span>
-<span class="sd">        opt (argparse.Namespace): Command line options</span>
-<span class="sd">        model_opt (argparse.Namespace): Command line options saved with</span>
-<span class="sd">            the model checkpoint.</span>
+<span class="sd">        src_reader (inputters.DataReaderBase): Source reader.</span>
+<span class="sd">        tgt_reader (inputters.TextDataReader): Target reader.</span>
+<span class="sd">        gpu (int): GPU device. Set to negative for no GPU.</span>
+<span class="sd">        n_best (int): How many beams to wait for.</span>
+<span class="sd">        min_length (int): See</span>
+<span class="sd">            :class:`onmt.translate.decode_strategy.DecodeStrategy`.</span>
+<span class="sd">        max_length (int): See</span>
+<span class="sd">            :class:`onmt.translate.decode_strategy.DecodeStrategy`.</span>
+<span class="sd">        beam_size (int): Number of beams.</span>
+<span class="sd">        random_sampling_topk (int): See</span>
+<span class="sd">            :class:`onmt.translate.random_sampling.RandomSampling`.</span>
+<span class="sd">        random_sampling_temp (int): See</span>
+<span class="sd">            :class:`onmt.translate.random_sampling.RandomSampling`.</span>
+<span class="sd">        stepwise_penalty (bool): Whether coverage penalty is applied every step</span>
+<span class="sd">            or not.</span>
+<span class="sd">        dump_beam (bool): Debugging option.</span>
+<span class="sd">        block_ngram_repeat (int): See</span>
+<span class="sd">            :class:`onmt.translate.decode_strategy.DecodeStrategy`.</span>
+<span class="sd">        ignore_when_blocking (set or frozenset): See</span>
+<span class="sd">            :class:`onmt.translate.decode_strategy.DecodeStrategy`.</span>
+<span class="sd">        replace_unk (bool): Replace unknown token.</span>
+<span class="sd">        data_type (str): Source data type.</span>
+<span class="sd">        verbose (bool): Print/log every translation.</span>
+<span class="sd">        report_bleu (bool): Print/log Bleu metric.</span>
+<span class="sd">        report_rouge (bool): Print/log Rouge metric.</span>
+<span class="sd">        report_time (bool): Print/log total time/frequency.</span>
+<span class="sd">        copy_attn (bool): Use copy attention.</span>
 <span class="sd">        global_scorer (onmt.translate.GNMTGlobalScorer): Translation</span>
 <span class="sd">            scoring/reranking object.</span>
 <span class="sd">        out_file (TextIO or codecs.StreamReaderWriter): Output file.</span>
@@ -232,12 +256,31 @@
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">model</span><span class="p">,</span>
             <span class="n">fields</span><span class="p">,</span>
-            <span class="n">opt</span><span class="p">,</span>
-            <span class="n">model_opt</span><span class="p">,</span>
+            <span class="n">src_reader</span><span class="p">,</span>
+            <span class="n">tgt_reader</span><span class="p">,</span>
+            <span class="n">gpu</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">n_best</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">min_length</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">max_length</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+            <span class="n">beam_size</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
+            <span class="n">random_sampling_topk</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">random_sampling_temp</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">stepwise_penalty</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">dump_beam</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">block_ngram_repeat</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">ignore_when_blocking</span><span class="o">=</span><span class="nb">frozenset</span><span class="p">(),</span>
+            <span class="n">replace_unk</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">data_type</span><span class="o">=</span><span class="s2">&quot;text&quot;</span><span class="p">,</span>
+            <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">report_bleu</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">report_rouge</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">report_time</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">copy_attn</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="n">global_scorer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">out_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">report_score</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">logger</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">seed</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fields</span> <span class="o">=</span> <span class="n">fields</span>
         <span class="n">tgt_field</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">base_field</span>
@@ -248,39 +291,38 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_unk_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">tgt_field</span><span class="o">.</span><span class="n">unk_token</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_vocab_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_vocab</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_gpu</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">gpu</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_use_cuda</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">gpu</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_gpu</span> <span class="o">=</span> <span class="n">gpu</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_use_cuda</span> <span class="o">=</span> <span class="n">gpu</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_dev</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cuda&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gpu</span><span class="p">)</span> \
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_cuda</span> <span class="k">else</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">n_best</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">n_best</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">max_length</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">max_length</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_best</span> <span class="o">=</span> <span class="n">n_best</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_length</span> <span class="o">=</span> <span class="n">max_length</span>
 
-        <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">beam_size</span> <span class="o">!=</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">opt</span><span class="o">.</span><span class="n">random_sampling_topk</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">beam_size</span> <span class="o">!=</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">random_sampling_topk</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Can either do beam search OR random sampling.&#39;</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">beam_size</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">random_sampling_temp</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">random_sampling_temp</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">sample_from_topk</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">random_sampling_topk</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span> <span class="o">=</span> <span class="n">beam_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">random_sampling_temp</span> <span class="o">=</span> <span class="n">random_sampling_temp</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sample_from_topk</span> <span class="o">=</span> <span class="n">random_sampling_topk</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">min_length</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">min_length</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">stepwise_penalty</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">stepwise_penalty</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">coverage_penalty</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">coverage_penalty</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dump_beam</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">dump_beam</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">block_ngram_repeat</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">block_ngram_repeat</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ignore_when_blocking</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">ignore_when_blocking</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_length</span> <span class="o">=</span> <span class="n">min_length</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stepwise_penalty</span> <span class="o">=</span> <span class="n">stepwise_penalty</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dump_beam</span> <span class="o">=</span> <span class="n">dump_beam</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">block_ngram_repeat</span> <span class="o">=</span> <span class="n">block_ngram_repeat</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ignore_when_blocking</span> <span class="o">=</span> <span class="n">ignore_when_blocking</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_exclusion_idxs</span> <span class="o">=</span> <span class="p">{</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignore_when_blocking</span><span class="p">}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">src_reader</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">str2reader</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">data_type</span><span class="p">]</span><span class="o">.</span><span class="n">from_opt</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">tgt_reader</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">str2reader</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">from_opt</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">replace_unk</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">replace_unk</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">data_type</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">verbose</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">report_bleu</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">report_bleu</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">report_rouge</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">report_rouge</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">report_time</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">report_time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">src_reader</span> <span class="o">=</span> <span class="n">src_reader</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tgt_reader</span> <span class="o">=</span> <span class="n">tgt_reader</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">replace_unk</span> <span class="o">=</span> <span class="n">replace_unk</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span> <span class="o">=</span> <span class="n">data_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">report_bleu</span> <span class="o">=</span> <span class="n">report_bleu</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">report_rouge</span> <span class="o">=</span> <span class="n">report_rouge</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">report_time</span> <span class="o">=</span> <span class="n">report_time</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span> <span class="o">=</span> <span class="n">model_opt</span><span class="o">.</span><span class="n">copy_attn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span> <span class="o">=</span> <span class="n">copy_attn</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">global_scorer</span> <span class="o">=</span> <span class="n">global_scorer</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">out_file</span> <span class="o">=</span> <span class="n">out_file</span>
@@ -300,7 +342,66 @@
                 <span class="s2">&quot;scores&quot;</span><span class="p">:</span> <span class="p">[],</span>
                 <span class="s2">&quot;log_probs&quot;</span><span class="p">:</span> <span class="p">[]}</span>
 
-        <span class="n">set_random_seed</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">seed</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_cuda</span><span class="p">)</span>
+        <span class="n">set_random_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_cuda</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Translator.from_opt"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.Translator.from_opt">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_opt</span><span class="p">(</span>
+            <span class="bp">cls</span><span class="p">,</span>
+            <span class="n">model</span><span class="p">,</span>
+            <span class="n">fields</span><span class="p">,</span>
+            <span class="n">opt</span><span class="p">,</span>
+            <span class="n">model_opt</span><span class="p">,</span>
+            <span class="n">global_scorer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">out_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">report_score</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">logger</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Alternate constructor.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            model (onmt.modules.NMTModel): See :func:`__init__()`.</span>
+<span class="sd">            fields (dict[str, list[tuple[str, torchtext.data.Field]]]): See</span>
+<span class="sd">                :func:`__init__()`.</span>
+<span class="sd">            opt (argparse.Namespace): Command line options</span>
+<span class="sd">            model_opt (argparse.Namespace): Command line options saved with</span>
+<span class="sd">                the model checkpoint.</span>
+<span class="sd">            global_scorer (onmt.translate.GNMTGlobalScorer): See</span>
+<span class="sd">                :func:`__init__()`..</span>
+<span class="sd">            out_file (TextIO or codecs.StreamReaderWriter): See</span>
+<span class="sd">                :func:`__init__()`.</span>
+<span class="sd">            report_score (bool) : See :func:`__init__()`.</span>
+<span class="sd">            logger (logging.Logger or NoneType): See :func:`__init__()`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">src_reader</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">str2reader</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">data_type</span><span class="p">]</span><span class="o">.</span><span class="n">from_opt</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
+        <span class="n">tgt_reader</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">str2reader</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">from_opt</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">model</span><span class="p">,</span>
+            <span class="n">fields</span><span class="p">,</span>
+            <span class="n">src_reader</span><span class="p">,</span>
+            <span class="n">tgt_reader</span><span class="p">,</span>
+            <span class="n">gpu</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">gpu</span><span class="p">,</span>
+            <span class="n">n_best</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">n_best</span><span class="p">,</span>
+            <span class="n">min_length</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">min_length</span><span class="p">,</span>
+            <span class="n">max_length</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">max_length</span><span class="p">,</span>
+            <span class="n">beam_size</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">beam_size</span><span class="p">,</span>
+            <span class="n">random_sampling_topk</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">random_sampling_topk</span><span class="p">,</span>
+            <span class="n">random_sampling_temp</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">random_sampling_temp</span><span class="p">,</span>
+            <span class="n">stepwise_penalty</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">stepwise_penalty</span><span class="p">,</span>
+            <span class="n">dump_beam</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">dump_beam</span><span class="p">,</span>
+            <span class="n">block_ngram_repeat</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">block_ngram_repeat</span><span class="p">,</span>
+            <span class="n">ignore_when_blocking</span><span class="o">=</span><span class="nb">set</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">ignore_when_blocking</span><span class="p">),</span>
+            <span class="n">replace_unk</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">replace_unk</span><span class="p">,</span>
+            <span class="n">data_type</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">data_type</span><span class="p">,</span>
+            <span class="n">verbose</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">verbose</span><span class="p">,</span>
+            <span class="n">report_bleu</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">report_bleu</span><span class="p">,</span>
+            <span class="n">report_rouge</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">report_rouge</span><span class="p">,</span>
+            <span class="n">report_time</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">report_time</span><span class="p">,</span>
+            <span class="n">copy_attn</span><span class="o">=</span><span class="n">model_opt</span><span class="o">.</span><span class="n">copy_attn</span><span class="p">,</span>
+            <span class="n">global_scorer</span><span class="o">=</span><span class="n">global_scorer</span><span class="p">,</span>
+            <span class="n">out_file</span><span class="o">=</span><span class="n">out_file</span><span class="p">,</span>
+            <span class="n">report_score</span><span class="o">=</span><span class="n">report_score</span><span class="p">,</span>
+            <span class="n">logger</span><span class="o">=</span><span class="n">logger</span><span class="p">,</span>
+            <span class="n">seed</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">seed</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">_log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="p">:</span>
