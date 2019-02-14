@@ -1,7 +1,9 @@
 import unittest
-from onmt.translate.translation_server import ServerModel
+from onmt.translate.translation_server import ServerModel, TranslationServer
 
 import os
+from six import string_types
+from textwrap import dedent
 
 import torch
 
@@ -113,7 +115,7 @@ class TestServerModel(unittest.TestCase):
         results, scores, n_best, time = sm.run(inp)
         self.assertIsInstance(results, list)
         for sentence_string in results:
-            self.assertIsInstance(sentence_string, str)
+            self.assertIsInstance(sentence_string, string_types)
         self.assertIsInstance(scores, list)
         for elem in scores:
             self.assertIsInstance(elem, float)
@@ -130,3 +132,105 @@ class TestServerModel(unittest.TestCase):
         model_root = TEST_DIR
         with self.assertRaises(ValueError):
             ServerModel(opt, model_id, model_root=model_root, load=True)
+
+
+class TestTranslationServer(unittest.TestCase):
+    # this could be considered an integration test because it touches
+    # the filesystem for the config file (and the models)
+
+    CFG_F = os.path.join(
+        TEST_DIR, "test_translation_server_config_file.json")
+
+    def tearDown(self):
+        if os.path.exists(self.CFG_F):
+            os.remove(self.CFG_F)
+
+    def write(self, cfg):
+        with open(self.CFG_F, "w") as f:
+            f.write(cfg)
+
+    CFG_NO_LOAD = dedent("""\
+        {
+            "models_root": "%s",
+            "models": [
+                {
+                    "id": 100,
+                    "model": "test_model.pt",
+                    "timeout": -1,
+                    "on_timeout": "to_cpu",
+                    "load": false,
+                    "opt": {
+                        "beam_size": 5
+                    }
+                }
+            ]
+        }
+        """ % TEST_DIR)
+
+    def test_start_without_initial_loading(self):
+        self.write(self.CFG_NO_LOAD)
+        sv = TranslationServer()
+        sv.start(self.CFG_F)
+        self.assertFalse(sv.models[100].loaded)
+        self.assertEqual(set(sv.models.keys()), {100})
+
+    CFG_LOAD = dedent("""\
+        {
+            "models_root": "%s",
+            "models": [
+                {
+                    "id": 100,
+                    "model": "test_model.pt",
+                    "timeout": -1,
+                    "on_timeout": "to_cpu",
+                    "load": true,
+                    "opt": {
+                        "beam_size": 5
+                    }
+                }
+            ]
+        }
+        """ % TEST_DIR)
+
+    def test_start_with_initial_loading(self):
+        self.write(self.CFG_LOAD)
+        sv = TranslationServer()
+        sv.start(self.CFG_F)
+        self.assertTrue(sv.models[100].loaded)
+        self.assertEqual(set(sv.models.keys()), {100})
+
+    CFG_2_MODELS = dedent("""\
+        {
+            "models_root": "%s",
+            "models": [
+                {
+                    "id": 100,
+                    "model": "test_model.pt",
+                    "timeout": -1,
+                    "on_timeout": "to_cpu",
+                    "load": true,
+                    "opt": {
+                        "beam_size": 5
+                    }
+                },
+                {
+                    "id": 1000,
+                    "model": "test_model2.pt",
+                    "timeout": -1,
+                    "on_timeout": "to_cpu",
+                    "load": false,
+                    "opt": {
+                        "beam_size": 5
+                    }
+                }
+            ]
+        }
+        """ % TEST_DIR)
+
+    def test_start_with_two_models(self):
+        self.write(self.CFG_2_MODELS)
+        sv = TranslationServer()
+        sv.start(self.CFG_F)
+        self.assertTrue(sv.models[100].loaded)
+        self.assertFalse(sv.models[1000].loaded)
+        self.assertEqual(set(sv.models.keys()), {100, 1000})

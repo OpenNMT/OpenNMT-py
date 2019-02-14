@@ -21,9 +21,13 @@ from onmt.translate.translator import build_translator
 def critical(func):
     """Decorator for critical section (mutually exclusive code)"""
     def wrapper(server_model, *args, **kwargs):
-        if not server_model.running_lock.acquire(True, 120):
-            raise ServerModelError("Model %d running lock timeout"
-                                   % server_model.model_id)
+        if sys.version_info[0] == 3:
+            if not server_model.running_lock.acquire(True, 120):
+                raise ServerModelError("Model %d running lock timeout"
+                                       % server_model.model_id)
+        else:
+            # semaphore doesn't have a timeout arg in Python 2.7
+            server_model.running_lock.acquire(True)
         try:
             o = func(server_model, *args, **kwargs)
         except (Exception, RuntimeError):
@@ -70,8 +74,7 @@ class TranslationServer(object):
         self.next_id = 0
 
     def start(self, config_file):
-        """Read the config file and pre-/load the models
-        """
+        """Read the config file and pre-/load the models."""
         self.config_file = config_file
         with open(self.config_file) as f:
             self.confs = json.load(f)
@@ -111,7 +114,7 @@ class TranslationServer(object):
             raise ServerModelError("No such model '%s'" % str(model_id))
 
     def load_model(self, opt, model_id=None, **model_kwargs):
-        """Loading a model given a set of options
+        """Load a model given a set of options
         """
         model_id = self.preload_model(opt, model_id=model_id, **model_kwargs)
         load_time = self.models[model_id].load_time
