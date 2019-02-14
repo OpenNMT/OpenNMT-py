@@ -15,7 +15,7 @@ class TranslationBuilder(object):
 
     Args:
        data (DataSet):
-       fields (dict of Fields): data fields
+       fields (List[Tuple[str, torchtext.data.Field]]): data fields
        n_best (int): number of translations produced
        replace_unk (bool): replace unknown words using attention
        has_tgt (bool): will the batch have gold targets
@@ -26,13 +26,13 @@ class TranslationBuilder(object):
         self.data = data
         self.fields = fields
         self._has_text_src = isinstance(
-            self.fields["src"][0][1], TextMultiField)
+            dict(self.fields)["src"], TextMultiField)
         self.n_best = n_best
         self.replace_unk = replace_unk
         self.has_tgt = has_tgt
 
     def _build_target_tokens(self, src, src_vocab, src_raw, pred, attn):
-        tgt_field = self.fields["tgt"][0][1].base_field
+        tgt_field = dict(self.fields)["tgt"].base_field
         vocab = tgt_field.vocab
         tokens = []
         for tok in pred:

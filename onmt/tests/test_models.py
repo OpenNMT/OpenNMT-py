@@ -28,7 +28,7 @@ class TestModel(unittest.TestCase):
         self.opt = opt
 
     def get_field(self):
-        src = onmt.inputters.get_fields("text", 0, 0)["src"][0][1]
+        src = onmt.inputters.get_fields("text", 0, 0)["src"]
         src.base_field.build_vocab([])
         return src
 
