@@ -35,7 +35,7 @@ def build_translator(opt, report_score=True, logger=None, out_file=None):
 
     scorer = onmt.translate.GNMTGlobalScorer.from_opt(opt)
 
-    translator = Translator(
+    translator = Translator.from_opt(
         model,
         fields,
         opt,
@@ -55,9 +55,33 @@ class Translator(object):
         model (onmt.modules.NMTModel): NMT model to use for translation
         fields (dict[str, list[tuple[str, torchtext.data.Field]]]): A dict
             mapping each side to its list of name-Field pairs.
-        opt (argparse.Namespace): Command line options
-        model_opt (argparse.Namespace): Command line options saved with
-            the model checkpoint.
+        src_reader (inputters.DataReaderBase): Source reader.
+        tgt_reader (inputters.TextDataReader): Target reader.
+        gpu (int): GPU device. Set to negative for no GPU.
+        n_best (int): How many beams to wait for.
+        min_length (int): See
+            :class:`onmt.translate.decode_strategy.DecodeStrategy`.
+        max_length (int): See
+            :class:`onmt.translate.decode_strategy.DecodeStrategy`.
+        beam_size (int): Number of beams.
+        random_sampling_topk (int): See
+            :class:`onmt.translate.random_sampling.RandomSampling`.
+        random_sampling_temp (int): See
+            :class:`onmt.translate.random_sampling.RandomSampling`.
+        stepwise_penalty (bool): Whether coverage penalty is applied every step
+            or not.
+        dump_beam (bool): Debugging option.
+        block_ngram_repeat (int): See
+            :class:`onmt.translate.decode_strategy.DecodeStrategy`.
+        ignore_when_blocking (set or frozenset): See
+            :class:`onmt.translate.decode_strategy.DecodeStrategy`.
+        replace_unk (bool): Replace unknown token.
+        data_type (str): Source data type.
+        verbose (bool): Print/log every translation.
+        report_bleu (bool): Print/log Bleu metric.
+        report_rouge (bool): Print/log Rouge metric.
+        report_time (bool): Print/log total time/frequency.
+        copy_attn (bool): Use copy attention.
         global_scorer (onmt.translate.GNMTGlobalScorer): Translation
             scoring/reranking object.
         out_file (TextIO or codecs.StreamReaderWriter): Output file.
@@ -69,12 +93,31 @@ class Translator(object):
             self,
             model,
             fields,
-            opt,
-            model_opt,
+            src_reader,
+            tgt_reader,
+            gpu=-1,
+            n_best=1,
+            min_length=0,
+            max_length=100,
+            beam_size=30,
+            random_sampling_topk=1,
+            random_sampling_temp=1,
+            stepwise_penalty=None,
+            dump_beam=False,
+            block_ngram_repeat=0,
+            ignore_when_blocking=frozenset(),
+            replace_unk=False,
+            data_type="text",
+            verbose=False,
+            report_bleu=False,
+            report_rouge=False,
+            report_time=False,
+            copy_attn=False,
             global_scorer=None,
             out_file=None,
             report_score=True,
-            logger=None):
+            logger=None,
+            seed=-1):
         self.model = model
         self.fields = fields
         tgt_field = self.fields["tgt"][0][1].base_field
@@ -85,39 +128,38 @@ class Translator(object):
         self._tgt_unk_idx = self._tgt_vocab.stoi[tgt_field.unk_token]
         self._tgt_vocab_len = len(self._tgt_vocab)
 
-        self._gpu = opt.gpu
-        self._use_cuda = opt.gpu > -1
+        self._gpu = gpu
+        self._use_cuda = gpu > -1
         self._dev = torch.device("cuda", self._gpu) \
             if self._use_cuda else torch.device("cpu")
 
-        self.n_best = opt.n_best
-        self.max_length = opt.max_length
+        self.n_best = n_best
+        self.max_length = max_length
 
-        if opt.beam_size != 1 and opt.random_sampling_topk != 1:
+        if beam_size != 1 and random_sampling_topk != 1:
             raise ValueError('Can either do beam search OR random sampling.')
 
-        self.beam_size = opt.beam_size
-        self.random_sampling_temp = opt.random_sampling_temp
-        self.sample_from_topk = opt.random_sampling_topk
+        self.beam_size = beam_size
+        self.random_sampling_temp = random_sampling_temp
+        self.sample_from_topk = random_sampling_topk
 
-        self.min_length = opt.min_length
-        self.stepwise_penalty = opt.stepwise_penalty
-        self.coverage_penalty = opt.coverage_penalty
-        self.dump_beam = opt.dump_beam
-        self.block_ngram_repeat = opt.block_ngram_repeat
-        self.ignore_when_blocking = set(opt.ignore_when_blocking)
+        self.min_length = min_length
+        self.stepwise_penalty = stepwise_penalty
+        self.dump_beam = dump_beam
+        self.block_ngram_repeat = block_ngram_repeat
+        self.ignore_when_blocking = ignore_when_blocking
         self._exclusion_idxs = {
             self._tgt_vocab.stoi[t] for t in self.ignore_when_blocking}
-        self.src_reader = inputters.str2reader[opt.data_type].from_opt(opt)
-        self.tgt_reader = inputters.str2reader["text"].from_opt(opt)
-        self.replace_unk = opt.replace_unk
-        self.data_type = opt.data_type
-        self.verbose = opt.verbose
-        self.report_bleu = opt.report_bleu
-        self.report_rouge = opt.report_rouge
-        self.report_time = opt.report_time
+        self.src_reader = src_reader
+        self.tgt_reader = tgt_reader
+        self.replace_unk = replace_unk
+        self.data_type = data_type
+        self.verbose = verbose
+        self.report_bleu = report_bleu
+        self.report_rouge = report_rouge
+        self.report_time = report_time
 
-        self.copy_attn = model_opt.copy_attn
+        self.copy_attn = copy_attn
 
         self.global_scorer = global_scorer
         self.out_file = out_file
@@ -137,7 +179,66 @@ class Translator(object):
                 "scores": [],
                 "log_probs": []}
 
-        set_random_seed(opt.seed, self._use_cuda)
+        set_random_seed(seed, self._use_cuda)
+
+    @classmethod
+    def from_opt(
+            cls,
+            model,
+            fields,
+            opt,
+            model_opt,
+            global_scorer=None,
+            out_file=None,
+            report_score=True,
+            logger=None):
+        """Alternate constructor.
+
+        Args:
+            model (onmt.modules.NMTModel): See :func:`__init__()`.
+            fields (dict[str, list[tuple[str, torchtext.data.Field]]]): See
+                :func:`__init__()`.
+            opt (argparse.Namespace): Command line options
+            model_opt (argparse.Namespace): Command line options saved with
+                the model checkpoint.
+            global_scorer (onmt.translate.GNMTGlobalScorer): See
+                :func:`__init__()`..
+            out_file (TextIO or codecs.StreamReaderWriter): See
+                :func:`__init__()`.
+            report_score (bool) : See :func:`__init__()`.
+            logger (logging.Logger or NoneType): See :func:`__init__()`.
+        """
+
+        src_reader = inputters.str2reader[opt.data_type].from_opt(opt)
+        tgt_reader = inputters.str2reader["text"].from_opt(opt)
+        return cls(
+            model,
+            fields,
+            src_reader,
+            tgt_reader,
+            gpu=opt.gpu,
+            n_best=opt.n_best,
+            min_length=opt.min_length,
+            max_length=opt.max_length,
+            beam_size=opt.beam_size,
+            random_sampling_topk=opt.random_sampling_topk,
+            random_sampling_temp=opt.random_sampling_temp,
+            stepwise_penalty=opt.stepwise_penalty,
+            dump_beam=opt.dump_beam,
+            block_ngram_repeat=opt.block_ngram_repeat,
+            ignore_when_blocking=set(opt.ignore_when_blocking),
+            replace_unk=opt.replace_unk,
+            data_type=opt.data_type,
+            verbose=opt.verbose,
+            report_bleu=opt.report_bleu,
+            report_rouge=opt.report_rouge,
+            report_time=opt.report_time,
+            copy_attn=model_opt.copy_attn,
+            global_scorer=global_scorer,
+            out_file=out_file,
+            report_score=report_score,
+            logger=logger,
+            seed=opt.seed)
 
     def _log(self, msg):
         if self.logger:
