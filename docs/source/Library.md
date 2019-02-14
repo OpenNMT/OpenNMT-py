@@ -58,12 +58,10 @@ model = onmt.models.model.NMTModel(encoder, decoder)
 model.generator = nn.Sequential(
     nn.Linear(rnn_size, len(tgt_vocab)),
     nn.LogSoftmax())
-builder = onmt.translate.TranslationBuilder(data=valid_data_dataset, fields=vocab_fields)
 
 loss = onmt.utils.loss.NMTLossCompute(
     criterion=nn.NLLLoss(ignore_index=tgt_padding, reduction='sum'),
-    generator=model.generator))
-
+    generator=model.generator)
 ```
 
 Now we set up the optimizer. Our wrapper around a core torch optim class handles learning rate updates and gradient normalization automatically.
@@ -152,30 +150,26 @@ trainer.train(train_iter=train_iter,
 [2019-02-13 10:17:20,608 INFO] Validation accuracy: 35.5637
 ```
 
-To use the model, we need to load up the translation functions. A Translator object requires the vocab fields, a global scorer, general options and model options, here default values collected with dummy parsers.
+To use the model, we need to load up the translation functions. A Translator object requires the vocab fields, readers for source and target and a global scorer.
 
 
 ```python
 import onmt.translate
-import configargparse
 
-dummy_parser = configargparse.ArgumentParser()
-onmt.opts.model_opts(dummy_parser)
-model_opt = dummy_parser.parse_known_args([])[0]
-
-dummy_parser = configargparse.ArgumentParser()
-onmt.opts.translate_opts(dummy_parser)
-opt = dummy_parser.parse_args("-model dummymodel -src dummysrc")
-
-scorer = onmt.translate.GNMTGlobalScorer.from_opt(opt)
-translator = onmt.translate.Translator(model=model,
-                                       fields=vocab_fields,
-                                       opt=opt,
-                                       model_opt=model_opt,
+src_reader = onmt.inputters.str2reader["text"]
+tgt_reader = onmt.inputters.str2reader["text"]
+scorer = onmt.translate.GNMTGlobalScorer(alpha=0.7, 
+                                         beta=0., 
+                                         length_penalty="avg", 
+                                         coverage_penalty="none")
+translator = onmt.translate.Translator(model=model, 
+                                       fields=vocab_fields, 
+                                       src_reader=src_reader, 
+                                       tgt_reader=tgt_reader, 
                                        global_scorer=scorer)
-
-builder = onmt.translate.TranslationBuilder(data=valid_data_dataset,
+builder = onmt.translate.TranslationBuilder(data=valid_data_dataset, 
                                             fields=vocab_fields)
+
 
 for batch in valid_iter:
     trans_batch = translator.translate_batch(
