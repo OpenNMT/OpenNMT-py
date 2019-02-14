@@ -129,4 +129,4 @@ class TestServerModel(unittest.TestCase):
         opt = {"models": ["test_model.pt"], "n_best": 2}
         model_root = TEST_DIR
         with self.assertRaises(ValueError):
-            sm = ServerModel(opt, model_id, model_root=model_root, load=True)
+            ServerModel(opt, model_id, model_root=model_root, load=True)
