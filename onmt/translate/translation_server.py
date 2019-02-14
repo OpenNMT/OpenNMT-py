@@ -21,7 +21,7 @@ from onmt.translate.translator import build_translator
 def critical(func):
     """Decorator for critical section (mutually exclusive code)"""
     def wrapper(server_model, *args, **kwargs):
-        if not server_model.running_lock.acquire(blocking=True, timeout=120):
+        if not server_model.running_lock.acquire(True, 120):
             raise ServerModelError("Model %d running lock timeout"
                                    % server_model.model_id)
         try:
