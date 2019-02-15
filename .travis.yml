@@ -75,5 +75,5 @@ matrix:
         - pip install -r docs/requirements.txt
         - cd docs/; make html; cd ..
         - set -e
-        - doctr deploy --built-docs docs/build/html/ .
+        #- doctr deploy --built-docs docs/build/html/ .
 
