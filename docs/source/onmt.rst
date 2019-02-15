@@ -21,7 +21,7 @@ Loss
 ----
 
 
-.. autoclass:: onmt.utils.LossComputeBase
+.. autoclass:: onmt.utils.loss.LossComputeBase
     :members:
 
 
