@@ -97,6 +97,8 @@ def load_test_model(opt, model_path=None):
 
     model = build_base_model(model_opt, fields, use_gpu(opt), checkpoint,
                              opt.gpu)
+    if opt.fp32:
+        model.float()
     model.eval()
     model.generator.eval()
     return fields, model, model_opt
