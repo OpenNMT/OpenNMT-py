@@ -52,7 +52,7 @@ Architecture: Transfomer
 .. autoclass:: onmt.modules.PositionalEncoding
     :members:
 
-.. autoclass:: onmt.modules.PositionwiseFeedForward
+.. autoclass:: onmt.modules.position_ffn.PositionwiseFeedForward
     :members:
 
 .. autoclass:: onmt.encoders.TransformerEncoder
@@ -83,7 +83,7 @@ and have not been thoroughly tested.)
 .. autoclass:: onmt.modules.ConvMultiStepAttention
     :members:
 
-.. autoclass:: onmt.modules.WeightNorm
+.. autoclass:: onmt.modules.WeightNormConv2d
     :members:
 
 Architecture: SRU
