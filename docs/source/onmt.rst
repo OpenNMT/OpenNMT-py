@@ -4,10 +4,7 @@ Doc: Framework
 Model
 -----
 
-.. autoclass:: onmt.Models.NMTModel
-    :members:
-
-.. autoclass:: onmt.Models.DecoderState
+.. autoclass:: onmt.models.NMTModel
     :members:
 
 Trainer
@@ -17,19 +14,19 @@ Trainer
     :members:
 
 
-.. autoclass:: onmt.Statistics
+.. autoclass:: onmt.utils.Statistics
     :members:
 
 Loss
 ----
 
 
-.. autoclass:: onmt.Loss.LossComputeBase
+.. autoclass:: onmt.utils.LossComputeBase
     :members:
 
 
-Optim
+Optimizer
 -----
 
-.. autoclass:: onmt.Optim.Optim
+.. autoclass:: onmt.utils.Optimizer
     :members:
