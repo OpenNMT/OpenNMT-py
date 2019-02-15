@@ -296,7 +296,7 @@
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>model</strong> (<em>onmt.modules.NMTModel</em>) – NMT model to use for translation</li>
-<li><strong>fields</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>list</em><em>[</em><em>tuple</em><em>[</em><em>str</em><em>, </em><em>torchtext.data.Field</em><em>]</em><em>]</em><em>]</em>) – A dict
+<li><strong>fields</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>torchtext.data.Field</em><em>]</em>) – A dict
 mapping each side to its list of name-Field pairs.</li>
 <li><strong>src_reader</strong> (<em>inputters.DataReaderBase</em>) – Source reader.</li>
 <li><strong>tgt_reader</strong> (<em>inputters.TextDataReader</em>) – Target reader.</li>
@@ -345,7 +345,7 @@ scoring/reranking object.</li>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>model</strong> (<em>onmt.modules.NMTModel</em>) – See <code class="xref py py-func docutils literal notranslate"><span class="pre">__init__()</span></code>.</li>
-<li><strong>fields</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>list</em><em>[</em><em>tuple</em><em>[</em><em>str</em><em>, </em><em>torchtext.data.Field</em><em>]</em><em>]</em><em>]</em>) – See
+<li><strong>fields</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>torchtext.data.Field</em><em>]</em>) – See
 <code class="xref py py-func docutils literal notranslate"><span class="pre">__init__()</span></code>.</li>
 <li><strong>opt</strong> (<em>argparse.Namespace</em>) – Command line options</li>
 <li><strong>model_opt</strong> (<em>argparse.Namespace</em>) – Command line options saved with
@@ -418,7 +418,7 @@ Problem in Neural Machine Translation” <a class="reference internal" href="ref
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>data</strong> (<em>DataSet</em>) – </li>
-<li><strong>fields</strong> (<em>dict of Fields</em>) – data fields</li>
+<li><strong>fields</strong> (<em>List</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>torchtext.data.Field</em><em>]</em><em>]</em>) – data fields</li>
 <li><strong>n_best</strong> (<em>int</em>) – number of translations produced</li>
 <li><strong>replace_unk</strong> (<em>bool</em>) – replace unknown words using attention</li>
 <li><strong>has_tgt</strong> (<em>bool</em>) – will the batch have gold targets</li>
