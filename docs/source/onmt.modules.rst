@@ -11,13 +11,13 @@ Core Modules
 Encoders
 ---------
 
-.. autoclass:: onmt.modules.EncoderBase
+.. autoclass:: onmt.encoders.EncoderBase
     :members:
 
-.. autoclass:: onmt.modules.MeanEncoder
+.. autoclass:: onmt.encoders.MeanEncoder
     :members:
 
-.. autoclass:: onmt.modules.RNNEncoder
+.. autoclass:: onmt.encoders.RNNEncoder
     :members:
 
 
@@ -25,15 +25,15 @@ Decoders
 ---------
 
 
-.. autoclass:: onmt.modules.RNNDecoderBase
+.. autoclass:: onmt.decoders.RNNDecoderBase
     :members:
 
 
-.. autoclass:: onmt.modules.StdRNNDecoder
+.. autoclass:: onmt.decoders.StdRNNDecoder
     :members:
 
 
-.. autoclass:: onmt.modules.InputFeedRNNDecoder
+.. autoclass:: onmt.decoders.InputFeedRNNDecoder
     :members:
 
 Attention
@@ -53,10 +53,10 @@ Architecture: Transfomer
 .. autoclass:: onmt.modules.PositionwiseFeedForward
     :members:
 
-.. autoclass:: onmt.modules.TransformerEncoder
+.. autoclass:: onmt.encoders.TransformerEncoder
     :members:
 
-.. autoclass:: onmt.modules.TransformerDecoder
+.. autoclass:: onmt.decoders.TransformerDecoder
     :members:
 
 .. autoclass:: onmt.modules.MultiHeadedAttention
@@ -71,11 +71,11 @@ Architecture: Conv2Conv
 and have not been thoroughly tested.)
 
 
-.. autoclass:: onmt.modules.CNNEncoder
+.. autoclass:: onmt.encoders.CNNEncoder
     :members:
 
 
-.. autoclass:: onmt.modules.CNNDecoder
+.. autoclass:: onmt.decoders.CNNDecoder
     :members:
 
 .. autoclass:: onmt.modules.ConvMultiStepAttention
@@ -87,7 +87,7 @@ and have not been thoroughly tested.)
 Architecture: SRU
 ----------------------------
 
-.. autoclass:: onmt.modules.SRU
+.. autoclass:: onmt.models.SRU
     :members:
 
 
@@ -96,13 +96,13 @@ Alternative Encoders
 
 onmt\.modules\.AudioEncoder
 
-.. autoclass:: onmt.modules.AudioEncoder
+.. autoclass:: onmt.encoders.AudioEncoder
     :members:
 
 
 onmt\.modules\.ImageEncoder
 
-.. autoclass:: onmt.modules.ImageEncoder
+.. autoclass:: onmt.encoders.ImageEncoder
     :members:
 
 
