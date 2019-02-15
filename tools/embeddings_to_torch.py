@@ -19,9 +19,9 @@ def get_vocabs(dict_path):
             vocab = next((v for n, v in fields if n == side), None)
         else:
             try:
-                vocab = fields[side][0][1].base_field.vocab
+                vocab = fields[side].base_field.vocab
             except AttributeError:
-                vocab = fields[side][0][1].vocab
+                vocab = fields[side].vocab
         vocs.append(vocab)
     enc_vocab, dec_vocab = vocs
 

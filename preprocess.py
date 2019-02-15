@@ -4,11 +4,9 @@
     Pre-process Data / features files and build vocabulary
 """
 import codecs
-import configargparse
 import glob
 import sys
 import gc
-import os
 import torch
 from functools import partial
 
@@ -16,6 +14,7 @@ from onmt.utils.logging import init_logger, logger
 from onmt.utils.misc import split_corpus
 import onmt.inputters as inputters
 import onmt.opts as opts
+from onmt.utils.parse import ArgumentParser
 
 
 def check_existing_pt_files(opt):
@@ -27,24 +26,6 @@ def check_existing_pt_files(opt):
             sys.stderr.write("Please backup existing pt files: %s, "
                              "to avoid overwriting them!\n" % path)
             sys.exit(1)
-
-
-def parse_args():
-    parser = configargparse.ArgumentParser(
-        description='preprocess.py',
-        config_file_parser_class=configargparse.YAMLConfigFileParser,
-        formatter_class=configargparse.ArgumentDefaultsHelpFormatter)
-
-    opts.config_opts(parser)
-    opts.add_md_help_argument(parser)
-    opts.preprocess_opts(parser)
-
-    opt = parser.parse_args()
-    torch.manual_seed(opt.seed)
-
-    check_existing_pt_files(opt)
-
-    return opt
 
 
 def build_save_dataset(corpus_type, fields, src_reader, tgt_reader, opt):
@@ -121,23 +102,10 @@ def count_features(path):
         return len(first_tok.split(u"￨")) - 1
 
 
-def main():
-    opt = parse_args()
-
-    assert opt.max_shard_size == 0, \
-        "-max_shard_size is deprecated. Please use \
-        -shard_size (number of examples) instead."
-    assert opt.shuffle == 0, \
-        "-shuffle is not implemented. Please shuffle \
-        your data before pre-processing."
-
-    assert os.path.isfile(opt.train_src) and os.path.isfile(opt.train_tgt), \
-        "Please check path of your train src and tgt files!"
-
-    assert not opt.valid_src or os.path.isfile(opt.valid_src), \
-        "Please check path of your valid src file!"
-    assert not opt.valid_tgt or os.path.isfile(opt.valid_tgt), \
-        "Please check path of your valid tgt file!"
+def main(opt):
+    ArgumentParser.validate_preprocess_args(opt)
+    torch.manual_seed(opt.seed)
+    check_existing_pt_files(opt)
 
     init_logger(opt.log_file)
     logger.info("Extracting features...")
@@ -173,4 +141,10 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = ArgumentParser(description='preprocess.py')
+
+    opts.config_opts(parser)
+    opts.preprocess_opts(parser)
+
+    opt = parser.parse_args()
+    main(opt)

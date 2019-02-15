@@ -1,9 +1,5 @@
 #!/usr/bin/env python
-"""
-    Main training workflow
-"""
-
-import configargparse
+"""Train models."""
 import os
 import signal
 import torch
@@ -13,21 +9,13 @@ import onmt.utils.distributed
 
 from onmt.utils.logging import logger
 from onmt.train_single import main as single_main
+from onmt.utils.parse import ArgumentParser
 
 
 def main(opt):
-    if opt.rnn_type == "SRU" and not opt.gpu_ranks:
-        raise AssertionError("Using SRU requires -gpu_ranks set.")
-
-    if opt.epochs:
-        raise AssertionError("-epochs is deprecated please use -train_steps.")
-
-    if opt.truncated_decoder > 0 and opt.accum_count > 1:
-        raise AssertionError("BPTT is not compatible with -accum > 1")
-
-    if opt.gpuid:
-        raise AssertionError("gpuid is deprecated \
-              see world_size and gpu_ranks")
+    ArgumentParser.validate_train_opts(opt)
+    ArgumentParser.update_model_opts(opt)
+    ArgumentParser.validate_model_opts(opt)
 
     nb_gpu = len(opt.gpu_ranks)
 
@@ -106,13 +94,9 @@ class ErrorHandler(object):
 
 
 if __name__ == "__main__":
-    parser = configargparse.ArgumentParser(
-        description='train.py',
-        config_file_parser_class=configargparse.YAMLConfigFileParser,
-        formatter_class=configargparse.ArgumentDefaultsHelpFormatter)
+    parser = ArgumentParser(description='train.py')
 
     opts.config_opts(parser)
-    opts.add_md_help_argument(parser)
     opts.model_opts(parser)
     opts.train_opts(parser)
 

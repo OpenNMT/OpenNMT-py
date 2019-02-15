@@ -58,7 +58,8 @@ class EnsembleDecoder(nn.Module):
         # of the input.
         dec_outs, attns = zip(*[
             model_decoder(
-                tgt, memory_bank[i], memory_lengths, step=step)
+                tgt, memory_bank[i],
+                memory_lengths=memory_lengths, step=step)
             for i, model_decoder in enumerate(self.model_decoders)])
         mean_attns = self.combine_attns(attns)
         return EnsembleDecoderOutput(dec_outs), mean_attns
@@ -116,23 +117,33 @@ class EnsembleModel(NMTModel):
         self.models = nn.ModuleList(models)
 
 
-def load_test_model(opt, dummy_opt):
+def load_test_model(opt):
     """ Read in multiple models for ensemble """
     shared_fields = None
     shared_model_opt = None
     models = []
     for model_path in opt.models:
         fields, model, model_opt = \
-            onmt.model_builder.load_test_model(opt,
-                                               dummy_opt,
-                                               model_path=model_path)
+            onmt.model_builder.load_test_model(opt, model_path=model_path)
         if shared_fields is None:
             shared_fields = fields
         else:
             for key, field in fields.items():
-                if field is not None and 'vocab' in field.__dict__:
-                    assert field.vocab.stoi == shared_fields[key].vocab.stoi, \
-                        'Ensemble models must use the same preprocessed data'
+                try:
+                    f_iter = iter(field)
+                except TypeError:
+                    f_iter = [(key, field)]
+                for sn, sf in f_iter:
+                    if sf is not None and 'vocab' in sf.__dict__:
+                        sh_field = shared_fields[key]
+                        try:
+                            sh_f_iter = iter(sh_field)
+                        except TypeError:
+                            sh_f_iter = [(key, sh_field)]
+                        sh_f_dict = dict(sh_f_iter)
+                        assert sf.vocab.stoi == sh_f_dict[sn].vocab.stoi, \
+                            "Ensemble models must use the same " \
+                            "preprocessed data"
         models.append(model)
         if shared_model_opt is None:
             shared_model_opt = model_opt

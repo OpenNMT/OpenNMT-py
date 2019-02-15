@@ -217,6 +217,6 @@ class AudioSeqField(Field):
         return arr
 
 
-def audio_fields(base_name, **kwargs):
+def audio_fields(**kwargs):
     audio = AudioSeqField(pad_index=0, batch_first=True, include_lengths=True)
-    return [(base_name, audio)]
+    return audio

@@ -71,7 +71,7 @@ class Dataset(TorchtextDataset):
     torchtext's iterators then know how to use these examples to make batches.
 
     Args:
-        fields (dict[str, List[Tuple[str, Field]]]): a dict with the structure
+        fields (dict[str, Field]): a dict with the structure
             returned by :func:`onmt.inputters.get_fields()`. Usually
             that means the dataset side, ``"src"`` or ``"tgt"``. Keys match
             the keys of items yielded by the ``readers``, while values
@@ -119,18 +119,22 @@ class Dataset(TorchtextDataset):
         examples = []
         for ex_dict in starmap(_join_dicts, zip(*read_iters)):
             if can_copy:
-                src_field = fields['src'][0][1]
-                tgt_field = fields['tgt'][0][1]
+                src_field = fields['src']
+                tgt_field = fields['tgt']
                 # this assumes src_field and tgt_field are both text
                 src_ex_vocab, ex_dict = _dynamic_dict(
                     ex_dict, src_field.base_field, tgt_field.base_field)
                 self.src_vocabs.append(src_ex_vocab)
-            ex_fields = {k: v for k, v in fields.items() if k in ex_dict}
+            ex_fields = {k: [(k, v)] for k, v in fields.items() if
+                         k in ex_dict}
             ex = Example.fromdict(ex_dict, ex_fields)
             examples.append(ex)
 
-        # the dataset's self.fields should have the same attributes as examples
-        fields = dict(chain.from_iterable(ex_fields.values()))
+        # fields needs to have only keys that examples have as attrs
+        fields = []
+        for _, nf_list in ex_fields.items():
+            assert len(nf_list) == 1
+            fields.append(nf_list[0])
 
         super(Dataset, self).__init__(examples, fields, filter_pred)
 

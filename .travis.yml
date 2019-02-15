@@ -34,6 +34,8 @@ script:
   - python preprocess.py -data_type audio -shard_size 300 -src_dir /tmp/speech/an4_dataset -train_src /tmp/speech/src-train.txt -train_tgt /tmp/speech/tgt-train.txt -valid_src /tmp/speech/src-val.txt -valid_tgt /tmp/speech/tgt-val.txt -save_data /tmp/speech/data && rm -rf /tmp/speech/data*.pt
   # test nmt translation
   - head data/src-test.txt > /tmp/src-test.txt; python translate.py -model onmt/tests/test_model.pt -src /tmp/src-test.txt -verbose
+  # test nmt ensemble translation
+  - head data/src-test.txt > /tmp/src-test.txt; python translate.py -model onmt/tests/test_model.pt onmt/tests/test_model.pt -src /tmp/src-test.txt -verbose
   # test im2text translation
   - head /tmp/im2text/src-val.txt > /tmp/im2text/src-val-head.txt; head /tmp/im2text/tgt-val.txt > /tmp/im2text/tgt-val-head.txt; python translate.py -data_type img -src_dir /tmp/im2text/images -model /tmp/test_model_im2text.pt -src /tmp/im2text/src-val-head.txt -tgt /tmp/im2text/tgt-val-head.txt -verbose -out /tmp/im2text/trans
   # test speech2text translation

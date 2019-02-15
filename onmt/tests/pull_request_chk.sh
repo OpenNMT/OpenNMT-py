@@ -149,6 +149,13 @@ ${PYTHON} translate.py -model ${TEST_DIR}/test_model.pt -src /tmp/src-test.txt -
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 
+echo -n "  [+] Testing NMT ensemble translation..."
+head ${DATA_DIR}/src-test.txt > /tmp/src-test.txt
+${PYTHON} translate.py -model ${TEST_DIR}/test_model.pt ${TEST_DIR}/test_model.pt \
+            -src /tmp/src-test.txt -verbose >> ${LOG_FILE} 2>&1
+[ "$?" -eq 0 ] || error_exit
+echo "Succeeded" | tee -a ${LOG_FILE}
+
 echo -n "  [+] Testing img2text translation..."
 head /tmp/im2text/src-val.txt > /tmp/im2text/src-val-head.txt
 head /tmp/im2text/tgt-val.txt > /tmp/im2text/tgt-val-head.txt

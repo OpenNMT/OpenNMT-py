@@ -112,7 +112,7 @@ class AudioEncoder(EncoderBase):
             t, _, _ = memory_bank.size()
             memory_bank = memory_bank.transpose(0, 2)
             memory_bank = pool(memory_bank)
-            lengths = [int(math.floor((length - stride)/stride + 1))
+            lengths = [int(math.floor((length - stride) / stride + 1))
                        for length in lengths]
             memory_bank = memory_bank.transpose(0, 2)
             src = memory_bank

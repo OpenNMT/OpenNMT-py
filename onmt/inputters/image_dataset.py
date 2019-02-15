@@ -99,8 +99,8 @@ def batch_img(data, vocab):
     return imgs
 
 
-def image_fields(base_name, **kwargs):
+def image_fields(**kwargs):
     img = Field(
         use_vocab=False, dtype=torch.float,
         postprocessing=batch_img, sequential=False)
-    return [(base_name, img)]
+    return img
