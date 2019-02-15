@@ -164,7 +164,6 @@
 <span></span><span class="ch">#!/usr/bin/env python</span>
 <span class="sd">&quot;&quot;&quot; Translator Class and builder &quot;&quot;&quot;</span>
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
-<span class="kn">import</span> <span class="nn">configargparse</span>
 <span class="kn">import</span> <span class="nn">codecs</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">math</span>
@@ -176,7 +175,6 @@
 <span class="kn">import</span> <span class="nn">onmt.model_builder</span>
 <span class="kn">import</span> <span class="nn">onmt.translate.beam</span>
 <span class="kn">import</span> <span class="nn">onmt.inputters</span> <span class="k">as</span> <span class="nn">inputters</span>
-<span class="kn">import</span> <span class="nn">onmt.opts</span> <span class="k">as</span> <span class="nn">opts</span>
 <span class="kn">import</span> <span class="nn">onmt.decoders.ensemble</span>
 <span class="kn">from</span> <span class="nn">onmt.translate.beam_search</span> <span class="k">import</span> <span class="n">BeamSearch</span>
 <span class="kn">from</span> <span class="nn">onmt.translate.random_sampling</span> <span class="k">import</span> <span class="n">RandomSampling</span>
@@ -188,13 +186,9 @@
     <span class="k">if</span> <span class="n">out_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">out_file</span> <span class="o">=</span> <span class="n">codecs</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">output</span><span class="p">,</span> <span class="s1">&#39;w+&#39;</span><span class="p">,</span> <span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
 
-    <span class="n">dummy_parser</span> <span class="o">=</span> <span class="n">configargparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;train.py&#39;</span><span class="p">)</span>
-    <span class="n">opts</span><span class="o">.</span><span class="n">model_opts</span><span class="p">(</span><span class="n">dummy_parser</span><span class="p">)</span>
-    <span class="n">dummy_opt</span> <span class="o">=</span> <span class="n">dummy_parser</span><span class="o">.</span><span class="n">parse_known_args</span><span class="p">([])[</span><span class="mi">0</span><span class="p">]</span>
-
     <span class="n">load_test_model</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">decoders</span><span class="o">.</span><span class="n">ensemble</span><span class="o">.</span><span class="n">load_test_model</span> \
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">models</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">onmt</span><span class="o">.</span><span class="n">model_builder</span><span class="o">.</span><span class="n">load_test_model</span>
-    <span class="n">fields</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">model_opt</span> <span class="o">=</span> <span class="n">load_test_model</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">dummy_opt</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">)</span>
+    <span class="n">fields</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">model_opt</span> <span class="o">=</span> <span class="n">load_test_model</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
 
     <span class="n">scorer</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">translate</span><span class="o">.</span><span class="n">GNMTGlobalScorer</span><span class="o">.</span><span class="n">from_opt</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
 
@@ -298,9 +292,6 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">n_best</span> <span class="o">=</span> <span class="n">n_best</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_length</span> <span class="o">=</span> <span class="n">max_length</span>
-
-        <span class="k">if</span> <span class="n">beam_size</span> <span class="o">!=</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">random_sampling_topk</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Can either do beam search OR random sampling.&#39;</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span> <span class="o">=</span> <span class="n">beam_size</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">random_sampling_temp</span> <span class="o">=</span> <span class="n">random_sampling_temp</span>
