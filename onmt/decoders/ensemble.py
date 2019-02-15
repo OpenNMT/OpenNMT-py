@@ -129,21 +129,17 @@ def load_test_model(opt):
             shared_fields = fields
         else:
             for key, field in fields.items():
-                assert len(field) == 1
-                n, f = field[0]
                 try:
-                    f_iter = iter(f)
+                    f_iter = iter(field)
                 except TypeError:
-                    f_iter = [(n, f)]
+                    f_iter = [(key, field)]
                 for sn, sf in f_iter:
                     if sf is not None and 'vocab' in sf.__dict__:
                         sh_field = shared_fields[key]
-                        assert len(sh_field) == 1
-                        sh_n, sh_f = sh_field[0]
                         try:
-                            sh_f_iter = iter(sh_f)
+                            sh_f_iter = iter(sh_field)
                         except TypeError:
-                            sh_f_iter = [(sh_n, sh_f)]
+                            sh_f_iter = [(key, sh_field)]
                         sh_f_dict = dict(sh_f_iter)
                         assert sf.vocab.stoi == sh_f_dict[sn].vocab.stoi, \
                             "Ensemble models must use the same " \
