@@ -25,9 +25,11 @@ Decoders
 ---------
 
 
-.. autoclass:: onmt.decoders.RNNDecoderBase
+.. autoclass:: onmt.decoders.DecoderBase
     :members:
-
+    
+.. autoclass:: onmt.decoders.decoder.RNNDecoderBase
+    :members:
 
 .. autoclass:: onmt.decoders.StdRNNDecoder
     :members:
