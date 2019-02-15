@@ -151,7 +151,7 @@ class TextMultiField(RawField):
         return self.fields[item]
 
 
-def text_fields(base_name, **kwargs):
+def text_fields(**kwargs):
     """Create text fields.
 
     Args:
@@ -164,11 +164,12 @@ def text_fields(base_name, **kwargs):
         truncate (bool or NoneType, optional): Defaults to ``None``.
 
     Returns:
-        List[Tuple[str, TextMultiField]]
+        TextMultiField
     """
 
     n_feats = kwargs["n_feats"]
     include_lengths = kwargs["include_lengths"]
+    base_name = kwargs["base_name"]
     pad = kwargs.get("pad", "<blank>")
     bos = kwargs.get("bos", "<s>")
     eos = kwargs.get("eos", "</s>")
@@ -190,4 +191,4 @@ def text_fields(base_name, **kwargs):
         fields_.append((name, feat))
     assert fields_[0][0] == base_name  # sanity check
     field = TextMultiField(fields_[0][0], fields_[0][1], fields_[1:])
-    return [(base_name, field)]
+    return field

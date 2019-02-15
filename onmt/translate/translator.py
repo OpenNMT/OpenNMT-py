@@ -47,7 +47,7 @@ class Translator(object):
 
     Args:
         model (onmt.modules.NMTModel): NMT model to use for translation
-        fields (dict[str, list[tuple[str, torchtext.data.Field]]]): A dict
+        fields (dict[str, torchtext.data.Field]): A dict
             mapping each side to its list of name-Field pairs.
         src_reader (inputters.DataReaderBase): Source reader.
         tgt_reader (inputters.TextDataReader): Target reader.
@@ -114,7 +114,7 @@ class Translator(object):
             seed=-1):
         self.model = model
         self.fields = fields
-        tgt_field = self.fields["tgt"][0][1].base_field
+        tgt_field = dict(self.fields)["tgt"].base_field
         self._tgt_vocab = tgt_field.vocab
         self._tgt_eos_idx = self._tgt_vocab.stoi[tgt_field.eos_token]
         self._tgt_pad_idx = self._tgt_vocab.stoi[tgt_field.pad_token]
@@ -187,7 +187,7 @@ class Translator(object):
 
         Args:
             model (onmt.modules.NMTModel): See :func:`__init__()`.
-            fields (dict[str, list[tuple[str, torchtext.data.Field]]]): See
+            fields (dict[str, torchtext.data.Field]): See
                 :func:`__init__()`.
             opt (argparse.Namespace): Command line options
             model_opt (argparse.Namespace): Command line options saved with

@@ -88,18 +88,15 @@ def get_fields(
             :class:`TextDataReader` - see there for more details).
 
     Returns:
-        A dictionary. The keys are strings whose names correspond to the
-        keys of the dictionaries yielded by the make_examples methods of
-        various dataset classes. The values are lists of (name, Field)
-        pairs, where the name is a string which will become the name of
-        an attribute of an example.
+        A dict mapping names to fields. These names need to match
+        the dataset example attributes.
     """
 
     assert src_data_type in ['text', 'img', 'audio'], \
         "Data type not implemented"
     assert not dynamic_dict or src_data_type == 'text', \
         'it is not possible to use dynamic_dict with non-text input'
-    fields = {'src': [], 'tgt': []}
+    fields = {}
 
     fields_getters = {"text": text_fields,
                       "img": image_fields,
@@ -108,30 +105,30 @@ def get_fields(
     src_field_kwargs = {"n_feats": n_src_feats,
                         "include_lengths": True,
                         "pad": pad, "bos": None, "eos": None,
-                        "truncate": src_truncate}
-    fields["src"] = fields_getters[src_data_type](
-        'src', **src_field_kwargs)
+                        "truncate": src_truncate,
+                        "base_name": "src"}
+    fields["src"] = fields_getters[src_data_type](**src_field_kwargs)
 
     tgt_field_kwargs = {"n_feats": n_tgt_feats,
                         "include_lengths": False,
                         "pad": pad, "bos": bos, "eos": eos,
-                        "truncate": tgt_truncate}
-    fields['tgt'] = fields_getters["text"](
-        'tgt', **tgt_field_kwargs)
+                        "truncate": tgt_truncate,
+                        "base_name": "tgt"}
+    fields["tgt"] = fields_getters["text"](**tgt_field_kwargs)
 
     indices = Field(use_vocab=False, dtype=torch.long, sequential=False)
-    fields["indices"] = [('indices', indices)]
+    fields["indices"] = indices
 
     if dynamic_dict:
         src_map = Field(
             use_vocab=False, dtype=torch.float,
             postprocessing=make_src, sequential=False)
-        fields["src_map"] = [("src_map", src_map)]
+        fields["src_map"] = src_map
 
         align = Field(
             use_vocab=False, dtype=torch.long,
             postprocessing=make_tgt, sequential=False)
-        fields["alignment"] = [('alignment', align)]
+        fields["alignment"] = align
 
     return fields
 
@@ -144,30 +141,22 @@ def load_old_vocab(vocab, data_type="text", dynamic_dict=False):
             format formerly saved in *.vocab.pt files. Or, text data
             not using a :class:`TextMultiField`.
         data_type (str): text, img, or audio
-        dynamic_dict (str): Used for copy attention.
+        dynamic_dict (bool): Used for copy attention.
+
     Returns:
-        a dictionary whose keys are the field names and whose values
-        are lists of (name, Field) pairs, using :class:`TextMultiField`s
-        as appropriate.
+        a dictionary whose keys are the field names and whose values Fields.
     """
 
-    if _old_style_field_list(vocab):  # upgrade to multifield
-        fields = vocab
-        for base_name, vals in fields.items():
-            if ((base_name == 'src' and data_type == 'text') or
-                    base_name == 'tgt'):
-                assert not isinstance(vals[0][1], TextMultiField)
-                fields[base_name] = [(base_name, TextMultiField(
-                    vals[0][0], vals[0][1], vals[1:]))]
-        return fields
-    vocab = dict(vocab)
-    n_src_features = sum('src_feat_' in k for k in vocab)
-    n_tgt_features = sum('tgt_feat_' in k for k in vocab)
-    fields = get_fields(
-        data_type, n_src_features, n_tgt_features, dynamic_dict=dynamic_dict
-    )
-    for k, vals in fields.items():
-        for n, f in vals:
+    if _old_style_vocab(vocab):
+        # List[Tuple[str, Vocab]] -> List[Tuple[str, Field]]
+        # -> dict[str, Field]
+        vocab = dict(vocab)
+        n_src_features = sum('src_feat_' in k for k in vocab)
+        n_tgt_features = sum('tgt_feat_' in k for k in vocab)
+        fields = get_fields(
+            data_type, n_src_features, n_tgt_features,
+            dynamic_dict=dynamic_dict)
+        for n, f in fields.items():
             try:
                 f_iter = iter(f)
             except TypeError:
@@ -175,11 +164,29 @@ def load_old_vocab(vocab, data_type="text", dynamic_dict=False):
             for sub_n, sub_f in f_iter:
                 if sub_n in vocab:
                     sub_f.vocab = vocab[sub_n]
+        return fields
+
+    if _old_style_field_list(vocab):  # upgrade to multifield
+        # Dict[str, List[Tuple[str, Field]]]
+        # doesn't change structure - don't return early.
+        fields = vocab
+        for base_name, vals in fields.items():
+            if ((base_name == 'src' and data_type == 'text') or
+                    base_name == 'tgt'):
+                assert not isinstance(vals[0][1], TextMultiField)
+                fields[base_name] = [(base_name, TextMultiField(
+                    vals[0][0], vals[0][1], vals[1:]))]
+
+    if _old_style_nesting(vocab):
+        # Dict[str, List[Tuple[str, Field]]] -> List[Tuple[str, Field]]
+        # -> dict[str, Field]
+        fields = dict(list(chain.from_iterable(vocab.values())))
+
     return fields
 
 
 def _old_style_vocab(vocab):
-    """Detect old-style vocabs.
+    """Detect old-style vocabs (``List[Tuple[str, torchtext.data.Vocab]]``).
 
     Args:
         vocab: some object loaded from a *.vocab.pt file
@@ -197,8 +204,17 @@ def _old_style_vocab(vocab):
         any(isinstance(v[1], Vocab) for v in vocab)
 
 
+def _old_style_nesting(vocab):
+    """Detect old-style nesting (``dict[str, List[Tuple[str, Field]]]``)."""
+    return isinstance(vocab, dict) and \
+        any(isinstance(v, list) for v in vocab.values())
+
+
 def _old_style_field_list(vocab):
     """Detect old-style text fields.
+
+    Not old style vocab, old nesting, and text-type fields not using
+    ``TextMultiField``.
 
     Args:
         vocab: some object loaded from a *.vocab.pt file
@@ -209,13 +225,14 @@ def _old_style_field_list(vocab):
     """
 
     # if tgt isn't using TextMultiField, then no text field is.
-    return not _old_style_vocab(vocab) and not isinstance(
-        vocab['tgt'][0][1], TextMultiField)
+    return (not _old_style_vocab(vocab)) and _old_style_nesting(vocab) and \
+        (not isinstance(vocab['tgt'][0][1], TextMultiField))
 
 
 def old_style_vocab(vocab):
-    """:func:`_old_style_vocab()` OR :func:`_old_style_field_list()`."""
-    return _old_style_vocab(vocab) or _old_style_field_list(vocab)
+    """The vocab/fields need updated."""
+    return _old_style_vocab(vocab) or _old_style_field_list(vocab) or \
+        _old_style_nesting(vocab)
 
 
 def filter_example(ex, use_src_len=True, use_tgt_len=True,
@@ -299,7 +316,7 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
 
     Args:
         train_dataset_files: a list of train dataset pt file.
-        fields (dict[str, List[Tuple[str, Field]]]): fields to build vocab for.
+        fields (dict[str, Field]): fields to build vocab for.
         data_type (str): A supported data type string.
         share_vocab (bool): share source and target vocabulary?
         src_vocab_path (str): Path to src vocabulary file.
@@ -336,7 +353,7 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
         dataset = torch.load(path)
         logger.info(" * reloading %s." % path)
         for ex in dataset.examples:
-            for name, field in chain.from_iterable(fields.values()):
+            for name, field in fields.items():
                 try:
                     f_iter = iter(field)
                 except TypeError:
@@ -366,16 +383,14 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
         max_size=src_vocab_size, min_freq=src_words_min_frequency)
     build_fv_args["tgt"] = dict(
         max_size=tgt_vocab_size, min_freq=tgt_words_min_frequency)
-    assert len(fields["tgt"]) == 1
-    tgt_multifield = fields["tgt"][0][1]
+    tgt_multifield = fields["tgt"]
     _build_fv_from_multifield(
         tgt_multifield,
         counters,
         build_fv_args,
         size_multiple=vocab_size_multiple if not share_vocab else 1)
     if data_type == 'text':
-        assert len(fields["src"]) == 1
-        src_multifield = fields["src"][0][1]
+        src_multifield = fields["src"]
         _build_fv_from_multifield(
             src_multifield,
             counters,
@@ -506,7 +521,7 @@ class DatasetLazyIter(object):
 
     Args:
         dataset_paths: a list containing the locations of dataset files.
-        fields (dict[str, List[Tuple[str, Field]]]): fields dict for the
+        fields (dict[str, Field]): fields dict for the
             datasets.
         batch_size (int): batch size.
         batch_size_fn: custom batch process function.

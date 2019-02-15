@@ -103,25 +103,26 @@ def load_test_model(opt, model_path=None):
 
 
 def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
-    """
+    """Build a model from opts.
+
     Args:
         model_opt: the option loaded from checkpoint. It's important that
             the opts have been updated and validated. See
             :class:`onmt.utils.parse.ArgumentParser`.
-        fields: `Field` objects for the model.
+        fields (dict[str, torchtext.data.Field]):
+            `Field` objects for the model.
         gpu (bool): whether to use gpu.
         checkpoint: the model gnerated by train phase, or a resumed snapshot
                     model from a stopped training.
         gpu_id (int or NoneType): Which GPU to use.
+
     Returns:
         the NMTModel.
     """
 
     # Build embeddings.
     if model_opt.model_type == "text":
-        src_fields = [f for n, f in fields['src']]
-        assert len(src_fields) == 1
-        src_field = src_fields[0]
+        src_field = fields["src"]
         src_emb = build_embeddings(model_opt, src_field)
     else:
         src_emb = None
@@ -130,11 +131,8 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
     encoder = build_encoder(model_opt, src_emb)
 
     # Build decoder.
-    tgt_fields = [f for n, f in fields['tgt']]
-    assert len(tgt_fields) == 1
-    tgt_field = tgt_fields[0]
-    tgt_emb = build_embeddings(
-        model_opt, tgt_field, for_encoder=False)
+    tgt_field = fields["tgt"]
+    tgt_emb = build_embeddings(model_opt, tgt_field, for_encoder=False)
 
     # Share the embedding matrix - preprocess with share_vocab required.
     if model_opt.share_embeddings:
@@ -163,15 +161,14 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
             gen_func = nn.LogSoftmax(dim=-1)
         generator = nn.Sequential(
             nn.Linear(model_opt.dec_rnn_size,
-                      len(fields["tgt"][0][1].base_field.vocab)),
+                      len(fields["tgt"].base_field.vocab)),
             Cast(torch.float32),
             gen_func
         )
         if model_opt.share_decoder_embeddings:
             generator[0].weight = decoder.embeddings.word_lut.weight
     else:
-        assert len(fields["tgt"]) == 1
-        tgt_base_field = fields["tgt"][0][1].base_field
+        tgt_base_field = fields["tgt"].base_field
         vocab_size = len(tgt_base_field.vocab)
         pad_idx = tgt_base_field.vocab.stoi[tgt_base_field.pad_token]
         generator = CopyGenerator(model_opt.dec_rnn_size, vocab_size, pad_idx)

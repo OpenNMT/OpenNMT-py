@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 """Training on a single process."""
 import os
-from itertools import chain
 
 import torch
 
@@ -71,14 +70,14 @@ def main(opt, device_id):
 
     # Report src and tgt vocab sizes, including for features
     for side in ['src', 'tgt']:
-        for name, f in fields[side]:
-            try:
-                f_iter = iter(f)
-            except TypeError:
-                f_iter = [(name, f)]
-            for sn, sf in f_iter:
-                if sf.use_vocab:
-                    logger.info(' * %s vocab size = %d' % (sn, len(sf.vocab)))
+        f = fields[side]
+        try:
+            f_iter = iter(f)
+        except TypeError:
+            f_iter = [(side, f)]
+        for sn, sf in f_iter:
+            if sf.use_vocab:
+                logger.info(' * %s vocab size = %d' % (sn, len(sf.vocab)))
 
     # Build model.
     model = build_model(model_opt, opt, fields, checkpoint)
@@ -97,13 +96,9 @@ def main(opt, device_id):
     trainer = build_trainer(
         opt, device_id, model, fields, optim, model_saver=model_saver)
 
-    # this line is kind of a temporary kludge because different objects expect
-    # fields to have a different structure
-    dataset_fields = dict(chain.from_iterable(fields.values()))
-
-    train_iter = build_dataset_iter("train", dataset_fields, opt)
+    train_iter = build_dataset_iter("train", fields, opt)
     valid_iter = build_dataset_iter(
-        "valid", dataset_fields, opt, is_train=False)
+        "valid", fields, opt, is_train=False)
 
     if len(opt.gpu_ranks):
         logger.info('Starting training on GPU: %s' % opt.gpu_ranks)
