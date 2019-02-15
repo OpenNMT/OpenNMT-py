@@ -9,7 +9,7 @@ Contents
       onmt.rst
       onmt.modules.rst
       onmt.translation.rst
-      onmt.io.rst
+      onmt.inputters.rst
       Library.md
 
       options/preprocess.md
