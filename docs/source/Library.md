@@ -23,11 +23,11 @@ We begin by loading in the vocabulary for the model of interest. This will let u
 ```python
 vocab_fields = torch.load("data/data.vocab.pt")
 
-src_text_field = vocab_fields["src"][0][1].base_field
+src_text_field = vocab_fields["src"].base_field
 src_vocab = src_text_field.vocab
 src_padding = src_vocab.stoi[src_text_field.pad_token]
 
-tgt_text_field = vocab_fields['tgt'][0][1].base_field
+tgt_text_field = vocab_fields['tgt'].base_field
 tgt_vocab = tgt_text_field.vocab
 tgt_padding = tgt_vocab.stoi[tgt_text_field.pad_token]
 ```
@@ -77,7 +77,7 @@ optim = onmt.utils.optimizers.Optimizer(
     torch_optimizer, learning_rate=lr, max_grad_norm=2)
 ```
 
-Now we load the data from disk with the values of the associated vocab fields. To iterate through the data itself we use a wrapper around a torchtext iterator class. We specify one for both the training and test data.
+Now we load the data from disk with the associated vocab fields. To iterate through the data itself we use a wrapper around a torchtext iterator class. We specify one for both the training and test data.
 
 
 ```python
@@ -85,9 +85,8 @@ Now we load the data from disk with the values of the associated vocab fields. T
 from itertools import chain
 train_data_file = "data/data.train.0.pt"
 valid_data_file = "data/data.valid.0.pt"
-vocab_fields_formatted_for_iterator = dict(chain.from_iterable(vocab_fields.values()))
 train_iter = onmt.inputters.inputter.DatasetLazyIter(dataset_paths=[train_data_file],
-                                                     fields=vocab_fields_formatted_for_iterator,
+                                                     fields=vocab_fields,
                                                      batch_size=50,
                                                      batch_size_multiple=1,
                                                      batch_size_fn=None,
@@ -96,7 +95,7 @@ train_iter = onmt.inputters.inputter.DatasetLazyIter(dataset_paths=[train_data_f
                                                      repeat=True)
 
 valid_iter = onmt.inputters.inputter.DatasetLazyIter(dataset_paths=[valid_data_file],
-                                                     fields=vocab_fields_formatted_for_iterator,
+                                                     fields=vocab_fields,
                                                      batch_size=10,
                                                      batch_size_multiple=1,
                                                      batch_size_fn=None,
@@ -123,22 +122,23 @@ trainer.train(train_iter=train_iter,
 ```
 
 ```
-[2019-02-14 17:40:32,854 INFO] Start training loop and validate every 200 steps...
-[2019-02-14 17:40:32,975 INFO] Loading dataset from data/data.train.0.pt, number of examples: 10000
-[2019-02-14 17:40:53,996 INFO] Step 50/  400; acc:  12.04; ppl:  0.00; xent: -144.42; lr: 1.00000; 524/517 tok/s;     21 sec
-[2019-02-14 17:41:17,655 INFO] Step 100/  400; acc:  11.76; ppl:  0.00; xent: -450.43; lr: 1.00000; 478/481 tok/s;     45 sec
-[2019-02-14 17:41:38,788 INFO] Step 150/  400; acc:  11.81; ppl:  0.00; xent: -765.66; lr: 1.00000; 528/517 tok/s;     66 sec
-[2019-02-14 17:42:02,082 INFO] Step 200/  400; acc:  12.49; ppl:  0.00; xent: -1107.68; lr: 1.00000; 479/487 tok/s;     89 sec
-[2019-02-14 17:42:02,114 INFO] Loading dataset from data/data.valid.0.pt, number of examples: 3000
-[2019-02-14 17:42:51,292 INFO] Validation perplexity: 0
-[2019-02-14 17:42:51,293 INFO] Validation accuracy: 19.8323
-[2019-02-14 17:43:12,535 INFO] Step 250/  400; acc:  12.10; ppl:  0.00; xent: -1401.45; lr: 1.00000; 156/153 tok/s;    160 sec
-[2019-02-14 17:43:35,407 INFO] Step 300/  400; acc:  12.60; ppl:  0.00; xent: -1762.64; lr: 1.00000; 497/491 tok/s;    183 sec
-[2019-02-14 17:43:56,475 INFO] Step 350/  400; acc:  11.71; ppl:  0.00; xent: -2012.42; lr: 1.00000; 492/506 tok/s;    204 sec
-[2019-02-14 17:44:21,052 INFO] Step 400/  400; acc:  12.90; ppl:  0.00; xent: -2433.33; lr: 1.00000; 493/487 tok/s;    228 sec
-[2019-02-14 17:44:21,084 INFO] Loading dataset from data/data.valid.0.pt, number of examples: 3000
-[2019-02-14 17:45:11,367 INFO] Validation perplexity: 0
-[2019-02-14 17:45:11,368 INFO] Validation accuracy: 19.8323
+[2019-02-15 16:34:17,475 INFO] Start training loop and validate every 200 steps...
+[2019-02-15 16:34:17,601 INFO] Loading dataset from data/data.train.0.pt, number of examples: 10000
+[2019-02-15 16:35:43,873 INFO] Step 50/  400; acc:  11.54; ppl: 1714.07; xent: 7.45; lr: 1.00000; 662/656 tok/s;     86 sec
+[2019-02-15 16:37:05,965 INFO] Step 100/  400; acc:  13.75; ppl: 534.80; xent: 6.28; lr: 1.00000; 675/671 tok/s;    168 sec
+[2019-02-15 16:38:31,289 INFO] Step 150/  400; acc:  15.02; ppl: 439.96; xent: 6.09; lr: 1.00000; 675/668 tok/s;    254 sec
+[2019-02-15 16:39:56,715 INFO] Step 200/  400; acc:  16.08; ppl: 357.62; xent: 5.88; lr: 1.00000; 642/647 tok/s;    339 sec
+[2019-02-15 16:39:56,811 INFO] Loading dataset from data/data.valid.0.pt, number of examples: 3000
+[2019-02-15 16:41:13,415 INFO] Validation perplexity: 208.73
+[2019-02-15 16:41:13,415 INFO] Validation accuracy: 23.3507
+[2019-02-15 16:41:13,567 INFO] Loading dataset from data/data.train.0.pt, number of examples: 10000
+[2019-02-15 16:42:41,562 INFO] Step 250/  400; acc:  17.07; ppl: 310.41; xent: 5.74; lr: 1.00000; 347/344 tok/s;    504 sec
+[2019-02-15 16:44:04,899 INFO] Step 300/  400; acc:  19.17; ppl: 262.81; xent: 5.57; lr: 1.00000; 665/661 tok/s;    587 sec
+[2019-02-15 16:45:33,653 INFO] Step 350/  400; acc:  19.38; ppl: 244.81; xent: 5.50; lr: 1.00000; 649/642 tok/s;    676 sec
+[2019-02-15 16:47:06,141 INFO] Step 400/  400; acc:  20.44; ppl: 214.75; xent: 5.37; lr: 1.00000; 593/598 tok/s;    769 sec
+[2019-02-15 16:47:06,265 INFO] Loading dataset from data/data.valid.0.pt, number of examples: 3000
+[2019-02-15 16:48:27,328 INFO] Validation perplexity: 150.277
+[2019-02-15 16:48:27,328 INFO] Validation accuracy: 24.2132
 ```
 
 To use the model, we need to load up the translation functions. A Translator object requires the vocab fields, readers for source and target and a global scorer.
@@ -173,21 +173,56 @@ for batch in valid_iter:
         print(trans.log(0))
 ```
 ```
-[2019-02-14 17:49:24,398 INFO] Loading dataset from data/data.valid.0.pt, number of examples: 3000
+[2019-02-15 16:48:27,419 INFO] Loading dataset from data/data.valid.0.pt, number of examples: 3000
 
 
 SENT 0: ['Parliament', 'Does', 'Not', 'Support', 'Amendment', 'Freeing', 'Tymoshenko']
-PRED 0: <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk>
-PRED SCORE: 11987.6055
+PRED 0: <unk> ist ein <unk> <unk> <unk> .
+PRED SCORE: -1.0983
 
 
 SENT 0: ['Today', ',', 'the', 'Ukraine', 'parliament', 'dismissed', ',', 'within', 'the', 'Code', 'of', 'Criminal', 'Procedure', 'amendment', ',', 'the', 'motion', 'to', 'revoke', 'an', 'article', 'based', 'on', 'which', 'the', 'opposition', 'leader', ',', 'Yulia', 'Tymoshenko', ',', 'was', 'sentenced', '.']
-PRED 0: <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk>
-PRED SCORE: 11987.6113
+PRED 0: <unk> ist das <unk> <unk> .
+PRED SCORE: -1.5950
 
 
 SENT 0: ['The', 'amendment', 'that', 'would', 'lead', 'to', 'freeing', 'the', 'imprisoned', 'former', 'Prime', 'Minister', 'was', 'revoked', 'during', 'second', 'reading', 'of', 'the', 'proposal', 'for', 'mitigation', 'of', 'sentences', 'for', 'economic', 'offences', '.']
-PRED 0: <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk>
-PRED SCORE: 11987.6104
+PRED 0: Es gibt es das <unk> der <unk> für <unk> <unk> .
+PRED SCORE: -1.5128
+
+
+SENT 0: ['In', 'October', ',', 'Tymoshenko', 'was', 'sentenced', 'to', 'seven', 'years', 'in', 'prison', 'for', 'entering', 'into', 'what', 'was', 'reported', 'to', 'be', 'a', 'disadvantageous', 'gas', 'deal', 'with', 'Russia', '.']
+PRED 0: <unk> ist ein <unk> <unk> .
+PRED SCORE: -1.5578
+
+
+SENT 0: ['The', 'verdict', 'is', 'not', 'yet', 'final;', 'the', 'court', 'will', 'hear', 'Tymoshenko', '&apos;s', 'appeal', 'in', 'December', '.']
+PRED 0: <unk> ist nicht <unk> .
+PRED SCORE: -0.9623
+
+
+SENT 0: ['Tymoshenko', 'claims', 'the', 'verdict', 'is', 'a', 'political', 'revenge', 'of', 'the', 'regime;', 'in', 'the', 'West', ',', 'the', 'trial', 'has', 'also', 'evoked', 'suspicion', 'of', 'being', 'biased', '.']
+PRED 0: <unk> ist ein <unk> <unk> .
+PRED SCORE: -0.8703
+
+
+SENT 0: ['The', 'proposal', 'to', 'remove', 'Article', '365', 'from', 'the', 'Code', 'of', 'Criminal', 'Procedure', ',', 'upon', 'which', 'the', 'former', 'Prime', 'Minister', 'was', 'sentenced', ',', 'was', 'supported', 'by', '147', 'members', 'of', 'parliament', '.']
+PRED 0: <unk> Sie sich mit <unk> <unk> .
+PRED SCORE: -1.4778
+
+
+SENT 0: ['Its', 'ratification', 'would', 'require', '226', 'votes', '.']
+PRED 0: <unk> Sie sich <unk> .
+PRED SCORE: -1.3341
+
+
+SENT 0: ['Libya', '&apos;s', 'Victory']
+PRED 0: <unk> Sie die <unk> <unk> .
+PRED SCORE: -1.5192
+
+
+SENT 0: ['The', 'story', 'of', 'Libya', '&apos;s', 'liberation', ',', 'or', 'rebellion', ',', 'already', 'has', 'its', 'defeated', '.']
+PRED 0: <unk> ist ein <unk> <unk> .
+PRED SCORE: -1.2772
 
 ...
