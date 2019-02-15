@@ -29,7 +29,7 @@ class CNNEncoder(EncoderBase):
     def from_opt(cls, opt, embeddings):
         return cls(
             opt.enc_layers,
-            opt.enc_rnn_size,
+            opt.enc_size,
             opt.cnn_kernel_width,
             opt.dropout,
             embeddings)

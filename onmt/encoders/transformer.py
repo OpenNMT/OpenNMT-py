@@ -99,7 +99,7 @@ class TransformerEncoder(EncoderBase):
     def from_opt(cls, opt, embeddings):
         return cls(
             opt.enc_layers,
-            opt.enc_rnn_size,
+            opt.enc_size,
             opt.heads,
             opt.transformer_ff,
             opt.dropout,

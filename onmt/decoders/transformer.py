@@ -147,7 +147,7 @@ class TransformerDecoder(DecoderBase):
     def from_opt(cls, opt, embeddings):
         return cls(
             opt.dec_layers,
-            opt.dec_rnn_size,
+            opt.dec_size,
             opt.heads,
             opt.transformer_ff,
             opt.copy_attn,

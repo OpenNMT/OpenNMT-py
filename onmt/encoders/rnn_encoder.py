@@ -54,7 +54,7 @@ class RNNEncoder(EncoderBase):
             opt.rnn_type,
             opt.brnn,
             opt.enc_layers,
-            opt.enc_rnn_size,
+            opt.enc_size,
             opt.dropout,
             embeddings,
             opt.bridge)

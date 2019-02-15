@@ -87,16 +87,24 @@ def model_opts(parser):
     group.add('--dec_layers', '-dec_layers', type=int, default=2,
               help='Number of layers in the decoder')
     group.add('--rnn_size', '-rnn_size', type=int, default=-1,
-              help="""Size of rnn hidden states. Overwrites
-                       enc_rnn_size and dec_rnn_size""")
-    group.add('--enc_rnn_size', '-enc_rnn_size', type=int, default=500,
-              help="""Size of encoder rnn hidden states.
-                       Must be equal to dec_rnn_size except for
-                       speech-to-text.""")
-    group.add('--dec_rnn_size', '-dec_rnn_size', type=int, default=500,
-              help="""Size of decoder rnn hidden states.
-                       Must be equal to enc_rnn_size except for
-                       speech-to-text.""")
+              action=DeprecateAction,
+              help="""Deprecated, use --size.""")
+    group.add('--size', '-size', type=int, default=-1,
+              help="""Size of rnn hidden states, transformer model size,
+                      CNN hidden size, etc. Overwrites both enc_size and
+                      dec_size""")
+    group.add('--enc_rnn_size', '-enc_rnn_size', type=int, default=-1,
+              action=DeprecateAction,
+              help="""Deprecated, use --enc_size.""")
+    group.add('--enc_size', '-enc_size', type=int, default=500,
+              help="""Set --size for encoder only (Usually must be equal
+                      to --dec_size.""")
+    group.add('--dec_rnn_size', '-dec_rnn_size', type=int, default=-1,
+              action=DeprecateAction,
+              help="""Deprecated, use --dec_size.""")
+    group.add('--dec_size', '-dec_size', type=int, default=500,
+              help="""Set --size for decoder only (Usually must be equal
+                      to --enc_size.""")
     group.add('--audio_enc_pooling', '-audio_enc_pooling',
               type=str, default='1',
               help="""The amount of pooling of audio encoder,

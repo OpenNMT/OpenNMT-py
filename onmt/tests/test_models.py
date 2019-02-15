@@ -87,8 +87,6 @@ class TestModel(unittest.TestCase):
             source_l: Length of generated input sentence
             bsize: Batchsize of generated input
         '''
-        if opt.rnn_size > 0:
-            opt.enc_rnn_size = opt.rnn_size
         word_field = self.get_field()
         embeddings = build_embeddings(opt, word_field)
         enc = build_encoder(opt, embeddings)
@@ -99,8 +97,8 @@ class TestModel(unittest.TestCase):
         hidden_t, outputs, test_length = enc(test_src, test_length)
 
         # Initialize vectors to compare size with
-        test_hid = torch.zeros(self.opt.enc_layers, bsize, opt.enc_rnn_size)
-        test_out = torch.zeros(source_l, bsize, opt.dec_rnn_size)
+        test_hid = torch.zeros(self.opt.enc_layers, bsize, opt.enc_size)
+        test_out = torch.zeros(source_l, bsize, opt.dec_size)
 
         # Ensure correct sizes and types
         self.assertEqual(test_hid.size(),
@@ -119,9 +117,6 @@ class TestModel(unittest.TestCase):
             source_l: length of input sequence
             bsize: batchsize
         """
-        if opt.rnn_size > 0:
-            opt.enc_rnn_size = opt.rnn_size
-            opt.dec_rnn_size = opt.rnn_size
         word_field = self.get_field()
 
         embeddings = build_embeddings(opt, word_field)
@@ -135,7 +130,7 @@ class TestModel(unittest.TestCase):
         test_src, test_tgt, test_length = self.get_batch(source_l=source_l,
                                                          bsize=bsize)
         outputs, attn = model(test_src, test_tgt, test_length)
-        outputsize = torch.zeros(source_l - 1, bsize, opt.dec_rnn_size)
+        outputsize = torch.zeros(source_l - 1, bsize, opt.dec_size)
         # Make sure that output has the correct size and type
         self.assertEqual(outputs.size(), outputsize.size())
         self.assertEqual(type(outputs), torch.Tensor)
@@ -156,7 +151,7 @@ class TestModel(unittest.TestCase):
         word_field = self.get_field()
 
         enc = ImageEncoder(
-            opt.enc_layers, opt.brnn, opt.enc_rnn_size, opt.dropout)
+            opt.enc_layers, opt.brnn, opt.enc_size, opt.dropout)
 
         embeddings = build_embeddings(opt, word_field, for_encoder=False)
         dec = build_decoder(opt, embeddings)
@@ -168,7 +163,7 @@ class TestModel(unittest.TestCase):
             bsize=bsize,
             tgt_l=tgt_l)
         outputs, attn = model(test_src, test_tgt, test_length)
-        outputsize = torch.zeros(tgt_l - 1, bsize, opt.dec_rnn_size)
+        outputsize = torch.zeros(tgt_l - 1, bsize, opt.dec_size)
         # Make sure that output has the correct size and type
         self.assertEqual(outputs.size(), outputsize.size())
         self.assertEqual(type(outputs), torch.Tensor)
@@ -191,7 +186,7 @@ class TestModel(unittest.TestCase):
         word_field = self.get_field()
 
         enc = AudioEncoder(opt.rnn_type, opt.enc_layers, opt.dec_layers,
-                           opt.brnn, opt.enc_rnn_size, opt.dec_rnn_size,
+                           opt.brnn, opt.enc_size, opt.dec_size,
                            opt.audio_enc_pooling, opt.dropout,
                            opt.sample_rate, opt.window_size)
 
@@ -206,7 +201,7 @@ class TestModel(unittest.TestCase):
             window_size=opt.window_size,
             t=t, tgt_l=tgt_l)
         outputs, attn = model(test_src, test_tgt, test_length)
-        outputsize = torch.zeros(tgt_l - 1, bsize, opt.dec_rnn_size)
+        outputsize = torch.zeros(tgt_l - 1, bsize, opt.dec_size)
         # Make sure that output has the correct size and type
         self.assertEqual(outputs.size(), outputsize.size())
         self.assertEqual(type(outputs), torch.Tensor)
@@ -266,12 +261,12 @@ tests_nmtmodel = [[('rnn_type', 'GRU')],
                    ('encoder_type', 'transformer'),
                    ('src_word_vec_size', 16),
                    ('tgt_word_vec_size', 16),
-                   ('rnn_size', 16)],
+                   ('size', 16)],
                   [('decoder_type', 'transformer'),
                    ('encoder_type', 'transformer'),
                    ('src_word_vec_size', 16),
                    ('tgt_word_vec_size', 16),
-                   ('rnn_size', 16),
+                   ('size', 16),
                    ('position_encoding', True)],
                   [('coverage_attn', True)],
                   [('copy_attn', True)],

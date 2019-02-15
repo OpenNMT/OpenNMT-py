@@ -104,10 +104,13 @@ def build_torch_optimizer(model, opt):
 def make_learning_rate_decay_fn(opt):
     """Returns the learning decay function from options."""
     if opt.decay_method == 'noam':
+        if opt.size <= 0:
+            raise ValueError(
+                "Cannot use Noam decay without using the size parameter.")
         return functools.partial(
             noam_decay,
             warmup_steps=opt.warmup_steps,
-            model_size=opt.rnn_size)
+            model_size=opt.size)
     elif opt.decay_method == 'rsqrt':
         return functools.partial(
             rsqrt_decay, warmup_steps=opt.warmup_steps)

@@ -41,8 +41,17 @@ class ArgumentParser(cfargparse.ArgumentParser):
             model_opt.dec_layers = model_opt.layers
 
         if model_opt.rnn_size > 0:
-            model_opt.enc_rnn_size = model_opt.rnn_size
-            model_opt.dec_rnn_size = model_opt.rnn_size
+            model_opt.size = model_opt.rnn_size
+
+        if model_opt.enc_rnn_size > 0:
+            model_opt.enc_size = model_opt.enc_rnn_size
+
+        if model_opt.dec_rnn_size > 0:
+            model_opt.dec_size = model_opt.dec_rnn_size
+
+        if model_opt.size > 0:
+            model_opt.enc_size = model_opt.size
+            model_opt.dec_size = model_opt.size
 
         model_opt.brnn = model_opt.model_type == "brnn"
 

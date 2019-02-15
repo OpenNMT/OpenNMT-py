@@ -116,7 +116,7 @@ class RNNDecoderBase(DecoderBase):
             opt.rnn_type,
             opt.brnn,
             opt.dec_layers,
-            opt.dec_rnn_size,
+            opt.dec_size,
             opt.global_attention,
             opt.global_attention_function,
             opt.coverage_attn,

@@ -162,7 +162,7 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
         else:
             gen_func = nn.LogSoftmax(dim=-1)
         generator = nn.Sequential(
-            nn.Linear(model_opt.dec_rnn_size,
+            nn.Linear(model_opt.dec_size,
                       len(fields["tgt"].base_field.vocab)),
             Cast(torch.float32),
             gen_func
@@ -173,7 +173,7 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
         tgt_base_field = fields["tgt"].base_field
         vocab_size = len(tgt_base_field.vocab)
         pad_idx = tgt_base_field.vocab.stoi[tgt_base_field.pad_token]
-        generator = CopyGenerator(model_opt.dec_rnn_size, vocab_size, pad_idx)
+        generator = CopyGenerator(model_opt.dec_size, vocab_size, pad_idx)
 
     # Load the model states from checkpoint or initialize them.
     if checkpoint is not None:
