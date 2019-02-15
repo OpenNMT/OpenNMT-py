@@ -58,7 +58,8 @@ class EnsembleDecoder(nn.Module):
         # of the input.
         dec_outs, attns = zip(*[
             model_decoder(
-                tgt, memory_bank[i], memory_lengths, step=step)
+                tgt, memory_bank[i],
+                memory_lengths=memory_lengths, step=step)
             for i, model_decoder in enumerate(self.model_decoders)])
         mean_attns = self.combine_attns(attns)
         return EnsembleDecoderOutput(dec_outs), mean_attns
@@ -128,9 +129,25 @@ def load_test_model(opt):
             shared_fields = fields
         else:
             for key, field in fields.items():
-                if field is not None and 'vocab' in field.__dict__:
-                    assert field.vocab.stoi == shared_fields[key].vocab.stoi, \
-                        'Ensemble models must use the same preprocessed data'
+                assert len(field) == 1
+                n, f = field[0]
+                try:
+                    f_iter = iter(f)
+                except TypeError:
+                    f_iter = [(n, f)]
+                for sn, sf in f_iter:
+                    if sf is not None and 'vocab' in sf.__dict__:
+                        sh_field = shared_fields[key]
+                        assert len(sh_field) == 1
+                        sh_n, sh_f = sh_field[0]
+                        try:
+                            sh_f_iter = iter(sh_f)
+                        except TypeError:
+                            sh_f_iter = [(sh_n, sh_f)]
+                        sh_f_dict = dict(sh_f_iter)
+                        assert sf.vocab.stoi == sh_f_dict[sn].vocab.stoi, \
+                            "Ensemble models must use the same " \
+                            "preprocessed data"
         models.append(model)
         if shared_model_opt is None:
             shared_model_opt = model_opt
