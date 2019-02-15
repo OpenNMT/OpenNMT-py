@@ -89,7 +89,7 @@ and have not been thoroughly tested.)
 Architecture: SRU
 ----------------------------
 
-.. autoclass:: onmt.models.SRU
+.. autoclass:: onmt.models.sru.SRU
     :members:
 
 
@@ -118,5 +118,5 @@ Copy Attention
 Structured Attention
 -------------------------------------------
 
-.. autoclass:: onmt.modules.MatrixTree
+.. autoclass:: onmt.modules.structured_attention.MatrixTree
     :members:
