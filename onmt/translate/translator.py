@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 """ Translator Class and builder """
 from __future__ import print_function
-import configargparse
 import codecs
 import os
 import math
@@ -13,7 +12,6 @@ import torch
 import onmt.model_builder
 import onmt.translate.beam
 import onmt.inputters as inputters
-import onmt.opts as opts
 import onmt.decoders.ensemble
 from onmt.translate.beam_search import BeamSearch
 from onmt.translate.random_sampling import RandomSampling
@@ -25,13 +23,9 @@ def build_translator(opt, report_score=True, logger=None, out_file=None):
     if out_file is None:
         out_file = codecs.open(opt.output, 'w+', 'utf-8')
 
-    dummy_parser = configargparse.ArgumentParser(description='train.py')
-    opts.model_opts(dummy_parser)
-    dummy_opt = dummy_parser.parse_known_args([])[0]
-
     load_test_model = onmt.decoders.ensemble.load_test_model \
         if len(opt.models) > 1 else onmt.model_builder.load_test_model
-    fields, model, model_opt = load_test_model(opt, dummy_opt.__dict__)
+    fields, model, model_opt = load_test_model(opt)
 
     scorer = onmt.translate.GNMTGlobalScorer.from_opt(opt)
 
@@ -135,9 +129,6 @@ class Translator(object):
 
         self.n_best = n_best
         self.max_length = max_length
-
-        if beam_size != 1 and random_sampling_topk != 1:
-            raise ValueError('Can either do beam search OR random sampling.')
 
         self.beam_size = beam_size
         self.random_sampling_temp = random_sampling_temp
