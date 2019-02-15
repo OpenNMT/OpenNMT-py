@@ -4,11 +4,11 @@ Doc: Data Loaders
 Datasets
 ---------
 
-.. autoclass:: onmt.io.TextDataset
+.. autoclass:: onmt.inputters.TextDataReader
     :members:
 
-.. autoclass:: onmt.io.ImageDataset
+.. autoclass:: onmt.inputters.ImageDataReader
     :members:
 
-.. autoclass:: onmt.io.AudioDataset
+.. autoclass:: onmt.inputters.AudioDataReader
     :members:
