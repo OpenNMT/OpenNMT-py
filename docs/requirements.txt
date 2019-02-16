@@ -3,3 +3,4 @@ sphinxcontrib.bibtex
 sphinxcontrib.mermaid
 sphinx-rtd-theme
 recommonmark
+sphinx-argparse
