@@ -11,8 +11,9 @@ class DataReaderBase(object):
     """Read data from file system and yield as dicts.
 
     Raises:
-        MissingDependencyException: A number of DataReaders need specific
-            additional packages. If any are missing, this will be raised.
+        onmt.inputters.datareader_base.MissingDependencyException: A number
+            of DataReaders need specific additional packages.
+            If any are missing, this will be raised.
     """
 
     @classmethod

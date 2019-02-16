@@ -50,6 +50,15 @@ extensions = ['sphinx.ext.autodoc',
               'sphinxcontrib.mermaid',
               'sphinxcontrib.bibtex']
 
+# Show base classes
+autodoc_default_options = {
+    'show-inheritance': True
+}
+
+# Use "variables" section for Attributes instead of weird block things
+# mimicking the function style.
+napoleon_use_ivar = True
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['.templates']
 
