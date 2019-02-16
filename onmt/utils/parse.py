@@ -44,7 +44,7 @@ class ArgumentParser(cfargparse.ArgumentParser):
             model_opt.enc_rnn_size = model_opt.rnn_size
             model_opt.dec_rnn_size = model_opt.rnn_size
 
-        model_opt.brnn = model_opt.model_type == "brnn"
+        model_opt.brnn = model_opt.encoder_type == "brnn"
 
     @classmethod
     def validate_model_opts(cls, model_opt):
