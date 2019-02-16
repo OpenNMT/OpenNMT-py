@@ -90,7 +90,7 @@ class Beam(object):
 
         Args:
             word_probs (FloatTensor): probs of advancing from the last step
-                `[K x words]`
+                ``(K, words)``
             attn_out (FloatTensor): attention at the last step
 
         Returns:

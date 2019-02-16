@@ -83,3 +83,6 @@ citation into `refs.bib`. Then, in your docstring, use ``:cite:`DBLP:journals/co
   ```
 
   This note is the least important. Focus on content first, but remember that consistent docs look good.
+- Be sensible about the first line. Generally, one stand-alone summary line (per the Google guidelines) is good.
+  Sometimes, it's better to cut directly to the args or an extended description. It's always acceptable to have a
+  "trailing" citation.

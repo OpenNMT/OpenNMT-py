@@ -44,7 +44,7 @@ class TransformerDecoderLayer(nn.Module):
                 layer_cache=None, step=None):
         """
         Args:
-            inputs (FloatTensor): ``(batch_size, 1, model_dim)`
+            inputs (FloatTensor): ``(batch_size, 1, model_dim)``
             memory_bank (FloatTensor): ``(batch_size, src_len, model_dim)``
             src_pad_mask (LongTensor): ``(batch_size, 1, src_len)``
             tgt_pad_mask (LongTensor): ``(batch_size, 1, 1)``

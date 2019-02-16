@@ -99,8 +99,9 @@ class CopyGenerator(nn.Module):
            src_map (FloatTensor):
                A sparse indicator matrix mapping each source word to
                its index in the "extended" vocab containing.
-               `(src_len, batch, extra_words)`
+               ``(src_len, batch, extra_words)``
         """
+
         # CHECKS
         batch_by_tlen, _ = hidden.size()
         batch_by_tlen_, slen = attn.size()
