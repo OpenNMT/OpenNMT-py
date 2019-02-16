@@ -11,13 +11,13 @@ Core Modules
 Encoders
 ---------
 
-.. autoclass:: onmt.modules.EncoderBase
+.. autoclass:: onmt.encoders.EncoderBase
     :members:
 
-.. autoclass:: onmt.modules.MeanEncoder
+.. autoclass:: onmt.encoders.MeanEncoder
     :members:
 
-.. autoclass:: onmt.modules.RNNEncoder
+.. autoclass:: onmt.encoders.RNNEncoder
     :members:
 
 
@@ -25,15 +25,17 @@ Decoders
 ---------
 
 
-.. autoclass:: onmt.modules.RNNDecoderBase
+.. autoclass:: onmt.decoders.DecoderBase
+    :members:
+    
+.. autoclass:: onmt.decoders.decoder.RNNDecoderBase
+    :members:
+
+.. autoclass:: onmt.decoders.StdRNNDecoder
     :members:
 
 
-.. autoclass:: onmt.modules.StdRNNDecoder
-    :members:
-
-
-.. autoclass:: onmt.modules.InputFeedRNNDecoder
+.. autoclass:: onmt.decoders.InputFeedRNNDecoder
     :members:
 
 Attention
@@ -50,13 +52,13 @@ Architecture: Transfomer
 .. autoclass:: onmt.modules.PositionalEncoding
     :members:
 
-.. autoclass:: onmt.modules.PositionwiseFeedForward
+.. autoclass:: onmt.modules.position_ffn.PositionwiseFeedForward
     :members:
 
-.. autoclass:: onmt.modules.TransformerEncoder
+.. autoclass:: onmt.encoders.TransformerEncoder
     :members:
 
-.. autoclass:: onmt.modules.TransformerDecoder
+.. autoclass:: onmt.decoders.TransformerDecoder
     :members:
 
 .. autoclass:: onmt.modules.MultiHeadedAttention
@@ -71,23 +73,23 @@ Architecture: Conv2Conv
 and have not been thoroughly tested.)
 
 
-.. autoclass:: onmt.modules.CNNEncoder
+.. autoclass:: onmt.encoders.CNNEncoder
     :members:
 
 
-.. autoclass:: onmt.modules.CNNDecoder
+.. autoclass:: onmt.decoders.CNNDecoder
     :members:
 
 .. autoclass:: onmt.modules.ConvMultiStepAttention
     :members:
 
-.. autoclass:: onmt.modules.WeightNorm
+.. autoclass:: onmt.modules.WeightNormConv2d
     :members:
 
 Architecture: SRU
 ----------------------------
 
-.. autoclass:: onmt.modules.SRU
+.. autoclass:: onmt.models.sru.SRU
     :members:
 
 
@@ -96,13 +98,13 @@ Alternative Encoders
 
 onmt\.modules\.AudioEncoder
 
-.. autoclass:: onmt.modules.AudioEncoder
+.. autoclass:: onmt.encoders.AudioEncoder
     :members:
 
 
 onmt\.modules\.ImageEncoder
 
-.. autoclass:: onmt.modules.ImageEncoder
+.. autoclass:: onmt.encoders.ImageEncoder
     :members:
 
 
@@ -116,5 +118,5 @@ Copy Attention
 Structured Attention
 -------------------------------------------
 
-.. autoclass:: onmt.modules.MatrixTree
+.. autoclass:: onmt.modules.structured_attention.MatrixTree
     :members:

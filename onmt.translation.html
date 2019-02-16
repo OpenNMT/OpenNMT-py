@@ -37,7 +37,7 @@
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Doc: Data Loaders" href="onmt.io.html" />
+    <link rel="next" title="Doc: Data Loaders" href="onmt.inputters.html" />
     <link rel="prev" title="Doc: Modules" href="onmt.modules.html" /> 
 </head>
 
@@ -93,7 +93,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#beam-search">Beam Search</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="onmt.io.html">Doc: Data Loaders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.inputters.html">Doc: Data Loaders</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Library.html">Library: Example</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/preprocess.html">Options: preprocess.py:</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/train.html">Options: train.py:</a></li>
@@ -299,7 +299,7 @@
 <li><strong>fields</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>torchtext.data.Field</em><em>]</em>) – A dict
 mapping each side to its list of name-Field pairs.</li>
 <li><strong>src_reader</strong> (<em>inputters.DataReaderBase</em>) – Source reader.</li>
-<li><strong>tgt_reader</strong> (<em>inputters.TextDataReader</em>) – Target reader.</li>
+<li><strong>tgt_reader</strong> (<a class="reference internal" href="onmt.inputters.html#onmt.inputters.TextDataReader" title="onmt.inputters.TextDataReader"><em>inputters.TextDataReader</em></a>) – Target reader.</li>
 <li><strong>gpu</strong> (<em>int</em>) – GPU device. Set to negative for no GPU.</li>
 <li><strong>n_best</strong> (<em>int</em>) – How many beams to wait for.</li>
 <li><strong>min_length</strong> (<em>int</em>) – See
@@ -622,7 +622,7 @@ token indices, it may repeat.</li>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="onmt.io.html" class="btn btn-neutral float-right" title="Doc: Data Loaders" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="onmt.inputters.html" class="btn btn-neutral float-right" title="Doc: Data Loaders" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="onmt.modules.html" class="btn btn-neutral float-left" title="Doc: Modules" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>

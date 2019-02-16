@@ -1,0 +1,333 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>onmt.decoders.cnn_decoder &mdash; OpenNMT-py  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> OpenNMT-py
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../main.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.html">Doc: Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.modules.html">Doc: Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.translation.html">Doc: Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.inputters.html">Doc: Data Loaders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../Library.html">Library: Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/preprocess.html">Options: preprocess.py:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/train.html">Options: train.py:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/translate.html">Options: translate.py:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../extended.html">Example: Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../Summarization.html">Example: Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../im2text.html">Example: Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../speech2text.html">Example: Speech to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../CONTRIBUTING.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../ref.html">References</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">OpenNMT-py</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>onmt.decoders.cnn_decoder</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for onmt.decoders.cnn_decoder</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Implementation of the CNN Decoder part of</span>
+<span class="sd">  &quot;Convolutional Sequence to Sequence Learning&quot;</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+
+<span class="kn">from</span> <span class="nn">onmt.modules</span> <span class="k">import</span> <span class="n">ConvMultiStepAttention</span><span class="p">,</span> <span class="n">GlobalAttention</span>
+<span class="kn">from</span> <span class="nn">onmt.utils.cnn_factory</span> <span class="k">import</span> <span class="n">shape_transform</span><span class="p">,</span> <span class="n">GatedConv</span>
+<span class="kn">from</span> <span class="nn">onmt.decoders.decoder</span> <span class="k">import</span> <span class="n">DecoderBase</span>
+
+<span class="n">SCALE_WEIGHT</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">**</span> <span class="mf">0.5</span>
+
+
+<div class="viewcode-block" id="CNNDecoder"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.decoders.CNNDecoder">[docs]</a><span class="k">class</span> <span class="nc">CNNDecoder</span><span class="p">(</span><span class="n">DecoderBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Decoder built on CNN, based on :cite:`DBLP:journals/corr/GehringAGYD17`.</span>
+
+<span class="sd">    Consists of residual convolutional layers, with ConvMultiStepAttention.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span> <span class="n">attn_type</span><span class="p">,</span>
+                 <span class="n">copy_attn</span><span class="p">,</span> <span class="n">cnn_kernel_width</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">CNNDecoder</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">cnn_kernel_width</span> <span class="o">=</span> <span class="n">cnn_kernel_width</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span> <span class="o">=</span> <span class="n">embeddings</span>
+
+        <span class="c1"># Decoder State</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="n">input_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span><span class="o">.</span><span class="n">embedding_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">linear</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">input_size</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv_layers</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">GatedConv</span><span class="p">(</span><span class="n">hidden_size</span><span class="p">,</span> <span class="n">cnn_kernel_width</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_layers</span><span class="p">)]</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attn_layers</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">ConvMultiStepAttention</span><span class="p">(</span><span class="n">hidden_size</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_layers</span><span class="p">)]</span>
+        <span class="p">)</span>
+
+        <span class="c1"># CNNDecoder has its own attention mechanism.</span>
+        <span class="c1"># Set up a separate copy attention layer if needed.</span>
+        <span class="k">assert</span> <span class="ow">not</span> <span class="n">copy_attn</span><span class="p">,</span> <span class="s2">&quot;Copy mechanism not yet tested in conv2conv&quot;</span>
+        <span class="k">if</span> <span class="n">copy_attn</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span> <span class="o">=</span> <span class="n">GlobalAttention</span><span class="p">(</span><span class="n">hidden_size</span><span class="p">,</span> <span class="n">attn_type</span><span class="o">=</span><span class="n">attn_type</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_opt</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">opt</span><span class="o">.</span><span class="n">dec_layers</span><span class="p">,</span>
+            <span class="n">opt</span><span class="o">.</span><span class="n">dec_rnn_size</span><span class="p">,</span>
+            <span class="n">opt</span><span class="o">.</span><span class="n">global_attention</span><span class="p">,</span>
+            <span class="n">opt</span><span class="o">.</span><span class="n">copy_attn</span><span class="p">,</span>
+            <span class="n">opt</span><span class="o">.</span><span class="n">cnn_kernel_width</span><span class="p">,</span>
+            <span class="n">opt</span><span class="o">.</span><span class="n">dropout</span><span class="p">,</span>
+            <span class="n">embeddings</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CNNDecoder.init_state"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.decoders.CNNDecoder.init_state">[docs]</a>    <span class="k">def</span> <span class="nf">init_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">enc_hidden</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Init decoder state.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">memory_bank</span> <span class="o">+</span> <span class="n">enc_hidden</span><span class="p">)</span> <span class="o">*</span> <span class="n">SCALE_WEIGHT</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;previous_input&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+    <span class="k">def</span> <span class="nf">map_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fn</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fn</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;previous_input&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;previous_input&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fn</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;previous_input&quot;</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">detach_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;previous_input&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;previous_input&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+
+<div class="viewcode-block" id="CNNDecoder.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.decoders.CNNDecoder.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; See :obj:`onmt.modules.RNNDecoderBase.forward()`&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;previous_input&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">tgt</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;previous_input&quot;</span><span class="p">],</span> <span class="n">tgt</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="n">dec_outs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">attns</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;std&quot;</span><span class="p">:</span> <span class="p">[]}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">attns</span><span class="p">[</span><span class="s2">&quot;copy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span><span class="p">(</span><span class="n">tgt</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">emb</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">==</span> <span class="mi">3</span>  <span class="c1"># len x batch x embedding_dim</span>
+
+        <span class="n">tgt_emb</span> <span class="o">=</span> <span class="n">emb</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
+        <span class="c1"># The output of CNNEncoder.</span>
+        <span class="n">src_memory_bank_t</span> <span class="o">=</span> <span class="n">memory_bank</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
+        <span class="c1"># The combination of output of CNNEncoder and source embeddings.</span>
+        <span class="n">src_memory_bank_c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
+
+        <span class="n">emb_reshape</span> <span class="o">=</span> <span class="n">tgt_emb</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span><span class="o">.</span><span class="n">view</span><span class="p">(</span>
+            <span class="n">tgt_emb</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="n">tgt_emb</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">linear_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear</span><span class="p">(</span><span class="n">emb_reshape</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">linear_out</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">tgt_emb</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">tgt_emb</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">shape_transform</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="n">pad</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">cnn_kernel_width</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">pad</span> <span class="o">=</span> <span class="n">pad</span><span class="o">.</span><span class="n">type_as</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">base_target_emb</span> <span class="o">=</span> <span class="n">x</span>
+
+        <span class="k">for</span> <span class="n">conv</span><span class="p">,</span> <span class="n">attention</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv_layers</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">attn_layers</span><span class="p">):</span>
+            <span class="n">new_target_input</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">pad</span><span class="p">,</span> <span class="n">x</span><span class="p">],</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="n">conv</span><span class="p">(</span><span class="n">new_target_input</span><span class="p">)</span>
+            <span class="n">c</span><span class="p">,</span> <span class="n">attn</span> <span class="o">=</span> <span class="n">attention</span><span class="p">(</span><span class="n">base_target_emb</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span>
+                                <span class="n">src_memory_bank_t</span><span class="p">,</span> <span class="n">src_memory_bank_c</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="p">(</span><span class="n">c</span> <span class="o">+</span> <span class="n">out</span><span class="p">)</span> <span class="o">*</span> <span class="n">SCALE_WEIGHT</span><span class="p">)</span> <span class="o">*</span> <span class="n">SCALE_WEIGHT</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+        <span class="c1"># Process the result and update the attentions.</span>
+        <span class="n">dec_outs</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;previous_input&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">dec_outs</span> <span class="o">=</span> <span class="n">dec_outs</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;previous_input&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">):]</span>
+            <span class="n">attn</span> <span class="o">=</span> <span class="n">attn</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;previous_input&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">):]</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+            <span class="n">attn</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">attn</span><span class="p">])</span>
+        <span class="n">attns</span><span class="p">[</span><span class="s2">&quot;std&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">attn</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">attns</span><span class="p">[</span><span class="s2">&quot;copy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">attn</span>
+
+        <span class="c1"># Update the state.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;previous_input&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tgt</span>
+        <span class="c1"># TODO change the way attns is returned dict =&gt; list or tuple (onnx)</span>
+        <span class="k">return</span> <span class="n">dec_outs</span><span class="p">,</span> <span class="n">attns</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, srush
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

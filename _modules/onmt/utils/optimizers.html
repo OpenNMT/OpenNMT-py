@@ -86,7 +86,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../onmt.html">Doc: Framework</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../onmt.modules.html">Doc: Modules</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../onmt.translation.html">Doc: Translation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../onmt.io.html">Doc: Data Loaders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.inputters.html">Doc: Data Loaders</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../Library.html">Library: Example</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../options/preprocess.html">Options: preprocess.py:</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../options/train.html">Options: train.py:</a></li>
@@ -343,7 +343,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">optimizers</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dicts</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
 
 
-<span class="k">class</span> <span class="nc">Optimizer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="Optimizer"><a class="viewcode-back" href="../../../onmt.html#onmt.utils.Optimizer">[docs]</a><span class="k">class</span> <span class="nc">Optimizer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Controller class for optimization. Mostly a thin</span>
 <span class="sd">    wrapper for `optim`, but also useful for implementing</span>
@@ -375,7 +375,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_with_fp16_wrapper</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">optimizer</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;FP16_Optimizer&quot;</span><span class="p">)</span>
 
-    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="Optimizer.from_opt"><a class="viewcode-back" href="../../../onmt.html#onmt.utils.Optimizer.from_opt">[docs]</a>    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">from_opt</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">checkpoint</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Builds the optimizer from options.</span>
 
@@ -425,19 +425,19 @@
             <span class="n">max_grad_norm</span><span class="o">=</span><span class="n">optim_opt</span><span class="o">.</span><span class="n">max_grad_norm</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">optim_state_dict</span><span class="p">:</span>
             <span class="n">optimizer</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">optim_state_dict</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">optimizer</span>
+        <span class="k">return</span> <span class="n">optimizer</span></div>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">training_step</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;The current training step.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_training_step</span>
 
-    <span class="k">def</span> <span class="nf">learning_rate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Optimizer.learning_rate"><a class="viewcode-back" href="../../../onmt.html#onmt.utils.Optimizer.learning_rate">[docs]</a>    <span class="k">def</span> <span class="nf">learning_rate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the current learning rate.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_learning_rate_decay_fn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_learning_rate</span>
         <span class="n">scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_learning_rate_decay_fn</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_decay_step</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">scale</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_learning_rate</span>
+        <span class="k">return</span> <span class="n">scale</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_learning_rate</span></div>
 
     <span class="k">def</span> <span class="nf">state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">{</span>
@@ -454,11 +454,11 @@
         <span class="k">if</span> <span class="s1">&#39;optimizer&#39;</span> <span class="ow">in</span> <span class="n">state_dict</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">[</span><span class="s1">&#39;optimizer&#39;</span><span class="p">])</span>
 
-    <span class="k">def</span> <span class="nf">zero_grad</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Optimizer.zero_grad"><a class="viewcode-back" href="../../../onmt.html#onmt.utils.Optimizer.zero_grad">[docs]</a>    <span class="k">def</span> <span class="nf">zero_grad</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Zero the gradients of optimized parameters.&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span></div>
 
-    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loss</span><span class="p">):</span>
+<div class="viewcode-block" id="Optimizer.backward"><a class="viewcode-back" href="../../../onmt.html#onmt.utils.Optimizer.backward">[docs]</a>    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loss</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Wrapper for backward pass. Some optimizer requires ownership of the</span>
 <span class="sd">        backward pass.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_with_fp16_wrapper</span><span class="p">:</span>
@@ -467,9 +467,9 @@
                 <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;update_master_grads&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">loss</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+            <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span></div>
 
-    <span class="k">def</span> <span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Optimizer.step"><a class="viewcode-back" href="../../../onmt.html#onmt.utils.Optimizer.step">[docs]</a>    <span class="k">def</span> <span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Update the model parameters based on current gradients.</span>
 
 <span class="sd">        Optionally, will employ gradient modification or update learning</span>
@@ -488,7 +488,7 @@
                 <span class="n">clip_grad_norm_</span><span class="p">(</span><span class="n">group</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max_grad_norm</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_decay_step</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_training_step</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_training_step</span> <span class="o">+=</span> <span class="mi">1</span></div></div>
 
 <span class="c1"># Code below is an implementation of https://arxiv.org/pdf/1804.04235.pdf</span>
 <span class="c1"># inspired but modified from https://github.com/DeadAt0m/adafactor-pytorch</span>
