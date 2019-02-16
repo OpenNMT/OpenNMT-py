@@ -52,7 +52,7 @@ class RNNEncoder(EncoderBase):
     def from_opt(cls, opt, embeddings):
         return cls(
             opt.rnn_type,
-            opt.brnn,
+            opt.bidirectional,
             opt.enc_layers,
             opt.enc_size,
             opt.dropout,

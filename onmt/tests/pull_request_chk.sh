@@ -194,9 +194,9 @@ ${PYTHON} preprocess.py -train_src /tmp/src-val.txt \
 		     -save_data /tmp/q           \
 		     -src_vocab_size 1000        \
 		     -tgt_vocab_size 1000        >> ${LOG_FILE} 2>&1
-${PYTHON} train.py -data /tmp/q -rnn_size 2 -batch_size 10 \
+${PYTHON} train.py -data /tmp/q -size 2 -batch_size 10 \
 		-word_vec_size 5 -report_every 5        \
-		-rnn_size 10 -train_steps 10        >> ${LOG_FILE} 2>&1
+		-bidirectional -train_steps 10        >> ${LOG_FILE} 2>&1
 ${PYTHON} translate.py -model ${TEST_DIR}/test_model2.pt  \
 		    -src ${DATA_DIR}/morph/src.valid   \
 		    -verbose -batch_size 10     \
@@ -234,9 +234,9 @@ ${PYTHON} preprocess.py -train_src /tmp/src-val.txt \
 		     -tgt_vocab_size 1000        \
 		     -shard_size 1           \
              -dynamic_dict               >> ${LOG_FILE} 2>&1
-${PYTHON} train.py -data /tmp/q -rnn_size 2 -batch_size 10 \
+${PYTHON} train.py -data /tmp/q -size 2 -batch_size 10 \
 		-word_vec_size 5 -report_every 5        \
-		-rnn_size 10 -train_steps 10 -copy_attn       >> ${LOG_FILE} 2>&1
+		-bidirectional -train_steps 10 -copy_attn       >> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 
@@ -253,9 +253,9 @@ ${PYTHON} preprocess.py -data_type img \
 		     -valid_tgt /tmp/im2text/tgt-val-head.txt \
              -shard_size 5 \
 		     -save_data /tmp/im2text/q  >> ${LOG_FILE} 2>&1
-${PYTHON} train.py -model_type img \
-	        -data /tmp/im2text/q -rnn_size 2 -batch_size 10 \
-		-word_vec_size 5 -report_every 5 -rnn_size 10 -train_steps 10  >> ${LOG_FILE} 2>&1
+${PYTHON} train.py -model_type img -encoder_type img \
+	        -data /tmp/im2text/q -size 2 -batch_size 10 \
+		-word_vec_size 5 -report_every 5 -train_steps 10  >> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 
@@ -272,9 +272,9 @@ ${PYTHON} preprocess.py -data_type audio \
 		     -valid_tgt /tmp/speech/tgt-val-head.txt \
              -shard_size 50 \
 		     -save_data /tmp/speech/q  >> ${LOG_FILE} 2>&1
-${PYTHON} train.py -model_type audio \
-	        -data /tmp/speech/q -rnn_size 2 -batch_size 10 \
-		-word_vec_size 5 -report_every 5 -rnn_size 10 -train_steps 10  >> ${LOG_FILE} 2>&1
+${PYTHON} train.py -model_type audio -encoder_type audio \
+	        -data /tmp/speech/q -size 2 -batch_size 10 \
+		-word_vec_size 5 -report_every 5 -train_steps 10  >> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 

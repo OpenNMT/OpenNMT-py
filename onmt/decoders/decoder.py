@@ -114,7 +114,7 @@ class RNNDecoderBase(DecoderBase):
     def from_opt(cls, opt, embeddings):
         return cls(
             opt.rnn_type,
-            opt.brnn,
+            opt.bidirectional,
             opt.dec_layers,
             opt.dec_size,
             opt.global_attention,

@@ -60,7 +60,7 @@ class ImageEncoder(EncoderBase):
             image_channel_size = opt.image_channel_size
         return cls(
             opt.enc_layers,
-            opt.brnn,
+            opt.bidirectional,
             opt.enc_size,
             opt.dropout,
             image_channel_size

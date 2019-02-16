@@ -84,7 +84,7 @@ class AudioEncoder(EncoderBase):
             opt.rnn_type,
             opt.enc_layers,
             opt.dec_layers,
-            opt.brnn,
+            opt.bidirectional,
             opt.enc_size,
             opt.dec_size,
             opt.audio_enc_pooling,

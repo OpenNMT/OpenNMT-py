@@ -9,6 +9,7 @@ import onmt.opts
 
 from onmt.utils.misc import use_gpu
 from onmt.utils.logging import init_logger, logger
+from onmt.utils.parse import ArgumentParser
 
 parser = argparse.ArgumentParser(description='translate.py')
 
@@ -30,9 +31,6 @@ def write_embeddings(filename, dict, embeddings):
 
 
 def main():
-    dummy_parser = argparse.ArgumentParser(description='train.py')
-    onmt.opts.model_opts(dummy_parser)
-    dummy_opt = dummy_parser.parse_known_args([])[0]
     opt = parser.parse_args()
     opt.cuda = opt.gpu > -1
     if opt.cuda:
@@ -41,7 +39,6 @@ def main():
     # Add in default model arguments, possibly added since training.
     checkpoint = torch.load(opt.model,
                             map_location=lambda storage, loc: storage)
-    model_opt = checkpoint['opt']
 
     vocab = checkpoint['vocab']
     if inputters.old_style_vocab(vocab):
@@ -52,9 +49,9 @@ def main():
     tgt_dict = fields['tgt'].base_field.vocab
 
     model_opt = checkpoint['opt']
-    for arg in dummy_opt.__dict__:
-        if arg not in model_opt:
-            model_opt.__dict__[arg] = dummy_opt.__dict__[arg]
+    model_opt = ArgumentParser.ckpt_model_opts(model_opt)
+    ArgumentParser.update_model_opts(model_opt)
+    ArgumentParser.validate_model_opts(model_opt)
 
     model = onmt.model_builder.build_base_model(
         model_opt, fields, use_gpu(opt), checkpoint)

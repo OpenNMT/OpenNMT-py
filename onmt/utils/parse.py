@@ -53,12 +53,48 @@ class ArgumentParser(cfargparse.ArgumentParser):
             model_opt.enc_size = model_opt.size
             model_opt.dec_size = model_opt.size
 
-        model_opt.brnn = model_opt.model_type == "brnn"
+        if model_opt.encoder_type == "brnn":
+            logger.warning(
+                "encoder_type 'brnn' is deprecated. Use -bidirectional."
+                " (If this is a checkpoint, this warning can be ignored.)")
+            model_opt.bidirectional = True
+            model_opt.encoder_type = "rnn"
+
+        if model_opt.input_feed > -1:
+            if model_opt.decoder_type == "rnn":
+                model_opt.decoder_type = "ifrnn"
+
+        if model_opt.model_type == "audio":
+            if model_opt.encoder_type == "rnn":
+                model_opt.encoder_type = "audio"
+
+        if model_opt.model_type == "img":
+            if model_opt.encoder_type == "rnn":
+                model_opt.encoder_type = "img"
 
     @classmethod
     def validate_model_opts(cls, model_opt):
         assert model_opt.model_type in ["text", "img", "audio"], \
             "Unsupported model type %s" % model_opt.model_type
+
+        if model_opt.model_type == "text":
+            if model_opt.encoder_type not in {
+                    "transformer", "rnn", "mean", "cnn"}:
+                raise ValueError(
+                    "'text' model type does not support {:s} encoder.".format(
+                        model_opt.encoder_type))
+
+        if model_opt.model_type == "audio":
+            if model_opt.encoder_type != "audio":
+                raise ValueError(
+                    "'audio' model type does not support {:s} encoder.".format(
+                        model_opt.encoder_type))
+
+        if model_opt.model_type == "img":
+            if model_opt.encoder_type != "img":
+                raise ValueError(
+                    "'img' model type does not support {:s} encoder.".format(
+                        model_opt.encoder_type))
 
         # this check is here because audio allows the encoder and decoder to
         # be different sizes, but other model types do not yet

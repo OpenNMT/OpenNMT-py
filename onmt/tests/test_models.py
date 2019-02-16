@@ -151,7 +151,7 @@ class TestModel(unittest.TestCase):
         word_field = self.get_field()
 
         enc = ImageEncoder(
-            opt.enc_layers, opt.brnn, opt.enc_size, opt.dropout)
+            opt.enc_layers, opt.bidirectional, opt.enc_size, opt.dropout)
 
         embeddings = build_embeddings(opt, word_field, for_encoder=False)
         dec = build_decoder(opt, embeddings)
@@ -186,7 +186,7 @@ class TestModel(unittest.TestCase):
         word_field = self.get_field()
 
         enc = AudioEncoder(opt.rnn_type, opt.enc_layers, opt.dec_layers,
-                           opt.brnn, opt.enc_size, opt.dec_size,
+                           opt.bidirectional, opt.enc_size, opt.dec_size,
                            opt.audio_enc_pooling, opt.dropout,
                            opt.sample_rate, opt.window_size)
 
@@ -235,7 +235,7 @@ def _add_test(param_setting, methodname):
 '''
 TEST PARAMETERS
 '''
-opt.brnn = False
+opt.bidirectional = False
 
 test_embeddings = [[],
                    [('decoder_type', 'transformer')]
@@ -274,9 +274,9 @@ tests_nmtmodel = [[('rnn_type', 'GRU')],
                   [('context_gate', 'both')],
                   [('context_gate', 'target')],
                   [('context_gate', 'source')],
-                  [('encoder_type', "brnn"),
+                  [('encoder_type', 'rnn'),
                    ('brnn_merge', 'sum')],
-                  [('encoder_type', "brnn")],
+                  [('encoder_type', 'rnn')],
                   [('decoder_type', 'cnn'),
                    ('encoder_type', 'cnn')],
                   [],
@@ -306,3 +306,7 @@ for p in tests_nmtmodel:
     else:
         p.append(('audio_enc_pooling', '2'))
     _add_test(p, 'audiomodel_forward')
+
+
+if __name__ == "__main__":
+    unittest.main()

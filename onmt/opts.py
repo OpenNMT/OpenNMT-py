@@ -70,15 +70,20 @@ def model_opts(parser):
               help='Data type of the model.')
 
     group.add('--encoder_type', '-encoder_type', type=str, default='rnn',
-              choices=['rnn', 'brnn', 'mean', 'transformer', 'cnn'],
+              choices=['rnn', 'mean', 'transformer', 'cnn',
+                       'audio', 'img'],
               help="""Type of encoder layer to use. Non-RNN layers
                        are experimental. Options are
-                       [rnn|brnn|mean|transformer|cnn].""")
-    group.add('--decoder_type', '-decoder_type', type=str, default='rnn',
-              choices=['rnn', 'transformer', 'cnn'],
+                       [rnn|mean|transformer|cnn].""")
+    group.add('--bidirectional', '-bidirectional', action="store_true",
+              default=False,
+              help="""For optionally bidirectional models, use
+                      bidirectionality.""")
+    group.add('--decoder_type', '-decoder_type', type=str, default='ifrnn',
+              choices=['rnn', 'transformer', 'cnn', 'ifrnn'],
               help="""Type of decoder layer to use. Non-RNN layers
                        are experimental. Options are
-                       [rnn|transformer|cnn].""")
+                       [rnn|transformer|cnn|ifrnn].""")
 
     group.add('--layers', '-layers', type=int, default=-1,
               help='Number of layers in enc/dec.')
@@ -86,6 +91,7 @@ def model_opts(parser):
               help='Number of layers in the encoder')
     group.add('--dec_layers', '-dec_layers', type=int, default=2,
               help='Number of layers in the decoder')
+
     group.add('--rnn_size', '-rnn_size', type=int, default=-1,
               action=DeprecateAction,
               help="""Deprecated, use --size.""")
@@ -93,18 +99,21 @@ def model_opts(parser):
               help="""Size of rnn hidden states, transformer model size,
                       CNN hidden size, etc. Overwrites both enc_size and
                       dec_size""")
+
     group.add('--enc_rnn_size', '-enc_rnn_size', type=int, default=-1,
               action=DeprecateAction,
               help="""Deprecated, use --enc_size.""")
     group.add('--enc_size', '-enc_size', type=int, default=500,
               help="""Set --size for encoder only (Usually must be equal
                       to --dec_size.""")
+
     group.add('--dec_rnn_size', '-dec_rnn_size', type=int, default=-1,
               action=DeprecateAction,
               help="""Deprecated, use --dec_size.""")
     group.add('--dec_size', '-dec_size', type=int, default=500,
               help="""Set --size for decoder only (Usually must be equal
                       to --enc_size.""")
+
     group.add('--audio_enc_pooling', '-audio_enc_pooling',
               type=str, default='1',
               help="""The amount of pooling of audio encoder,
@@ -115,10 +124,9 @@ def model_opts(parser):
               help="""Size of windows in the cnn, the kernel_size is
                        (cnn_kernel_width, 1) in conv layer""")
 
-    group.add('--input_feed', '-input_feed', type=int, default=1,
-              help="""Feed the context vector at each time step as
-                       additional input (via concatenation with the word
-                       embeddings) to the decoder.""")
+    group.add('--input_feed', '-input_feed', type=int, default=-1,
+              action=DeprecateAction,
+              help="""Deprecated, see --decoder_type ifrnn.""")
     group.add('--bridge', '-bridge', action="store_true",
               help="""Have an additional layer between the last encoder
                        state and the first decoder state""")
@@ -777,6 +785,6 @@ class DeprecateAction(configargparse.Action):
                                               help=help, **kwargs)
 
     def __call__(self, parser, namespace, values, flag_name):
-        help = self.help if self.mdhelp is not None else ""
+        help = self.help if self.help is not None else ""
         msg = "Flag '%s' is deprecated. %s" % (flag_name, help)
         raise configargparse.ArgumentTypeError(msg)
