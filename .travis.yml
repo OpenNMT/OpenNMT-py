@@ -3,6 +3,8 @@ language: python
 python:
   - "2.7"
   - "3.5"
+git:
+  depth: false
 addons:
   apt:
     packages:
@@ -75,5 +77,4 @@ matrix:
         - pip install -r docs/requirements.txt
         - cd docs/; make html; cd ..
         - set -e
-        #- doctr deploy --built-docs docs/build/html/ .
-
+        - doctr deploy --built-docs docs/build/html/ .
