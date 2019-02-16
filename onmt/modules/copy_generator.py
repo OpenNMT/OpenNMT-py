@@ -35,8 +35,10 @@ def collapse_copy_scores(scores, batch, tgt_vocab, src_vocabs,
 
 
 class CopyGenerator(nn.Module):
-    """An implementation of pointer-generator networks (See et al., 2017)
-    (https://arxiv.org/abs/1704.04368), which consider copying words
+    """An implementation of pointer-generator networks
+    :cite:`DBLP:journals/corr/SeeLM17`.
+
+    These networks consider copying words
     directly from the source sequence.
 
     The copy generator is an extended version of the standard

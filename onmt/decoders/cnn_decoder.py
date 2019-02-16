@@ -13,8 +13,8 @@ SCALE_WEIGHT = 0.5 ** 0.5
 
 
 class CNNDecoder(DecoderBase):
-    """
-    Decoder built on CNN, based on :cite:`DBLP:journals/corr/GehringAGYD17`.
+    """Decoder based on "Convolutional Sequence to Sequence Learning"
+    :cite:`DBLP:journals/corr/GehringAGYD17`.
 
     Consists of residual convolutional layers, with ConvMultiStepAttention.
     """
@@ -49,6 +49,7 @@ class CNNDecoder(DecoderBase):
 
     @classmethod
     def from_opt(cls, opt, embeddings):
+        """Alternate constructor."""
         return cls(
             opt.dec_layers,
             opt.dec_rnn_size,
@@ -59,9 +60,7 @@ class CNNDecoder(DecoderBase):
             embeddings)
 
     def init_state(self, _, memory_bank, enc_hidden):
-        """
-        Init decoder state.
-        """
+        """Init decoder state."""
         self.state["src"] = (memory_bank + enc_hidden) * SCALE_WEIGHT
         self.state["previous_input"] = None
 

@@ -21,6 +21,9 @@ config file save path
 Path to model .pt file(s). Multiple models can be specified, for ensemble
 decoding.
 
+* **-fp32 []** 
+Force the model to be in FP32 because FP16 is very slow on GTX1080(ti).
+
 * **-avg_raw_probs []** 
 If this is set, during ensembling scores from different models will be combined
 by averaging their raw probabilities and then taking the log. Otherwise, the log

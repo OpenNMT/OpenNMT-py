@@ -10,8 +10,7 @@ SCALE_WEIGHT = 0.5 ** 0.5
 
 
 class CNNEncoder(EncoderBase):
-    """
-    Encoder built on CNN based on
+    """Encoder based on "Convolutional Sequence to Sequence Learning"
     :cite:`DBLP:journals/corr/GehringAGYD17`.
     """
 
@@ -27,6 +26,7 @@ class CNNEncoder(EncoderBase):
 
     @classmethod
     def from_opt(cls, opt, embeddings):
+        """Alternate constructor."""
         return cls(
             opt.enc_layers,
             opt.enc_rnn_size,
@@ -35,7 +35,7 @@ class CNNEncoder(EncoderBase):
             embeddings)
 
     def forward(self, input, lengths=None, hidden=None):
-        """ See :obj:`onmt.modules.EncoderBase.forward()`"""
+        """See :class:`onmt.modules.EncoderBase.forward()`"""
         self._check_args(input, lengths, hidden)
 
         emb = self.embeddings(input)

@@ -13,13 +13,13 @@ class RNNEncoder(EncoderBase):
     """ A generic recurrent neural network encoder.
 
     Args:
-       rnn_type (:obj:`str`):
+       rnn_type (str):
           style of recurrent unit to use, one of [RNN, LSTM, GRU, SRU]
        bidirectional (bool) : use a bidirectional RNN
        num_layers (int) : number of stacked layers
        hidden_size (int) : hidden size of each layer
-       dropout (float) : dropout value for :obj:`nn.Dropout`
-       embeddings (:obj:`onmt.modules.Embeddings`): embedding module to use
+       dropout (float) : dropout value for :class:`torch.nn.Dropout`
+       embeddings (onmt.modules.Embeddings): embedding module to use
     """
 
     def __init__(self, rnn_type, bidirectional, num_layers,
@@ -50,6 +50,7 @@ class RNNEncoder(EncoderBase):
 
     @classmethod
     def from_opt(cls, opt, embeddings):
+        """Alternate constructor."""
         return cls(
             opt.rnn_type,
             opt.brnn,
@@ -60,7 +61,7 @@ class RNNEncoder(EncoderBase):
             opt.bridge)
 
     def forward(self, src, lengths=None):
-        "See :obj:`EncoderBase.forward()`"
+        """See :func:`EncoderBase.forward()`"""
         self._check_args(src, lengths)
 
         emb = self.embeddings(src)
@@ -97,9 +98,7 @@ class RNNEncoder(EncoderBase):
                                      for _ in range(number_of_states)])
 
     def _bridge(self, hidden):
-        """
-        Forward hidden state through bridge
-        """
+        """Forward hidden state through bridge."""
         def bottle_hidden(linear, states):
             """
             Transform from 3D to 2D, apply linear and return initial size

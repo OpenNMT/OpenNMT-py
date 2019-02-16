@@ -583,7 +583,6 @@ class SRU(nn.Module):
       bidirectional (bool): bidirectional
       use_tanh (bool): activation
       use_relu (bool): activation
-
     """
 
     def __init__(self, input_size, hidden_size,

@@ -36,11 +36,11 @@ class TransformerEncoderLayer(nn.Module):
     def forward(self, inputs, mask):
         """
         Args:
-            inputs (`FloatTensor`): `[batch_size x src_len x model_dim]`
-            mask (`LongTensor`): `[batch_size x src_len x src_len]`
+            inputs (torch.FloatTensor): `[batch_size x src_len x model_dim]`
+            mask (torch.LongTensor): `[batch_size x src_len x src_len]`
 
         Returns:
-            (`FloatTensor`):
+            (torch.FloatTensor):
 
             * outputs `[batch_size x src_len x model_dim]`
         """
@@ -52,9 +52,8 @@ class TransformerEncoderLayer(nn.Module):
 
 
 class TransformerEncoder(EncoderBase):
-    """
-    The Transformer encoder from "Attention is All You Need".
-
+    """The Transformer encoder from "Attention is All You Need"
+    :cite:`DBLP:journals/corr/VaswaniSPUJGKP17`
 
     .. mermaid::
 
@@ -73,11 +72,11 @@ class TransformerEncoder(EncoderBase):
         heads (int): number of heads
         d_ff (int): size of the inner FF layer
         dropout (float): dropout parameters
-        embeddings (:obj:`onmt.modules.Embeddings`):
+        embeddings (onmt.modules.Embeddings):
           embeddings to use, should have positional encodings
 
     Returns:
-        (`FloatTensor`, `FloatTensor`):
+        (torch.FloatTensor, torch.FloatTensor):
 
         * embeddings `[src_len x batch_size x model_dim]`
         * memory_bank `[src_len x batch_size x model_dim]`
@@ -97,6 +96,7 @@ class TransformerEncoder(EncoderBase):
 
     @classmethod
     def from_opt(cls, opt, embeddings):
+        """Alternate constructor."""
         return cls(
             opt.enc_layers,
             opt.enc_rnn_size,
@@ -107,7 +107,7 @@ class TransformerEncoder(EncoderBase):
             opt.max_relative_positions)
 
     def forward(self, src, lengths=None):
-        """ See :obj:`EncoderBase.forward()`"""
+        """See :func:`EncoderBase.forward()`"""
         self._check_args(src, lengths)
 
         emb = self.embeddings(src)
