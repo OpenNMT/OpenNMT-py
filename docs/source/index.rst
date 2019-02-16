@@ -30,6 +30,7 @@ Contents
       options/preprocess.rst
       options/train.rst
       options/translate.rst
+      options/server.rst
 
 
 .. toctree::
@@ -39,4 +40,5 @@ Contents
       onmt.rst
       onmt.modules.rst
       onmt.translation.rst
+      onmt.translate.translation_server.rst
       onmt.inputters.rst
