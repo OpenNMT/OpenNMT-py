@@ -96,14 +96,30 @@ class TestModel(unittest.TestCase):
 
         hidden_t, outputs, test_length = enc(test_src, test_length)
 
-        # Initialize vectors to compare size with
-        test_hid = torch.zeros(self.opt.enc_layers, bsize, opt.enc_size)
-        test_out = torch.zeros(source_l, bsize, opt.dec_size)
-
         # Ensure correct sizes and types
-        self.assertEqual(test_hid.size(),
-                         hidden_t[0].size(),
-                         hidden_t[1].size())
+        if opt.encoder_type == "rnn" or opt.encoder_type == "mean":
+            ndirs = 2 if opt.bidirectional else 1
+            test_hid = torch.zeros(
+                ndirs * self.opt.enc_layers, bsize, opt.enc_size // ndirs)
+            if isinstance(hidden_t, tuple):
+                self.assertEqual(test_hid.size(),
+                                 hidden_t[0].size(),
+                                 hidden_t[1].size())
+            else:
+                self.assertEqual(test_hid.size(),
+                                 hidden_t.size())
+        else:
+            emb = hidden_t
+            if opt.encoder_type == "cnn":
+                expected_shape = (embeddings.embedding_size, bsize, source_l)
+            else:
+                expected_shape = (source_l, bsize, embeddings.embedding_size)
+            self.assertEqual(expected_shape, emb.shape)
+
+        if opt.encoder_type == "cnn":
+            test_out = torch.zeros(opt.dec_size, bsize, source_l)
+        else:
+            test_out = torch.zeros(source_l, bsize, opt.dec_size)
         self.assertEqual(test_out.size(), outputs.size())
         self.assertEqual(type(outputs), torch.Tensor)
 
@@ -219,7 +235,7 @@ def _add_test(param_setting, methodname):
     def test_method(self):
         opt = copy.deepcopy(self.opt)
         if param_setting:
-            for param, setting in param_setting:
+            for param, setting in param_setting.items():
                 setattr(opt, param, setting)
         ArgumentParser.update_model_opts(opt)
         getattr(self, methodname)(opt)
@@ -235,57 +251,83 @@ def _add_test(param_setting, methodname):
 '''
 TEST PARAMETERS
 '''
-opt.bidirectional = False
 
-test_embeddings = [[],
-                   [('decoder_type', 'transformer')]
-                   ]
+test_embeddings = [
+    {},
+    {
+        'decoder_type': 'transformer'},
+
+]
 
 for p in test_embeddings:
     _add_test(p, 'embeddings_forward')
 
-tests_encoder = [[],
-                 [('encoder_type', 'mean')],
-                 # [('encoder_type', 'transformer'),
-                 # ('word_vec_size', 16), ('rnn_size', 16)],
-                 []
-                 ]
+tests_encoder = [
+    {},
+    {
+        'encoder_type': 'mean'},
+    {
+        'encoder_type': 'transformer',
+        'word_vec_size': 16,
+        'size': 16},
+    {
+        'encoder_type': 'cnn'},
+    {
+        'bidirectional': True}
+]
 
 for p in tests_encoder:
     _add_test(p, 'encoder_forward')
 
-tests_nmtmodel = [[('rnn_type', 'GRU')],
-                  [('layers', 10)],
-                  [('input_feed', 0)],
-                  [('decoder_type', 'transformer'),
-                   ('encoder_type', 'transformer'),
-                   ('src_word_vec_size', 16),
-                   ('tgt_word_vec_size', 16),
-                   ('size', 16)],
-                  [('decoder_type', 'transformer'),
-                   ('encoder_type', 'transformer'),
-                   ('src_word_vec_size', 16),
-                   ('tgt_word_vec_size', 16),
-                   ('size', 16),
-                   ('position_encoding', True)],
-                  [('coverage_attn', True)],
-                  [('copy_attn', True)],
-                  [('global_attention', 'mlp')],
-                  [('context_gate', 'both')],
-                  [('context_gate', 'target')],
-                  [('context_gate', 'source')],
-                  [('encoder_type', 'rnn'),
-                   ('brnn_merge', 'sum')],
-                  [('encoder_type', 'rnn')],
-                  [('decoder_type', 'cnn'),
-                   ('encoder_type', 'cnn')],
-                  [],
-                  ]
+tests_nmtmodel = [
+    {
+        'rnn_type': 'GRU'},
+    {
+        'layers': 10},
+    {
+        'decoder_type': 'rnn'},
+    {
+        'decoder_type': 'transformer',
+        'encoder_type': 'transformer',
+        'src_word_vec_size': 16,
+        'tgt_word_vec_size': 16,
+        'size': 16},
+    {
+        'decoder_type': 'transformer',
+        'encoder_type': 'transformer',
+        'src_word_vec_size': 16,
+        'tgt_word_vec_size': 16,
+        'size': 16,
+        'position_encoding': True},
+    {
+        'coverage_attn': True},
+    {
+        'copy_attn': True},
+    {
+        'global_attention': 'mlp'},
+    {
+        'context_gate': 'both'},
+    {
+        'context_gate': 'target'},
+    {
+        'context_gate': 'source'},
+    {
+        'encoder_type': 'rnn',
+        'bidirectional': True,
+        'brnn_merge': 'sum'},
+    {
+        'encoder_type': 'rnn',
+        'bidirectional': True},
+    {
+        'decoder_type': 'cnn',
+        'encoder_type': 'cnn'},
+    {},
+]
 
 if onmt.models.sru.check_sru_requirement():
     #   """ Only do SRU test if requirment is safisfied. """
     # SRU doesn't support input_feed.
-    tests_nmtmodel.append([('rnn_type', 'SRU'), ('input_feed', 0)])
+    tests_nmtmodel.append({'rnn_type': 'SRU', 'decoder_type': 'rnn'})
 
 for p in tests_nmtmodel:
     _add_test(p, 'nmtmodel_forward')
@@ -294,17 +336,17 @@ for p in tests_nmtmodel:
     _add_test(p, 'imagemodel_forward')
 
 for p in tests_nmtmodel:
-    p.append(('sample_rate', 5500))
-    p.append(('window_size', 0.03))
+    p['sample_rate'] = 5500
+    p['window_size'] = 0.03
     # when reasonable, set audio_enc_pooling to 2
-    for arg, val in p:
+    for arg, val in p.items():
         if arg == "layers" and int(val) > 2:
             # Need lengths >= audio_enc_pooling**n_layers.
             # That condition is unrealistic for large n_layers,
             # so leave audio_enc_pooling at 1.
             break
     else:
-        p.append(('audio_enc_pooling', '2'))
+        p['audio_enc_pooling'] = '2'
     _add_test(p, 'audiomodel_forward')
 
 
