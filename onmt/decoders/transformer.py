@@ -14,10 +14,10 @@ class TransformerDecoderLayer(nn.Module):
     """
     Args:
       d_model (int): the dimension of keys/values/queries in
-          MultiHeadedAttention, also the input size of
-          the first-layer of the PositionwiseFeedForward.
+          :class:`MultiHeadedAttention`, also the input size of
+          the first-layer of the :class:`PositionwiseFeedForward`.
       heads (int): the number of heads for MultiHeadedAttention.
-      d_ff (int): the second-layer of the PositionwiseFeedForward.
+      d_ff (int): the second-layer of the :class:`PositionwiseFeedForward`.
       dropout (float): dropout probability.
       self_attn_type (string): type of self-attention scaled-dot, average
     """
@@ -44,16 +44,16 @@ class TransformerDecoderLayer(nn.Module):
                 layer_cache=None, step=None):
         """
         Args:
-            inputs (FloatTensor): `[batch_size x 1 x model_dim]`
-            memory_bank (FloatTensor): `[batch_size x src_len x model_dim]`
-            src_pad_mask (LongTensor): `[batch_size x 1 x src_len]`
-            tgt_pad_mask (LongTensor): `[batch_size x 1 x 1]`
+            inputs (FloatTensor): ``(batch_size, 1, model_dim)`
+            memory_bank (FloatTensor): ``(batch_size, src_len, model_dim)``
+            src_pad_mask (LongTensor): ``(batch_size, 1, src_len)``
+            tgt_pad_mask (LongTensor): ``(batch_size, 1, 1)``
 
         Returns:
             (FloatTensor, FloatTensor):
 
-            * output `[batch_size x 1 x model_dim]`
-            * attn `[batch_size x 1 x src_len]`
+            * output ``(batch_size, 1, model_dim)``
+            * attn ``(batch_size, 1, src_len)``
 
         """
         dec_mask = None

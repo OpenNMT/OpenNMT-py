@@ -26,10 +26,10 @@ class PositionwiseFeedForward(nn.Module):
         """Layer definition.
 
         Args:
-            x: `[batch_size x input_len x model_dim]`
+            x: ``(batch_size, input_len, model_dim)``
 
         Returns:
-            (FloatTensor): Output `[batch_size x input_len x model_dim]`.
+            (FloatTensor): Output ``(batch_size, input_len, model_dim)``.
         """
 
         inter = self.dropout_1(self.relu(self.w_1(self.layer_norm(x))))

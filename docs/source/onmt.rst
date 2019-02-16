@@ -1,4 +1,4 @@
-Doc: Framework
+Framework
 =================
 
 Model

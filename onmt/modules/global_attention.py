@@ -96,12 +96,12 @@ class GlobalAttention(nn.Module):
     def score(self, h_t, h_s):
         """
         Args:
-          h_t (FloatTensor): sequence of queries `[batch x tgt_len x dim]`
-          h_s (FloatTensor): sequence of sources `[batch x src_len x dim]`
+          h_t (FloatTensor): sequence of queries ``(batch, tgt_len, dim)``
+          h_s (FloatTensor): sequence of sources ``(batch, src_len, dim``
 
         Returns:
           FloatTensor: raw attention scores (unnormalized) for each src index
-            `[batch x tgt_len x src_len]`
+            ``(batch, tgt_len, src_len)``
         """
 
         # Check input sizes
@@ -138,17 +138,17 @@ class GlobalAttention(nn.Module):
         """
 
         Args:
-          source (FloatTensor): query vectors `[batch x tgt_len x dim]`
-          memory_bank (FloatTensor): source vectors `[batch x src_len x dim]`
-          memory_lengths (LongTensor): the source context lengths `[batch]`
+          source (FloatTensor): query vectors ``(batch, tgt_len, dim)``
+          memory_bank (FloatTensor): source vectors ``(batch, src_len, dim)``
+          memory_lengths (LongTensor): the source context lengths ``(batch,)``
           coverage (FloatTensor): None (not supported yet)
 
         Returns:
           (FloatTensor, FloatTensor):
 
-          * Computed vector `[tgt_len x batch x dim]`
+          * Computed vector ``(tgt_len, batch, dim)``
           * Attention distribtutions for each query
-            `[tgt_len x batch x src_len]`
+            ``(tgt_len, batch, src_len)``
         """
 
         # one step input

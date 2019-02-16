@@ -161,7 +161,7 @@ class AudioSeqField(Field):
 
         Returns:
             torch.FloatTensor or Tuple[torch.FloatTensor, List[int]]: The
-                padded tensor of shape batch_size x 1 x n_feats x max_len
+                padded tensor of shape ``(batch_size, 1, n_feats, max_len)``.
                 and a list of the lengths if `self.include_lengths` is `True`
                 else just returns the padded tensor.
         """
@@ -190,8 +190,8 @@ class AudioSeqField(Field):
                 List of tokenized and padded examples, or tuple of List of
                 tokenized and padded examples and List of lengths of each
                 example if self.include_lengths is True. Examples have shape
-                batch_size x 1 x n_feats x max_len if `self.batch_first`
-                else max_len x batch_size x 1 x n_feats.
+                ``(batch_size, 1, n_feats, max_len)`` if `self.batch_first`
+                else ``(max_len, batch_size, 1, n_feats)``.
             device (str or torch.device): See `Field.numericalize`.
         """
 

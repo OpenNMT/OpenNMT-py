@@ -34,16 +34,16 @@ class DecodeStrategy(object):
             list of scores.
         attention (list[list[FloatTensor or list[]]]): For each
             batch, holds a list of attention sequence tensors
-            (or empty lists) having shape `[step x inp_seq_len]` where
+            (or empty lists) having shape ``(step, inp_seq_len)`` where
             ``inp_seq_len`` is the length of the sample (not the max
             length of all inp seqs).
-        alive_seq (LongTensor): Shape `[B * parallel_paths x step]`.
+        alive_seq (LongTensor): Shape ``(B x parallel_paths, step)``.
             This sequence grows in the ``step`` axis on each call to
             :func:`advance()`.
         is_finished (ByteTensor or NoneType): Shape
-            `[B x parallel_paths]`. Initialized to ``None``.
+            ``(B, parallel_paths)``. Initialized to ``None``.
         alive_attn (FloatTensor or NoneType): If tensor, shape is
-            `[step x B * parallel_paths x inp_seq_len]`, where ``inp_seq_len``
+            ``(step, B x parallel_paths, inp_seq_len)``, where ``inp_seq_len``
             is the (max) length of the input sequence.
         min_length (int): See above.
         max_length (int): See above.

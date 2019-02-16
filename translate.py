@@ -31,11 +31,16 @@ def main(opt):
             )
 
 
-if __name__ == "__main__":
+def _get_parser():
     parser = ArgumentParser(description='translate.py')
 
     opts.config_opts(parser)
     opts.translate_opts(parser)
+    return parser
+
+
+if __name__ == "__main__":
+    parser = _get_parser()
 
     opt = parser.parse_args()
     main(opt)

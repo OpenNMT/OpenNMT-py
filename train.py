@@ -93,12 +93,17 @@ class ErrorHandler(object):
         raise Exception(msg)
 
 
-if __name__ == "__main__":
+def _get_parser():
     parser = ArgumentParser(description='train.py')
 
     opts.config_opts(parser)
     opts.model_opts(parser)
     opts.train_opts(parser)
+    return parser
+
+
+if __name__ == "__main__":
+    parser = _get_parser()
 
     opt = parser.parse_args()
     main(opt)

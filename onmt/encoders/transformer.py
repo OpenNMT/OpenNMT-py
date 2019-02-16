@@ -36,13 +36,13 @@ class TransformerEncoderLayer(nn.Module):
     def forward(self, inputs, mask):
         """
         Args:
-            inputs (torch.FloatTensor): `[batch_size x src_len x model_dim]`
-            mask (torch.LongTensor): `[batch_size x src_len x src_len]`
+            inputs (FloatTensor): ``(batch_size, src_len, model_dim)``
+            mask (LongTensor): ``(batch_size, src_len, src_len)``
 
         Returns:
-            (torch.FloatTensor):
+            (FloatTensor):
 
-            * outputs `[batch_size x src_len x model_dim]`
+            * outputs ``(batch_size, src_len, model_dim)``
         """
         input_norm = self.layer_norm(inputs)
         context, _ = self.self_attn(input_norm, input_norm, input_norm,
@@ -78,8 +78,8 @@ class TransformerEncoder(EncoderBase):
     Returns:
         (torch.FloatTensor, torch.FloatTensor):
 
-        * embeddings `[src_len x batch_size x model_dim]`
-        * memory_bank `[src_len x batch_size x model_dim]`
+        * embeddings ``(src_len, batch_size, model_dim)``
+        * memory_bank ``(src_len, batch_size, model_dim)``
     """
 
     def __init__(self, num_layers, d_model, heads, d_ff, dropout, embeddings,

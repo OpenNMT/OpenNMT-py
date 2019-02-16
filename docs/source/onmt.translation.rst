@@ -1,4 +1,4 @@
-Doc: Translation
+Translation
 ==================
 
 Translations

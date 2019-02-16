@@ -10,7 +10,7 @@ def sample_with_temperature(logits, sampling_temp, keep_topk):
     the category probabilities ``logits / sampling_temp``.
 
     Args:
-        logits (FloatTensor): Shaped `[batch_size x vocab_size]`.
+        logits (FloatTensor): Shaped ``(batch_size, vocab_size)``.
             These can be logits (``(-inf, inf)``) or log-probs (``(-inf, 0]``).
             (The distribution actually uses the log-probabilities
             ``logits - logits.logsumexp(-1)``, which equals the logits if
@@ -24,9 +24,9 @@ def sample_with_temperature(logits, sampling_temp, keep_topk):
     Returns:
         (LongTensor, FloatTensor):
 
-        * topk_ids: Shaped `[batch_size x 1]`. These are
+        * topk_ids: Shaped ``(batch_size, 1)``. These are
           the sampled word indices in the output vocab.
-        * topk_scores: Shaped `[batch_size x 1]`. These
+        * topk_scores: Shaped ``(batch_size, 1)``. These
           are essentially ``(logits / sampling_temp)[topk_ids]``.
     """
 
@@ -105,13 +105,13 @@ class RandomSampling(DecodeStrategy):
         """Select next tokens randomly from the top k possible next tokens.
 
         Args:
-            log_probs (FloatTensor): Shaped `[batch_size x vocab_size]`.
+            log_probs (FloatTensor): Shaped ``(batch_size, vocab_size)``.
                 These can be logits (``(-inf, inf)``) or log-probs
                 (``(-inf, 0]``). (The distribution actually uses the
                 log-probabilities ``logits - logits.logsumexp(-1)``,
                 which equals the logits if they are log-probabilities summing
                 to 1.)
-            attn (FloatTensor): Shaped `[1 x B x inp_seq_len]`.
+            attn (FloatTensor): Shaped ``(1, B, inp_seq_len)``.
         """
 
         self.ensure_min_length(log_probs)

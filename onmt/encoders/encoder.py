@@ -44,15 +44,15 @@ class EncoderBase(nn.Module):
         """
         Args:
             src (LongTensor):
-               padded sequences of sparse indices `[src_len x batch x nfeat]`
-            lengths (LongTensor): length of each sequence `[batch]`
+               padded sequences of sparse indices ``(src_len, batch, nfeat)``
+            lengths (LongTensor): length of each sequence ``(batch,)``
 
 
         Returns:
             (FloatTensor, FloatTensor):
 
             * final encoder state, used to initialize decoder
-            * memory bank for attention, `[src_len x batch x hidden]`
+            * memory bank for attention, ``(src_len, batch, hidden)``
         """
 
         raise NotImplementedError

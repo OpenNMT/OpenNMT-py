@@ -40,7 +40,7 @@ class PositionalEncoding(nn.Module):
 
         Args:
             emb (FloatTensor): Sequence of word vectors
-                `[seq_len, batch_size, self.dim]`
+                ``(seq_len, batch_size, self.dim)``
             step (int or NoneType): If stepwise (``seq_len = 1``), use
                 the encoding for this position.
         """
@@ -229,10 +229,10 @@ class Embeddings(nn.Module):
         """Computes the embeddings for words and features.
 
         Args:
-            source (LongTensor): index tensor `[len x batch x nfeat]`
+            source (LongTensor): index tensor ``(len, batch, nfeat)``
 
         Returns:
-            FloatTensor: Word embeddings `[len x batch x embedding_size]`
+            FloatTensor: Word embeddings ``(len, batch, embedding_size)``
         """
 
         if self.position_encoding:

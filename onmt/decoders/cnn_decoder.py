@@ -1,6 +1,5 @@
-"""
-Implementation of the CNN Decoder part of
-  "Convolutional Sequence to Sequence Learning"
+"""Implementation of the CNN Decoder part of
+"Convolutional Sequence to Sequence Learning"
 """
 import torch
 import torch.nn as nn

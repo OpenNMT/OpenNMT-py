@@ -10,8 +10,8 @@ class SparsemaxLossFunction(Function):
     @staticmethod
     def forward(ctx, input, target):
         """
-        input (FloatTensor): n x num_classes
-        target (LongTensor): n, the indices of the target classes
+        input (FloatTensor): ``(n, num_classes)``.
+        target (LongTensor): ``(n,)``, the indices of the target classes
         """
         input_batch, classes = input.size()
         target_batch = target.size(0)
@@ -44,9 +44,8 @@ sparsemax_loss = SparsemaxLossFunction.apply
 
 class SparsemaxLoss(nn.Module):
     """
-    An implementation of sparsemax loss, first proposed in "From Softmax to
-    Sparsemax: A Sparse Model of Attention and Multi-Label Classification"
-    (Martins & Astudillo, 2016: https://arxiv.org/pdf/1602.02068). If using
+    An implementation of sparsemax loss, first proposed in
+    :cite:`DBLP:journals/corr/MartinsA16`. If using
     a sparse output layer, it is not possible to use negative log likelihood
     because the loss is infinite in the case the target is assigned zero
     probability. Inputs to SparsemaxLoss are arbitrary dense real-valued

@@ -1,4 +1,4 @@
-# Example: Speech to Text
+# Speech to Text
 
 A deep learning-based approach to learning the speech-to-text conversion, built on top of the <a href="http://opennmt.net/">OpenNMT</a> system.
 

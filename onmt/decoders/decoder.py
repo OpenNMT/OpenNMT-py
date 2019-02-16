@@ -168,19 +168,19 @@ class RNNDecoderBase(DecoderBase):
         """
         Args:
             tgt (LongTensor): sequences of padded tokens
-                 `[tgt_len x batch x nfeats]`.
+                 ``(tgt_len, batch, nfeats)``.
             memory_bank (FloatTensor): vectors from the encoder
-                 `[src_len x batch x hidden]`.
+                 ``(src_len, batch, hidden)``.
             memory_lengths (LongTensor): the padded source lengths
-                `[batch]`.
+                ``(batch,)``.
 
         Returns:
-            (FloatTensor, FloatTensor):
+            (FloatTensor, dict[str, FloatTensor]):
 
             * dec_outs: output from the decoder (after attn)
-              `[tgt_len x batch x hidden]`.
+              ``(tgt_len, batch, hidden)``.
             * attns: distribution over src at each tgt
-              `[tgt_len x batch x src_len]`.
+              ``(tgt_len, batch, src_len)``.
         """
 
         dec_state, dec_outs, attns = self._run_forward_pass(
@@ -232,9 +232,9 @@ class StdRNNDecoder(RNNDecoderBase):
 
         Args:
             tgt (LongTensor): a sequence of input tokens tensors
-                `[len x batch x nfeats]`.
+                ``(len, batch, nfeats)``.
             memory_bank (FloatTensor): output(tensor sequence) from the
-                encoder RNN of size `[src_len x batch x hidden_size]`.
+                encoder RNN of size ``(src_len, batch, hidden_size)``.
             memory_lengths (LongTensor): the source memory_bank lengths.
 
         Returns:
@@ -244,8 +244,8 @@ class StdRNNDecoder(RNNDecoderBase):
             * dec_outs: an array of output of every time
               step from the decoder.
             * attns: a dictionary of different
-                type of attention Tensor array of every time
-                step from the decoder.
+              type of attention Tensor array of every time
+              step from the decoder.
         """
 
         assert self.copy_attn is None  # TODO, no support yet.
@@ -392,7 +392,5 @@ class InputFeedRNNDecoder(RNNDecoderBase):
 
     @property
     def _input_size(self):
-        """
-        Using input feed by concatenating input with attention vectors.
-        """
+        """Using input feed by concatenating input with attention vectors."""
         return self.embeddings.embedding_size + self.hidden_size

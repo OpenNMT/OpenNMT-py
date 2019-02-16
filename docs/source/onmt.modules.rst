@@ -1,4 +1,4 @@
-Doc: Modules
+Modules
 =============
 
 Core Modules
@@ -34,12 +34,14 @@ Decoders
 .. autoclass:: onmt.decoders.StdRNNDecoder
     :members:
 
-
 .. autoclass:: onmt.decoders.InputFeedRNNDecoder
     :members:
 
 Attention
 ----------
+
+.. autoclass:: onmt.modules.AverageAttention
+    :members:
 
 .. autoclass:: onmt.modules.GlobalAttention
     :members:

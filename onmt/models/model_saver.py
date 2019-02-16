@@ -19,11 +19,11 @@ def build_model_saver(model_opt, opt, model, fields, optim):
 
 
 class ModelSaverBase(object):
-    """
-        Base class for model saving operations
-        Inherited classes must implement private methods:
-            * `_save`
-            * `_rm_checkpoint
+    """Base class for model saving operations
+
+    Inherited classes must implement private methods:
+    * `_save`
+    * `_rm_checkpoint
     """
 
     def __init__(self, base_path, model, model_opt, fields, optim,
@@ -39,11 +39,12 @@ class ModelSaverBase(object):
             self.checkpoint_queue = deque([], maxlen=keep_checkpoint)
 
     def save(self, step, moving_average=None):
-        """
-        Main entry point for model saver
+        """Main entry point for model saver
+
         It wraps the `_save` method with checks and apply `keep_checkpoint`
         related logic
         """
+
         if self.keep_checkpoint == 0 or step == self.last_saved_step:
             return
 
@@ -67,32 +68,33 @@ class ModelSaverBase(object):
             self.checkpoint_queue.append(chkpt_name)
 
     def _save(self, step):
-        """ Save a resumable checkpoint.
+        """Save a resumable checkpoint.
 
         Args:
             step (int): step number
 
         Returns:
-            checkpoint: the saved object
-            checkpoint_name: name (or path) of the saved checkpoint
+            (object, str):
+
+            * checkpoint: the saved object
+            * checkpoint_name: name (or path) of the saved checkpoint
         """
+
         raise NotImplementedError()
 
     def _rm_checkpoint(self, name):
-        """
-        Remove a checkpoint
+        """Remove a checkpoint
 
         Args:
             name(str): name that indentifies the checkpoint
                 (it may be a filepath)
         """
+
         raise NotImplementedError()
 
 
 class ModelSaver(ModelSaverBase):
-    """
-        Simple model saver to filesystem
-    """
+    """Simple model saver to filesystem"""
 
     def _save(self, step, model):
         real_model = (model.module

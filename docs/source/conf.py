@@ -48,7 +48,8 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.githubpages',
               'sphinx.ext.napoleon',
               'sphinxcontrib.mermaid',
-              'sphinxcontrib.bibtex']
+              'sphinxcontrib.bibtex',
+              'sphinxarg.ext']
 
 # Show base classes
 autodoc_default_options = {

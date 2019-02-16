@@ -62,9 +62,9 @@ class PenaltyBuilder(object):
         """GNMT coverage re-ranking score.
 
         See "Google's Neural Machine Translation System" :cite:`wu2016google`.
-        ``cov`` is expected to be sized `[* x seq_len]`, where ``*`` is
-        probably `[batch_size * beam_size]` but could be several
-        dimensions like `[batch_size x beam_size]`. If ``cov`` is attention,
+        ``cov`` is expected to be sized ``(*, seq_len)``, where ``*`` is
+        probably ``batch_size x beam_size`` but could be several
+        dimensions like ``(batch_size, beam_size)``. If ``cov`` is attention,
         then the ``seq_len`` axis probably sums to (almost) 1.
         """
 

@@ -1,4 +1,4 @@
-Doc: Data Loaders
+Data Loaders
 =================
 
 Data Readers

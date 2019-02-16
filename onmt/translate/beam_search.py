@@ -30,25 +30,25 @@ class BeamSearch(DecodeStrategy):
             masking attentions.
 
     Attributes:
-        top_beam_finished (ByteTensor): Shape `[B,]`.
-        _batch_offset (LongTensor): Shape `[B,]`.
-        _beam_offset (LongTensor): Shape `[batch_size * beam_size,]`.
+        top_beam_finished (ByteTensor): Shape ``(B,)``.
+        _batch_offset (LongTensor): Shape ``(B,)``.
+        _beam_offset (LongTensor): Shape ``(batch_size x beam_size,)``.
         alive_seq (LongTensor): See base.
-        topk_log_probs (FloatTensor): Shape `[B * beam_size,]`. These
+        topk_log_probs (FloatTensor): Shape ``(B x beam_size,)``. These
             are the scores used for the topk operation.
         select_indices (LongTensor or NoneType): Shape
-            `[B * beam_size,]`. This is just a flat view of the
+            ``(B x beam_size,)``. This is just a flat view of the
             ``_batch_index``.
         topk_scores (FloatTensor): Shape
-            `[B x beam_size]`. These are the
+            ``(B, beam_size)``. These are the
             scores a sequence will receive if it finishes.
-        topk_ids (LongTensor): Shape `[B x beam_size]`. These are the
+        topk_ids (LongTensor): Shape ``(B, beam_size)``. These are the
             word indices of the topk predictions.
-        _batch_index (LongTensor): Shape `[B x beam_size]`.
-        _prev_penalty (torch.FloatTensor or NoneType): Shape
-            `[B x beam_size]`. Initialized to ``None``.
+        _batch_index (LongTensor): Shape ``(B, beam_size)``.
+        _prev_penalty (FloatTensor or NoneType): Shape
+            ``(B, beam_size)``. Initialized to ``None``.
         _coverage (FloatTensor or NoneType): Shape
-            `[1 x B * beam_size, inp_seq_len]`.
+            ``(1, B x beam_size, inp_seq_len)``.
         hypotheses (list[list[Tuple[Tensor]]]): Contains a tuple
             of score (float), sequence (long), and attention (float or None).
     """
