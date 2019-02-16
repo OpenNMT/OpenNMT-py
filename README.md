@@ -143,6 +143,7 @@ Major contributors are:
 [Paul Tardy](https://github.com/pltrdy) (Ubiqus / Lium)
 [François Hernandez](https://github.com/francoishernandez) (Ubiqus)
 [Jianyu Zhan](http://github.com/jianyuzhan) (Shanghai)
+[Dylan Flaute](http://github.com/flauted (University of Dayton)
 and more !
 
 OpentNMT-py belongs to the OpenNMT project along with OpenNMT-Lua and OpenNMT-tf.
