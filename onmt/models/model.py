@@ -8,8 +8,8 @@ class NMTModel(nn.Module):
     for a simple, generic encoder + decoder model.
 
     Args:
-      encoder (:obj:`EncoderBase`): an encoder object
-      decoder (:obj:`RNNDecoderBase`): a decoder object
+      encoder (onmt.encoders.EncoderBase): an encoder object
+      decoder (onmt.decoders.DecoderBase): a decoder object
     """
 
     def __init__(self, encoder, decoder):
@@ -22,23 +22,20 @@ class NMTModel(nn.Module):
         Possible initialized with a beginning decoder state.
 
         Args:
-            src (:obj:`Tensor`):
-                a source sequence passed to encoder.
-                typically for inputs this will be a padded :obj:`LongTensor`
-                of size `[len x batch x features]`. however, may be an
+            src (Tensor): A source sequence passed to encoder.
+                typically for inputs this will be a padded `LongTensor`
+                of size ``(len, batch, features)``. However, may be an
                 image or other generic input depending on encoder.
-            tgt (:obj:`LongTensor`):
-                 a target sequence of size `[tgt_len x batch]`.
-            lengths(:obj:`LongTensor`): the src lengths, pre-padding `[batch]`.
-            bptt (:obj:`Boolean`):
-                a flag indicating if truncated bptt is set. If reset then
-                init_state
+            tgt (LongTensor): A target sequence of size ``(tgt_len, batch)``.
+            lengths(LongTensor): The src lengths, pre-padding ``(batch,)``.
+            bptt (Boolean): A flag indicating if truncated bptt is set.
+                If reset then init_state
 
         Returns:
-            (:obj:`FloatTensor`, `dict`, :obj:`onmt.Models.DecoderState`):
+            (FloatTensor, dict[str, FloatTensor]):
 
-                 * decoder output `[tgt_len x batch x hidden]`
-                 * dictionary attention dists of `[tgt_len x batch x src_len]`
+            * decoder output ``(tgt_len, batch, hidden)``
+            * dictionary attention dists of ``(tgt_len, batch, src_len)``
         """
         tgt = tgt[:-1]  # exclude last target from inputs
 

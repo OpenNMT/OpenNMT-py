@@ -10,7 +10,7 @@ def sample_with_temperature(logits, sampling_temp, keep_topk):
     the category probabilities ``logits / sampling_temp``.
 
     Args:
-        logits (torch.FloatTensor): Shaped ``(batch_size, vocab_size)``.
+        logits (FloatTensor): Shaped ``(batch_size, vocab_size)``.
             These can be logits (``(-inf, inf)``) or log-probs (``(-inf, 0]``).
             (The distribution actually uses the log-probabilities
             ``logits - logits.logsumexp(-1)``, which equals the logits if
@@ -22,10 +22,12 @@ def sample_with_temperature(logits, sampling_temp, keep_topk):
             other logits are set to have probability 0.
 
     Returns:
-        topk_ids (torch.LongTensor): Shaped ``(batch_size, 1)``. These are
-            the sampled word indices in the output vocab.
-        topk_scores (torch.FloatTensor): Shaped ``(batch_size, 1)``. These
-            are essentially ``(logits / sampling_temp)[topk_ids]``.
+        (LongTensor, FloatTensor):
+
+        * topk_ids: Shaped ``(batch_size, 1)``. These are
+          the sampled word indices in the output vocab.
+        * topk_scores: Shaped ``(batch_size, 1)``. These
+          are essentially ``(logits / sampling_temp)[topk_ids]``.
     """
 
     if sampling_temp == 0.0 or keep_topk == 1:
@@ -73,9 +75,11 @@ class RandomSampling(DecodeStrategy):
         exclusion_tokens (set[int]): See base.
         return_attention (bool): See base.
         max_length (int): See base.
-        sampling_temp (float): See :func:`sample_with_temperature()`.
-        keep_topk (int): See :func:`sample_with_temperature()`.
-        memory_length (torch.LongTensor): Lengths of encodings. Used for
+        sampling_temp (float): See
+            :func:`~onmt.translate.random_sampling.sample_with_temperature()`.
+        keep_topk (int): See
+            :func:`~onmt.translate.random_sampling.sample_with_temperature()`.
+        memory_length (LongTensor): Lengths of encodings. Used for
             masking attention.
     """
 
@@ -101,13 +105,13 @@ class RandomSampling(DecodeStrategy):
         """Select next tokens randomly from the top k possible next tokens.
 
         Args:
-            log_probs (torch.FloatTensor): Shaped ``(batch_size, vocab_size)``.
+            log_probs (FloatTensor): Shaped ``(batch_size, vocab_size)``.
                 These can be logits (``(-inf, inf)``) or log-probs
                 (``(-inf, 0]``). (The distribution actually uses the
                 log-probabilities ``logits - logits.logsumexp(-1)``,
                 which equals the logits if they are log-probabilities summing
                 to 1.)
-            attn (torch.FloatTensor): Shaped ``(1, B, inp_seq_len)``.
+            attn (FloatTensor): Shaped ``(1, B, inp_seq_len)``.
         """
 
         self.ensure_min_length(log_probs)

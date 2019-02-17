@@ -49,8 +49,8 @@ class Translator(object):
         model (onmt.modules.NMTModel): NMT model to use for translation
         fields (dict[str, torchtext.data.Field]): A dict
             mapping each side to its list of name-Field pairs.
-        src_reader (inputters.DataReaderBase): Source reader.
-        tgt_reader (inputters.TextDataReader): Target reader.
+        src_reader (onmt.inputters.DataReaderBase): Source reader.
+        tgt_reader (onmt.inputters.TextDataReader): Target reader.
         gpu (int): GPU device. Set to negative for no GPU.
         n_best (int): How many beams to wait for.
         min_length (int): See

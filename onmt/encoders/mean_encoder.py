@@ -7,7 +7,7 @@ class MeanEncoder(EncoderBase):
 
     Args:
        num_layers (int): number of replicated layers
-       embeddings (:obj:`onmt.modules.Embeddings`): embedding module to use
+       embeddings (onmt.modules.Embeddings): embedding module to use
     """
 
     def __init__(self, num_layers, embeddings):
@@ -17,12 +17,13 @@ class MeanEncoder(EncoderBase):
 
     @classmethod
     def from_opt(cls, opt, embeddings):
+        """Alternate constructor."""
         return cls(
             opt.enc_layers,
             embeddings)
 
     def forward(self, src, lengths=None):
-        "See :obj:`EncoderBase.forward()`"
+        """See :func:`EncoderBase.forward()`"""
         self._check_args(src, lengths)
 
         emb = self.embeddings(src)

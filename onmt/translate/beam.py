@@ -6,13 +6,12 @@ import warnings
 
 
 class Beam(object):
-    """
-    Class for managing the internals of the beam search process.
+    """Class for managing the internals of the beam search process.
 
     Takes care of beams, back pointers, and scores.
 
     Args:
-        beam_size (int): Number of beams to use.
+        size (int): Number of beams to use.
         pad (int): Magic integer in output vocab.
         bos (int): Magic integer in output vocab.
         eos (int): Magic integer in output vocab.
@@ -89,13 +88,15 @@ class Beam(object):
         Given prob over words for every last beam `wordLk` and attention
         `attn_out`: Compute and update the beam search.
 
-        Parameters:
+        Args:
+            word_probs (FloatTensor): probs of advancing from the last step
+                ``(K, words)``
+            attn_out (FloatTensor): attention at the last step
 
-        * `word_probs`- probs of advancing from the last step (K x words)
-        * `attn_out`- attention at the last step
-
-        Returns: True if beam search is complete.
+        Returns:
+            bool: True if beam search is complete.
         """
+
         num_words = word_probs.size(1)
         if self.stepwise_penalty:
             self.global_scorer.update_score(self, attn_out)
@@ -183,9 +184,7 @@ class Beam(object):
         return scores, ks
 
     def get_hyp(self, timestep, k):
-        """
-        Walk back to construct the full hypothesis.
-        """
+        """Walk back to construct the full hypothesis."""
         hyp, attn = [], []
         for j in range(len(self.prev_ks[:timestep]) - 1, -1, -1):
             hyp.append(self.next_ys[j + 1][k])

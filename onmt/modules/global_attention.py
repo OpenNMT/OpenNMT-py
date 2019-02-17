@@ -1,4 +1,4 @@
-""" Global attention modules (Luong / Bahdanau) """
+"""Global attention modules (Luong / Bahdanau)"""
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -13,7 +13,7 @@ from onmt.utils.misc import aeq, sequence_mask
 
 
 class GlobalAttention(nn.Module):
-    """
+    r"""
     Global attention takes a matrix and a query vector. It
     then computes a parameterized convex combination of the matrix
     based on the input query.
@@ -44,7 +44,7 @@ class GlobalAttention(nn.Module):
           F --> G
 
     All models compute the output as
-    :math:`c = sum_{j=1}^{SeqLength} a_j H_j` where
+    :math:`c = \sum_{j=1}^{\text{SeqLength}} a_j H_j` where
     :math:`a_j` is the softmax of a score function.
     Then then apply a projection layer to [q, c].
 
@@ -52,12 +52,12 @@ class GlobalAttention(nn.Module):
     differ on how they compute the attention score.
 
     * Luong Attention (dot, general):
-       * dot: :math:`score(H_j,q) = H_j^T q`
-       * general: :math:`score(H_j, q) = H_j^T W_a q`
+       * dot: :math:`\text{score}(H_j,q) = H_j^T q`
+       * general: :math:`\text{score}(H_j, q) = H_j^T W_a q`
 
 
     * Bahdanau Attention (mlp):
-       * :math:`score(H_j, q) = v_a^T tanh(W_a q + U_a h_j)`
+       * :math:`\text{score}(H_j, q) = v_a^T \text{tanh}(W_a q + U_a h_j)`
 
 
     Args:
@@ -96,14 +96,12 @@ class GlobalAttention(nn.Module):
     def score(self, h_t, h_s):
         """
         Args:
-          h_t (`FloatTensor`): sequence of queries `[batch x tgt_len x dim]`
-          h_s (`FloatTensor`): sequence of sources `[batch x src_len x dim]`
+          h_t (FloatTensor): sequence of queries ``(batch, tgt_len, dim)``
+          h_s (FloatTensor): sequence of sources ``(batch, src_len, dim``
 
         Returns:
-          :obj:`FloatTensor`:
-           raw attention scores (unnormalized) for each src index
-          `[batch x tgt_len x src_len]`
-
+          FloatTensor: raw attention scores (unnormalized) for each src index
+            ``(batch, tgt_len, src_len)``
         """
 
         # Check input sizes
@@ -140,17 +138,17 @@ class GlobalAttention(nn.Module):
         """
 
         Args:
-          source (`FloatTensor`): query vectors `[batch x tgt_len x dim]`
-          memory_bank (`FloatTensor`): source vectors `[batch x src_len x dim]`
-          memory_lengths (`LongTensor`): the source context lengths `[batch]`
-          coverage (`FloatTensor`): None (not supported yet)
+          source (FloatTensor): query vectors ``(batch, tgt_len, dim)``
+          memory_bank (FloatTensor): source vectors ``(batch, src_len, dim)``
+          memory_lengths (LongTensor): the source context lengths ``(batch,)``
+          coverage (FloatTensor): None (not supported yet)
 
         Returns:
-          (`FloatTensor`, `FloatTensor`):
+          (FloatTensor, FloatTensor):
 
-          * Computed vector `[tgt_len x batch x dim]`
+          * Computed vector ``(tgt_len, batch, dim)``
           * Attention distribtutions for each query
-             `[tgt_len x batch x src_len]`
+            ``(tgt_len, batch, src_len)``
         """
 
         # one step input

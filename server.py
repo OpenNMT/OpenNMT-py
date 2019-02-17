@@ -103,7 +103,7 @@ def start(config_file,
             threaded=True)
 
 
-if __name__ == '__main__':
+def _get_parser():
     parser = configargparse.ArgumentParser(
         config_file_parser_class=configargparse.YAMLConfigFileParser,
         description="OpenNMT-py REST Server")
@@ -113,7 +113,11 @@ if __name__ == '__main__':
     parser.add_argument("--debug", "-d", action="store_true")
     parser.add_argument("--config", "-c", type=str,
                         default="./available_models/conf.json")
+    return parser
 
+
+if __name__ == '__main__':
+    parser = _get_parser()
     args = parser.parse_args()
     start(args.config, url_root=args.url_root, host=args.ip, port=args.port,
           debug=args.debug)

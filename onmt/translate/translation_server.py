@@ -102,8 +102,9 @@ class TranslationServer(object):
 
     def clone_model(self, model_id, opt, timeout=-1):
         """Clone a model `model_id`.
-           Different options may be passed. If `opt` is None, it will use the
-           same set of options
+
+        Different options may be passed. If `opt` is None, it will use the
+        same set of options
         """
         if model_id in self.models:
             if opt is None:
@@ -123,7 +124,8 @@ class TranslationServer(object):
 
     def preload_model(self, opt, model_id=None, **model_kwargs):
         """Preloading the model: updating internal datastructure
-           It will effectively load the model if `load` is set
+
+        It will effectively load the model if `load` is set
         """
         if model_id is not None:
             if model_id in self.models.keys():
@@ -141,11 +143,13 @@ class TranslationServer(object):
 
     def run(self, inputs):
         """Translate `inputs`
-           We keep the same format as the Lua version i.e.
-             [{"id": model_id, "src": "sequence to translate"},{ ...}]
 
-           We use inputs[0]["id"] as the model id
+        We keep the same format as the Lua version i.e.
+        ``[{"id": model_id, "src": "sequence to translate"},{ ...}]``
+
+        We use inputs[0]["id"] as the model id
         """
+
         model_id = inputs[0].get("id", 0)
         if model_id in self.models and self.models[model_id] is not None:
             return self.models[model_id].run(inputs)
@@ -155,8 +159,10 @@ class TranslationServer(object):
 
     def unload_model(self, model_id):
         """Manually unload a model.
-           It will free the memory and cancel the timer
+
+        It will free the memory and cancel the timer
         """
+
         if model_id in self.models and self.models[model_id] is not None:
             self.models[model_id].unload()
         else:

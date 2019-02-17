@@ -9,16 +9,22 @@ from onmt.utils.misc import aeq
 
 
 class DecoderBase(nn.Module):
+    """Abstract class for decoders."""
     @classmethod
     def from_opt(cls, opt, embeddings):
+        """Alternate constructor.
+
+        Subclasses should override this method.
+        """
+
         raise NotImplementedError
 
 
 class RNNDecoderBase(DecoderBase):
-    """
-    Base recurrent attention-based decoder class.
+    """Base recurrent attention-based decoder class.
+
     Specifies the interface used by different decoder types
-    and required by :obj:`models.NMTModel`.
+    and required by :class:`~onmt.models.NMTModel`.
 
 
     .. mermaid::
@@ -48,19 +54,19 @@ class RNNDecoderBase(DecoderBase):
           F---I
 
     Args:
-       rnn_type (:obj:`str`):
+       rnn_type (str):
           style of recurrent unit to use, one of [RNN, LSTM, GRU, SRU]
        bidirectional_encoder (bool) : use with a bidirectional encoder
        num_layers (int) : number of stacked layers
        hidden_size (int) : hidden size of each layer
-       attn_type (str) : see :obj:`onmt.modules.GlobalAttention`
-       attn_func (str) : see :obj:`onmt.modules.GlobalAttention`
-       coverage_attn (str): see :obj:`onmt.modules.GlobalAttention`
-       context_gate (str): see :obj:`onmt.modules.ContextGate`
+       attn_type (str) : see :class:`~onmt.modules.GlobalAttention`
+       attn_func (str) : see :class:`~onmt.modules.GlobalAttention`
+       coverage_attn (str): see :class:`~onmt.modules.GlobalAttention`
+       context_gate (str): see :class:`~onmt.modules.ContextGate`
        copy_attn (bool): setup a separate copy attention mechanism
-       dropout (float) : dropout value for :obj:`nn.Dropout`
-       embeddings (:obj:`onmt.modules.Embeddings`): embedding module to use
-       reuse_copy_attns (bool): reuse the attention for copying
+       dropout (float) : dropout value for :class:`torch.nn.Dropout`
+       embeddings (onmt.modules.Embeddings): embedding module to use
+       reuse_copy_attn (bool): reuse the attention for copying
     """
 
     def __init__(self, rnn_type, bidirectional_encoder, num_layers,
@@ -112,6 +118,7 @@ class RNNDecoderBase(DecoderBase):
 
     @classmethod
     def from_opt(cls, opt, embeddings):
+        """Alternate constructor."""
         return cls(
             opt.rnn_type,
             opt.brnn,
@@ -127,7 +134,7 @@ class RNNDecoderBase(DecoderBase):
             opt.reuse_copy_attn)
 
     def init_state(self, src, memory_bank, encoder_final):
-        """ Init decoder state with last state of the encoder """
+        """Initialize decoder state with last state of the encoder."""
         def _fix_enc_hidden(hidden):
             # The encoder hidden is  (layers*directions) x batch x dim.
             # We need to convert it to layers x batch x (directions*dim).
@@ -160,19 +167,22 @@ class RNNDecoderBase(DecoderBase):
     def forward(self, tgt, memory_bank, memory_lengths=None, step=None):
         """
         Args:
-            tgt (`LongTensor`): sequences of padded tokens
-                 `[tgt_len x batch x nfeats]`.
-            memory_bank (`FloatTensor`): vectors from the encoder
-                 `[src_len x batch x hidden]`.
-            memory_lengths (`LongTensor`): the padded source lengths
-                `[batch]`.
+            tgt (LongTensor): sequences of padded tokens
+                 ``(tgt_len, batch, nfeats)``.
+            memory_bank (FloatTensor): vectors from the encoder
+                 ``(src_len, batch, hidden)``.
+            memory_lengths (LongTensor): the padded source lengths
+                ``(batch,)``.
+
         Returns:
-            (`FloatTensor`,:obj:`onmt.Models.DecoderState`,`FloatTensor`):
-                * dec_outs: output from the decoder (after attn)
-                         `[tgt_len x batch x hidden]`.
-                * attns: distribution over src at each tgt
-                        `[tgt_len x batch x src_len]`.
+            (FloatTensor, dict[str, FloatTensor]):
+
+            * dec_outs: output from the decoder (after attn)
+              ``(tgt_len, batch, hidden)``.
+            * attns: distribution over src at each tgt
+              ``(tgt_len, batch, src_len)``.
         """
+
         dec_state, dec_outs, attns = self._run_forward_pass(
             tgt, memory_bank, memory_lengths=memory_lengths)
 
@@ -196,15 +206,14 @@ class RNNDecoderBase(DecoderBase):
             for k in attns:
                 if type(attns[k]) == list:
                     attns[k] = torch.stack(attns[k])
-        # TODO change the way attns is returned dict => list or tuple (onnx)
         return dec_outs, attns
 
 
 class StdRNNDecoder(RNNDecoderBase):
-    """
-    Standard fully batched RNN decoder with attention.
+    """Standard fully batched RNN decoder with attention.
+
     Faster implementation, uses CuDNN for implementation.
-    See :obj:`RNNDecoderBase` for options.
+    See :class:`~onmt.decoders.decoder.RNNDecoderBase` for options.
 
 
     Based around the approach from
@@ -220,22 +229,25 @@ class StdRNNDecoder(RNNDecoderBase):
         """
         Private helper for running the specific RNN forward pass.
         Must be overriden by all subclasses.
+
         Args:
             tgt (LongTensor): a sequence of input tokens tensors
-                                 [len x batch x nfeats].
+                ``(len, batch, nfeats)``.
             memory_bank (FloatTensor): output(tensor sequence) from the
-                          encoder RNN of size (src_len x batch x hidden_size).
-            state (FloatTensor): hidden state from the encoder RNN for
-                                 initializing the decoder.
+                encoder RNN of size ``(src_len, batch, hidden_size)``.
             memory_lengths (LongTensor): the source memory_bank lengths.
+
         Returns:
-            dec_state (Tensor): final hidden state from the decoder.
-            dec_outs ([FloatTensor]): an array of output of every time
-                                     step from the decoder.
-            attns (dict of (str, [FloatTensor]): a dictionary of different
-                            type of attention Tensor array of every time
-                            step from the decoder.
+            (Tensor, List[FloatTensor], Dict[str, List[FloatTensor]):
+
+            * dec_state: final hidden state from the decoder.
+            * dec_outs: an array of output of every time
+              step from the decoder.
+            * attns: a dictionary of different
+              type of attention Tensor array of every time
+              step from the decoder.
         """
+
         assert self.copy_attn is None  # TODO, no support yet.
         assert not self._coverage  # TODO, no support yet.
 
@@ -283,8 +295,9 @@ class StdRNNDecoder(RNNDecoderBase):
 
 
 class InputFeedRNNDecoder(RNNDecoderBase):
-    """
-    Input feeding based decoder. See :obj:`RNNDecoderBase` for options.
+    """Input feeding based decoder.
+
+    See :class:`~onmt.decoders.decoder.RNNDecoderBase` for options.
 
     Based around the input feeding approach from
     "Effective Approaches to Attention-based Neural Machine Translation"
@@ -379,7 +392,5 @@ class InputFeedRNNDecoder(RNNDecoderBase):
 
     @property
     def _input_size(self):
-        """
-        Using input feed by concatenating input with attention vectors.
-        """
+        """Using input feed by concatenating input with attention vectors."""
         return self.embeddings.embedding_size + self.hidden_size

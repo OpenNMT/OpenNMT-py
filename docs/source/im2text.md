@@ -1,4 +1,4 @@
-# Example: Image to Text
+# Image to Text
 
 A deep learning-based approach to learning the image-to-text conversion, built on top of the <a href="http://opennmt.net/">OpenNMT</a> system. It is completely data-driven, hence can be used for a variety of image-to-text problems, such as image captioning, optical character recognition and LaTeX decompilation. 
 

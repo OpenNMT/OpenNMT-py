@@ -26,30 +26,30 @@ class BeamSearch(DecodeStrategy):
         return_attention (bool): See base.
         block_ngram_repeat (int): See base.
         exclusion_tokens (set[int]): See base.
-        memory_lengths (torch.LongTensor): Lengths of encodings. Used for
+        memory_lengths (LongTensor): Lengths of encodings. Used for
             masking attentions.
 
     Attributes:
-        top_beam_finished (torch.ByteTensor): Shape ``(B,)``.
-        _batch_offset (torch.LongTensor): Shape ``(B,)``.
-        _beam_offset (torch.LongTensor): Shape ``(batch_size x beam_size)``.
-        alive_seq (torch.LongTensor): See base.
-        topk_log_probs (torch.FloatTensor): Shape ``(B x beam_size,)``. These
+        top_beam_finished (ByteTensor): Shape ``(B,)``.
+        _batch_offset (LongTensor): Shape ``(B,)``.
+        _beam_offset (LongTensor): Shape ``(batch_size x beam_size,)``.
+        alive_seq (LongTensor): See base.
+        topk_log_probs (FloatTensor): Shape ``(B x beam_size,)``. These
             are the scores used for the topk operation.
-        select_indices (torch.LongTensor or NoneType): Shape
+        select_indices (LongTensor or NoneType): Shape
             ``(B x beam_size,)``. This is just a flat view of the
             ``_batch_index``.
-        topk_scores (torch.FloatTensor): Shape
+        topk_scores (FloatTensor): Shape
             ``(B, beam_size)``. These are the
             scores a sequence will receive if it finishes.
-        topk_ids (torch.LongTensor): Shape `(B, beam_size)``. These are the
+        topk_ids (LongTensor): Shape ``(B, beam_size)``. These are the
             word indices of the topk predictions.
-        _batch_index (torch.LongTensor): Shape ``(B, beam_size)``.
-        _prev_penalty (torch.FloatTensor or NoneType): Shape
+        _batch_index (LongTensor): Shape ``(B, beam_size)``.
+        _prev_penalty (FloatTensor or NoneType): Shape
             ``(B, beam_size)``. Initialized to ``None``.
-        _coverage (torch.FloatTensor or NoneType): Shape
+        _coverage (FloatTensor or NoneType): Shape
             ``(1, B x beam_size, inp_seq_len)``.
-        hypotheses (list[list[Tuple[torch.Tensor]]]): Contains a tuple
+        hypotheses (list[list[Tuple[Tensor]]]): Contains a tuple
             of score (float), sequence (long), and attention (float or None).
     """
 

@@ -1,4 +1,4 @@
-# Library: Example
+# Library
 
 For this example, we will assume that we have run preprocess to
 create our datasets. For instance

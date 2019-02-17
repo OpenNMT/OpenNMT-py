@@ -1,5 +1,4 @@
-"""
-Ensemble decoding.
+"""Ensemble decoding.
 
 Decodes using multiple models simultaneously,
 combining their prediction distributions by averaging.
@@ -15,14 +14,13 @@ import onmt.model_builder
 
 
 class EnsembleDecoderOutput(object):
-    """ Wrapper around multiple decoder final hidden states """
+    """Wrapper around multiple decoder final hidden states."""
     def __init__(self, model_dec_outs):
         self.model_dec_outs = tuple(model_dec_outs)
 
     def squeeze(self, dim=None):
-        """
-        Delegate squeeze to avoid modifying
-        :obj:`Translator.translate_batch()`
+        """Delegate squeeze to avoid modifying
+        :func:`onmt.translate.translator.Translator.translate_batch()`
         """
         return EnsembleDecoderOutput([
             x.squeeze(dim) for x in self.model_dec_outs])
@@ -32,7 +30,7 @@ class EnsembleDecoderOutput(object):
 
 
 class EnsembleEncoder(EncoderBase):
-    """ Dummy Encoder that delegates to individual real Encoders """
+    """Dummy Encoder that delegates to individual real Encoders."""
     def __init__(self, model_encoders):
         super(EnsembleEncoder, self).__init__()
         self.model_encoders = nn.ModuleList(model_encoders)
@@ -45,13 +43,13 @@ class EnsembleEncoder(EncoderBase):
 
 
 class EnsembleDecoder(nn.Module):
-    """ Dummy Decoder that delegates to individual real Decoders """
+    """Dummy Decoder that delegates to individual real Decoders."""
     def __init__(self, model_decoders):
         super(EnsembleDecoder, self).__init__()
         self.model_decoders = nn.ModuleList(model_decoders)
 
     def forward(self, tgt, memory_bank, memory_lengths=None, step=None):
-        """ See :obj:`RNNDecoderBase.forward()` """
+        """See :func:`onmt.decoders.decoder.DecoderBase.forward()`."""
         # Memory_lengths is a single tensor shared between all models.
         # This assumption will not hold if Translator is modified
         # to calculate memory_lengths as something other than the length
@@ -107,7 +105,7 @@ class EnsembleGenerator(nn.Module):
 
 
 class EnsembleModel(NMTModel):
-    """ Dummy NMTModel wrapping individual real NMTModels """
+    """Dummy NMTModel wrapping individual real NMTModels."""
     def __init__(self, models, raw_probs=False):
         encoder = EnsembleEncoder(model.encoder for model in models)
         decoder = EnsembleDecoder(model.decoder for model in models)
@@ -118,7 +116,7 @@ class EnsembleModel(NMTModel):
 
 
 def load_test_model(opt):
-    """ Read in multiple models for ensemble """
+    """Read in multiple models for ensemble."""
     shared_fields = None
     shared_model_opt = None
     models = []

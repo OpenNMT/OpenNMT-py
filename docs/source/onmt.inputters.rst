@@ -1,8 +1,13 @@
-Doc: Data Loaders
+Data Loaders
 =================
 
-Datasets
----------
+Data Readers
+-------------
+
+.. autoexception:: onmt.inputters.datareader_base.MissingDependencyException
+
+.. autoclass:: onmt.inputters.DataReaderBase
+    :members:
 
 .. autoclass:: onmt.inputters.TextDataReader
     :members:
@@ -11,4 +16,11 @@ Datasets
     :members:
 
 .. autoclass:: onmt.inputters.AudioDataReader
+    :members:
+
+
+Dataset
+--------
+
+.. autoclass:: onmt.inputters.Dataset
     :members:

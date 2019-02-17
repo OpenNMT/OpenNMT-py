@@ -9,9 +9,7 @@ from onmt.utils.misc import generate_relative_positions_matrix,\
 
 
 class MultiHeadedAttention(nn.Module):
-    """
-    Multi-Head Attention module from
-    "Attention is All You Need"
+    """Multi-Head Attention module from "Attention is All You Need"
     :cite:`DBLP:journals/corr/VaswaniSPUJGKP17`.
 
     Similar to standard `dot` attention but uses
@@ -82,19 +80,19 @@ class MultiHeadedAttention(nn.Module):
         Compute the context vector and the attention vectors.
 
         Args:
-           key (`FloatTensor`): set of `key_len`
-                key vectors `[batch, key_len, dim]`
-           value (`FloatTensor`): set of `key_len`
-                value vectors `[batch, key_len, dim]`
-           query (`FloatTensor`): set of `query_len`
-                 query vectors  `[batch, query_len, dim]`
+           key (FloatTensor): set of `key_len`
+               key vectors ``(batch, key_len, dim)``
+           value (FloatTensor): set of `key_len`
+               value vectors ``(batch, key_len, dim)``
+           query (FloatTensor): set of `query_len`
+               query vectors  ``(batch, query_len, dim)``
            mask: binary mask indicating which keys have
-                 non-zero attention `[batch, query_len, key_len]`
+               non-zero attention ``(batch, query_len, key_len)``
         Returns:
-           (`FloatTensor`, `FloatTensor`) :
+           (FloatTensor, FloatTensor):
 
-           * output context vectors `[batch, query_len, dim]`
-           * one of the attention vectors `[batch, query_len, key_len]`
+           * output context vectors ``(batch, query_len, dim)``
+           * one of the attention vectors ``(batch, query_len, key_len)``
         """
 
         # CHECKS
@@ -122,12 +120,12 @@ class MultiHeadedAttention(nn.Module):
         device = key.device
 
         def shape(x):
-            """  projection """
+            """Projection."""
             return x.view(batch_size, -1, head_count, dim_per_head) \
                 .transpose(1, 2)
 
         def unshape(x):
-            """  compute context """
+            """Compute context."""
             return x.transpose(1, 2).contiguous() \
                     .view(batch_size, -1, head_count * dim_per_head)
 
