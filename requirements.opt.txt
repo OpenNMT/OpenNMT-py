@@ -8,4 +8,3 @@ pyrouge
 pyonmttok
 opencv-python
 git+https://github.com/NVIDIA/apex
-flask
