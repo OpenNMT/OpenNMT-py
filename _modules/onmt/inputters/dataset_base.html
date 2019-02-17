@@ -1,0 +1,371 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>onmt.inputters.dataset_base &mdash; OpenNMT-py  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> OpenNMT-py
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../main.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../CONTRIBUTING.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../ref.html">References</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../Library.html">Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../extended.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../Summarization.html">Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../im2text.html">Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../speech2text.html">Speech to Text</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Scripts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/preprocess.html">Preprocess</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/train.html">Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/translate.html">Translate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/server.html">Server</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.html">Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.translation.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.translate.translation_server.html">Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.inputters.html">Data Loaders</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">OpenNMT-py</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>onmt.inputters.dataset_base</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for onmt.inputters.dataset_base</h1><div class="highlight"><pre>
+<span></span><span class="c1"># coding: utf-8</span>
+
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="k">import</span> <span class="n">chain</span><span class="p">,</span> <span class="n">starmap</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">Counter</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">torchtext.data</span> <span class="k">import</span> <span class="n">Dataset</span> <span class="k">as</span> <span class="n">TorchtextDataset</span>
+<span class="kn">from</span> <span class="nn">torchtext.data</span> <span class="k">import</span> <span class="n">Example</span>
+<span class="kn">from</span> <span class="nn">torchtext.vocab</span> <span class="k">import</span> <span class="n">Vocab</span>
+
+
+<span class="k">def</span> <span class="nf">_join_dicts</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Args:</span>
+<span class="sd">        dictionaries with disjoint keys.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        a single dictionary that has the union of these keys.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">chain</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">args</span><span class="p">]))</span>
+
+
+<span class="k">def</span> <span class="nf">_dynamic_dict</span><span class="p">(</span><span class="n">example</span><span class="p">,</span> <span class="n">src_field</span><span class="p">,</span> <span class="n">tgt_field</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Create copy-vocab and numericalize with it.</span>
+
+<span class="sd">    In-place adds ``&quot;src_map&quot;`` to ``example``. That is the copy-vocab</span>
+<span class="sd">    numericalization of the tokenized ``example[&quot;src&quot;]``. If ``example``</span>
+<span class="sd">    has a ``&quot;tgt&quot;`` key, adds ``&quot;alignment&quot;`` to example. That is the</span>
+<span class="sd">    copy-vocab numericalization of the tokenized ``example[&quot;tgt&quot;]``. The</span>
+<span class="sd">    alignment has an initial and final UNK token to match the BOS and EOS</span>
+<span class="sd">    tokens.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        example (dict): An example dictionary with a ``&quot;src&quot;`` key and</span>
+<span class="sd">            maybe a ``&quot;tgt&quot;`` key. (This argument changes in place!)</span>
+<span class="sd">        src_field (torchtext.data.Field): Field object.</span>
+<span class="sd">        tgt_field (torchtext.data.Field): Field object.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        torchtext.data.Vocab and ``example``, changed as described.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">src</span> <span class="o">=</span> <span class="n">src_field</span><span class="o">.</span><span class="n">tokenize</span><span class="p">(</span><span class="n">example</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">])</span>
+    <span class="c1"># make a small vocab containing just the tokens in the source sequence</span>
+    <span class="n">unk</span> <span class="o">=</span> <span class="n">src_field</span><span class="o">.</span><span class="n">unk_token</span>
+    <span class="n">pad</span> <span class="o">=</span> <span class="n">src_field</span><span class="o">.</span><span class="n">pad_token</span>
+    <span class="n">src_ex_vocab</span> <span class="o">=</span> <span class="n">Vocab</span><span class="p">(</span><span class="n">Counter</span><span class="p">(</span><span class="n">src</span><span class="p">),</span> <span class="n">specials</span><span class="o">=</span><span class="p">[</span><span class="n">unk</span><span class="p">,</span> <span class="n">pad</span><span class="p">])</span>
+    <span class="n">unk_idx</span> <span class="o">=</span> <span class="n">src_ex_vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">unk</span><span class="p">]</span>
+    <span class="c1"># Map source tokens to indices in the dynamic dict.</span>
+    <span class="n">src_map</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">([</span><span class="n">src_ex_vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">w</span><span class="p">]</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">src</span><span class="p">])</span>
+    <span class="n">example</span><span class="p">[</span><span class="s2">&quot;src_map&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">src_map</span>
+
+    <span class="k">if</span> <span class="s2">&quot;tgt&quot;</span> <span class="ow">in</span> <span class="n">example</span><span class="p">:</span>
+        <span class="n">tgt</span> <span class="o">=</span> <span class="n">tgt_field</span><span class="o">.</span><span class="n">tokenize</span><span class="p">(</span><span class="n">example</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">])</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">unk_idx</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">src_ex_vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">w</span><span class="p">]</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">tgt</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">unk_idx</span><span class="p">])</span>
+        <span class="n">example</span><span class="p">[</span><span class="s2">&quot;alignment&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mask</span>
+    <span class="k">return</span> <span class="n">src_ex_vocab</span><span class="p">,</span> <span class="n">example</span>
+
+
+<div class="viewcode-block" id="Dataset"><a class="viewcode-back" href="../../../onmt.inputters.html#onmt.inputters.Dataset">[docs]</a><span class="k">class</span> <span class="nc">Dataset</span><span class="p">(</span><span class="n">TorchtextDataset</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Contain data and process it.</span>
+
+<span class="sd">    A dataset is an object that accepts sequences of raw data (sentence pairs</span>
+<span class="sd">    in the case of machine translation) and fields which describe how this</span>
+<span class="sd">    raw data should be processed to produce tensors. When a dataset is</span>
+<span class="sd">    instantiated, it applies the fields&#39; preprocessing pipeline (but not</span>
+<span class="sd">    the bit that numericalizes it or turns it into batch tensors) to the raw</span>
+<span class="sd">    data, producing a list of :class:`torchtext.data.Example` objects.</span>
+<span class="sd">    torchtext&#39;s iterators then know how to use these examples to make batches.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        fields (dict[str, Field]): a dict with the structure</span>
+<span class="sd">            returned by :func:`onmt.inputters.get_fields()`. Usually</span>
+<span class="sd">            that means the dataset side, ``&quot;src&quot;`` or ``&quot;tgt&quot;``. Keys match</span>
+<span class="sd">            the keys of items yielded by the ``readers``, while values</span>
+<span class="sd">            are lists of (name, Field) pairs. An attribute with this</span>
+<span class="sd">            name will be created for each :class:`torchtext.data.Example`</span>
+<span class="sd">            object and its value will be the result of applying the Field</span>
+<span class="sd">            to the data that matches the key. The advantage of having</span>
+<span class="sd">            sequences of fields for each piece of raw input is that it allows</span>
+<span class="sd">            the dataset to store multiple &quot;views&quot; of each input, which allows</span>
+<span class="sd">            for easy implementation of token-level features, mixed word-</span>
+<span class="sd">            and character-level models, and so on. (See also</span>
+<span class="sd">            :class:`onmt.inputters.TextMultiField`.)</span>
+<span class="sd">        readers (Iterable[onmt.inputters.DataReaderBase]): Reader objects</span>
+<span class="sd">            for disk-to-dict. The yielded dicts are then processed</span>
+<span class="sd">            according to ``fields``.</span>
+<span class="sd">        data (Iterable[Tuple[str, Any]]): (name, ``data_arg``) pairs</span>
+<span class="sd">            where ``data_arg`` is passed to the ``read()`` method of the</span>
+<span class="sd">            reader in ``readers`` at that position. (See the reader object for</span>
+<span class="sd">            details on the ``Any`` type.)</span>
+<span class="sd">        dirs (Iterable[str or NoneType]): A list of directories where</span>
+<span class="sd">            data is contained. See the reader object for more details.</span>
+<span class="sd">        sort_key (Callable[[torchtext.data.Example], Any]): A function</span>
+<span class="sd">            for determining the value on which data is sorted (i.e. length).</span>
+<span class="sd">        filter_pred (Callable[[torchtext.data.Example], bool]): A function</span>
+<span class="sd">            that accepts Example objects and returns a boolean value</span>
+<span class="sd">            indicating whether to include that example in the dataset.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        src_vocabs (List[torchtext.data.Vocab]): Used with dynamic dict/copy</span>
+<span class="sd">            attention. There is a very short vocab for each src example.</span>
+<span class="sd">            It contains just the source words, e.g. so that the generator can</span>
+<span class="sd">            predict to copy them.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">readers</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">dirs</span><span class="p">,</span> <span class="n">sort_key</span><span class="p">,</span>
+                 <span class="n">filter_pred</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sort_key</span> <span class="o">=</span> <span class="n">sort_key</span>
+        <span class="n">can_copy</span> <span class="o">=</span> <span class="s1">&#39;src_map&#39;</span> <span class="ow">in</span> <span class="n">fields</span> <span class="ow">and</span> <span class="s1">&#39;alignment&#39;</span> <span class="ow">in</span> <span class="n">fields</span>
+
+        <span class="n">read_iters</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">dat</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">dat</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dir_</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span><span class="p">,</span> <span class="n">dat</span><span class="p">,</span> <span class="n">dir_</span>
+                      <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">readers</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">dirs</span><span class="p">)]</span>
+
+        <span class="c1"># self.src_vocabs is used in collapse_copy_scores and Translator.py</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">src_vocabs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">examples</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">ex_dict</span> <span class="ow">in</span> <span class="n">starmap</span><span class="p">(</span><span class="n">_join_dicts</span><span class="p">,</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">read_iters</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">can_copy</span><span class="p">:</span>
+                <span class="n">src_field</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">]</span>
+                <span class="n">tgt_field</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span>
+                <span class="c1"># this assumes src_field and tgt_field are both text</span>
+                <span class="n">src_ex_vocab</span><span class="p">,</span> <span class="n">ex_dict</span> <span class="o">=</span> <span class="n">_dynamic_dict</span><span class="p">(</span>
+                    <span class="n">ex_dict</span><span class="p">,</span> <span class="n">src_field</span><span class="o">.</span><span class="n">base_field</span><span class="p">,</span> <span class="n">tgt_field</span><span class="o">.</span><span class="n">base_field</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">src_vocabs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">src_ex_vocab</span><span class="p">)</span>
+            <span class="n">ex_fields</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="p">[(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)]</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">fields</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span>
+                         <span class="n">k</span> <span class="ow">in</span> <span class="n">ex_dict</span><span class="p">}</span>
+            <span class="n">ex</span> <span class="o">=</span> <span class="n">Example</span><span class="o">.</span><span class="n">fromdict</span><span class="p">(</span><span class="n">ex_dict</span><span class="p">,</span> <span class="n">ex_fields</span><span class="p">)</span>
+            <span class="n">examples</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span>
+
+        <span class="c1"># fields needs to have only keys that examples have as attrs</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">nf_list</span> <span class="ow">in</span> <span class="n">ex_fields</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">nf_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+            <span class="n">fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nf_list</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">Dataset</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">examples</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">filter_pred</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
+        <span class="c1"># avoid infinite recursion when fields isn&#39;t defined</span>
+        <span class="k">if</span> <span class="s1">&#39;fields&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span>
+        <span class="k">if</span> <span class="n">attr</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">examples</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span>
+
+    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">remove_fields</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">remove_fields</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fields</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, srush
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

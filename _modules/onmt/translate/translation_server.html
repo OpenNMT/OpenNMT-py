@@ -1,0 +1,768 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>onmt.translate.translation_server &mdash; OpenNMT-py  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> OpenNMT-py
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../main.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../CONTRIBUTING.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../ref.html">References</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../Library.html">Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../extended.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../Summarization.html">Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../im2text.html">Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../speech2text.html">Speech to Text</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Scripts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/preprocess.html">Preprocess</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/train.html">Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/translate.html">Translate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/server.html">Server</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.html">Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.translation.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.translate.translation_server.html">Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.inputters.html">Data Loaders</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">OpenNMT-py</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>onmt.translate.translation_server</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for onmt.translate.translation_server</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+<span class="sd">&quot;&quot;&quot;REST Translation server.&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">traceback</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">onmt.opts</span>
+
+<span class="kn">from</span> <span class="nn">onmt.utils.logging</span> <span class="k">import</span> <span class="n">init_logger</span>
+<span class="kn">from</span> <span class="nn">onmt.utils.misc</span> <span class="k">import</span> <span class="n">set_random_seed</span>
+<span class="kn">from</span> <span class="nn">onmt.utils.parse</span> <span class="k">import</span> <span class="n">ArgumentParser</span>
+<span class="kn">from</span> <span class="nn">onmt.translate.translator</span> <span class="k">import</span> <span class="n">build_translator</span>
+
+
+<span class="k">def</span> <span class="nf">critical</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Decorator for critical section (mutually exclusive code)&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="n">server_model</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">server_model</span><span class="o">.</span><span class="n">running_lock</span><span class="o">.</span><span class="n">acquire</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="mi">120</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">ServerModelError</span><span class="p">(</span><span class="s2">&quot;Model </span><span class="si">%d</span><span class="s2"> running lock timeout&quot;</span>
+                                       <span class="o">%</span> <span class="n">server_model</span><span class="o">.</span><span class="n">model_id</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># semaphore doesn&#39;t have a timeout arg in Python 2.7</span>
+            <span class="n">server_model</span><span class="o">.</span><span class="n">running_lock</span><span class="o">.</span><span class="n">acquire</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">o</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">server_model</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">Exception</span><span class="p">,</span> <span class="ne">RuntimeError</span><span class="p">):</span>
+            <span class="n">server_model</span><span class="o">.</span><span class="n">running_lock</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+            <span class="k">raise</span>
+        <span class="n">server_model</span><span class="o">.</span><span class="n">running_lock</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">o</span>
+    <span class="k">return</span> <span class="n">wrapper</span>
+
+
+<div class="viewcode-block" id="Timer"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.Timer">[docs]</a><span class="k">class</span> <span class="nc">Timer</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stime</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prev</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">times</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">start</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prev</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stime</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">times</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span> <span class="nf">tick</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tot</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">tot</span><span class="p">:</span>
+            <span class="n">elapsed</span> <span class="o">=</span> <span class="n">t</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">prev</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">elapsed</span> <span class="o">=</span> <span class="n">t</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">stime</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prev</span> <span class="o">=</span> <span class="n">t</span>
+
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">times</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">elapsed</span>
+        <span class="k">return</span> <span class="n">elapsed</span></div>
+
+
+<div class="viewcode-block" id="ServerModelError"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModelError">[docs]</a><span class="k">class</span> <span class="nc">ServerModelError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="TranslationServer"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.TranslationServer">[docs]</a><span class="k">class</span> <span class="nc">TranslationServer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">models</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">next_id</span> <span class="o">=</span> <span class="mi">0</span>
+
+<div class="viewcode-block" id="TranslationServer.start"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.TranslationServer.start">[docs]</a>    <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config_file</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Read the config file and pre-/load the models.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config_file</span> <span class="o">=</span> <span class="n">config_file</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config_file</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">confs</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">models_root</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">confs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;models_root&#39;</span><span class="p">,</span> <span class="s1">&#39;./available_models&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">conf</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">confs</span><span class="p">[</span><span class="s2">&quot;models&quot;</span><span class="p">]):</span>
+            <span class="k">if</span> <span class="s2">&quot;models&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">conf</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s2">&quot;model&quot;</span> <span class="ow">in</span> <span class="n">conf</span><span class="p">:</span>
+                    <span class="c1"># backwards compatibility for confs</span>
+                    <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;models&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">conf</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">]]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;Incorrect config file: missing &#39;models&#39;</span>
+<span class="s2">                                        parameter for model #</span><span class="si">%d</span><span class="s2">&quot;&quot;&quot;</span> <span class="o">%</span> <span class="n">i</span><span class="p">)</span>
+            <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;timeout&#39;</span><span class="p">:</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;timeout&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+                      <span class="s1">&#39;load&#39;</span><span class="p">:</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;load&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+                      <span class="s1">&#39;tokenizer_opt&#39;</span><span class="p">:</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;tokenizer&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+                      <span class="s1">&#39;on_timeout&#39;</span><span class="p">:</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;on_timeout&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+                      <span class="s1">&#39;model_root&#39;</span><span class="p">:</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;model_root&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">models_root</span><span class="p">)</span>
+                      <span class="p">}</span>
+            <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">}</span>
+            <span class="n">model_id</span> <span class="o">=</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">opt</span> <span class="o">=</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;opt&quot;</span><span class="p">]</span>
+            <span class="n">opt</span><span class="p">[</span><span class="s2">&quot;models&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;models&quot;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">preload_model</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">model_id</span><span class="o">=</span><span class="n">model_id</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TranslationServer.clone_model"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.TranslationServer.clone_model">[docs]</a>    <span class="k">def</span> <span class="nf">clone_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_id</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Clone a model `model_id`.</span>
+
+<span class="sd">        Different options may be passed. If `opt` is None, it will use the</span>
+<span class="sd">        same set of options</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">model_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">opt</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">opt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">[</span><span class="n">model_id</span><span class="p">]</span><span class="o">.</span><span class="n">user_opt</span>
+            <span class="n">opt</span><span class="p">[</span><span class="s2">&quot;models&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">[</span><span class="n">model_id</span><span class="p">]</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">models</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_model</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ServerModelError</span><span class="p">(</span><span class="s2">&quot;No such model &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">model_id</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="TranslationServer.load_model"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.TranslationServer.load_model">[docs]</a>    <span class="k">def</span> <span class="nf">load_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">model_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">model_kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Load a model given a set of options</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">model_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">preload_model</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">model_id</span><span class="o">=</span><span class="n">model_id</span><span class="p">,</span> <span class="o">**</span><span class="n">model_kwargs</span><span class="p">)</span>
+        <span class="n">load_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">[</span><span class="n">model_id</span><span class="p">]</span><span class="o">.</span><span class="n">load_time</span>
+
+        <span class="k">return</span> <span class="n">model_id</span><span class="p">,</span> <span class="n">load_time</span></div>
+
+<div class="viewcode-block" id="TranslationServer.preload_model"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.TranslationServer.preload_model">[docs]</a>    <span class="k">def</span> <span class="nf">preload_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">model_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">model_kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Preloading the model: updating internal datastructure</span>
+
+<span class="sd">        It will effectively load the model if `load` is set</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">model_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">model_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Model ID </span><span class="si">%d</span><span class="s2"> already exists&quot;</span> <span class="o">%</span> <span class="n">model_id</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">model_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">next_id</span>
+            <span class="k">while</span> <span class="n">model_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">model_id</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">next_id</span> <span class="o">=</span> <span class="n">model_id</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Pre-loading model </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">model_id</span><span class="p">)</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">ServerModel</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">model_id</span><span class="p">,</span> <span class="o">**</span><span class="n">model_kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">[</span><span class="n">model_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">model</span>
+
+        <span class="k">return</span> <span class="n">model_id</span></div>
+
+<div class="viewcode-block" id="TranslationServer.run"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.TranslationServer.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Translate `inputs`</span>
+
+<span class="sd">        We keep the same format as the Lua version i.e.</span>
+<span class="sd">        ``[{&quot;id&quot;: model_id, &quot;src&quot;: &quot;sequence to translate&quot;},{ ...}]``</span>
+
+<span class="sd">        We use inputs[0][&quot;id&quot;] as the model id</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">model_id</span> <span class="o">=</span> <span class="n">inputs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">model_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">[</span><span class="n">model_id</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">[</span><span class="n">model_id</span><span class="p">]</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Error No such model &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">model_id</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="n">ServerModelError</span><span class="p">(</span><span class="s2">&quot;No such model &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">model_id</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="TranslationServer.unload_model"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.TranslationServer.unload_model">[docs]</a>    <span class="k">def</span> <span class="nf">unload_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Manually unload a model.</span>
+
+<span class="sd">        It will free the memory and cancel the timer</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">model_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">[</span><span class="n">model_id</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">[</span><span class="n">model_id</span><span class="p">]</span><span class="o">.</span><span class="n">unload</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ServerModelError</span><span class="p">(</span><span class="s2">&quot;No such model &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">model_id</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="TranslationServer.list_models"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.TranslationServer.list_models">[docs]</a>    <span class="k">def</span> <span class="nf">list_models</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the list of available models</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">models</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">model</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">models</span> <span class="o">+=</span> <span class="p">[</span><span class="n">model</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()]</span>
+        <span class="k">return</span> <span class="n">models</span></div></div>
+
+
+<div class="viewcode-block" id="ServerModel"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel">[docs]</a><span class="k">class</span> <span class="nc">ServerModel</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Wrap a model with server functionality.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        opt (dict): Options for the Translator</span>
+<span class="sd">        model_id (int): Model ID</span>
+<span class="sd">        tokenizer_opt (dict): Options for the tokenizer or None</span>
+<span class="sd">        load (bool): whether to load the model during :func:`__init__()`</span>
+<span class="sd">        timeout (int): Seconds before running :func:`do_timeout()`</span>
+<span class="sd">            Negative values means no timeout</span>
+<span class="sd">        on_timeout (str): Options are [&quot;to_cpu&quot;, &quot;unload&quot;]. Set what to do on</span>
+<span class="sd">            timeout (see :func:`do_timeout()`.)</span>
+<span class="sd">        model_root (str): Path to the model directory</span>
+<span class="sd">            it must contain the model and tokenizer file</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">model_id</span><span class="p">,</span> <span class="n">tokenizer_opt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">load</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">timeout</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">on_timeout</span><span class="o">=</span><span class="s2">&quot;to_cpu&quot;</span><span class="p">,</span> <span class="n">model_root</span><span class="o">=</span><span class="s2">&quot;./&quot;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_root</span> <span class="o">=</span> <span class="n">model_root</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_opt</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">n_best</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Values of n_best &gt; 1 are not supported&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_id</span> <span class="o">=</span> <span class="n">model_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span> <span class="o">=</span> <span class="n">tokenizer_opt</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span> <span class="o">=</span> <span class="n">timeout</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">on_timeout</span> <span class="o">=</span> <span class="n">on_timeout</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">unload_timer</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user_opt</span> <span class="o">=</span> <span class="n">opt</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">log_file</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">log_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">model_root</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">log_file</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">log_file</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">init_logger</span><span class="p">(</span><span class="n">log_file</span><span class="o">=</span><span class="n">log_file</span><span class="p">,</span>
+                                  <span class="n">log_file_level</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">log_file_level</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">loading_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Event</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loading_lock</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">running_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Semaphore</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">set_random_seed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">seed</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">cuda</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">load</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+
+<div class="viewcode-block" id="ServerModel.parse_opt"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.parse_opt">[docs]</a>    <span class="k">def</span> <span class="nf">parse_opt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">opt</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Parse the option set passed by the user using `onmt.opts`</span>
+
+<span class="sd">       Args:</span>
+<span class="sd">           opt (dict): Options passed by the user</span>
+
+<span class="sd">       Returns:</span>
+<span class="sd">           opt (argparse.Namespace): full set of options for the Translator</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">prec_argv</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[:</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">()</span>
+        <span class="n">onmt</span><span class="o">.</span><span class="n">opts</span><span class="o">.</span><span class="n">translate_opts</span><span class="p">(</span><span class="n">parser</span><span class="p">)</span>
+
+        <span class="n">models</span> <span class="o">=</span> <span class="n">opt</span><span class="p">[</span><span class="s1">&#39;models&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">models</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+            <span class="n">models</span> <span class="o">=</span> <span class="p">[</span><span class="n">models</span><span class="p">]</span>
+        <span class="n">opt</span><span class="p">[</span><span class="s1">&#39;models&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_root</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
+                         <span class="k">for</span> <span class="n">model</span> <span class="ow">in</span> <span class="n">models</span><span class="p">]</span>
+        <span class="n">opt</span><span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;dummy_src&quot;</span>
+
+        <span class="k">for</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="n">opt</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="s1">&#39;models&#39;</span><span class="p">:</span>
+                <span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="o">+=</span> <span class="p">[</span><span class="s1">&#39;-model&#39;</span><span class="p">]</span>
+                <span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="o">+=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">model</span><span class="p">)</span> <span class="k">for</span> <span class="n">model</span> <span class="ow">in</span> <span class="n">v</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">==</span> <span class="nb">bool</span><span class="p">:</span>
+                <span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="o">+=</span> <span class="p">[</span><span class="s1">&#39;-</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">k</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="o">+=</span> <span class="p">[</span><span class="s1">&#39;-</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">k</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)]</span>
+
+        <span class="n">opt</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+        <span class="n">ArgumentParser</span><span class="o">.</span><span class="n">validate_translate_opts</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
+        <span class="n">opt</span><span class="o">.</span><span class="n">cuda</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">gpu</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">1</span>
+
+        <span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="n">prec_argv</span>
+        <span class="k">return</span> <span class="n">opt</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">loaded</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;translator&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loading_lock</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+
+        <span class="n">timer</span> <span class="o">=</span> <span class="n">Timer</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading model </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_id</span><span class="p">)</span>
+        <span class="n">timer</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">translator</span> <span class="o">=</span> <span class="n">build_translator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="p">,</span>
+                                               <span class="n">report_score</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                               <span class="n">out_file</span><span class="o">=</span><span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">devnull</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">RuntimeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ServerModelError</span><span class="p">(</span><span class="s2">&quot;Runtime Error: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+
+        <span class="n">timer</span><span class="o">.</span><span class="n">tick</span><span class="p">(</span><span class="s2">&quot;model_loading&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading tokenizer&quot;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="s2">&quot;type&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Missing mandatory tokenizer option &#39;type&#39;&quot;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;sentencepiece&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s2">&quot;model&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="s2">&quot;Missing mandatory tokenizer option &#39;model&#39;&quot;</span><span class="p">)</span>
+                <span class="kn">import</span> <span class="nn">sentencepiece</span> <span class="k">as</span> <span class="nn">spm</span>
+                <span class="n">sp</span> <span class="o">=</span> <span class="n">spm</span><span class="o">.</span><span class="n">SentencePieceProcessor</span><span class="p">()</span>
+                <span class="n">model_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_root</span><span class="p">,</span>
+                                          <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span><span class="p">[</span><span class="s1">&#39;model&#39;</span><span class="p">])</span>
+                <span class="n">sp</span><span class="o">.</span><span class="n">Load</span><span class="p">(</span><span class="n">model_path</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span> <span class="o">=</span> <span class="n">sp</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;pyonmttok&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s2">&quot;params&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="s2">&quot;Missing mandatory tokenizer option &#39;params&#39;&quot;</span><span class="p">)</span>
+                <span class="kn">import</span> <span class="nn">pyonmttok</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span><span class="p">[</span><span class="s2">&quot;mode&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span><span class="p">[</span><span class="s2">&quot;mode&quot;</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">mode</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="c1"># load can be called multiple times: modify copy</span>
+                <span class="n">tokenizer_params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">])</span>
+                <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;path&quot;</span><span class="p">):</span>
+                        <span class="n">tokenizer_params</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">model_root</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+                <span class="n">tokenizer</span> <span class="o">=</span> <span class="n">pyonmttok</span><span class="o">.</span><span class="n">Tokenizer</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span>
+                                                <span class="o">**</span><span class="n">tokenizer_params</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span> <span class="o">=</span> <span class="n">tokenizer</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid value for tokenizer type&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">load_time</span> <span class="o">=</span> <span class="n">timer</span><span class="o">.</span><span class="n">tick</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reset_unload_timer</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loading_lock</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
+
+    <span class="nd">@critical</span>
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Translate `inputs` using this model</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            inputs (List[dict[str, str]]): [{&quot;src&quot;: &quot;...&quot;},{&quot;src&quot;: ...}]</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            result (list): translations</span>
+<span class="sd">            times (dict): containing times</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">stop_unload_timer</span><span class="p">()</span>
+
+        <span class="n">timer</span> <span class="o">=</span> <span class="n">Timer</span><span class="p">()</span>
+        <span class="n">timer</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Running translation using </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_id</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">loading_lock</span><span class="o">.</span><span class="n">is_set</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="s2">&quot;Model #</span><span class="si">%d</span><span class="s2"> is being loaded by another thread, waiting&quot;</span>
+                <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_id</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">loading_lock</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mi">30</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">ServerModelError</span><span class="p">(</span><span class="s2">&quot;Model </span><span class="si">%d</span><span class="s2"> loading timeout&quot;</span>
+                                       <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_id</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">loaded</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+                <span class="n">timer</span><span class="o">.</span><span class="n">tick</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;load&quot;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">cuda</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">to_gpu</span><span class="p">()</span>
+                <span class="n">timer</span><span class="o">.</span><span class="n">tick</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;to_gpu&quot;</span><span class="p">)</span>
+
+        <span class="n">texts</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">head_spaces</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">tail_spaces</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">sslength</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">inp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">inputs</span><span class="p">):</span>
+            <span class="n">src</span> <span class="o">=</span> <span class="n">inp</span><span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">src</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+                <span class="n">head_spaces</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">src</span><span class="p">)</span>
+                <span class="n">texts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="n">tail_spaces</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">whitespaces_before</span><span class="p">,</span> <span class="n">whitespaces_after</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span>
+                <span class="n">match_before</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^\s+&#39;</span><span class="p">,</span> <span class="n">src</span><span class="p">)</span>
+                <span class="n">match_after</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\s+$&#39;</span><span class="p">,</span> <span class="n">src</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">match_before</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">whitespaces_before</span> <span class="o">=</span> <span class="n">match_before</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">match_after</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">whitespaces_after</span> <span class="o">=</span> <span class="n">match_after</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">head_spaces</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">whitespaces_before</span><span class="p">)</span>
+                <span class="n">tok</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maybe_tokenize</span><span class="p">(</span><span class="n">src</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+                <span class="n">texts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tok</span><span class="p">)</span>
+                <span class="n">sslength</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tok</span><span class="o">.</span><span class="n">split</span><span class="p">()))</span>
+                <span class="n">tail_spaces</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">whitespaces_after</span><span class="p">)</span>
+
+        <span class="n">empty_indices</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">texts</span><span class="p">)</span> <span class="k">if</span> <span class="n">x</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">]</span>
+        <span class="n">texts_to_translate</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">texts</span> <span class="k">if</span> <span class="n">x</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">]</span>
+
+        <span class="n">scores</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">predictions</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">texts_to_translate</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">scores</span><span class="p">,</span> <span class="n">predictions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span>
+                    <span class="n">texts_to_translate</span><span class="p">,</span>
+                    <span class="n">batch_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">batch_size</span><span class="p">)</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">RuntimeError</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">err</span> <span class="o">=</span> <span class="s2">&quot;Error: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;repr(text_to_translate): &quot;</span>
+                                  <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="n">texts_to_translate</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;model: #</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_id</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;model opt: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">())</span>
+
+                <span class="k">raise</span> <span class="n">ServerModelError</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+
+        <span class="n">timer</span><span class="o">.</span><span class="n">tick</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;translation&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;Using model #</span><span class="si">%d</span><span class="se">\t</span><span class="si">%d</span><span class="s2"> inputs</span>
+<span class="s2">               </span><span class="se">\t</span><span class="s2">translation time: </span><span class="si">%f</span><span class="s2">&quot;&quot;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_id</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">texts</span><span class="p">),</span>
+                                            <span class="n">timer</span><span class="o">.</span><span class="n">times</span><span class="p">[</span><span class="s1">&#39;translation&#39;</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reset_unload_timer</span><span class="p">()</span>
+
+        <span class="c1"># NOTE: translator returns lists of `n_best` list</span>
+        <span class="c1">#       we can ignore that (i.e. flatten lists) only because</span>
+        <span class="c1">#       we restrict `n_best=1`</span>
+        <span class="k">def</span> <span class="nf">flatten_list</span><span class="p">(</span><span class="n">_list</span><span class="p">):</span> <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">_list</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">flatten_list</span><span class="p">(</span><span class="n">predictions</span><span class="p">)</span>
+        <span class="n">scores</span> <span class="o">=</span> <span class="p">[</span><span class="n">score_tensor</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+                  <span class="k">for</span> <span class="n">score_tensor</span> <span class="ow">in</span> <span class="n">flatten_list</span><span class="p">(</span><span class="n">scores</span><span class="p">)]</span>
+
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">maybe_detokenize</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+                   <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">results</span><span class="p">]</span>
+
+        <span class="c1"># build back results with empty texts</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">empty_indices</span><span class="p">:</span>
+            <span class="n">results</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="n">scores</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
+                   <span class="k">for</span> <span class="n">items</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">head_spaces</span><span class="p">,</span> <span class="n">results</span><span class="p">,</span> <span class="n">tail_spaces</span><span class="p">)]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Translation Results: </span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">results</span><span class="p">,</span> <span class="n">scores</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">n_best</span><span class="p">,</span> <span class="n">timer</span><span class="o">.</span><span class="n">times</span>
+
+<div class="viewcode-block" id="ServerModel.do_timeout"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.do_timeout">[docs]</a>    <span class="k">def</span> <span class="nf">do_timeout</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Timeout function that frees GPU memory.</span>
+
+<span class="sd">        Moves the model to CPU or unloads it; depending on</span>
+<span class="sd">        attr`self.on_timemout` value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_timeout</span> <span class="o">==</span> <span class="s2">&quot;unload&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Timeout: unloading model </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_id</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">unload</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_timeout</span> <span class="o">==</span> <span class="s2">&quot;to_cpu&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Timeout: sending model </span><span class="si">%d</span><span class="s2"> to CPU&quot;</span>
+                             <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_id</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">to_cpu</span><span class="p">()</span></div>
+
+    <span class="nd">@critical</span>
+    <span class="k">def</span> <span class="nf">unload</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Unloading model </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_id</span><span class="p">)</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">translator</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">cuda</span><span class="p">:</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">empty_cache</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">unload_timer</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">stop_unload_timer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">unload_timer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">unload_timer</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">reset_unload_timer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">stop_unload_timer</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">unload_timer</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Timer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">timeout</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_timeout</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">unload_timer</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">hide_opt</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;models&quot;</span><span class="p">,</span> <span class="s2">&quot;src&quot;</span><span class="p">]</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;model_id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_id</span><span class="p">,</span>
+             <span class="s2">&quot;opt&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">user_opt</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">user_opt</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+                     <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">hide_opt</span><span class="p">},</span>
+             <span class="s2">&quot;models&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">user_opt</span><span class="p">[</span><span class="s2">&quot;models&quot;</span><span class="p">],</span>
+             <span class="s2">&quot;loaded&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">loaded</span><span class="p">,</span>
+             <span class="s2">&quot;timeout&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span><span class="p">,</span>
+             <span class="p">}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">d</span><span class="p">[</span><span class="s2">&quot;tokenizer&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span>
+        <span class="k">return</span> <span class="n">d</span>
+
+    <span class="nd">@critical</span>
+    <span class="k">def</span> <span class="nf">to_cpu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Move the model to CPU and clear CUDA cache.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">cuda</span><span class="p">:</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">empty_cache</span><span class="p">()</span>
+
+<div class="viewcode-block" id="ServerModel.to_gpu"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.to_gpu">[docs]</a>    <span class="k">def</span> <span class="nf">to_gpu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Move the model to GPU.&quot;&quot;&quot;</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">set_device</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">gpu</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">cuda</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ServerModel.maybe_tokenize"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.maybe_tokenize">[docs]</a>    <span class="k">def</span> <span class="nf">maybe_tokenize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tokenize the sequence (or not).</span>
+
+<span class="sd">        Same args/returns as `tokenize`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenize</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">sequence</span></div>
+
+<div class="viewcode-block" id="ServerModel.tokenize"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.tokenize">[docs]</a>    <span class="k">def</span> <span class="nf">tokenize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tokenize a single sequence.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            sequence (str): The sequence to tokenize.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tok (str): The tokenized sequence.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No tokenizer loaded&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;sentencepiece&quot;</span><span class="p">:</span>
+            <span class="n">tok</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">EncodeAsPieces</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span>
+            <span class="n">tok</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tok</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;pyonmttok&quot;</span><span class="p">:</span>
+            <span class="n">tok</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">tokenize</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span>
+            <span class="n">tok</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tok</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tok</span></div>
+
+<div class="viewcode-block" id="ServerModel.maybe_detokenize"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.maybe_detokenize">[docs]</a>    <span class="k">def</span> <span class="nf">maybe_detokenize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;De-tokenize the sequence (or not)</span>
+
+<span class="sd">        Same args/returns as :func:`tokenize()`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">sequence</span><span class="o">.</span><span class="n">split</span><span class="p">())</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">detokenize</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">sequence</span></div>
+
+<div class="viewcode-block" id="ServerModel.detokenize"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.detokenize">[docs]</a>    <span class="k">def</span> <span class="nf">detokenize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Detokenize a single sequence</span>
+
+<span class="sd">        Same args/returns as :func:`tokenize()`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No tokenizer loaded&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;sentencepiece&quot;</span><span class="p">:</span>
+            <span class="n">detok</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">DecodePieces</span><span class="p">(</span><span class="n">sequence</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;pyonmttok&quot;</span><span class="p">:</span>
+            <span class="n">detok</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">detokenize</span><span class="p">(</span><span class="n">sequence</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+
+        <span class="k">return</span> <span class="n">detok</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, srush
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

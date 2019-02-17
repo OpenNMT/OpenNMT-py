@@ -1,0 +1,369 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>onmt.translate.random_sampling &mdash; OpenNMT-py  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> OpenNMT-py
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../main.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../CONTRIBUTING.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../ref.html">References</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../Library.html">Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../extended.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../Summarization.html">Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../im2text.html">Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../speech2text.html">Speech to Text</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Scripts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/preprocess.html">Preprocess</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/train.html">Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/translate.html">Translate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/server.html">Server</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.html">Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.translation.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.translate.translation_server.html">Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.inputters.html">Data Loaders</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">OpenNMT-py</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>onmt.translate.random_sampling</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for onmt.translate.random_sampling</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">torch</span>
+
+<span class="kn">from</span> <span class="nn">onmt.translate.decode_strategy</span> <span class="k">import</span> <span class="n">DecodeStrategy</span>
+
+
+<div class="viewcode-block" id="sample_with_temperature"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.random_sampling.sample_with_temperature">[docs]</a><span class="k">def</span> <span class="nf">sample_with_temperature</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="n">sampling_temp</span><span class="p">,</span> <span class="n">keep_topk</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Select next tokens randomly from the top k possible next tokens.</span>
+
+<span class="sd">    Samples from a categorical distribution over the ``keep_topk`` words using</span>
+<span class="sd">    the category probabilities ``logits / sampling_temp``.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        logits (FloatTensor): Shaped ``(batch_size, vocab_size)``.</span>
+<span class="sd">            These can be logits (``(-inf, inf)``) or log-probs (``(-inf, 0]``).</span>
+<span class="sd">            (The distribution actually uses the log-probabilities</span>
+<span class="sd">            ``logits - logits.logsumexp(-1)``, which equals the logits if</span>
+<span class="sd">            they are log-probabilities summing to 1.)</span>
+<span class="sd">        sampling_temp (float): Used to scale down logits. The higher the</span>
+<span class="sd">            value, the more likely it is that a non-max word will be</span>
+<span class="sd">            sampled.</span>
+<span class="sd">        keep_topk (int): This many words could potentially be chosen. The</span>
+<span class="sd">            other logits are set to have probability 0.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        (LongTensor, FloatTensor):</span>
+
+<span class="sd">        * topk_ids: Shaped ``(batch_size, 1)``. These are</span>
+<span class="sd">          the sampled word indices in the output vocab.</span>
+<span class="sd">        * topk_scores: Shaped ``(batch_size, 1)``. These</span>
+<span class="sd">          are essentially ``(logits / sampling_temp)[topk_ids]``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">sampling_temp</span> <span class="o">==</span> <span class="mf">0.0</span> <span class="ow">or</span> <span class="n">keep_topk</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="c1"># For temp=0.0, take the argmax to avoid divide-by-zero errors.</span>
+        <span class="c1"># keep_topk=1 is also equivalent to argmax.</span>
+        <span class="n">topk_scores</span><span class="p">,</span> <span class="n">topk_ids</span> <span class="o">=</span> <span class="n">logits</span><span class="o">.</span><span class="n">topk</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">sampling_temp</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">topk_scores</span> <span class="o">/=</span> <span class="n">sampling_temp</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">logits</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="n">sampling_temp</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">keep_topk</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">top_values</span><span class="p">,</span> <span class="n">top_indices</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">topk</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="n">keep_topk</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">kth_best</span> <span class="o">=</span> <span class="n">top_values</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">view</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="n">kth_best</span> <span class="o">=</span> <span class="n">kth_best</span><span class="o">.</span><span class="n">repeat</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="n">logits</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+
+            <span class="c1"># Set all logits that are not in the top-k to -10000.</span>
+            <span class="c1"># This puts the probabilities close to 0.</span>
+            <span class="n">ignore</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">lt</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="n">kth_best</span><span class="p">)</span>
+            <span class="n">logits</span> <span class="o">=</span> <span class="n">logits</span><span class="o">.</span><span class="n">masked_fill</span><span class="p">(</span><span class="n">ignore</span><span class="p">,</span> <span class="o">-</span><span class="mi">10000</span><span class="p">)</span>
+
+        <span class="n">dist</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">Multinomial</span><span class="p">(</span>
+            <span class="n">logits</span><span class="o">=</span><span class="n">logits</span><span class="p">,</span> <span class="n">total_count</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">topk_ids</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">dist</span><span class="o">.</span><span class="n">sample</span><span class="p">(),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdim</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">topk_scores</span> <span class="o">=</span> <span class="n">logits</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">topk_ids</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">topk_ids</span><span class="p">,</span> <span class="n">topk_scores</span></div>
+
+
+<div class="viewcode-block" id="RandomSampling"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.random_sampling.RandomSampling">[docs]</a><span class="k">class</span> <span class="nc">RandomSampling</span><span class="p">(</span><span class="n">DecodeStrategy</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Select next tokens randomly from the top k possible next tokens.</span>
+
+<span class="sd">    The ``scores`` attribute&#39;s lists are the score, after applying temperature,</span>
+<span class="sd">    of the final prediction (either EOS or the final token in the event</span>
+<span class="sd">    that ``max_length`` is reached)</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        pad (int): See base.</span>
+<span class="sd">        bos (int): See base.</span>
+<span class="sd">        eos (int): See base.</span>
+<span class="sd">        batch_size (int): See base.</span>
+<span class="sd">        device (torch.device or str): See base ``device``.</span>
+<span class="sd">        min_length (int): See base.</span>
+<span class="sd">        max_length (int): See base.</span>
+<span class="sd">        block_ngram_repeat (int): See base.</span>
+<span class="sd">        exclusion_tokens (set[int]): See base.</span>
+<span class="sd">        return_attention (bool): See base.</span>
+<span class="sd">        max_length (int): See base.</span>
+<span class="sd">        sampling_temp (float): See</span>
+<span class="sd">            :func:`~onmt.translate.random_sampling.sample_with_temperature()`.</span>
+<span class="sd">        keep_topk (int): See</span>
+<span class="sd">            :func:`~onmt.translate.random_sampling.sample_with_temperature()`.</span>
+<span class="sd">        memory_length (LongTensor): Lengths of encodings. Used for</span>
+<span class="sd">            masking attention.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pad</span><span class="p">,</span> <span class="n">bos</span><span class="p">,</span> <span class="n">eos</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span>
+                 <span class="n">min_length</span><span class="p">,</span> <span class="n">block_ngram_repeat</span><span class="p">,</span> <span class="n">exclusion_tokens</span><span class="p">,</span>
+                 <span class="n">return_attention</span><span class="p">,</span> <span class="n">max_length</span><span class="p">,</span> <span class="n">sampling_temp</span><span class="p">,</span> <span class="n">keep_topk</span><span class="p">,</span>
+                 <span class="n">memory_length</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RandomSampling</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">pad</span><span class="p">,</span> <span class="n">bos</span><span class="p">,</span> <span class="n">eos</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">min_length</span><span class="p">,</span> <span class="n">block_ngram_repeat</span><span class="p">,</span> <span class="n">exclusion_tokens</span><span class="p">,</span>
+            <span class="n">return_attention</span><span class="p">,</span> <span class="n">max_length</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sampling_temp</span> <span class="o">=</span> <span class="n">sampling_temp</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">keep_topk</span> <span class="o">=</span> <span class="n">keep_topk</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">topk_scores</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">memory_length</span> <span class="o">=</span> <span class="n">memory_length</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="n">batch_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">select_indices</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span>
+                                           <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">original_batch_idx</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span>
+                                               <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+
+<div class="viewcode-block" id="RandomSampling.advance"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.random_sampling.RandomSampling.advance">[docs]</a>    <span class="k">def</span> <span class="nf">advance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log_probs</span><span class="p">,</span> <span class="n">attn</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Select next tokens randomly from the top k possible next tokens.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            log_probs (FloatTensor): Shaped ``(batch_size, vocab_size)``.</span>
+<span class="sd">                These can be logits (``(-inf, inf)``) or log-probs</span>
+<span class="sd">                (``(-inf, 0]``). (The distribution actually uses the</span>
+<span class="sd">                log-probabilities ``logits - logits.logsumexp(-1)``,</span>
+<span class="sd">                which equals the logits if they are log-probabilities summing</span>
+<span class="sd">                to 1.)</span>
+<span class="sd">            attn (FloatTensor): Shaped ``(1, B, inp_seq_len)``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">ensure_min_length</span><span class="p">(</span><span class="n">log_probs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">block_ngram_repeats</span><span class="p">(</span><span class="n">log_probs</span><span class="p">)</span>
+        <span class="n">topk_ids</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">topk_scores</span> <span class="o">=</span> <span class="n">sample_with_temperature</span><span class="p">(</span>
+            <span class="n">log_probs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampling_temp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">keep_topk</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span> <span class="o">=</span> <span class="n">topk_ids</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">eos</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">alive_seq</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">alive_seq</span><span class="p">,</span> <span class="n">topk_ids</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">return_attention</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">alive_attn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">alive_attn</span> <span class="o">=</span> <span class="n">attn</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">alive_attn</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">alive_attn</span><span class="p">,</span> <span class="n">attn</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ensure_max_length</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="RandomSampling.update_finished"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.random_sampling.RandomSampling.update_finished">[docs]</a>    <span class="k">def</span> <span class="nf">update_finished</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Finalize scores and predictions.&quot;&quot;&quot;</span>
+        <span class="c1"># shape: (sum(~ self.is_finished), 1)</span>
+        <span class="n">finished_batches</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">finished_batches</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">b_orig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">original_batch_idx</span><span class="p">[</span><span class="n">b</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">scores</span><span class="p">[</span><span class="n">b_orig</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">topk_scores</span><span class="p">[</span><span class="n">b</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">predictions</span><span class="p">[</span><span class="n">b_orig</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alive_seq</span><span class="p">[</span><span class="n">b</span><span class="p">,</span> <span class="mi">1</span><span class="p">:])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">attention</span><span class="p">[</span><span class="n">b_orig</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">alive_attn</span><span class="p">[:,</span> <span class="n">b</span><span class="p">,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">memory_length</span><span class="p">[</span><span class="n">b</span><span class="p">]]</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">alive_attn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">done</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">done</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">is_alive</span> <span class="o">=</span> <span class="o">~</span><span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alive_seq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">alive_seq</span><span class="p">[</span><span class="n">is_alive</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">alive_attn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">alive_attn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">alive_attn</span><span class="p">[:,</span> <span class="n">is_alive</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">select_indices</span> <span class="o">=</span> <span class="n">is_alive</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">original_batch_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">original_batch_idx</span><span class="p">[</span><span class="n">is_alive</span><span class="p">]</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, srush
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

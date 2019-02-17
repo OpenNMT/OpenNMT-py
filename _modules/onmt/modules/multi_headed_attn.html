@@ -1,0 +1,447 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>onmt.modules.multi_headed_attn &mdash; OpenNMT-py  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> OpenNMT-py
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../main.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../CONTRIBUTING.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../ref.html">References</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../Library.html">Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../extended.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../Summarization.html">Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../im2text.html">Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../speech2text.html">Speech to Text</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Scripts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/preprocess.html">Preprocess</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/train.html">Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/translate.html">Translate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/server.html">Server</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.html">Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.translation.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.translate.translation_server.html">Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.inputters.html">Data Loaders</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">OpenNMT-py</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>onmt.modules.multi_headed_attn</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for onmt.modules.multi_headed_attn</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot; Multi-Head Attention module &quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+
+<span class="kn">from</span> <span class="nn">onmt.utils.misc</span> <span class="k">import</span> <span class="n">generate_relative_positions_matrix</span><span class="p">,</span>\
+                            <span class="n">relative_matmul</span>
+<span class="c1"># from onmt.utils.misc import aeq</span>
+
+
+<div class="viewcode-block" id="MultiHeadedAttention"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.MultiHeadedAttention">[docs]</a><span class="k">class</span> <span class="nc">MultiHeadedAttention</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Multi-Head Attention module from &quot;Attention is All You Need&quot;</span>
+<span class="sd">    :cite:`DBLP:journals/corr/VaswaniSPUJGKP17`.</span>
+
+<span class="sd">    Similar to standard `dot` attention but uses</span>
+<span class="sd">    multiple attention distributions simulataneously</span>
+<span class="sd">    to select relevant items.</span>
+
+<span class="sd">    .. mermaid::</span>
+
+<span class="sd">       graph BT</span>
+<span class="sd">          A[key]</span>
+<span class="sd">          B[value]</span>
+<span class="sd">          C[query]</span>
+<span class="sd">          O[output]</span>
+<span class="sd">          subgraph Attn</span>
+<span class="sd">            D[Attn 1]</span>
+<span class="sd">            E[Attn 2]</span>
+<span class="sd">            F[Attn N]</span>
+<span class="sd">          end</span>
+<span class="sd">          A --&gt; D</span>
+<span class="sd">          C --&gt; D</span>
+<span class="sd">          A --&gt; E</span>
+<span class="sd">          C --&gt; E</span>
+<span class="sd">          A --&gt; F</span>
+<span class="sd">          C --&gt; F</span>
+<span class="sd">          D --&gt; O</span>
+<span class="sd">          E --&gt; O</span>
+<span class="sd">          F --&gt; O</span>
+<span class="sd">          B --&gt; O</span>
+
+<span class="sd">    Also includes several additional tricks.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">       head_count (int): number of parallel heads</span>
+<span class="sd">       model_dim (int): the dimension of keys/values/queries,</span>
+<span class="sd">           must be divisible by head_count</span>
+<span class="sd">       dropout (float): dropout parameter</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">head_count</span><span class="p">,</span> <span class="n">model_dim</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+                 <span class="n">max_relative_positions</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">model_dim</span> <span class="o">%</span> <span class="n">head_count</span> <span class="o">==</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span> <span class="o">=</span> <span class="n">model_dim</span> <span class="o">//</span> <span class="n">head_count</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_dim</span> <span class="o">=</span> <span class="n">model_dim</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">MultiHeadedAttention</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">head_count</span> <span class="o">=</span> <span class="n">head_count</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">linear_keys</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">model_dim</span><span class="p">,</span>
+                                     <span class="n">head_count</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">linear_values</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">model_dim</span><span class="p">,</span>
+                                       <span class="n">head_count</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">linear_query</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">model_dim</span><span class="p">,</span>
+                                      <span class="n">head_count</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">softmax</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Softmax</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">final_linear</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">model_dim</span><span class="p">,</span> <span class="n">model_dim</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_relative_positions</span> <span class="o">=</span> <span class="n">max_relative_positions</span>
+
+        <span class="k">if</span> <span class="n">max_relative_positions</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">vocab_size</span> <span class="o">=</span> <span class="n">max_relative_positions</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">relative_positions_embeddings</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span>
+                <span class="n">vocab_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">)</span>
+
+<div class="viewcode-block" id="MultiHeadedAttention.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.MultiHeadedAttention.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">layer_cache</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the context vector and the attention vectors.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">           key (FloatTensor): set of `key_len`</span>
+<span class="sd">               key vectors ``(batch, key_len, dim)``</span>
+<span class="sd">           value (FloatTensor): set of `key_len`</span>
+<span class="sd">               value vectors ``(batch, key_len, dim)``</span>
+<span class="sd">           query (FloatTensor): set of `query_len`</span>
+<span class="sd">               query vectors  ``(batch, query_len, dim)``</span>
+<span class="sd">           mask: binary mask indicating which keys have</span>
+<span class="sd">               non-zero attention ``(batch, query_len, key_len)``</span>
+<span class="sd">        Returns:</span>
+<span class="sd">           (FloatTensor, FloatTensor):</span>
+
+<span class="sd">           * output context vectors ``(batch, query_len, dim)``</span>
+<span class="sd">           * one of the attention vectors ``(batch, query_len, key_len)``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># CHECKS</span>
+        <span class="c1"># batch, k_len, d = key.size()</span>
+        <span class="c1"># batch_, k_len_, d_ = value.size()</span>
+        <span class="c1"># aeq(batch, batch_)</span>
+        <span class="c1"># aeq(k_len, k_len_)</span>
+        <span class="c1"># aeq(d, d_)</span>
+        <span class="c1"># batch_, q_len, d_ = query.size()</span>
+        <span class="c1"># aeq(batch, batch_)</span>
+        <span class="c1"># aeq(d, d_)</span>
+        <span class="c1"># aeq(self.model_dim % 8, 0)</span>
+        <span class="c1"># if mask is not None:</span>
+        <span class="c1">#    batch_, q_len_, k_len_ = mask.size()</span>
+        <span class="c1">#    aeq(batch_, batch)</span>
+        <span class="c1">#    aeq(k_len_, k_len)</span>
+        <span class="c1">#    aeq(q_len_ == q_len)</span>
+        <span class="c1"># END CHECKS</span>
+
+        <span class="n">batch_size</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">dim_per_head</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span>
+        <span class="n">head_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">head_count</span>
+        <span class="n">key_len</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">query_len</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">device</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">device</span>
+
+        <span class="k">def</span> <span class="nf">shape</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Projection.&quot;&quot;&quot;</span>
+            <span class="k">return</span> <span class="n">x</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">head_count</span><span class="p">,</span> <span class="n">dim_per_head</span><span class="p">)</span> \
+                <span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">unshape</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Compute context.&quot;&quot;&quot;</span>
+            <span class="k">return</span> <span class="n">x</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span> \
+                    <span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">head_count</span> <span class="o">*</span> <span class="n">dim_per_head</span><span class="p">)</span>
+
+        <span class="c1"># 1) Project key, value, and query.</span>
+        <span class="k">if</span> <span class="n">layer_cache</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">type</span> <span class="o">==</span> <span class="s2">&quot;self&quot;</span><span class="p">:</span>
+                <span class="n">query</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear_query</span><span class="p">(</span><span class="n">query</span><span class="p">),</span>\
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">linear_keys</span><span class="p">(</span><span class="n">query</span><span class="p">),</span>\
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">linear_values</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">layer_cache</span><span class="p">[</span><span class="s2">&quot;self_keys&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">key</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span>
+                        <span class="p">(</span><span class="n">layer_cache</span><span class="p">[</span><span class="s2">&quot;self_keys&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">),</span> <span class="n">key</span><span class="p">),</span>
+                        <span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">layer_cache</span><span class="p">[</span><span class="s2">&quot;self_values&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span>
+                        <span class="p">(</span><span class="n">layer_cache</span><span class="p">[</span><span class="s2">&quot;self_values&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">),</span> <span class="n">value</span><span class="p">),</span>
+                        <span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+                <span class="n">layer_cache</span><span class="p">[</span><span class="s2">&quot;self_keys&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">key</span>
+                <span class="n">layer_cache</span><span class="p">[</span><span class="s2">&quot;self_values&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="k">elif</span> <span class="nb">type</span> <span class="o">==</span> <span class="s2">&quot;context&quot;</span><span class="p">:</span>
+                <span class="n">query</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear_query</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">layer_cache</span><span class="p">[</span><span class="s2">&quot;memory_keys&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear_keys</span><span class="p">(</span><span class="n">key</span><span class="p">),</span>\
+                                 <span class="bp">self</span><span class="o">.</span><span class="n">linear_values</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                    <span class="n">key</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="n">layer_cache</span><span class="p">[</span><span class="s2">&quot;memory_keys&quot;</span><span class="p">],</span>\
+                               <span class="n">layer_cache</span><span class="p">[</span><span class="s2">&quot;memory_values&quot;</span><span class="p">]</span>
+                <span class="n">layer_cache</span><span class="p">[</span><span class="s2">&quot;memory_keys&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">key</span>
+                <span class="n">layer_cache</span><span class="p">[</span><span class="s2">&quot;memory_values&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear_keys</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear_values</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear_query</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_relative_positions</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">type</span> <span class="o">==</span> <span class="s2">&quot;self&quot;</span><span class="p">:</span>
+            <span class="n">key_len</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+            <span class="c1"># 1 or key_len x key_len</span>
+            <span class="n">relative_positions_matrix</span> <span class="o">=</span> <span class="n">generate_relative_positions_matrix</span><span class="p">(</span>
+                <span class="n">key_len</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_relative_positions</span><span class="p">,</span>
+                <span class="n">cache</span><span class="o">=</span><span class="kc">True</span> <span class="k">if</span> <span class="n">layer_cache</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">False</span><span class="p">)</span>
+            <span class="c1">#  1 or key_len x key_len x dim_per_head</span>
+            <span class="n">relations_keys</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relative_positions_embeddings</span><span class="p">(</span>
+                <span class="n">relative_positions_matrix</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">))</span>
+            <span class="c1">#  1 or key_len x key_len x dim_per_head</span>
+            <span class="n">relations_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relative_positions_embeddings</span><span class="p">(</span>
+                <span class="n">relative_positions_matrix</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">))</span>
+
+        <span class="n">query</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+
+        <span class="n">key_len</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">query_len</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="c1"># 2) Calculate and scale scores.</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="n">query</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">dim_per_head</span><span class="p">)</span>
+        <span class="c1"># batch x num_heads x query_len x key_len</span>
+        <span class="n">query_key</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">key</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_relative_positions</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">type</span> <span class="o">==</span> <span class="s2">&quot;self&quot;</span><span class="p">:</span>
+            <span class="n">scores</span> <span class="o">=</span> <span class="n">query_key</span> <span class="o">+</span> <span class="n">relative_matmul</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">relations_keys</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">scores</span> <span class="o">=</span> <span class="n">query_key</span>
+        <span class="n">scores</span> <span class="o">=</span> <span class="n">scores</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># [B, 1, 1, T_values]</span>
+            <span class="n">scores</span> <span class="o">=</span> <span class="n">scores</span><span class="o">.</span><span class="n">masked_fill</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="o">-</span><span class="mf">1e18</span><span class="p">)</span>
+
+        <span class="c1"># 3) Apply attention dropout and compute context vectors.</span>
+        <span class="n">attn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">query</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">drop_attn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">(</span><span class="n">attn</span><span class="p">)</span>
+
+        <span class="n">context_original</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">drop_attn</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_relative_positions</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">type</span> <span class="o">==</span> <span class="s2">&quot;self&quot;</span><span class="p">:</span>
+            <span class="n">context</span> <span class="o">=</span> <span class="n">unshape</span><span class="p">(</span><span class="n">context_original</span>
+                              <span class="o">+</span> <span class="n">relative_matmul</span><span class="p">(</span><span class="n">drop_attn</span><span class="p">,</span>
+                                                <span class="n">relations_values</span><span class="p">,</span>
+                                                <span class="kc">False</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">context</span> <span class="o">=</span> <span class="n">unshape</span><span class="p">(</span><span class="n">context_original</span><span class="p">)</span>
+
+        <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">final_linear</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+        <span class="c1"># CHECK</span>
+        <span class="c1"># batch_, q_len_, d_ = output.size()</span>
+        <span class="c1"># aeq(q_len, q_len_)</span>
+        <span class="c1"># aeq(batch, batch_)</span>
+        <span class="c1"># aeq(d, d_)</span>
+
+        <span class="c1"># Return one attn</span>
+        <span class="n">top_attn</span> <span class="o">=</span> <span class="n">attn</span> \
+            <span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">head_count</span><span class="p">,</span>
+                  <span class="n">query_len</span><span class="p">,</span> <span class="n">key_len</span><span class="p">)[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> \
+            <span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">output</span><span class="p">,</span> <span class="n">top_attn</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, srush
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

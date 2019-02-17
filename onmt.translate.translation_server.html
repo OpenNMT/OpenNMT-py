@@ -1,0 +1,408 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Server &mdash; OpenNMT-py  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Data Loaders" href="onmt.inputters.html" />
+    <link rel="prev" title="Translation" href="onmt.translation.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> OpenNMT-py
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="main.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CONTRIBUTING.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ref.html">References</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="Library.html">Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extended.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Summarization.html">Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="im2text.html">Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="speech2text.html">Speech to Text</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Scripts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="options/preprocess.html">Preprocess</a></li>
+<li class="toctree-l1"><a class="reference internal" href="options/train.html">Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="options/translate.html">Translate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="options/server.html">Server</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="onmt.html">Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.translation.html">Translation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Server</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#models">Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#core-server">Core Server</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.inputters.html">Data Loaders</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">OpenNMT-py</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Server</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/onmt.translate.translation_server.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="server">
+<h1>Server<a class="headerlink" href="#server" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="models">
+<h2>Models<a class="headerlink" href="#models" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="onmt.translate.translation_server.ServerModel">
+<em class="property">class </em><code class="descclassname">onmt.translate.translation_server.</code><code class="descname">ServerModel</code><span class="sig-paren">(</span><em>opt</em>, <em>model_id</em>, <em>tokenizer_opt=None</em>, <em>load=False</em>, <em>timeout=-1</em>, <em>on_timeout='to_cpu'</em>, <em>model_root='./'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#ServerModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.ServerModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Wrap a model with server functionality.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>opt</strong> (<em>dict</em>) – Options for the Translator</li>
+<li><strong>model_id</strong> (<em>int</em>) – Model ID</li>
+<li><strong>tokenizer_opt</strong> (<em>dict</em>) – Options for the tokenizer or None</li>
+<li><strong>load</strong> (<em>bool</em>) – whether to load the model during <code class="xref py py-func docutils literal notranslate"><span class="pre">__init__()</span></code></li>
+<li><strong>timeout</strong> (<em>int</em>) – Seconds before running <a class="reference internal" href="#onmt.translate.translation_server.ServerModel.do_timeout" title="onmt.translate.translation_server.ServerModel.do_timeout"><code class="xref py py-func docutils literal notranslate"><span class="pre">do_timeout()</span></code></a>
+Negative values means no timeout</li>
+<li><strong>on_timeout</strong> (<em>str</em>) – Options are [“to_cpu”, “unload”]. Set what to do on
+timeout (see <a class="reference internal" href="#onmt.translate.translation_server.ServerModel.do_timeout" title="onmt.translate.translation_server.ServerModel.do_timeout"><code class="xref py py-func docutils literal notranslate"><span class="pre">do_timeout()</span></code></a>.)</li>
+<li><strong>model_root</strong> (<em>str</em>) – Path to the model directory
+it must contain the model and tokenizer file</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="onmt.translate.translation_server.ServerModel.detokenize">
+<code class="descname">detokenize</code><span class="sig-paren">(</span><em>sequence</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#ServerModel.detokenize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.ServerModel.detokenize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Detokenize a single sequence</p>
+<p>Same args/returns as <a class="reference internal" href="#onmt.translate.translation_server.ServerModel.tokenize" title="onmt.translate.translation_server.ServerModel.tokenize"><code class="xref py py-func docutils literal notranslate"><span class="pre">tokenize()</span></code></a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.translate.translation_server.ServerModel.do_timeout">
+<code class="descname">do_timeout</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#ServerModel.do_timeout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.ServerModel.do_timeout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Timeout function that frees GPU memory.</p>
+<p>Moves the model to CPU or unloads it; depending on
+attr`self.on_timemout` value</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.translate.translation_server.ServerModel.maybe_detokenize">
+<code class="descname">maybe_detokenize</code><span class="sig-paren">(</span><em>sequence</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#ServerModel.maybe_detokenize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.ServerModel.maybe_detokenize" title="Permalink to this definition">¶</a></dt>
+<dd><p>De-tokenize the sequence (or not)</p>
+<p>Same args/returns as <a class="reference internal" href="#onmt.translate.translation_server.ServerModel.tokenize" title="onmt.translate.translation_server.ServerModel.tokenize"><code class="xref py py-func docutils literal notranslate"><span class="pre">tokenize()</span></code></a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.translate.translation_server.ServerModel.maybe_tokenize">
+<code class="descname">maybe_tokenize</code><span class="sig-paren">(</span><em>sequence</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#ServerModel.maybe_tokenize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.ServerModel.maybe_tokenize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tokenize the sequence (or not).</p>
+<p>Same args/returns as <cite>tokenize</cite></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.translate.translation_server.ServerModel.parse_opt">
+<code class="descname">parse_opt</code><span class="sig-paren">(</span><em>opt</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#ServerModel.parse_opt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.ServerModel.parse_opt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse the option set passed by the user using <cite>onmt.opts</cite></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>opt</strong> (<em>dict</em>) – Options passed by the user</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">full set of options for the Translator</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">opt (argparse.Namespace)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.translate.translation_server.ServerModel.to_gpu">
+<code class="descname">to_gpu</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#ServerModel.to_gpu"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.ServerModel.to_gpu" title="Permalink to this definition">¶</a></dt>
+<dd><p>Move the model to GPU.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.translate.translation_server.ServerModel.tokenize">
+<code class="descname">tokenize</code><span class="sig-paren">(</span><em>sequence</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#ServerModel.tokenize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.ServerModel.tokenize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tokenize a single sequence.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>sequence</strong> (<em>str</em>) – The sequence to tokenize.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The tokenized sequence.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">tok (str)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="core-server">
+<h2>Core Server<a class="headerlink" href="#core-server" title="Permalink to this headline">¶</a></h2>
+<dl class="exception">
+<dt id="onmt.translate.translation_server.ServerModelError">
+<em class="property">exception </em><code class="descclassname">onmt.translate.translation_server.</code><code class="descname">ServerModelError</code><a class="reference internal" href="_modules/onmt/translate/translation_server.html#ServerModelError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.ServerModelError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="onmt.translate.translation_server.Timer">
+<em class="property">class </em><code class="descclassname">onmt.translate.translation_server.</code><code class="descname">Timer</code><span class="sig-paren">(</span><em>start=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#Timer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.Timer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="onmt.translate.translation_server.TranslationServer">
+<em class="property">class </em><code class="descclassname">onmt.translate.translation_server.</code><code class="descname">TranslationServer</code><a class="reference internal" href="_modules/onmt/translate/translation_server.html#TranslationServer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.TranslationServer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="onmt.translate.translation_server.TranslationServer.clone_model">
+<code class="descname">clone_model</code><span class="sig-paren">(</span><em>model_id</em>, <em>opt</em>, <em>timeout=-1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#TranslationServer.clone_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.TranslationServer.clone_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clone a model <cite>model_id</cite>.</p>
+<p>Different options may be passed. If <cite>opt</cite> is None, it will use the
+same set of options</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.translate.translation_server.TranslationServer.list_models">
+<code class="descname">list_models</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#TranslationServer.list_models"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.TranslationServer.list_models" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the list of available models</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.translate.translation_server.TranslationServer.load_model">
+<code class="descname">load_model</code><span class="sig-paren">(</span><em>opt</em>, <em>model_id=None</em>, <em>**model_kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#TranslationServer.load_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.TranslationServer.load_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load a model given a set of options</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.translate.translation_server.TranslationServer.preload_model">
+<code class="descname">preload_model</code><span class="sig-paren">(</span><em>opt</em>, <em>model_id=None</em>, <em>**model_kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#TranslationServer.preload_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.TranslationServer.preload_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Preloading the model: updating internal datastructure</p>
+<p>It will effectively load the model if <cite>load</cite> is set</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.translate.translation_server.TranslationServer.run">
+<code class="descname">run</code><span class="sig-paren">(</span><em>inputs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#TranslationServer.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.TranslationServer.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Translate <cite>inputs</cite></p>
+<p>We keep the same format as the Lua version i.e.
+<code class="docutils literal notranslate"><span class="pre">[{&quot;id&quot;:</span> <span class="pre">model_id,</span> <span class="pre">&quot;src&quot;:</span> <span class="pre">&quot;sequence</span> <span class="pre">to</span> <span class="pre">translate&quot;},{</span> <span class="pre">...}]</span></code></p>
+<p>We use inputs[0][“id”] as the model id</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.translate.translation_server.TranslationServer.start">
+<code class="descname">start</code><span class="sig-paren">(</span><em>config_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#TranslationServer.start"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.TranslationServer.start" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read the config file and pre-/load the models.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.translate.translation_server.TranslationServer.unload_model">
+<code class="descname">unload_model</code><span class="sig-paren">(</span><em>model_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#TranslationServer.unload_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.TranslationServer.unload_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Manually unload a model.</p>
+<p>It will free the memory and cancel the timer</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="onmt.inputters.html" class="btn btn-neutral float-right" title="Data Loaders" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="onmt.translation.html" class="btn btn-neutral float-left" title="Translation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, srush
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

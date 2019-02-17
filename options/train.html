@@ -1,0 +1,1000 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Train &mdash; OpenNMT-py  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Translate" href="translate.html" />
+    <link rel="prev" title="Preprocess" href="preprocess.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> OpenNMT-py
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../main.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../CONTRIBUTING.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ref.html">References</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../Library.html">Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../extended.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Summarization.html">Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../im2text.html">Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../speech2text.html">Speech to Text</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Scripts</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="preprocess.html">Preprocess</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Train</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#Named Arguments">Named Arguments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Model-Embeddings">Model-Embeddings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Model-Embedding Features">Model-Embedding Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Model- Encoder-Decoder">Model- Encoder-Decoder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Model- Attention">Model- Attention</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#General">General</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Initialization">Initialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Optimization- Type">Optimization- Type</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Optimization- Rate">Optimization- Rate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Logging">Logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Speech">Speech</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="translate.html">Translate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="server.html">Server</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../onmt.html">Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../onmt.modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../onmt.translation.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../onmt.translate.translation_server.html">Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../onmt.inputters.html">Data Loaders</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">OpenNMT-py</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li>Train</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/options/train.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="train">
+<h1>Train<a class="headerlink" href="#train" title="Permalink to this headline">¶</a></h1>
+<p>train.py</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">train</span><span class="o">.</span><span class="n">py</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">config</span> <span class="n">CONFIG</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">save_config</span> <span class="n">SAVE_CONFIG</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">src_word_vec_size</span> <span class="n">SRC_WORD_VEC_SIZE</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">tgt_word_vec_size</span> <span class="n">TGT_WORD_VEC_SIZE</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">word_vec_size</span> <span class="n">WORD_VEC_SIZE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">share_decoder_embeddings</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">share_embeddings</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">position_encoding</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">feat_merge</span> <span class="p">{</span><span class="n">concat</span><span class="p">,</span><span class="nb">sum</span><span class="p">,</span><span class="n">mlp</span><span class="p">}]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">feat_vec_size</span> <span class="n">FEAT_VEC_SIZE</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">feat_vec_exponent</span> <span class="n">FEAT_VEC_EXPONENT</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">model_type</span> <span class="p">{</span><span class="n">text</span><span class="p">,</span><span class="n">img</span><span class="p">,</span><span class="n">audio</span><span class="p">}]</span> <span class="p">[</span><span class="o">--</span><span class="n">model_dtype</span> <span class="p">{</span><span class="n">fp32</span><span class="p">,</span><span class="n">fp16</span><span class="p">}]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">encoder_type</span> <span class="p">{</span><span class="n">rnn</span><span class="p">,</span><span class="n">brnn</span><span class="p">,</span><span class="n">mean</span><span class="p">,</span><span class="n">transformer</span><span class="p">,</span><span class="n">cnn</span><span class="p">}]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">decoder_type</span> <span class="p">{</span><span class="n">rnn</span><span class="p">,</span><span class="n">transformer</span><span class="p">,</span><span class="n">cnn</span><span class="p">}]</span> <span class="p">[</span><span class="o">--</span><span class="n">layers</span> <span class="n">LAYERS</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">enc_layers</span> <span class="n">ENC_LAYERS</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">dec_layers</span> <span class="n">DEC_LAYERS</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">rnn_size</span> <span class="n">RNN_SIZE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">enc_rnn_size</span> <span class="n">ENC_RNN_SIZE</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">dec_rnn_size</span> <span class="n">DEC_RNN_SIZE</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">audio_enc_pooling</span> <span class="n">AUDIO_ENC_POOLING</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">cnn_kernel_width</span> <span class="n">CNN_KERNEL_WIDTH</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">input_feed</span> <span class="n">INPUT_FEED</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">bridge</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">rnn_type</span> <span class="p">{</span><span class="n">LSTM</span><span class="p">,</span><span class="n">GRU</span><span class="p">,</span><span class="n">SRU</span><span class="p">}]</span> <span class="p">[</span><span class="o">--</span><span class="n">brnn</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">context_gate</span> <span class="p">{</span><span class="n">source</span><span class="p">,</span><span class="n">target</span><span class="p">,</span><span class="n">both</span><span class="p">}]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">global_attention</span> <span class="p">{</span><span class="n">dot</span><span class="p">,</span><span class="n">general</span><span class="p">,</span><span class="n">mlp</span><span class="p">}]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">global_attention_function</span> <span class="p">{</span><span class="n">softmax</span><span class="p">,</span><span class="n">sparsemax</span><span class="p">}]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">self_attn_type</span> <span class="n">SELF_ATTN_TYPE</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">max_relative_positions</span> <span class="n">MAX_RELATIVE_POSITIONS</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">heads</span> <span class="n">HEADS</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">transformer_ff</span> <span class="n">TRANSFORMER_FF</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">copy_attn</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">generator_function</span> <span class="p">{</span><span class="n">softmax</span><span class="p">,</span><span class="n">sparsemax</span><span class="p">}]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">copy_attn_force</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">reuse_copy_attn</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">copy_loss_by_seqlength</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">coverage_attn</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">lambda_coverage</span> <span class="n">LAMBDA_COVERAGE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">loss_scale</span> <span class="n">LOSS_SCALE</span><span class="p">]</span>
+                <span class="o">--</span><span class="n">data</span> <span class="n">DATA</span> <span class="p">[</span><span class="o">--</span><span class="n">save_model</span> <span class="n">SAVE_MODEL</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">save_checkpoint_steps</span> <span class="n">SAVE_CHECKPOINT_STEPS</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">keep_checkpoint</span> <span class="n">KEEP_CHECKPOINT</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">gpuid</span> <span class="p">[</span><span class="n">GPUID</span> <span class="p">[</span><span class="n">GPUID</span> <span class="o">...</span><span class="p">]]]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">gpu_ranks</span> <span class="p">[</span><span class="n">GPU_RANKS</span> <span class="p">[</span><span class="n">GPU_RANKS</span> <span class="o">...</span><span class="p">]]]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">world_size</span> <span class="n">WORLD_SIZE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">gpu_backend</span> <span class="n">GPU_BACKEND</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">gpu_verbose_level</span> <span class="n">GPU_VERBOSE_LEVEL</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">master_ip</span> <span class="n">MASTER_IP</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">master_port</span> <span class="n">MASTER_PORT</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">seed</span> <span class="n">SEED</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">param_init</span> <span class="n">PARAM_INIT</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">param_init_glorot</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">train_from</span> <span class="n">TRAIN_FROM</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">reset_optim</span> <span class="p">{</span><span class="n">none</span><span class="p">,</span><span class="nb">all</span><span class="p">,</span><span class="n">states</span><span class="p">,</span><span class="n">keep_states</span><span class="p">}]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">pre_word_vecs_enc</span> <span class="n">PRE_WORD_VECS_ENC</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">pre_word_vecs_dec</span> <span class="n">PRE_WORD_VECS_DEC</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">fix_word_vecs_enc</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">fix_word_vecs_dec</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">batch_size</span> <span class="n">BATCH_SIZE</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">batch_type</span> <span class="p">{</span><span class="n">sents</span><span class="p">,</span><span class="n">tokens</span><span class="p">}]</span> <span class="p">[</span><span class="o">--</span><span class="n">normalization</span> <span class="p">{</span><span class="n">sents</span><span class="p">,</span><span class="n">tokens</span><span class="p">}]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">accum_count</span> <span class="n">ACCUM_COUNT</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">valid_steps</span> <span class="n">VALID_STEPS</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">valid_batch_size</span> <span class="n">VALID_BATCH_SIZE</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">max_generator_batches</span> <span class="n">MAX_GENERATOR_BATCHES</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">train_steps</span> <span class="n">TRAIN_STEPS</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">single_pass</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">epochs</span> <span class="n">EPOCHS</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">optim</span> <span class="p">{</span><span class="n">sgd</span><span class="p">,</span><span class="n">adagrad</span><span class="p">,</span><span class="n">adadelta</span><span class="p">,</span><span class="n">adam</span><span class="p">,</span><span class="n">sparseadam</span><span class="p">,</span><span class="n">adafactor</span><span class="p">,</span><span class="n">fusedadam</span><span class="p">}]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">adagrad_accumulator_init</span> <span class="n">ADAGRAD_ACCUMULATOR_INIT</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">max_grad_norm</span> <span class="n">MAX_GRAD_NORM</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">dropout</span> <span class="n">DROPOUT</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">truncated_decoder</span> <span class="n">TRUNCATED_DECODER</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">adam_beta1</span> <span class="n">ADAM_BETA1</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">adam_beta2</span> <span class="n">ADAM_BETA2</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">label_smoothing</span> <span class="n">LABEL_SMOOTHING</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">average_decay</span> <span class="n">AVERAGE_DECAY</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">average_every</span> <span class="n">AVERAGE_EVERY</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">learning_rate</span> <span class="n">LEARNING_RATE</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">learning_rate_decay</span> <span class="n">LEARNING_RATE_DECAY</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">start_decay_steps</span> <span class="n">START_DECAY_STEPS</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">decay_steps</span> <span class="n">DECAY_STEPS</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">decay_method</span> <span class="p">{</span><span class="n">noam</span><span class="p">,</span><span class="n">rsqrt</span><span class="p">,</span><span class="n">none</span><span class="p">}]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">warmup_steps</span> <span class="n">WARMUP_STEPS</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">report_every</span> <span class="n">REPORT_EVERY</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">log_file</span> <span class="n">LOG_FILE</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">log_file_level</span> <span class="p">{</span><span class="n">DEBUG</span><span class="p">,</span><span class="n">NOTSET</span><span class="p">,</span><span class="n">CRITICAL</span><span class="p">,</span><span class="n">INFO</span><span class="p">,</span><span class="n">ERROR</span><span class="p">,</span><span class="n">WARNING</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">50</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">40</span><span class="p">,</span><span class="mi">30</span><span class="p">}]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">exp_host</span> <span class="n">EXP_HOST</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">exp</span> <span class="n">EXP</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">tensorboard</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">tensorboard_log_dir</span> <span class="n">TENSORBOARD_LOG_DIR</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">sample_rate</span> <span class="n">SAMPLE_RATE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">window_size</span> <span class="n">WINDOW_SIZE</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">image_channel_size</span> <span class="p">{</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">}]</span>
+</pre></div>
+</div>
+<div class="section" id="Named Arguments">
+<h2>Named Arguments<a class="headerlink" href="#Named Arguments" title="Permalink to this headline">¶</a></h2>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group" colspan="2">
+<kbd>-config, --config</kbd></td>
+</tr>
+<tr><td>&#160;</td><td>config file path</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>-save_config, --save_config</kbd></td>
+</tr>
+<tr><td>&#160;</td><td>config file save path</td></tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="Model-Embeddings">
+<h2>Model-Embeddings<a class="headerlink" href="#Model-Embeddings" title="Permalink to this headline">¶</a></h2>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group" colspan="2">
+<kbd>--src_word_vec_size, -src_word_vec_size</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Word embedding size for src.</p>
+<p class="last">Default: 500</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--tgt_word_vec_size, -tgt_word_vec_size</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Word embedding size for tgt.</p>
+<p class="last">Default: 500</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--word_vec_size, -word_vec_size</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Word embedding size for src and tgt.</p>
+<p class="last">Default: -1</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--share_decoder_embeddings, -share_decoder_embeddings</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Use a shared weight matrix for the input and output word  embeddings in the decoder.</p>
+<p class="last">Default: False</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--share_embeddings, -share_embeddings</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Share the word embeddings between encoder and decoder. Need to use shared dictionary for this option.</p>
+<p class="last">Default: False</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--position_encoding, -position_encoding</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Use a sin to mark relative words positions. Necessary for non-RNN style models.</p>
+<p class="last">Default: False</p>
+</td></tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="Model-Embedding Features">
+<h2>Model-Embedding Features<a class="headerlink" href="#Model-Embedding Features" title="Permalink to this headline">¶</a></h2>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group" colspan="2">
+<kbd>--feat_merge, -feat_merge</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Possible choices: concat, sum, mlp</p>
+<p>Merge action for incorporating features embeddings. Options [concat|sum|mlp].</p>
+<p class="last">Default: “concat”</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--feat_vec_size, -feat_vec_size</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">If specified, feature embedding sizes will be set to this. Otherwise, feat_vec_exponent will be used.</p>
+<p class="last">Default: -1</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--feat_vec_exponent, -feat_vec_exponent</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">If -feat_merge_size is not set, feature embedding sizes will be set to N^feat_vec_exponent where N is the number of values the feature takes.</p>
+<p class="last">Default: 0.7</p>
+</td></tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="Model- Encoder-Decoder">
+<h2>Model- Encoder-Decoder<a class="headerlink" href="#Model- Encoder-Decoder" title="Permalink to this headline">¶</a></h2>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group" colspan="2">
+<kbd>--model_type, -model_type</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Possible choices: text, img, audio</p>
+<p>Type of source model to use. Allows the system to incorporate non-text inputs. Options are [text|img|audio].</p>
+<p class="last">Default: “text”</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--model_dtype, -model_dtype</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Possible choices: fp32, fp16</p>
+<p>Data type of the model.</p>
+<p class="last">Default: “fp32”</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--encoder_type, -encoder_type</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Possible choices: rnn, brnn, mean, transformer, cnn</p>
+<p>Type of encoder layer to use. Non-RNN layers are experimental. Options are [rnn|brnn|mean|transformer|cnn].</p>
+<p class="last">Default: “rnn”</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--decoder_type, -decoder_type</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Possible choices: rnn, transformer, cnn</p>
+<p>Type of decoder layer to use. Non-RNN layers are experimental. Options are [rnn|transformer|cnn].</p>
+<p class="last">Default: “rnn”</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--layers, -layers</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Number of layers in enc/dec.</p>
+<p class="last">Default: -1</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--enc_layers, -enc_layers</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Number of layers in the encoder</p>
+<p class="last">Default: 2</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--dec_layers, -dec_layers</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Number of layers in the decoder</p>
+<p class="last">Default: 2</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--rnn_size, -rnn_size</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Size of rnn hidden states. Overwrites enc_rnn_size and dec_rnn_size</p>
+<p class="last">Default: -1</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--enc_rnn_size, -enc_rnn_size</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Size of encoder rnn hidden states. Must be equal to dec_rnn_size except for speech-to-text.</p>
+<p class="last">Default: 500</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--dec_rnn_size, -dec_rnn_size</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Size of decoder rnn hidden states. Must be equal to enc_rnn_size except for speech-to-text.</p>
+<p class="last">Default: 500</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--audio_enc_pooling, -audio_enc_pooling</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">The amount of pooling of audio encoder, either the same amount of pooling across all layers indicated by a single number, or different amounts of pooling per layer separated by comma.</p>
+<p class="last">Default: “1”</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--cnn_kernel_width, -cnn_kernel_width</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Size of windows in the cnn, the kernel_size is (cnn_kernel_width, 1) in conv layer</p>
+<p class="last">Default: 3</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--input_feed, -input_feed</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Feed the context vector at each time step as additional input (via concatenation with the word embeddings) to the decoder.</p>
+<p class="last">Default: 1</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--bridge, -bridge</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Have an additional layer between the last encoder state and the first decoder state</p>
+<p class="last">Default: False</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--rnn_type, -rnn_type</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Possible choices: LSTM, GRU, SRU</p>
+<p>The gate type to use in the RNNs</p>
+<p class="last">Default: “LSTM”</p>
+</td></tr>
+<tr><td class="option-group">
+<kbd>--brnn, -brnn</kbd></td>
+<td>Deprecated, use <cite>encoder_type</cite>.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--context_gate, -context_gate</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Possible choices: source, target, both</p>
+<p class="last">Type of context gate to use. Do not select for no context gate.</p>
+</td></tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="Model- Attention">
+<h2>Model- Attention<a class="headerlink" href="#Model- Attention" title="Permalink to this headline">¶</a></h2>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group" colspan="2">
+<kbd>--global_attention, -global_attention</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Possible choices: dot, general, mlp</p>
+<p>The attention type to use: dotprod or general (Luong) or MLP (Bahdanau)</p>
+<p class="last">Default: “general”</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--global_attention_function, -global_attention_function</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Possible choices: softmax, sparsemax</p>
+<p class="last">Default: “softmax”</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--self_attn_type, -self_attn_type</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Self attention type in Transformer decoder layer – currently “scaled-dot” or “average”</p>
+<p class="last">Default: “scaled-dot”</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--max_relative_positions, -max_relative_positions</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Maximum distance between inputs in relative positions representations. For more detailed information, see: <a class="reference external" href="https://arxiv.org/pdf/1803.02155.pdf">https://arxiv.org/pdf/1803.02155.pdf</a></p>
+<p class="last">Default: 0</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--heads, -heads</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Number of heads for transformer self-attention</p>
+<p class="last">Default: 8</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--transformer_ff, -transformer_ff</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Size of hidden transformer feed-forward</p>
+<p class="last">Default: 2048</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--copy_attn, -copy_attn</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Train copy attention layer.</p>
+<p class="last">Default: False</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--generator_function, -generator_function</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Possible choices: softmax, sparsemax</p>
+<p>Which function to use for generating probabilities over the target vocabulary (choices: softmax, sparsemax)</p>
+<p class="last">Default: “softmax”</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--copy_attn_force, -copy_attn_force</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">When available, train to copy.</p>
+<p class="last">Default: False</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--reuse_copy_attn, -reuse_copy_attn</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Reuse standard attention for copy</p>
+<p class="last">Default: False</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--copy_loss_by_seqlength, -copy_loss_by_seqlength</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Divide copy loss by length of sequence</p>
+<p class="last">Default: False</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--coverage_attn, -coverage_attn</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Train a coverage attention layer.</p>
+<p class="last">Default: False</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--lambda_coverage, -lambda_coverage</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Lambda value for coverage.</p>
+<p class="last">Default: 1</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--loss_scale, -loss_scale</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">For FP16 training, the static loss scale to use. If not set, the loss scale is dynamically computed.</p>
+<p class="last">Default: 0</p>
+</td></tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="General">
+<h2>General<a class="headerlink" href="#General" title="Permalink to this headline">¶</a></h2>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd>--data, -data</kbd></td>
+<td>Path prefix to the “.train.pt” and “.valid.pt” file path from preprocess.py</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--save_model, -save_model</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Model filename (the model will be saved as &lt;save_model&gt;_N.pt where N is the number of steps</p>
+<p class="last">Default: “model”</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--save_checkpoint_steps, -save_checkpoint_steps</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Save a checkpoint every X steps</p>
+<p class="last">Default: 5000</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--keep_checkpoint, -keep_checkpoint</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Keep X checkpoints (negative: keep all)</p>
+<p class="last">Default: -1</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--gpuid, -gpuid</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Deprecated see world_size and gpu_ranks.</p>
+<p class="last">Default: []</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--gpu_ranks, -gpu_ranks</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">list of ranks of each process.</p>
+<p class="last">Default: []</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--world_size, -world_size</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">total number of distributed processes.</p>
+<p class="last">Default: 1</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--gpu_backend, -gpu_backend</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Type of torch distributed backend</p>
+<p class="last">Default: “nccl”</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--gpu_verbose_level, -gpu_verbose_level</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Gives more info on each process per GPU.</p>
+<p class="last">Default: 0</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--master_ip, -master_ip</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">IP of master for torch.distributed training.</p>
+<p class="last">Default: “localhost”</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--master_port, -master_port</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Port of master for torch.distributed training.</p>
+<p class="last">Default: 10000</p>
+</td></tr>
+<tr><td class="option-group">
+<kbd>--seed, -seed</kbd></td>
+<td><p class="first">Random seed used for the experiments reproducibility.</p>
+<p class="last">Default: -1</p>
+</td></tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="Initialization">
+<h2>Initialization<a class="headerlink" href="#Initialization" title="Permalink to this headline">¶</a></h2>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group" colspan="2">
+<kbd>--param_init, -param_init</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Parameters are initialized over uniform distribution with support (-param_init, param_init). Use 0 to not use initialization</p>
+<p class="last">Default: 0.1</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--param_init_glorot, -param_init_glorot</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Init parameters with xavier_uniform. Required for transfomer.</p>
+<p class="last">Default: False</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--train_from, -train_from</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">If training from a checkpoint then this is the path to the pretrained model’s state_dict.</p>
+<p class="last">Default: “”</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--reset_optim, -reset_optim</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Possible choices: none, all, states, keep_states</p>
+<p>Optimization resetter when train_from.</p>
+<p class="last">Default: “none”</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--pre_word_vecs_enc, -pre_word_vecs_enc</kbd></td>
+</tr>
+<tr><td>&#160;</td><td>If a valid path is specified, then this will load pretrained word embeddings on the encoder side. See README for specific formatting instructions.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--pre_word_vecs_dec, -pre_word_vecs_dec</kbd></td>
+</tr>
+<tr><td>&#160;</td><td>If a valid path is specified, then this will load pretrained word embeddings on the decoder side. See README for specific formatting instructions.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--fix_word_vecs_enc, -fix_word_vecs_enc</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Fix word embeddings on the encoder side.</p>
+<p class="last">Default: False</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--fix_word_vecs_dec, -fix_word_vecs_dec</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Fix word embeddings on the decoder side.</p>
+<p class="last">Default: False</p>
+</td></tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="Optimization- Type">
+<h2>Optimization- Type<a class="headerlink" href="#Optimization- Type" title="Permalink to this headline">¶</a></h2>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group" colspan="2">
+<kbd>--batch_size, -batch_size</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Maximum batch size for training</p>
+<p class="last">Default: 64</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--batch_type, -batch_type</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Possible choices: sents, tokens</p>
+<p>Batch grouping for batch_size. Standard is sents. Tokens will do dynamic batching</p>
+<p class="last">Default: “sents”</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--normalization, -normalization</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Possible choices: sents, tokens</p>
+<p>Normalization method of the gradient.</p>
+<p class="last">Default: “sents”</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--accum_count, -accum_count</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Accumulate gradient this many times. Approximately equivalent to updating batch_size * accum_count batches at once. Recommended for Transformer.</p>
+<p class="last">Default: 1</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--valid_steps, -valid_steps</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Perfom validation every X steps</p>
+<p class="last">Default: 10000</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--valid_batch_size, -valid_batch_size</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Maximum batch size for validation</p>
+<p class="last">Default: 32</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--max_generator_batches, -max_generator_batches</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Maximum batches of words in a sequence to run the generator on in parallel. Higher is faster, but uses more memory. Set to 0 to disable.</p>
+<p class="last">Default: 32</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--train_steps, -train_steps</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Number of training steps</p>
+<p class="last">Default: 100000</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--single_pass, -single_pass</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Make a single pass over the training dataset.</p>
+<p class="last">Default: False</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--epochs, -epochs</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Deprecated epochs see train_steps</p>
+<p class="last">Default: 0</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--optim, -optim</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Possible choices: sgd, adagrad, adadelta, adam, sparseadam, adafactor, fusedadam</p>
+<p>Optimization method.</p>
+<p class="last">Default: “sgd”</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--adagrad_accumulator_init, -adagrad_accumulator_init</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Initializes the accumulator values in adagrad. Mirrors the initial_accumulator_value option in the tensorflow adagrad (use 0.1 for their default).</p>
+<p class="last">Default: 0</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--max_grad_norm, -max_grad_norm</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">If the norm of the gradient vector exceeds this, renormalize it to have the norm equal to max_grad_norm</p>
+<p class="last">Default: 5</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--dropout, -dropout</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Dropout probability; applied in LSTM stacks.</p>
+<p class="last">Default: 0.3</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--truncated_decoder, -truncated_decoder</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Truncated bptt.</p>
+<p class="last">Default: 0</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--adam_beta1, -adam_beta1</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">The beta1 parameter used by Adam. Almost without exception a value of 0.9 is used in the literature, seemingly giving good results, so we would discourage changing this value from the default without due consideration.</p>
+<p class="last">Default: 0.9</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--adam_beta2, -adam_beta2</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">The beta2 parameter used by Adam. Typically a value of 0.999 is recommended, as this is the value suggested by the original paper describing Adam, and is also the value adopted in other frameworks such as Tensorflow and Kerras, i.e. see: <a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/train/AdamOptimizer">https://www.tensorflow.org/api_docs/python/tf/train/AdamOptimizer</a> or <a class="reference external" href="https://keras.io/optimizers/">https://keras.io/optimizers/</a> . Whereas recently the paper “Attention is All You Need” suggested a value of 0.98 for beta2, this parameter may not work well for normal models / default baselines.</p>
+<p class="last">Default: 0.999</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--label_smoothing, -label_smoothing</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Label smoothing value epsilon. Probabilities of all non-true labels will be smoothed by epsilon / (vocab_size - 1). Set to zero to turn off label smoothing. For more detailed information, see: <a class="reference external" href="https://arxiv.org/abs/1512.00567">https://arxiv.org/abs/1512.00567</a></p>
+<p class="last">Default: 0.0</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--average_decay, -average_decay</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Moving average decay. Set to other than 0 (e.g. 1e-4) to activate. Similar to Marian NMT implementation: <a class="reference external" href="http://www.aclweb.org/anthology/P18-4020">http://www.aclweb.org/anthology/P18-4020</a> For more detail on Exponential Moving Average: <a class="reference external" href="https://en.wikipedia.org/wiki/Moving_average">https://en.wikipedia.org/wiki/Moving_average</a></p>
+<p class="last">Default: 0</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--average_every, -average_every</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Step for moving average. Default is every update, if -average_decay is set.</p>
+<p class="last">Default: 1</p>
+</td></tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="Optimization- Rate">
+<h2>Optimization- Rate<a class="headerlink" href="#Optimization- Rate" title="Permalink to this headline">¶</a></h2>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group" colspan="2">
+<kbd>--learning_rate, -learning_rate</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Starting learning rate. Recommended settings: sgd = 1, adagrad = 0.1, adadelta = 1, adam = 0.001</p>
+<p class="last">Default: 1.0</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--learning_rate_decay, -learning_rate_decay</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">If update_learning_rate, decay learning rate by this much if steps have gone past start_decay_steps</p>
+<p class="last">Default: 0.5</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--start_decay_steps, -start_decay_steps</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Start decaying every decay_steps after start_decay_steps</p>
+<p class="last">Default: 50000</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--decay_steps, -decay_steps</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Decay every decay_steps</p>
+<p class="last">Default: 10000</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--decay_method, -decay_method</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Possible choices: noam, rsqrt, none</p>
+<p>Use a custom decay rate.</p>
+<p class="last">Default: “none”</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--warmup_steps, -warmup_steps</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Number of warmup steps for custom decay.</p>
+<p class="last">Default: 4000</p>
+</td></tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="Logging">
+<h2>Logging<a class="headerlink" href="#Logging" title="Permalink to this headline">¶</a></h2>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group" colspan="2">
+<kbd>--report_every, -report_every</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Print stats at this interval.</p>
+<p class="last">Default: 50</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--log_file, -log_file</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Output logs to a file under this path.</p>
+<p class="last">Default: “”</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--log_file_level, -log_file_level</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Possible choices: DEBUG, NOTSET, CRITICAL, INFO, ERROR, WARNING, 10, 0, 50, 20, 40, 30</p>
+<p class="last">Default: “0”</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--exp_host, -exp_host</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Send logs to this crayon server.</p>
+<p class="last">Default: “”</p>
+</td></tr>
+<tr><td class="option-group">
+<kbd>--exp, -exp</kbd></td>
+<td><p class="first">Name of the experiment for logging.</p>
+<p class="last">Default: “”</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--tensorboard, -tensorboard</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Use tensorboardX for visualization during training. Must have the library tensorboardX.</p>
+<p class="last">Default: False</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--tensorboard_log_dir, -tensorboard_log_dir</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Log directory for Tensorboard. This is also the name of the run.</p>
+<p class="last">Default: “runs/onmt”</p>
+</td></tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="Speech">
+<h2>Speech<a class="headerlink" href="#Speech" title="Permalink to this headline">¶</a></h2>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group" colspan="2">
+<kbd>--sample_rate, -sample_rate</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Sample rate.</p>
+<p class="last">Default: 16000</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--window_size, -window_size</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Window size for spectrogram in seconds.</p>
+<p class="last">Default: 0.02</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--image_channel_size, -image_channel_size</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Possible choices: 3, 1</p>
+<p>Using grayscale image can training model faster and smaller</p>
+<p class="last">Default: 3</p>
+</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="translate.html" class="btn btn-neutral float-right" title="Translate" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="preprocess.html" class="btn btn-neutral float-left" title="Preprocess" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, srush
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

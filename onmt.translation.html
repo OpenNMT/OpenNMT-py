@@ -1,0 +1,815 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Translation &mdash; OpenNMT-py  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Server" href="onmt.translate.translation_server.html" />
+    <link rel="prev" title="Modules" href="onmt.modules.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> OpenNMT-py
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="main.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CONTRIBUTING.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ref.html">References</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="Library.html">Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extended.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Summarization.html">Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="im2text.html">Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="speech2text.html">Speech to Text</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Scripts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="options/preprocess.html">Preprocess</a></li>
+<li class="toctree-l1"><a class="reference internal" href="options/train.html">Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="options/translate.html">Translate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="options/server.html">Server</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="onmt.html">Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.modules.html">Modules</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Translation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#translations">Translations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#translator-class">Translator Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#decoding-strategies">Decoding Strategies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#scoring">Scoring</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.translate.translation_server.html">Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.inputters.html">Data Loaders</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">OpenNMT-py</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Translation</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/onmt.translation.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="translation">
+<h1>Translation<a class="headerlink" href="#translation" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="translations">
+<h2>Translations<a class="headerlink" href="#translations" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="onmt.translate.Translation">
+<em class="property">class </em><code class="descclassname">onmt.translate.</code><code class="descname">Translation</code><span class="sig-paren">(</span><em>src</em>, <em>src_raw</em>, <em>pred_sents</em>, <em>attn</em>, <em>pred_scores</em>, <em>tgt_sent</em>, <em>gold_score</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation.html#Translation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Container for a translated sentence.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Variables:</th><td class="field-body"><ul class="first last simple">
+<li><strong>src</strong> (<em>LongTensor</em>) – Source word IDs.</li>
+<li><strong>src_raw</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – Raw source words.</li>
+<li><strong>pred_sents</strong> (<em>List</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em>) – Words from the n-best translations.</li>
+<li><strong>pred_scores</strong> (<em>List</em><em>[</em><em>List</em><em>[</em><em>float</em><em>]</em><em>]</em>) – Log-probs of n-best translations.</li>
+<li><strong>attns</strong> (<em>List</em><em>[</em><em>FloatTensor</em><em>]</em>) – Attention distribution for each
+translation.</li>
+<li><strong>gold_sent</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – Words from gold translation.</li>
+<li><strong>gold_score</strong> (<em>List</em><em>[</em><em>float</em><em>]</em>) – Log-prob of gold translation.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="onmt.translate.Translation.log">
+<code class="descname">log</code><span class="sig-paren">(</span><em>sent_number</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation.html#Translation.log"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translation.log" title="Permalink to this definition">¶</a></dt>
+<dd><p>Log translation.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="translator-class">
+<h2>Translator Class<a class="headerlink" href="#translator-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="onmt.translate.Translator">
+<em class="property">class </em><code class="descclassname">onmt.translate.</code><code class="descname">Translator</code><span class="sig-paren">(</span><em>model</em>, <em>fields</em>, <em>src_reader</em>, <em>tgt_reader</em>, <em>gpu=-1</em>, <em>n_best=1</em>, <em>min_length=0</em>, <em>max_length=100</em>, <em>beam_size=30</em>, <em>random_sampling_topk=1</em>, <em>random_sampling_temp=1</em>, <em>stepwise_penalty=None</em>, <em>dump_beam=False</em>, <em>block_ngram_repeat=0</em>, <em>ignore_when_blocking=frozenset()</em>, <em>replace_unk=False</em>, <em>data_type='text'</em>, <em>verbose=False</em>, <em>report_bleu=False</em>, <em>report_rouge=False</em>, <em>report_time=False</em>, <em>copy_attn=False</em>, <em>global_scorer=None</em>, <em>out_file=None</em>, <em>report_score=True</em>, <em>logger=None</em>, <em>seed=-1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translator.html#Translator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Translate a batch of sentences with a saved model.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>model</strong> (<em>onmt.modules.NMTModel</em>) – NMT model to use for translation</li>
+<li><strong>fields</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>torchtext.data.Field</em><em>]</em>) – A dict
+mapping each side to its list of name-Field pairs.</li>
+<li><strong>src_reader</strong> (<a class="reference internal" href="onmt.inputters.html#onmt.inputters.DataReaderBase" title="onmt.inputters.DataReaderBase"><em>onmt.inputters.DataReaderBase</em></a>) – Source reader.</li>
+<li><strong>tgt_reader</strong> (<a class="reference internal" href="onmt.inputters.html#onmt.inputters.TextDataReader" title="onmt.inputters.TextDataReader"><em>onmt.inputters.TextDataReader</em></a>) – Target reader.</li>
+<li><strong>gpu</strong> (<em>int</em>) – GPU device. Set to negative for no GPU.</li>
+<li><strong>n_best</strong> (<em>int</em>) – How many beams to wait for.</li>
+<li><strong>min_length</strong> (<em>int</em>) – See
+<code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.translate.decode_strategy.DecodeStrategy</span></code>.</li>
+<li><strong>max_length</strong> (<em>int</em>) – See
+<code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.translate.decode_strategy.DecodeStrategy</span></code>.</li>
+<li><strong>beam_size</strong> (<em>int</em>) – Number of beams.</li>
+<li><strong>random_sampling_topk</strong> (<em>int</em>) – See
+<code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.translate.random_sampling.RandomSampling</span></code>.</li>
+<li><strong>random_sampling_temp</strong> (<em>int</em>) – See
+<code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.translate.random_sampling.RandomSampling</span></code>.</li>
+<li><strong>stepwise_penalty</strong> (<em>bool</em>) – Whether coverage penalty is applied every step
+or not.</li>
+<li><strong>dump_beam</strong> (<em>bool</em>) – Debugging option.</li>
+<li><strong>block_ngram_repeat</strong> (<em>int</em>) – See
+<code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.translate.decode_strategy.DecodeStrategy</span></code>.</li>
+<li><strong>ignore_when_blocking</strong> (<em>set</em><em> or </em><em>frozenset</em>) – See
+<code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.translate.decode_strategy.DecodeStrategy</span></code>.</li>
+<li><strong>replace_unk</strong> (<em>bool</em>) – Replace unknown token.</li>
+<li><strong>data_type</strong> (<em>str</em>) – Source data type.</li>
+<li><strong>verbose</strong> (<em>bool</em>) – Print/log every translation.</li>
+<li><strong>report_bleu</strong> (<em>bool</em>) – Print/log Bleu metric.</li>
+<li><strong>report_rouge</strong> (<em>bool</em>) – Print/log Rouge metric.</li>
+<li><strong>report_time</strong> (<em>bool</em>) – Print/log total time/frequency.</li>
+<li><strong>copy_attn</strong> (<em>bool</em>) – Use copy attention.</li>
+<li><strong>global_scorer</strong> (<a class="reference internal" href="#onmt.translate.GNMTGlobalScorer" title="onmt.translate.GNMTGlobalScorer"><em>onmt.translate.GNMTGlobalScorer</em></a>) – Translation
+scoring/reranking object.</li>
+<li><strong>out_file</strong> (<em>TextIO</em><em> or </em><em>codecs.StreamReaderWriter</em>) – Output file.</li>
+<li><strong>report_score</strong> (<em>bool</em>) – Whether to report scores</li>
+<li><strong>logger</strong> (<em>logging.Logger</em><em> or </em><em>NoneType</em>) – Logger.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="classmethod">
+<dt id="onmt.translate.Translator.from_opt">
+<em class="property">classmethod </em><code class="descname">from_opt</code><span class="sig-paren">(</span><em>model</em>, <em>fields</em>, <em>opt</em>, <em>model_opt</em>, <em>global_scorer=None</em>, <em>out_file=None</em>, <em>report_score=True</em>, <em>logger=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translator.html#Translator.from_opt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translator.from_opt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alternate constructor.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>model</strong> (<em>onmt.modules.NMTModel</em>) – See <code class="xref py py-func docutils literal notranslate"><span class="pre">__init__()</span></code>.</li>
+<li><strong>fields</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>torchtext.data.Field</em><em>]</em>) – See
+<code class="xref py py-func docutils literal notranslate"><span class="pre">__init__()</span></code>.</li>
+<li><strong>opt</strong> (<em>argparse.Namespace</em>) – Command line options</li>
+<li><strong>model_opt</strong> (<em>argparse.Namespace</em>) – Command line options saved with
+the model checkpoint.</li>
+<li><strong>global_scorer</strong> (<a class="reference internal" href="#onmt.translate.GNMTGlobalScorer" title="onmt.translate.GNMTGlobalScorer"><em>onmt.translate.GNMTGlobalScorer</em></a>) – See
+<code class="xref py py-func docutils literal notranslate"><span class="pre">__init__()</span></code>..</li>
+<li><strong>out_file</strong> (<em>TextIO</em><em> or </em><em>codecs.StreamReaderWriter</em>) – See
+<code class="xref py py-func docutils literal notranslate"><span class="pre">__init__()</span></code>.</li>
+<li><strong>report_score</strong> (<em>bool</em>) – See <code class="xref py py-func docutils literal notranslate"><span class="pre">__init__()</span></code>.</li>
+<li><strong>logger</strong> (<em>logging.Logger</em><em> or </em><em>NoneType</em>) – See <code class="xref py py-func docutils literal notranslate"><span class="pre">__init__()</span></code>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.translate.Translator.translate">
+<code class="descname">translate</code><span class="sig-paren">(</span><em>src</em>, <em>tgt=None</em>, <em>src_dir=None</em>, <em>batch_size=None</em>, <em>attn_debug=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translator.html#Translator.translate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translator.translate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Translate content of <code class="docutils literal notranslate"><span class="pre">src</span></code> and get gold scores from <code class="docutils literal notranslate"><span class="pre">tgt</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>src</strong> – See <code class="xref py py-func docutils literal notranslate"><span class="pre">self.src_reader.read()</span></code>.</li>
+<li><strong>tgt</strong> – See <code class="xref py py-func docutils literal notranslate"><span class="pre">self.tgt_reader.read()</span></code>.</li>
+<li><strong>src_dir</strong> – See <code class="xref py py-func docutils literal notranslate"><span class="pre">self.src_reader.read()</span></code> (only relevant
+for certain types of data).</li>
+<li><strong>batch_size</strong> (<em>int</em>) – size of examples per mini-batch</li>
+<li><strong>attn_debug</strong> (<em>bool</em>) – enables the attention logging</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><p>(<cite>list</cite>, <cite>list</cite>)</p>
+<ul class="simple">
+<li>all_scores is a list of <cite>batch_size</cite> lists of <cite>n_best</cite> scores</li>
+<li><dl class="first docutils">
+<dt>all_predictions is a list of <cite>batch_size</cite> lists</dt>
+<dd>of <cite>n_best</cite> predictions</dd>
+</dl>
+</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.translate.Translator.translate_batch">
+<code class="descname">translate_batch</code><span class="sig-paren">(</span><em>batch</em>, <em>src_vocabs</em>, <em>attn_debug</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translator.html#Translator.translate_batch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translator.translate_batch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Translate a batch of sentences.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="onmt.translate.TranslationBuilder">
+<em class="property">class </em><code class="descclassname">onmt.translate.</code><code class="descname">TranslationBuilder</code><span class="sig-paren">(</span><em>data</em>, <em>fields</em>, <em>n_best=1</em>, <em>replace_unk=False</em>, <em>has_tgt=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation.html#TranslationBuilder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.TranslationBuilder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Build a word-based translation from the batch output
+of translator and the underlying dictionaries.</p>
+<p>Replacement based on “Addressing the Rare Word
+Problem in Neural Machine Translation” <a class="reference internal" href="ref.html#luong2015b" id="id1">[LSL+15]</a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>data</strong> (<a class="reference internal" href="onmt.inputters.html#onmt.inputters.Dataset" title="onmt.inputters.Dataset"><em>onmt.inputters.Dataset</em></a>) – Data.</li>
+<li><strong>fields</strong> (<em>List</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>torchtext.data.Field</em><em>]</em><em>]</em>) – data fields</li>
+<li><strong>n_best</strong> (<em>int</em>) – number of translations produced</li>
+<li><strong>replace_unk</strong> (<em>bool</em>) – replace unknown words using attention</li>
+<li><strong>has_tgt</strong> (<em>bool</em>) – will the batch have gold targets</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="decoding-strategies">
+<h2>Decoding Strategies<a class="headerlink" href="#decoding-strategies" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="onmt.translate.DecodeStrategy">
+<em class="property">class </em><code class="descclassname">onmt.translate.</code><code class="descname">DecodeStrategy</code><span class="sig-paren">(</span><em>pad</em>, <em>bos</em>, <em>eos</em>, <em>batch_size</em>, <em>device</em>, <em>parallel_paths</em>, <em>min_length</em>, <em>block_ngram_repeat</em>, <em>exclusion_tokens</em>, <em>return_attention</em>, <em>max_length</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/decode_strategy.html#DecodeStrategy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.DecodeStrategy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Base class for generation strategies.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>pad</strong> (<em>int</em>) – Magic integer in output vocab.</li>
+<li><strong>bos</strong> (<em>int</em>) – Magic integer in output vocab.</li>
+<li><strong>eos</strong> (<em>int</em>) – Magic integer in output vocab.</li>
+<li><strong>batch_size</strong> (<em>int</em>) – Current batch size.</li>
+<li><strong>device</strong> (<em>torch.device</em><em> or </em><em>str</em>) – Device for memory bank (encoder).</li>
+<li><strong>parallel_paths</strong> (<em>int</em>) – Decoding strategies like beam search
+use parallel paths. Each batch is repeated <code class="docutils literal notranslate"><span class="pre">parallel_paths</span></code>
+times in relevant state tensors.</li>
+<li><strong>min_length</strong> (<em>int</em>) – Shortest acceptable generation, not counting
+begin-of-sentence or end-of-sentence.</li>
+<li><strong>max_length</strong> (<em>int</em>) – Longest acceptable sequence, not counting
+begin-of-sentence (presumably there has been no EOS
+yet if max_length is used as a cutoff).</li>
+<li><strong>block_ngram_repeat</strong> (<em>int</em>) – Block beams where
+<code class="docutils literal notranslate"><span class="pre">block_ngram_repeat</span></code>-grams repeat.</li>
+<li><strong>exclusion_tokens</strong> (<em>set</em><em>[</em><em>int</em><em>]</em>) – If a gram contains any of these
+tokens, it may repeat.</li>
+<li><strong>return_attention</strong> (<em>bool</em>) – Whether to work with attention too.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Variables:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pad</strong> (<em>int</em>) – See above.</li>
+<li><strong>bos</strong> (<em>int</em>) – See above.</li>
+<li><strong>eos</strong> (<em>int</em>) – See above.</li>
+<li><strong>predictions</strong> (<em>list</em><em>[</em><em>list</em><em>[</em><em>LongTensor</em><em>]</em><em>]</em>) – For each batch, holds a
+list of beam prediction sequences.</li>
+<li><strong>scores</strong> (<em>list</em><em>[</em><em>list</em><em>[</em><em>FloatTensor</em><em>]</em><em>]</em>) – For each batch, holds a
+list of scores.</li>
+<li><strong>attention</strong> (<em>list</em><em>[</em><em>list</em><em>[</em><em>FloatTensor</em><em> or </em><em>list</em><em>[</em><em>]</em><em>]</em><em>]</em>) – For each
+batch, holds a list of attention sequence tensors
+(or empty lists) having shape <code class="docutils literal notranslate"><span class="pre">(step,</span> <span class="pre">inp_seq_len)</span></code> where
+<code class="docutils literal notranslate"><span class="pre">inp_seq_len</span></code> is the length of the sample (not the max
+length of all inp seqs).</li>
+<li><strong>alive_seq</strong> (<em>LongTensor</em>) – Shape <code class="docutils literal notranslate"><span class="pre">(B</span> <span class="pre">x</span> <span class="pre">parallel_paths,</span> <span class="pre">step)</span></code>.
+This sequence grows in the <code class="docutils literal notranslate"><span class="pre">step</span></code> axis on each call to
+<a class="reference internal" href="#onmt.translate.DecodeStrategy.advance" title="onmt.translate.DecodeStrategy.advance"><code class="xref py py-func docutils literal notranslate"><span class="pre">advance()</span></code></a>.</li>
+<li><strong>is_finished</strong> (<em>ByteTensor</em><em> or </em><em>NoneType</em>) – Shape
+<code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">parallel_paths)</span></code>. Initialized to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</li>
+<li><strong>alive_attn</strong> (<em>FloatTensor</em><em> or </em><em>NoneType</em>) – If tensor, shape is
+<code class="docutils literal notranslate"><span class="pre">(step,</span> <span class="pre">B</span> <span class="pre">x</span> <span class="pre">parallel_paths,</span> <span class="pre">inp_seq_len)</span></code>, where <code class="docutils literal notranslate"><span class="pre">inp_seq_len</span></code>
+is the (max) length of the input sequence.</li>
+<li><strong>min_length</strong> (<em>int</em>) – See above.</li>
+<li><strong>max_length</strong> (<em>int</em>) – See above.</li>
+<li><strong>block_ngram_repeat</strong> (<em>int</em>) – See above.</li>
+<li><strong>exclusion_tokens</strong> (<em>set</em><em>[</em><em>int</em><em>]</em>) – See above.</li>
+<li><strong>return_attention</strong> (<em>bool</em>) – See above.</li>
+<li><strong>done</strong> (<em>bool</em>) – See above.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="onmt.translate.DecodeStrategy.advance">
+<code class="descname">advance</code><span class="sig-paren">(</span><em>log_probs</em>, <em>attn</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/decode_strategy.html#DecodeStrategy.advance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.DecodeStrategy.advance" title="Permalink to this definition">¶</a></dt>
+<dd><p>DecodeStrategy subclasses should override <a class="reference internal" href="#onmt.translate.DecodeStrategy.advance" title="onmt.translate.DecodeStrategy.advance"><code class="xref py py-func docutils literal notranslate"><span class="pre">advance()</span></code></a>.</p>
+<p>Advance is used to update <code class="docutils literal notranslate"><span class="pre">self.alive_seq</span></code>, <code class="docutils literal notranslate"><span class="pre">self.is_finished</span></code>,
+and, when appropriate, <code class="docutils literal notranslate"><span class="pre">self.alive_attn</span></code>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.translate.DecodeStrategy.update_finished">
+<code class="descname">update_finished</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/decode_strategy.html#DecodeStrategy.update_finished"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.DecodeStrategy.update_finished" title="Permalink to this definition">¶</a></dt>
+<dd><p>DecodeStrategy subclasses should override <a class="reference internal" href="#onmt.translate.DecodeStrategy.update_finished" title="onmt.translate.DecodeStrategy.update_finished"><code class="xref py py-func docutils literal notranslate"><span class="pre">update_finished()</span></code></a>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">update_finished</span></code> is used to update <code class="docutils literal notranslate"><span class="pre">self.predictions</span></code>,
+<code class="docutils literal notranslate"><span class="pre">self.scores</span></code>, and other “output” attributes.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="onmt.translate.BeamSearch">
+<em class="property">class </em><code class="descclassname">onmt.translate.</code><code class="descname">BeamSearch</code><span class="sig-paren">(</span><em>beam_size</em>, <em>batch_size</em>, <em>pad</em>, <em>bos</em>, <em>eos</em>, <em>n_best</em>, <em>mb_device</em>, <em>global_scorer</em>, <em>min_length</em>, <em>max_length</em>, <em>return_attention</em>, <em>block_ngram_repeat</em>, <em>exclusion_tokens</em>, <em>memory_lengths</em>, <em>stepwise_penalty</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam_search.html#BeamSearch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.BeamSearch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.translate.decode_strategy.DecodeStrategy</span></code></p>
+<p>Generation beam search.</p>
+<p>Note that the attributes list is not exhaustive. Rather, it highlights
+tensors to document their shape. (Since the state variables’ “batch”
+size decreases as beams finish, we denote this axis with a B rather than
+<code class="docutils literal notranslate"><span class="pre">batch_size</span></code>).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>beam_size</strong> (<em>int</em>) – Number of beams to use (see base <code class="docutils literal notranslate"><span class="pre">parallel_paths</span></code>).</li>
+<li><strong>batch_size</strong> (<em>int</em>) – See base.</li>
+<li><strong>pad</strong> (<em>int</em>) – See base.</li>
+<li><strong>bos</strong> (<em>int</em>) – See base.</li>
+<li><strong>eos</strong> (<em>int</em>) – See base.</li>
+<li><strong>n_best</strong> (<em>int</em>) – Don’t stop until at least this many beams have
+reached EOS.</li>
+<li><strong>mb_device</strong> (<em>torch.device</em><em> or </em><em>str</em>) – See base <code class="docutils literal notranslate"><span class="pre">device</span></code>.</li>
+<li><strong>global_scorer</strong> (<a class="reference internal" href="#onmt.translate.GNMTGlobalScorer" title="onmt.translate.GNMTGlobalScorer"><em>onmt.translate.GNMTGlobalScorer</em></a>) – Scorer instance.</li>
+<li><strong>min_length</strong> (<em>int</em>) – See base.</li>
+<li><strong>max_length</strong> (<em>int</em>) – See base.</li>
+<li><strong>return_attention</strong> (<em>bool</em>) – See base.</li>
+<li><strong>block_ngram_repeat</strong> (<em>int</em>) – See base.</li>
+<li><strong>exclusion_tokens</strong> (<em>set</em><em>[</em><em>int</em><em>]</em>) – See base.</li>
+<li><strong>memory_lengths</strong> (<em>LongTensor</em>) – Lengths of encodings. Used for
+masking attentions.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Variables:</th><td class="field-body"><ul class="first last simple">
+<li><strong>top_beam_finished</strong> (<em>ByteTensor</em>) – Shape <code class="docutils literal notranslate"><span class="pre">(B,)</span></code>.</li>
+<li><strong>_batch_offset</strong> (<em>LongTensor</em>) – Shape <code class="docutils literal notranslate"><span class="pre">(B,)</span></code>.</li>
+<li><strong>_beam_offset</strong> (<em>LongTensor</em>) – Shape <code class="docutils literal notranslate"><span class="pre">(batch_size</span> <span class="pre">x</span> <span class="pre">beam_size,)</span></code>.</li>
+<li><strong>alive_seq</strong> (<em>LongTensor</em>) – See base.</li>
+<li><strong>topk_log_probs</strong> (<em>FloatTensor</em>) – Shape <code class="docutils literal notranslate"><span class="pre">(B</span> <span class="pre">x</span> <span class="pre">beam_size,)</span></code>. These
+are the scores used for the topk operation.</li>
+<li><strong>select_indices</strong> (<em>LongTensor</em><em> or </em><em>NoneType</em>) – Shape
+<code class="docutils literal notranslate"><span class="pre">(B</span> <span class="pre">x</span> <span class="pre">beam_size,)</span></code>. This is just a flat view of the
+<code class="docutils literal notranslate"><span class="pre">_batch_index</span></code>.</li>
+<li><strong>topk_scores</strong> (<em>FloatTensor</em>) – Shape
+<code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">beam_size)</span></code>. These are the
+scores a sequence will receive if it finishes.</li>
+<li><strong>topk_ids</strong> (<em>LongTensor</em>) – Shape <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">beam_size)</span></code>. These are the
+word indices of the topk predictions.</li>
+<li><strong>_batch_index</strong> (<em>LongTensor</em>) – Shape <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">beam_size)</span></code>.</li>
+<li><strong>_prev_penalty</strong> (<em>FloatTensor</em><em> or </em><em>NoneType</em>) – Shape
+<code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">beam_size)</span></code>. Initialized to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</li>
+<li><strong>_coverage</strong> (<em>FloatTensor</em><em> or </em><em>NoneType</em>) – Shape
+<code class="docutils literal notranslate"><span class="pre">(1,</span> <span class="pre">B</span> <span class="pre">x</span> <span class="pre">beam_size,</span> <span class="pre">inp_seq_len)</span></code>.</li>
+<li><strong>hypotheses</strong> (<em>list</em><em>[</em><em>list</em><em>[</em><em>Tuple</em><em>[</em><em>Tensor</em><em>]</em><em>]</em><em>]</em>) – Contains a tuple
+of score (float), sequence (long), and attention (float or None).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="onmt.translate.BeamSearch.advance">
+<code class="descname">advance</code><span class="sig-paren">(</span><em>log_probs</em>, <em>attn</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam_search.html#BeamSearch.advance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.BeamSearch.advance" title="Permalink to this definition">¶</a></dt>
+<dd><p>DecodeStrategy subclasses should override <a class="reference internal" href="#onmt.translate.BeamSearch.advance" title="onmt.translate.BeamSearch.advance"><code class="xref py py-func docutils literal notranslate"><span class="pre">advance()</span></code></a>.</p>
+<p>Advance is used to update <code class="docutils literal notranslate"><span class="pre">self.alive_seq</span></code>, <code class="docutils literal notranslate"><span class="pre">self.is_finished</span></code>,
+and, when appropriate, <code class="docutils literal notranslate"><span class="pre">self.alive_attn</span></code>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.translate.BeamSearch.update_finished">
+<code class="descname">update_finished</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam_search.html#BeamSearch.update_finished"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.BeamSearch.update_finished" title="Permalink to this definition">¶</a></dt>
+<dd><p>DecodeStrategy subclasses should override <a class="reference internal" href="#onmt.translate.BeamSearch.update_finished" title="onmt.translate.BeamSearch.update_finished"><code class="xref py py-func docutils literal notranslate"><span class="pre">update_finished()</span></code></a>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">update_finished</span></code> is used to update <code class="docutils literal notranslate"><span class="pre">self.predictions</span></code>,
+<code class="docutils literal notranslate"><span class="pre">self.scores</span></code>, and other “output” attributes.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="onmt.translate.random_sampling.sample_with_temperature">
+<code class="descclassname">onmt.translate.random_sampling.</code><code class="descname">sample_with_temperature</code><span class="sig-paren">(</span><em>logits</em>, <em>sampling_temp</em>, <em>keep_topk</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/random_sampling.html#sample_with_temperature"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.random_sampling.sample_with_temperature" title="Permalink to this definition">¶</a></dt>
+<dd><p>Select next tokens randomly from the top k possible next tokens.</p>
+<p>Samples from a categorical distribution over the <code class="docutils literal notranslate"><span class="pre">keep_topk</span></code> words using
+the category probabilities <code class="docutils literal notranslate"><span class="pre">logits</span> <span class="pre">/</span> <span class="pre">sampling_temp</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>logits</strong> (<em>FloatTensor</em>) – Shaped <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">vocab_size)</span></code>.
+These can be logits (<code class="docutils literal notranslate"><span class="pre">(-inf,</span> <span class="pre">inf)</span></code>) or log-probs (<code class="docutils literal notranslate"><span class="pre">(-inf,</span> <span class="pre">0]</span></code>).
+(The distribution actually uses the log-probabilities
+<code class="docutils literal notranslate"><span class="pre">logits</span> <span class="pre">-</span> <span class="pre">logits.logsumexp(-1)</span></code>, which equals the logits if
+they are log-probabilities summing to 1.)</li>
+<li><strong>sampling_temp</strong> (<em>float</em>) – Used to scale down logits. The higher the
+value, the more likely it is that a non-max word will be
+sampled.</li>
+<li><strong>keep_topk</strong> (<em>int</em>) – This many words could potentially be chosen. The
+other logits are set to have probability 0.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><ul class="simple">
+<li>topk_ids: Shaped <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">1)</span></code>. These are
+the sampled word indices in the output vocab.</li>
+<li>topk_scores: Shaped <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">1)</span></code>. These
+are essentially <code class="docutils literal notranslate"><span class="pre">(logits</span> <span class="pre">/</span> <span class="pre">sampling_temp)[topk_ids]</span></code>.</li>
+</ul>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">(LongTensor, FloatTensor)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="onmt.translate.RandomSampling">
+<em class="property">class </em><code class="descclassname">onmt.translate.</code><code class="descname">RandomSampling</code><span class="sig-paren">(</span><em>pad</em>, <em>bos</em>, <em>eos</em>, <em>batch_size</em>, <em>device</em>, <em>min_length</em>, <em>block_ngram_repeat</em>, <em>exclusion_tokens</em>, <em>return_attention</em>, <em>max_length</em>, <em>sampling_temp</em>, <em>keep_topk</em>, <em>memory_length</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/random_sampling.html#RandomSampling"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.RandomSampling" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.translate.decode_strategy.DecodeStrategy</span></code></p>
+<p>Select next tokens randomly from the top k possible next tokens.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">scores</span></code> attribute’s lists are the score, after applying temperature,
+of the final prediction (either EOS or the final token in the event
+that <code class="docutils literal notranslate"><span class="pre">max_length</span></code> is reached)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pad</strong> (<em>int</em>) – See base.</li>
+<li><strong>bos</strong> (<em>int</em>) – See base.</li>
+<li><strong>eos</strong> (<em>int</em>) – See base.</li>
+<li><strong>batch_size</strong> (<em>int</em>) – See base.</li>
+<li><strong>device</strong> (<em>torch.device</em><em> or </em><em>str</em>) – See base <code class="docutils literal notranslate"><span class="pre">device</span></code>.</li>
+<li><strong>min_length</strong> (<em>int</em>) – See base.</li>
+<li><strong>max_length</strong> (<em>int</em>) – See base.</li>
+<li><strong>block_ngram_repeat</strong> (<em>int</em>) – See base.</li>
+<li><strong>exclusion_tokens</strong> (<em>set</em><em>[</em><em>int</em><em>]</em>) – See base.</li>
+<li><strong>return_attention</strong> (<em>bool</em>) – See base.</li>
+<li><strong>max_length</strong> – See base.</li>
+<li><strong>sampling_temp</strong> (<em>float</em>) – See
+<a class="reference internal" href="#onmt.translate.random_sampling.sample_with_temperature" title="onmt.translate.random_sampling.sample_with_temperature"><code class="xref py py-func docutils literal notranslate"><span class="pre">sample_with_temperature()</span></code></a>.</li>
+<li><strong>keep_topk</strong> (<em>int</em>) – See
+<a class="reference internal" href="#onmt.translate.random_sampling.sample_with_temperature" title="onmt.translate.random_sampling.sample_with_temperature"><code class="xref py py-func docutils literal notranslate"><span class="pre">sample_with_temperature()</span></code></a>.</li>
+<li><strong>memory_length</strong> (<em>LongTensor</em>) – Lengths of encodings. Used for
+masking attention.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="onmt.translate.RandomSampling.advance">
+<code class="descname">advance</code><span class="sig-paren">(</span><em>log_probs</em>, <em>attn</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/random_sampling.html#RandomSampling.advance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.RandomSampling.advance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Select next tokens randomly from the top k possible next tokens.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>log_probs</strong> (<em>FloatTensor</em>) – Shaped <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">vocab_size)</span></code>.
+These can be logits (<code class="docutils literal notranslate"><span class="pre">(-inf,</span> <span class="pre">inf)</span></code>) or log-probs
+(<code class="docutils literal notranslate"><span class="pre">(-inf,</span> <span class="pre">0]</span></code>). (The distribution actually uses the
+log-probabilities <code class="docutils literal notranslate"><span class="pre">logits</span> <span class="pre">-</span> <span class="pre">logits.logsumexp(-1)</span></code>,
+which equals the logits if they are log-probabilities summing
+to 1.)</li>
+<li><strong>attn</strong> (<em>FloatTensor</em>) – Shaped <code class="docutils literal notranslate"><span class="pre">(1,</span> <span class="pre">B,</span> <span class="pre">inp_seq_len)</span></code>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.translate.RandomSampling.update_finished">
+<code class="descname">update_finished</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/random_sampling.html#RandomSampling.update_finished"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.RandomSampling.update_finished" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finalize scores and predictions.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="scoring">
+<h2>Scoring<a class="headerlink" href="#scoring" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="onmt.translate.penalties.PenaltyBuilder">
+<em class="property">class </em><code class="descclassname">onmt.translate.penalties.</code><code class="descname">PenaltyBuilder</code><span class="sig-paren">(</span><em>cov_pen</em>, <em>length_pen</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/penalties.html#PenaltyBuilder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.penalties.PenaltyBuilder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Returns the Length and Coverage Penalty function for Beam Search.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>length_pen</strong> (<em>str</em>) – option name of length pen</li>
+<li><strong>cov_pen</strong> (<em>str</em>) – option name of cov pen</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Variables:</th><td class="field-body"><ul class="first last simple">
+<li><strong>has_cov_pen</strong> (<em>bool</em>) – Whether coverage penalty is None (applying it
+is a no-op). Note that the converse isn’t true. Setting beta
+to 0 should force coverage length to be a no-op.</li>
+<li><strong>has_len_pen</strong> (<em>bool</em>) – Whether length penalty is None (applying it
+is a no-op). Note that the converse isn’t true. Setting alpha
+to 1 should force length penalty to be a no-op.</li>
+<li><strong>coverage_penalty</strong> (<em>callable</em><em>[</em><em>[</em><em>FloatTensor</em><em>, </em><em>float</em><em>]</em><em>, </em><em>FloatTensor</em><em>]</em>) – Calculates the coverage penalty.</li>
+<li><strong>length_penalty</strong> (<em>callable</em><em>[</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>, </em><em>float</em><em>]</em>) – Calculates
+the length penalty.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="onmt.translate.penalties.PenaltyBuilder.coverage_none">
+<code class="descname">coverage_none</code><span class="sig-paren">(</span><em>cov</em>, <em>beta=0.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/penalties.html#PenaltyBuilder.coverage_none"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.penalties.PenaltyBuilder.coverage_none" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns zero as penalty</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.translate.penalties.PenaltyBuilder.coverage_summary">
+<code class="descname">coverage_summary</code><span class="sig-paren">(</span><em>cov</em>, <em>beta=0.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/penalties.html#PenaltyBuilder.coverage_summary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.penalties.PenaltyBuilder.coverage_summary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Our summary penalty.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.translate.penalties.PenaltyBuilder.coverage_wu">
+<code class="descname">coverage_wu</code><span class="sig-paren">(</span><em>cov</em>, <em>beta=0.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/penalties.html#PenaltyBuilder.coverage_wu"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.penalties.PenaltyBuilder.coverage_wu" title="Permalink to this definition">¶</a></dt>
+<dd><p>GNMT coverage re-ranking score.</p>
+<p>See “Google’s Neural Machine Translation System” <a class="reference internal" href="ref.html#wu2016google" id="id2">[WSC+16]</a>.
+<code class="docutils literal notranslate"><span class="pre">cov</span></code> is expected to be sized <code class="docutils literal notranslate"><span class="pre">(*,</span> <span class="pre">seq_len)</span></code>, where <code class="docutils literal notranslate"><span class="pre">*</span></code> is
+probably <code class="docutils literal notranslate"><span class="pre">batch_size</span> <span class="pre">x</span> <span class="pre">beam_size</span></code> but could be several
+dimensions like <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">beam_size)</span></code>. If <code class="docutils literal notranslate"><span class="pre">cov</span></code> is attention,
+then the <code class="docutils literal notranslate"><span class="pre">seq_len</span></code> axis probably sums to (almost) 1.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.translate.penalties.PenaltyBuilder.length_average">
+<code class="descname">length_average</code><span class="sig-paren">(</span><em>cur_len</em>, <em>alpha=0.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/penalties.html#PenaltyBuilder.length_average"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.penalties.PenaltyBuilder.length_average" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the current sequence length.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.translate.penalties.PenaltyBuilder.length_none">
+<code class="descname">length_none</code><span class="sig-paren">(</span><em>cur_len</em>, <em>alpha=0.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/penalties.html#PenaltyBuilder.length_none"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.penalties.PenaltyBuilder.length_none" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns unmodified scores.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.translate.penalties.PenaltyBuilder.length_wu">
+<code class="descname">length_wu</code><span class="sig-paren">(</span><em>cur_len</em>, <em>alpha=0.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/penalties.html#PenaltyBuilder.length_wu"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.penalties.PenaltyBuilder.length_wu" title="Permalink to this definition">¶</a></dt>
+<dd><p>GNMT length re-ranking score.</p>
+<p>See “Google’s Neural Machine Translation System” <a class="reference internal" href="ref.html#wu2016google" id="id3">[WSC+16]</a>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="onmt.translate.GNMTGlobalScorer">
+<em class="property">class </em><code class="descclassname">onmt.translate.</code><code class="descname">GNMTGlobalScorer</code><span class="sig-paren">(</span><em>alpha</em>, <em>beta</em>, <em>length_penalty</em>, <em>coverage_penalty</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam.html#GNMTGlobalScorer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.GNMTGlobalScorer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>NMT re-ranking.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>alpha</strong> (<em>float</em>) – Length parameter.</li>
+<li><strong>beta</strong> (<em>float</em>) – Coverage parameter.</li>
+<li><strong>length_penalty</strong> (<em>str</em>) – Length penalty strategy.</li>
+<li><strong>coverage_penalty</strong> (<em>str</em>) – Coverage penalty strategy.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Variables:</th><td class="field-body"><ul class="first last simple">
+<li><strong>alpha</strong> (<em>float</em>) – See above.</li>
+<li><strong>beta</strong> (<em>float</em>) – See above.</li>
+<li><strong>length_penalty</strong> (<em>callable</em>) – See <a class="reference internal" href="#onmt.translate.penalties.PenaltyBuilder" title="onmt.translate.penalties.PenaltyBuilder"><code class="xref py py-class docutils literal notranslate"><span class="pre">penalties.PenaltyBuilder</span></code></a>.</li>
+<li><strong>coverage_penalty</strong> (<em>callable</em>) – See <a class="reference internal" href="#onmt.translate.penalties.PenaltyBuilder" title="onmt.translate.penalties.PenaltyBuilder"><code class="xref py py-class docutils literal notranslate"><span class="pre">penalties.PenaltyBuilder</span></code></a>.</li>
+<li><strong>has_cov_pen</strong> (<em>bool</em>) – See <a class="reference internal" href="#onmt.translate.penalties.PenaltyBuilder" title="onmt.translate.penalties.PenaltyBuilder"><code class="xref py py-class docutils literal notranslate"><span class="pre">penalties.PenaltyBuilder</span></code></a>.</li>
+<li><strong>has_len_pen</strong> (<em>bool</em>) – See <a class="reference internal" href="#onmt.translate.penalties.PenaltyBuilder" title="onmt.translate.penalties.PenaltyBuilder"><code class="xref py py-class docutils literal notranslate"><span class="pre">penalties.PenaltyBuilder</span></code></a>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="onmt.translate.GNMTGlobalScorer.score">
+<code class="descname">score</code><span class="sig-paren">(</span><em>beam</em>, <em>logprobs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam.html#GNMTGlobalScorer.score"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.GNMTGlobalScorer.score" title="Permalink to this definition">¶</a></dt>
+<dd><p>Rescore a prediction based on penalty functions.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.translate.GNMTGlobalScorer.update_global_state">
+<code class="descname">update_global_state</code><span class="sig-paren">(</span><em>beam</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam.html#GNMTGlobalScorer.update_global_state"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.GNMTGlobalScorer.update_global_state" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keeps the coverage vector as sum of attentions.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.translate.GNMTGlobalScorer.update_score">
+<code class="descname">update_score</code><span class="sig-paren">(</span><em>beam</em>, <em>attn</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam.html#GNMTGlobalScorer.update_score"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.GNMTGlobalScorer.update_score" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update scores of a Beam that is not finished.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="onmt.translate.translation_server.html" class="btn btn-neutral float-right" title="Server" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="onmt.modules.html" class="btn btn-neutral float-left" title="Modules" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, srush
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

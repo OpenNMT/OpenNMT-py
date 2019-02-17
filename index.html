@@ -1,0 +1,372 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Contents &mdash; OpenNMT-py  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Overview" href="main.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="#" class="icon icon-home"> OpenNMT-py
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="main.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CONTRIBUTING.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ref.html">References</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="Library.html">Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extended.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Summarization.html">Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="im2text.html">Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="speech2text.html">Speech to Text</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Scripts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="options/preprocess.html">Preprocess</a></li>
+<li class="toctree-l1"><a class="reference internal" href="options/train.html">Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="options/translate.html">Translate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="options/server.html">Server</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="onmt.html">Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.translation.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.translate.translation_server.html">Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.inputters.html">Data Loaders</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">OpenNMT-py</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="#">Docs</a> &raquo;</li>
+        
+      <li>Contents</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="contents">
+<h1>Contents<a class="headerlink" href="#contents" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="main.html">Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="main.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#citation">Citation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html#additional-resources">Additional resources</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#step-1-preprocess-the-data">Step 1: Preprocess the data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#step-2-train-the-model">Step 2: Train the model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#step-3-translate">Step 3: Translate</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html">FAQ</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="FAQ.html#how-do-i-use-the-transformer-model-do-you-support-multi-gpu">How do I use the Transformer model? Do you support multi-gpu?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="CONTRIBUTING.html">Contributors</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="CONTRIBUTING.html#guidelines">Guidelines</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ref.html">References</a></li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="Library.html">Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extended.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Summarization.html">Summarization</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="Summarization.html#preprocessing-the-data">Preprocessing the data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Summarization.html#training">Training</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Summarization.html#inference">Inference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Summarization.html#evaluation">Evaluation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Summarization.html#scores-and-models">Scores and Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Summarization.html#references">References</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="im2text.html">Image to Text</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="im2text.html#dependencies">Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="im2text.html#quick-start">Quick Start</a></li>
+<li class="toctree-l2"><a class="reference internal" href="im2text.html#options">Options</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="speech2text.html">Speech to Text</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="speech2text.html#dependencies">Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="speech2text.html#quick-start">Quick Start</a></li>
+<li class="toctree-l2"><a class="reference internal" href="speech2text.html#options">Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="speech2text.html#acknowledgement">Acknowledgement</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">Scripts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="options/preprocess.html">Preprocess</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="options/preprocess.html#Named Arguments">Named Arguments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/preprocess.html#Data">Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/preprocess.html#Vocab">Vocab</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/preprocess.html#Pruning">Pruning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/preprocess.html#Random">Random</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/preprocess.html#Logging">Logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/preprocess.html#Speech">Speech</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="options/train.html">Train</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="options/train.html#Named Arguments">Named Arguments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/train.html#Model-Embeddings">Model-Embeddings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/train.html#Model-Embedding Features">Model-Embedding Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/train.html#Model- Encoder-Decoder">Model- Encoder-Decoder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/train.html#Model- Attention">Model- Attention</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/train.html#General">General</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/train.html#Initialization">Initialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/train.html#Optimization- Type">Optimization- Type</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/train.html#Optimization- Rate">Optimization- Rate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/train.html#Logging">Logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/train.html#Speech">Speech</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="options/translate.html">Translate</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="options/translate.html#Named Arguments">Named Arguments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/translate.html#Model">Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/translate.html#Data">Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/translate.html#Random Sampling">Random Sampling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/translate.html#Beam">Beam</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/translate.html#Logging">Logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/translate.html#Efficiency">Efficiency</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/translate.html#Speech">Speech</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="options/server.html">Server</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="options/server.html#Named Arguments">Named Arguments</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="onmt.html">Framework</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="onmt.html#model">Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="onmt.html#trainer">Trainer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="onmt.html#loss">Loss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="onmt.html#optimizer">Optimizer</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.modules.html">Modules</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="onmt.modules.html#core-modules">Core Modules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="onmt.modules.html#encoders">Encoders</a></li>
+<li class="toctree-l2"><a class="reference internal" href="onmt.modules.html#decoders">Decoders</a></li>
+<li class="toctree-l2"><a class="reference internal" href="onmt.modules.html#attention">Attention</a></li>
+<li class="toctree-l2"><a class="reference internal" href="onmt.modules.html#architecture-transfomer">Architecture: Transfomer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="onmt.modules.html#architecture-conv2conv">Architecture: Conv2Conv</a></li>
+<li class="toctree-l2"><a class="reference internal" href="onmt.modules.html#architecture-sru">Architecture: SRU</a></li>
+<li class="toctree-l2"><a class="reference internal" href="onmt.modules.html#alternative-encoders">Alternative Encoders</a></li>
+<li class="toctree-l2"><a class="reference internal" href="onmt.modules.html#copy-attention">Copy Attention</a></li>
+<li class="toctree-l2"><a class="reference internal" href="onmt.modules.html#structured-attention">Structured Attention</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.translation.html">Translation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="onmt.translation.html#translations">Translations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="onmt.translation.html#translator-class">Translator Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="onmt.translation.html#decoding-strategies">Decoding Strategies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="onmt.translation.html#scoring">Scoring</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.translate.translation_server.html">Server</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="onmt.translate.translation_server.html#models">Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="onmt.translate.translation_server.html#core-server">Core Server</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.inputters.html">Data Loaders</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="onmt.inputters.html#data-readers">Data Readers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="onmt.inputters.html#dataset">Dataset</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="main.html" class="btn btn-neutral float-right" title="Overview" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, srush
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

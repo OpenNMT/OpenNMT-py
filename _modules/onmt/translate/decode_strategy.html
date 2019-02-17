@@ -1,0 +1,354 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>onmt.translate.decode_strategy &mdash; OpenNMT-py  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> OpenNMT-py
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../main.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../CONTRIBUTING.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../ref.html">References</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../Library.html">Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../extended.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../Summarization.html">Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../im2text.html">Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../speech2text.html">Speech to Text</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Scripts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/preprocess.html">Preprocess</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/train.html">Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/translate.html">Translate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/server.html">Server</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.html">Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.translation.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.translate.translation_server.html">Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.inputters.html">Data Loaders</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">OpenNMT-py</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>onmt.translate.decode_strategy</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for onmt.translate.decode_strategy</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">torch</span>
+
+
+<div class="viewcode-block" id="DecodeStrategy"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.DecodeStrategy">[docs]</a><span class="k">class</span> <span class="nc">DecodeStrategy</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Base class for generation strategies.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        pad (int): Magic integer in output vocab.</span>
+<span class="sd">        bos (int): Magic integer in output vocab.</span>
+<span class="sd">        eos (int): Magic integer in output vocab.</span>
+<span class="sd">        batch_size (int): Current batch size.</span>
+<span class="sd">        device (torch.device or str): Device for memory bank (encoder).</span>
+<span class="sd">        parallel_paths (int): Decoding strategies like beam search</span>
+<span class="sd">            use parallel paths. Each batch is repeated ``parallel_paths``</span>
+<span class="sd">            times in relevant state tensors.</span>
+<span class="sd">        min_length (int): Shortest acceptable generation, not counting</span>
+<span class="sd">            begin-of-sentence or end-of-sentence.</span>
+<span class="sd">        max_length (int): Longest acceptable sequence, not counting</span>
+<span class="sd">            begin-of-sentence (presumably there has been no EOS</span>
+<span class="sd">            yet if max_length is used as a cutoff).</span>
+<span class="sd">        block_ngram_repeat (int): Block beams where</span>
+<span class="sd">            ``block_ngram_repeat``-grams repeat.</span>
+<span class="sd">        exclusion_tokens (set[int]): If a gram contains any of these</span>
+<span class="sd">            tokens, it may repeat.</span>
+<span class="sd">        return_attention (bool): Whether to work with attention too.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        pad (int): See above.</span>
+<span class="sd">        bos (int): See above.</span>
+<span class="sd">        eos (int): See above.</span>
+<span class="sd">        predictions (list[list[LongTensor]]): For each batch, holds a</span>
+<span class="sd">            list of beam prediction sequences.</span>
+<span class="sd">        scores (list[list[FloatTensor]]): For each batch, holds a</span>
+<span class="sd">            list of scores.</span>
+<span class="sd">        attention (list[list[FloatTensor or list[]]]): For each</span>
+<span class="sd">            batch, holds a list of attention sequence tensors</span>
+<span class="sd">            (or empty lists) having shape ``(step, inp_seq_len)`` where</span>
+<span class="sd">            ``inp_seq_len`` is the length of the sample (not the max</span>
+<span class="sd">            length of all inp seqs).</span>
+<span class="sd">        alive_seq (LongTensor): Shape ``(B x parallel_paths, step)``.</span>
+<span class="sd">            This sequence grows in the ``step`` axis on each call to</span>
+<span class="sd">            :func:`advance()`.</span>
+<span class="sd">        is_finished (ByteTensor or NoneType): Shape</span>
+<span class="sd">            ``(B, parallel_paths)``. Initialized to ``None``.</span>
+<span class="sd">        alive_attn (FloatTensor or NoneType): If tensor, shape is</span>
+<span class="sd">            ``(step, B x parallel_paths, inp_seq_len)``, where ``inp_seq_len``</span>
+<span class="sd">            is the (max) length of the input sequence.</span>
+<span class="sd">        min_length (int): See above.</span>
+<span class="sd">        max_length (int): See above.</span>
+<span class="sd">        block_ngram_repeat (int): See above.</span>
+<span class="sd">        exclusion_tokens (set[int]): See above.</span>
+<span class="sd">        return_attention (bool): See above.</span>
+<span class="sd">        done (bool): See above.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pad</span><span class="p">,</span> <span class="n">bos</span><span class="p">,</span> <span class="n">eos</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">parallel_paths</span><span class="p">,</span>
+                 <span class="n">min_length</span><span class="p">,</span> <span class="n">block_ngram_repeat</span><span class="p">,</span> <span class="n">exclusion_tokens</span><span class="p">,</span>
+                 <span class="n">return_attention</span><span class="p">,</span> <span class="n">max_length</span><span class="p">):</span>
+
+        <span class="c1"># magic indices</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pad</span> <span class="o">=</span> <span class="n">pad</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bos</span> <span class="o">=</span> <span class="n">bos</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eos</span> <span class="o">=</span> <span class="n">eos</span>
+
+        <span class="c1"># result caching</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">predictions</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scores</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attention</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">alive_seq</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">full</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">batch_size</span> <span class="o">*</span> <span class="n">parallel_paths</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">bos</span><span class="p">,</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">parallel_paths</span><span class="p">],</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alive_attn</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_length</span> <span class="o">=</span> <span class="n">min_length</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_length</span> <span class="o">=</span> <span class="n">max_length</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">block_ngram_repeat</span> <span class="o">=</span> <span class="n">block_ngram_repeat</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exclusion_tokens</span> <span class="o">=</span> <span class="n">exclusion_tokens</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">return_attention</span> <span class="o">=</span> <span class="n">return_attention</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">done</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">alive_seq</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">ensure_min_length</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log_probs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_length</span><span class="p">:</span>
+            <span class="n">log_probs</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">eos</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1e20</span>
+
+    <span class="k">def</span> <span class="nf">ensure_max_length</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># add one to account for BOS. Don&#39;t account for EOS because hitting</span>
+        <span class="c1"># this implies it hasn&#39;t been found.</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_length</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span><span class="o">.</span><span class="n">fill_</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">block_ngram_repeats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log_probs</span><span class="p">):</span>
+        <span class="n">cur_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_ngram_repeat</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">cur_len</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">path_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alive_seq</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="c1"># skip BOS</span>
+                <span class="n">hyp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">alive_seq</span><span class="p">[</span><span class="n">path_idx</span><span class="p">,</span> <span class="mi">1</span><span class="p">:]</span>
+                <span class="n">ngrams</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+                <span class="n">fail</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="n">gram</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">cur_len</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                    <span class="c1"># Last n tokens, n = block_ngram_repeat</span>
+                    <span class="n">gram</span> <span class="o">=</span> <span class="p">(</span><span class="n">gram</span> <span class="o">+</span> <span class="p">[</span><span class="n">hyp</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()])[</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">block_ngram_repeat</span><span class="p">:]</span>
+                    <span class="c1"># skip the blocking if any token in gram is excluded</span>
+                    <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">gram</span><span class="p">)</span> <span class="o">&amp;</span> <span class="bp">self</span><span class="o">.</span><span class="n">exclusion_tokens</span><span class="p">:</span>
+                        <span class="k">continue</span>
+                    <span class="k">if</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">gram</span><span class="p">)</span> <span class="ow">in</span> <span class="n">ngrams</span><span class="p">:</span>
+                        <span class="n">fail</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="n">ngrams</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">gram</span><span class="p">))</span>
+                <span class="k">if</span> <span class="n">fail</span><span class="p">:</span>
+                    <span class="n">log_probs</span><span class="p">[</span><span class="n">path_idx</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">10e20</span>
+
+<div class="viewcode-block" id="DecodeStrategy.advance"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.DecodeStrategy.advance">[docs]</a>    <span class="k">def</span> <span class="nf">advance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log_probs</span><span class="p">,</span> <span class="n">attn</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;DecodeStrategy subclasses should override :func:`advance()`.</span>
+
+<span class="sd">        Advance is used to update ``self.alive_seq``, ``self.is_finished``,</span>
+<span class="sd">        and, when appropriate, ``self.alive_attn``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="DecodeStrategy.update_finished"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.DecodeStrategy.update_finished">[docs]</a>    <span class="k">def</span> <span class="nf">update_finished</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;DecodeStrategy subclasses should override :func:`update_finished()`.</span>
+
+<span class="sd">        ``update_finished`` is used to update ``self.predictions``,</span>
+<span class="sd">        ``self.scores``, and other &quot;output&quot; attributes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, srush
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

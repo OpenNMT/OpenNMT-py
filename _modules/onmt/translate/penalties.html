@@ -1,0 +1,320 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>onmt.translate.penalties &mdash; OpenNMT-py  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> OpenNMT-py
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../main.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../CONTRIBUTING.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../ref.html">References</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../Library.html">Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../extended.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../Summarization.html">Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../im2text.html">Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../speech2text.html">Speech to Text</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Scripts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/preprocess.html">Preprocess</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/train.html">Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/translate.html">Translate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/server.html">Server</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.html">Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.translation.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.translate.translation_server.html">Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.inputters.html">Data Loaders</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">OpenNMT-py</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>onmt.translate.penalties</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for onmt.translate.penalties</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">division</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+
+
+<div class="viewcode-block" id="PenaltyBuilder"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.penalties.PenaltyBuilder">[docs]</a><span class="k">class</span> <span class="nc">PenaltyBuilder</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns the Length and Coverage Penalty function for Beam Search.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        length_pen (str): option name of length pen</span>
+<span class="sd">        cov_pen (str): option name of cov pen</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        has_cov_pen (bool): Whether coverage penalty is None (applying it</span>
+<span class="sd">            is a no-op). Note that the converse isn&#39;t true. Setting beta</span>
+<span class="sd">            to 0 should force coverage length to be a no-op.</span>
+<span class="sd">        has_len_pen (bool): Whether length penalty is None (applying it</span>
+<span class="sd">            is a no-op). Note that the converse isn&#39;t true. Setting alpha</span>
+<span class="sd">            to 1 should force length penalty to be a no-op.</span>
+<span class="sd">        coverage_penalty (callable[[FloatTensor, float], FloatTensor]):</span>
+<span class="sd">            Calculates the coverage penalty.</span>
+<span class="sd">        length_penalty (callable[[int, float], float]): Calculates</span>
+<span class="sd">            the length penalty.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cov_pen</span><span class="p">,</span> <span class="n">length_pen</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">has_cov_pen</span> <span class="o">=</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pen_is_none</span><span class="p">(</span><span class="n">cov_pen</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coverage_penalty</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coverage_penalty</span><span class="p">(</span><span class="n">cov_pen</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">has_len_pen</span> <span class="o">=</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pen_is_none</span><span class="p">(</span><span class="n">length_pen</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">length_penalty</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_length_penalty</span><span class="p">(</span><span class="n">length_pen</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_pen_is_none</span><span class="p">(</span><span class="n">pen</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">pen</span> <span class="o">==</span> <span class="s2">&quot;none&quot;</span> <span class="ow">or</span> <span class="n">pen</span> <span class="ow">is</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">_coverage_penalty</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cov_pen</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">cov_pen</span> <span class="o">==</span> <span class="s2">&quot;wu&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">coverage_wu</span>
+        <span class="k">elif</span> <span class="n">cov_pen</span> <span class="o">==</span> <span class="s2">&quot;summary&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">coverage_summary</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pen_is_none</span><span class="p">(</span><span class="n">cov_pen</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">coverage_none</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;No &#39;</span><span class="si">{:s}</span><span class="s2">&#39; coverage penalty.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">cov_pen</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_length_penalty</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">length_pen</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">length_pen</span> <span class="o">==</span> <span class="s2">&quot;wu&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">length_wu</span>
+        <span class="k">elif</span> <span class="n">length_pen</span> <span class="o">==</span> <span class="s2">&quot;avg&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">length_average</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pen_is_none</span><span class="p">(</span><span class="n">length_pen</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">length_none</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;No &#39;</span><span class="si">{:s}</span><span class="s2">&#39; length penalty.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">length_pen</span><span class="p">))</span>
+
+    <span class="c1"># Below are all the different penalty terms implemented so far.</span>
+    <span class="c1"># Subtract coverage penalty from topk log probs.</span>
+    <span class="c1"># Divide topk log probs by length penalty.</span>
+
+<div class="viewcode-block" id="PenaltyBuilder.coverage_wu"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.penalties.PenaltyBuilder.coverage_wu">[docs]</a>    <span class="k">def</span> <span class="nf">coverage_wu</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cov</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;GNMT coverage re-ranking score.</span>
+
+<span class="sd">        See &quot;Google&#39;s Neural Machine Translation System&quot; :cite:`wu2016google`.</span>
+<span class="sd">        ``cov`` is expected to be sized ``(*, seq_len)``, where ``*`` is</span>
+<span class="sd">        probably ``batch_size x beam_size`` but could be several</span>
+<span class="sd">        dimensions like ``(batch_size, beam_size)``. If ``cov`` is attention,</span>
+<span class="sd">        then the ``seq_len`` axis probably sums to (almost) 1.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">penalty</span> <span class="o">=</span> <span class="o">-</span><span class="n">torch</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">cov</span><span class="p">,</span> <span class="n">cov</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">fill_</span><span class="p">(</span><span class="mf">1.0</span><span class="p">))</span><span class="o">.</span><span class="n">log</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">beta</span> <span class="o">*</span> <span class="n">penalty</span></div>
+
+<div class="viewcode-block" id="PenaltyBuilder.coverage_summary"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.penalties.PenaltyBuilder.coverage_summary">[docs]</a>    <span class="k">def</span> <span class="nf">coverage_summary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cov</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Our summary penalty.&quot;&quot;&quot;</span>
+        <span class="n">penalty</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">cov</span><span class="p">,</span> <span class="n">cov</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">fill_</span><span class="p">(</span><span class="mf">1.0</span><span class="p">))</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">penalty</span> <span class="o">-=</span> <span class="n">cov</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">beta</span> <span class="o">*</span> <span class="n">penalty</span></div>
+
+<div class="viewcode-block" id="PenaltyBuilder.coverage_none"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.penalties.PenaltyBuilder.coverage_none">[docs]</a>    <span class="k">def</span> <span class="nf">coverage_none</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cov</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns zero as penalty&quot;&quot;&quot;</span>
+        <span class="n">none</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,),</span> <span class="n">device</span><span class="o">=</span><span class="n">cov</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
+                           <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">cov</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">none</span> <span class="o">=</span> <span class="n">none</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">none</span></div>
+
+<div class="viewcode-block" id="PenaltyBuilder.length_wu"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.penalties.PenaltyBuilder.length_wu">[docs]</a>    <span class="k">def</span> <span class="nf">length_wu</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cur_len</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;GNMT length re-ranking score.</span>
+
+<span class="sd">        See &quot;Google&#39;s Neural Machine Translation System&quot; :cite:`wu2016google`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="p">((</span><span class="mi">5</span> <span class="o">+</span> <span class="n">cur_len</span><span class="p">)</span> <span class="o">/</span> <span class="mf">6.0</span><span class="p">)</span> <span class="o">**</span> <span class="n">alpha</span></div>
+
+<div class="viewcode-block" id="PenaltyBuilder.length_average"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.penalties.PenaltyBuilder.length_average">[docs]</a>    <span class="k">def</span> <span class="nf">length_average</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cur_len</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the current sequence length.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">cur_len</span></div>
+
+<div class="viewcode-block" id="PenaltyBuilder.length_none"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.penalties.PenaltyBuilder.length_none">[docs]</a>    <span class="k">def</span> <span class="nf">length_none</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cur_len</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns unmodified scores.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="mf">1.0</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, srush
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

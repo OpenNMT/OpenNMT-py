@@ -1,0 +1,298 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>onmt.modules.conv_multi_step_attention &mdash; OpenNMT-py  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> OpenNMT-py
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../main.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../CONTRIBUTING.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../ref.html">References</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../Library.html">Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../extended.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../Summarization.html">Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../im2text.html">Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../speech2text.html">Speech to Text</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Scripts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/preprocess.html">Preprocess</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/train.html">Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/translate.html">Translate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/server.html">Server</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.html">Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.translation.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.translate.translation_server.html">Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.inputters.html">Data Loaders</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">OpenNMT-py</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>onmt.modules.conv_multi_step_attention</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for onmt.modules.conv_multi_step_attention</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot; Multi Step Attention for CNN &quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+<span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
+<span class="kn">from</span> <span class="nn">onmt.utils.misc</span> <span class="k">import</span> <span class="n">aeq</span>
+
+
+<span class="n">SCALE_WEIGHT</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">**</span> <span class="mf">0.5</span>
+
+
+<span class="k">def</span> <span class="nf">seq_linear</span><span class="p">(</span><span class="n">linear</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; linear transform for 3-d tensor &quot;&quot;&quot;</span>
+    <span class="n">batch</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+    <span class="n">h</span> <span class="o">=</span> <span class="n">linear</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span><span class="o">.</span><span class="n">view</span><span class="p">(</span>
+        <span class="n">batch</span> <span class="o">*</span> <span class="n">length</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="ConvMultiStepAttention"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.ConvMultiStepAttention">[docs]</a><span class="k">class</span> <span class="nc">ConvMultiStepAttention</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Conv attention takes a key matrix, a value matrix and a query vector.</span>
+<span class="sd">    Attention weight is calculated by key matrix with the query vector</span>
+<span class="sd">    and sum on the value matrix. And the same operation is applied</span>
+<span class="sd">    in each decode conv layer.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_size</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ConvMultiStepAttention</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">linear_in</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">input_size</span><span class="p">,</span> <span class="n">input_size</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mask</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="ConvMultiStepAttention.apply_mask"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.ConvMultiStepAttention.apply_mask">[docs]</a>    <span class="k">def</span> <span class="nf">apply_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mask</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Apply mask &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span></div>
+
+<div class="viewcode-block" id="ConvMultiStepAttention.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.ConvMultiStepAttention.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_target_emb</span><span class="p">,</span> <span class="n">input_from_dec</span><span class="p">,</span> <span class="n">encoder_out_top</span><span class="p">,</span>
+                <span class="n">encoder_out_combine</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            base_target_emb: target emb tensor</span>
+<span class="sd">            input_from_dec: output of decode conv</span>
+<span class="sd">            encoder_out_top: the key matrix for calculation of attetion weight,</span>
+<span class="sd">                which is the top output of encode conv</span>
+<span class="sd">            encoder_out_combine:</span>
+<span class="sd">                the value matrix for the attention-weighted sum,</span>
+<span class="sd">                which is the combination of base emb and top output of encode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># checks</span>
+        <span class="c1"># batch, channel, height, width = base_target_emb.size()</span>
+        <span class="n">batch</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">base_target_emb</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+        <span class="c1"># batch_, channel_, height_, width_ = input_from_dec.size()</span>
+        <span class="n">batch_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">height_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">input_from_dec</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+        <span class="n">aeq</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">batch_</span><span class="p">)</span>
+        <span class="n">aeq</span><span class="p">(</span><span class="n">height</span><span class="p">,</span> <span class="n">height_</span><span class="p">)</span>
+
+        <span class="c1"># enc_batch, enc_channel, enc_height = encoder_out_top.size()</span>
+        <span class="n">enc_batch</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">enc_height</span> <span class="o">=</span> <span class="n">encoder_out_top</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+        <span class="c1"># enc_batch_, enc_channel_, enc_height_ = encoder_out_combine.size()</span>
+        <span class="n">enc_batch_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">enc_height_</span> <span class="o">=</span> <span class="n">encoder_out_combine</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+
+        <span class="n">aeq</span><span class="p">(</span><span class="n">enc_batch</span><span class="p">,</span> <span class="n">enc_batch_</span><span class="p">)</span>
+        <span class="n">aeq</span><span class="p">(</span><span class="n">enc_height</span><span class="p">,</span> <span class="n">enc_height_</span><span class="p">)</span>
+
+        <span class="n">preatt</span> <span class="o">=</span> <span class="n">seq_linear</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">linear_in</span><span class="p">,</span> <span class="n">input_from_dec</span><span class="p">)</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="p">(</span><span class="n">base_target_emb</span> <span class="o">+</span> <span class="n">preatt</span><span class="p">)</span> <span class="o">*</span> <span class="n">SCALE_WEIGHT</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">pre_attn</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">bmm</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">encoder_out_top</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">pre_attn</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">masked_fill_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="p">,</span> <span class="o">-</span><span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">))</span>
+
+        <span class="n">attn</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">pre_attn</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="n">context_output</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">bmm</span><span class="p">(</span>
+            <span class="n">attn</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">encoder_out_combine</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="n">context_output</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="n">context_output</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">context_output</span><span class="p">,</span> <span class="n">attn</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, srush
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

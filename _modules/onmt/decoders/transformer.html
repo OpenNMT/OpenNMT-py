@@ -1,0 +1,452 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>onmt.decoders.transformer &mdash; OpenNMT-py  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> OpenNMT-py
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../main.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../CONTRIBUTING.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../ref.html">References</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../Library.html">Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../extended.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../Summarization.html">Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../im2text.html">Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../speech2text.html">Speech to Text</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Scripts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/preprocess.html">Preprocess</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/train.html">Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/translate.html">Translate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/server.html">Server</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.html">Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.translation.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.translate.translation_server.html">Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.inputters.html">Data Loaders</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">OpenNMT-py</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>onmt.decoders.transformer</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for onmt.decoders.transformer</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Implementation of &quot;Attention is All You Need&quot;</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+
+<span class="kn">from</span> <span class="nn">onmt.decoders.decoder</span> <span class="k">import</span> <span class="n">DecoderBase</span>
+<span class="kn">from</span> <span class="nn">onmt.modules</span> <span class="k">import</span> <span class="n">MultiHeadedAttention</span><span class="p">,</span> <span class="n">AverageAttention</span>
+<span class="kn">from</span> <span class="nn">onmt.modules.position_ffn</span> <span class="k">import</span> <span class="n">PositionwiseFeedForward</span>
+
+
+<span class="k">class</span> <span class="nc">TransformerDecoderLayer</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Args:</span>
+<span class="sd">      d_model (int): the dimension of keys/values/queries in</span>
+<span class="sd">          :class:`MultiHeadedAttention`, also the input size of</span>
+<span class="sd">          the first-layer of the :class:`PositionwiseFeedForward`.</span>
+<span class="sd">      heads (int): the number of heads for MultiHeadedAttention.</span>
+<span class="sd">      d_ff (int): the second-layer of the :class:`PositionwiseFeedForward`.</span>
+<span class="sd">      dropout (float): dropout probability.</span>
+<span class="sd">      self_attn_type (string): type of self-attention scaled-dot, average</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d_model</span><span class="p">,</span> <span class="n">heads</span><span class="p">,</span> <span class="n">d_ff</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span>
+                 <span class="n">self_attn_type</span><span class="o">=</span><span class="s2">&quot;scaled-dot&quot;</span><span class="p">,</span> <span class="n">max_relative_positions</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">TransformerDecoderLayer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">self_attn_type</span> <span class="o">==</span> <span class="s2">&quot;scaled-dot&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">self_attn</span> <span class="o">=</span> <span class="n">MultiHeadedAttention</span><span class="p">(</span>
+                <span class="n">heads</span><span class="p">,</span> <span class="n">d_model</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="n">dropout</span><span class="p">,</span>
+                <span class="n">max_relative_positions</span><span class="o">=</span><span class="n">max_relative_positions</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">self_attn_type</span> <span class="o">==</span> <span class="s2">&quot;average&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">self_attn</span> <span class="o">=</span> <span class="n">AverageAttention</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="n">dropout</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">context_attn</span> <span class="o">=</span> <span class="n">MultiHeadedAttention</span><span class="p">(</span>
+            <span class="n">heads</span><span class="p">,</span> <span class="n">d_model</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="n">dropout</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">feed_forward</span> <span class="o">=</span> <span class="n">PositionwiseFeedForward</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">d_ff</span><span class="p">,</span> <span class="n">dropout</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm_1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm_2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">drop</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_pad_mask</span><span class="p">,</span> <span class="n">tgt_pad_mask</span><span class="p">,</span>
+                <span class="n">layer_cache</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            inputs (FloatTensor): ``(batch_size, 1, model_dim)``</span>
+<span class="sd">            memory_bank (FloatTensor): ``(batch_size, src_len, model_dim)``</span>
+<span class="sd">            src_pad_mask (LongTensor): ``(batch_size, 1, src_len)``</span>
+<span class="sd">            tgt_pad_mask (LongTensor): ``(batch_size, 1, 1)``</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (FloatTensor, FloatTensor):</span>
+
+<span class="sd">            * output ``(batch_size, 1, model_dim)``</span>
+<span class="sd">            * attn ``(batch_size, 1, src_len)``</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dec_mask</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">step</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">tgt_len</span> <span class="o">=</span> <span class="n">tgt_pad_mask</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">future_mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">tgt_len</span><span class="p">,</span> <span class="n">tgt_len</span><span class="p">],</span>
+                <span class="n">device</span><span class="o">=</span><span class="n">tgt_pad_mask</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+            <span class="n">future_mask</span> <span class="o">=</span> <span class="n">future_mask</span><span class="o">.</span><span class="n">triu_</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">tgt_len</span><span class="p">,</span> <span class="n">tgt_len</span><span class="p">)</span>
+            <span class="n">dec_mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">gt</span><span class="p">(</span><span class="n">tgt_pad_mask</span> <span class="o">+</span> <span class="n">future_mask</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="n">input_norm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm_1</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">self_attn</span><span class="p">,</span> <span class="n">MultiHeadedAttention</span><span class="p">):</span>
+            <span class="n">query</span><span class="p">,</span> <span class="n">attn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">self_attn</span><span class="p">(</span><span class="n">input_norm</span><span class="p">,</span> <span class="n">input_norm</span><span class="p">,</span> <span class="n">input_norm</span><span class="p">,</span>
+                                         <span class="n">mask</span><span class="o">=</span><span class="n">dec_mask</span><span class="p">,</span>
+                                         <span class="n">layer_cache</span><span class="o">=</span><span class="n">layer_cache</span><span class="p">,</span>
+                                         <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;self&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">self_attn</span><span class="p">,</span> <span class="n">AverageAttention</span><span class="p">):</span>
+            <span class="n">query</span><span class="p">,</span> <span class="n">attn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">self_attn</span><span class="p">(</span><span class="n">input_norm</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">dec_mask</span><span class="p">,</span>
+                                         <span class="n">layer_cache</span><span class="o">=</span><span class="n">layer_cache</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">)</span>
+
+        <span class="n">query</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">query</span><span class="p">)</span> <span class="o">+</span> <span class="n">inputs</span>
+
+        <span class="n">query_norm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm_2</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+        <span class="n">mid</span><span class="p">,</span> <span class="n">attn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context_attn</span><span class="p">(</span><span class="n">memory_bank</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">query_norm</span><span class="p">,</span>
+                                      <span class="n">mask</span><span class="o">=</span><span class="n">src_pad_mask</span><span class="p">,</span>
+                                      <span class="n">layer_cache</span><span class="o">=</span><span class="n">layer_cache</span><span class="p">,</span>
+                                      <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;context&quot;</span><span class="p">)</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">feed_forward</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">mid</span><span class="p">)</span> <span class="o">+</span> <span class="n">query</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">output</span><span class="p">,</span> <span class="n">attn</span>
+
+
+<div class="viewcode-block" id="TransformerDecoder"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.decoders.TransformerDecoder">[docs]</a><span class="k">class</span> <span class="nc">TransformerDecoder</span><span class="p">(</span><span class="n">DecoderBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The Transformer decoder from &quot;Attention is All You Need&quot;.</span>
+<span class="sd">    :cite:`DBLP:journals/corr/VaswaniSPUJGKP17`</span>
+
+<span class="sd">    .. mermaid::</span>
+
+<span class="sd">       graph BT</span>
+<span class="sd">          A[input]</span>
+<span class="sd">          B[multi-head self-attn]</span>
+<span class="sd">          BB[multi-head src-attn]</span>
+<span class="sd">          C[feed forward]</span>
+<span class="sd">          O[output]</span>
+<span class="sd">          A --&gt; B</span>
+<span class="sd">          B --&gt; BB</span>
+<span class="sd">          BB --&gt; C</span>
+<span class="sd">          C --&gt; O</span>
+
+
+<span class="sd">    Args:</span>
+<span class="sd">       num_layers (int): number of encoder layers.</span>
+<span class="sd">       d_model (int): size of the model</span>
+<span class="sd">       heads (int): number of heads</span>
+<span class="sd">       d_ff (int): size of the inner FF layer</span>
+<span class="sd">       copy_attn (bool): if using a separate copy attention</span>
+<span class="sd">       self_attn_type (str): type of self-attention scaled-dot, average</span>
+<span class="sd">       dropout (float): dropout parameters</span>
+<span class="sd">       embeddings (onmt.modules.Embeddings):</span>
+<span class="sd">          embeddings to use, should have positional encodings</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">,</span> <span class="n">d_model</span><span class="p">,</span> <span class="n">heads</span><span class="p">,</span> <span class="n">d_ff</span><span class="p">,</span>
+                 <span class="n">copy_attn</span><span class="p">,</span> <span class="n">self_attn_type</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">,</span>
+                 <span class="n">max_relative_positions</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">TransformerDecoder</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span> <span class="o">=</span> <span class="n">embeddings</span>
+
+        <span class="c1"># Decoder State</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">transformer_layers</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">TransformerDecoderLayer</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">heads</span><span class="p">,</span> <span class="n">d_ff</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span>
+             <span class="n">self_attn_type</span><span class="o">=</span><span class="n">self_attn_type</span><span class="p">,</span>
+             <span class="n">max_relative_positions</span><span class="o">=</span><span class="n">max_relative_positions</span><span class="p">)</span>
+             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_layers</span><span class="p">)])</span>
+
+        <span class="c1"># previously, there was a GlobalAttention module here for copy</span>
+        <span class="c1"># attention. But it was never actually used -- the &quot;copy&quot; attention</span>
+        <span class="c1"># just reuses the context attention.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_copy</span> <span class="o">=</span> <span class="n">copy_attn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
+
+<div class="viewcode-block" id="TransformerDecoder.from_opt"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.decoders.TransformerDecoder.from_opt">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_opt</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Alternate constructor.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">opt</span><span class="o">.</span><span class="n">dec_layers</span><span class="p">,</span>
+            <span class="n">opt</span><span class="o">.</span><span class="n">dec_rnn_size</span><span class="p">,</span>
+            <span class="n">opt</span><span class="o">.</span><span class="n">heads</span><span class="p">,</span>
+            <span class="n">opt</span><span class="o">.</span><span class="n">transformer_ff</span><span class="p">,</span>
+            <span class="n">opt</span><span class="o">.</span><span class="n">copy_attn</span><span class="p">,</span>
+            <span class="n">opt</span><span class="o">.</span><span class="n">self_attn_type</span><span class="p">,</span>
+            <span class="n">opt</span><span class="o">.</span><span class="n">dropout</span><span class="p">,</span>
+            <span class="n">embeddings</span><span class="p">,</span>
+            <span class="n">opt</span><span class="o">.</span><span class="n">max_relative_positions</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TransformerDecoder.init_state"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.decoders.TransformerDecoder.init_state">[docs]</a>    <span class="k">def</span> <span class="nf">init_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">enc_hidden</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize decoder state.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">src</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;cache&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+    <span class="k">def</span> <span class="nf">map_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fn</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">_recursive_map</span><span class="p">(</span><span class="n">struct</span><span class="p">,</span> <span class="n">batch_dim</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">struct</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                        <span class="n">_recursive_map</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">struct</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">fn</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">batch_dim</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fn</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;cache&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_recursive_map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;cache&quot;</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">detach_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+
+<div class="viewcode-block" id="TransformerDecoder.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.decoders.TransformerDecoder.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Decode, possibly stepwise.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">step</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_init_cache</span><span class="p">(</span><span class="n">memory_bank</span><span class="p">)</span>
+
+        <span class="n">src</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span>
+        <span class="n">src_words</span> <span class="o">=</span> <span class="n">src</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">tgt_words</span> <span class="o">=</span> <span class="n">tgt</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">src_batch</span><span class="p">,</span> <span class="n">src_len</span> <span class="o">=</span> <span class="n">src_words</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+        <span class="n">tgt_batch</span><span class="p">,</span> <span class="n">tgt_len</span> <span class="o">=</span> <span class="n">tgt_words</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+
+        <span class="n">emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span><span class="p">(</span><span class="n">tgt</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">emb</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">==</span> <span class="mi">3</span>  <span class="c1"># len x batch x embedding_dim</span>
+
+        <span class="n">output</span> <span class="o">=</span> <span class="n">emb</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
+        <span class="n">src_memory_bank</span> <span class="o">=</span> <span class="n">memory_bank</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
+
+        <span class="n">pad_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span><span class="o">.</span><span class="n">word_padding_idx</span>
+        <span class="n">src_pad_mask</span> <span class="o">=</span> <span class="n">src_words</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">pad_idx</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># [B, 1, T_src]</span>
+        <span class="n">tgt_pad_mask</span> <span class="o">=</span> <span class="n">tgt_words</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">pad_idx</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># [B, 1, T_tgt]</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">layer</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transformer_layers</span><span class="p">):</span>
+            <span class="n">layer_cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;cache&quot;</span><span class="p">][</span><span class="s2">&quot;layer_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span> \
+                <span class="k">if</span> <span class="n">step</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="n">output</span><span class="p">,</span> <span class="n">attn</span> <span class="o">=</span> <span class="n">layer</span><span class="p">(</span>
+                <span class="n">output</span><span class="p">,</span>
+                <span class="n">src_memory_bank</span><span class="p">,</span>
+                <span class="n">src_pad_mask</span><span class="p">,</span>
+                <span class="n">tgt_pad_mask</span><span class="p">,</span>
+                <span class="n">layer_cache</span><span class="o">=</span><span class="n">layer_cache</span><span class="p">,</span>
+                <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">)</span>
+
+        <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
+        <span class="n">dec_outs</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
+        <span class="n">attn</span> <span class="o">=</span> <span class="n">attn</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
+
+        <span class="n">attns</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;std&quot;</span><span class="p">:</span> <span class="n">attn</span><span class="p">}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_copy</span><span class="p">:</span>
+            <span class="n">attns</span><span class="p">[</span><span class="s2">&quot;copy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">attn</span>
+
+        <span class="c1"># TODO change the way attns is returned dict =&gt; list or tuple (onnx)</span>
+        <span class="k">return</span> <span class="n">dec_outs</span><span class="p">,</span> <span class="n">attns</span></div>
+
+    <span class="k">def</span> <span class="nf">_init_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;cache&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">batch_size</span> <span class="o">=</span> <span class="n">memory_bank</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">depth</span> <span class="o">=</span> <span class="n">memory_bank</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">layer</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transformer_layers</span><span class="p">):</span>
+            <span class="n">layer_cache</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;memory_keys&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;memory_values&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">self_attn</span><span class="p">,</span> <span class="n">AverageAttention</span><span class="p">):</span>
+                <span class="n">layer_cache</span><span class="p">[</span><span class="s2">&quot;prev_g&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">batch_size</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">depth</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">layer_cache</span><span class="p">[</span><span class="s2">&quot;self_keys&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">layer_cache</span><span class="p">[</span><span class="s2">&quot;self_values&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;cache&quot;</span><span class="p">][</span><span class="s2">&quot;layer_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span> <span class="o">=</span> <span class="n">layer_cache</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, srush
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
