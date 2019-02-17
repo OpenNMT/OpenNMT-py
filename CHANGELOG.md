@@ -3,13 +3,19 @@
 
 
 ## [Unreleased]
+### Fixes and improvements
+
+## [0.8.2](https://github.com/OpenNMT/OpenNMT-py/tree/0.8.2) (2019-02-16)
+* Update documentation and Library example
+* Revamp args
+* Bug fixes, save moving average in FP32
+* Allow FP32 inference for FP16 models
 
 ## [0.8.1](https://github.com/OpenNMT/OpenNMT-py/tree/0.8.1) (2019-02-12)
 * Update documentation
 * Random sampling scores fixes
 * Bug fixes
 
-### Fixes and improvements
 ## [0.8.0](https://github.com/OpenNMT/OpenNMT-py/tree/0.8.0) (2019-02-09)
 * Many fixes and code cleaning thanks @flauted, @guillaumekln
 * Datasets code refactor (thanks @flauted) you need to r-preeprocess datasets
