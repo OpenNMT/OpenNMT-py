@@ -293,7 +293,8 @@ tests_nmtmodel = [[('rnn_type', 'GRU')],
                   [('encoder_type', 'rnn'),
                    ('global_attention', 'mlp'),
                    ('copy_attn', True),
-                   ('copy_attn_type', 'general')]
+                   ('copy_attn_type', 'general')],
+                  [],
                   ]
 
 if onmt.models.sru.check_sru_requirement():
