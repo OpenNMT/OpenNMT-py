@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-""" Average Attention module """
+"""Average Attention module."""
 
 import torch
 import torch.nn as nn
@@ -11,7 +11,7 @@ class AverageAttention(nn.Module):
     """
     Average Attention module from
     "Accelerating Neural Transformer via an Average Attention Network"
-    :cite:`https://arxiv.org/abs/1805.00631`.
+    :cite:`DBLP:journals/corr/abs-1805-00631`.
 
     Args:
        model_dim (int): the dimension of keys/values/queries,
@@ -31,16 +31,16 @@ class AverageAttention(nn.Module):
     def cumulative_average_mask(self, batch_size, inputs_len):
         """
         Builds the mask to compute the cumulative average as described in
-        https://arxiv.org/abs/1805.00631 -- Figure 3
+        :cite:`DBLP:journals/corr/abs-1805-00631` -- Figure 3
 
         Args:
             batch_size (int): batch size
             inputs_len (int): length of the inputs
 
         Returns:
-            (`FloatTensor`):
+            (FloatTensor):
 
-            * A Tensor of shape `[batch_size x input_len x input_len]`
+            * A Tensor of shape ``(batch_size, input_len, input_len)``
         """
 
         triangle = torch.tril(torch.ones(inputs_len, inputs_len))
@@ -54,21 +54,22 @@ class AverageAttention(nn.Module):
                            layer_cache=None, step=None):
         """
         Computes the cumulative average as described in
-        https://arxiv.org/abs/1805.00631 -- Equations (1) (5) (6)
+        :cite:`DBLP:journals/corr/abs-1805-00631` -- Equations (1) (5) (6)
 
         Args:
-            inputs (`FloatTensor`): sequence to average
-                `[batch_size x input_len x dimension]`
+            inputs (FloatTensor): sequence to average
+                ``(batch_size, input_len, dimension)``
             mask_or_step: if cache is set, this is assumed
                 to be the current step of the
                 dynamic decoding. Otherwise, it is the mask matrix
                 used to compute the cumulative average.
-            cache: a dictionary containing the cumulative average
+            layer_cache: a dictionary containing the cumulative average
                 of the previous step.
 
         Returns:
-            a tensor of the same shape and type as :obj:`inputs`.
+            a tensor of the same shape and type as ``inputs``.
         """
+
         if layer_cache is not None:
             step = mask_or_step
             device = inputs.device
@@ -83,15 +84,16 @@ class AverageAttention(nn.Module):
     def forward(self, inputs, mask=None, layer_cache=None, step=None):
         """
         Args:
-            inputs (`FloatTensor`): `[batch_size x input_len x model_dim]`
+            inputs (FloatTensor): ``(batch_size, input_len, model_dim)``
 
         Returns:
-            (`FloatTensor`, `FloatTensor`):
+            (FloatTensor, FloatTensor):
 
-            * gating_outputs `[batch_size x input_len x model_dim]`
+            * gating_outputs ``(batch_size, input_len, model_dim)``
             * average_outputs average attention
-                `[batch_size x input_len x model_dim]`
+                ``(batch_size, input_len, model_dim)``
         """
+
         batch_size = inputs.size(0)
         inputs_len = inputs.size(1)
 

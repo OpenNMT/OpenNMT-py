@@ -9,9 +9,7 @@ from onmt.modules.util_class import Elementwise
 
 
 class PositionalEncoding(nn.Module):
-    """
-    Implements the sinusoidal positional encoding for
-    non-recurrent neural networks.
+    """Sinusoidal positional encoding for non-recurrent neural networks.
 
     Implementation based on "Attention Is All You Need"
     :cite:`DBLP:journals/corr/VaswaniSPUJGKP17`
@@ -38,6 +36,15 @@ class PositionalEncoding(nn.Module):
         self.dim = dim
 
     def forward(self, emb, step=None):
+        """Embed inputs.
+
+        Args:
+            emb (FloatTensor): Sequence of word vectors
+                ``(seq_len, batch_size, self.dim)``
+            step (int or NoneType): If stepwise (``seq_len = 1``), use
+                the encoding for this position.
+        """
+
         emb = emb * math.sqrt(self.dim)
         if step is None:
             emb = emb + self.pe[:emb.size(0)]
@@ -48,8 +55,7 @@ class PositionalEncoding(nn.Module):
 
 
 class Embeddings(nn.Module):
-    """
-    Words embeddings for encoder/decoder.
+    """Words embeddings for encoder/decoder.
 
     Additionally includes ability to add sparse input features
     based on "Linguistic Input Features Improve Neural Machine Translation"
@@ -72,21 +78,19 @@ class Embeddings(nn.Module):
     Args:
         word_vec_size (int): size of the dictionary of embeddings.
         word_padding_idx (int): padding index for words in the embeddings.
-        feats_padding_idx (list of int): padding index for a list of features
+        feat_padding_idx (List[int]): padding index for a list of features
                                    in the embeddings.
         word_vocab_size (int): size of dictionary of embeddings for words.
-        feat_vocab_sizes ([int], optional): list of size of dictionary
-                                    of embeddings for each feature.
-
-        position_encoding (bool): see :obj:`onmt.modules.PositionalEncoding`
-
+        feat_vocab_sizes (List[int], optional): list of size of dictionary
+            of embeddings for each feature.
+        position_encoding (bool): see :class:`~onmt.modules.PositionalEncoding`
         feat_merge (string): merge action for the features embeddings:
-                    concat, sum or mlp.
+            concat, sum or mlp.
         feat_vec_exponent (float): when using `-feat_merge concat`, feature
-                    embedding size is N^feat_dim_exponent, where N is the
-                    number of values the feature takes.
+            embedding size is N^feat_dim_exponent, where N is the
+            number of values the feature takes.
         feat_vec_size (int): embedding dimension for features when using
-                    `-feat_merge mlp`
+            `-feat_merge mlp`
         dropout (float): dropout probability.
     """
 
@@ -195,12 +199,12 @@ class Embeddings(nn.Module):
 
     @property
     def word_lut(self):
-        """ word look-up table """
+        """Word look-up table."""
         return self.make_embedding[0][0]
 
     @property
     def emb_luts(self):
-        """ embedding look-up table """
+        """Embedding look-up table."""
         return self.make_embedding[0]
 
     def load_pretrained_vectors(self, emb_file):
@@ -208,8 +212,8 @@ class Embeddings(nn.Module):
 
         Args:
           emb_file (str) : path to torch serialized embeddings
-          fixed (bool) : if true, embeddings are not updated
         """
+
         if emb_file:
             pretrained = torch.load(emb_file)
             pretrained_vec_size = pretrained.size(1)
@@ -222,14 +226,15 @@ class Embeddings(nn.Module):
                 self.word_lut.weight.data.copy_(pretrained)
 
     def forward(self, source, step=None):
-        """
-        Computes the embeddings for words and features.
+        """Computes the embeddings for words and features.
 
         Args:
-            source (`LongTensor`): index tensor `[len x batch x nfeat]`
-        Return:
-            `FloatTensor`: word embeddings `[len x batch x embedding_size]`
+            source (LongTensor): index tensor ``(len, batch, nfeat)``
+
+        Returns:
+            FloatTensor: Word embeddings ``(len, batch, embedding_size)``
         """
+
         if self.position_encoding:
             for i, module in enumerate(self.make_embedding._modules.values()):
                 if i == len(self.make_embedding._modules.values()) - 1:

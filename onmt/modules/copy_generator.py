@@ -35,8 +35,10 @@ def collapse_copy_scores(scores, batch, tgt_vocab, src_vocabs,
 
 
 class CopyGenerator(nn.Module):
-    """An implementation of pointer-generator networks (See et al., 2017)
-    (https://arxiv.org/abs/1704.04368), which consider copying words
+    """An implementation of pointer-generator networks
+    :cite:`DBLP:journals/corr/SeeLM17`.
+
+    These networks consider copying words
     directly from the source sequence.
 
     The copy generator is an extended version of the standard
@@ -88,17 +90,18 @@ class CopyGenerator(nn.Module):
     def forward(self, hidden, attn, src_map):
         """
         Compute a distribution over the target dictionary
-        extended by the dynamic dictionary implied by compying
+        extended by the dynamic dictionary implied by copying
         source words.
 
         Args:
-           hidden (`FloatTensor`): hidden outputs `[batch*tlen, input_size]`
-           attn (`FloatTensor`): attn for each `[batch*tlen, input_size]`
-           src_map (`FloatTensor`):
-             A sparse indicator matrix mapping each source word to
-             its index in the "extended" vocab containing.
-             `[src_len, batch, extra_words]`
+           hidden (FloatTensor): hidden outputs ``(batch x tlen, input_size)``
+           attn (FloatTensor): attn for each ``(batch x tlen, input_size)``
+           src_map (FloatTensor):
+               A sparse indicator matrix mapping each source word to
+               its index in the "extended" vocab containing.
+               ``(src_len, batch, extra_words)``
         """
+
         # CHECKS
         batch_by_tlen, _ = hidden.size()
         batch_by_tlen_, slen = attn.size()
@@ -125,8 +128,7 @@ class CopyGenerator(nn.Module):
 
 
 class CopyGeneratorLoss(nn.Module):
-    """ Copy generator criterion """
-
+    """Copy generator criterion."""
     def __init__(self, vocab_size, force_copy, unk_index=0,
                  ignore_index=-100, eps=1e-20):
         super(CopyGeneratorLoss, self).__init__()
@@ -138,11 +140,12 @@ class CopyGeneratorLoss(nn.Module):
 
     def forward(self, scores, align, target):
         """
-        scores (FloatTensor): (batch_size*tgt_len) x dynamic vocab size
-            whose sum along dim 1 is less than or equal to 1, i.e. cols
-            softmaxed.
-        align (LongTensor): (batch_size*tgt_len)
-        target (LongTensor): (batch_size*tgt_len)
+        Args:
+            scores (FloatTensor): ``(batch_size*tgt_len)`` x dynamic vocab size
+                whose sum along dim 1 is less than or equal to 1, i.e. cols
+                softmaxed.
+            align (LongTensor): ``(batch_size x tgt_len)``
+            target (LongTensor): ``(batch_size x tgt_len)``
         """
         # probabilities assigned by the model to the gold targets
         vocab_probs = scores.gather(1, target.unsqueeze(1)).squeeze(1)
@@ -170,17 +173,14 @@ class CopyGeneratorLoss(nn.Module):
 
 
 class CopyGeneratorLossCompute(LossComputeBase):
-    """
-    Copy Generator Loss Computation.
-    """
-
+    """Copy Generator Loss Computation."""
     def __init__(self, criterion, generator, tgt_vocab, normalize_by_length):
         super(CopyGeneratorLossCompute, self).__init__(criterion, generator)
         self.tgt_vocab = tgt_vocab
         self.normalize_by_length = normalize_by_length
 
     def _make_shard_state(self, batch, output, range_, attns):
-        """ See base class for args description. """
+        """See base class for args description."""
         if getattr(batch, "alignment", None) is None:
             raise AssertionError("using -copy_attn you need to pass in "
                                  "-dynamic_dict during preprocess stage.")
@@ -193,8 +193,10 @@ class CopyGeneratorLossCompute(LossComputeBase):
         }
 
     def _compute_loss(self, batch, output, target, copy_attn, align):
-        """
-        Compute the loss. The args must match self._make_shard_state().
+        """Compute the loss.
+
+        The args must match :func:`self._make_shard_state()`.
+
         Args:
             batch: the current batch.
             output: the predict output from the model.
@@ -202,6 +204,7 @@ class CopyGeneratorLossCompute(LossComputeBase):
             copy_attn: the copy attention value.
             align: the align info.
         """
+
         target = target.view(-1)
         align = align.view(-1)
         scores = self.generator(

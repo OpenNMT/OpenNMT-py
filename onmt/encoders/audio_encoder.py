@@ -1,4 +1,4 @@
-""" Audio encoder """
+"""Audio encoder"""
 import math
 
 import torch.nn as nn
@@ -11,19 +11,22 @@ from onmt.encoders.encoder import EncoderBase
 
 
 class AudioEncoder(EncoderBase):
-    """
-    A simple encoder convolutional -> recurrent neural network for
-    audio input.
+    """A simple encoder CNN -> RNN for audio input.
 
     Args:
-        num_layers (int): number of encoder layers.
-        bidirectional (bool): bidirectional encoder.
-        rnn_size (int): size of hidden states of the rnn.
+        rnn_type (str): Type of RNN (e.g. GRU, LSTM, etc).
+        enc_layers (int): Number of encoder layers.
+        dec_layers (int): Number of decoder layers.
+        brnn (bool): Bidirectional encoder.
+        enc_rnn_size (int): Size of hidden states of the rnn.
+        dec_rnn_size (int): Size of the decoder hidden states.
+        enc_pooling (str): A comma separated list either of length 1
+            or of length ``enc_layers`` specifying the pooling amount.
         dropout (float): dropout probablity.
         sample_rate (float): input spec
         window_size (int): input spec
-
     """
+
     def __init__(self, rnn_type, enc_layers, dec_layers, brnn,
                  enc_rnn_size, dec_rnn_size, enc_pooling, dropout,
                  sample_rate, window_size):
@@ -78,6 +81,7 @@ class AudioEncoder(EncoderBase):
 
     @classmethod
     def from_opt(cls, opt, embeddings=None):
+        """Alternate constructor."""
         if embeddings is not None:
             raise ValueError("Cannot use embeddings with AudioEncoder.")
         return cls(
@@ -93,8 +97,7 @@ class AudioEncoder(EncoderBase):
             opt.window_size)
 
     def forward(self, src, lengths=None):
-        "See :obj:`onmt.encoders.encoder.EncoderBase.forward()`"
-
+        """See :func:`onmt.encoders.encoder.EncoderBase.forward()`"""
         batch_size, _, nfft, t = src.size()
         src = src.transpose(0, 1).transpose(0, 3).contiguous() \
                  .view(t, batch_size, nfft)

@@ -16,8 +16,8 @@ class PenaltyBuilder(object):
         has_len_pen (bool): Whether length penalty is None (applying it
             is a no-op). Note that the converse isn't true. Setting alpha
             to 1 should force length penalty to be a no-op.
-        coverage_penalty (callable[[torch.FloatTensor, float],
-            torch.FloatTensor]): Calculates the coverage penalty.
+        coverage_penalty (callable[[FloatTensor, float], FloatTensor]):
+            Calculates the coverage penalty.
         length_penalty (callable[[int, float], float]): Calculates
             the length penalty.
     """
@@ -64,7 +64,7 @@ class PenaltyBuilder(object):
         See "Google's Neural Machine Translation System" :cite:`wu2016google`.
         ``cov`` is expected to be sized ``(*, seq_len)``, where ``*`` is
         probably ``batch_size x beam_size`` but could be several
-        dimensions like ``batch_size, beam_size``. If ``cov`` is attention,
+        dimensions like ``(batch_size, beam_size)``. If ``cov`` is attention,
         then the ``seq_len`` axis probably sums to (almost) 1.
         """
 

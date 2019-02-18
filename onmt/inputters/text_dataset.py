@@ -109,7 +109,7 @@ class TextMultiField(RawField):
                 are built.
 
         Returns:
-            torch.LongTensor or Tuple[torch.LongTensor, torch.LongTensor]:
+            torch.LongTensor or Tuple[LongTensor, LongTensor]:
                 A tensor of shape ``(seq_len, batch_size, len(self.fields))``
                 where the field features are ordered like ``self.fields``.
                 If the base field returns lengths, these are also returned

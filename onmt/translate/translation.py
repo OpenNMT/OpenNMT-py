@@ -14,7 +14,7 @@ class TranslationBuilder(object):
     Problem in Neural Machine Translation" :cite:`Luong2015b`
 
     Args:
-       data (DataSet):
+       data (onmt.inputters.Dataset): Data.
        fields (List[Tuple[str, torchtext.data.Field]]): data fields
        n_best (int): number of translations produced
        replace_unk (bool): replace unknown words using attention
@@ -105,19 +105,17 @@ class TranslationBuilder(object):
 
 
 class Translation(object):
-    """
-    Container for a translated sentence.
+    """Container for a translated sentence.
 
     Attributes:
-        src (`LongTensor`): src word ids
-        src_raw ([str]): raw src words
-
-        pred_sents ([[str]]): words from the n-best translations
-        pred_scores ([[float]]): log-probs of n-best translations
-        attns ([`FloatTensor`]) : attention dist for each translation
-        gold_sent ([str]): words from gold translation
-        gold_score ([float]): log-prob of gold translation
-
+        src (LongTensor): Source word IDs.
+        src_raw (List[str]): Raw source words.
+        pred_sents (List[List[str]]): Words from the n-best translations.
+        pred_scores (List[List[float]]): Log-probs of n-best translations.
+        attns (List[FloatTensor]) : Attention distribution for each
+            translation.
+        gold_sent (List[str]): Words from gold translation.
+        gold_score (List[float]): Log-prob of gold translation.
     """
 
     __slots__ = ["src", "src_raw", "pred_sents", "attns", "pred_scores",

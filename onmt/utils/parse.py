@@ -10,7 +10,6 @@ from onmt.utils.logging import logger
 class ArgumentParser(cfargparse.ArgumentParser):
     def __init__(
             self,
-            md_help=True,
             config_file_parser_class=cfargparse.YAMLConfigFileParser,
             formatter_class=cfargparse.ArgumentDefaultsHelpFormatter,
             **kwargs):
@@ -18,8 +17,6 @@ class ArgumentParser(cfargparse.ArgumentParser):
             config_file_parser_class=config_file_parser_class,
             formatter_class=formatter_class,
             **kwargs)
-        if md_help:
-            opts.add_md_help_argument(self)
 
     @classmethod
     def defaults(cls, *args):

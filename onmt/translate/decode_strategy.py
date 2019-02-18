@@ -28,21 +28,21 @@ class DecodeStrategy(object):
         pad (int): See above.
         bos (int): See above.
         eos (int): See above.
-        predictions (list[list[torch.LongTensor]]): For each batch, holds a
+        predictions (list[list[LongTensor]]): For each batch, holds a
             list of beam prediction sequences.
-        scores (list[list[torch.FloatTensor]]): For each batch, holds a
+        scores (list[list[FloatTensor]]): For each batch, holds a
             list of scores.
-        attention (list[list[torch.FloatTensor or list[]]]): For each
+        attention (list[list[FloatTensor or list[]]]): For each
             batch, holds a list of attention sequence tensors
             (or empty lists) having shape ``(step, inp_seq_len)`` where
             ``inp_seq_len`` is the length of the sample (not the max
             length of all inp seqs).
-        alive_seq (torch.LongTensor): Shape ``(B x parallel_paths, step)``.
+        alive_seq (LongTensor): Shape ``(B x parallel_paths, step)``.
             This sequence grows in the ``step`` axis on each call to
             :func:`advance()`.
-        is_finished (torch.ByteTensor or NoneType): Shape
+        is_finished (ByteTensor or NoneType): Shape
             ``(B, parallel_paths)``. Initialized to ``None``.
-        alive_attn (torch.FloatTensor or NoneType): If tensor, shape is
+        alive_attn (FloatTensor or NoneType): If tensor, shape is
             ``(step, B x parallel_paths, inp_seq_len)``, where ``inp_seq_len``
             is the (max) length of the input sequence.
         min_length (int): See above.
@@ -51,8 +51,8 @@ class DecodeStrategy(object):
         exclusion_tokens (set[int]): See above.
         return_attention (bool): See above.
         done (bool): See above.
-
     """
+
     def __init__(self, pad, bos, eos, batch_size, device, parallel_paths,
                  min_length, block_ngram_repeat, exclusion_tokens,
                  return_attention, max_length):

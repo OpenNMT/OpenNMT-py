@@ -1,4 +1,4 @@
-# Example: Summarization
+# Summarization
 
 Note: The process and results below are presented in our paper `Bottom-Up Abstractive Summarization`. Please consider citing it if you follow these instructions. 
 

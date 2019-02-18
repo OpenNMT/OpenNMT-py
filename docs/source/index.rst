@@ -2,23 +2,43 @@ Contents
 --------
 
 .. toctree::
+      :caption: Getting Started
       :maxdepth: 2
 
       main.md
       quickstart.md
-      onmt.rst
-      onmt.modules.rst
-      onmt.translation.rst
-      onmt.inputters.rst
-      Library.md
+      FAQ.md
+      CONTRIBUTING.md
+      ref.rst
 
-      options/preprocess.md
-      options/train.md
-      options/translate.md
+
+.. toctree::
+      :caption: Examples
+      :maxdepth: 2
+
+      Library.md
       extended.md
       Summarization.md
       im2text.md
       speech2text.md
-      FAQ.md
-      CONTRIBUTING.md
-      ref.rst
+
+
+.. toctree::
+      :caption: Scripts
+      :maxdepth: 2
+
+      options/preprocess.rst
+      options/train.rst
+      options/translate.rst
+      options/server.rst
+
+
+.. toctree::
+      :caption: API
+      :maxdepth: 2
+
+      onmt.rst
+      onmt.modules.rst
+      onmt.translation.rst
+      onmt.translate.translation_server.rst
+      onmt.inputters.rst
