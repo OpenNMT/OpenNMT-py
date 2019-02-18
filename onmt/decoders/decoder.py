@@ -76,6 +76,8 @@ class RNNDecoderBase(DecoderBase):
        dropout (float) : dropout value for :class:`torch.nn.Dropout`
        embeddings (onmt.modules.Embeddings): embedding module to use
        reuse_copy_attn (bool): reuse the attention for copying
+       copy_attn_type (str): The copy attention style. See
+        :class:`~onmt.modules.GlobalAttention`.
     """
 
     def __init__(self, rnn_type, bidirectional_encoder, num_layers,
