@@ -144,6 +144,9 @@ class Translator(object):
         self.src_reader = src_reader
         self.tgt_reader = tgt_reader
         self.replace_unk = replace_unk
+        if self.replace_unk and not self.model.decoder.attentional:
+            raise ValueError(
+                "replace_unk requires an attentional decoder.")
         self.data_type = data_type
         self.verbose = verbose
         self.report_bleu = report_bleu
@@ -153,6 +156,10 @@ class Translator(object):
         self.copy_attn = copy_attn
 
         self.global_scorer = global_scorer
+        if self.global_scorer.has_cov_pen and \
+                not self.model.decoder.attentional:
+            raise ValueError(
+                "Coverage penalty requires an attentional decoder.")
         self.out_file = out_file
         self.report_score = report_score
         self.logger = logger
@@ -544,7 +551,10 @@ class Translator(object):
 
         # Generator forward.
         if not self.copy_attn:
-            attn = dec_attn["std"]
+            if "std" in dec_attn:
+                attn = dec_attn["std"]
+            else:
+                attn = None
             log_probs = self.model.generator(dec_out.squeeze(0))
             # returns [(batch_size x beam_size) , vocab ] when 1 step
             # or [ tgt_len, batch_size, vocab ] when full sentence

@@ -74,7 +74,8 @@ class GlobalAttention(nn.Module):
 
         self.dim = dim
         assert attn_type in ["dot", "general", "mlp"], (
-            "Please select a valid attention type.")
+            "Please select a valid attention type (got {:s}).".format(
+                attn_type))
         self.attn_type = attn_type
         assert attn_func in ["softmax", "sparsemax"], (
             "Please select a valid attention function.")

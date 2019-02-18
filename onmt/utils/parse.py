@@ -43,6 +43,9 @@ class ArgumentParser(cfargparse.ArgumentParser):
 
         model_opt.brnn = model_opt.encoder_type == "brnn"
 
+        if model_opt.copy_attn_type is None:
+            model_opt.copy_attn_type = model_opt.global_attention
+
     @classmethod
     def validate_model_opts(cls, model_opt):
         assert model_opt.model_type in ["text", "img", "audio"], \

@@ -22,7 +22,8 @@ class DecodeStrategy(object):
             ``block_ngram_repeat``-grams repeat.
         exclusion_tokens (set[int]): If a gram contains any of these
             tokens, it may repeat.
-        return_attention (bool): Whether to work with attention too.
+        return_attention (bool): Whether to work with attention too. If this
+            is true, it is assumed that the decoder is attentional.
 
     Attributes:
         pad (int): See above.
