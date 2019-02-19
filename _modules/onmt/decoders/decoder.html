@@ -185,7 +185,16 @@
 
 
 <div class="viewcode-block" id="DecoderBase"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.decoders.DecoderBase">[docs]</a><span class="k">class</span> <span class="nc">DecoderBase</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Abstract class for decoders.&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Abstract class for decoders.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        attentional (bool): The decoder returns non-empty attention.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attentional</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">DecoderBase</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attentional</span> <span class="o">=</span> <span class="n">attentional</span>
+
 <div class="viewcode-block" id="DecoderBase.from_opt"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.decoders.DecoderBase.from_opt">[docs]</a>    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">from_opt</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Alternate constructor.</span>
@@ -243,14 +252,17 @@
 <span class="sd">       dropout (float) : dropout value for :class:`torch.nn.Dropout`</span>
 <span class="sd">       embeddings (onmt.modules.Embeddings): embedding module to use</span>
 <span class="sd">       reuse_copy_attn (bool): reuse the attention for copying</span>
+<span class="sd">       copy_attn_type (str): The copy attention style. See</span>
+<span class="sd">        :class:`~onmt.modules.GlobalAttention`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rnn_type</span><span class="p">,</span> <span class="n">bidirectional_encoder</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">,</span>
                  <span class="n">hidden_size</span><span class="p">,</span> <span class="n">attn_type</span><span class="o">=</span><span class="s2">&quot;general&quot;</span><span class="p">,</span> <span class="n">attn_func</span><span class="o">=</span><span class="s2">&quot;softmax&quot;</span><span class="p">,</span>
                  <span class="n">coverage_attn</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">context_gate</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">copy_attn</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">embeddings</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">reuse_copy_attn</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">RNNDecoderBase</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+                 <span class="n">reuse_copy_attn</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">copy_attn_type</span><span class="o">=</span><span class="s2">&quot;general&quot;</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RNNDecoderBase</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">attentional</span><span class="o">=</span><span class="n">attn_type</span> <span class="o">!=</span> <span class="s2">&quot;none&quot;</span> <span class="ow">and</span> <span class="n">attn_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">bidirectional_encoder</span> <span class="o">=</span> <span class="n">bidirectional_encoder</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_layers</span> <span class="o">=</span> <span class="n">num_layers</span>
@@ -278,19 +290,29 @@
 
         <span class="c1"># Set up the standard attention.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_coverage</span> <span class="o">=</span> <span class="n">coverage_attn</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">attn</span> <span class="o">=</span> <span class="n">GlobalAttention</span><span class="p">(</span>
-            <span class="n">hidden_size</span><span class="p">,</span> <span class="n">coverage</span><span class="o">=</span><span class="n">coverage_attn</span><span class="p">,</span>
-            <span class="n">attn_type</span><span class="o">=</span><span class="n">attn_type</span><span class="p">,</span> <span class="n">attn_func</span><span class="o">=</span><span class="n">attn_func</span>
-        <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">attentional</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coverage</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot use coverage term with no attention.&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">attn</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">attn</span> <span class="o">=</span> <span class="n">GlobalAttention</span><span class="p">(</span>
+                <span class="n">hidden_size</span><span class="p">,</span> <span class="n">coverage</span><span class="o">=</span><span class="n">coverage_attn</span><span class="p">,</span>
+                <span class="n">attn_type</span><span class="o">=</span><span class="n">attn_type</span><span class="p">,</span> <span class="n">attn_func</span><span class="o">=</span><span class="n">attn_func</span>
+            <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">copy_attn</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">reuse_copy_attn</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">copy_attn_type</span> <span class="o">==</span> <span class="s2">&quot;none&quot;</span> <span class="ow">or</span> <span class="n">copy_attn_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Cannot use copy_attn with copy_attn_type none&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span> <span class="o">=</span> <span class="n">GlobalAttention</span><span class="p">(</span>
-                <span class="n">hidden_size</span><span class="p">,</span> <span class="n">attn_type</span><span class="o">=</span><span class="n">attn_type</span><span class="p">,</span> <span class="n">attn_func</span><span class="o">=</span><span class="n">attn_func</span>
+                <span class="n">hidden_size</span><span class="p">,</span> <span class="n">attn_type</span><span class="o">=</span><span class="n">copy_attn_type</span><span class="p">,</span> <span class="n">attn_func</span><span class="o">=</span><span class="n">attn_func</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_reuse_copy_attn</span> <span class="o">=</span> <span class="n">reuse_copy_attn</span> <span class="ow">and</span> <span class="n">copy_attn</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reuse_copy_attn</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">attentional</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot reuse copy attention with no attention.&quot;</span><span class="p">)</span>
 
 <div class="viewcode-block" id="RNNDecoderBase.from_opt"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.decoders.RNNDecoderBase.from_opt">[docs]</a>    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">from_opt</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">):</span>
@@ -307,7 +329,8 @@
             <span class="n">opt</span><span class="o">.</span><span class="n">copy_attn</span><span class="p">,</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">dropout</span><span class="p">,</span>
             <span class="n">embeddings</span><span class="p">,</span>
-            <span class="n">opt</span><span class="o">.</span><span class="n">reuse_copy_attn</span><span class="p">)</span></div>
+            <span class="n">opt</span><span class="o">.</span><span class="n">reuse_copy_attn</span><span class="p">,</span>
+            <span class="n">opt</span><span class="o">.</span><span class="n">copy_attn_type</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="RNNDecoderBase.init_state"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.decoders.RNNDecoderBase.init_state">[docs]</a>    <span class="k">def</span> <span class="nf">init_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">encoder_final</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize decoder state with last state of the encoder.&quot;&quot;&quot;</span>
@@ -442,12 +465,15 @@
         <span class="n">aeq</span><span class="p">(</span><span class="n">tgt_batch</span><span class="p">,</span> <span class="n">output_batch</span><span class="p">)</span>
 
         <span class="c1"># Calculate the attention.</span>
-        <span class="n">dec_outs</span><span class="p">,</span> <span class="n">p_attn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">attn</span><span class="p">(</span>
-            <span class="n">rnn_output</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">(),</span>
-            <span class="n">memory_bank</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
-            <span class="n">memory_lengths</span><span class="o">=</span><span class="n">memory_lengths</span>
-        <span class="p">)</span>
-        <span class="n">attns</span><span class="p">[</span><span class="s2">&quot;std&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">p_attn</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">attentional</span><span class="p">:</span>
+            <span class="n">dec_outs</span> <span class="o">=</span> <span class="n">rnn_output</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dec_outs</span><span class="p">,</span> <span class="n">p_attn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">attn</span><span class="p">(</span>
+                <span class="n">rnn_output</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">(),</span>
+                <span class="n">memory_bank</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                <span class="n">memory_lengths</span><span class="o">=</span><span class="n">memory_lengths</span>
+            <span class="p">)</span>
+            <span class="n">attns</span><span class="p">[</span><span class="s2">&quot;std&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">p_attn</span>
 
         <span class="c1"># Calculate the context gate.</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">context_gate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -511,7 +537,9 @@
         <span class="c1"># END Additional args check.</span>
 
         <span class="n">dec_outs</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">attns</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;std&quot;</span><span class="p">:</span> <span class="p">[]}</span>
+        <span class="n">attns</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">attn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">attns</span><span class="p">[</span><span class="s2">&quot;std&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reuse_copy_attn</span><span class="p">:</span>
             <span class="n">attns</span><span class="p">[</span><span class="s2">&quot;copy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coverage</span><span class="p">:</span>
@@ -529,10 +557,14 @@
         <span class="k">for</span> <span class="n">emb_t</span> <span class="ow">in</span> <span class="n">emb</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
             <span class="n">decoder_input</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">emb_t</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">input_feed</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
             <span class="n">rnn_output</span><span class="p">,</span> <span class="n">dec_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rnn</span><span class="p">(</span><span class="n">decoder_input</span><span class="p">,</span> <span class="n">dec_state</span><span class="p">)</span>
-            <span class="n">decoder_output</span><span class="p">,</span> <span class="n">p_attn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">attn</span><span class="p">(</span>
-                <span class="n">rnn_output</span><span class="p">,</span>
-                <span class="n">memory_bank</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
-                <span class="n">memory_lengths</span><span class="o">=</span><span class="n">memory_lengths</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">attentional</span><span class="p">:</span>
+                <span class="n">decoder_output</span><span class="p">,</span> <span class="n">p_attn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">attn</span><span class="p">(</span>
+                    <span class="n">rnn_output</span><span class="p">,</span>
+                    <span class="n">memory_bank</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                    <span class="n">memory_lengths</span><span class="o">=</span><span class="n">memory_lengths</span><span class="p">)</span>
+                <span class="n">attns</span><span class="p">[</span><span class="s2">&quot;std&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p_attn</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">decoder_output</span> <span class="o">=</span> <span class="n">rnn_output</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">context_gate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="c1"># TODO: context gate should be employed</span>
                 <span class="c1"># instead of second RNN transform.</span>
@@ -543,7 +575,6 @@
             <span class="n">input_feed</span> <span class="o">=</span> <span class="n">decoder_output</span>
 
             <span class="n">dec_outs</span> <span class="o">+=</span> <span class="p">[</span><span class="n">decoder_output</span><span class="p">]</span>
-            <span class="n">attns</span><span class="p">[</span><span class="s2">&quot;std&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="p">[</span><span class="n">p_attn</span><span class="p">]</span>
 
             <span class="c1"># Update the coverage attention.</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coverage</span><span class="p">:</span>

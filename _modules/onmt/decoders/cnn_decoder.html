@@ -195,7 +195,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span> <span class="n">attn_type</span><span class="p">,</span>
-                 <span class="n">copy_attn</span><span class="p">,</span> <span class="n">cnn_kernel_width</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">):</span>
+                 <span class="n">copy_attn</span><span class="p">,</span> <span class="n">cnn_kernel_width</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">,</span>
+                 <span class="n">copy_attn_type</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">CNNDecoder</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">cnn_kernel_width</span> <span class="o">=</span> <span class="n">cnn_kernel_width</span>
@@ -218,7 +219,8 @@
         <span class="c1"># Set up a separate copy attention layer if needed.</span>
         <span class="k">assert</span> <span class="ow">not</span> <span class="n">copy_attn</span><span class="p">,</span> <span class="s2">&quot;Copy mechanism not yet tested in conv2conv&quot;</span>
         <span class="k">if</span> <span class="n">copy_attn</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span> <span class="o">=</span> <span class="n">GlobalAttention</span><span class="p">(</span><span class="n">hidden_size</span><span class="p">,</span> <span class="n">attn_type</span><span class="o">=</span><span class="n">attn_type</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span> <span class="o">=</span> <span class="n">GlobalAttention</span><span class="p">(</span>
+                <span class="n">hidden_size</span><span class="p">,</span> <span class="n">attn_type</span><span class="o">=</span><span class="n">copy_attn_type</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -232,7 +234,8 @@
             <span class="n">opt</span><span class="o">.</span><span class="n">copy_attn</span><span class="p">,</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">cnn_kernel_width</span><span class="p">,</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">dropout</span><span class="p">,</span>
-            <span class="n">embeddings</span><span class="p">)</span></div>
+            <span class="n">embeddings</span><span class="p">,</span>
+            <span class="n">opt</span><span class="o">.</span><span class="n">copy_attn_type</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="CNNDecoder.init_state"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.decoders.CNNDecoder.init_state">[docs]</a>    <span class="k">def</span> <span class="nf">init_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">enc_hidden</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Init decoder state.&quot;&quot;&quot;</span>

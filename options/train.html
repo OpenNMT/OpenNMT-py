@@ -212,16 +212,17 @@
                 <span class="p">[</span><span class="o">--</span><span class="n">input_feed</span> <span class="n">INPUT_FEED</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">bridge</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">rnn_type</span> <span class="p">{</span><span class="n">LSTM</span><span class="p">,</span><span class="n">GRU</span><span class="p">,</span><span class="n">SRU</span><span class="p">}]</span> <span class="p">[</span><span class="o">--</span><span class="n">brnn</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">context_gate</span> <span class="p">{</span><span class="n">source</span><span class="p">,</span><span class="n">target</span><span class="p">,</span><span class="n">both</span><span class="p">}]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">global_attention</span> <span class="p">{</span><span class="n">dot</span><span class="p">,</span><span class="n">general</span><span class="p">,</span><span class="n">mlp</span><span class="p">}]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">global_attention</span> <span class="p">{</span><span class="n">dot</span><span class="p">,</span><span class="n">general</span><span class="p">,</span><span class="n">mlp</span><span class="p">,</span><span class="n">none</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">global_attention_function</span> <span class="p">{</span><span class="n">softmax</span><span class="p">,</span><span class="n">sparsemax</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">self_attn_type</span> <span class="n">SELF_ATTN_TYPE</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">max_relative_positions</span> <span class="n">MAX_RELATIVE_POSITIONS</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">heads</span> <span class="n">HEADS</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">transformer_ff</span> <span class="n">TRANSFORMER_FF</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">copy_attn</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">generator_function</span> <span class="p">{</span><span class="n">softmax</span><span class="p">,</span><span class="n">sparsemax</span><span class="p">}]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">copy_attn_force</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">reuse_copy_attn</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">copy_loss_by_seqlength</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">coverage_attn</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">lambda_coverage</span> <span class="n">LAMBDA_COVERAGE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">loss_scale</span> <span class="n">LOSS_SCALE</span><span class="p">]</span>
-                <span class="o">--</span><span class="n">data</span> <span class="n">DATA</span> <span class="p">[</span><span class="o">--</span><span class="n">save_model</span> <span class="n">SAVE_MODEL</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">copy_attn</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">copy_attn_type</span> <span class="p">{</span><span class="n">dot</span><span class="p">,</span><span class="n">general</span><span class="p">,</span><span class="n">mlp</span><span class="p">,</span><span class="n">none</span><span class="p">}]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">generator_function</span> <span class="p">{</span><span class="n">softmax</span><span class="p">,</span><span class="n">sparsemax</span><span class="p">}]</span> <span class="p">[</span><span class="o">--</span><span class="n">copy_attn_force</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">reuse_copy_attn</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">copy_loss_by_seqlength</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">coverage_attn</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">lambda_coverage</span> <span class="n">LAMBDA_COVERAGE</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">loss_scale</span> <span class="n">LOSS_SCALE</span><span class="p">]</span> <span class="o">--</span><span class="n">data</span> <span class="n">DATA</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">save_model</span> <span class="n">SAVE_MODEL</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">save_checkpoint_steps</span> <span class="n">SAVE_CHECKPOINT_STEPS</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">keep_checkpoint</span> <span class="n">KEEP_CHECKPOINT</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">gpuid</span> <span class="p">[</span><span class="n">GPUID</span> <span class="p">[</span><span class="n">GPUID</span> <span class="o">...</span><span class="p">]]]</span>
@@ -254,7 +255,7 @@
                 <span class="p">[</span><span class="o">--</span><span class="n">decay_steps</span> <span class="n">DECAY_STEPS</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">decay_method</span> <span class="p">{</span><span class="n">noam</span><span class="p">,</span><span class="n">rsqrt</span><span class="p">,</span><span class="n">none</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">warmup_steps</span> <span class="n">WARMUP_STEPS</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">report_every</span> <span class="n">REPORT_EVERY</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">log_file</span> <span class="n">LOG_FILE</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">log_file_level</span> <span class="p">{</span><span class="n">DEBUG</span><span class="p">,</span><span class="n">NOTSET</span><span class="p">,</span><span class="n">WARNING</span><span class="p">,</span><span class="n">ERROR</span><span class="p">,</span><span class="n">INFO</span><span class="p">,</span><span class="n">CRITICAL</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">30</span><span class="p">,</span><span class="mi">40</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">50</span><span class="p">}]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">log_file_level</span> <span class="p">{</span><span class="n">WARNING</span><span class="p">,</span><span class="n">DEBUG</span><span class="p">,</span><span class="n">INFO</span><span class="p">,</span><span class="n">CRITICAL</span><span class="p">,</span><span class="n">NOTSET</span><span class="p">,</span><span class="n">ERROR</span><span class="p">,</span><span class="mi">30</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">50</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">40</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">exp_host</span> <span class="n">EXP_HOST</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">exp</span> <span class="n">EXP</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">tensorboard</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">tensorboard_log_dir</span> <span class="n">TENSORBOARD_LOG_DIR</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">sample_rate</span> <span class="n">SAMPLE_RATE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">window_size</span> <span class="n">WINDOW_SIZE</span><span class="p">]</span>
@@ -473,7 +474,7 @@
 <tr><td class="option-group" colspan="2">
 <kbd>--global_attention, -global_attention</kbd></td>
 </tr>
-<tr><td>&#160;</td><td><p class="first">Possible choices: dot, general, mlp</p>
+<tr><td>&#160;</td><td><p class="first">Possible choices: dot, general, mlp, none</p>
 <p>The attention type to use: dotprod or general (Luong) or MLP (Bahdanau)</p>
 <p class="last">Default: “general”</p>
 </td></tr>
@@ -512,6 +513,12 @@
 </tr>
 <tr><td>&#160;</td><td><p class="first">Train copy attention layer.</p>
 <p class="last">Default: False</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--copy_attn_type, -copy_attn_type</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Possible choices: dot, general, mlp, none</p>
+<p class="last">The copy attention type to use. Leave as None to use the same as -global_attention.</p>
 </td></tr>
 <tr><td class="option-group" colspan="2">
 <kbd>--generator_function, -generator_function</kbd></td>
@@ -889,7 +896,7 @@
 <tr><td class="option-group" colspan="2">
 <kbd>--log_file_level, -log_file_level</kbd></td>
 </tr>
-<tr><td>&#160;</td><td><p class="first">Possible choices: DEBUG, NOTSET, WARNING, ERROR, INFO, CRITICAL, 10, 0, 30, 40, 20, 50</p>
+<tr><td>&#160;</td><td><p class="first">Possible choices: WARNING, DEBUG, INFO, CRITICAL, NOTSET, ERROR, 30, 10, 20, 50, 0, 40</p>
 <p class="last">Default: “0”</p>
 </td></tr>
 <tr><td class="option-group" colspan="2">

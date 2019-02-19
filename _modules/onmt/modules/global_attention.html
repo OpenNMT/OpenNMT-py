@@ -250,7 +250,8 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">=</span> <span class="n">dim</span>
         <span class="k">assert</span> <span class="n">attn_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;dot&quot;</span><span class="p">,</span> <span class="s2">&quot;general&quot;</span><span class="p">,</span> <span class="s2">&quot;mlp&quot;</span><span class="p">],</span> <span class="p">(</span>
-            <span class="s2">&quot;Please select a valid attention type.&quot;</span><span class="p">)</span>
+            <span class="s2">&quot;Please select a valid attention type (got </span><span class="si">{:s}</span><span class="s2">).&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">attn_type</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">attn_type</span> <span class="o">=</span> <span class="n">attn_type</span>
         <span class="k">assert</span> <span class="n">attn_func</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;softmax&quot;</span><span class="p">,</span> <span class="s2">&quot;sparsemax&quot;</span><span class="p">],</span> <span class="p">(</span>
             <span class="s2">&quot;Please select a valid attention function.&quot;</span><span class="p">)</span>

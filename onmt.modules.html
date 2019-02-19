@@ -424,9 +424,17 @@ and required by <code class="xref py py-class docutils literal notranslate"><spa
 <h2>Decoders<a class="headerlink" href="#decoders" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.decoders.DecoderBase">
-<em class="property">class </em><code class="descclassname">onmt.decoders.</code><code class="descname">DecoderBase</code><a class="reference internal" href="_modules/onmt/decoders/decoder.html#DecoderBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.decoders.DecoderBase" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.decoders.</code><code class="descname">DecoderBase</code><span class="sig-paren">(</span><em>attentional=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/decoders/decoder.html#DecoderBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.decoders.DecoderBase" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.module.Module</span></code></p>
 <p>Abstract class for decoders.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>attentional</strong> (<em>bool</em>) – The decoder returns non-empty attention.</td>
+</tr>
+</tbody>
+</table>
 <dl class="classmethod">
 <dt id="onmt.decoders.DecoderBase.from_opt">
 <em class="property">classmethod </em><code class="descname">from_opt</code><span class="sig-paren">(</span><em>opt</em>, <em>embeddings</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/decoders/decoder.html#DecoderBase.from_opt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.decoders.DecoderBase.from_opt" title="Permalink to this definition">¶</a></dt>
@@ -438,7 +446,7 @@ and required by <code class="xref py py-class docutils literal notranslate"><spa
 
 <dl class="class">
 <dt id="onmt.decoders.decoder.RNNDecoderBase">
-<em class="property">class </em><code class="descclassname">onmt.decoders.decoder.</code><code class="descname">RNNDecoderBase</code><span class="sig-paren">(</span><em>rnn_type</em>, <em>bidirectional_encoder</em>, <em>num_layers</em>, <em>hidden_size</em>, <em>attn_type='general'</em>, <em>attn_func='softmax'</em>, <em>coverage_attn=False</em>, <em>context_gate=None</em>, <em>copy_attn=False</em>, <em>dropout=0.0</em>, <em>embeddings=None</em>, <em>reuse_copy_attn=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/decoders/decoder.html#RNNDecoderBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.decoders.decoder.RNNDecoderBase" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.decoders.decoder.</code><code class="descname">RNNDecoderBase</code><span class="sig-paren">(</span><em>rnn_type</em>, <em>bidirectional_encoder</em>, <em>num_layers</em>, <em>hidden_size</em>, <em>attn_type='general'</em>, <em>attn_func='softmax'</em>, <em>coverage_attn=False</em>, <em>context_gate=None</em>, <em>copy_attn=False</em>, <em>dropout=0.0</em>, <em>embeddings=None</em>, <em>reuse_copy_attn=False</em>, <em>copy_attn_type='general'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/decoders/decoder.html#RNNDecoderBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.decoders.decoder.RNNDecoderBase" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.decoders.decoder.DecoderBase</span></code></p>
 <p>Base recurrent attention-based decoder class.</p>
 <p>Specifies the interface used by different decoder types
@@ -491,6 +499,8 @@ and required by <a class="reference internal" href="onmt.html#onmt.models.NMTMod
 <li><strong>dropout</strong> (<em>float</em>) – dropout value for <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.Dropout</span></code></li>
 <li><strong>embeddings</strong> (<a class="reference internal" href="#onmt.modules.Embeddings" title="onmt.modules.Embeddings"><em>onmt.modules.Embeddings</em></a>) – embedding module to use</li>
 <li><strong>reuse_copy_attn</strong> (<em>bool</em>) – reuse the attention for copying</li>
+<li><strong>copy_attn_type</strong> (<em>str</em>) – The copy attention style. See
+<a class="reference internal" href="#onmt.modules.GlobalAttention" title="onmt.modules.GlobalAttention"><code class="xref py py-class docutils literal notranslate"><span class="pre">GlobalAttention</span></code></a>.</li>
 </ul>
 </td>
 </tr>
@@ -545,7 +555,7 @@ and required by <a class="reference internal" href="onmt.html#onmt.models.NMTMod
 
 <dl class="class">
 <dt id="onmt.decoders.StdRNNDecoder">
-<em class="property">class </em><code class="descclassname">onmt.decoders.</code><code class="descname">StdRNNDecoder</code><span class="sig-paren">(</span><em>rnn_type</em>, <em>bidirectional_encoder</em>, <em>num_layers</em>, <em>hidden_size</em>, <em>attn_type='general'</em>, <em>attn_func='softmax'</em>, <em>coverage_attn=False</em>, <em>context_gate=None</em>, <em>copy_attn=False</em>, <em>dropout=0.0</em>, <em>embeddings=None</em>, <em>reuse_copy_attn=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/decoders/decoder.html#StdRNNDecoder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.decoders.StdRNNDecoder" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.decoders.</code><code class="descname">StdRNNDecoder</code><span class="sig-paren">(</span><em>rnn_type</em>, <em>bidirectional_encoder</em>, <em>num_layers</em>, <em>hidden_size</em>, <em>attn_type='general'</em>, <em>attn_func='softmax'</em>, <em>coverage_attn=False</em>, <em>context_gate=None</em>, <em>copy_attn=False</em>, <em>dropout=0.0</em>, <em>embeddings=None</em>, <em>reuse_copy_attn=False</em>, <em>copy_attn_type='general'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/decoders/decoder.html#StdRNNDecoder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.decoders.StdRNNDecoder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#onmt.decoders.decoder.RNNDecoderBase" title="onmt.decoders.decoder.RNNDecoderBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.decoders.decoder.RNNDecoderBase</span></code></a></p>
 <p>Standard fully batched RNN decoder with attention.</p>
 <p>Faster implementation, uses CuDNN for implementation.
@@ -559,7 +569,7 @@ or <cite>copy_attn</cite> support.</p>
 
 <dl class="class">
 <dt id="onmt.decoders.InputFeedRNNDecoder">
-<em class="property">class </em><code class="descclassname">onmt.decoders.</code><code class="descname">InputFeedRNNDecoder</code><span class="sig-paren">(</span><em>rnn_type</em>, <em>bidirectional_encoder</em>, <em>num_layers</em>, <em>hidden_size</em>, <em>attn_type='general'</em>, <em>attn_func='softmax'</em>, <em>coverage_attn=False</em>, <em>context_gate=None</em>, <em>copy_attn=False</em>, <em>dropout=0.0</em>, <em>embeddings=None</em>, <em>reuse_copy_attn=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/decoders/decoder.html#InputFeedRNNDecoder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.decoders.InputFeedRNNDecoder" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.decoders.</code><code class="descname">InputFeedRNNDecoder</code><span class="sig-paren">(</span><em>rnn_type</em>, <em>bidirectional_encoder</em>, <em>num_layers</em>, <em>hidden_size</em>, <em>attn_type='general'</em>, <em>attn_func='softmax'</em>, <em>coverage_attn=False</em>, <em>context_gate=None</em>, <em>copy_attn=False</em>, <em>dropout=0.0</em>, <em>embeddings=None</em>, <em>reuse_copy_attn=False</em>, <em>copy_attn_type='general'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/decoders/decoder.html#InputFeedRNNDecoder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.decoders.InputFeedRNNDecoder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#onmt.decoders.decoder.RNNDecoderBase" title="onmt.decoders.decoder.RNNDecoderBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.decoders.decoder.RNNDecoderBase</span></code></a></p>
 <p>Input feeding based decoder.</p>
 <p>See <a class="reference internal" href="#onmt.decoders.decoder.RNNDecoderBase" title="onmt.decoders.decoder.RNNDecoderBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">RNNDecoderBase</span></code></a> for options.</p>
@@ -1152,7 +1162,7 @@ and have not been thoroughly tested.)</p>
 
 <dl class="class">
 <dt id="onmt.decoders.CNNDecoder">
-<em class="property">class </em><code class="descclassname">onmt.decoders.</code><code class="descname">CNNDecoder</code><span class="sig-paren">(</span><em>num_layers</em>, <em>hidden_size</em>, <em>attn_type</em>, <em>copy_attn</em>, <em>cnn_kernel_width</em>, <em>dropout</em>, <em>embeddings</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/decoders/cnn_decoder.html#CNNDecoder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.decoders.CNNDecoder" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">onmt.decoders.</code><code class="descname">CNNDecoder</code><span class="sig-paren">(</span><em>num_layers</em>, <em>hidden_size</em>, <em>attn_type</em>, <em>copy_attn</em>, <em>cnn_kernel_width</em>, <em>dropout</em>, <em>embeddings</em>, <em>copy_attn_type</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/decoders/cnn_decoder.html#CNNDecoder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.decoders.CNNDecoder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.decoders.decoder.DecoderBase</span></code></p>
 <p>Decoder based on “Convolutional Sequence to Sequence Learning”
 <a class="reference internal" href="ref.html#dblp-journals-corr-gehringagyd17" id="id12">[GAG+17]</a>.</p>
