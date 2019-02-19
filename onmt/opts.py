@@ -131,7 +131,8 @@ def model_opts(parser):
     # Attention options
     group = parser.add_argument_group('Model- Attention')
     group.add('--global_attention', '-global_attention',
-              type=str, default='general', choices=['dot', 'general', 'mlp'],
+              type=str, default='general',
+              choices=['dot', 'general', 'mlp', 'none'],
               help="The attention type to use: "
                    "dotprod or general (Luong) or MLP (Bahdanau)")
     group.add('--global_attention_function', '-global_attention_function',
@@ -154,6 +155,11 @@ def model_opts(parser):
     # Generator and loss options.
     group.add('--copy_attn', '-copy_attn', action="store_true",
               help='Train copy attention layer.')
+    group.add('--copy_attn_type', '-copy_attn_type',
+              type=str, default=None,
+              choices=['dot', 'general', 'mlp', 'none'],
+              help="The copy attention type to use. Leave as None to use "
+                   "the same as -global_attention.")
     group.add('--generator_function', '-generator_function', default="softmax",
               choices=["softmax", "sparsemax"],
               help="Which function to use for generating "

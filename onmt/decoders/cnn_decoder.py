@@ -19,7 +19,8 @@ class CNNDecoder(DecoderBase):
     """
 
     def __init__(self, num_layers, hidden_size, attn_type,
-                 copy_attn, cnn_kernel_width, dropout, embeddings):
+                 copy_attn, cnn_kernel_width, dropout, embeddings,
+                 copy_attn_type):
         super(CNNDecoder, self).__init__()
 
         self.cnn_kernel_width = cnn_kernel_width
@@ -42,7 +43,8 @@ class CNNDecoder(DecoderBase):
         # Set up a separate copy attention layer if needed.
         assert not copy_attn, "Copy mechanism not yet tested in conv2conv"
         if copy_attn:
-            self.copy_attn = GlobalAttention(hidden_size, attn_type=attn_type)
+            self.copy_attn = GlobalAttention(
+                hidden_size, attn_type=copy_attn_type)
         else:
             self.copy_attn = None
 
@@ -56,7 +58,8 @@ class CNNDecoder(DecoderBase):
             opt.copy_attn,
             opt.cnn_kernel_width,
             opt.dropout,
-            embeddings)
+            embeddings,
+            opt.copy_attn_type)
 
     def init_state(self, _, memory_bank, enc_hidden):
         """Init decoder state."""
