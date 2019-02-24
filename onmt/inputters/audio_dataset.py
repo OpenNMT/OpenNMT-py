@@ -211,7 +211,7 @@ class AudioSeqField(Field):
             arr = arr.permute(3, 0, 1, 2)
         if self.sequential:
             arr = arr.contiguous()
-        arr=torch.tensor(arr, dtype=torch.float, device=device)
+        arr=arr.to(device)
         if self.include_lengths:
             return arr, lengths
         return arr
