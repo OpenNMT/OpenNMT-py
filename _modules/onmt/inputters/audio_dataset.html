@@ -387,7 +387,7 @@
             <span class="n">arr</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sequential</span><span class="p">:</span>
             <span class="n">arr</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
-
+        <span class="n">arr</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">include_lengths</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">arr</span><span class="p">,</span> <span class="n">lengths</span>
         <span class="k">return</span> <span class="n">arr</span>
