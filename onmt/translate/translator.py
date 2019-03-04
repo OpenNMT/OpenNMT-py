@@ -93,6 +93,7 @@ class Translator(object):
         self.report_bleu = opt.report_bleu
         self.report_rouge = opt.report_rouge
         self.fast = opt.fast
+        self.length_penalty = opt.length_penalty
 
         self.copy_attn = model_opt.copy_attn
 
@@ -417,7 +418,11 @@ class Translator(object):
         src_map = (tile(batch.src_map, beam_size, dim=1)
                    if data.data_type == 'text' and self.copy_attn else None)
 
-        top_beam_finished = torch.zeros([batch_size], dtype=torch.uint8)
+        if self.length_penalty != "avg":
+            top_beam_finished = torch.zeros([batch_size], dtype=torch.uint8)
+        else:
+            best_scores = torch.full([batch_size], -1e10, dtype=torch.float,
+                                     device=mb_device)
         batch_offset = torch.arange(batch_size, dtype=torch.long)
         beam_offset = torch.arange(
             0,
@@ -501,7 +506,8 @@ class Translator(object):
                 # Penalize beams that finished.
                 topk_log_probs.masked_fill_(is_finished, -1e10)
                 is_finished = is_finished.to('cpu')
-                top_beam_finished |= is_finished[:, 0].eq(1)
+                if self.length_penalty != "avg":
+                    top_beam_finished |= is_finished[:, 0].eq(1)
                 predictions = alive_seq.view(-1, beam_size, alive_seq.size(-1))
                 attention = (
                     alive_attn.view(
@@ -513,14 +519,25 @@ class Translator(object):
                     finished_hyp = is_finished[i].nonzero().view(-1)
                     # Store finished hypotheses for this batch.
                     for j in finished_hyp:
+                        s = topk_scores[i, j]
+                        if self.length_penalty == "avg":
+                            s = s / (step + 1)
+                            if best_scores[b] < s:
+                                best_scores[b] = s
                         hypotheses[b].append((
-                            topk_scores[i, j],
+                            s,
                             predictions[i, j, 1:],  # Ignore start_token.
                             attention[:, i, j, :memory_lengths[i]]
                             if attention is not None else None))
                     # End condition is the top beam finished and we can return
                     # n_best hypotheses.
-                    if top_beam_finished[i] and len(hypotheses[b]) >= n_best:
+                    if self.length_penalty == "avg":
+                        finish_flag = ((topk_scores[i, 0] / max_length)
+                                       <= best_scores[b]) or \
+                                       is_finished[i].all()
+                    else:
+                        finish_flag = top_beam_finished[i] != 0
+                    if finish_flag and len(hypotheses[b]) >= n_best:
                         best_hyp = sorted(
                             hypotheses[b], key=lambda x: x[0], reverse=True)
                         for n, (score, pred, attn) in enumerate(best_hyp):
@@ -537,8 +554,9 @@ class Translator(object):
                 if len(non_finished) == 0:
                     break
                 # Remove finished batches for the next step.
-                top_beam_finished = top_beam_finished.index_select(
-                    0, non_finished)
+                if self.length_penalty != "avg":
+                    top_beam_finished = top_beam_finished.index_select(
+                        0, non_finished)
                 batch_offset = batch_offset.index_select(0, non_finished)
                 non_finished = non_finished.to(topk_ids.device)
                 topk_log_probs = topk_log_probs.index_select(0, non_finished)
