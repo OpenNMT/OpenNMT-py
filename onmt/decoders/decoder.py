@@ -182,6 +182,8 @@ class RNNDecoderBase(DecoderBase):
     def map_state(self, fn):
         self.state["hidden"] = tuple(fn(h, 1) for h in self.state["hidden"])
         self.state["input_feed"] = fn(self.state["input_feed"], 1)
+        if self._coverage and self.state["coverage"] is not None:
+            self.state["coverage"] = fn(self.state["coverage"], 1)
 
     def detach_state(self):
         self.state["hidden"] = tuple(h.detach() for h in self.state["hidden"])
