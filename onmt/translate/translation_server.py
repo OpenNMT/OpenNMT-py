@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """REST Translation server."""
 from __future__ import print_function
+import codecs
 import sys
 import os
 import time
@@ -277,7 +278,8 @@ class ServerModel(object):
         try:
             self.translator = build_translator(self.opt,
                                                report_score=False,
-                                               out_file=open(os.devnull, "w"))
+                                               out_file=codecs.open(
+                                                   os.devnull, "w", "utf-8"))
         except RuntimeError as e:
             raise ServerModelError("Runtime Error: %s" % str(e))
 
