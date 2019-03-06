@@ -607,6 +607,8 @@ def translate_opts(parser):
     group.add('--length_penalty', '-length_penalty', default='none',
               choices=['none', 'wu', 'avg'],
               help="Length Penalty to use.")
+    group.add('--ratio', '-ratio', type=float, default=-0.,
+              help="Ratio based beam stop condition")
     group.add('--coverage_penalty', '-coverage_penalty', default='none',
               choices=['none', 'wu', 'summary'],
               help="Coverage Penalty to use.")

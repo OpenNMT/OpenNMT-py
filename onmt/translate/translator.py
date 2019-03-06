@@ -93,6 +93,7 @@ class Translator(object):
             n_best=1,
             min_length=0,
             max_length=100,
+            ratio=0.,
             beam_size=30,
             random_sampling_topk=1,
             random_sampling_temp=1,
@@ -135,6 +136,7 @@ class Translator(object):
         self.sample_from_topk = random_sampling_topk
 
         self.min_length = min_length
+        self.ratio = ratio
         self.stepwise_penalty = stepwise_penalty
         self.dump_beam = dump_beam
         self.block_ngram_repeat = block_ngram_repeat
@@ -218,6 +220,7 @@ class Translator(object):
             n_best=opt.n_best,
             min_length=opt.min_length,
             max_length=opt.max_length,
+            ratio=opt.ratio,
             beam_size=opt.beam_size,
             random_sampling_topk=opt.random_sampling_topk,
             random_sampling_temp=opt.random_sampling_temp,
@@ -507,6 +510,7 @@ class Translator(object):
                     src_vocabs,
                     self.max_length,
                     min_length=self.min_length,
+                    ratio=self.ratio,
                     n_best=self.n_best,
                     return_attention=attn_debug or self.replace_unk)
 
@@ -588,6 +592,7 @@ class Translator(object):
             src_vocabs,
             max_length,
             min_length=0,
+            ratio=0.,
             n_best=1,
             return_attention=False):
         # TODO: support these blacklisted features.
@@ -636,6 +641,7 @@ class Translator(object):
             eos=self._tgt_eos_idx,
             bos=self._tgt_bos_idx,
             min_length=min_length,
+            ratio=ratio,
             max_length=max_length,
             mb_device=mb_device,
             return_attention=return_attention,
