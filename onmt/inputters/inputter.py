@@ -336,6 +336,18 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
 
     counters = defaultdict(Counter)
 
+    if src_vocab_path:
+        try:
+            logger.info("Using existing vocabulary...")
+            vocab = torch.load(src_vocab_path)
+            # return vocab to dump with standard name
+            return vocab
+        except torch.serialization.pickle.UnpicklingError:
+            logger.info("Building vocab from text file...")
+            # empty train_dataset_files so that vocab is only loaded from
+            # given paths in src_vocab_path, tgt_vocab_path
+            train_dataset_files = []
+
     # Load vocabulary
     if src_vocab_path:
         src_vocab, src_vocab_size = _load_vocab(
