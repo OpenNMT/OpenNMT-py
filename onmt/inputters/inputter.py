@@ -311,7 +311,7 @@ def _build_fv_from_multifield(multifield, counters, build_fv_args,
 def build_vocab(train_dataset_files, fields, data_type, share_vocab,
                 src_vocab_path, src_vocab_size, src_words_min_frequency,
                 tgt_vocab_path, tgt_vocab_size, tgt_words_min_frequency,
-                vocab_size_multiple=1):
+                use_existing_vocab, vocab_size_multiple=1):
     """Build the fields for all data sides.
 
     Args:
@@ -336,6 +336,17 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
 
     counters = defaultdict(Counter)
 
+    if use_existing_vocab:
+        try:
+            logger.info("Using existing vocabulary...")
+            vocab = torch.load(src_vocab_path)
+            # return vocab to dump with standard name
+            return vocab
+        except torch.serialization.pickle.UnpicklingError:
+            logger.info("Building vocab from text file...")
+            # empty train_dataset_files so that vocab is only loaded from 
+            # given paths in src_vocab_path, tgt_vocab_path
+            train_dataset_files = []
     # Load vocabulary
     if src_vocab_path:
         src_vocab, src_vocab_size = _load_vocab(
