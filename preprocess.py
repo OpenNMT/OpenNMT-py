@@ -136,7 +136,6 @@ def main(opt):
         logger.info("Building & saving validation data...")
         build_save_dataset('valid', fields, src_reader, tgt_reader, opt)
 
-    
     logger.info("Building & saving vocabulary...")
     build_save_vocab(train_dataset_files, fields, opt)
 
