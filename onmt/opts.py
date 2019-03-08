@@ -219,8 +219,6 @@ def preprocess_opts(parser):
     # Dictionary options, for text corpus
 
     group = parser.add_argument_group('Vocab')
-    group.add('--use_existing_vocab', '-use_existing_vocab',
-              action='store_true', default="", help="Use existing vocabulary.")
     group.add('--src_vocab', '-src_vocab', default="",
               help="Path to an existing source vocabulary. Format: "
                    "one word per line.")
