@@ -346,7 +346,7 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
         # empty train_dataset_files so that vocab is only loaded from
         # given paths in src_vocab_path, tgt_vocab_path
         train_dataset_files = []
-    
+
     # Load vocabulary
     if src_vocab_path:
         src_vocab, src_vocab_size = _load_vocab(
