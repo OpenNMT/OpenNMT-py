@@ -201,12 +201,12 @@
                     <span class="p">[</span><span class="o">--</span><span class="n">seed</span> <span class="n">SEED</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">beam_size</span> <span class="n">BEAM_SIZE</span><span class="p">]</span>
                     <span class="p">[</span><span class="o">--</span><span class="n">min_length</span> <span class="n">MIN_LENGTH</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">max_length</span> <span class="n">MAX_LENGTH</span><span class="p">]</span>
                     <span class="p">[</span><span class="o">--</span><span class="n">max_sent_length</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">stepwise_penalty</span><span class="p">]</span>
-                    <span class="p">[</span><span class="o">--</span><span class="n">length_penalty</span> <span class="p">{</span><span class="n">none</span><span class="p">,</span><span class="n">wu</span><span class="p">,</span><span class="n">avg</span><span class="p">}]</span>
+                    <span class="p">[</span><span class="o">--</span><span class="n">length_penalty</span> <span class="p">{</span><span class="n">none</span><span class="p">,</span><span class="n">wu</span><span class="p">,</span><span class="n">avg</span><span class="p">}]</span> <span class="p">[</span><span class="o">--</span><span class="n">ratio</span> <span class="n">RATIO</span><span class="p">]</span>
                     <span class="p">[</span><span class="o">--</span><span class="n">coverage_penalty</span> <span class="p">{</span><span class="n">none</span><span class="p">,</span><span class="n">wu</span><span class="p">,</span><span class="n">summary</span><span class="p">}]</span> <span class="p">[</span><span class="o">--</span><span class="n">alpha</span> <span class="n">ALPHA</span><span class="p">]</span>
                     <span class="p">[</span><span class="o">--</span><span class="n">beta</span> <span class="n">BETA</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">block_ngram_repeat</span> <span class="n">BLOCK_NGRAM_REPEAT</span><span class="p">]</span>
                     <span class="p">[</span><span class="o">--</span><span class="n">ignore_when_blocking</span> <span class="n">IGNORE_WHEN_BLOCKING</span> <span class="p">[</span><span class="n">IGNORE_WHEN_BLOCKING</span> <span class="o">...</span><span class="p">]]</span>
                     <span class="p">[</span><span class="o">--</span><span class="n">replace_unk</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">verbose</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">log_file</span> <span class="n">LOG_FILE</span><span class="p">]</span>
-                    <span class="p">[</span><span class="o">--</span><span class="n">log_file_level</span> <span class="p">{</span><span class="n">NOTSET</span><span class="p">,</span><span class="n">DEBUG</span><span class="p">,</span><span class="n">CRITICAL</span><span class="p">,</span><span class="n">ERROR</span><span class="p">,</span><span class="n">INFO</span><span class="p">,</span><span class="n">WARNING</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">50</span><span class="p">,</span><span class="mi">40</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">30</span><span class="p">}]</span>
+                    <span class="p">[</span><span class="o">--</span><span class="n">log_file_level</span> <span class="p">{</span><span class="n">NOTSET</span><span class="p">,</span><span class="n">WARNING</span><span class="p">,</span><span class="n">DEBUG</span><span class="p">,</span><span class="n">ERROR</span><span class="p">,</span><span class="n">CRITICAL</span><span class="p">,</span><span class="n">INFO</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">30</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">40</span><span class="p">,</span><span class="mi">50</span><span class="p">,</span><span class="mi">20</span><span class="p">}]</span>
                     <span class="p">[</span><span class="o">--</span><span class="n">attn_debug</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">dump_beam</span> <span class="n">DUMP_BEAM</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">n_best</span> <span class="n">N_BEST</span><span class="p">]</span>
                     <span class="p">[</span><span class="o">--</span><span class="n">batch_size</span> <span class="n">BATCH_SIZE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">gpu</span> <span class="n">GPU</span><span class="p">]</span>
                     <span class="p">[</span><span class="o">--</span><span class="n">sample_rate</span> <span class="n">SAMPLE_RATE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">window_size</span> <span class="n">WINDOW_SIZE</span><span class="p">]</span>
@@ -394,6 +394,12 @@
 <p class="last">Default: “none”</p>
 </td></tr>
 <tr><td class="option-group" colspan="2">
+<kbd>--ratio, -ratio</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Ratio based beam stop condition</p>
+<p class="last">Default: -0.0</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
 <kbd>--coverage_penalty, -coverage_penalty</kbd></td>
 </tr>
 <tr><td>&#160;</td><td><p class="first">Possible choices: none, wu, summary</p>
@@ -453,7 +459,7 @@
 <tr><td class="option-group" colspan="2">
 <kbd>--log_file_level, -log_file_level</kbd></td>
 </tr>
-<tr><td>&#160;</td><td><p class="first">Possible choices: NOTSET, DEBUG, CRITICAL, ERROR, INFO, WARNING, 0, 10, 50, 40, 20, 30</p>
+<tr><td>&#160;</td><td><p class="first">Possible choices: NOTSET, WARNING, DEBUG, ERROR, CRITICAL, INFO, 0, 30, 10, 40, 50, 20</p>
 <p class="last">Default: “0”</p>
 </td></tr>
 <tr><td class="option-group" colspan="2">
