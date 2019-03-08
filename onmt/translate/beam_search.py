@@ -56,7 +56,7 @@ class BeamSearch(DecodeStrategy):
     def __init__(self, beam_size, batch_size, pad, bos, eos, n_best, mb_device,
                  global_scorer, min_length, max_length, return_attention,
                  block_ngram_repeat, exclusion_tokens, memory_lengths,
-                 stepwise_penalty):
+                 stepwise_penalty, ratio):
         super(BeamSearch, self).__init__(
             pad, bos, eos, batch_size, mb_device, beam_size, min_length,
             block_ngram_repeat, exclusion_tokens, return_attention,
@@ -66,12 +66,16 @@ class BeamSearch(DecodeStrategy):
         self.beam_size = beam_size
         self.n_best = n_best
         self.batch_size = batch_size
+        self.ratio = ratio
 
         # result caching
         self.hypotheses = [[] for _ in range(batch_size)]
 
         # beam state
         self.top_beam_finished = torch.zeros([batch_size], dtype=torch.uint8)
+        self.best_scores = torch.full([batch_size], -1e10, dtype=torch.float,
+                                      device=mb_device)
+
         self._batch_offset = torch.arange(batch_size, dtype=torch.long)
         self._beam_offset = torch.arange(
             0, batch_size * beam_size, step=beam_size, dtype=torch.long,
@@ -213,6 +217,10 @@ class BeamSearch(DecodeStrategy):
             finished_hyp = self.is_finished[i].nonzero().view(-1)
             # Store finished hypotheses for this batch.
             for j in finished_hyp:
+                if self.ratio > 0:
+                    s = self.topk_scores[i, j] / (step + 1)
+                    if self.best_scores[b] < s:
+                        self.best_scores[b] = s
                 self.hypotheses[b].append((
                     self.topk_scores[i, j],
                     predictions[i, j, 1:],  # Ignore start_token.
@@ -220,8 +228,14 @@ class BeamSearch(DecodeStrategy):
                     if attention is not None else None))
             # End condition is the top beam finished and we can return
             # n_best hypotheses.
-            if self.top_beam_finished[i] and len(
-                    self.hypotheses[b]) >= self.n_best:
+            if self.ratio > 0:
+                pred_len = self._memory_lengths[i] * self.ratio
+                finish_flag = ((self.topk_scores[i, 0] / pred_len)
+                               <= self.best_scores[b]) or \
+                    self.is_finished[i].all()
+            else:
+                finish_flag = self.top_beam_finished[i] != 0
+            if finish_flag and len(self.hypotheses[b]) >= self.n_best:
                 best_hyp = sorted(
                     self.hypotheses[b], key=lambda x: x[0], reverse=True)
                 for n, (score, pred, attn) in enumerate(best_hyp):

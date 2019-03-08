@@ -39,7 +39,7 @@ class TestBeamSearch(unittest.TestCase):
                 beam_sz, batch_sz, 0, 1, 2, 2,
                 torch.device("cpu"), GlobalScorerStub(), 0, 30,
                 False, ngram_repeat, set(),
-                torch.randint(0, 30, (batch_sz,)), False)
+                torch.randint(0, 30, (batch_sz,)), False, 0.)
             for i in range(ngram_repeat + 4):
                 # predict repeat_idx over and over again
                 word_probs = torch.full(
@@ -69,7 +69,7 @@ class TestBeamSearch(unittest.TestCase):
                 beam_sz, batch_sz, 0, 1, 2, 2,
                 torch.device("cpu"), GlobalScorerStub(), 0, 30,
                 False, ngram_repeat, set(),
-                torch.randint(0, 30, (batch_sz,)), False)
+                torch.randint(0, 30, (batch_sz,)), False, 0.)
             for i in range(ngram_repeat + 4):
                 # non-interesting beams are going to get dummy values
                 word_probs = torch.full(
@@ -116,7 +116,7 @@ class TestBeamSearch(unittest.TestCase):
                 beam_sz, batch_sz, 0, 1, 2, 2,
                 torch.device("cpu"), GlobalScorerStub(), 0, 30,
                 False, ngram_repeat, {repeat_idx_ignored},
-                torch.randint(0, 30, (batch_sz,)), False)
+                torch.randint(0, 30, (batch_sz,)), False, 0.)
             for i in range(ngram_repeat + 4):
                 # non-interesting beams are going to get dummy values
                 word_probs = torch.full(
@@ -173,7 +173,7 @@ class TestBeamSearch(unittest.TestCase):
             beam = BeamSearch(beam_sz, batch_sz, 0, 1, 2, 2,
                               torch.device("cpu"), GlobalScorerStub(),
                               min_length, 30, False, 0, set(),
-                              lengths, False)
+                              lengths, False, 0.)
             all_attns = []
             for i in range(min_length + 4):
                 # non-interesting beams are going to get dummy values
@@ -228,7 +228,7 @@ class TestBeamSearch(unittest.TestCase):
             beam_sz, batch_sz, 0, 1, 2, 2,
             torch.device("cpu"), GlobalScorerStub(),
             min_length, 30, False, 0, set(),
-            torch.randint(0, 30, (batch_sz,)), False)
+            torch.randint(0, 30, (batch_sz,)), False, 0.)
         for i in range(min_length + 4):
             # non-interesting beams are going to get dummy values
             word_probs = torch.full(
@@ -286,7 +286,7 @@ class TestBeamSearch(unittest.TestCase):
             beam_sz, batch_sz, 0, 1, 2, 2,
             torch.device("cpu"), GlobalScorerStub(),
             min_length, 30, True, 0, set(),
-            inp_lens, False)
+            inp_lens, False, 0.)
         for i in range(min_length + 2):
             # non-interesting beams are going to get dummy values
             word_probs = torch.full(
@@ -497,7 +497,7 @@ class TestBeamSearchAgainstReferenceCase(unittest.TestCase):
             self.BEAM_SZ, self.BATCH_SZ, 0, 1, 2, self.N_BEST,
             torch.device("cpu"), GlobalScorerStub(),
             0, 30, False, 0, set(),
-            torch.randint(0, 30, (self.BATCH_SZ,)), False)
+            torch.randint(0, 30, (self.BATCH_SZ,)), False, 0.)
 
         expected_beam_scores = self.init_step(beam, 1)
         expected_beam_scores = self.first_step(beam, expected_beam_scores, 1)
@@ -515,7 +515,7 @@ class TestBeamWithLengthPenalty(TestBeamSearchAgainstReferenceCase):
             self.BEAM_SZ, self.BATCH_SZ, 0, 1, 2, self.N_BEST,
             torch.device("cpu"), scorer,
             0, 30, False, 0, set(),
-            torch.randint(0, 30, (self.BATCH_SZ,)), False)
+            torch.randint(0, 30, (self.BATCH_SZ,)), False, 0.)
         expected_beam_scores = self.init_step(beam, 1.)
         expected_beam_scores = self.first_step(beam, expected_beam_scores, 3)
         expected_beam_scores = self.second_step(beam, expected_beam_scores, 4)
