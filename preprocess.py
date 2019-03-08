@@ -151,8 +151,6 @@ def main(opt):
             build_save_vocab([], fields, opt)
 
 
-
-
 def _get_parser():
     parser = ArgumentParser(description='preprocess.py')
 
