@@ -219,6 +219,8 @@ def preprocess_opts(parser):
     # Dictionary options, for text corpus
 
     group = parser.add_argument_group('Vocab')
+    # if you want to pass an existing vocab.pt file, pass it to
+    # -src_vocab alone as it already contains tgt vocab.
     group.add('--src_vocab', '-src_vocab', default="",
               help="Path to an existing source vocabulary. Format: "
                    "one word per line.")
