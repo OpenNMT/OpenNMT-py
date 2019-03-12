@@ -110,8 +110,8 @@ def build_save_in_shards_using_shards_size(src_corpus, tgt_corpus, fields,
             window_size=opt.window_size,
             window_stride=opt.window_stride,
             window=opt.window,
-            image_channel_size=opt.image_channel_size
-        )
+            image_channel_size=opt.image_channel_size,
+            reentrancies=opt.reentrancies)
 
         pt_file = "{:s}.{:s}.{:d}.pt".format(
             opt.save_data, corpus_type, index)
@@ -168,8 +168,9 @@ def build_save_dataset(corpus_type, fields, opt):
         sample_rate=opt.sample_rate,
         window_size=opt.window_size,
         window_stride=opt.window_stride,
-        window=opt.window,
-        image_channel_size=opt.image_channel_size)
+        window=opt.window,      
+        image_channel_size=opt.image_channel_size,
+        reentrancies=opt.reentrancies)        
 
     # We save fields in vocab.pt seperately, so make it empty.
     dataset.fields = []

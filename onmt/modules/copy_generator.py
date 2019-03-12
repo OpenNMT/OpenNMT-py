@@ -149,10 +149,11 @@ class CopyGeneratorLossCompute(loss.LossComputeBase):
     """
 
     def __init__(self, generator, tgt_vocab,
-                 force_copy, normalize_by_length,
+                 force_copy, normalize_by_length, data_type,
                  eps=1e-20):
         super(CopyGeneratorLossCompute, self).__init__(
             generator, tgt_vocab)
+        self.data_type = data_type
         self.force_copy = force_copy
         self.normalize_by_length = normalize_by_length
         self.criterion = CopyGeneratorCriterion(len(tgt_vocab), force_copy,
@@ -188,9 +189,15 @@ class CopyGeneratorLossCompute(loss.LossComputeBase):
                                 batch.src_map)
         loss = self.criterion(scores, align, target)
         scores_data = scores.data.clone()
-        scores_data = inputters.TextDataset.collapse_copy_scores(
-            self._unbottle(scores_data, batch.batch_size),
-            batch, self.tgt_vocab, batch.dataset.src_vocabs)
+        
+        if self.data_type == 'text':
+            scores_data = inputters.TextDataset.collapse_copy_scores(
+                self._unbottle(scores_data, batch.batch_size),
+                batch, self.tgt_vocab, batch.dataset.src_vocabs)
+        else: #amr
+                scores_data = inputters.AMRDataset.collapse_copy_scores(
+                self._unbottle(scores_data, batch.batch_size),
+                batch, self.tgt_vocab, batch.dataset.src_vocabs)
         scores_data = self._bottle(scores_data)
 
         # Correct target copy token instead of <unk>

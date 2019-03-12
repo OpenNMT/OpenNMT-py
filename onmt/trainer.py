@@ -145,13 +145,13 @@ class Trainer(object):
         while step <= train_steps:
 
             reduce_counter = 0
-            for i, batch in enumerate(train_iter):
+            for i, batch in enumerate(train_iter):               
                 if self.n_gpu == 0 or (i % self.n_gpu == self.gpu_rank):
                     if self.gpu_verbose_level > 1:
                         logger.info("GpuRank %d: index: %d accum: %d"
                                     % (self.gpu_rank, i, accum))
 
-                    true_batchs.append(batch)
+                    true_batchs.append(batch)                
 
                     if self.norm_method == "tokens":
                         num_tokens = batch.tgt[1:].ne(
@@ -225,14 +225,14 @@ class Trainer(object):
 
         for batch in valid_iter:
             src = inputters.make_features(batch, 'src', self.data_type)
-            if self.data_type == 'text':
+            if self.data_type == 'text' or self.data_type == 'amr':
                 _, src_lengths = batch.src
             elif self.data_type == 'audio':
                 src_lengths = batch.src_lengths
             else:
                 src_lengths = None
 
-            tgt = inputters.make_features(batch, 'tgt')
+            tgt = inputters.make_features(batch, 'tgt', self.data_type)
 
             # F-prop through the model.
             outputs, attns, _ = self.model(src, tgt, src_lengths)
@@ -264,7 +264,7 @@ class Trainer(object):
 
             dec_state = None
             src = inputters.make_features(batch, 'src', self.data_type)
-            if self.data_type == 'text':
+            if self.data_type == 'text' or self.data_type == 'amr':
                 _, src_lengths = batch.src
                 report_stats.n_src_words += src_lengths.sum().item()
             elif self.data_type == 'audio':
@@ -272,7 +272,7 @@ class Trainer(object):
             else:
                 src_lengths = None
 
-            tgt_outer = inputters.make_features(batch, 'tgt')
+            tgt_outer = inputters.make_features(batch, 'tgt', self.data_type)
 
             for j in range(0, target_size-1, trunc_size):
                 # 1. Create truncated target.

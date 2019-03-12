@@ -41,6 +41,7 @@ class TranslationBuilder(object):
             if tokens[-1] == inputters.EOS_WORD:
                 tokens = tokens[:-1]
                 break
+
         if self.replace_unk and (attn is not None) and (src is not None):
             for i in range(len(tokens)):
                 if tokens[i] == vocab.itos[inputters.UNK]:
@@ -65,7 +66,7 @@ class TranslationBuilder(object):
         # Sorting
         inds, perm = torch.sort(batch.indices.data)
         data_type = self.data.data_type
-        if data_type == 'text':
+        if data_type == 'text' or data_type == 'amr':
             src = batch.src[0].data.index_select(1, perm)
         else:
             src = None
@@ -77,7 +78,7 @@ class TranslationBuilder(object):
 
         translations = []
         for b in range(batch_size):
-            if data_type == 'text':
+            if data_type == 'text' or data_type == 'amr':
                 src_vocab = self.data.src_vocabs[inds[b]] \
                     if self.data.src_vocabs else None
                 src_raw = self.data.examples[inds[b]].src

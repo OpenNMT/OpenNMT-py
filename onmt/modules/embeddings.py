@@ -5,7 +5,8 @@ import torch
 import torch.nn as nn
 
 from onmt.modules.util_class import Elementwise
-
+from onmt.modules.gcn import GraphConvolution
+from onmt.modules.treelstm import ChildSumTreeLSTM, TopDownTreeLSTM
 
 class PositionalEncoding(nn.Module):
     """
@@ -95,7 +96,16 @@ class Embeddings(nn.Module):
                  feat_padding_idx=[],
                  feat_vocab_sizes=[],
                  dropout=0,
-                 sparse=False):
+                 sparse=False,
+                 emb_type=None,
+                 gcn_vec_size=0,
+                 gcn_dropout=0,
+                 gcn_edge_dropout=0,
+                 n_gcn_layers=0,
+                 activation='',
+                 highway='',
+                 treelstm_vec_size=0
+                ):
 
         if feat_padding_idx is None:
             feat_padding_idx = []
@@ -143,6 +153,66 @@ class Embeddings(nn.Module):
         super(Embeddings, self).__init__()
         self.make_embedding = nn.Sequential()
         self.make_embedding.add_module('emb_luts', emb_luts)
+        
+        self.emb_type = emb_type
+
+        assert(self.emb_type in 
+               [None, 'gcn', 'treelstm', 'bi_treelstm',
+                'gcn_and_bi_treelstm', 'gcn_and_treelstm'])
+        
+        if self.emb_type == 'gcn':
+            self.gcn = GraphConvolution(word_vec_size,
+                gcn_vec_size,
+                gcn_dropout,
+                gcn_edge_dropout,
+                n_gcn_layers,
+                activation,
+                highway)
+
+        elif self.emb_type == 'treelstm':
+            self.treelstm = ChildSumTreeLSTM(word_vec_size, 
+                treelstm_vec_size)
+            
+        elif self.emb_type == 'bi_treelstm':
+            self.treelstm = ChildSumTreeLSTM(
+                word_vec_size, 
+                treelstm_vec_size // 2)
+            self.topdown_treelstm = TopDownTreeLSTM(
+                treelstm_vec_size // 2,
+                treelstm_vec_size // 2)            
+            
+        elif self.emb_type == "gcn_and_treelstm":
+            self.gcn = GraphConvolution(word_vec_size,
+                gcn_vec_size,
+                gcn_dropout,
+                gcn_edge_dropout,
+                n_gcn_layers,
+                activation,
+                highway)                                       
+            self.treelstm = ChildSumTreeLSTM(word_vec_size, 
+                treelstm_vec_size)
+            
+        elif self.emb_type == "gcn_and_bi_treelstm":
+            self.gcn = GraphConvolution(word_vec_size,
+                gcn_vec_size,
+                gcn_dropout,
+                gcn_edge_dropout,
+                n_gcn_layers,
+                activation,
+                highway)                                        
+            self.treelstm = ChildSumTreeLSTM(word_vec_size, 
+                treelstm_vec_size // 2)           
+            self.topdown_treelstm = TopDownTreeLSTM(
+                treelstm_vec_size // 2,
+                treelstm_vec_size // 2)               
+            
+        if self.emb_type is not None:
+            if 'gcn' in self.emb_type and 'treelstm' not in self.emb_type:
+                ##### word_vec_size += gcn_vec_size + treelstm_vec_size                
+                self.embedding_size += gcn_vec_size + treelstm_vec_size - word_vec_size    
+            else:
+                #### word_vec_size += gcn_vec_size + treelstm_vec_size
+                self.embedding_size += gcn_vec_size + treelstm_vec_size #- word_vec_size    
 
         if feat_merge == 'mlp' and len(feat_vocab_sizes) > 0:
             in_dim = sum(emb_dims)
@@ -195,6 +265,9 @@ class Embeddings(nn.Module):
         Return:
             `FloatTensor`: word embeddings `[len x batch x embedding_size]`
         """
+        if isinstance(source, tuple):
+            source, adj, trees = source
+            
         if self.position_encoding:
             for i, module in enumerate(self.make_embedding._modules.values()):
                 if i == len(self.make_embedding._modules.values()) - 1:
@@ -204,4 +277,60 @@ class Embeddings(nn.Module):
         else:
             source = self.make_embedding(source)
 
+        if self.emb_type == 'gcn':
+            emb_gcn = self.gcn(source, adj.float().cuda())
+            # source = torch.cat((source, emb_gcn), 2)
+            source = emb_gcn
+            
+        elif self.emb_type == 'treelstm':
+            emb_treelstm = []
+            for i in range(len(trees)):
+                _, _, emb_treelstm_batch = self.treelstm(trees[i], source[:, i, :])
+                emb_treelstm.append(emb_treelstm_batch)         
+            emb_treelstm = torch.stack(emb_treelstm, 1)
+            # source = torch.cat((source, emb_treelstm), 2)
+            source = emb_treelstm
+        
+        elif self.emb_type == 'bi_treelstm':
+            emb_treelstm = []
+            for i in range(len(trees)):
+                state, hidden, emb_treelstm_batch = self.treelstm(trees[i], source[:, i, :])
+                state_down, hidden_down, emb_treelstm_batch_down = self.topdown_treelstm(
+                    trees[i],
+                    emb_treelstm_batch,
+                    state
+                )
+                emb_treelstm_batch = torch.cat([emb_treelstm_batch, emb_treelstm_batch_down], 1)    
+                emb_treelstm.append(emb_treelstm_batch)         
+            emb_treelstm = torch.stack(emb_treelstm, 1)
+            # source = emb_treelstm
+            source = torch.cat((source, emb_treelstm), 2)
+            
+        elif self.emb_type == 'gcn_and_treelstm':
+            emb_gcn = self.gcn(source, adj.float().cuda())
+            emb_treelstm = []
+            for i in range(len(trees)):
+                _, _, emb_treelstm_batch = self.treelstm(trees[i], source[:, i, :])
+                emb_treelstm.append(emb_treelstm_batch)         
+            emb_treelstm = torch.stack(emb_treelstm, 1)
+            # source = torch.cat((emb_treelstm, emb_gcn), 2)
+            source = torch.cat((source, emb_gcn), 2)
+            source = torch.cat((source, emb_treelstm), 2)
+
+        elif self.emb_type == 'gcn_and_bi_treelstm':
+            emb_gcn = self.gcn(source, adj.float().cuda())
+            emb_treelstm = []
+            for i in range(len(trees)):
+                state, hidden, emb_treelstm_batch = self.treelstm(trees[i], source[:, i, :])
+                state_down, hidden_down, emb_treelstm_batch_down = self.topdown_treelstm(
+                    trees[i],
+                    emb_treelstm_batch,
+                    state
+                )                
+                emb_treelstm_batch = torch.cat([emb_treelstm_batch, emb_treelstm_batch_down], 1)              
+                emb_treelstm.append(emb_treelstm_batch)       
+            emb_treelstm = torch.stack(emb_treelstm, 1)
+            # source = torch.cat((emb_treelstm, emb_gcn), 2)
+            source = torch.cat((source, emb_gcn), 2)
+            source = torch.cat((source, emb_treelstm), 2)   
         return source

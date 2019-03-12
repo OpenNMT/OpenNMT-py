@@ -19,6 +19,25 @@ def model_opts(parser):
                        help='Word embedding size for tgt.')
     group.add_argument('-word_vec_size', type=int, default=-1,
                        help='Word embedding size for src and tgt.')
+    
+    group.add_argument('-emb_type', default=None,
+                       help="Type of the embeddings.")
+    group.add_argument('-activation', type=str, default='leaky_relu',
+                        # choices=['sigmoid', 'tanh', 'relu', 'leaky_relu'],
+                        help='Activation function')
+    group.add_argument('-highway', type=str, default='leaky_relu',
+                        # choices=['', 'sigmoid', 'tanh', 'relu', 'leaky_relu'],
+                        help='Highway activation function')    
+    parser.add_argument('-gcn_dropout', type=float, default=0,
+                    help="""Dropout probability in GCN layers""")
+    parser.add_argument('-gcn_edge_dropout', type=float, default=0,
+                    help="""Edge dropout probability in GCN layers""")
+    parser.add_argument('-n_gcn_layers', type=int, default=1,
+                    help="""Number of GCN layers""")
+    parser.add_argument('-gcn_vec_size', type=int, default=0,
+                        help='GCN embedding size.')
+    parser.add_argument('-treelstm_vec_size', type=int, default=0,
+                        help='TreeLSTM embedding size.')        
 
     group.add_argument('-share_decoder_embeddings', action='store_true',
                        help="""Use a shared weight matrix for the input and
@@ -54,7 +73,9 @@ def model_opts(parser):
                        Options are [text|img|audio].""")
 
     group.add_argument('-encoder_type', type=str, default='rnn',
-                       choices=['rnn', 'brnn', 'mean', 'transformer', 'cnn'],
+                       choices=['rnn', 'gcn', 'rnngcn', 'brnn', 'mean', 'transformer', 
+                                'cnn', 'treelstm', 'rnntreelstm', 'bitreelstm', 
+                                'rnnbitreelstm'],
                        help="""Type of encoder layer to use. Non-RNN layers
                        are experimental. Options are
                        [rnn|brnn|mean|transformer|cnn].""")
@@ -155,7 +176,9 @@ def preprocess_opts(parser):
     group.add_argument('-data_type', default="text",
                        help="""Type of the source input.
                        Options are [text|img].""")
-
+    group.add_argument('-reentrancies', action='store_true',
+                       help="Use graphs instead of trees")
+    
     group.add_argument('-train_src', required=True,
                        help="Path to the training source data")
     group.add_argument('-train_tgt', required=True,
@@ -249,11 +272,14 @@ def preprocess_opts(parser):
                        help="""Using grayscale image can training
                        model faster and smaller""")
 
-
 def train_opts(parser):
     """ Training and saving options """
 
     group = parser.add_argument_group('General')
+    
+    group.add_argument('-data_type', default="text",
+                       help="Type of the source input. Options: [text|img|amr].")
+    
     group.add_argument('-data', required=True,
                        help="""Path prefix to the ".train.pt" and
                        ".valid.pt" file path from preprocess.py""")
@@ -456,6 +482,8 @@ def translate_opts(parser):
     group = parser.add_argument_group('Data')
     group.add_argument('-data_type', default="text",
                        help="Type of the source input. Options: [text|img].")
+    group.add_argument('-reentrancies', action='store_true',
+                       help="Use graphs instead of trees")    
 
     group.add_argument('-src', required=True,
                        help="""Source sequence to decode (one line per
@@ -467,7 +495,7 @@ def translate_opts(parser):
     group.add_argument('-output', default='pred.txt',
                        help="""Path to output the predictions (each line will
                        be the decoded sequence""")
-    group.add_argument('-report_bleu', action='store_true',
+    group.add_argument('-report_bleu', action='store_true', default=True,
                        help="""Report bleu score after translation,
                        call tools/multi-bleu.perl on command line""")
     group.add_argument('-report_rouge', action='store_true',

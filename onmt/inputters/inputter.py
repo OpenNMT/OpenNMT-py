@@ -11,15 +11,18 @@ from itertools import count
 import torch
 import torchtext.data
 import torchtext.vocab
+from torch.autograd import Variable
 
 from onmt.inputters.dataset_base import UNK_WORD, PAD_WORD, BOS_WORD, EOS_WORD
 from onmt.inputters.text_dataset import TextDataset
+from onmt.inputters.amr_dataset import AMRDataset
 from onmt.inputters.image_dataset import ImageDataset
 from onmt.inputters.audio_dataset import AudioDataset
 from onmt.utils.logging import logger
 
 import gc
-
+import numpy as np
+from tree import read_tree
 
 def _getstate(self):
     return dict(self.__dict__, stoi=dict(self.stoi))
@@ -53,11 +56,13 @@ def get_fields(data_type, n_src_features, n_tgt_features):
         return ImageDataset.get_fields(n_src_features, n_tgt_features)
     elif data_type == 'audio':
         return AudioDataset.get_fields(n_src_features, n_tgt_features)
+    elif data_type == 'amr':
+        return AMRDataset.get_fields(n_src_features, n_tgt_features)
     else:
         raise ValueError("Data type not implemented")
 
 
-def load_fields_from_vocab(vocab, data_type="text"):
+def load_fields_from_vocab(vocab, data_type):
     """
     Load Field objects from `vocab.pt` file.
     """
@@ -121,11 +126,13 @@ def get_num_features(data_type, corpus_file, side):
         return ImageDataset.get_num_features(corpus_file, side)
     elif data_type == 'audio':
         return AudioDataset.get_num_features(corpus_file, side)
+    elif data_type == 'amr':
+        return AMRDataset.get_num_features(corpus_file, side)
     else:
         raise ValueError("Data type not implemented")
 
 
-def make_features(batch, side, data_type='text'):
+def make_features(batch, side, data_type):
     """
     Args:
         batch (Tensor): a batch of source or target data.
@@ -146,8 +153,19 @@ def make_features(batch, side, data_type='text'):
     keys = sorted([k for k in batch.__dict__ if feat_start in k])
     features = [batch.__dict__[k] for k in keys]
     levels = [data] + features
-
-    if data_type == 'text':
+    
+    if side == 'src' and 'src_adj' in batch.__dict__.keys():
+        adj = batch.__dict__['src_adj']
+    if side == 'src' and 'src_parents' in batch.__dict__.keys():
+        parents = batch.__dict__['src_parents']
+        
+    if data_type == 'amr':
+        if side == 'tgt':
+            return torch.cat([level.unsqueeze(2) for level in levels], 2)
+        return (torch.cat([level.unsqueeze(2) for level in levels], 2),
+                adj,
+                parents)
+    elif data_type == 'text':
         return torch.cat([level.unsqueeze(2) for level in levels], 2)
     else:
         return levels[0]
@@ -188,7 +206,7 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
                   dynamic_dict=True, sample_rate=0,
                   window_size=0, window_stride=0, window=None,
                   normalize_audio=True, use_filter_pred=True,
-                  image_channel_size=3):
+                  image_channel_size=3, reentrancies=False):
     """
     Build src/tgt examples iterator from corpus files, also extract
     number of features.
@@ -197,13 +215,12 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
     def _make_examples_nfeats_tpl(data_type, src_data_iter, src_path, src_dir,
                                   src_seq_length_trunc, sample_rate,
                                   window_size, window_stride,
-                                  window, normalize_audio,
+                                  window, normalize_audio, reentrancies,
                                   image_channel_size=3):
         """
         Process the corpus into (example_dict iterator, num_feats) tuple
         on source side for different 'data_type'.
         """
-
         if data_type == 'text':
             src_examples_iter, num_src_feats = \
                 TextDataset.make_text_examples_nfeats_tpl(
@@ -226,6 +243,12 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
                     src_path, src_dir, sample_rate,
                     window_size, window_stride, window,
                     normalize_audio)
+                
+        elif data_type == 'amr':
+            src_examples_iter, num_src_feats = \
+                AMRDataset.make_amr_examples_nfeats_tpl(
+                    src_data_iter, src_path, src_seq_length_trunc, 
+                    "src", reentrancies)
 
         return src_examples_iter, num_src_feats
 
@@ -233,7 +256,7 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
         _make_examples_nfeats_tpl(data_type, src_data_iter, src_path, src_dir,
                                   src_seq_length_trunc, sample_rate,
                                   window_size, window_stride,
-                                  window, normalize_audio,
+                                  window, normalize_audio, reentrancies,
                                   image_channel_size=image_channel_size)
 
     # For all data types, the tgt side corpus is in form of text.
@@ -260,6 +283,13 @@ def build_dataset(fields, data_type, src_data_iter=None, src_path=None,
         dataset = AudioDataset(fields, src_examples_iter, tgt_examples_iter,
                                tgt_seq_length=tgt_seq_length,
                                use_filter_pred=use_filter_pred)
+    elif data_type == 'amr':
+        dataset = AMRDataset(fields, src_examples_iter, tgt_examples_iter,
+                              num_src_feats, num_tgt_feats,
+                              src_seq_length=src_seq_length,
+                              tgt_seq_length=tgt_seq_length,
+                              dynamic_dict=dynamic_dict,
+                              use_filter_pred=use_filter_pred)        
 
     return dataset
 
@@ -342,11 +372,11 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
         logger.info(" * %s vocab size: %d." % (key,
                                                len(fields[key].vocab)))
 
-    if data_type == 'text':
+    if data_type == 'text' or data_type == 'amr':
         _build_field_vocab(fields["src"], counter["src"],
                            max_size=src_vocab_size,
                            min_freq=src_words_min_frequency)
-        logger.info(" * src vocab size: %d." % len(fields["src"].vocab))
+        logger.info(" * src vocab size: %d." % len(fields["src"].vocab))     
 
         # All datasets have same num of n_src_features,
         # getting the last one is OK.
@@ -415,6 +445,127 @@ class OrderedIterator(torchtext.data.Iterator):
             for b in torchtext.data.batch(self.data(), self.batch_size,
                                           self.batch_size_fn):
                 self.batches.append(sorted(b, key=self.sort_key))
+                
+
+class AMRBatch:
+    index = 0
+    def __init__(self, data, dataset, device, train):
+        self.batch_size = len(data)
+        self.dataset = dataset
+        self.indices = torch.LongTensor(self.batch_size)
+        for i in range(self.batch_size):
+            self.indices[i] = AMRBatch.index
+            AMRBatch.index += 1
+        if device != 'cpu':
+            self.indices = self.indices.cuda()
+        self.indices = Variable(self.indices)
+        
+        str_stoi = dataset.fields['src'].vocab.stoi
+        if 'tgt' in dataset.fields:
+            tgt_stoi = dataset.fields['tgt'].vocab.stoi
+        src_length = 0
+        for x in data:
+            src_length = max(src_length, len(x.src))
+        src_lengths = []
+        tgt_length = 0
+        srcs = []
+        tgts = []
+        alignments = []
+        srcmaps = []
+        supports = []
+        for example in data:
+            size = len(example.src)
+            size_matrix = example.src_graph.matrix.size()
+            src_lengths.append(size)
+            # src_lengths.append(size_matrix[1])
+            tree = read_tree(example.src_graph.parents)                
+            adj = torch.LongTensor(size_matrix[0], src_length, src_length).zero_()
+            adj[:, 0 : size_matrix[1], 0 : size_matrix[1]] = example.src_graph.matrix
+            src_identifiers = [str_stoi["<blank>"]] * (src_length)
+            for i, item in enumerate(example.src):
+                src_identifiers[i] = str_stoi[item]
+            example_src = (tree, Variable(adj), 
+                         Variable(torch.from_numpy(np.asarray(src_identifiers)).long()))                    
+            if device != 'cpu':
+                example_src = (example_src[0], example_src[1], example_src[2].cuda())                         
+            srcs.append(example_src[2])
+            supports.append((example_src[0], example_src[1]))            
+            if hasattr(example, 'src_map'):
+                src_map = torch.FloatTensor(src_length, src_length + 2).zero_()
+                for i in range(example.src_map.size(0)):
+                    src_map[i][example.src_map[i]] = 1
+                src_map = Variable(src_map)
+                if device != -1:
+                    src_map = src_map.cuda()
+                srcmaps.append(src_map)            
+                
+            if 'tgt' in dataset.fields:
+                tgt_length = max(tgt_length, len(example.tgt))
+        
+        if 'tgt' in dataset.fields:
+            for example in data:     
+                tgt_identifiers = []
+                for i, word in enumerate(example.tgt):
+                    tgt_identifiers.append(tgt_stoi[word])
+                tgt_identifiers = [tgt_stoi["<s>"]] + tgt_identifiers + [tgt_stoi["</s>"]]
+                tgt_identifiers += [tgt_stoi["<blank>"]] * (tgt_length + 2 - len(tgt_identifiers))
+                example_tgt = Variable(torch.from_numpy(np.asarray(tgt_identifiers)).long())
+                if device != 'cpu':
+                    example_tgt = example_tgt.cuda()
+                tgts.append(example_tgt)
+
+                if getattr(example, "alignment", None) is not None:
+                    align_identifiers = []
+                    for word in example.alignment:
+                        align_identifiers.append(word)
+                    align_identifiers += [0] * (tgt_length + 2 - len(align_identifiers))
+                    example_alignment = Variable(torch.from_numpy(np.asarray(align_identifiers)).long())
+                    if device != -1:
+                        example_alignment = example_alignment.cuda()
+                    alignments.append(example_alignment)
+        
+        lengths = torch.from_numpy(np.asarray(src_lengths)).long()
+
+        trees = []
+        adjs = []
+        for t, a in supports:
+            trees.append(t)
+            adjs.append(a)
+        self.src = (torch.stack(srcs, 1), lengths)
+        self.src_parents = trees
+        self.src_adj = torch.stack(adjs, 1)
+        # self.tgt = torch.stack(tgts, 1)
+        
+        if srcmaps != []:
+            self.src_map = torch.stack(srcmaps, 1)
+        if tgts != []:
+            self.tgt = torch.stack(tgts, 1)
+            if srcmaps != []:
+                self.alignment = torch.stack(alignments, 1)        
+        
+
+class AMRIterator(torchtext.data.Iterator):
+    def __init__(self, dataset, batch_size, sort_key=None, device=None,
+                 batch_size_fn=lambda new, count, sofar: count, train=True, repeat=None, 
+                 shuffle=None, sort=None, sort_within_batch=None): 
+        super(AMRIterator, self).__init__(dataset=dataset, batch_size=batch_size, sort_key=sort_key, 
+                device=device, batch_size_fn=batch_size_fn, train=train, repeat=repeat, 
+                shuffle=shuffle, sort=sort, sort_within_batch=sort_within_batch)
+
+    def __iter__(self):
+        while True:
+            self.init_epoch()
+            for idx, minibatch in enumerate(self.batches):
+                # fast-forward if loaded from state
+                if self._iterations_this_epoch > idx:
+                    continue
+                self.iterations += 1
+                self._iterations_this_epoch += 1
+                batch = AMRBatch(minibatch, self.dataset, self.device, self.train)
+                yield batch
+                
+            if not self.repeat:
+                raise StopIteration
 
 
 class DatasetLazyIter(object):
@@ -431,13 +582,14 @@ class DatasetLazyIter(object):
     """
 
     def __init__(self, datasets, fields, batch_size, batch_size_fn,
-                 device, is_train):
+                 device, is_train, iterator_type):
         self.datasets = datasets
         self.fields = fields
         self.batch_size = batch_size
         self.batch_size_fn = batch_size_fn
         self.device = device
         self.is_train = is_train
+        self.iterator_type = iterator_type
 
         self.cur_iter = self._next_dataset_iterator(datasets)
         # We have at least one dataset.
@@ -475,12 +627,21 @@ class DatasetLazyIter(object):
 
         # Sort batch by decreasing lengths of sentence required by pytorch.
         # sort=False means "Use dataset's sortkey instead of iterator's".
-        return OrderedIterator(
-            dataset=self.cur_dataset, batch_size=self.batch_size,
-            batch_size_fn=self.batch_size_fn,
-            device=self.device, train=self.is_train,
-            sort=False, sort_within_batch=True,
-            repeat=False)
+        if self.iterator_type == 'amr':
+            return AMRIterator(
+                dataset=self.cur_dataset, batch_size=self.batch_size,
+                batch_size_fn=self.batch_size_fn,
+                device=self.device, train=self.is_train,
+                sort=True, sort_within_batch=True,
+                repeat=False)
+        else:
+            return OrderedIterator(
+                dataset=self.cur_dataset, batch_size=self.batch_size,
+                batch_size_fn=self.batch_size_fn,
+                device=self.device, train=self.is_train,
+                sort=False, sort_within_batch=True,
+                repeat=False)
+        
 
 
 def build_dataset_iter(datasets, fields, opt, is_train=True):
@@ -519,7 +680,7 @@ def build_dataset_iter(datasets, fields, opt, is_train=True):
         device = "cpu"
 
     return DatasetLazyIter(datasets, fields, batch_size, batch_size_fn,
-                           device, is_train)
+                           device, is_train, opt.data_type)
 
 
 def lazily_load_dataset(corpus_type, opt):
@@ -562,7 +723,7 @@ def _load_fields(dataset, data_type, opt, checkpoint):
     fields = dict([(k, f) for (k, f) in fields.items()
                    if k in dataset.examples[0].__dict__])
 
-    if data_type == 'text':
+    if data_type == 'text' or data_type == 'amr':
         logger.info(' * vocabulary size. source = %d; target = %d' %
                     (len(fields['src'].vocab), len(fields['tgt'].vocab)))
     else:

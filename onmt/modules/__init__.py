@@ -6,6 +6,8 @@ from onmt.modules.conv_multi_step_attention import ConvMultiStepAttention
 from onmt.modules.copy_generator import CopyGenerator, CopyGeneratorLossCompute
 from onmt.modules.multi_headed_attn import MultiHeadedAttention
 from onmt.modules.embeddings import Embeddings, PositionalEncoding
+from onmt.modules.gcn import GraphConvolution
+from onmt.modules.treelstm import ChildSumTreeLSTM, TopDownTreeLSTM
 from onmt.modules.weight_norm import WeightNormConv2d
 from onmt.modules.average_attn import AverageAttention
 

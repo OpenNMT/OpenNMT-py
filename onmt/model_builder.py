@@ -10,6 +10,8 @@ from torch.nn.init import xavier_uniform_
 import onmt.inputters as inputters
 import onmt.modules
 from onmt.encoders.rnn_encoder import RNNEncoder
+from onmt.encoders.gcn_encoder import GCNEncoder
+from onmt.encoders.treelstm_encoder import TreeLSTMEncoder
 from onmt.encoders.transformer import TransformerEncoder
 from onmt.encoders.cnn_encoder import CNNEncoder
 from onmt.encoders.mean_encoder import MeanEncoder
@@ -46,7 +48,7 @@ def build_embeddings(opt, word_dict, feature_dicts, for_encoder=True):
                          for feat_dict in feature_dicts]
     num_feat_embeddings = [len(feat_dict) for feat_dict in
                            feature_dicts]
-
+    
     return Embeddings(word_vec_size=embedding_dim,
                       position_encoding=opt.position_encoding,
                       feat_merge=opt.feat_merge,
@@ -57,7 +59,15 @@ def build_embeddings(opt, word_dict, feature_dicts, for_encoder=True):
                       feat_padding_idx=feats_padding_idx,
                       word_vocab_size=num_word_embeddings,
                       feat_vocab_sizes=num_feat_embeddings,
-                      sparse=opt.optim == "sparseadam")
+                      sparse=opt.optim == "sparseadam",
+                      emb_type=opt.emb_type if for_encoder else None,
+                      gcn_vec_size=opt.gcn_vec_size,
+                      gcn_dropout=opt.gcn_dropout,
+                      gcn_edge_dropout=opt.gcn_edge_dropout,
+                      n_gcn_layers=opt.n_gcn_layers,
+                      activation=opt.activation,
+                      highway=opt.highway,
+                      treelstm_vec_size=opt.treelstm_vec_size)
 
 
 def build_encoder(opt, embeddings):
@@ -77,6 +87,23 @@ def build_encoder(opt, embeddings):
                           opt.dropout, embeddings)
     elif opt.encoder_type == "mean":
         return MeanEncoder(opt.enc_layers, embeddings)
+    elif opt.encoder_type == "rnntreelstm" or opt.encoder_type == "treelstm":
+        opt.brnn = True if opt.encoder_type == "rnntreelstm" else False
+        return TreeLSTMEncoder(opt.rnn_type, opt.brnn, opt.enc_layers,
+                        opt.rnn_size, opt.dropout, embeddings,
+                        opt.bridge, False)
+    elif opt.encoder_type == "rnnbitreelstm" or opt.encoder_type == "bitreelstm":
+        opt.brnn = True if opt.encoder_type == "rnnbitreelstm" else False
+        return TreeLSTMEncoder(opt.rnn_type, opt.brnn, opt.enc_layers,
+                        opt.rnn_size, opt.dropout, embeddings,
+                        opt.bridge, True)    
+    elif opt.encoder_type == "rnngcn" or opt.encoder_type == "gcn":
+        opt.brnn = True if opt.encoder_type == "rnngcn" else False
+        return GCNEncoder(opt.rnn_type, opt.brnn, opt.enc_layers,
+                          opt.rnn_size, opt.dropout, embeddings,
+                          opt.bridge, opt.gcn_dropout, 
+                          opt.gcn_edge_dropout, opt.n_gcn_layers, 
+                          opt.activation, opt.highway)    
     else:
         # "rnn" or "brnn"
         return RNNEncoder(opt.rnn_type, opt.brnn, opt.enc_layers,
@@ -169,7 +196,7 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
     if model_opt.model_type == "text":
         src_dict = fields["src"].vocab
         feature_dicts = inputters.collect_feature_vocabs(fields, 'src')
-        src_embeddings = build_embeddings(model_opt, src_dict, feature_dicts)
+        src_embeddings = build_embeddings(model_opt, src_dict, feature_dicts, model_opt)
         encoder = build_encoder(model_opt, src_embeddings)
     elif model_opt.model_type == "img":
         if ("image_channel_size" not in model_opt.__dict__):

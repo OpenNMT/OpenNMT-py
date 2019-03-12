@@ -57,10 +57,10 @@ class EnsembleEncoder(EncoderBase):
         self.model_encoders = nn.ModuleList(list(model_encoders))
 
     def forward(self, src, lengths=None):
-        enc_hidden, memory_bank = zip(*[
+        enc_hidden, memory_bank, length = zip(*[
             model_encoder.forward(src, lengths)
             for model_encoder in self.model_encoders])
-        return enc_hidden, memory_bank
+        return enc_hidden, memory_bank, length[0]
 
 
 class EnsembleDecoder(nn.Module):
@@ -117,8 +117,7 @@ class EnsembleGenerator(nn.Module):
         All models in the ensemble must share a target vocabulary.
         """
         distributions = [model_generator.forward(hidden[i])
-                         for (i, model_generator)
-                         in enumerate(self.model_generators)]
+                         for i, model_generator in enumerate(self.model_generators)]
         return torch.stack(distributions).mean(0)
 
 

@@ -41,15 +41,16 @@ class NMTModel(nn.Module):
                  * final decoder state
         """
         tgt = tgt[:-1]  # exclude last target from inputs
-
         enc_final, memory_bank, lengths = self.encoder(src, lengths)
         enc_state = \
             self.decoder.init_decoder_state(src, memory_bank, enc_final)
+
         decoder_outputs, dec_state, attns = \
             self.decoder(tgt, memory_bank,
                          enc_state if dec_state is None
                          else dec_state,
                          memory_lengths=lengths)
+
         if self.multigpu:
             # Not yet supported on multi-gpu
             dec_state = None

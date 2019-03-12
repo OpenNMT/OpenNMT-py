@@ -45,7 +45,7 @@ def build_translator(opt, report_score=True, logger=None, out_file=None):
                         "ignore_when_blocking", "dump_beam", "report_bleu",
                         "data_type", "replace_unk", "gpu", "verbose", "fast",
                         "sample_rate", "window_size", "window_stride",
-                        "window", "image_channel_size"]}
+                        "window", "image_channel_size", "reentrancies"]}
 
     translator = Translator(model, fields, global_scorer=scorer,
                             out_file=out_file, report_score=report_score,
@@ -102,11 +102,12 @@ class Translator(object):
                  verbose=False,
                  out_file=None,
                  fast=False,
-                 image_channel_size=3):
+                 image_channel_size=3,
+                 reentrancies=False):
         self.logger = logger
         self.gpu = gpu
         self.cuda = gpu > -1
-
+        self.reentrancies=reentrancies
         self.model = model
         self.fields = fields
         self.n_best = n_best
@@ -178,7 +179,6 @@ class Translator(object):
                 of `n_best` predictions
         """
         assert src_data_iter is not None or src_path is not None
-
         if batch_size is None:
             raise ValueError("batch_size must be set")
         data = inputters. \
@@ -194,18 +194,25 @@ class Translator(object):
                           window_stride=self.window_stride,
                           window=self.window,
                           use_filter_pred=self.use_filter_pred,
-                          image_channel_size=self.image_channel_size)
+                          image_channel_size=self.image_channel_size, 
+                          reentrancies=self.reentrancies)
 
         if self.cuda:
             cur_device = "cuda"
         else:
             cur_device = "cpu"
 
-        data_iter = inputters.OrderedIterator(
-            dataset=data, device=cur_device,
-            batch_size=batch_size, train=False, sort=False,
-            sort_within_batch=True, shuffle=False)
-
+        if self.data_type == 'amr':
+            data_iter = inputters.AMRIterator(
+                dataset=data, device=cur_device,
+                batch_size=batch_size, train=False, sort=False,
+                sort_within_batch=True, shuffle=False)
+        else:
+            data_iter = inputters.OrderedIterator(
+                dataset=data, device=cur_device,
+                batch_size=batch_size, train=False, sort=False,
+                sort_within_batch=True, shuffle=False)
+        
         builder = onmt.translate.TranslationBuilder(
             data, self.fields,
             self.n_best, self.replace_unk, tgt_path)
@@ -227,6 +234,7 @@ class Translator(object):
                 pred_score_total += trans.pred_scores[0]
                 pred_words_total += len(trans.pred_sents[0])
                 if tgt_path is not None:
+                    print(trans.gold_score.data.cpu().numpy())
                     gold_score_total += trans.gold_score
                     gold_words_total += len(trans.gold_sent) + 1
 
@@ -249,7 +257,7 @@ class Translator(object):
                     preds = trans.pred_sents[0]
                     preds.append('</s>')
                     attns = trans.attns[0].tolist()
-                    if self.data_type == 'text':
+                    if self.data_type == 'text' or self.data_type == 'amr':
                         srcs = trans.src_raw
                     else:
                         srcs = [str(item) for item in range(len(attns[0]))]
@@ -335,7 +343,7 @@ class Translator(object):
         # TODO: faster code path for beam_size == 1.
 
         # TODO: support these blacklisted features.
-        assert data.data_type == 'text'
+        assert data.data_type == 'text' or data.data_type == 'amr'
         assert not self.copy_attn
         assert not self.dump_beam
         assert not self.use_filter_pred
@@ -547,7 +555,7 @@ class Translator(object):
         # (1) Run the encoder on the src.
         src = inputters.make_features(batch, 'src', data_type)
         src_lengths = None
-        if data_type == 'text':
+        if data_type == 'text' or data_type == 'amr':
             _, src_lengths = batch.src
         elif data_type == 'audio':
             src_lengths = batch.src_lengths
@@ -565,7 +573,7 @@ class Translator(object):
 
         # (2) Repeat src objects `beam_size` times.
         src_map = rvar(batch.src_map.data) \
-            if data_type == 'text' and self.copy_attn else None
+            if data_type in ['text','amr'] and self.copy_attn else None
         if isinstance(memory_bank, tuple):
             memory_bank = tuple(rvar(x.data) for x in memory_bank)
         else:
@@ -655,14 +663,14 @@ class Translator(object):
 
     def _run_target(self, batch, data):
         data_type = data.data_type
-        if data_type == 'text':
+        if data_type == 'text' or data_type == 'amr':
             _, src_lengths = batch.src
         elif data_type == 'audio':
             src_lengths = batch.src_lengths
         else:
             src_lengths = None
         src = inputters.make_features(batch, 'src', data_type)
-        tgt_in = inputters.make_features(batch, 'tgt')[:-1]
+        tgt_in = inputters.make_features(batch, 'tgt', data_type)[:-1]       
 
         #  (1) run the encoder on the src
         enc_states, memory_bank, src_lengths \
@@ -678,13 +686,14 @@ class Translator(object):
             tgt_in, memory_bank, dec_states, memory_lengths=src_lengths)
 
         tgt_pad = self.fields["tgt"].vocab.stoi[inputters.PAD_WORD]
-        for dec, tgt in zip(dec_out, batch.tgt[1:].data):
-            # Log prob of each word.
-            out = self.model.generator.forward(dec)
-            tgt = tgt.unsqueeze(1)
-            scores = out.data.gather(1, tgt)
-            scores.masked_fill_(tgt.eq(tgt_pad), 0)
-            gold_scores += scores.view(-1)
+        if not self.copy_attn:
+            for dec, tgt in zip(dec_out, batch.tgt[1:].data):
+                # Log prob of each word.
+                out = self.model.generator.forward(dec)
+                tgt = tgt.unsqueeze(1)
+                scores = out.data.gather(1, tgt)
+                scores.masked_fill_(tgt.eq(tgt_pad), 0)
+                gold_scores += scores.view(-1)
         return gold_scores
 
     def _report_score(self, name, score_total, words_total):

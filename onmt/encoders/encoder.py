@@ -33,6 +33,8 @@ class EncoderBase(nn.Module):
     """
 
     def _check_args(self, src, lengths=None, hidden=None):
+        if isinstance(src, tuple):
+            src = src[0]
         _, n_batch, _ = src.size()
         if lengths is not None:
             n_batch_, = lengths.size()

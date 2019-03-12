@@ -88,11 +88,12 @@ class RNNDecoderBase(nn.Module):
 
         # Set up the standard attention.
         self._coverage = coverage_attn
+        
         self.attn = onmt.modules.GlobalAttention(
             hidden_size, coverage=coverage_attn,
             attn_type=attn_type, attn_func=attn_func
         )
-
+        
         # Set up a separated copy attention layer, if needed.
         self._copy = False
         if copy_attn and not reuse_copy_attn:
@@ -127,8 +128,8 @@ class RNNDecoderBase(nn.Module):
         assert isinstance(state, RNNDecoderState)
         # tgt.size() returns tgt length and batch
         _, tgt_batch, _ = tgt.size()
-        _, memory_batch, _ = memory_bank.size()
-        aeq(tgt_batch, memory_batch)
+        # _, memory_batch, _ = memory_bank.size()
+        # aeq(tgt_batch, memory_batch)
         # END
 
         # Run the forward pass of the RNN.
@@ -163,8 +164,15 @@ class RNNDecoderBase(nn.Module):
             # The encoder hidden is  (layers*directions) x batch x dim.
             # We need to convert it to layers x batch x (directions*dim).
             if self.bidirectional_encoder:
-                hidden = torch.cat([hidden[0:hidden.size(0):2],
+                # if hidden.size()[0] == 3: # concat with treelstm
+                #     hidden = torch.cat([hidden[0:1], hidden[1:2], 
+                #                         hidden[2:3]], 2)
+                # else:
+                hidden = torch.cat([hidden[0:hidden.size(0):2], 
                                     hidden[1:hidden.size(0):2]], 2)
+            # else:
+                # if hidden.size()[0] == 2: # concat with treelstm
+                #     hidden = torch.cat([hidden[0:1], hidden[1:2]], 2)
             return hidden
 
         if isinstance(encoder_final, tuple):  # LSTM
@@ -323,13 +331,16 @@ class InputFeedRNNDecoder(RNNDecoderBase):
         # input at every time step.
         for _, emb_t in enumerate(emb.split(1)):
             emb_t = emb_t.squeeze(0)
+            
             decoder_input = torch.cat([emb_t, input_feed], 1)
 
             rnn_output, hidden = self.rnn(decoder_input, hidden)
+
             decoder_output, p_attn = self.attn(
                 rnn_output,
                 memory_bank.transpose(0, 1),
-                memory_lengths=memory_lengths)
+                memory_lengths=memory_lengths)          
+            
             if self.context_gate is not None:
                 # TODO: context gate should be employed
                 # instead of second RNN transform.
@@ -337,6 +348,7 @@ class InputFeedRNNDecoder(RNNDecoderBase):
                     decoder_input, rnn_output, decoder_output
                 )
             decoder_output = self.dropout(decoder_output)
+
             input_feed = decoder_output
 
             decoder_outputs += [decoder_output]

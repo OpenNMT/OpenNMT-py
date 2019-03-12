@@ -25,7 +25,7 @@ def build_loss_compute(model, tgt_vocab, opt, train=True):
     if opt.copy_attn:
         compute = onmt.modules.CopyGeneratorLossCompute(
             model.generator, tgt_vocab, opt.copy_attn_force,
-            opt.copy_loss_by_seqlength)
+            opt.copy_loss_by_seqlength, opt.data_type)
     else:
         compute = NMTLossCompute(
             model.generator, tgt_vocab,

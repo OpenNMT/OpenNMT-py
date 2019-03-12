@@ -1,0 +1,61 @@
+Update: 08/22/2012
+Person involved: Shu Cai
+
+Minor bug fix of smatch.py. smatch-v2.py was created.
+
+smatch.py-> smatch-v1.py
+smatch-v2.py-> smatch.py
+
+No change of interface
+
+Update: 09/14/2012
+Person involved: Shu Cai
+
+Bug fix of smatch.py and smatch-table.py. smatch-v0.1.py smatch-v0.2.py smatch-v0.3.py smatch-v0.4.py smatch-table-v0.1.py smatch-table-v0.2.py was created.
+
+smatch.py now equals to smatch-v0.4.py
+smatch-table.py now equals to smatch-table-v0.2.py
+
+smatch.py runs with a smart initialization, which matches words with the same value first, then randomly select other variable mappings. 4 restarts is applied.
+
+Update: 03/17/2013
+Person involved: Shu Cai
+
+Interface change of smatch.py and smatch-table.py. Using this version does not require esem-format-check.pl. (All versions before v0.5 require esem-format-check.pl to check the format of AMR) Instead it needs amr.py.
+
+It now accepts one-AMR-per-line format as well as other formats of AMR. 
+
+smatch.py now equals to smatch-v0.5.py
+smatch-table.py now equals to smatch-table-v0.3.py
+
+Update:03/19/2013
+Person involved: Shu Cai
+
+Document update. The latest documents are smatch_guide.txt and smatch_guide.pdf (same content)
+Add some sample files to the directory: sample_file_list, test_input1, test_input2 
+
+Update: 03/20/2013
+Person involved: Shu Cai
+
+Minor changes to the documents: smatch_guide.txt and smatch_guide.pdf
+
+Update: 04/04/2013
+Person involved: Shu Cai
+
+Add Software_architecture.pdf. Minor changes to the smatch.py and smatch-table.py (comments and add --pr option) 
+Minor changes to the README.txt and smatch_guide.pdf
+
+Update: 01/18/2015
+Person involved: Shu Cai
+Code cleanup and bug fix. Add detailed comment to the code.
+Thanks Yoav Artzi (yoav@cs.washington.edu) for finding a bug and fixing it.
+
+Update: 12/21/2015
+Person involved: Jon May
+Fixed treatment of quoted strings to allow special characters to be actually part of the string.
+Empty double quoted strings also allowed
+
+Update: 1/9/2016
+Person involved: Guntis Barzdins and Didzis Gosko
+Fixed small crash bug
+
