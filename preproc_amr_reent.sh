@@ -18,5 +18,6 @@ python preprocess.py \
     -tgt_words_min_frequency 1 \
     -src_seq_length 125 \
     -tgt_seq_length 125 \
-    -src_vocab ../NeuralAmr/vocab/20M-vocab-gen/amr.src.dict \
-    -tgt_vocab ../NeuralAmr/vocab/20M-vocab-gen/amr.targ.dict
+    -src_vocab dicts/amr.src.dict \
+    -tgt_vocab dicts/amr.targ.dict
+#dicts taken from https://github.com/sinantie/NeuralAmr
