@@ -38,7 +38,7 @@ class AMRData:
                 else:
                     self.matrix[1, i2, j2] = 1
                     self.matrix[2, j2, i2] = 1
-        print(reentrancies, longest_dep)
+        #print(reentrancies, longest_dep)
 
 
     def __repr__(self):
