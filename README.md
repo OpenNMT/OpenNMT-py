@@ -32,7 +32,7 @@ GCNSeq: ```train_amr_tree_gcn_seq.sh```
 
 GCN: ```train_amr_tree_gcn.sh```
 
-### Graph encoders encoders
+### Graph encoders
 
 SeqGCN: ```train_amr_graph_seq_gcn.sh```
 
