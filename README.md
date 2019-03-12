@@ -6,7 +6,7 @@ Follow instructions on [README_OpenNMT-py.md](README_OpenNMT-py.md) to install
 
 ## Data
 
-Use https://github.com/sinantie/NeuralAmr to generate the linearized and anonymized data
+Use https://github.com/sinantie/NeuralAmr to generate the linearized and anonymized data.
 
 ## Experiments
 
