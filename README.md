@@ -2,7 +2,7 @@ This is a fork of OpenNMT-py (https://github.com/OpenNMT/OpenNMT-py), v0.4 with 
 
 ## Install
 
-Follow instructions on README_OpenNMT-py.md to install
+Follow instructions on [README_OpenNMT-py.md](README_OpenNMT-py.md) to install
 
 ## Data
 
@@ -21,21 +21,28 @@ Seq: ```train_amr_seq.sh```
 ### Tree encoders
 
 SeqTreeLSTM: ```train_amr_tree_seq_treelstm.sh```
+
 TreeLSTMSeq: ```train_amr_tree_treelstm_seq.sh```
+
 TreeLSTM: ```train_amr_tree_treelstm.sh```
+
 SeqGCN: ```train_amr_tree_seq_gcn.sh```
+
 GCNSeq: ```train_amr_tree_gcn_seq.sh```
+
 GCN: ```train_amr_tree_gcn.sh```
 
 ### Graph encoders encoders
 
 SeqGCN: ```train_amr_graph_seq_gcn.sh```
+
 GCNSeq: ```train_amr_graph_gcn_seq.sh```
+
 GCN: ```train_amr_graph_gcn.sh```
 
 ### Evaluation
 
-Use ```recomputeMetrics.sh``` of https://github.com/sinantie/NeuralAmr to evaluate the models.
+Use ```recomputeMetrics.sh``` in https://github.com/sinantie/NeuralAmr to evaluate the models.
 
 ## Contrastive examples
 
