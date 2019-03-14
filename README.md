@@ -6,7 +6,7 @@ Follow instructions on [README_OpenNMT-py.md](README_OpenNMT-py.md) to install
 
 ## Data
 
-Use https://github.com/sinantie/NeuralAmr to generate the linearized and anonymized data
+Use https://github.com/sinantie/NeuralAmr to generate the linearized and anonymized data.
 
 ## Experiments
 
@@ -32,7 +32,7 @@ GCNSeq: ```train_amr_tree_gcn_seq.sh```
 
 GCN: ```train_amr_tree_gcn.sh```
 
-### Graph encoders encoders
+### Graph encoders
 
 SeqGCN: ```train_amr_graph_seq_gcn.sh```
 
