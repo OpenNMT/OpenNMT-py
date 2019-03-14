@@ -1,5 +1,6 @@
 models/
 ldc*
+available_models/
 
 # repo-specific stuff
 pred.txt
