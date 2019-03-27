@@ -4,7 +4,6 @@ from __future__ import unicode_literals, print_function
 import torch
 from onmt.inputters.text_dataset import TextMultiField
 
-
 class TranslationBuilder(object):
     """
     Build a word-based translation from the batch output
@@ -22,13 +21,14 @@ class TranslationBuilder(object):
     """
 
     def __init__(self, data, fields, n_best=1, replace_unk=False,
-                 has_tgt=False):
+                 has_tgt=False, phrase_table=""):
         self.data = data
         self.fields = fields
         self._has_text_src = isinstance(
             dict(self.fields)["src"], TextMultiField)
         self.n_best = n_best
         self.replace_unk = replace_unk
+        self.phrase_table = phrase_table
         self.has_tgt = has_tgt
 
     def _build_target_tokens(self, src, src_vocab, src_raw, pred, attn):
@@ -48,6 +48,11 @@ class TranslationBuilder(object):
                 if tokens[i] == tgt_field.unk_token:
                     _, max_index = attn[i].max(0)
                     tokens[i] = src_raw[max_index.item()]
+                    if self.phrase_table != "":
+                        with open(self.phrase_table, "r") as f:
+                            for line in f:
+                                if line.startswith(src_raw[max_index.item()]):
+                                    tokens[i] = line.split('|||')[1].strip()
         return tokens
 
     def from_batch(self, translation_batch):
