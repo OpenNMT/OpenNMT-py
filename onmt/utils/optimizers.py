@@ -145,6 +145,7 @@ def noamwd_decay(step, warmup_steps,
         min(step ** (-0.5), step * warmup_steps**(-1.5)) *
         rate ** (max(step - start_step + decay_steps, 0) // decay_steps))
 
+
 def exponential_decay(step, rate, decay_steps, start_step=0):
     """A standard exponential decay, scaling the learning rate by :obj:`rate`
     every :obj:`decay_steps` steps.
