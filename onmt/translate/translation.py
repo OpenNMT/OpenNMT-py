@@ -4,6 +4,7 @@ from __future__ import unicode_literals, print_function
 import torch
 from onmt.inputters.text_dataset import TextMultiField
 
+
 class TranslationBuilder(object):
     """
     Build a word-based translation from the batch output
