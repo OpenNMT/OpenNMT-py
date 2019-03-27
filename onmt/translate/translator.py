@@ -311,7 +311,8 @@ class Translator(object):
         )
 
         xlation_builder = onmt.translate.TranslationBuilder(
-            data, self.fields, self.n_best, self.replace_unk, tgt, self.phrase_table
+            data, self.fields, self.n_best, self.replace_unk, tgt,
+            self.phrase_table
         )
 
         # Statistics
