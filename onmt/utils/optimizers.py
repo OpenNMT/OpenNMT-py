@@ -135,7 +135,9 @@ def noam_decay(step, warmup_steps, model_size):
         model_size ** (-0.5) *
         min(step ** (-0.5), step * warmup_steps**(-1.5)))
 
-def noamwd_decay(step, warmup_steps, model_size, rate, decay_steps, start_step=0):
+
+def noamwd_decay(step, warmup_steps,
+                 model_size, rate, decay_steps, start_step=0):
     """Learning rate schedule optimized for huge batches
     """
     return (

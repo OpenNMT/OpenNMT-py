@@ -118,7 +118,6 @@ class Trainer(object):
         self.average_every = average_every
         self.model_dtype = model_dtype
 
- 
         for i in range(len(self.accum_count_l)):
             assert self.accum_count_l[i] > 0
             if self.accum_count_l[i] > 1:
