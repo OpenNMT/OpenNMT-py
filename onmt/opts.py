@@ -385,13 +385,13 @@ def train_opts(parser):
     group.add('--normalization', '-normalization', default='sents',
               choices=["sents", "tokens"],
               help='Normalization method of the gradient.')
-    group.add('--accum_count', '-accum_count', type=int, nargs='*',
+    group.add('--accum_count', '-accum_count', type=int, nargs='+',
               default=[1],
               help="Accumulate gradient this many times. "
                    "Approximately equivalent to updating "
                    "batch_size * accum_count batches at once. "
                    "Recommended for Transformer.")
-    group.add('--accum_steps', '-accum_steps', type=int, nargs='*',
+    group.add('--accum_steps', '-accum_steps', type=int, nargs='+',
               default=[0], help="Steps at which accum_count values change")
     group.add('--valid_steps', '-valid_steps', type=int, default=10000,
               help='Perfom validation every X steps')

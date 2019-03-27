@@ -82,7 +82,8 @@ class Trainer(object):
             shard_size(int): compute loss in shards of this size for efficiency
             data_type(string): type of the source input: [text|img|audio]
             norm_method(string): normalization methods: [sents|tokens]
-            accum_count(int): accumulate gradients this many times.
+            accum_count(list): accumulate gradients this many times.
+            accum_steps(list): steps for accum gradients changes.
             report_manager(:obj:`onmt.utils.ReportMgrBase`):
                 the object that creates reports, or None
             model_saver(:obj:`onmt.models.ModelSaverBase`): the saver is
@@ -92,8 +93,8 @@ class Trainer(object):
 
     def __init__(self, model, train_loss, valid_loss, optim,
                  trunc_size=0, shard_size=32,
-                 norm_method="sents", accum_count='1',
-                 accum_steps='0',
+                 norm_method="sents", accum_count=[1],
+                 accum_steps=[0],
                  n_gpu=1, gpu_rank=1,
                  gpu_verbose_level=0, report_manager=None, model_saver=None,
                  average_decay=0, average_every=1, model_dtype='fp32'):
