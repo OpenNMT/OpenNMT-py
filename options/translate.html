@@ -189,7 +189,8 @@
             
   <div class="section" id="translate">
 <h1>Translate<a class="headerlink" href="#translate" title="Permalink to this headline">¶</a></h1>
-<p>translate.py</p>
+<p><p>translate.py</p>
+</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">translate</span><span class="o">.</span><span class="n">py</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">config</span> <span class="n">CONFIG</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">save_config</span> <span class="n">SAVE_CONFIG</span><span class="p">]</span> <span class="o">--</span><span class="n">model</span>
                     <span class="n">MODEL</span> <span class="p">[</span><span class="n">MODEL</span> <span class="o">...</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">fp32</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">avg_raw_probs</span><span class="p">]</span>
                     <span class="p">[</span><span class="o">--</span><span class="n">data_type</span> <span class="n">DATA_TYPE</span><span class="p">]</span> <span class="o">--</span><span class="n">src</span> <span class="n">SRC</span> <span class="p">[</span><span class="o">--</span><span class="n">src_dir</span> <span class="n">SRC_DIR</span><span class="p">]</span>
@@ -205,8 +206,9 @@
                     <span class="p">[</span><span class="o">--</span><span class="n">coverage_penalty</span> <span class="p">{</span><span class="n">none</span><span class="p">,</span><span class="n">wu</span><span class="p">,</span><span class="n">summary</span><span class="p">}]</span> <span class="p">[</span><span class="o">--</span><span class="n">alpha</span> <span class="n">ALPHA</span><span class="p">]</span>
                     <span class="p">[</span><span class="o">--</span><span class="n">beta</span> <span class="n">BETA</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">block_ngram_repeat</span> <span class="n">BLOCK_NGRAM_REPEAT</span><span class="p">]</span>
                     <span class="p">[</span><span class="o">--</span><span class="n">ignore_when_blocking</span> <span class="n">IGNORE_WHEN_BLOCKING</span> <span class="p">[</span><span class="n">IGNORE_WHEN_BLOCKING</span> <span class="o">...</span><span class="p">]]</span>
-                    <span class="p">[</span><span class="o">--</span><span class="n">replace_unk</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">verbose</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">log_file</span> <span class="n">LOG_FILE</span><span class="p">]</span>
-                    <span class="p">[</span><span class="o">--</span><span class="n">log_file_level</span> <span class="p">{</span><span class="n">NOTSET</span><span class="p">,</span><span class="n">DEBUG</span><span class="p">,</span><span class="n">CRITICAL</span><span class="p">,</span><span class="n">ERROR</span><span class="p">,</span><span class="n">INFO</span><span class="p">,</span><span class="n">WARNING</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">50</span><span class="p">,</span><span class="mi">40</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">30</span><span class="p">}]</span>
+                    <span class="p">[</span><span class="o">--</span><span class="n">replace_unk</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">phrase_table</span> <span class="n">PHRASE_TABLE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">verbose</span><span class="p">]</span>
+                    <span class="p">[</span><span class="o">--</span><span class="n">log_file</span> <span class="n">LOG_FILE</span><span class="p">]</span>
+                    <span class="p">[</span><span class="o">--</span><span class="n">log_file_level</span> <span class="p">{</span><span class="n">NOTSET</span><span class="p">,</span><span class="n">CRITICAL</span><span class="p">,</span><span class="n">INFO</span><span class="p">,</span><span class="n">DEBUG</span><span class="p">,</span><span class="n">ERROR</span><span class="p">,</span><span class="n">WARNING</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">50</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">40</span><span class="p">,</span><span class="mi">30</span><span class="p">}]</span>
                     <span class="p">[</span><span class="o">--</span><span class="n">attn_debug</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">dump_beam</span> <span class="n">DUMP_BEAM</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">n_best</span> <span class="n">N_BEST</span><span class="p">]</span>
                     <span class="p">[</span><span class="o">--</span><span class="n">batch_size</span> <span class="n">BATCH_SIZE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">gpu</span> <span class="n">GPU</span><span class="p">]</span>
                     <span class="p">[</span><span class="o">--</span><span class="n">sample_rate</span> <span class="n">SAMPLE_RATE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">window_size</span> <span class="n">WINDOW_SIZE</span><span class="p">]</span>
@@ -216,332 +218,225 @@
 </div>
 <div class="section" id="Named Arguments">
 <h2>Named Arguments<a class="headerlink" href="#Named Arguments" title="Permalink to this headline">¶</a></h2>
-<table class="docutils option-list" frame="void" rules="none">
-<col class="option" />
-<col class="description" />
-<tbody valign="top">
-<tr><td class="option-group" colspan="2">
-<kbd>-config, --config</kbd></td>
-</tr>
-<tr><td>&#160;</td><td>config file path</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>-save_config, --save_config</kbd></td>
-</tr>
-<tr><td>&#160;</td><td>config file save path</td></tr>
-</tbody>
-</table>
+<dl class="option-list">
+<dt><kbd>-config, --config</kbd></dt>
+<dd><p>config file path</p>
+</dd>
+<dt><kbd>-save_config, --save_config</kbd></dt>
+<dd><p>config file save path</p>
+</dd>
+</dl>
 </div>
 <div class="section" id="Model">
 <h2>Model<a class="headerlink" href="#Model" title="Permalink to this headline">¶</a></h2>
-<table class="docutils option-list" frame="void" rules="none">
-<col class="option" />
-<col class="description" />
-<tbody valign="top">
-<tr><td class="option-group" colspan="2">
-<kbd>--model, -model</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Path to model .pt file(s). Multiple models can be specified, for ensemble decoding.</p>
-<p class="last">Default: []</p>
-</td></tr>
-<tr><td class="option-group">
-<kbd>--fp32, -fp32</kbd></td>
-<td><p class="first">Force the model to be in FP32 because FP16 is very slow on GTX1080(ti).</p>
-<p class="last">Default: False</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--avg_raw_probs, -avg_raw_probs</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">If this is set, during ensembling scores from different models will be combined by averaging their raw probabilities and then taking the log. Otherwise, the log probabilities will be averaged directly. Necessary for models whose output layers can assign zero probability.</p>
-<p class="last">Default: False</p>
-</td></tr>
-</tbody>
-</table>
+<dl class="option-list">
+<dt><kbd>--model, -model</kbd></dt>
+<dd><p>Path to model .pt file(s). Multiple models can be specified, for ensemble decoding.</p>
+<p>Default: []</p>
+</dd>
+<dt><kbd>--fp32, -fp32</kbd></dt>
+<dd><p>Force the model to be in FP32 because FP16 is very slow on GTX1080(ti).</p>
+<p>Default: False</p>
+</dd>
+<dt><kbd>--avg_raw_probs, -avg_raw_probs</kbd></dt>
+<dd><p>If this is set, during ensembling scores from different models will be combined by averaging their raw probabilities and then taking the log. Otherwise, the log probabilities will be averaged directly. Necessary for models whose output layers can assign zero probability.</p>
+<p>Default: False</p>
+</dd>
+</dl>
 </div>
 <div class="section" id="Data">
 <h2>Data<a class="headerlink" href="#Data" title="Permalink to this headline">¶</a></h2>
-<table class="docutils option-list" frame="void" rules="none">
-<col class="option" />
-<col class="description" />
-<tbody valign="top">
-<tr><td class="option-group" colspan="2">
-<kbd>--data_type, -data_type</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Type of the source input. Options: [text|img].</p>
-<p class="last">Default: “text”</p>
-</td></tr>
-<tr><td class="option-group">
-<kbd>--src, -src</kbd></td>
-<td>Source sequence to decode (one line per sequence)</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--src_dir, -src_dir</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Source directory for image or audio files</p>
-<p class="last">Default: “”</p>
-</td></tr>
-<tr><td class="option-group">
-<kbd>--tgt, -tgt</kbd></td>
-<td>True target sequence (optional)</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--shard_size, -shard_size</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Divide src and tgt (if applicable) into smaller multiple src and tgt files, then build shards, each shard will have opt.shard_size samples except last shard. shard_size=0 means no segmentation shard_size&gt;0 means segment dataset into multiple shards, each shard has shard_size samples</p>
-<p class="last">Default: 10000</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--output, -output</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Path to output the predictions (each line will be the decoded sequence</p>
-<p class="last">Default: “pred.txt”</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--report_bleu, -report_bleu</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Report bleu score after translation, call tools/multi-bleu.perl on command line</p>
-<p class="last">Default: False</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--report_rouge, -report_rouge</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Report rouge 1/2/3/L/SU4 score after translation call tools/test_rouge.py on command line</p>
-<p class="last">Default: False</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--report_time, -report_time</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Report some translation time metrics</p>
-<p class="last">Default: False</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--dynamic_dict, -dynamic_dict</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Create dynamic dictionaries</p>
-<p class="last">Default: False</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--share_vocab, -share_vocab</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Share source and target vocabulary</p>
-<p class="last">Default: False</p>
-</td></tr>
-</tbody>
-</table>
+<dl class="option-list">
+<dt><kbd>--data_type, -data_type</kbd></dt>
+<dd><p>Type of the source input. Options: [text|img].</p>
+<p>Default: “text”</p>
+</dd>
+<dt><kbd>--src, -src</kbd></dt>
+<dd><p>Source sequence to decode (one line per sequence)</p>
+</dd>
+<dt><kbd>--src_dir, -src_dir</kbd></dt>
+<dd><p>Source directory for image or audio files</p>
+<p>Default: “”</p>
+</dd>
+<dt><kbd>--tgt, -tgt</kbd></dt>
+<dd><p>True target sequence (optional)</p>
+</dd>
+<dt><kbd>--shard_size, -shard_size</kbd></dt>
+<dd><p>Divide src and tgt (if applicable) into smaller multiple src and tgt files, then build shards, each shard will have opt.shard_size samples except last shard. shard_size=0 means no segmentation shard_size&gt;0 means segment dataset into multiple shards, each shard has shard_size samples</p>
+<p>Default: 10000</p>
+</dd>
+<dt><kbd>--output, -output</kbd></dt>
+<dd><p>Path to output the predictions (each line will be the decoded sequence</p>
+<p>Default: “pred.txt”</p>
+</dd>
+<dt><kbd>--report_bleu, -report_bleu</kbd></dt>
+<dd><p>Report bleu score after translation, call tools/multi-bleu.perl on command line</p>
+<p>Default: False</p>
+</dd>
+<dt><kbd>--report_rouge, -report_rouge</kbd></dt>
+<dd><p>Report rouge 1/2/3/L/SU4 score after translation call tools/test_rouge.py on command line</p>
+<p>Default: False</p>
+</dd>
+<dt><kbd>--report_time, -report_time</kbd></dt>
+<dd><p>Report some translation time metrics</p>
+<p>Default: False</p>
+</dd>
+<dt><kbd>--dynamic_dict, -dynamic_dict</kbd></dt>
+<dd><p>Create dynamic dictionaries</p>
+<p>Default: False</p>
+</dd>
+<dt><kbd>--share_vocab, -share_vocab</kbd></dt>
+<dd><p>Share source and target vocabulary</p>
+<p>Default: False</p>
+</dd>
+</dl>
 </div>
 <div class="section" id="Random Sampling">
 <h2>Random Sampling<a class="headerlink" href="#Random Sampling" title="Permalink to this headline">¶</a></h2>
-<table class="docutils option-list" frame="void" rules="none">
-<col class="option" />
-<col class="description" />
-<tbody valign="top">
-<tr><td class="option-group" colspan="2">
-<kbd>--random_sampling_topk, -random_sampling_topk</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Set this to -1 to do random sampling from full distribution. Set this to value k&gt;1 to do random sampling restricted to the k most likely next tokens. Set this to 1 to use argmax or for doing beam search.</p>
-<p class="last">Default: 1</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--random_sampling_temp, -random_sampling_temp</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">If doing random sampling, divide the logits by this before computing softmax during decoding.</p>
-<p class="last">Default: 1.0</p>
-</td></tr>
-<tr><td class="option-group">
-<kbd>--seed, -seed</kbd></td>
-<td><p class="first">Random seed</p>
-<p class="last">Default: 829</p>
-</td></tr>
-</tbody>
-</table>
+<dl class="option-list">
+<dt><kbd>--random_sampling_topk, -random_sampling_topk</kbd></dt>
+<dd><p>Set this to -1 to do random sampling from full distribution. Set this to value k&gt;1 to do random sampling restricted to the k most likely next tokens. Set this to 1 to use argmax or for doing beam search.</p>
+<p>Default: 1</p>
+</dd>
+<dt><kbd>--random_sampling_temp, -random_sampling_temp</kbd></dt>
+<dd><p>If doing random sampling, divide the logits by this before computing softmax during decoding.</p>
+<p>Default: 1.0</p>
+</dd>
+<dt><kbd>--seed, -seed</kbd></dt>
+<dd><p>Random seed</p>
+<p>Default: 829</p>
+</dd>
+</dl>
 </div>
 <div class="section" id="Beam">
 <h2>Beam<a class="headerlink" href="#Beam" title="Permalink to this headline">¶</a></h2>
-<table class="docutils option-list" frame="void" rules="none">
-<col class="option" />
-<col class="description" />
-<tbody valign="top">
-<tr><td class="option-group" colspan="2">
-<kbd>--beam_size, -beam_size</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Beam size</p>
-<p class="last">Default: 5</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--min_length, -min_length</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Minimum prediction length</p>
-<p class="last">Default: 0</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--max_length, -max_length</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Maximum prediction length.</p>
-<p class="last">Default: 100</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--max_sent_length, -max_sent_length</kbd></td>
-</tr>
-<tr><td>&#160;</td><td>Deprecated, use <cite>-max_length</cite> instead</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--stepwise_penalty, -stepwise_penalty</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Apply penalty at every decoding step. Helpful for summary penalty.</p>
-<p class="last">Default: False</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--length_penalty, -length_penalty</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Possible choices: none, wu, avg</p>
+<dl class="option-list">
+<dt><kbd>--beam_size, -beam_size</kbd></dt>
+<dd><p>Beam size</p>
+<p>Default: 5</p>
+</dd>
+<dt><kbd>--min_length, -min_length</kbd></dt>
+<dd><p>Minimum prediction length</p>
+<p>Default: 0</p>
+</dd>
+<dt><kbd>--max_length, -max_length</kbd></dt>
+<dd><p>Maximum prediction length.</p>
+<p>Default: 100</p>
+</dd>
+<dt><kbd>--max_sent_length, -max_sent_length</kbd></dt>
+<dd><p>Deprecated, use <cite>-max_length</cite> instead</p>
+</dd>
+<dt><kbd>--stepwise_penalty, -stepwise_penalty</kbd></dt>
+<dd><p>Apply penalty at every decoding step. Helpful for summary penalty.</p>
+<p>Default: False</p>
+</dd>
+<dt><kbd>--length_penalty, -length_penalty</kbd></dt>
+<dd><p>Possible choices: none, wu, avg</p>
 <p>Length Penalty to use.</p>
-<p class="last">Default: “none”</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--ratio, -ratio</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Ratio based beam stop condition</p>
-<p class="last">Default: -0.0</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--coverage_penalty, -coverage_penalty</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Possible choices: none, wu, summary</p>
+<p>Default: “none”</p>
+</dd>
+<dt><kbd>--ratio, -ratio</kbd></dt>
+<dd><p>Ratio based beam stop condition</p>
+<p>Default: -0.0</p>
+</dd>
+<dt><kbd>--coverage_penalty, -coverage_penalty</kbd></dt>
+<dd><p>Possible choices: none, wu, summary</p>
 <p>Coverage Penalty to use.</p>
-<p class="last">Default: “none”</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--alpha, -alpha</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Google NMT length penalty parameter (higher = longer generation)</p>
-<p class="last">Default: 0.0</p>
-</td></tr>
-<tr><td class="option-group">
-<kbd>--beta, -beta</kbd></td>
-<td><p class="first">Coverage penalty parameter</p>
-<p class="last">Default: -0.0</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--block_ngram_repeat, -block_ngram_repeat</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Block repetition of ngrams during decoding.</p>
-<p class="last">Default: 0</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--ignore_when_blocking, -ignore_when_blocking</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Ignore these strings when blocking repeats. You want to block sentence delimiters.</p>
-<p class="last">Default: []</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--replace_unk, -replace_unk</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Replace the generated UNK tokens with the source token that had highest attention weight. If phrase_table is provided, it will lookup the identified source token and give the corresponding target token. If it is not provided(or the identified source token does not exist in the table) then it will copy the source token</p>
-<p class="last">Default: False</p>
-</td></tr>
-</tbody>
-</table>
+<p>Default: “none”</p>
+</dd>
+<dt><kbd>--alpha, -alpha</kbd></dt>
+<dd><p>Google NMT length penalty parameter (higher = longer generation)</p>
+<p>Default: 0.0</p>
+</dd>
+<dt><kbd>--beta, -beta</kbd></dt>
+<dd><p>Coverage penalty parameter</p>
+<p>Default: -0.0</p>
+</dd>
+<dt><kbd>--block_ngram_repeat, -block_ngram_repeat</kbd></dt>
+<dd><p>Block repetition of ngrams during decoding.</p>
+<p>Default: 0</p>
+</dd>
+<dt><kbd>--ignore_when_blocking, -ignore_when_blocking</kbd></dt>
+<dd><p>Ignore these strings when blocking repeats. You want to block sentence delimiters.</p>
+<p>Default: []</p>
+</dd>
+<dt><kbd>--replace_unk, -replace_unk</kbd></dt>
+<dd><p>Replace the generated UNK tokens with the source token that had highest attention weight. If phrase_table is provided, it will look up the identified source token and give the corresponding target token. If it is not provided (or the identified source token does not exist in the table), then it will copy the source token.</p>
+<p>Default: False</p>
+</dd>
+<dt><kbd>--phrase_table, -phrase_table</kbd></dt>
+<dd><p>If phrase_table is provided (with replace_unk), it will look up the identified source token and give the corresponding target token. If it is not provided (or the identified source token does not exist in the table), then it will copy the source token.</p>
+<p>Default: “”</p>
+</dd>
+</dl>
 </div>
 <div class="section" id="Logging">
 <h2>Logging<a class="headerlink" href="#Logging" title="Permalink to this headline">¶</a></h2>
-<table class="docutils option-list" frame="void" rules="none">
-<col class="option" />
-<col class="description" />
-<tbody valign="top">
-<tr><td class="option-group" colspan="2">
-<kbd>--verbose, -verbose</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Print scores and predictions for each sentence</p>
-<p class="last">Default: False</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--log_file, -log_file</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Output logs to a file under this path.</p>
-<p class="last">Default: “”</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--log_file_level, -log_file_level</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Possible choices: NOTSET, DEBUG, CRITICAL, ERROR, INFO, WARNING, 0, 10, 50, 40, 20, 30</p>
-<p class="last">Default: “0”</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--attn_debug, -attn_debug</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Print best attn for each word</p>
-<p class="last">Default: False</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--dump_beam, -dump_beam</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">File to dump beam information to.</p>
-<p class="last">Default: “”</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--n_best, -n_best</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">If verbose is set, will output the n_best decoded sentences</p>
-<p class="last">Default: 1</p>
-</td></tr>
-</tbody>
-</table>
+<dl class="option-list">
+<dt><kbd>--verbose, -verbose</kbd></dt>
+<dd><p>Print scores and predictions for each sentence</p>
+<p>Default: False</p>
+</dd>
+<dt><kbd>--log_file, -log_file</kbd></dt>
+<dd><p>Output logs to a file under this path.</p>
+<p>Default: “”</p>
+</dd>
+<dt><kbd>--log_file_level, -log_file_level</kbd></dt>
+<dd><p>Possible choices: NOTSET, CRITICAL, INFO, DEBUG, ERROR, WARNING, 0, 50, 20, 10, 40, 30</p>
+<p>Default: “0”</p>
+</dd>
+<dt><kbd>--attn_debug, -attn_debug</kbd></dt>
+<dd><p>Print best attn for each word</p>
+<p>Default: False</p>
+</dd>
+<dt><kbd>--dump_beam, -dump_beam</kbd></dt>
+<dd><p>File to dump beam information to.</p>
+<p>Default: “”</p>
+</dd>
+<dt><kbd>--n_best, -n_best</kbd></dt>
+<dd><p>If verbose is set, will output the n_best decoded sentences</p>
+<p>Default: 1</p>
+</dd>
+</dl>
 </div>
 <div class="section" id="Efficiency">
 <h2>Efficiency<a class="headerlink" href="#Efficiency" title="Permalink to this headline">¶</a></h2>
-<table class="docutils option-list" frame="void" rules="none">
-<col class="option" />
-<col class="description" />
-<tbody valign="top">
-<tr><td class="option-group" colspan="2">
-<kbd>--batch_size, -batch_size</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Batch size</p>
-<p class="last">Default: 30</p>
-</td></tr>
-<tr><td class="option-group">
-<kbd>--gpu, -gpu</kbd></td>
-<td><p class="first">Device to run on</p>
-<p class="last">Default: -1</p>
-</td></tr>
-</tbody>
-</table>
+<dl class="option-list">
+<dt><kbd>--batch_size, -batch_size</kbd></dt>
+<dd><p>Batch size</p>
+<p>Default: 30</p>
+</dd>
+<dt><kbd>--gpu, -gpu</kbd></dt>
+<dd><p>Device to run on</p>
+<p>Default: -1</p>
+</dd>
+</dl>
 </div>
 <div class="section" id="Speech">
 <h2>Speech<a class="headerlink" href="#Speech" title="Permalink to this headline">¶</a></h2>
-<table class="docutils option-list" frame="void" rules="none">
-<col class="option" />
-<col class="description" />
-<tbody valign="top">
-<tr><td class="option-group" colspan="2">
-<kbd>--sample_rate, -sample_rate</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Sample rate.</p>
-<p class="last">Default: 16000</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--window_size, -window_size</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Window size for spectrogram in seconds</p>
-<p class="last">Default: 0.02</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--window_stride, -window_stride</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Window stride for spectrogram in seconds</p>
-<p class="last">Default: 0.01</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--window, -window</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Window type for spectrogram generation</p>
-<p class="last">Default: “hamming”</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--image_channel_size, -image_channel_size</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Possible choices: 3, 1</p>
+<dl class="option-list">
+<dt><kbd>--sample_rate, -sample_rate</kbd></dt>
+<dd><p>Sample rate.</p>
+<p>Default: 16000</p>
+</dd>
+<dt><kbd>--window_size, -window_size</kbd></dt>
+<dd><p>Window size for spectrogram in seconds</p>
+<p>Default: 0.02</p>
+</dd>
+<dt><kbd>--window_stride, -window_stride</kbd></dt>
+<dd><p>Window stride for spectrogram in seconds</p>
+<p>Default: 0.01</p>
+</dd>
+<dt><kbd>--window, -window</kbd></dt>
+<dd><p>Window type for spectrogram generation</p>
+<p>Default: “hamming”</p>
+</dd>
+<dt><kbd>--image_channel_size, -image_channel_size</kbd></dt>
+<dd><p>Possible choices: 3, 1</p>
 <p>Using grayscale image can training model faster and smaller</p>
-<p class="last">Default: 3</p>
-</td></tr>
-</tbody>
-</table>
+<p>Default: 3</p>
+</dd>
+</dl>
 </div>
 </div>
 

@@ -188,7 +188,8 @@
             
   <div class="section" id="preprocess">
 <h1>Preprocess<a class="headerlink" href="#preprocess" title="Permalink to this headline">¶</a></h1>
-<p>preprocess.py</p>
+<p><p>preprocess.py</p>
+</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">preprocess</span><span class="o">.</span><span class="n">py</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">config</span> <span class="n">CONFIG</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">save_config</span> <span class="n">SAVE_CONFIG</span><span class="p">]</span>
                      <span class="p">[</span><span class="o">--</span><span class="n">data_type</span> <span class="n">DATA_TYPE</span><span class="p">]</span> <span class="o">--</span><span class="n">train_src</span> <span class="n">TRAIN_SRC</span> <span class="o">--</span><span class="n">train_tgt</span>
                      <span class="n">TRAIN_TGT</span> <span class="p">[</span><span class="o">--</span><span class="n">valid_src</span> <span class="n">VALID_SRC</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">valid_tgt</span> <span class="n">VALID_TGT</span><span class="p">]</span>
@@ -209,7 +210,7 @@
                      <span class="p">[</span><span class="o">--</span><span class="n">tgt_seq_length_trunc</span> <span class="n">TGT_SEQ_LENGTH_TRUNC</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">lower</span><span class="p">]</span>
                      <span class="p">[</span><span class="o">--</span><span class="n">filter_valid</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">shuffle</span> <span class="n">SHUFFLE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">seed</span> <span class="n">SEED</span><span class="p">]</span>
                      <span class="p">[</span><span class="o">--</span><span class="n">report_every</span> <span class="n">REPORT_EVERY</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">log_file</span> <span class="n">LOG_FILE</span><span class="p">]</span>
-                     <span class="p">[</span><span class="o">--</span><span class="n">log_file_level</span> <span class="p">{</span><span class="n">NOTSET</span><span class="p">,</span><span class="n">DEBUG</span><span class="p">,</span><span class="n">CRITICAL</span><span class="p">,</span><span class="n">ERROR</span><span class="p">,</span><span class="n">INFO</span><span class="p">,</span><span class="n">WARNING</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">50</span><span class="p">,</span><span class="mi">40</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">30</span><span class="p">}]</span>
+                     <span class="p">[</span><span class="o">--</span><span class="n">log_file_level</span> <span class="p">{</span><span class="n">NOTSET</span><span class="p">,</span><span class="n">CRITICAL</span><span class="p">,</span><span class="n">INFO</span><span class="p">,</span><span class="n">DEBUG</span><span class="p">,</span><span class="n">ERROR</span><span class="p">,</span><span class="n">WARNING</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">50</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">40</span><span class="p">,</span><span class="mi">30</span><span class="p">}]</span>
                      <span class="p">[</span><span class="o">--</span><span class="n">sample_rate</span> <span class="n">SAMPLE_RATE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">window_size</span> <span class="n">WINDOW_SIZE</span><span class="p">]</span>
                      <span class="p">[</span><span class="o">--</span><span class="n">window_stride</span> <span class="n">WINDOW_STRIDE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">window</span> <span class="n">WINDOW</span><span class="p">]</span>
                      <span class="p">[</span><span class="o">--</span><span class="n">image_channel_size</span> <span class="p">{</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">}]</span>
@@ -217,266 +218,176 @@
 </div>
 <div class="section" id="Named Arguments">
 <h2>Named Arguments<a class="headerlink" href="#Named Arguments" title="Permalink to this headline">¶</a></h2>
-<table class="docutils option-list" frame="void" rules="none">
-<col class="option" />
-<col class="description" />
-<tbody valign="top">
-<tr><td class="option-group" colspan="2">
-<kbd>-config, --config</kbd></td>
-</tr>
-<tr><td>&#160;</td><td>config file path</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>-save_config, --save_config</kbd></td>
-</tr>
-<tr><td>&#160;</td><td>config file save path</td></tr>
-</tbody>
-</table>
+<dl class="option-list">
+<dt><kbd>-config, --config</kbd></dt>
+<dd><p>config file path</p>
+</dd>
+<dt><kbd>-save_config, --save_config</kbd></dt>
+<dd><p>config file save path</p>
+</dd>
+</dl>
 </div>
 <div class="section" id="Data">
 <h2>Data<a class="headerlink" href="#Data" title="Permalink to this headline">¶</a></h2>
-<table class="docutils option-list" frame="void" rules="none">
-<col class="option" />
-<col class="description" />
-<tbody valign="top">
-<tr><td class="option-group" colspan="2">
-<kbd>--data_type, -data_type</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Type of the source input. Options are [text|img|audio].</p>
-<p class="last">Default: “text”</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--train_src, -train_src</kbd></td>
-</tr>
-<tr><td>&#160;</td><td>Path to the training source data</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--train_tgt, -train_tgt</kbd></td>
-</tr>
-<tr><td>&#160;</td><td>Path to the training target data</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--valid_src, -valid_src</kbd></td>
-</tr>
-<tr><td>&#160;</td><td>Path to the validation source data</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--valid_tgt, -valid_tgt</kbd></td>
-</tr>
-<tr><td>&#160;</td><td>Path to the validation target data</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--src_dir, -src_dir</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Source directory for image or audio files.</p>
-<p class="last">Default: “”</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--save_data, -save_data</kbd></td>
-</tr>
-<tr><td>&#160;</td><td>Output file for the prepared data</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--max_shard_size, -max_shard_size</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Deprecated use shard_size instead</p>
-<p class="last">Default: 0</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--shard_size, -shard_size</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Divide src_corpus and tgt_corpus into smaller multiple src_copus and tgt corpus files, then build shards, each shard will have opt.shard_size samples except last shard. shard_size=0 means no segmentation shard_size&gt;0 means segment dataset into multiple shards, each shard has shard_size samples</p>
-<p class="last">Default: 1000000</p>
-</td></tr>
-</tbody>
-</table>
+<dl class="option-list">
+<dt><kbd>--data_type, -data_type</kbd></dt>
+<dd><p>Type of the source input. Options are [text|img|audio].</p>
+<p>Default: “text”</p>
+</dd>
+<dt><kbd>--train_src, -train_src</kbd></dt>
+<dd><p>Path to the training source data</p>
+</dd>
+<dt><kbd>--train_tgt, -train_tgt</kbd></dt>
+<dd><p>Path to the training target data</p>
+</dd>
+<dt><kbd>--valid_src, -valid_src</kbd></dt>
+<dd><p>Path to the validation source data</p>
+</dd>
+<dt><kbd>--valid_tgt, -valid_tgt</kbd></dt>
+<dd><p>Path to the validation target data</p>
+</dd>
+<dt><kbd>--src_dir, -src_dir</kbd></dt>
+<dd><p>Source directory for image or audio files.</p>
+<p>Default: “”</p>
+</dd>
+<dt><kbd>--save_data, -save_data</kbd></dt>
+<dd><p>Output file for the prepared data</p>
+</dd>
+<dt><kbd>--max_shard_size, -max_shard_size</kbd></dt>
+<dd><p>Deprecated use shard_size instead</p>
+<p>Default: 0</p>
+</dd>
+<dt><kbd>--shard_size, -shard_size</kbd></dt>
+<dd><p>Divide src_corpus and tgt_corpus into smaller multiple src_copus and tgt corpus files, then build shards, each shard will have opt.shard_size samples except last shard. shard_size=0 means no segmentation shard_size&gt;0 means segment dataset into multiple shards, each shard has shard_size samples</p>
+<p>Default: 1000000</p>
+</dd>
+</dl>
 </div>
 <div class="section" id="Vocab">
 <h2>Vocab<a class="headerlink" href="#Vocab" title="Permalink to this headline">¶</a></h2>
-<table class="docutils option-list" frame="void" rules="none">
-<col class="option" />
-<col class="description" />
-<tbody valign="top">
-<tr><td class="option-group" colspan="2">
-<kbd>--src_vocab, -src_vocab</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Path to an existing source vocabulary. Format: one word per line.</p>
-<p class="last">Default: “”</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--tgt_vocab, -tgt_vocab</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Path to an existing target vocabulary. Format: one word per line.</p>
-<p class="last">Default: “”</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--features_vocabs_prefix, -features_vocabs_prefix</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Path prefix to existing features vocabularies</p>
-<p class="last">Default: “”</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--src_vocab_size, -src_vocab_size</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Size of the source vocabulary</p>
-<p class="last">Default: 50000</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--tgt_vocab_size, -tgt_vocab_size</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Size of the target vocabulary</p>
-<p class="last">Default: 50000</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--vocab_size_multiple, -vocab_size_multiple</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Make the vocabulary size a multiple of this value</p>
-<p class="last">Default: 1</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--src_words_min_frequency, -src_words_min_frequency</kbd></td>
-</tr>
-<tr><td>&#160;</td><td>Default: 0</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--tgt_words_min_frequency, -tgt_words_min_frequency</kbd></td>
-</tr>
-<tr><td>&#160;</td><td>Default: 0</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--dynamic_dict, -dynamic_dict</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Create dynamic dictionaries</p>
-<p class="last">Default: False</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--share_vocab, -share_vocab</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Share source and target vocabulary</p>
-<p class="last">Default: False</p>
-</td></tr>
-</tbody>
-</table>
+<dl class="option-list">
+<dt><kbd>--src_vocab, -src_vocab</kbd></dt>
+<dd><p>Path to an existing source vocabulary. Format: one word per line.</p>
+<p>Default: “”</p>
+</dd>
+<dt><kbd>--tgt_vocab, -tgt_vocab</kbd></dt>
+<dd><p>Path to an existing target vocabulary. Format: one word per line.</p>
+<p>Default: “”</p>
+</dd>
+<dt><kbd>--features_vocabs_prefix, -features_vocabs_prefix</kbd></dt>
+<dd><p>Path prefix to existing features vocabularies</p>
+<p>Default: “”</p>
+</dd>
+<dt><kbd>--src_vocab_size, -src_vocab_size</kbd></dt>
+<dd><p>Size of the source vocabulary</p>
+<p>Default: 50000</p>
+</dd>
+<dt><kbd>--tgt_vocab_size, -tgt_vocab_size</kbd></dt>
+<dd><p>Size of the target vocabulary</p>
+<p>Default: 50000</p>
+</dd>
+<dt><kbd>--vocab_size_multiple, -vocab_size_multiple</kbd></dt>
+<dd><p>Make the vocabulary size a multiple of this value</p>
+<p>Default: 1</p>
+</dd>
+<dt><kbd>--src_words_min_frequency, -src_words_min_frequency</kbd></dt>
+<dd><p>Default: 0</p>
+</dd>
+<dt><kbd>--tgt_words_min_frequency, -tgt_words_min_frequency</kbd></dt>
+<dd><p>Default: 0</p>
+</dd>
+<dt><kbd>--dynamic_dict, -dynamic_dict</kbd></dt>
+<dd><p>Create dynamic dictionaries</p>
+<p>Default: False</p>
+</dd>
+<dt><kbd>--share_vocab, -share_vocab</kbd></dt>
+<dd><p>Share source and target vocabulary</p>
+<p>Default: False</p>
+</dd>
+</dl>
 </div>
 <div class="section" id="Pruning">
 <h2>Pruning<a class="headerlink" href="#Pruning" title="Permalink to this headline">¶</a></h2>
-<table class="docutils option-list" frame="void" rules="none">
-<col class="option" />
-<col class="description" />
-<tbody valign="top">
-<tr><td class="option-group" colspan="2">
-<kbd>--src_seq_length, -src_seq_length</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Maximum source sequence length</p>
-<p class="last">Default: 50</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--src_seq_length_trunc, -src_seq_length_trunc</kbd></td>
-</tr>
-<tr><td>&#160;</td><td>Truncate source sequence length.</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--tgt_seq_length, -tgt_seq_length</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Maximum target sequence length to keep.</p>
-<p class="last">Default: 50</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--tgt_seq_length_trunc, -tgt_seq_length_trunc</kbd></td>
-</tr>
-<tr><td>&#160;</td><td>Truncate target sequence length.</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--lower, -lower</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">lowercase data</p>
-<p class="last">Default: False</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--filter_valid, -filter_valid</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Filter validation data by src and/or tgt length</p>
-<p class="last">Default: False</p>
-</td></tr>
-</tbody>
-</table>
+<dl class="option-list">
+<dt><kbd>--src_seq_length, -src_seq_length</kbd></dt>
+<dd><p>Maximum source sequence length</p>
+<p>Default: 50</p>
+</dd>
+<dt><kbd>--src_seq_length_trunc, -src_seq_length_trunc</kbd></dt>
+<dd><p>Truncate source sequence length.</p>
+</dd>
+<dt><kbd>--tgt_seq_length, -tgt_seq_length</kbd></dt>
+<dd><p>Maximum target sequence length to keep.</p>
+<p>Default: 50</p>
+</dd>
+<dt><kbd>--tgt_seq_length_trunc, -tgt_seq_length_trunc</kbd></dt>
+<dd><p>Truncate target sequence length.</p>
+</dd>
+<dt><kbd>--lower, -lower</kbd></dt>
+<dd><p>lowercase data</p>
+<p>Default: False</p>
+</dd>
+<dt><kbd>--filter_valid, -filter_valid</kbd></dt>
+<dd><p>Filter validation data by src and/or tgt length</p>
+<p>Default: False</p>
+</dd>
+</dl>
 </div>
 <div class="section" id="Random">
 <h2>Random<a class="headerlink" href="#Random" title="Permalink to this headline">¶</a></h2>
-<table class="docutils option-list" frame="void" rules="none">
-<col class="option" />
-<col class="description" />
-<tbody valign="top">
-<tr><td class="option-group" colspan="2">
-<kbd>--shuffle, -shuffle</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Shuffle data</p>
-<p class="last">Default: 0</p>
-</td></tr>
-<tr><td class="option-group">
-<kbd>--seed, -seed</kbd></td>
-<td><p class="first">Random seed</p>
-<p class="last">Default: 3435</p>
-</td></tr>
-</tbody>
-</table>
+<dl class="option-list">
+<dt><kbd>--shuffle, -shuffle</kbd></dt>
+<dd><p>Shuffle data</p>
+<p>Default: 0</p>
+</dd>
+<dt><kbd>--seed, -seed</kbd></dt>
+<dd><p>Random seed</p>
+<p>Default: 3435</p>
+</dd>
+</dl>
 </div>
 <div class="section" id="Logging">
 <h2>Logging<a class="headerlink" href="#Logging" title="Permalink to this headline">¶</a></h2>
-<table class="docutils option-list" frame="void" rules="none">
-<col class="option" />
-<col class="description" />
-<tbody valign="top">
-<tr><td class="option-group" colspan="2">
-<kbd>--report_every, -report_every</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Report status every this many sentences</p>
-<p class="last">Default: 100000</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--log_file, -log_file</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Output logs to a file under this path.</p>
-<p class="last">Default: “”</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--log_file_level, -log_file_level</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Possible choices: NOTSET, DEBUG, CRITICAL, ERROR, INFO, WARNING, 0, 10, 50, 40, 20, 30</p>
-<p class="last">Default: “0”</p>
-</td></tr>
-</tbody>
-</table>
+<dl class="option-list">
+<dt><kbd>--report_every, -report_every</kbd></dt>
+<dd><p>Report status every this many sentences</p>
+<p>Default: 100000</p>
+</dd>
+<dt><kbd>--log_file, -log_file</kbd></dt>
+<dd><p>Output logs to a file under this path.</p>
+<p>Default: “”</p>
+</dd>
+<dt><kbd>--log_file_level, -log_file_level</kbd></dt>
+<dd><p>Possible choices: NOTSET, CRITICAL, INFO, DEBUG, ERROR, WARNING, 0, 50, 20, 10, 40, 30</p>
+<p>Default: “0”</p>
+</dd>
+</dl>
 </div>
 <div class="section" id="Speech">
 <h2>Speech<a class="headerlink" href="#Speech" title="Permalink to this headline">¶</a></h2>
-<table class="docutils option-list" frame="void" rules="none">
-<col class="option" />
-<col class="description" />
-<tbody valign="top">
-<tr><td class="option-group" colspan="2">
-<kbd>--sample_rate, -sample_rate</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Sample rate.</p>
-<p class="last">Default: 16000</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--window_size, -window_size</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Window size for spectrogram in seconds.</p>
-<p class="last">Default: 0.02</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--window_stride, -window_stride</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Window stride for spectrogram in seconds.</p>
-<p class="last">Default: 0.01</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--window, -window</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Window type for spectrogram generation.</p>
-<p class="last">Default: “hamming”</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--image_channel_size, -image_channel_size</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Possible choices: 3, 1</p>
+<dl class="option-list">
+<dt><kbd>--sample_rate, -sample_rate</kbd></dt>
+<dd><p>Sample rate.</p>
+<p>Default: 16000</p>
+</dd>
+<dt><kbd>--window_size, -window_size</kbd></dt>
+<dd><p>Window size for spectrogram in seconds.</p>
+<p>Default: 0.02</p>
+</dd>
+<dt><kbd>--window_stride, -window_stride</kbd></dt>
+<dd><p>Window stride for spectrogram in seconds.</p>
+<p>Default: 0.01</p>
+</dd>
+<dt><kbd>--window, -window</kbd></dt>
+<dd><p>Window type for spectrogram generation.</p>
+<p>Default: “hamming”</p>
+</dd>
+<dt><kbd>--image_channel_size, -image_channel_size</kbd></dt>
+<dd><p>Possible choices: 3, 1</p>
 <p>Using grayscale image can training model faster and smaller</p>
-<p class="last">Default: 3</p>
-</td></tr>
-</tbody>
-</table>
+<p>Default: 3</p>
+</dd>
+</dl>
 </div>
 </div>
 

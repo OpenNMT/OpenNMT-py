@@ -190,26 +190,22 @@
 <em class="property">class </em><code class="descclassname">onmt.translate.translation_server.</code><code class="descname">ServerModel</code><span class="sig-paren">(</span><em>opt</em>, <em>model_id</em>, <em>tokenizer_opt=None</em>, <em>load=False</em>, <em>timeout=-1</em>, <em>on_timeout='to_cpu'</em>, <em>model_root='./'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#ServerModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.ServerModel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Wrap a model with server functionality.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>opt</strong> (<em>dict</em>) – Options for the Translator</li>
-<li><strong>model_id</strong> (<em>int</em>) – Model ID</li>
-<li><strong>tokenizer_opt</strong> (<em>dict</em>) – Options for the tokenizer or None</li>
-<li><strong>load</strong> (<em>bool</em>) – whether to load the model during <code class="xref py py-func docutils literal notranslate"><span class="pre">__init__()</span></code></li>
-<li><strong>timeout</strong> (<em>int</em>) – Seconds before running <a class="reference internal" href="#onmt.translate.translation_server.ServerModel.do_timeout" title="onmt.translate.translation_server.ServerModel.do_timeout"><code class="xref py py-func docutils literal notranslate"><span class="pre">do_timeout()</span></code></a>
-Negative values means no timeout</li>
-<li><strong>on_timeout</strong> (<em>str</em>) – Options are [“to_cpu”, “unload”]. Set what to do on
-timeout (see <a class="reference internal" href="#onmt.translate.translation_server.ServerModel.do_timeout" title="onmt.translate.translation_server.ServerModel.do_timeout"><code class="xref py py-func docutils literal notranslate"><span class="pre">do_timeout()</span></code></a>.)</li>
-<li><strong>model_root</strong> (<em>str</em>) – Path to the model directory
-it must contain the model and tokenizer file</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>opt</strong> (<em>dict</em>) – Options for the Translator</p></li>
+<li><p><strong>model_id</strong> (<em>int</em>) – Model ID</p></li>
+<li><p><strong>tokenizer_opt</strong> (<em>dict</em>) – Options for the tokenizer or None</p></li>
+<li><p><strong>load</strong> (<em>bool</em>) – whether to load the model during <code class="xref py py-func docutils literal notranslate"><span class="pre">__init__()</span></code></p></li>
+<li><p><strong>timeout</strong> (<em>int</em>) – Seconds before running <a class="reference internal" href="#onmt.translate.translation_server.ServerModel.do_timeout" title="onmt.translate.translation_server.ServerModel.do_timeout"><code class="xref py py-func docutils literal notranslate"><span class="pre">do_timeout()</span></code></a>
+Negative values means no timeout</p></li>
+<li><p><strong>on_timeout</strong> (<em>str</em>) – Options are [“to_cpu”, “unload”]. Set what to do on
+timeout (see <a class="reference internal" href="#onmt.translate.translation_server.ServerModel.do_timeout" title="onmt.translate.translation_server.ServerModel.do_timeout"><code class="xref py py-func docutils literal notranslate"><span class="pre">do_timeout()</span></code></a>.)</p></li>
+<li><p><strong>model_root</strong> (<em>str</em>) – Path to the model directory
+it must contain the model and tokenizer file</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 <dl class="method">
 <dt id="onmt.translate.translation_server.ServerModel.detokenize">
 <code class="descname">detokenize</code><span class="sig-paren">(</span><em>sequence</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#ServerModel.detokenize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.ServerModel.detokenize" title="Permalink to this definition">¶</a></dt>
@@ -243,18 +239,17 @@ attr`self.on_timemout` value</p>
 <dt id="onmt.translate.translation_server.ServerModel.parse_opt">
 <code class="descname">parse_opt</code><span class="sig-paren">(</span><em>opt</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#ServerModel.parse_opt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.ServerModel.parse_opt" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parse the option set passed by the user using <cite>onmt.opts</cite></p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>opt</strong> (<em>dict</em>) – Options passed by the user</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">full set of options for the Translator</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">opt (argparse.Namespace)</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>opt</strong> (<em>dict</em>) – Options passed by the user</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>full set of options for the Translator</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>opt (argparse.Namespace)</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
@@ -267,18 +262,17 @@ attr`self.on_timemout` value</p>
 <dt id="onmt.translate.translation_server.ServerModel.tokenize">
 <code class="descname">tokenize</code><span class="sig-paren">(</span><em>sequence</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#ServerModel.tokenize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.ServerModel.tokenize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tokenize a single sequence.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>sequence</strong> (<em>str</em>) – The sequence to tokenize.</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The tokenized sequence.</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">tok (str)</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>sequence</strong> (<em>str</em>) – The sequence to tokenize.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The tokenized sequence.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tok (str)</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>

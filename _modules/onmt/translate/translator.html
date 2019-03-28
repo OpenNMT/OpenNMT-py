@@ -278,6 +278,7 @@
             <span class="n">block_ngram_repeat</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
             <span class="n">ignore_when_blocking</span><span class="o">=</span><span class="nb">frozenset</span><span class="p">(),</span>
             <span class="n">replace_unk</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">phrase_table</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
             <span class="n">data_type</span><span class="o">=</span><span class="s2">&quot;text&quot;</span><span class="p">,</span>
             <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="n">report_bleu</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
@@ -325,6 +326,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">replace_unk</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">attentional</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="s2">&quot;replace_unk requires an attentional decoder.&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phrase_table</span> <span class="o">=</span> <span class="n">phrase_table</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span> <span class="o">=</span> <span class="n">data_type</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">report_bleu</span> <span class="o">=</span> <span class="n">report_bleu</span>
@@ -405,6 +407,7 @@
             <span class="n">block_ngram_repeat</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">block_ngram_repeat</span><span class="p">,</span>
             <span class="n">ignore_when_blocking</span><span class="o">=</span><span class="nb">set</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">ignore_when_blocking</span><span class="p">),</span>
             <span class="n">replace_unk</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">replace_unk</span><span class="p">,</span>
+            <span class="n">phrase_table</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">phrase_table</span><span class="p">,</span>
             <span class="n">data_type</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">data_type</span><span class="p">,</span>
             <span class="n">verbose</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">verbose</span><span class="p">,</span>
             <span class="n">report_bleu</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">report_bleu</span><span class="p">,</span>
@@ -440,7 +443,8 @@
             <span class="n">tgt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">src_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">batch_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">attn_debug</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+            <span class="n">attn_debug</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">phrase_table</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Translate content of ``src`` and get gold scores from ``tgt``.</span>
 
 <span class="sd">        Args:</span>
@@ -483,7 +487,8 @@
         <span class="p">)</span>
 
         <span class="n">xlation_builder</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">translate</span><span class="o">.</span><span class="n">TranslationBuilder</span><span class="p">(</span>
-            <span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_best</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">replace_unk</span><span class="p">,</span> <span class="n">tgt</span>
+            <span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_best</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">replace_unk</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">phrase_table</span>
         <span class="p">)</span>
 
         <span class="c1"># Statistics</span>

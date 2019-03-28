@@ -198,13 +198,14 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">n_best</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">replace_unk</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                 <span class="n">has_tgt</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+                 <span class="n">has_tgt</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">phrase_table</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fields</span> <span class="o">=</span> <span class="n">fields</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_has_text_src</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span>
             <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">)[</span><span class="s2">&quot;src&quot;</span><span class="p">],</span> <span class="n">TextMultiField</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_best</span> <span class="o">=</span> <span class="n">n_best</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">replace_unk</span> <span class="o">=</span> <span class="n">replace_unk</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phrase_table</span> <span class="o">=</span> <span class="n">phrase_table</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">has_tgt</span> <span class="o">=</span> <span class="n">has_tgt</span>
 
     <span class="k">def</span> <span class="nf">_build_target_tokens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">src_vocab</span><span class="p">,</span> <span class="n">src_raw</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="n">attn</span><span class="p">):</span>
@@ -224,6 +225,11 @@
                 <span class="k">if</span> <span class="n">tokens</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">tgt_field</span><span class="o">.</span><span class="n">unk_token</span><span class="p">:</span>
                     <span class="n">_</span><span class="p">,</span> <span class="n">max_index</span> <span class="o">=</span> <span class="n">attn</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
                     <span class="n">tokens</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">src_raw</span><span class="p">[</span><span class="n">max_index</span><span class="o">.</span><span class="n">item</span><span class="p">()]</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase_table</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+                        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phrase_table</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+                                <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">src_raw</span><span class="p">[</span><span class="n">max_index</span><span class="o">.</span><span class="n">item</span><span class="p">()]):</span>
+                                    <span class="n">tokens</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;|||&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">tokens</span>
 
     <span class="k">def</span> <span class="nf">from_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">translation_batch</span><span class="p">):</span>

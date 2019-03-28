@@ -192,7 +192,8 @@
             
   <div class="section" id="train">
 <h1>Train<a class="headerlink" href="#train" title="Permalink to this headline">¶</a></h1>
-<p>train.py</p>
+<p><p>train.py</p>
+</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">train</span><span class="o">.</span><span class="n">py</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">config</span> <span class="n">CONFIG</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">save_config</span> <span class="n">SAVE_CONFIG</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">src_word_vec_size</span> <span class="n">SRC_WORD_VEC_SIZE</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">tgt_word_vec_size</span> <span class="n">TGT_WORD_VEC_SIZE</span><span class="p">]</span>
@@ -258,7 +259,7 @@
                 <span class="p">[</span><span class="o">--</span><span class="n">decay_method</span> <span class="p">{</span><span class="n">noam</span><span class="p">,</span><span class="n">noamwd</span><span class="p">,</span><span class="n">rsqrt</span><span class="p">,</span><span class="n">none</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">warmup_steps</span> <span class="n">WARMUP_STEPS</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">report_every</span> <span class="n">REPORT_EVERY</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">log_file</span> <span class="n">LOG_FILE</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">log_file_level</span> <span class="p">{</span><span class="n">NOTSET</span><span class="p">,</span><span class="n">DEBUG</span><span class="p">,</span><span class="n">CRITICAL</span><span class="p">,</span><span class="n">ERROR</span><span class="p">,</span><span class="n">INFO</span><span class="p">,</span><span class="n">WARNING</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">50</span><span class="p">,</span><span class="mi">40</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">30</span><span class="p">}]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">log_file_level</span> <span class="p">{</span><span class="n">NOTSET</span><span class="p">,</span><span class="n">CRITICAL</span><span class="p">,</span><span class="n">INFO</span><span class="p">,</span><span class="n">DEBUG</span><span class="p">,</span><span class="n">ERROR</span><span class="p">,</span><span class="n">WARNING</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">50</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">40</span><span class="p">,</span><span class="mi">30</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">exp_host</span> <span class="n">EXP_HOST</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">exp</span> <span class="n">EXP</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">tensorboard</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">tensorboard_log_dir</span> <span class="n">TENSORBOARD_LOG_DIR</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">sample_rate</span> <span class="n">SAMPLE_RATE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">window_size</span> <span class="n">WINDOW_SIZE</span><span class="p">]</span>
@@ -267,700 +268,466 @@
 </div>
 <div class="section" id="Named Arguments">
 <h2>Named Arguments<a class="headerlink" href="#Named Arguments" title="Permalink to this headline">¶</a></h2>
-<table class="docutils option-list" frame="void" rules="none">
-<col class="option" />
-<col class="description" />
-<tbody valign="top">
-<tr><td class="option-group" colspan="2">
-<kbd>-config, --config</kbd></td>
-</tr>
-<tr><td>&#160;</td><td>config file path</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>-save_config, --save_config</kbd></td>
-</tr>
-<tr><td>&#160;</td><td>config file save path</td></tr>
-</tbody>
-</table>
+<dl class="option-list">
+<dt><kbd>-config, --config</kbd></dt>
+<dd><p>config file path</p>
+</dd>
+<dt><kbd>-save_config, --save_config</kbd></dt>
+<dd><p>config file save path</p>
+</dd>
+</dl>
 </div>
 <div class="section" id="Model-Embeddings">
 <h2>Model-Embeddings<a class="headerlink" href="#Model-Embeddings" title="Permalink to this headline">¶</a></h2>
-<table class="docutils option-list" frame="void" rules="none">
-<col class="option" />
-<col class="description" />
-<tbody valign="top">
-<tr><td class="option-group" colspan="2">
-<kbd>--src_word_vec_size, -src_word_vec_size</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Word embedding size for src.</p>
-<p class="last">Default: 500</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--tgt_word_vec_size, -tgt_word_vec_size</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Word embedding size for tgt.</p>
-<p class="last">Default: 500</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--word_vec_size, -word_vec_size</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Word embedding size for src and tgt.</p>
-<p class="last">Default: -1</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--share_decoder_embeddings, -share_decoder_embeddings</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Use a shared weight matrix for the input and output word  embeddings in the decoder.</p>
-<p class="last">Default: False</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--share_embeddings, -share_embeddings</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Share the word embeddings between encoder and decoder. Need to use shared dictionary for this option.</p>
-<p class="last">Default: False</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--position_encoding, -position_encoding</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Use a sin to mark relative words positions. Necessary for non-RNN style models.</p>
-<p class="last">Default: False</p>
-</td></tr>
-</tbody>
-</table>
+<dl class="option-list">
+<dt><kbd>--src_word_vec_size, -src_word_vec_size</kbd></dt>
+<dd><p>Word embedding size for src.</p>
+<p>Default: 500</p>
+</dd>
+<dt><kbd>--tgt_word_vec_size, -tgt_word_vec_size</kbd></dt>
+<dd><p>Word embedding size for tgt.</p>
+<p>Default: 500</p>
+</dd>
+<dt><kbd>--word_vec_size, -word_vec_size</kbd></dt>
+<dd><p>Word embedding size for src and tgt.</p>
+<p>Default: -1</p>
+</dd>
+<dt><kbd>--share_decoder_embeddings, -share_decoder_embeddings</kbd></dt>
+<dd><p>Use a shared weight matrix for the input and output word  embeddings in the decoder.</p>
+<p>Default: False</p>
+</dd>
+<dt><kbd>--share_embeddings, -share_embeddings</kbd></dt>
+<dd><p>Share the word embeddings between encoder and decoder. Need to use shared dictionary for this option.</p>
+<p>Default: False</p>
+</dd>
+<dt><kbd>--position_encoding, -position_encoding</kbd></dt>
+<dd><p>Use a sin to mark relative words positions. Necessary for non-RNN style models.</p>
+<p>Default: False</p>
+</dd>
+</dl>
 </div>
 <div class="section" id="Model-Embedding Features">
 <h2>Model-Embedding Features<a class="headerlink" href="#Model-Embedding Features" title="Permalink to this headline">¶</a></h2>
-<table class="docutils option-list" frame="void" rules="none">
-<col class="option" />
-<col class="description" />
-<tbody valign="top">
-<tr><td class="option-group" colspan="2">
-<kbd>--feat_merge, -feat_merge</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Possible choices: concat, sum, mlp</p>
+<dl class="option-list">
+<dt><kbd>--feat_merge, -feat_merge</kbd></dt>
+<dd><p>Possible choices: concat, sum, mlp</p>
 <p>Merge action for incorporating features embeddings. Options [concat|sum|mlp].</p>
-<p class="last">Default: “concat”</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--feat_vec_size, -feat_vec_size</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">If specified, feature embedding sizes will be set to this. Otherwise, feat_vec_exponent will be used.</p>
-<p class="last">Default: -1</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--feat_vec_exponent, -feat_vec_exponent</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">If -feat_merge_size is not set, feature embedding sizes will be set to N^feat_vec_exponent where N is the number of values the feature takes.</p>
-<p class="last">Default: 0.7</p>
-</td></tr>
-</tbody>
-</table>
+<p>Default: “concat”</p>
+</dd>
+<dt><kbd>--feat_vec_size, -feat_vec_size</kbd></dt>
+<dd><p>If specified, feature embedding sizes will be set to this. Otherwise, feat_vec_exponent will be used.</p>
+<p>Default: -1</p>
+</dd>
+<dt><kbd>--feat_vec_exponent, -feat_vec_exponent</kbd></dt>
+<dd><p>If -feat_merge_size is not set, feature embedding sizes will be set to N^feat_vec_exponent where N is the number of values the feature takes.</p>
+<p>Default: 0.7</p>
+</dd>
+</dl>
 </div>
 <div class="section" id="Model- Encoder-Decoder">
 <h2>Model- Encoder-Decoder<a class="headerlink" href="#Model- Encoder-Decoder" title="Permalink to this headline">¶</a></h2>
-<table class="docutils option-list" frame="void" rules="none">
-<col class="option" />
-<col class="description" />
-<tbody valign="top">
-<tr><td class="option-group" colspan="2">
-<kbd>--model_type, -model_type</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Possible choices: text, img, audio</p>
+<dl class="option-list">
+<dt><kbd>--model_type, -model_type</kbd></dt>
+<dd><p>Possible choices: text, img, audio</p>
 <p>Type of source model to use. Allows the system to incorporate non-text inputs. Options are [text|img|audio].</p>
-<p class="last">Default: “text”</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--model_dtype, -model_dtype</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Possible choices: fp32, fp16</p>
+<p>Default: “text”</p>
+</dd>
+<dt><kbd>--model_dtype, -model_dtype</kbd></dt>
+<dd><p>Possible choices: fp32, fp16</p>
 <p>Data type of the model.</p>
-<p class="last">Default: “fp32”</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--encoder_type, -encoder_type</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Possible choices: rnn, brnn, mean, transformer, cnn</p>
+<p>Default: “fp32”</p>
+</dd>
+<dt><kbd>--encoder_type, -encoder_type</kbd></dt>
+<dd><p>Possible choices: rnn, brnn, mean, transformer, cnn</p>
 <p>Type of encoder layer to use. Non-RNN layers are experimental. Options are [rnn|brnn|mean|transformer|cnn].</p>
-<p class="last">Default: “rnn”</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--decoder_type, -decoder_type</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Possible choices: rnn, transformer, cnn</p>
+<p>Default: “rnn”</p>
+</dd>
+<dt><kbd>--decoder_type, -decoder_type</kbd></dt>
+<dd><p>Possible choices: rnn, transformer, cnn</p>
 <p>Type of decoder layer to use. Non-RNN layers are experimental. Options are [rnn|transformer|cnn].</p>
-<p class="last">Default: “rnn”</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--layers, -layers</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Number of layers in enc/dec.</p>
-<p class="last">Default: -1</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--enc_layers, -enc_layers</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Number of layers in the encoder</p>
-<p class="last">Default: 2</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--dec_layers, -dec_layers</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Number of layers in the decoder</p>
-<p class="last">Default: 2</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--rnn_size, -rnn_size</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Size of rnn hidden states. Overwrites enc_rnn_size and dec_rnn_size</p>
-<p class="last">Default: -1</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--enc_rnn_size, -enc_rnn_size</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Size of encoder rnn hidden states. Must be equal to dec_rnn_size except for speech-to-text.</p>
-<p class="last">Default: 500</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--dec_rnn_size, -dec_rnn_size</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Size of decoder rnn hidden states. Must be equal to enc_rnn_size except for speech-to-text.</p>
-<p class="last">Default: 500</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--audio_enc_pooling, -audio_enc_pooling</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">The amount of pooling of audio encoder, either the same amount of pooling across all layers indicated by a single number, or different amounts of pooling per layer separated by comma.</p>
-<p class="last">Default: “1”</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--cnn_kernel_width, -cnn_kernel_width</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Size of windows in the cnn, the kernel_size is (cnn_kernel_width, 1) in conv layer</p>
-<p class="last">Default: 3</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--input_feed, -input_feed</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Feed the context vector at each time step as additional input (via concatenation with the word embeddings) to the decoder.</p>
-<p class="last">Default: 1</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--bridge, -bridge</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Have an additional layer between the last encoder state and the first decoder state</p>
-<p class="last">Default: False</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--rnn_type, -rnn_type</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Possible choices: LSTM, GRU, SRU</p>
+<p>Default: “rnn”</p>
+</dd>
+<dt><kbd>--layers, -layers</kbd></dt>
+<dd><p>Number of layers in enc/dec.</p>
+<p>Default: -1</p>
+</dd>
+<dt><kbd>--enc_layers, -enc_layers</kbd></dt>
+<dd><p>Number of layers in the encoder</p>
+<p>Default: 2</p>
+</dd>
+<dt><kbd>--dec_layers, -dec_layers</kbd></dt>
+<dd><p>Number of layers in the decoder</p>
+<p>Default: 2</p>
+</dd>
+<dt><kbd>--rnn_size, -rnn_size</kbd></dt>
+<dd><p>Size of rnn hidden states. Overwrites enc_rnn_size and dec_rnn_size</p>
+<p>Default: -1</p>
+</dd>
+<dt><kbd>--enc_rnn_size, -enc_rnn_size</kbd></dt>
+<dd><p>Size of encoder rnn hidden states. Must be equal to dec_rnn_size except for speech-to-text.</p>
+<p>Default: 500</p>
+</dd>
+<dt><kbd>--dec_rnn_size, -dec_rnn_size</kbd></dt>
+<dd><p>Size of decoder rnn hidden states. Must be equal to enc_rnn_size except for speech-to-text.</p>
+<p>Default: 500</p>
+</dd>
+<dt><kbd>--audio_enc_pooling, -audio_enc_pooling</kbd></dt>
+<dd><p>The amount of pooling of audio encoder, either the same amount of pooling across all layers indicated by a single number, or different amounts of pooling per layer separated by comma.</p>
+<p>Default: “1”</p>
+</dd>
+<dt><kbd>--cnn_kernel_width, -cnn_kernel_width</kbd></dt>
+<dd><p>Size of windows in the cnn, the kernel_size is (cnn_kernel_width, 1) in conv layer</p>
+<p>Default: 3</p>
+</dd>
+<dt><kbd>--input_feed, -input_feed</kbd></dt>
+<dd><p>Feed the context vector at each time step as additional input (via concatenation with the word embeddings) to the decoder.</p>
+<p>Default: 1</p>
+</dd>
+<dt><kbd>--bridge, -bridge</kbd></dt>
+<dd><p>Have an additional layer between the last encoder state and the first decoder state</p>
+<p>Default: False</p>
+</dd>
+<dt><kbd>--rnn_type, -rnn_type</kbd></dt>
+<dd><p>Possible choices: LSTM, GRU, SRU</p>
 <p>The gate type to use in the RNNs</p>
-<p class="last">Default: “LSTM”</p>
-</td></tr>
-<tr><td class="option-group">
-<kbd>--brnn, -brnn</kbd></td>
-<td>Deprecated, use <cite>encoder_type</cite>.</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--context_gate, -context_gate</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Possible choices: source, target, both</p>
-<p class="last">Type of context gate to use. Do not select for no context gate.</p>
-</td></tr>
-</tbody>
-</table>
+<p>Default: “LSTM”</p>
+</dd>
+<dt><kbd>--brnn, -brnn</kbd></dt>
+<dd><p>Deprecated, use <cite>encoder_type</cite>.</p>
+</dd>
+<dt><kbd>--context_gate, -context_gate</kbd></dt>
+<dd><p>Possible choices: source, target, both</p>
+<p>Type of context gate to use. Do not select for no context gate.</p>
+</dd>
+</dl>
 </div>
 <div class="section" id="Model- Attention">
 <h2>Model- Attention<a class="headerlink" href="#Model- Attention" title="Permalink to this headline">¶</a></h2>
-<table class="docutils option-list" frame="void" rules="none">
-<col class="option" />
-<col class="description" />
-<tbody valign="top">
-<tr><td class="option-group" colspan="2">
-<kbd>--global_attention, -global_attention</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Possible choices: dot, general, mlp, none</p>
+<dl class="option-list">
+<dt><kbd>--global_attention, -global_attention</kbd></dt>
+<dd><p>Possible choices: dot, general, mlp, none</p>
 <p>The attention type to use: dotprod or general (Luong) or MLP (Bahdanau)</p>
-<p class="last">Default: “general”</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--global_attention_function, -global_attention_function</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Possible choices: softmax, sparsemax</p>
-<p class="last">Default: “softmax”</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--self_attn_type, -self_attn_type</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Self attention type in Transformer decoder layer – currently “scaled-dot” or “average”</p>
-<p class="last">Default: “scaled-dot”</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--max_relative_positions, -max_relative_positions</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Maximum distance between inputs in relative positions representations. For more detailed information, see: <a class="reference external" href="https://arxiv.org/pdf/1803.02155.pdf">https://arxiv.org/pdf/1803.02155.pdf</a></p>
-<p class="last">Default: 0</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--heads, -heads</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Number of heads for transformer self-attention</p>
-<p class="last">Default: 8</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--transformer_ff, -transformer_ff</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Size of hidden transformer feed-forward</p>
-<p class="last">Default: 2048</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--copy_attn, -copy_attn</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Train copy attention layer.</p>
-<p class="last">Default: False</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--copy_attn_type, -copy_attn_type</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Possible choices: dot, general, mlp, none</p>
-<p class="last">The copy attention type to use. Leave as None to use the same as -global_attention.</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--generator_function, -generator_function</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Possible choices: softmax, sparsemax</p>
+<p>Default: “general”</p>
+</dd>
+<dt><kbd>--global_attention_function, -global_attention_function</kbd></dt>
+<dd><p>Possible choices: softmax, sparsemax</p>
+<p>Default: “softmax”</p>
+</dd>
+<dt><kbd>--self_attn_type, -self_attn_type</kbd></dt>
+<dd><p>Self attention type in Transformer decoder layer – currently “scaled-dot” or “average”</p>
+<p>Default: “scaled-dot”</p>
+</dd>
+<dt><kbd>--max_relative_positions, -max_relative_positions</kbd></dt>
+<dd><p>Maximum distance between inputs in relative positions representations. For more detailed information, see: <a class="reference external" href="https://arxiv.org/pdf/1803.02155.pdf">https://arxiv.org/pdf/1803.02155.pdf</a></p>
+<p>Default: 0</p>
+</dd>
+<dt><kbd>--heads, -heads</kbd></dt>
+<dd><p>Number of heads for transformer self-attention</p>
+<p>Default: 8</p>
+</dd>
+<dt><kbd>--transformer_ff, -transformer_ff</kbd></dt>
+<dd><p>Size of hidden transformer feed-forward</p>
+<p>Default: 2048</p>
+</dd>
+<dt><kbd>--copy_attn, -copy_attn</kbd></dt>
+<dd><p>Train copy attention layer.</p>
+<p>Default: False</p>
+</dd>
+<dt><kbd>--copy_attn_type, -copy_attn_type</kbd></dt>
+<dd><p>Possible choices: dot, general, mlp, none</p>
+<p>The copy attention type to use. Leave as None to use the same as -global_attention.</p>
+</dd>
+<dt><kbd>--generator_function, -generator_function</kbd></dt>
+<dd><p>Possible choices: softmax, sparsemax</p>
 <p>Which function to use for generating probabilities over the target vocabulary (choices: softmax, sparsemax)</p>
-<p class="last">Default: “softmax”</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--copy_attn_force, -copy_attn_force</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">When available, train to copy.</p>
-<p class="last">Default: False</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--reuse_copy_attn, -reuse_copy_attn</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Reuse standard attention for copy</p>
-<p class="last">Default: False</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--copy_loss_by_seqlength, -copy_loss_by_seqlength</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Divide copy loss by length of sequence</p>
-<p class="last">Default: False</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--coverage_attn, -coverage_attn</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Train a coverage attention layer.</p>
-<p class="last">Default: False</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--lambda_coverage, -lambda_coverage</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Lambda value for coverage.</p>
-<p class="last">Default: 1</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--loss_scale, -loss_scale</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">For FP16 training, the static loss scale to use. If not set, the loss scale is dynamically computed.</p>
-<p class="last">Default: 0</p>
-</td></tr>
-</tbody>
-</table>
+<p>Default: “softmax”</p>
+</dd>
+<dt><kbd>--copy_attn_force, -copy_attn_force</kbd></dt>
+<dd><p>When available, train to copy.</p>
+<p>Default: False</p>
+</dd>
+<dt><kbd>--reuse_copy_attn, -reuse_copy_attn</kbd></dt>
+<dd><p>Reuse standard attention for copy</p>
+<p>Default: False</p>
+</dd>
+<dt><kbd>--copy_loss_by_seqlength, -copy_loss_by_seqlength</kbd></dt>
+<dd><p>Divide copy loss by length of sequence</p>
+<p>Default: False</p>
+</dd>
+<dt><kbd>--coverage_attn, -coverage_attn</kbd></dt>
+<dd><p>Train a coverage attention layer.</p>
+<p>Default: False</p>
+</dd>
+<dt><kbd>--lambda_coverage, -lambda_coverage</kbd></dt>
+<dd><p>Lambda value for coverage.</p>
+<p>Default: 1</p>
+</dd>
+<dt><kbd>--loss_scale, -loss_scale</kbd></dt>
+<dd><p>For FP16 training, the static loss scale to use. If not set, the loss scale is dynamically computed.</p>
+<p>Default: 0</p>
+</dd>
+</dl>
 </div>
 <div class="section" id="General">
 <h2>General<a class="headerlink" href="#General" title="Permalink to this headline">¶</a></h2>
-<table class="docutils option-list" frame="void" rules="none">
-<col class="option" />
-<col class="description" />
-<tbody valign="top">
-<tr><td class="option-group">
-<kbd>--data, -data</kbd></td>
-<td>Path prefix to the “.train.pt” and “.valid.pt” file path from preprocess.py</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--save_model, -save_model</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Model filename (the model will be saved as &lt;save_model&gt;_N.pt where N is the number of steps</p>
-<p class="last">Default: “model”</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--save_checkpoint_steps, -save_checkpoint_steps</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Save a checkpoint every X steps</p>
-<p class="last">Default: 5000</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--keep_checkpoint, -keep_checkpoint</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Keep X checkpoints (negative: keep all)</p>
-<p class="last">Default: -1</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--gpuid, -gpuid</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Deprecated see world_size and gpu_ranks.</p>
-<p class="last">Default: []</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--gpu_ranks, -gpu_ranks</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">list of ranks of each process.</p>
-<p class="last">Default: []</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--world_size, -world_size</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">total number of distributed processes.</p>
-<p class="last">Default: 1</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--gpu_backend, -gpu_backend</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Type of torch distributed backend</p>
-<p class="last">Default: “nccl”</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--gpu_verbose_level, -gpu_verbose_level</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Gives more info on each process per GPU.</p>
-<p class="last">Default: 0</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--master_ip, -master_ip</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">IP of master for torch.distributed training.</p>
-<p class="last">Default: “localhost”</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--master_port, -master_port</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Port of master for torch.distributed training.</p>
-<p class="last">Default: 10000</p>
-</td></tr>
-<tr><td class="option-group">
-<kbd>--seed, -seed</kbd></td>
-<td><p class="first">Random seed used for the experiments reproducibility.</p>
-<p class="last">Default: -1</p>
-</td></tr>
-</tbody>
-</table>
+<dl class="option-list">
+<dt><kbd>--data, -data</kbd></dt>
+<dd><p>Path prefix to the “.train.pt” and “.valid.pt” file path from preprocess.py</p>
+</dd>
+<dt><kbd>--save_model, -save_model</kbd></dt>
+<dd><p>Model filename (the model will be saved as &lt;save_model&gt;_N.pt where N is the number of steps</p>
+<p>Default: “model”</p>
+</dd>
+<dt><kbd>--save_checkpoint_steps, -save_checkpoint_steps</kbd></dt>
+<dd><p>Save a checkpoint every X steps</p>
+<p>Default: 5000</p>
+</dd>
+<dt><kbd>--keep_checkpoint, -keep_checkpoint</kbd></dt>
+<dd><p>Keep X checkpoints (negative: keep all)</p>
+<p>Default: -1</p>
+</dd>
+<dt><kbd>--gpuid, -gpuid</kbd></dt>
+<dd><p>Deprecated see world_size and gpu_ranks.</p>
+<p>Default: []</p>
+</dd>
+<dt><kbd>--gpu_ranks, -gpu_ranks</kbd></dt>
+<dd><p>list of ranks of each process.</p>
+<p>Default: []</p>
+</dd>
+<dt><kbd>--world_size, -world_size</kbd></dt>
+<dd><p>total number of distributed processes.</p>
+<p>Default: 1</p>
+</dd>
+<dt><kbd>--gpu_backend, -gpu_backend</kbd></dt>
+<dd><p>Type of torch distributed backend</p>
+<p>Default: “nccl”</p>
+</dd>
+<dt><kbd>--gpu_verbose_level, -gpu_verbose_level</kbd></dt>
+<dd><p>Gives more info on each process per GPU.</p>
+<p>Default: 0</p>
+</dd>
+<dt><kbd>--master_ip, -master_ip</kbd></dt>
+<dd><p>IP of master for torch.distributed training.</p>
+<p>Default: “localhost”</p>
+</dd>
+<dt><kbd>--master_port, -master_port</kbd></dt>
+<dd><p>Port of master for torch.distributed training.</p>
+<p>Default: 10000</p>
+</dd>
+<dt><kbd>--seed, -seed</kbd></dt>
+<dd><p>Random seed used for the experiments reproducibility.</p>
+<p>Default: -1</p>
+</dd>
+</dl>
 </div>
 <div class="section" id="Initialization">
 <h2>Initialization<a class="headerlink" href="#Initialization" title="Permalink to this headline">¶</a></h2>
-<table class="docutils option-list" frame="void" rules="none">
-<col class="option" />
-<col class="description" />
-<tbody valign="top">
-<tr><td class="option-group" colspan="2">
-<kbd>--param_init, -param_init</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Parameters are initialized over uniform distribution with support (-param_init, param_init). Use 0 to not use initialization</p>
-<p class="last">Default: 0.1</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--param_init_glorot, -param_init_glorot</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Init parameters with xavier_uniform. Required for transfomer.</p>
-<p class="last">Default: False</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--train_from, -train_from</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">If training from a checkpoint then this is the path to the pretrained model’s state_dict.</p>
-<p class="last">Default: “”</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--reset_optim, -reset_optim</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Possible choices: none, all, states, keep_states</p>
+<dl class="option-list">
+<dt><kbd>--param_init, -param_init</kbd></dt>
+<dd><p>Parameters are initialized over uniform distribution with support (-param_init, param_init). Use 0 to not use initialization</p>
+<p>Default: 0.1</p>
+</dd>
+<dt><kbd>--param_init_glorot, -param_init_glorot</kbd></dt>
+<dd><p>Init parameters with xavier_uniform. Required for transfomer.</p>
+<p>Default: False</p>
+</dd>
+<dt><kbd>--train_from, -train_from</kbd></dt>
+<dd><p>If training from a checkpoint then this is the path to the pretrained model’s state_dict.</p>
+<p>Default: “”</p>
+</dd>
+<dt><kbd>--reset_optim, -reset_optim</kbd></dt>
+<dd><p>Possible choices: none, all, states, keep_states</p>
 <p>Optimization resetter when train_from.</p>
-<p class="last">Default: “none”</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--pre_word_vecs_enc, -pre_word_vecs_enc</kbd></td>
-</tr>
-<tr><td>&#160;</td><td>If a valid path is specified, then this will load pretrained word embeddings on the encoder side. See README for specific formatting instructions.</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--pre_word_vecs_dec, -pre_word_vecs_dec</kbd></td>
-</tr>
-<tr><td>&#160;</td><td>If a valid path is specified, then this will load pretrained word embeddings on the decoder side. See README for specific formatting instructions.</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--fix_word_vecs_enc, -fix_word_vecs_enc</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Fix word embeddings on the encoder side.</p>
-<p class="last">Default: False</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--fix_word_vecs_dec, -fix_word_vecs_dec</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Fix word embeddings on the decoder side.</p>
-<p class="last">Default: False</p>
-</td></tr>
-</tbody>
-</table>
+<p>Default: “none”</p>
+</dd>
+<dt><kbd>--pre_word_vecs_enc, -pre_word_vecs_enc</kbd></dt>
+<dd><p>If a valid path is specified, then this will load pretrained word embeddings on the encoder side. See README for specific formatting instructions.</p>
+</dd>
+<dt><kbd>--pre_word_vecs_dec, -pre_word_vecs_dec</kbd></dt>
+<dd><p>If a valid path is specified, then this will load pretrained word embeddings on the decoder side. See README for specific formatting instructions.</p>
+</dd>
+<dt><kbd>--fix_word_vecs_enc, -fix_word_vecs_enc</kbd></dt>
+<dd><p>Fix word embeddings on the encoder side.</p>
+<p>Default: False</p>
+</dd>
+<dt><kbd>--fix_word_vecs_dec, -fix_word_vecs_dec</kbd></dt>
+<dd><p>Fix word embeddings on the decoder side.</p>
+<p>Default: False</p>
+</dd>
+</dl>
 </div>
 <div class="section" id="Optimization- Type">
 <h2>Optimization- Type<a class="headerlink" href="#Optimization- Type" title="Permalink to this headline">¶</a></h2>
-<table class="docutils option-list" frame="void" rules="none">
-<col class="option" />
-<col class="description" />
-<tbody valign="top">
-<tr><td class="option-group" colspan="2">
-<kbd>--batch_size, -batch_size</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Maximum batch size for training</p>
-<p class="last">Default: 64</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--batch_type, -batch_type</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Possible choices: sents, tokens</p>
+<dl class="option-list">
+<dt><kbd>--batch_size, -batch_size</kbd></dt>
+<dd><p>Maximum batch size for training</p>
+<p>Default: 64</p>
+</dd>
+<dt><kbd>--batch_type, -batch_type</kbd></dt>
+<dd><p>Possible choices: sents, tokens</p>
 <p>Batch grouping for batch_size. Standard is sents. Tokens will do dynamic batching</p>
-<p class="last">Default: “sents”</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--normalization, -normalization</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Possible choices: sents, tokens</p>
+<p>Default: “sents”</p>
+</dd>
+<dt><kbd>--normalization, -normalization</kbd></dt>
+<dd><p>Possible choices: sents, tokens</p>
 <p>Normalization method of the gradient.</p>
-<p class="last">Default: “sents”</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--accum_count, -accum_count</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Accumulate gradient this many times. Approximately equivalent to updating batch_size * accum_count batches at once. Recommended for Transformer.</p>
-<p class="last">Default: [1]</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--accum_steps, -accum_steps</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Steps at which accum_count values change</p>
-<p class="last">Default: [0]</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--valid_steps, -valid_steps</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Perfom validation every X steps</p>
-<p class="last">Default: 10000</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--valid_batch_size, -valid_batch_size</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Maximum batch size for validation</p>
-<p class="last">Default: 32</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--max_generator_batches, -max_generator_batches</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Maximum batches of words in a sequence to run the generator on in parallel. Higher is faster, but uses more memory. Set to 0 to disable.</p>
-<p class="last">Default: 32</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--train_steps, -train_steps</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Number of training steps</p>
-<p class="last">Default: 100000</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--single_pass, -single_pass</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Make a single pass over the training dataset.</p>
-<p class="last">Default: False</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--epochs, -epochs</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Deprecated epochs see train_steps</p>
-<p class="last">Default: 0</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--optim, -optim</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Possible choices: sgd, adagrad, adadelta, adam, sparseadam, adafactor, fusedadam</p>
+<p>Default: “sents”</p>
+</dd>
+<dt><kbd>--accum_count, -accum_count</kbd></dt>
+<dd><p>Accumulate gradient this many times. Approximately equivalent to updating batch_size * accum_count batches at once. Recommended for Transformer.</p>
+<p>Default: [1]</p>
+</dd>
+<dt><kbd>--accum_steps, -accum_steps</kbd></dt>
+<dd><p>Steps at which accum_count values change</p>
+<p>Default: [0]</p>
+</dd>
+<dt><kbd>--valid_steps, -valid_steps</kbd></dt>
+<dd><p>Perfom validation every X steps</p>
+<p>Default: 10000</p>
+</dd>
+<dt><kbd>--valid_batch_size, -valid_batch_size</kbd></dt>
+<dd><p>Maximum batch size for validation</p>
+<p>Default: 32</p>
+</dd>
+<dt><kbd>--max_generator_batches, -max_generator_batches</kbd></dt>
+<dd><p>Maximum batches of words in a sequence to run the generator on in parallel. Higher is faster, but uses more memory. Set to 0 to disable.</p>
+<p>Default: 32</p>
+</dd>
+<dt><kbd>--train_steps, -train_steps</kbd></dt>
+<dd><p>Number of training steps</p>
+<p>Default: 100000</p>
+</dd>
+<dt><kbd>--single_pass, -single_pass</kbd></dt>
+<dd><p>Make a single pass over the training dataset.</p>
+<p>Default: False</p>
+</dd>
+<dt><kbd>--epochs, -epochs</kbd></dt>
+<dd><p>Deprecated epochs see train_steps</p>
+<p>Default: 0</p>
+</dd>
+<dt><kbd>--optim, -optim</kbd></dt>
+<dd><p>Possible choices: sgd, adagrad, adadelta, adam, sparseadam, adafactor, fusedadam</p>
 <p>Optimization method.</p>
-<p class="last">Default: “sgd”</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--adagrad_accumulator_init, -adagrad_accumulator_init</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Initializes the accumulator values in adagrad. Mirrors the initial_accumulator_value option in the tensorflow adagrad (use 0.1 for their default).</p>
-<p class="last">Default: 0</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--max_grad_norm, -max_grad_norm</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">If the norm of the gradient vector exceeds this, renormalize it to have the norm equal to max_grad_norm</p>
-<p class="last">Default: 5</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--dropout, -dropout</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Dropout probability; applied in LSTM stacks.</p>
-<p class="last">Default: 0.3</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--truncated_decoder, -truncated_decoder</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Truncated bptt.</p>
-<p class="last">Default: 0</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--adam_beta1, -adam_beta1</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">The beta1 parameter used by Adam. Almost without exception a value of 0.9 is used in the literature, seemingly giving good results, so we would discourage changing this value from the default without due consideration.</p>
-<p class="last">Default: 0.9</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--adam_beta2, -adam_beta2</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">The beta2 parameter used by Adam. Typically a value of 0.999 is recommended, as this is the value suggested by the original paper describing Adam, and is also the value adopted in other frameworks such as Tensorflow and Kerras, i.e. see: <a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/train/AdamOptimizer">https://www.tensorflow.org/api_docs/python/tf/train/AdamOptimizer</a> or <a class="reference external" href="https://keras.io/optimizers/">https://keras.io/optimizers/</a> . Whereas recently the paper “Attention is All You Need” suggested a value of 0.98 for beta2, this parameter may not work well for normal models / default baselines.</p>
-<p class="last">Default: 0.999</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--label_smoothing, -label_smoothing</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Label smoothing value epsilon. Probabilities of all non-true labels will be smoothed by epsilon / (vocab_size - 1). Set to zero to turn off label smoothing. For more detailed information, see: <a class="reference external" href="https://arxiv.org/abs/1512.00567">https://arxiv.org/abs/1512.00567</a></p>
-<p class="last">Default: 0.0</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--average_decay, -average_decay</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Moving average decay. Set to other than 0 (e.g. 1e-4) to activate. Similar to Marian NMT implementation: <a class="reference external" href="http://www.aclweb.org/anthology/P18-4020">http://www.aclweb.org/anthology/P18-4020</a> For more detail on Exponential Moving Average: <a class="reference external" href="https://en.wikipedia.org/wiki/Moving_average">https://en.wikipedia.org/wiki/Moving_average</a></p>
-<p class="last">Default: 0</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--average_every, -average_every</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Step for moving average. Default is every update, if -average_decay is set.</p>
-<p class="last">Default: 1</p>
-</td></tr>
-</tbody>
-</table>
+<p>Default: “sgd”</p>
+</dd>
+<dt><kbd>--adagrad_accumulator_init, -adagrad_accumulator_init</kbd></dt>
+<dd><p>Initializes the accumulator values in adagrad. Mirrors the initial_accumulator_value option in the tensorflow adagrad (use 0.1 for their default).</p>
+<p>Default: 0</p>
+</dd>
+<dt><kbd>--max_grad_norm, -max_grad_norm</kbd></dt>
+<dd><p>If the norm of the gradient vector exceeds this, renormalize it to have the norm equal to max_grad_norm</p>
+<p>Default: 5</p>
+</dd>
+<dt><kbd>--dropout, -dropout</kbd></dt>
+<dd><p>Dropout probability; applied in LSTM stacks.</p>
+<p>Default: 0.3</p>
+</dd>
+<dt><kbd>--truncated_decoder, -truncated_decoder</kbd></dt>
+<dd><p>Truncated bptt.</p>
+<p>Default: 0</p>
+</dd>
+<dt><kbd>--adam_beta1, -adam_beta1</kbd></dt>
+<dd><p>The beta1 parameter used by Adam. Almost without exception a value of 0.9 is used in the literature, seemingly giving good results, so we would discourage changing this value from the default without due consideration.</p>
+<p>Default: 0.9</p>
+</dd>
+<dt><kbd>--adam_beta2, -adam_beta2</kbd></dt>
+<dd><p>The beta2 parameter used by Adam. Typically a value of 0.999 is recommended, as this is the value suggested by the original paper describing Adam, and is also the value adopted in other frameworks such as Tensorflow and Kerras, i.e. see: <a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/train/AdamOptimizer">https://www.tensorflow.org/api_docs/python/tf/train/AdamOptimizer</a> or <a class="reference external" href="https://keras.io/optimizers/">https://keras.io/optimizers/</a> . Whereas recently the paper “Attention is All You Need” suggested a value of 0.98 for beta2, this parameter may not work well for normal models / default baselines.</p>
+<p>Default: 0.999</p>
+</dd>
+<dt><kbd>--label_smoothing, -label_smoothing</kbd></dt>
+<dd><p>Label smoothing value epsilon. Probabilities of all non-true labels will be smoothed by epsilon / (vocab_size - 1). Set to zero to turn off label smoothing. For more detailed information, see: <a class="reference external" href="https://arxiv.org/abs/1512.00567">https://arxiv.org/abs/1512.00567</a></p>
+<p>Default: 0.0</p>
+</dd>
+<dt><kbd>--average_decay, -average_decay</kbd></dt>
+<dd><p>Moving average decay. Set to other than 0 (e.g. 1e-4) to activate. Similar to Marian NMT implementation: <a class="reference external" href="http://www.aclweb.org/anthology/P18-4020">http://www.aclweb.org/anthology/P18-4020</a> For more detail on Exponential Moving Average: <a class="reference external" href="https://en.wikipedia.org/wiki/Moving_average">https://en.wikipedia.org/wiki/Moving_average</a></p>
+<p>Default: 0</p>
+</dd>
+<dt><kbd>--average_every, -average_every</kbd></dt>
+<dd><p>Step for moving average. Default is every update, if -average_decay is set.</p>
+<p>Default: 1</p>
+</dd>
+</dl>
 </div>
 <div class="section" id="Optimization- Rate">
 <h2>Optimization- Rate<a class="headerlink" href="#Optimization- Rate" title="Permalink to this headline">¶</a></h2>
-<table class="docutils option-list" frame="void" rules="none">
-<col class="option" />
-<col class="description" />
-<tbody valign="top">
-<tr><td class="option-group" colspan="2">
-<kbd>--learning_rate, -learning_rate</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Starting learning rate. Recommended settings: sgd = 1, adagrad = 0.1, adadelta = 1, adam = 0.001</p>
-<p class="last">Default: 1.0</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--learning_rate_decay, -learning_rate_decay</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">If update_learning_rate, decay learning rate by this much if steps have gone past start_decay_steps</p>
-<p class="last">Default: 0.5</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--start_decay_steps, -start_decay_steps</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Start decaying every decay_steps after start_decay_steps</p>
-<p class="last">Default: 50000</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--decay_steps, -decay_steps</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Decay every decay_steps</p>
-<p class="last">Default: 10000</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--decay_method, -decay_method</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Possible choices: noam, noamwd, rsqrt, none</p>
+<dl class="option-list">
+<dt><kbd>--learning_rate, -learning_rate</kbd></dt>
+<dd><p>Starting learning rate. Recommended settings: sgd = 1, adagrad = 0.1, adadelta = 1, adam = 0.001</p>
+<p>Default: 1.0</p>
+</dd>
+<dt><kbd>--learning_rate_decay, -learning_rate_decay</kbd></dt>
+<dd><p>If update_learning_rate, decay learning rate by this much if steps have gone past start_decay_steps</p>
+<p>Default: 0.5</p>
+</dd>
+<dt><kbd>--start_decay_steps, -start_decay_steps</kbd></dt>
+<dd><p>Start decaying every decay_steps after start_decay_steps</p>
+<p>Default: 50000</p>
+</dd>
+<dt><kbd>--decay_steps, -decay_steps</kbd></dt>
+<dd><p>Decay every decay_steps</p>
+<p>Default: 10000</p>
+</dd>
+<dt><kbd>--decay_method, -decay_method</kbd></dt>
+<dd><p>Possible choices: noam, noamwd, rsqrt, none</p>
 <p>Use a custom decay rate.</p>
-<p class="last">Default: “none”</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--warmup_steps, -warmup_steps</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Number of warmup steps for custom decay.</p>
-<p class="last">Default: 4000</p>
-</td></tr>
-</tbody>
-</table>
+<p>Default: “none”</p>
+</dd>
+<dt><kbd>--warmup_steps, -warmup_steps</kbd></dt>
+<dd><p>Number of warmup steps for custom decay.</p>
+<p>Default: 4000</p>
+</dd>
+</dl>
 </div>
 <div class="section" id="Logging">
 <h2>Logging<a class="headerlink" href="#Logging" title="Permalink to this headline">¶</a></h2>
-<table class="docutils option-list" frame="void" rules="none">
-<col class="option" />
-<col class="description" />
-<tbody valign="top">
-<tr><td class="option-group" colspan="2">
-<kbd>--report_every, -report_every</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Print stats at this interval.</p>
-<p class="last">Default: 50</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--log_file, -log_file</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Output logs to a file under this path.</p>
-<p class="last">Default: “”</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--log_file_level, -log_file_level</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Possible choices: NOTSET, DEBUG, CRITICAL, ERROR, INFO, WARNING, 0, 10, 50, 40, 20, 30</p>
-<p class="last">Default: “0”</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--exp_host, -exp_host</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Send logs to this crayon server.</p>
-<p class="last">Default: “”</p>
-</td></tr>
-<tr><td class="option-group">
-<kbd>--exp, -exp</kbd></td>
-<td><p class="first">Name of the experiment for logging.</p>
-<p class="last">Default: “”</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--tensorboard, -tensorboard</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Use tensorboardX for visualization during training. Must have the library tensorboardX.</p>
-<p class="last">Default: False</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--tensorboard_log_dir, -tensorboard_log_dir</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Log directory for Tensorboard. This is also the name of the run.</p>
-<p class="last">Default: “runs/onmt”</p>
-</td></tr>
-</tbody>
-</table>
+<dl class="option-list">
+<dt><kbd>--report_every, -report_every</kbd></dt>
+<dd><p>Print stats at this interval.</p>
+<p>Default: 50</p>
+</dd>
+<dt><kbd>--log_file, -log_file</kbd></dt>
+<dd><p>Output logs to a file under this path.</p>
+<p>Default: “”</p>
+</dd>
+<dt><kbd>--log_file_level, -log_file_level</kbd></dt>
+<dd><p>Possible choices: NOTSET, CRITICAL, INFO, DEBUG, ERROR, WARNING, 0, 50, 20, 10, 40, 30</p>
+<p>Default: “0”</p>
+</dd>
+<dt><kbd>--exp_host, -exp_host</kbd></dt>
+<dd><p>Send logs to this crayon server.</p>
+<p>Default: “”</p>
+</dd>
+<dt><kbd>--exp, -exp</kbd></dt>
+<dd><p>Name of the experiment for logging.</p>
+<p>Default: “”</p>
+</dd>
+<dt><kbd>--tensorboard, -tensorboard</kbd></dt>
+<dd><p>Use tensorboardX for visualization during training. Must have the library tensorboardX.</p>
+<p>Default: False</p>
+</dd>
+<dt><kbd>--tensorboard_log_dir, -tensorboard_log_dir</kbd></dt>
+<dd><p>Log directory for Tensorboard. This is also the name of the run.</p>
+<p>Default: “runs/onmt”</p>
+</dd>
+</dl>
 </div>
 <div class="section" id="Speech">
 <h2>Speech<a class="headerlink" href="#Speech" title="Permalink to this headline">¶</a></h2>
-<table class="docutils option-list" frame="void" rules="none">
-<col class="option" />
-<col class="description" />
-<tbody valign="top">
-<tr><td class="option-group" colspan="2">
-<kbd>--sample_rate, -sample_rate</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Sample rate.</p>
-<p class="last">Default: 16000</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--window_size, -window_size</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Window size for spectrogram in seconds.</p>
-<p class="last">Default: 0.02</p>
-</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd>--image_channel_size, -image_channel_size</kbd></td>
-</tr>
-<tr><td>&#160;</td><td><p class="first">Possible choices: 3, 1</p>
+<dl class="option-list">
+<dt><kbd>--sample_rate, -sample_rate</kbd></dt>
+<dd><p>Sample rate.</p>
+<p>Default: 16000</p>
+</dd>
+<dt><kbd>--window_size, -window_size</kbd></dt>
+<dd><p>Window size for spectrogram in seconds.</p>
+<p>Default: 0.02</p>
+</dd>
+<dt><kbd>--image_channel_size, -image_channel_size</kbd></dt>
+<dd><p>Possible choices: 3, 1</p>
 <p>Using grayscale image can training model faster and smaller</p>
-<p class="last">Default: 3</p>
-</td></tr>
-</tbody>
-</table>
+<p>Default: 3</p>
+</dd>
+</dl>
 </div>
 </div>
 

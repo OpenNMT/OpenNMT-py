@@ -249,14 +249,14 @@ For CNN-DM we follow See et al. [2] and additionally truncate the source length 
 <h2>Training<a class="headerlink" href="#training" title="Permalink to this headline">¶</a></h2>
 <p>The training procedure described in this section for the most part follows parameter choices and implementation similar to that of See et al. [2]. We describe notable options in the following list:</p>
 <ul class="simple">
-<li><code class="docutils literal notranslate"><span class="pre">copy_attn</span></code>: This is the most important option, since it allows the model to copy words from the source.</li>
-<li><code class="docutils literal notranslate"><span class="pre">global_attention</span> <span class="pre">mlp</span></code>: This makes the model use the  attention mechanism introduced by Bahdanau et al. [3] instead of that by Luong et al. [4] (<code class="docutils literal notranslate"><span class="pre">global_attention</span> <span class="pre">dot</span></code>).</li>
-<li><code class="docutils literal notranslate"><span class="pre">share_embeddings</span></code>: This shares the word embeddings between encoder and decoder. This option drastically decreases the number of parameters a model has to learn. We did not find this option to helpful, but you can try it out by adding it to the command below.</li>
-<li><code class="docutils literal notranslate"><span class="pre">reuse_copy_attn</span></code>: This option reuses the standard attention as copy attention. Without this, the model learns an additional attention that is only used for copying.</li>
-<li><code class="docutils literal notranslate"><span class="pre">copy_loss_by_seqlength</span></code>: This modifies the loss to divide the loss of a sequence by the number of tokens in it. In practice, we found this to generate longer sequences during inference. However, this effect can also be achieved by using penalties during decoding.</li>
-<li><code class="docutils literal notranslate"><span class="pre">bridge</span></code>: This is an additional layer that uses the final hidden state of the encoder as input and computes an initial hidden state for the decoder. Without this, the decoder is initialized with the final hidden state of the encoder directly.</li>
-<li><code class="docutils literal notranslate"><span class="pre">optim</span> <span class="pre">adagrad</span></code>: Adagrad outperforms SGD when coupled with the following option.</li>
-<li><code class="docutils literal notranslate"><span class="pre">adagrad_accumulator_init</span> <span class="pre">0.1</span></code>: PyTorch does not initialize the accumulator in adagrad with any values. To match the optimization algorithm with the Tensorflow version, this option needs to be added.</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">copy_attn</span></code>: This is the most important option, since it allows the model to copy words from the source.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">global_attention</span> <span class="pre">mlp</span></code>: This makes the model use the  attention mechanism introduced by Bahdanau et al. [3] instead of that by Luong et al. [4] (<code class="docutils literal notranslate"><span class="pre">global_attention</span> <span class="pre">dot</span></code>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">share_embeddings</span></code>: This shares the word embeddings between encoder and decoder. This option drastically decreases the number of parameters a model has to learn. We did not find this option to helpful, but you can try it out by adding it to the command below.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">reuse_copy_attn</span></code>: This option reuses the standard attention as copy attention. Without this, the model learns an additional attention that is only used for copying.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">copy_loss_by_seqlength</span></code>: This modifies the loss to divide the loss of a sequence by the number of tokens in it. In practice, we found this to generate longer sequences during inference. However, this effect can also be achieved by using penalties during decoding.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">bridge</span></code>: This is an additional layer that uses the final hidden state of the encoder as input and computes an initial hidden state for the decoder. Without this, the decoder is initialized with the final hidden state of the encoder directly.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">optim</span> <span class="pre">adagrad</span></code>: Adagrad outperforms SGD when coupled with the following option.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">adagrad_accumulator_init</span> <span class="pre">0.1</span></code>: PyTorch does not initialize the accumulator in adagrad with any values. To match the optimization algorithm with the Tensorflow version, this option needs to be added.</p></li>
 </ul>
 <p>We are using using a 128-dimensional word-embedding, and 512-dimensional 1 layer LSTM. On the encoder side, we use a bidirectional LSTM (<code class="docutils literal notranslate"><span class="pre">brnn</span></code>), which means that the 512 dimensions are split into 256 dimensions per direction.</p>
 <p>We additionally set the maximum norm of the gradient to 2, and renormalize if the gradient norm exceeds this value and do not use any dropout.</p>
@@ -332,13 +332,13 @@ For CNN-DM we follow See et al. [2] and additionally truncate the source length 
 <h2>Inference<a class="headerlink" href="#inference" title="Permalink to this headline">¶</a></h2>
 <p>During inference, we use beam-search with a beam-size of 10. We also added specific penalties that we can use during decoding, described in the following.</p>
 <ul class="simple">
-<li><code class="docutils literal notranslate"><span class="pre">stepwise_penalty</span></code>: Applies penalty at every step</li>
-<li><code class="docutils literal notranslate"><span class="pre">coverage_penalty</span> <span class="pre">summary</span></code>: Uses a penalty that prevents repeated attention to the same source word</li>
-<li><code class="docutils literal notranslate"><span class="pre">beta</span> <span class="pre">5</span></code>: Parameter for the Coverage Penalty</li>
-<li><code class="docutils literal notranslate"><span class="pre">length_penalty</span> <span class="pre">wu</span></code>: Uses the Length Penalty by Wu et al.</li>
-<li><code class="docutils literal notranslate"><span class="pre">alpha</span> <span class="pre">0.8</span></code>: Parameter for the Length Penalty.</li>
-<li><code class="docutils literal notranslate"><span class="pre">block_ngram_repeat</span> <span class="pre">3</span></code>: Prevent the model from repeating trigrams.</li>
-<li><code class="docutils literal notranslate"><span class="pre">ignore_when_blocking</span> <span class="pre">&quot;.&quot;</span> <span class="pre">&quot;&lt;/t&gt;&quot;</span> <span class="pre">&quot;&lt;t&gt;&quot;</span></code>: Allow the model to repeat trigrams with the sentence boundary tokens.</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stepwise_penalty</span></code>: Applies penalty at every step</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">coverage_penalty</span> <span class="pre">summary</span></code>: Uses a penalty that prevents repeated attention to the same source word</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">beta</span> <span class="pre">5</span></code>: Parameter for the Coverage Penalty</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">length_penalty</span> <span class="pre">wu</span></code>: Uses the Length Penalty by Wu et al.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">alpha</span> <span class="pre">0.8</span></code>: Parameter for the Length Penalty.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">block_ngram_repeat</span> <span class="pre">3</span></code>: Prevent the model from repeating trigrams.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ignore_when_blocking</span> <span class="pre">&quot;.&quot;</span> <span class="pre">&quot;&lt;/t&gt;&quot;</span> <span class="pre">&quot;&lt;t&gt;&quot;</span></code>: Allow the model to repeat trigrams with the sentence boundary tokens.</p></li>
 </ul>
 <p><strong>commands used</strong>:</p>
 <p>(1) CNN-DM</p>

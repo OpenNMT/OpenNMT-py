@@ -6,5 +6,5 @@ var DOCUMENTATION_OPTIONS = {
     FILE_SUFFIX: '.html',
     HAS_SOURCE: true,
     SOURCELINK_SUFFIX: '.txt',
-    NAVIGATION_WITH_KEYS: false,
+    NAVIGATION_WITH_KEYS: false
 };

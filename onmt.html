@@ -192,51 +192,43 @@
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.module.Module</span></code></p>
 <p>Core trainable object in OpenNMT. Implements a trainable interface
 for a simple, generic encoder + decoder model.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>encoder</strong> (<a class="reference internal" href="onmt.modules.html#onmt.encoders.EncoderBase" title="onmt.encoders.EncoderBase"><em>onmt.encoders.EncoderBase</em></a>) – an encoder object</li>
-<li><strong>decoder</strong> (<a class="reference internal" href="onmt.modules.html#onmt.decoders.DecoderBase" title="onmt.decoders.DecoderBase"><em>onmt.decoders.DecoderBase</em></a>) – a decoder object</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>encoder</strong> (<a class="reference internal" href="onmt.modules.html#onmt.encoders.EncoderBase" title="onmt.encoders.EncoderBase"><em>onmt.encoders.EncoderBase</em></a>) – an encoder object</p></li>
+<li><p><strong>decoder</strong> (<a class="reference internal" href="onmt.modules.html#onmt.decoders.DecoderBase" title="onmt.decoders.DecoderBase"><em>onmt.decoders.DecoderBase</em></a>) – a decoder object</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 <dl class="method">
 <dt id="onmt.models.NMTModel.forward">
 <code class="descname">forward</code><span class="sig-paren">(</span><em>src</em>, <em>tgt</em>, <em>lengths</em>, <em>bptt=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/models/model.html#NMTModel.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.models.NMTModel.forward" title="Permalink to this definition">¶</a></dt>
 <dd><p>Forward propagate a <cite>src</cite> and <cite>tgt</cite> pair for training.
 Possible initialized with a beginning decoder state.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>src</strong> (<em>Tensor</em>) – A source sequence passed to encoder.
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>src</strong> (<em>Tensor</em>) – A source sequence passed to encoder.
 typically for inputs this will be a padded <cite>LongTensor</cite>
 of size <code class="docutils literal notranslate"><span class="pre">(len,</span> <span class="pre">batch,</span> <span class="pre">features)</span></code>. However, may be an
-image or other generic input depending on encoder.</li>
-<li><strong>tgt</strong> (<em>LongTensor</em>) – A target sequence of size <code class="docutils literal notranslate"><span class="pre">(tgt_len,</span> <span class="pre">batch)</span></code>.</li>
-<li><strong>lengths</strong> (<em>LongTensor</em>) – The src lengths, pre-padding <code class="docutils literal notranslate"><span class="pre">(batch,)</span></code>.</li>
-<li><strong>bptt</strong> (<em>Boolean</em>) – A flag indicating if truncated bptt is set.
-If reset then init_state</li>
+image or other generic input depending on encoder.</p></li>
+<li><p><strong>tgt</strong> (<em>LongTensor</em>) – A target sequence of size <code class="docutils literal notranslate"><span class="pre">(tgt_len,</span> <span class="pre">batch)</span></code>.</p></li>
+<li><p><strong>lengths</strong> (<em>LongTensor</em>) – The src lengths, pre-padding <code class="docutils literal notranslate"><span class="pre">(batch,)</span></code>.</p></li>
+<li><p><strong>bptt</strong> (<em>Boolean</em>) – A flag indicating if truncated bptt is set.
+If reset then init_state</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><ul class="simple">
-<li>decoder output <code class="docutils literal notranslate"><span class="pre">(tgt_len,</span> <span class="pre">batch,</span> <span class="pre">hidden)</span></code></li>
-<li>dictionary attention dists of <code class="docutils literal notranslate"><span class="pre">(tgt_len,</span> <span class="pre">batch,</span> <span class="pre">src_len)</span></code></li>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>decoder output <code class="docutils literal notranslate"><span class="pre">(tgt_len,</span> <span class="pre">batch,</span> <span class="pre">hidden)</span></code></p></li>
+<li><p>dictionary attention dists of <code class="docutils literal notranslate"><span class="pre">(tgt_len,</span> <span class="pre">batch,</span> <span class="pre">src_len)</span></code></p></li>
 </ul>
 </p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">(FloatTensor, dict[str, FloatTensor])</p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(FloatTensor, dict[str, FloatTensor])</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
@@ -249,74 +241,64 @@ If reset then init_state</li>
 <em class="property">class </em><code class="descclassname">onmt.</code><code class="descname">Trainer</code><span class="sig-paren">(</span><em>model, train_loss, valid_loss, optim, trunc_size=0, shard_size=32, norm_method='sents', accum_count=[1], accum_steps=[0], n_gpu=1, gpu_rank=1, gpu_verbose_level=0, report_manager=None, model_saver=None, average_decay=0, average_every=1, model_dtype='fp32'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/trainer.html#Trainer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Class that controls the training process.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>model</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.models.model.NMTModel</span></code>) – translation model
-to train</li>
-<li><strong>train_loss</strong> (<a class="reference internal" href="#onmt.utils.loss.LossComputeBase" title="onmt.utils.loss.LossComputeBase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.utils.loss.LossComputeBase</span></code></a>) – training loss computation</li>
-<li><strong>valid_loss</strong> (<a class="reference internal" href="#onmt.utils.loss.LossComputeBase" title="onmt.utils.loss.LossComputeBase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.utils.loss.LossComputeBase</span></code></a>) – training loss computation</li>
-<li><strong>optim</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.utils.optimizers.Optimizer</span></code>) – the optimizer responsible for update</li>
-<li><strong>trunc_size</strong> (<em>int</em>) – length of truncated back propagation through time</li>
-<li><strong>shard_size</strong> (<em>int</em>) – compute loss in shards of this size for efficiency</li>
-<li><strong>data_type</strong> (<em>string</em>) – type of the source input: [text|img|audio]</li>
-<li><strong>norm_method</strong> (<em>string</em>) – normalization methods: [sents|tokens]</li>
-<li><strong>accum_count</strong> (<em>list</em>) – accumulate gradients this many times.</li>
-<li><strong>accum_steps</strong> (<em>list</em>) – steps for accum gradients changes.</li>
-<li><strong>report_manager</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.utils.ReportMgrBase</span></code>) – the object that creates reports, or None</li>
-<li><strong>model_saver</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.models.ModelSaverBase</span></code>) – the saver is
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.models.model.NMTModel</span></code>) – translation model
+to train</p></li>
+<li><p><strong>train_loss</strong> (<a class="reference internal" href="#onmt.utils.loss.LossComputeBase" title="onmt.utils.loss.LossComputeBase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.utils.loss.LossComputeBase</span></code></a>) – training loss computation</p></li>
+<li><p><strong>valid_loss</strong> (<a class="reference internal" href="#onmt.utils.loss.LossComputeBase" title="onmt.utils.loss.LossComputeBase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.utils.loss.LossComputeBase</span></code></a>) – training loss computation</p></li>
+<li><p><strong>optim</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.utils.optimizers.Optimizer</span></code>) – the optimizer responsible for update</p></li>
+<li><p><strong>trunc_size</strong> (<em>int</em>) – length of truncated back propagation through time</p></li>
+<li><p><strong>shard_size</strong> (<em>int</em>) – compute loss in shards of this size for efficiency</p></li>
+<li><p><strong>data_type</strong> (<em>string</em>) – type of the source input: [text|img|audio]</p></li>
+<li><p><strong>norm_method</strong> (<em>string</em>) – normalization methods: [sents|tokens]</p></li>
+<li><p><strong>accum_count</strong> (<em>list</em>) – accumulate gradients this many times.</p></li>
+<li><p><strong>accum_steps</strong> (<em>list</em>) – steps for accum gradients changes.</p></li>
+<li><p><strong>report_manager</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.utils.ReportMgrBase</span></code>) – the object that creates reports, or None</p></li>
+<li><p><strong>model_saver</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.models.ModelSaverBase</span></code>) – the saver is
 used to save a checkpoint.
-Thus nothing will be saved if this parameter is None</li>
+Thus nothing will be saved if this parameter is None</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 <dl class="method">
 <dt id="onmt.Trainer.train">
 <code class="descname">train</code><span class="sig-paren">(</span><em>train_iter</em>, <em>train_steps</em>, <em>save_checkpoint_steps=5000</em>, <em>valid_iter=None</em>, <em>valid_steps=10000</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/trainer.html#Trainer.train"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer.train" title="Permalink to this definition">¶</a></dt>
 <dd><p>The main training loop by iterating over <cite>train_iter</cite> and possibly
 running validation on <cite>valid_iter</cite>.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>train_iter</strong> – A generator that returns the next training batch.</li>
-<li><strong>train_steps</strong> – Run training for this many iterations.</li>
-<li><strong>save_checkpoint_steps</strong> – Save a checkpoint every this many
-iterations.</li>
-<li><strong>valid_iter</strong> – A generator that returns the next validation batch.</li>
-<li><strong>valid_steps</strong> – Run evaluation every this many iterations.</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>train_iter</strong> – A generator that returns the next training batch.</p></li>
+<li><p><strong>train_steps</strong> – Run training for this many iterations.</p></li>
+<li><p><strong>save_checkpoint_steps</strong> – Save a checkpoint every this many
+iterations.</p></li>
+<li><p><strong>valid_iter</strong> – A generator that returns the next validation batch.</p></li>
+<li><p><strong>valid_steps</strong> – Run evaluation every this many iterations.</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">The gathered statistics.</p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The gathered statistics.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
 <dt id="onmt.Trainer.validate">
 <code class="descname">validate</code><span class="sig-paren">(</span><em>valid_iter</em>, <em>moving_average=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/trainer.html#Trainer.validate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer.validate" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="docutils">
-<dt>Validate model.</dt>
-<dd>valid_iter: validate data iterator</dd>
+<dd><dl class="simple">
+<dt>Validate model.</dt><dd><p>valid_iter: validate data iterator</p>
+</dd>
 </dl>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">validation loss statistics</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nmt.Statistics</span></code></td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>validation loss statistics</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">nmt.Statistics</span></code></p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
@@ -328,9 +310,9 @@ iterations.</li>
 <p>Accumulator for loss statistics.
 Currently calculates:</p>
 <ul class="simple">
-<li>accuracy</li>
-<li>perplexity</li>
-<li>elapsed time</li>
+<li><p>accuracy</p></li>
+<li><p>perplexity</p></li>
+<li><p>elapsed time</p></li>
 </ul>
 <dl class="method">
 <dt id="onmt.utils.Statistics.accuracy">
@@ -342,47 +324,39 @@ Currently calculates:</p>
 <dt id="onmt.utils.Statistics.all_gather_stats">
 <em class="property">static </em><code class="descname">all_gather_stats</code><span class="sig-paren">(</span><em>stat</em>, <em>max_size=4096</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/statistics.html#Statistics.all_gather_stats"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.Statistics.all_gather_stats" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gather a <cite>Statistics</cite> object accross multiple process/nodes</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>stat</strong><strong>(</strong> – obj:Statistics): the statistics object to gather
-accross all processes/nodes</li>
-<li><strong>max_size</strong> (<em>int</em>) – max buffer size to use</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>stat</strong><strong>(</strong> – obj:Statistics): the statistics object to gather
+accross all processes/nodes</p></li>
+<li><p><strong>max_size</strong> (<em>int</em>) – max buffer size to use</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><cite>Statistics</cite>, the update stats object</p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><cite>Statistics</cite>, the update stats object</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="staticmethod">
 <dt id="onmt.utils.Statistics.all_gather_stats_list">
 <em class="property">static </em><code class="descname">all_gather_stats_list</code><span class="sig-paren">(</span><em>stat_list</em>, <em>max_size=4096</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/statistics.html#Statistics.all_gather_stats_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.Statistics.all_gather_stats_list" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gather a <cite>Statistics</cite> list accross all processes/nodes</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>stat_list</strong> (list([<cite>Statistics</cite>])) – list of statistics objects to
-gather accross all processes/nodes</li>
-<li><strong>max_size</strong> (<em>int</em>) – max buffer size to use</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>stat_list</strong> (list([<cite>Statistics</cite>])) – list of statistics objects to
+gather accross all processes/nodes</p></li>
+<li><p><strong>max_size</strong> (<em>int</em>) – max buffer size to use</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">list of updated stats</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">our_stats(list([<cite>Statistics</cite>]))</p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>list of updated stats</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>our_stats(list([<cite>Statistics</cite>]))</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
@@ -401,19 +375,15 @@ gather accross all processes/nodes</li>
 <dt id="onmt.utils.Statistics.output">
 <code class="descname">output</code><span class="sig-paren">(</span><em>step</em>, <em>num_steps</em>, <em>learning_rate</em>, <em>start</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/statistics.html#Statistics.output"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.Statistics.output" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write out statistics to stdout.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>step</strong> (<em>int</em>) – current step</li>
-<li><strong>n_batch</strong> (<em>int</em>) – total batches</li>
-<li><strong>start</strong> (<em>int</em>) – start time of step.</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>step</strong> (<em>int</em>) – current step</p></li>
+<li><p><strong>n_batch</strong> (<em>int</em>) – total batches</p></li>
+<li><p><strong>start</strong> (<em>int</em>) – start time of step.</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
@@ -426,19 +396,15 @@ gather accross all processes/nodes</li>
 <dt id="onmt.utils.Statistics.update">
 <code class="descname">update</code><span class="sig-paren">(</span><em>stat</em>, <em>update_n_src_words=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/statistics.html#Statistics.update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.Statistics.update" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update statistics by suming values with another <cite>Statistics</cite> object</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>stat</strong> – another statistic object</li>
-<li><strong>update_n_src_words</strong> (<em>bool</em>) – whether to update (sum) <cite>n_src_words</cite>
-or not</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>stat</strong> – another statistic object</p></li>
+<li><p><strong>update_n_src_words</strong> (<em>bool</em>) – whether to update (sum) <cite>n_src_words</cite>
+or not</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
@@ -462,20 +428,16 @@ loss computations</p>
 <p>Users can implement their own loss computation strategy by making
 subclass of this one.  Users need to implement the _compute_loss()
 and make_shard_state() methods.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>generator</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">nn.Module</span></code>) – module that maps the output of the decoder to a
-distribution over the target vocabulary.</li>
-<li><strong>tgt_vocab</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Vocab</span></code>) – torchtext vocab object representing the target output</li>
-<li><strong>normalzation</strong> (<em>str</em>) – normalize by “sents” or “tokens”</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>generator</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">nn.Module</span></code>) – module that maps the output of the decoder to a
+distribution over the target vocabulary.</p></li>
+<li><p><strong>tgt_vocab</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Vocab</span></code>) – torchtext vocab object representing the target output</p></li>
+<li><p><strong>normalzation</strong> (<em>str</em>) – normalize by “sents” or “tokens”</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
 </div>
@@ -501,23 +463,19 @@ backward pass.</p>
 <dt id="onmt.utils.Optimizer.from_opt">
 <em class="property">classmethod </em><code class="descname">from_opt</code><span class="sig-paren">(</span><em>model</em>, <em>opt</em>, <em>checkpoint=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/optimizers.html#Optimizer.from_opt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.Optimizer.from_opt" title="Permalink to this definition">¶</a></dt>
 <dd><p>Builds the optimizer from options.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>cls</strong> – The <code class="docutils literal notranslate"><span class="pre">Optimizer</span></code> class to instantiate.</li>
-<li><strong>model</strong> – The model to optimize.</li>
-<li><strong>opt</strong> – The dict of user options.</li>
-<li><strong>checkpoint</strong> – An optional checkpoint to load states from.</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cls</strong> – The <code class="docutils literal notranslate"><span class="pre">Optimizer</span></code> class to instantiate.</p></li>
+<li><p><strong>model</strong> – The model to optimize.</p></li>
+<li><p><strong>opt</strong> – The dict of user options.</p></li>
+<li><p><strong>checkpoint</strong> – An optional checkpoint to load states from.</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An <code class="docutils literal notranslate"><span class="pre">Optimizer</span></code> instance.</p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>An <code class="docutils literal notranslate"><span class="pre">Optimizer</span></code> instance.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
