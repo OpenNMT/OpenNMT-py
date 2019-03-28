@@ -385,11 +385,14 @@ def train_opts(parser):
     group.add('--normalization', '-normalization', default='sents',
               choices=["sents", "tokens"],
               help='Normalization method of the gradient.')
-    group.add('--accum_count', '-accum_count', type=int, default=1,
+    group.add('--accum_count', '-accum_count', type=int, nargs='+',
+              default=[1],
               help="Accumulate gradient this many times. "
                    "Approximately equivalent to updating "
                    "batch_size * accum_count batches at once. "
                    "Recommended for Transformer.")
+    group.add('--accum_steps', '-accum_steps', type=int, nargs='+',
+              default=[0], help="Steps at which accum_count values change")
     group.add('--valid_steps', '-valid_steps', type=int, default=10000,
               help='Perfom validation every X steps')
     group.add('--valid_batch_size', '-valid_batch_size', type=int, default=32,
@@ -479,7 +482,7 @@ def train_opts(parser):
               help="Decay every decay_steps")
 
     group.add('--decay_method', '-decay_method', type=str, default="none",
-              choices=['noam', 'rsqrt', 'none'],
+              choices=['noam', 'noamwd', 'rsqrt', 'none'],
               help="Use a custom decay rate.")
     group.add('--warmup_steps', '-warmup_steps', type=int, default=4000,
               help="Number of warmup steps for custom decay.")

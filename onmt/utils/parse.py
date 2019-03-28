@@ -82,7 +82,7 @@ class ArgumentParser(cfargparse.ArgumentParser):
         if opt.epochs:
             raise AssertionError(
                 "-epochs is deprecated please use -train_steps.")
-        if opt.truncated_decoder > 0 and opt.accum_count > 1:
+        if opt.truncated_decoder > 0 and max(opt.accum_count) > 1:
             raise AssertionError("BPTT is not compatible with -accum > 1")
         if opt.gpuid:
             raise AssertionError("gpuid is deprecated \
