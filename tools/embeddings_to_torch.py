@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import division
 import six
-import sys
-import numpy as np
 import argparse
 import torch
 from onmt.utils.logging import init_logger, logger
@@ -49,25 +47,10 @@ def read_embeddings(file_enc, skip_lines=0, filter_set=None):
             if len(l_split) == 2:
                 continue
             total_vectors_in_file += 1
-            if l_split[0] not in filter_set:
+            if filter_set is not None and l_split[0] not in filter_set:
                 continue
             embs[l_split[0]] = [float(em) for em in l_split[1:]]
     return embs, total_vectors_in_file
-
-
-def match_embeddings(vocab, emb, opt):
-    dim = len(six.next(six.itervalues(emb)))
-    filtered_embeddings = np.zeros((len(vocab), dim))
-    for w, w_id in vocab.stoi.items():
-        if w in emb:
-            filtered_embeddings[w_id] = emb[w]
-            count['match'] += 1
-        else:
-            if opt.verbose:
-                logger.info(u"not found:\t{}".format(w), file=sys.stderr)
-            count['miss'] += 1
-
-    return torch.Tensor(filtered_embeddings), count
 
 
 def convert_to_torch_tensor(word_to_float_list_dict, vocab):
@@ -79,14 +62,14 @@ def convert_to_torch_tensor(word_to_float_list_dict, vocab):
 
 
 def calc_vocab_load_stats(vocab, loaded_embed_dict):
-    matching_count = len(set(vocab.stoi.keys()) & set(loaded_embed_dict.keys()))
+    matching_count = len(
+        set(vocab.stoi.keys()) & set(loaded_embed_dict.keys()))
     missing_count = len(vocab) - matching_count
     percet_matching = matching_count / len(vocab) * 100
     return matching_count, missing_count, percet_matching
 
 
 def main():
-
     parser = argparse.ArgumentParser(description='embeddings_to_torch.py')
     parser.add_argument('-emb_file_both', required=False,
                         help="loads Embeddings for both source and target "
@@ -117,14 +100,15 @@ def main():
         if opt.emb_file_dec is not None:
             raise ValueError("If --emb_file_both is passed in, you should not"
                              "set --emb_file_dec.")
-        set_of_src_and_tgt_vocab = set(enc_vocab.stoi.keys()) | \
-                                   set(dec_vocab.stoi.keys())
+        set_of_src_and_tgt_vocab = \
+            set(enc_vocab.stoi.keys()) | set(dec_vocab.stoi.keys())
         logger.info("Reading encoder and decoder embeddings from {}".format(
             opt.emb_file_both))
         src_vectors, total_vec_count = \
-            read_embeddings(opt.emb_file_both, skip_lines, set_of_src_and_tgt_vocab)
+            read_embeddings(opt.emb_file_both, skip_lines,
+                            set_of_src_and_tgt_vocab)
         tgt_vectors = src_vectors
-        logger.info("\tFound {} total vectors in file.".format(total_vec_count))
+        logger.info("\tFound {} total vectors in file".format(total_vec_count))
     else:
         if opt.emb_file_enc is None:
             raise ValueError("If --emb_file_enc not provided. Please specify "
@@ -134,18 +118,21 @@ def main():
             raise ValueError("If --emb_file_dec not provided. Please specify "
                              "the file with encoder embeddings, or pass in "
                              "--emb_file_both")
-        logger.info("Reading encoder embeddings from {}".format(opt.emb_file_enc))
+        logger.info("Reading encoder embeddings from {}".format(
+            opt.emb_file_enc))
         src_vectors, total_vec_count = read_embeddings(
             opt.emb_file_enc, skip_lines,
             filter_set=enc_vocab.stoi
         )
-        logger.info("\tFound {} total vectors in file.".format(total_vec_count))
-        logger.info("Reading decoder embeddings from {}".format(opt.emb_file_dec))
+        logger.info("\tFound {} total vectors in file.".format(
+            total_vec_count))
+        logger.info("Reading decoder embeddings from {}".format(
+            opt.emb_file_dec))
         tgt_vectors, total_vec_count = read_embeddings(
             opt.emb_file_dec, skip_lines,
             filter_set=dec_vocab.stoi
         )
-        logger.info("\tFound {} total vectors in file.".format(total_vec_count))
+        logger.info("\tFound {} total vectors in file".format(total_vec_count))
     logger.info("After filtering to vectors in vocab:")
     logger.info("\t* enc: %d match, %d missing, (%.2f%%)"
                 % calc_vocab_load_stats(enc_vocab, src_vectors))
