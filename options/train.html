@@ -237,7 +237,9 @@
                 <span class="p">[</span><span class="o">--</span><span class="n">pre_word_vecs_dec</span> <span class="n">PRE_WORD_VECS_DEC</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">fix_word_vecs_enc</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">fix_word_vecs_dec</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">batch_size</span> <span class="n">BATCH_SIZE</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">batch_type</span> <span class="p">{</span><span class="n">sents</span><span class="p">,</span><span class="n">tokens</span><span class="p">}]</span> <span class="p">[</span><span class="o">--</span><span class="n">normalization</span> <span class="p">{</span><span class="n">sents</span><span class="p">,</span><span class="n">tokens</span><span class="p">}]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">accum_count</span> <span class="n">ACCUM_COUNT</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">valid_steps</span> <span class="n">VALID_STEPS</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">accum_count</span> <span class="n">ACCUM_COUNT</span> <span class="p">[</span><span class="n">ACCUM_COUNT</span> <span class="o">...</span><span class="p">]]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">accum_steps</span> <span class="n">ACCUM_STEPS</span> <span class="p">[</span><span class="n">ACCUM_STEPS</span> <span class="o">...</span><span class="p">]]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">valid_steps</span> <span class="n">VALID_STEPS</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">valid_batch_size</span> <span class="n">VALID_BATCH_SIZE</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">max_generator_batches</span> <span class="n">MAX_GENERATOR_BATCHES</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">train_steps</span> <span class="n">TRAIN_STEPS</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">single_pass</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">epochs</span> <span class="n">EPOCHS</span><span class="p">]</span>
@@ -252,10 +254,11 @@
                 <span class="p">[</span><span class="o">--</span><span class="n">learning_rate</span> <span class="n">LEARNING_RATE</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">learning_rate_decay</span> <span class="n">LEARNING_RATE_DECAY</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">start_decay_steps</span> <span class="n">START_DECAY_STEPS</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">decay_steps</span> <span class="n">DECAY_STEPS</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">decay_method</span> <span class="p">{</span><span class="n">noam</span><span class="p">,</span><span class="n">rsqrt</span><span class="p">,</span><span class="n">none</span><span class="p">}]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">decay_steps</span> <span class="n">DECAY_STEPS</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">decay_method</span> <span class="p">{</span><span class="n">noam</span><span class="p">,</span><span class="n">noamwd</span><span class="p">,</span><span class="n">rsqrt</span><span class="p">,</span><span class="n">none</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">warmup_steps</span> <span class="n">WARMUP_STEPS</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">report_every</span> <span class="n">REPORT_EVERY</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">log_file</span> <span class="n">LOG_FILE</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">log_file_level</span> <span class="p">{</span><span class="n">DEBUG</span><span class="p">,</span><span class="n">CRITICAL</span><span class="p">,</span><span class="n">WARNING</span><span class="p">,</span><span class="n">NOTSET</span><span class="p">,</span><span class="n">INFO</span><span class="p">,</span><span class="n">ERROR</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">50</span><span class="p">,</span><span class="mi">30</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">40</span><span class="p">}]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">log_file_level</span> <span class="p">{</span><span class="n">NOTSET</span><span class="p">,</span><span class="n">DEBUG</span><span class="p">,</span><span class="n">CRITICAL</span><span class="p">,</span><span class="n">ERROR</span><span class="p">,</span><span class="n">INFO</span><span class="p">,</span><span class="n">WARNING</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">50</span><span class="p">,</span><span class="mi">40</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">30</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">exp_host</span> <span class="n">EXP_HOST</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">exp</span> <span class="n">EXP</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">tensorboard</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">tensorboard_log_dir</span> <span class="n">TENSORBOARD_LOG_DIR</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">sample_rate</span> <span class="n">SAMPLE_RATE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">window_size</span> <span class="n">WINDOW_SIZE</span><span class="p">]</span>
@@ -727,7 +730,13 @@
 <kbd>--accum_count, -accum_count</kbd></td>
 </tr>
 <tr><td>&#160;</td><td><p class="first">Accumulate gradient this many times. Approximately equivalent to updating batch_size * accum_count batches at once. Recommended for Transformer.</p>
-<p class="last">Default: 1</p>
+<p class="last">Default: [1]</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--accum_steps, -accum_steps</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Steps at which accum_count values change</p>
+<p class="last">Default: [0]</p>
 </td></tr>
 <tr><td class="option-group" colspan="2">
 <kbd>--valid_steps, -valid_steps</kbd></td>
@@ -862,7 +871,7 @@
 <tr><td class="option-group" colspan="2">
 <kbd>--decay_method, -decay_method</kbd></td>
 </tr>
-<tr><td>&#160;</td><td><p class="first">Possible choices: noam, rsqrt, none</p>
+<tr><td>&#160;</td><td><p class="first">Possible choices: noam, noamwd, rsqrt, none</p>
 <p>Use a custom decay rate.</p>
 <p class="last">Default: “none”</p>
 </td></tr>
@@ -896,7 +905,7 @@
 <tr><td class="option-group" colspan="2">
 <kbd>--log_file_level, -log_file_level</kbd></td>
 </tr>
-<tr><td>&#160;</td><td><p class="first">Possible choices: DEBUG, CRITICAL, WARNING, NOTSET, INFO, ERROR, 10, 50, 30, 0, 20, 40</p>
+<tr><td>&#160;</td><td><p class="first">Possible choices: NOTSET, DEBUG, CRITICAL, ERROR, INFO, WARNING, 0, 10, 50, 40, 20, 30</p>
 <p class="last">Default: “0”</p>
 </td></tr>
 <tr><td class="option-group" colspan="2">

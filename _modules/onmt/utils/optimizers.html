@@ -284,6 +284,14 @@
             <span class="n">noam_decay</span><span class="p">,</span>
             <span class="n">warmup_steps</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">warmup_steps</span><span class="p">,</span>
             <span class="n">model_size</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">rnn_size</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">decay_method</span> <span class="o">==</span> <span class="s1">&#39;noamwd&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span>
+            <span class="n">noamwd_decay</span><span class="p">,</span>
+            <span class="n">warmup_steps</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">warmup_steps</span><span class="p">,</span>
+            <span class="n">model_size</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">rnn_size</span><span class="p">,</span>
+            <span class="n">rate</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">learning_rate_decay</span><span class="p">,</span>
+            <span class="n">decay_steps</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">decay_steps</span><span class="p">,</span>
+            <span class="n">start_step</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">start_decay_steps</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">decay_method</span> <span class="o">==</span> <span class="s1">&#39;rsqrt&#39;</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span>
             <span class="n">rsqrt_decay</span><span class="p">,</span> <span class="n">warmup_steps</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">warmup_steps</span><span class="p">)</span>
@@ -302,6 +310,16 @@
     <span class="k">return</span> <span class="p">(</span>
         <span class="n">model_size</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span>
         <span class="nb">min</span><span class="p">(</span><span class="n">step</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">),</span> <span class="n">step</span> <span class="o">*</span> <span class="n">warmup_steps</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">1.5</span><span class="p">)))</span>
+
+
+<span class="k">def</span> <span class="nf">noamwd_decay</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">warmup_steps</span><span class="p">,</span>
+                 <span class="n">model_size</span><span class="p">,</span> <span class="n">rate</span><span class="p">,</span> <span class="n">decay_steps</span><span class="p">,</span> <span class="n">start_step</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Learning rate schedule optimized for huge batches</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">model_size</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span>
+        <span class="nb">min</span><span class="p">(</span><span class="n">step</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">),</span> <span class="n">step</span> <span class="o">*</span> <span class="n">warmup_steps</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">1.5</span><span class="p">))</span> <span class="o">*</span>
+        <span class="n">rate</span> <span class="o">**</span> <span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">step</span> <span class="o">-</span> <span class="n">start_step</span> <span class="o">+</span> <span class="n">decay_steps</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">//</span> <span class="n">decay_steps</span><span class="p">))</span>
 
 
 <span class="k">def</span> <span class="nf">exponential_decay</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">rate</span><span class="p">,</span> <span class="n">decay_steps</span><span class="p">,</span> <span class="n">start_step</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
