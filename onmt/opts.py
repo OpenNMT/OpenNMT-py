@@ -632,12 +632,17 @@ def translate_opts(parser):
     group.add('--replace_unk', '-replace_unk', action="store_true",
               help="Replace the generated UNK tokens with the "
                    "source token that had highest attention weight. If "
-                   "phrase_table is provided, it will lookup the "
+                   "phrase_table is provided, it will look up the "
                    "identified source token and give the corresponding "
-                   "target token. If it is not provided(or the identified "
-                   "source token does not exist in the table) then it "
-                   "will copy the source token")
-
+                   "target token. If it is not provided (or the identified "
+                   "source token does not exist in the table), then it "
+                   "will copy the source token.")
+    group.add('--phrase_table', '-phrase_table', type=str, default="",
+              help="If phrase_table is provided (with replace_unk), it will "
+                   "look up the identified source token and give the "
+                   "corresponding target token. If it is not provided "
+                   "(or the identified source token does not exist in "
+                   "the table), then it will copy the source token.")
     group = parser.add_argument_group('Logging')
     group.add('--verbose', '-verbose', action="store_true",
               help='Print scores and predictions for each sentence')

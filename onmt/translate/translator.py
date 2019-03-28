@@ -102,6 +102,7 @@ class Translator(object):
             block_ngram_repeat=0,
             ignore_when_blocking=frozenset(),
             replace_unk=False,
+            phrase_table="",
             data_type="text",
             verbose=False,
             report_bleu=False,
@@ -149,6 +150,7 @@ class Translator(object):
         if self.replace_unk and not self.model.decoder.attentional:
             raise ValueError(
                 "replace_unk requires an attentional decoder.")
+        self.phrase_table = phrase_table
         self.data_type = data_type
         self.verbose = verbose
         self.report_bleu = report_bleu
@@ -229,6 +231,7 @@ class Translator(object):
             block_ngram_repeat=opt.block_ngram_repeat,
             ignore_when_blocking=set(opt.ignore_when_blocking),
             replace_unk=opt.replace_unk,
+            phrase_table=opt.phrase_table,
             data_type=opt.data_type,
             verbose=opt.verbose,
             report_bleu=opt.report_bleu,
@@ -264,7 +267,8 @@ class Translator(object):
             tgt=None,
             src_dir=None,
             batch_size=None,
-            attn_debug=False):
+            attn_debug=False,
+            phrase_table=""):
         """Translate content of ``src`` and get gold scores from ``tgt``.
 
         Args:
@@ -307,7 +311,8 @@ class Translator(object):
         )
 
         xlation_builder = onmt.translate.TranslationBuilder(
-            data, self.fields, self.n_best, self.replace_unk, tgt
+            data, self.fields, self.n_best, self.replace_unk, tgt,
+            self.phrase_table
         )
 
         # Statistics
