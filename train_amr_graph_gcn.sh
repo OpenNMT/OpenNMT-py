@@ -1,6 +1,6 @@
 #!/bin/bash
 
-GPUIDS="${1:-0}"
+GPUIDS="${1:-1}"
 DATA_DIR="${2:-amr_reent}"
 OUT_DIR="${3:-models/graph_gcn}"
 BATCH_SIZE="${4:-100}"

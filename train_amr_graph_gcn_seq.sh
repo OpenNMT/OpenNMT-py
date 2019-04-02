@@ -1,8 +1,8 @@
 #!/bin/bash
 
-GPUIDS="${1:-0}"
+#GPUIDS="${1:-0}"
 DATA_DIR="${2:-amr_reent}"
-OUT_DIR="${3:-models/graph_gcn_seq}"
+OUT_DIR="${3:-models/graph_gcn_seq_cpu}"
 BATCH_SIZE="${4:-100}"
 NUM_LAYERS="${5:-1}"
 
@@ -36,5 +36,5 @@ python train.py \
     -learning_rate_decay 0.8 \
     -start_decay_steps 6000 \
     -learning_rate 1 \
-    -dropout 0.5 \
-    -gpu_ranks ${GPUIDS}
+    -dropout 0.5
+    #-gpu_ranks ${GPUIDS}

@@ -278,7 +278,8 @@ class Embeddings(nn.Module):
             source = self.make_embedding(source)
 
         if self.emb_type == 'gcn':
-            emb_gcn = self.gcn(source, adj.float().cuda())
+            adj = adj.float().to(source.device)
+            emb_gcn = self.gcn(source, adj)
             # source = torch.cat((source, emb_gcn), 2)
             source = emb_gcn
             
@@ -307,7 +308,7 @@ class Embeddings(nn.Module):
             source = torch.cat((source, emb_treelstm), 2)
             
         elif self.emb_type == 'gcn_and_treelstm':
-            emb_gcn = self.gcn(source, adj.float().cuda())
+            emb_gcn = self.gcn(source, adj)
             emb_treelstm = []
             for i in range(len(trees)):
                 _, _, emb_treelstm_batch = self.treelstm(trees[i], source[:, i, :])
@@ -318,7 +319,7 @@ class Embeddings(nn.Module):
             source = torch.cat((source, emb_treelstm), 2)
 
         elif self.emb_type == 'gcn_and_bi_treelstm':
-            emb_gcn = self.gcn(source, adj.float().cuda())
+            emb_gcn = self.gcn(source, adj)
             emb_treelstm = []
             for i in range(len(trees)):
                 state, hidden, emb_treelstm_batch = self.treelstm(trees[i], source[:, i, :])
