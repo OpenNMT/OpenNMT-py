@@ -9,6 +9,7 @@ import torch
 import torch.nn as nn
 
 from onmt.encoders.encoder import EncoderBase
+from onmt.decoders.decoder import DecoderBase
 from onmt.models import NMTModel
 import onmt.model_builder
 
@@ -42,11 +43,13 @@ class EnsembleEncoder(EncoderBase):
         return enc_hidden, memory_bank, lengths
 
 
-class EnsembleDecoder(nn.Module):
+class EnsembleDecoder(DecoderBase):
     """Dummy Decoder that delegates to individual real Decoders."""
     def __init__(self, model_decoders):
-        super(EnsembleDecoder, self).__init__()
-        self.model_decoders = nn.ModuleList(model_decoders)
+        model_decoders = nn.ModuleList(model_decoders)
+        attentional = any([dec.attentional for dec in model_decoders])
+        super(EnsembleDecoder, self).__init__(attentional)
+        self.model_decoders = model_decoders
 
     def forward(self, tgt, memory_bank, memory_lengths=None, step=None):
         """See :func:`onmt.decoders.decoder.DecoderBase.forward()`."""
@@ -65,7 +68,8 @@ class EnsembleDecoder(nn.Module):
     def combine_attns(self, attns):
         result = {}
         for key in attns[0].keys():
-            result[key] = torch.stack([attn[key] for attn in attns]).mean(0)
+            result[key] = torch.stack(
+                [attn[key] for attn in attns if attn[key] is not None]).mean(0)
         return result
 
     def init_state(self, src, memory_bank, enc_hidden):
