@@ -495,7 +495,7 @@ class AMRBatch:
                 for i in range(example.src_map.size(0)):
                     src_map[i][example.src_map[i]] = 1
                 src_map = Variable(src_map)
-                if device != -1:
+                if device != 'cpu':
                     src_map = src_map.cuda()
                 srcmaps.append(src_map)            
                 
@@ -520,7 +520,7 @@ class AMRBatch:
                         align_identifiers.append(word)
                     align_identifiers += [0] * (tgt_length + 2 - len(align_identifiers))
                     example_alignment = Variable(torch.from_numpy(np.asarray(align_identifiers)).long())
-                    if device != -1:
+                    if device != 'cpu':
                         example_alignment = example_alignment.cuda()
                     alignments.append(example_alignment)
         

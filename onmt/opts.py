@@ -473,8 +473,9 @@ def train_opts(parser):
 def translate_opts(parser):
     """ Translation / inference options """
     group = parser.add_argument_group('Model')
+
     group.add_argument('-model', dest='models', metavar='MODEL',
-                       nargs='+', type=str, default=[], required=True,
+                       nargs='+', type=str, default=[],
                        help='Path to model .pt file(s). '
                             'Multiple models can be specified, '
                             'for ensemble decoding.')
@@ -485,7 +486,10 @@ def translate_opts(parser):
     group.add_argument('-reentrancies', action='store_true',
                        help="Use graphs instead of trees")    
 
-    group.add_argument('-src', required=True,
+    group.add_argument('--host', default='')
+    group.add_argument('--port', default='')
+
+    group.add_argument('-src',
                        help="""Source sequence to decode (one line per
                        sequence)""")
     group.add_argument('-src_dir', default="",
