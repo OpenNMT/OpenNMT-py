@@ -1,6 +1,9 @@
 models/
 ldc*
 available_models/
+amrtotext_*
+log.txt
+amr.log*
 
 # repo-specific stuff
 pred.txt
