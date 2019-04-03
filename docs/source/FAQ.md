@@ -9,14 +9,14 @@ the script is a slightly modified version of ylhsiehs one2.
 Usage:
 
 ```
-embeddings_to_torch.py [-h] -emb_file EMB_FILE -output_file OUTPUT_FILE -dict_file DICT_FILE [-verbose]
-
-emb_file: GloVe like embedding file i.e. CSV [word] [dim1] ... [dim_d]
-
-output_file: a filename to save the output as PyTorch serialized tensors2
-
-dict_file: dict output from OpenNMT-py preprocessing
+embeddings_to_torch.py [-h] [-emb_file_both EMB_FILE_BOTH]
+                       [-emb_file_enc EMB_FILE_ENC]
+                       [-emb_file_dec EMB_FILE_DEC] -output_file
+                       OUTPUT_FILE -dict_file DICT_FILE [-verbose]
+                       [-skip_lines SKIP_LINES]
+                       [-type {GloVe,word2vec}]
 ```
+Run embeddings_to_torch.py -h for more usagecomplete info.
 
 Example
 
@@ -43,7 +43,7 @@ python preprocess.py \
 3) prepare embeddings:
 
 ```
-./tools/embeddings_to_torch.py -emb_file "glove_dir/glove.6B.100d.txt" \
+./tools/embeddings_to_torch.py -emb_file_both "glove_dir/glove.6B.100d.txt" \
 -dict_file "data/data.vocab.pt" \
 -output_file "data/embeddings"
 ```
