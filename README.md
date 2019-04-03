@@ -120,7 +120,7 @@ Click this button to open a Workspace on [FloydHub](https://www.floydhub.com/?ut
 
 ## Pretrained embeddings (e.g. GloVe)
 
-Go to tutorial: [How to use GloVe pre-trained embeddings in OpenNMT-py](http://forum.opennmt.net/t/how-to-use-glove-pre-trained-embeddings-in-opennmt-py/1011)
+Please see the FAQ: [How to use GloVe pre-trained embeddings in OpenNMT-py](http://opennmt.net/OpenNMT-py/FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove)
 
 ## Pretrained Models
 
