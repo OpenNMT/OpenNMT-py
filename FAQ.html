@@ -188,15 +188,15 @@
 <p>Using vocabularies from OpenNMT-py preprocessing outputs, <code class="docutils literal notranslate"><span class="pre">embeddings_to_torch.py</span></code> to generate encoder and decoder embeddings initialized with GloVes values.</p>
 <p>the script is a slightly modified version of ylhsiehs one2.</p>
 <p>Usage:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">embeddings_to_torch</span><span class="o">.</span><span class="n">py</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="o">-</span><span class="n">emb_file</span> <span class="n">EMB_FILE</span> <span class="o">-</span><span class="n">output_file</span> <span class="n">OUTPUT_FILE</span> <span class="o">-</span><span class="n">dict_file</span> <span class="n">DICT_FILE</span> <span class="p">[</span><span class="o">-</span><span class="n">verbose</span><span class="p">]</span>
-
-<span class="n">emb_file</span><span class="p">:</span> <span class="n">GloVe</span> <span class="n">like</span> <span class="n">embedding</span> <span class="n">file</span> <span class="n">i</span><span class="o">.</span><span class="n">e</span><span class="o">.</span> <span class="n">CSV</span> <span class="p">[</span><span class="n">word</span><span class="p">]</span> <span class="p">[</span><span class="n">dim1</span><span class="p">]</span> <span class="o">...</span> <span class="p">[</span><span class="n">dim_d</span><span class="p">]</span>
-
-<span class="n">output_file</span><span class="p">:</span> <span class="n">a</span> <span class="n">filename</span> <span class="n">to</span> <span class="n">save</span> <span class="n">the</span> <span class="n">output</span> <span class="k">as</span> <span class="n">PyTorch</span> <span class="n">serialized</span> <span class="n">tensors2</span>
-
-<span class="n">dict_file</span><span class="p">:</span> <span class="nb">dict</span> <span class="n">output</span> <span class="kn">from</span> <span class="nn">OpenNMT</span><span class="o">-</span><span class="n">py</span> <span class="n">preprocessing</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">embeddings_to_torch</span><span class="o">.</span><span class="n">py</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">emb_file_both</span> <span class="n">EMB_FILE_BOTH</span><span class="p">]</span>
+                       <span class="p">[</span><span class="o">-</span><span class="n">emb_file_enc</span> <span class="n">EMB_FILE_ENC</span><span class="p">]</span>
+                       <span class="p">[</span><span class="o">-</span><span class="n">emb_file_dec</span> <span class="n">EMB_FILE_DEC</span><span class="p">]</span> <span class="o">-</span><span class="n">output_file</span>
+                       <span class="n">OUTPUT_FILE</span> <span class="o">-</span><span class="n">dict_file</span> <span class="n">DICT_FILE</span> <span class="p">[</span><span class="o">-</span><span class="n">verbose</span><span class="p">]</span>
+                       <span class="p">[</span><span class="o">-</span><span class="n">skip_lines</span> <span class="n">SKIP_LINES</span><span class="p">]</span>
+                       <span class="p">[</span><span class="o">-</span><span class="nb">type</span> <span class="p">{</span><span class="n">GloVe</span><span class="p">,</span><span class="n">word2vec</span><span class="p">}]</span>
 </pre></div>
 </div>
+<p>Run embeddings_to_torch.py -h for more usagecomplete info.</p>
 <p>Example</p>
 <ol class="simple">
 <li><p>get GloVe files:</p></li>
@@ -220,7 +220,7 @@
 <ol class="simple">
 <li><p>prepare embeddings:</p></li>
 </ol>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">tools</span><span class="o">/</span><span class="n">embeddings_to_torch</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">emb_file</span> <span class="s2">&quot;glove_dir/glove.6B.100d.txt&quot;</span> \
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">tools</span><span class="o">/</span><span class="n">embeddings_to_torch</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">emb_file_both</span> <span class="s2">&quot;glove_dir/glove.6B.100d.txt&quot;</span> \
 <span class="o">-</span><span class="n">dict_file</span> <span class="s2">&quot;data/data.vocab.pt&quot;</span> \
 <span class="o">-</span><span class="n">output_file</span> <span class="s2">&quot;data/embeddings&quot;</span>
 </pre></div>
