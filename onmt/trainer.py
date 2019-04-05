@@ -12,6 +12,7 @@
 from copy import deepcopy
 import itertools
 import torch
+import traceback
 
 import onmt.utils
 from onmt.utils.logging import logger
@@ -308,7 +309,7 @@ class Trainer(object):
         if self.accum_count > 1:
             self.optim.zero_grad()
 
-        for batch in true_batches:
+        for k, batch in enumerate(true_batches):
             target_size = batch.tgt.size(0)
             # Truncated BPTT: reminder not compatible with accum > 1
             if self.trunc_size:
@@ -335,20 +336,26 @@ class Trainer(object):
                 bptt = True
 
                 # 3. Compute loss.
-                loss, batch_stats = self.train_loss(
-                    batch,
-                    outputs,
-                    attns,
-                    normalization=normalization,
-                    shard_size=self.shard_size,
-                    trunc_start=j,
-                    trunc_size=trunc_size)
+                try:
+                    loss, batch_stats = self.train_loss(
+                        batch,
+                        outputs,
+                        attns,
+                        normalization=normalization,
+                        shard_size=self.shard_size,
+                        trunc_start=j,
+                        trunc_size=trunc_size)
 
-                if loss is not None:
-                    self.optim.backward(loss)
+                    if loss is not None:
+                        self.optim.backward(loss)
 
-                total_stats.update(batch_stats)
-                report_stats.update(batch_stats)
+                    total_stats.update(batch_stats)
+                    report_stats.update(batch_stats)
+
+                except Exception:
+                    traceback.print_exc()
+                    logger.info("At step %d, we removed a batch - accum %d",
+                                self.optim.training_step, k)
 
                 # 4. Update the parameters and statistics.
                 if self.accum_count == 1:
