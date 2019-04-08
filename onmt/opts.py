@@ -408,6 +408,11 @@ def train_opts(parser):
               help="Make a single pass over the training dataset.")
     group.add('--epochs', '-epochs', type=int, default=0,
               help='Deprecated epochs see train_steps')
+    group.add('--early_stopping', '-early_stopping', type=int, default=0,
+              help='Number of validation steps without improving.')
+    group.add('--early_stopping_criteria', '-early_stopping_criteria',
+              nargs="*", default=None,
+              help='Criteria to use for early stopping.')
     group.add('--optim', '-optim', default='sgd',
               choices=['sgd', 'adagrad', 'adadelta', 'adam',
                        'sparseadam', 'adafactor', 'fusedadam'],
