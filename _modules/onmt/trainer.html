@@ -188,6 +188,7 @@
 <span class="kn">from</span> <span class="nn">copy</span> <span class="k">import</span> <span class="n">deepcopy</span>
 <span class="kn">import</span> <span class="nn">itertools</span>
 <span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">traceback</span>
 
 <span class="kn">import</span> <span class="nn">onmt.utils</span>
 <span class="kn">from</span> <span class="nn">onmt.utils.logging</span> <span class="k">import</span> <span class="n">logger</span>
@@ -484,7 +485,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">accum_count</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
 
-        <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">true_batches</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">batch</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">true_batches</span><span class="p">):</span>
             <span class="n">target_size</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">tgt</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
             <span class="c1"># Truncated BPTT: reminder not compatible with accum &gt; 1</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">trunc_size</span><span class="p">:</span>
@@ -511,20 +512,26 @@
                 <span class="n">bptt</span> <span class="o">=</span> <span class="kc">True</span>
 
                 <span class="c1"># 3. Compute loss.</span>
-                <span class="n">loss</span><span class="p">,</span> <span class="n">batch_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_loss</span><span class="p">(</span>
-                    <span class="n">batch</span><span class="p">,</span>
-                    <span class="n">outputs</span><span class="p">,</span>
-                    <span class="n">attns</span><span class="p">,</span>
-                    <span class="n">normalization</span><span class="o">=</span><span class="n">normalization</span><span class="p">,</span>
-                    <span class="n">shard_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">shard_size</span><span class="p">,</span>
-                    <span class="n">trunc_start</span><span class="o">=</span><span class="n">j</span><span class="p">,</span>
-                    <span class="n">trunc_size</span><span class="o">=</span><span class="n">trunc_size</span><span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">loss</span><span class="p">,</span> <span class="n">batch_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_loss</span><span class="p">(</span>
+                        <span class="n">batch</span><span class="p">,</span>
+                        <span class="n">outputs</span><span class="p">,</span>
+                        <span class="n">attns</span><span class="p">,</span>
+                        <span class="n">normalization</span><span class="o">=</span><span class="n">normalization</span><span class="p">,</span>
+                        <span class="n">shard_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">shard_size</span><span class="p">,</span>
+                        <span class="n">trunc_start</span><span class="o">=</span><span class="n">j</span><span class="p">,</span>
+                        <span class="n">trunc_size</span><span class="o">=</span><span class="n">trunc_size</span><span class="p">)</span>
 
-                <span class="k">if</span> <span class="n">loss</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">loss</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">loss</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">loss</span><span class="p">)</span>
 
-                <span class="n">total_stats</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">batch_stats</span><span class="p">)</span>
-                <span class="n">report_stats</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">batch_stats</span><span class="p">)</span>
+                    <span class="n">total_stats</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">batch_stats</span><span class="p">)</span>
+                    <span class="n">report_stats</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">batch_stats</span><span class="p">)</span>
+
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="n">traceback</span><span class="o">.</span><span class="n">print_exc</span><span class="p">()</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;At step </span><span class="si">%d</span><span class="s2">, we removed a batch - accum </span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">training_step</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
 
                 <span class="c1"># 4. Update the parameters and statistics.</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">accum_count</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
