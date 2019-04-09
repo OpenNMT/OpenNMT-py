@@ -152,7 +152,7 @@ class Translator(object):
                   tgt_data_iter=None,
                   src_dir=None,
                   batch_size=None,
-                  attn_debug=False):
+                  attn_debug=False, demo=False):
         """
         Translate content of `src_data_iter` (if not None) or `src_path`
         and get gold scores if one of `tgt_data_iter` or `tgt_path` is set.
@@ -227,7 +227,7 @@ class Translator(object):
 
         for batch in data_iter:
             batch_data = self.translate_batch(batch, data, fast=self.fast)
-            translations = builder.from_batch(batch_data)
+            translations = builder.from_batch(batch_data, demo)
 
             for trans in translations:
                 all_scores += [trans.pred_scores[:self.n_best]]

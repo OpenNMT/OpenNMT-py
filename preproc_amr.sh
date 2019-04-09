@@ -1,7 +1,7 @@
 #!/bin/bash
 
 OUT_DIR=data/"${1:-amr}"
-DATA_DIR="ldc2015e86"
+DATA_DIR="ldc2017t10"
 mkdir -p ${OUT_DIR}
 
 python preprocess.py \

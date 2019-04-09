@@ -18,6 +18,7 @@ def main():
     form = InputForm()
     amr = request.args.get('amr')
     model = request.args.get('model')
+    print(model)
     sent = None
     if form.validate_on_submit():
         sent = amrtotext.run(form.input_amr.data, form.input_amr.model)

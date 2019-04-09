@@ -49,7 +49,7 @@ class TranslationBuilder(object):
                     tokens[i] = src_raw[max_index.item()]
         return tokens
 
-    def from_batch(self, translation_batch):
+    def from_batch(self, translation_batch, demo=False):
         batch = translation_batch["batch"]
         assert(len(translation_batch["gold_score"]) ==
                len(translation_batch["predictions"]))
@@ -79,9 +79,14 @@ class TranslationBuilder(object):
         translations = []
         for b in range(batch_size):
             if data_type == 'text' or data_type == 'amr':
-                src_vocab = self.data.src_vocabs[inds[b]] \
-                    if self.data.src_vocabs else None
-                src_raw = self.data.examples[inds[b]].src
+                if demo:
+                    src_vocab = self.data.src_vocabs[0] \
+                        if self.data.src_vocabs else None
+                    src_raw = self.data.examples[0].src
+                else:
+                    src_vocab = self.data.src_vocabs[inds[b]] \
+                        if self.data.src_vocabs else None
+                    src_raw = self.data.examples[inds[b]].src
             else:
                 src_vocab = None
                 src_raw = None

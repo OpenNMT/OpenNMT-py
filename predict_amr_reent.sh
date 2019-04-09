@@ -4,7 +4,7 @@ GPU_ID="${2:-0}"
 DATASET=dev
 
 MODELS_DIR="${1:-models/graph_gcn_seq}"
-INPUT_DATA=ldc2015e86
+INPUT_DATA=ldc2017t10
 OUT_DIR=${MODELS_DIR}/preds/
 MODEL=${MODELS_DIR}/best.pt
 
@@ -22,9 +22,9 @@ for fname in ${MODELS_DIR}/*model*; do
         -src ${REF_FILE} \
         -tgt ${TARG_FILE} \
         -output ${OUT_DIR}/{$f}.pred.txt \
-        -gpu ${GPU_ID} \
         -beam_size 5 \
         -batch_size 1 \
         -replace_unk \
+        -gpu ${GPU_ID} \
         -max_length 125 > log.txt
 done

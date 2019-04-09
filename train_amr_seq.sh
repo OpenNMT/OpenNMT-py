@@ -29,5 +29,6 @@ python train.py \
     -optim sgd \
     -max_grad_norm 3 \
     -learning_rate 1 \
+    -seed 123 \
     -dropout 0.5 \
     -gpu_ranks ${GPUIDS}
