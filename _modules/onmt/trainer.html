@@ -229,6 +229,10 @@
         <span class="n">n_gpu</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">gpu_verbose_level</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">gpu_verbose_level</span>
 
+    <span class="n">earlystopper</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">EarlyStopping</span><span class="p">(</span>
+        <span class="n">opt</span><span class="o">.</span><span class="n">early_stopping</span><span class="p">,</span> <span class="n">scorers</span><span class="o">=</span><span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">scorers_from_opts</span><span class="p">(</span><span class="n">opt</span><span class="p">))</span> \
+        <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">early_stopping</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span>
+
     <span class="n">report_manager</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">build_report_manager</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
     <span class="n">trainer</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">Trainer</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">train_loss</span><span class="p">,</span> <span class="n">valid_loss</span><span class="p">,</span> <span class="n">optim</span><span class="p">,</span> <span class="n">trunc_size</span><span class="p">,</span>
                            <span class="n">shard_size</span><span class="p">,</span> <span class="n">norm_method</span><span class="p">,</span>
@@ -238,7 +242,8 @@
                            <span class="n">model_saver</span><span class="o">=</span><span class="n">model_saver</span> <span class="k">if</span> <span class="n">gpu_rank</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
                            <span class="n">average_decay</span><span class="o">=</span><span class="n">average_decay</span><span class="p">,</span>
                            <span class="n">average_every</span><span class="o">=</span><span class="n">average_every</span><span class="p">,</span>
-                           <span class="n">model_dtype</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">model_dtype</span><span class="p">)</span>
+                           <span class="n">model_dtype</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">model_dtype</span><span class="p">,</span>
+                           <span class="n">earlystopper</span><span class="o">=</span><span class="n">earlystopper</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">trainer</span>
 
 
@@ -274,7 +279,8 @@
                  <span class="n">accum_steps</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
                  <span class="n">n_gpu</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">gpu_rank</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
                  <span class="n">gpu_verbose_level</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">report_manager</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">model_saver</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">average_decay</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">average_every</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">model_dtype</span><span class="o">=</span><span class="s1">&#39;fp32&#39;</span><span class="p">):</span>
+                 <span class="n">average_decay</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">average_every</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">model_dtype</span><span class="o">=</span><span class="s1">&#39;fp32&#39;</span><span class="p">,</span>
+                 <span class="n">earlystopper</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="c1"># Basic attributes.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">train_loss</span> <span class="o">=</span> <span class="n">train_loss</span>
@@ -295,6 +301,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">moving_average</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">average_every</span> <span class="o">=</span> <span class="n">average_every</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model_dtype</span> <span class="o">=</span> <span class="n">model_dtype</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">earlystopper</span> <span class="o">=</span> <span class="n">earlystopper</span>
 
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accum_count_l</span><span class="p">)):</span>
             <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">accum_count_l</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span>
@@ -424,6 +431,12 @@
                                 <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gpu_rank</span><span class="p">,</span> <span class="n">step</span><span class="p">))</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_report_step</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">(),</span>
                                   <span class="n">step</span><span class="p">,</span> <span class="n">valid_stats</span><span class="o">=</span><span class="n">valid_stats</span><span class="p">)</span>
+                <span class="c1"># Run patience mechanism</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">earlystopper</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">earlystopper</span><span class="p">(</span><span class="n">valid_stats</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
+                    <span class="c1"># If the patience has reached the limit, stop training</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">earlystopper</span><span class="o">.</span><span class="n">has_stopped</span><span class="p">():</span>
+                        <span class="k">break</span>
 
             <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_saver</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
                 <span class="ow">and</span> <span class="p">(</span><span class="n">save_checkpoint_steps</span> <span class="o">!=</span> <span class="mi">0</span>
