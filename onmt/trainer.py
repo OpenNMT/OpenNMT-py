@@ -53,6 +53,10 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
         n_gpu = 0
     gpu_verbose_level = opt.gpu_verbose_level
 
+    earlystopper = onmt.utils.EarlyStopping(
+        opt.early_stopping, scorers=onmt.utils.scorers_from_opts(opt)) \
+        if opt.early_stopping > 0 else None
+
     report_manager = onmt.utils.build_report_manager(opt)
     trainer = onmt.Trainer(model, train_loss, valid_loss, optim, trunc_size,
                            shard_size, norm_method,
@@ -62,7 +66,8 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
                            model_saver=model_saver if gpu_rank == 0 else None,
                            average_decay=average_decay,
                            average_every=average_every,
-                           model_dtype=opt.model_dtype)
+                           model_dtype=opt.model_dtype,
+                           earlystopper=earlystopper)
     return trainer
 
 
@@ -98,7 +103,8 @@ class Trainer(object):
                  accum_steps=[0],
                  n_gpu=1, gpu_rank=1,
                  gpu_verbose_level=0, report_manager=None, model_saver=None,
-                 average_decay=0, average_every=1, model_dtype='fp32'):
+                 average_decay=0, average_every=1, model_dtype='fp32',
+                 earlystopper=None):
         # Basic attributes.
         self.model = model
         self.train_loss = train_loss
@@ -119,6 +125,7 @@ class Trainer(object):
         self.moving_average = None
         self.average_every = average_every
         self.model_dtype = model_dtype
+        self.earlystopper = earlystopper
 
         for i in range(len(self.accum_count_l)):
             assert self.accum_count_l[i] > 0
@@ -248,6 +255,12 @@ class Trainer(object):
                                 % (self.gpu_rank, step))
                 self._report_step(self.optim.learning_rate(),
                                   step, valid_stats=valid_stats)
+                # Run patience mechanism
+                if self.earlystopper is not None:
+                    self.earlystopper(valid_stats, step)
+                    # If the patience has reached the limit, stop training
+                    if self.earlystopper.has_stopped():
+                        break
 
             if (self.model_saver is not None
                 and (save_checkpoint_steps != 0
