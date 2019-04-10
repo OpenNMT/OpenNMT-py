@@ -21,9 +21,19 @@ hash = hashlib.sha1()
 def anonymize(amr):
     os.chdir('NeuralAmrReent/')
     p = subprocess.check_output(["bash", "anonDeAnon_java.sh", "anonymizeAmrFull", "false", amr])
-    amr = p.decode('utf-8').split('##')[0]
+    p = p.decode('utf-8')
+    amr = p.split('#')[0]
+    alignments = p.split('#')[1]
     os.chdir('..')
-    return amr
+    return amr, alignments
+
+def deanonymize(amr, alignments):
+    os.chdir('NeuralAmrReent/')
+    amr = amr.strip() + '#' + alignments.strip()
+    p = subprocess.check_output(["bash", "anonDeAnon_java.sh", "deAnonymizeText", "false", amr])
+    text = p.decode('utf-8')
+    os.chdir('..')
+    return text
 
 def translate(opt):
     translator = build_translator(opt, report_score=False)
@@ -34,10 +44,11 @@ def translate(opt):
                          attn_debug=opt.attn_debug, demo=True)
 
 def run(amr, model):
+    amr = amr.replace('\n', ' ').strip()
     try:
-        amr = anonymize(amr)
+        amr, alignments = anonymize(amr)
     except:
-        return 'Anonymization with github.com/sinantie/NeuralAm returned an error'
+        return 'Anonymization with github.com/sinantie/NeuralAmr returned an error'
 
     if model == 'seq':
         model_path = 'models/seq_cpu/amr-model_step_10000.pt'
@@ -67,16 +78,20 @@ def run(amr, model):
     opt.batch_size = 1
     opt.replace_unk = True
     opt.max_length = 125
-
     try:
         translate(opt)
     except:
         return 'The generation model returned an error'
 
     out = open(tmp_file_path + '.pred', 'r').read()
+    try:
+        out = deanonymize(out, alignments)
+    except:
+        return 'De-anonymization with github.com/sinantie/NeuralAm returned an error'
+   
     os.remove(tmp_file_path)
     os.remove(tmp_file_path + '.pred')
     return out
 
-#print(run('(a2 / and :op1 (g / go-06 :mode imperative :ARG0 (y / you) :ARG2 (a / ahead)) :op2 (p / process-01 :mode imperative :ARG0 y :ARG1 (t / that) :duration (w / while)))', 'graph'))
 #print(run('(e / eat-01)', 'graph'))
+#print(run('(a2 / and :op1 (g / go-06 :mode imperative :ARG0 (y / you) :ARG2 (a / ahead)) :op2 (p / process-01 :mode imperative :ARG0 y :ARG1 (t / that) :duration (w / while)))', 'graph'))
