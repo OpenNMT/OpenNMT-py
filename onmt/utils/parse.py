@@ -101,9 +101,6 @@ class ArgumentParser(cfargparse.ArgumentParser):
         assert opt.max_shard_size == 0, \
             "-max_shard_size is deprecated. Please use \
             -shard_size (number of examples) instead."
-        assert opt.shuffle == 0, \
-            "-shuffle is not implemented. Please shuffle \
-            your data before pre-processing."
 
         assert os.path.isfile(opt.train_src) \
             and os.path.isfile(opt.train_tgt), \

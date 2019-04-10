@@ -18,6 +18,14 @@ def split_corpus(path, shard_size):
                 yield shard
 
 
+def split_list(result_list, shard_size):
+    if shard_size <= 0:
+        yield result_list
+    else:
+        for i in range(0, len(result_list), shard_size):
+            yield result_list[i:i+shard_size]
+
+
 def aeq(*args):
     """
     Assert all arguments have the same value

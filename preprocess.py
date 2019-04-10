@@ -11,7 +11,7 @@ import torch
 from functools import partial
 
 from onmt.utils.logging import init_logger, logger
-from onmt.utils.misc import split_corpus
+from onmt.utils.misc import split_corpus, split_list
 import onmt.inputters as inputters
 import onmt.opts as opts
 from onmt.utils.parse import ArgumentParser
@@ -28,6 +28,21 @@ def check_existing_pt_files(opt):
             sys.exit(1)
 
 
+def shuffle_shards(src_shards, tgt_shards, shard_size):
+    """ Shuffles the shards in memory """
+    src_data = [item for shard in src_shards for item in shard]
+    tgt_data = [item for shard in tgt_shards for item in shard]
+    logger.info("Shuffling")
+    assert len(src_data) == len(tgt_data), (
+        "Length mismatch {} and {}".format(len(src_data), len(tgt_data)))
+    random_idx = torch.randperm(len(src_data))
+    src_shards = split_list([src_data[idx] for idx in random_idx],
+                            shard_size)
+    tgt_shards = split_list([tgt_data[idx] for idx in random_idx],
+                            shard_size)
+    return src_shards, tgt_shards
+
+
 def build_save_dataset(corpus_type, fields, src_reader, tgt_reader, opt):
     assert corpus_type in ['train', 'valid']
 
@@ -42,6 +57,9 @@ def build_save_dataset(corpus_type, fields, src_reader, tgt_reader, opt):
 
     src_shards = split_corpus(src, opt.shard_size)
     tgt_shards = split_corpus(tgt, opt.shard_size)
+    if opt.shuffle:
+        src_shards, tgt_shards = shuffle_shards(
+            src_shards, tgt_shards, opt.shard_size)
     shard_pairs = zip(src_shards, tgt_shards)
     dataset_paths = []
     if (corpus_type == "train" or opt.filter_valid) and tgt is not None:
