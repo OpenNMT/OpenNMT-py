@@ -113,3 +113,8 @@ class ArgumentParser(cfargparse.ArgumentParser):
             "Please check path of your valid src file!"
         assert not opt.valid_tgt or os.path.isfile(opt.valid_tgt), \
             "Please check path of your valid tgt file!"
+
+        assert not opt.src_vocab or os.path.isfile(opt.src_vocab), \
+            "Please check path of your src vocab!"
+        assert not opt.tgt_vocab or os.path.isfile(opt.tgt_vocab), \
+            "Please check path of your tgt vocab!"
