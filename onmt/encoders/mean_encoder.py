@@ -34,12 +34,11 @@ class MeanEncoder(EncoderBase):
         if lengths is not None:
             # we avoid padding while mean pooling
             mask = sequence_mask(lengths).float()
-            mask = mask / lengths.unsqueeze(1).float()
-            mean = torch.bmm(mask.unsqueeze(1), emb.transpose(0, 1)).squeeze(1)
+            coefs = mask / lengths.unsqueeze(1).float()
+            mean = torch.bmm(coefs.unsqueeze(1), emb).squeeze(1)
         else:
             mean = emb.mean(0)
-
-        mean = mean.expand(self.num_layers, batch, emb_dim)
+            
         memory_bank = emb
         encoder_final = (mean, mean)
         return encoder_final, memory_bank, lengths
