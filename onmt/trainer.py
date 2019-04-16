@@ -380,6 +380,9 @@ class Trainer(object):
                         onmt.utils.distributed.all_reduce_and_rescale_tensors(
                             grads, float(1))
                     self.optim.step()
+                    if j > 0:
+                        # not incrementing training step in case of bptt
+                        self.optim._training_step -= 1
 
                 # If truncated, don't backprop fully.
                 # TO CHECK
