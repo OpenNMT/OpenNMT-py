@@ -230,10 +230,15 @@ class Trainer(object):
 
             self._gradient_accumulation(
                 batches, normalization, total_stats,
-                report_stats, train_steps)
+                report_stats)
 
             if self.average_decay > 0 and i % self.average_every == 0:
                 self._update_average(step)
+
+            report_stats = self._maybe_report_training(
+                step, train_steps,
+                self.optim.learning_rate(),
+                report_stats)
 
             if valid_iter is not None and step % valid_steps == 0:
                 if self.gpu_verbose_level > 0:
@@ -313,7 +318,7 @@ class Trainer(object):
         return stats
 
     def _gradient_accumulation(self, true_batches, normalization, total_stats,
-                               report_stats, train_steps):
+                               report_stats):
         if self.accum_count > 1:
             self.optim.zero_grad()
 
@@ -375,10 +380,6 @@ class Trainer(object):
                         onmt.utils.distributed.all_reduce_and_rescale_tensors(
                             grads, float(1))
                     self.optim.step()
-                    report_stats = self._maybe_report_training(
-                        self.optim.training_step, train_steps,
-                        self.optim.learning_rate(),
-                        report_stats)
 
                 # If truncated, don't backprop fully.
                 # TO CHECK
