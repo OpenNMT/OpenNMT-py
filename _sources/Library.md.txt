@@ -60,7 +60,7 @@ model.to(device)
 # Specify the tgt word generator and loss computation module
 model.generator = nn.Sequential(
     nn.Linear(rnn_size, len(tgt_vocab)),
-    nn.LogSoftmax(dim=-1))
+    nn.LogSoftmax(dim=-1)).to(device)
 
 loss = onmt.utils.loss.NMTLossCompute(
     criterion=nn.NLLLoss(ignore_index=tgt_padding, reduction="sum"),
