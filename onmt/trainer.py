@@ -13,6 +13,7 @@ from copy import deepcopy
 import itertools
 import torch
 import traceback
+import enlighten
 
 import onmt.utils
 from onmt.utils.logging import logger
@@ -207,6 +208,16 @@ class Trainer(object):
         total_stats = onmt.utils.Statistics()
         report_stats = onmt.utils.Statistics()
         self._start_report_manager(start_time=total_stats.start_time)
+        manager = enlighten.get_manager()
+        pbar_train = manager.counter(
+            total=train_steps,
+            desc='Total Progress:',
+            unit='steps')
+        pbar_valid = manager.counter(
+            total=valid_steps,
+            leave=False,
+            desc='Valid Progress:',
+            unit='steps')
 
         if self.n_gpu > 1:
             train_iter = itertools.islice(
@@ -239,6 +250,8 @@ class Trainer(object):
                 step, train_steps,
                 self.optim.learning_rate(),
                 report_stats)
+            pbar_train.update()
+            pbar_valid.update()
 
             if valid_iter is not None and step % valid_steps == 0:
                 if self.gpu_verbose_level > 0:
@@ -261,6 +274,11 @@ class Trainer(object):
                     # If the patience has reached the limit, stop training
                     if self.earlystopper.has_stopped():
                         break
+                pbar_valid.close()
+                pbar_valid = manager.counter(
+                    total=valid_steps,
+                    desc='Next Validation:',
+                    unit='steps')
 
             if (self.model_saver is not None
                 and (save_checkpoint_steps != 0

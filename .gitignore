@@ -6,6 +6,7 @@ multi-bleu.perl
 .idea
 *.sublime-*
 .DS_Store
+.vscode
 data/
 
 # Byte-compiled / optimized / DLL files
