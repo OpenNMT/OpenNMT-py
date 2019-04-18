@@ -14,6 +14,8 @@ import itertools
 import torch
 import traceback
 import enlighten
+import os
+import sys
 
 import onmt.utils
 from onmt.utils.logging import logger
@@ -208,7 +210,17 @@ class Trainer(object):
         total_stats = onmt.utils.Statistics()
         report_stats = onmt.utils.Statistics()
         self._start_report_manager(start_time=total_stats.start_time)
-        manager = enlighten.get_manager()
+
+        devnull = open(os.devnull, 'w')
+        if self.gpu_rank == 0:
+            sys.stdin = devnull
+            sys.__stdin__ = devnull
+            stream = None
+        else:
+            sys.stdin = devnull
+            sys.__stdin__ = devnull
+            stream = devnull
+        manager = enlighten.get_manager(stream=stream)
         pbar_train = manager.counter(
             total=train_steps,
             desc='Training       ',
@@ -290,6 +302,9 @@ class Trainer(object):
 
         if self.model_saver is not None:
             self.model_saver.save(step, moving_average=self.moving_average)
+
+        # Stop progress bar
+        manager.stop()
         return total_stats
 
     def validate(self, valid_iter, moving_average=None):
