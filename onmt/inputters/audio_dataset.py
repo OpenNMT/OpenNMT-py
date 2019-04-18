@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
-from tqdm import tqdm
+import enlighten
 
 import torch
 from torchtext.data import Field
@@ -115,7 +115,11 @@ class AudioDataReader(DataReaderBase):
         if isinstance(data, str):
             data = DataReaderBase._read_file(data)
 
-        for i, line in enumerate(tqdm(data)):
+        pbar = enlighten.Counter(
+            total=len(data),
+            desc='Progress:',
+            unit='lines')
+        for i, line in enumerate(data):
             line = line.decode("utf-8").strip()
             audio_path = os.path.join(src_dir, line)
             if not os.path.exists(audio_path):
@@ -123,6 +127,8 @@ class AudioDataReader(DataReaderBase):
 
             assert os.path.exists(audio_path), \
                 'audio path %s not found' % line
+
+            pbar.update()
 
             spect = self.extract_features(audio_path)
             yield {side: spect, side + '_path': line, 'indices': i}
