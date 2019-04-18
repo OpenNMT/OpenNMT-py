@@ -277,7 +277,7 @@ class Trainer(object):
                 pbar_valid.close()
                 pbar_valid = manager.counter(
                     total=valid_steps,
-                    desc='Next Validation:',
+                    desc='Next Validation',
                     unit='steps')
 
             if (self.model_saver is not None
