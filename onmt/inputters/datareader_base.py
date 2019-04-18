@@ -34,6 +34,16 @@ class DataReaderBase(object):
                 yield line
 
     @staticmethod
+    def _count_lines(path):
+        if isinstance(path, (list,)):
+            return len(path)
+        else:
+            with open(path) as f:
+                for i, l in enumerate(f):
+                    pass
+            return i + 1
+
+    @staticmethod
     def _raise_missing_dep(*missing_deps):
         """Raise missing dep exception with standard error message."""
         raise MissingDependencyException(

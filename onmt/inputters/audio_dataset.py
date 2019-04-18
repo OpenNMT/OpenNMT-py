@@ -112,11 +112,14 @@ class AudioDataReader(DataReaderBase):
         assert src_dir is not None and os.path.exists(src_dir),\
             "src_dir must be a valid directory if data_type is audio"
 
+        data_len = DataReaderBase._count_lines(data)
+
         if isinstance(data, str):
             data = DataReaderBase._read_file(data)
 
-        pbar = enlighten.Counter(
-            total=len(data),
+        manager = enlighten.get_manager()
+        pbar = manager.counter(
+            total=data_len,
             desc='Progress:',
             unit='lines')
         for i, line in enumerate(data):
