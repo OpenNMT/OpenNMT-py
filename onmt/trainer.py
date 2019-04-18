@@ -211,12 +211,12 @@ class Trainer(object):
         manager = enlighten.get_manager()
         pbar_train = manager.counter(
             total=train_steps,
-            desc='Total Progress:',
+            desc='Training       ',
             unit='steps')
         pbar_valid = manager.counter(
             total=valid_steps,
             leave=False,
-            desc='Valid Progress:',
+            desc='Next Validation',
             unit='steps')
 
         if self.n_gpu > 1:
