@@ -225,11 +225,6 @@ class Trainer(object):
             total=train_steps,
             desc='Total Training Progress:',
             unit='steps')
-        pbar_valid = manager.counter(
-            total=valid_steps,
-            leave=False,
-            desc='Next Validation:        ',
-            unit='steps')
 
         if self.n_gpu > 1:
             train_iter = itertools.islice(
@@ -263,7 +258,6 @@ class Trainer(object):
                 self.optim.learning_rate(),
                 report_stats)
             pbar_train.update()
-            pbar_valid.update()
 
             if valid_iter is not None and step % valid_steps == 0:
                 if self.gpu_verbose_level > 0:
@@ -286,11 +280,6 @@ class Trainer(object):
                     # If the patience has reached the limit, stop training
                     if self.earlystopper.has_stopped():
                         break
-                pbar_valid.close()
-                pbar_valid = manager.counter(
-                    total=valid_steps,
-                    desc='Next Validation',
-                    unit='steps')
 
             if (self.model_saver is not None
                 and (save_checkpoint_steps != 0
