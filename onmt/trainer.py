@@ -210,21 +210,7 @@ class Trainer(object):
         total_stats = onmt.utils.Statistics()
         report_stats = onmt.utils.Statistics()
         self._start_report_manager(start_time=total_stats.start_time)
-
-        devnull = open(os.devnull, 'w')
-        if self.gpu_rank == 0:
-            sys.stdin = devnull
-            sys.__stdin__ = devnull
-            stream = None
-        else:
-            sys.stdin = devnull
-            sys.__stdin__ = devnull
-            stream = devnull
-        manager = enlighten.get_manager(stream=stream)
-        pbar_train = manager.counter(
-            total=train_steps,
-            desc='Training Progress:',
-            unit='steps')
+        pbar_manager, pbar = self._start_progress_bar(train_steps)
 
         if self.n_gpu > 1:
             train_iter = itertools.islice(
@@ -257,7 +243,7 @@ class Trainer(object):
                 step, train_steps,
                 self.optim.learning_rate(),
                 report_stats)
-            pbar_train.update()
+            pbar.update()
 
             if valid_iter is not None and step % valid_steps == 0:
                 if self.gpu_verbose_level > 0:
@@ -293,7 +279,7 @@ class Trainer(object):
             self.model_saver.save(step, moving_average=self.moving_average)
 
         # Stop progress bar
-        manager.stop()
+        pbar_manager.stop()
         return total_stats
 
     def validate(self, valid_iter, moving_average=None):
@@ -430,6 +416,25 @@ class Trainer(object):
                 self.report_manager.start()
             else:
                 self.report_manager.start_time = start_time
+
+    def _start_progress_bar(self, train_steps):
+        """Start the training progress bar.
+        """
+        devnull = open(os.devnull, 'w')
+        if self.gpu_rank == 0:
+            sys.stdin = devnull
+            sys.__stdin__ = devnull
+            stream = None
+        else:
+            sys.stdin = devnull
+            sys.__stdin__ = devnull
+            stream = devnull
+        manager = enlighten.get_manager(stream=stream)
+        pbar = manager.counter(
+            total=train_steps,
+            desc='Training Progress:',
+            unit='steps')
+        return manager, pbar
 
     def _maybe_gather_stats(self, stat):
         """
