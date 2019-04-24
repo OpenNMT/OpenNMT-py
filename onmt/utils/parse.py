@@ -90,11 +90,15 @@ class ArgumentParser(cfargparse.ArgumentParser):
         if torch.cuda.is_available() and not opt.gpu_ranks:
             logger.info("WARNING: You have a CUDA device, \
                         should run with -gpu_ranks")
-        if opt.world_size <= len(opt.gpu_ranks) and \
-                min(opt.gpu_ranks[:opt.world_size]) > 0:
+        if opt.world_size < len(opt.gpu_ranks):
             raise AssertionError(
-                  "gpu_ranks should have master(=0) rank "
-                  "unless -world_size is larger than len(gpu_ranks).")
+                  "parameter counts of -gpu_ranks must be less or equal "
+                  "than -world_size.")
+        if opt.world_size == len(opt.gpu_ranks) and \
+                min(opt.gpu_ranks) > 0:
+            raise AssertionError(
+                  "-gpu_ranks should have master(=0) rank "
+                  "unless -world_size is greater than len(gpu_ranks).")
 
     @classmethod
     def validate_translate_opts(cls, opt):
