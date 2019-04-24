@@ -16,9 +16,10 @@ import traceback
 import enlighten
 import os
 import sys
+import signal
 
 import onmt.utils
-from onmt.utils.logging import logger
+from onmt.utils.logging import logger, logging
 
 
 def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
@@ -279,6 +280,7 @@ class Trainer(object):
             self.model_saver.save(step, moving_average=self.moving_average)
 
         # Stop progress bar
+        pbar.close(True)
         pbar_manager.stop()
         return total_stats
 
@@ -425,15 +427,32 @@ class Trainer(object):
             sys.stdin = devnull
             sys.__stdin__ = devnull
             stream = None
+            companion_stream = None
         else:
             sys.stdin = devnull
             sys.__stdin__ = devnull
             stream = devnull
-        manager = enlighten.get_manager(stream=stream)
+            companion_stream = devnull
+
+        manager = enlighten.get_manager(
+            stream=stream,
+            companion_stream=companion_stream)
         pbar = manager.counter(
             total=train_steps,
+            leave=False,
             desc='Training Progress:',
             unit='steps')
+
+        # Handling keyboard interrupt
+        def signal_handler(sig, frame):
+            pbar.refresh()
+            if self.gpu_rank == 0:
+                pbar.close(True)
+                manager.stop()
+                logging.shutdown()
+            exit(1)
+        signal.signal(signal.SIGINT, signal_handler)
+
         return manager, pbar
 
     def _maybe_gather_stats(self, stat):
