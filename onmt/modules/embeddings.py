@@ -54,6 +54,19 @@ class PositionalEncoding(nn.Module):
         return emb
 
 
+class VecEmbedding(nn.Module):
+    def __init__(self, vec_size, emb_dim):
+        super(VecEmbedding, self).__init__()
+        self.embedding_size = emb_dim
+        self.proj = nn.Linear(vec_size, emb_dim, bias=False)
+
+    def forward(self, x):
+        return self.proj(x).squeeze(2)
+
+    def load_pretrained_vectors(self, file):
+        assert not file
+
+
 class Embeddings(nn.Module):
     """Words embeddings for encoder/decoder.
 
