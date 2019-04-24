@@ -15,6 +15,7 @@ from torchtext.vocab import Vocab
 from onmt.inputters.text_dataset import text_fields, TextMultiField
 from onmt.inputters.image_dataset import image_fields
 from onmt.inputters.audio_dataset import audio_fields
+from onmt.inputters.vec_dataset import vec_fields
 from onmt.utils.logging import logger
 # backwards compatibility
 from onmt.inputters.text_dataset import _feature_tokenize  # noqa: F401
@@ -92,7 +93,7 @@ def get_fields(
         the dataset example attributes.
     """
 
-    assert src_data_type in ['text', 'img', 'audio'], \
+    assert src_data_type in ['text', 'img', 'audio', 'vec'], \
         "Data type not implemented"
     assert not dynamic_dict or src_data_type == 'text', \
         'it is not possible to use dynamic_dict with non-text input'
@@ -100,7 +101,8 @@ def get_fields(
 
     fields_getters = {"text": text_fields,
                       "img": image_fields,
-                      "audio": audio_fields}
+                      "audio": audio_fields,
+                      "vec": vec_fields}
 
     src_field_kwargs = {"n_feats": n_src_feats,
                         "include_lengths": True,
