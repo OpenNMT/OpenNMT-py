@@ -71,7 +71,8 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
                            average_decay=average_decay,
                            average_every=average_every,
                            model_dtype=opt.model_dtype,
-                           earlystopper=earlystopper)
+                           earlystopper=earlystopper,
+                           show_pbar=not opt.no_pbar)
     return trainer
 
 
@@ -108,7 +109,7 @@ class Trainer(object):
                  n_gpu=1, gpu_rank=1,
                  gpu_verbose_level=0, report_manager=None, model_saver=None,
                  average_decay=0, average_every=1, model_dtype='fp32',
-                 earlystopper=None):
+                 earlystopper=None, show_pbar=True):
         # Basic attributes.
         self.model = model
         self.train_loss = train_loss
@@ -130,6 +131,7 @@ class Trainer(object):
         self.average_every = average_every
         self.model_dtype = model_dtype
         self.earlystopper = earlystopper
+        self.show_pbar = show_pbar
 
         for i in range(len(self.accum_count_l)):
             assert self.accum_count_l[i] > 0
@@ -210,8 +212,10 @@ class Trainer(object):
 
         total_stats = onmt.utils.Statistics()
         report_stats = onmt.utils.Statistics()
+
         self._start_report_manager(start_time=total_stats.start_time)
-        pbar_manager, pbar = self._start_progress_bar(train_steps)
+        if self.show_pbar:
+            pbar_manager, pbar = self._start_progress_bar(train_steps)
 
         if self.n_gpu > 1:
             train_iter = itertools.islice(
@@ -244,7 +248,9 @@ class Trainer(object):
                 step, train_steps,
                 self.optim.learning_rate(),
                 report_stats)
-            pbar.update()
+
+            if self.show_pbar:
+                pbar.update()
 
             if valid_iter is not None and step % valid_steps == 0:
                 if self.gpu_verbose_level > 0:
@@ -279,9 +285,11 @@ class Trainer(object):
         if self.model_saver is not None:
             self.model_saver.save(step, moving_average=self.moving_average)
 
-        # Stop progress bar
-        pbar.close(True)
-        pbar_manager.stop()
+        if self.show_pbar:
+            # Stop progress bar
+            pbar.close(True)
+            pbar_manager.stop()
+
         return total_stats
 
     def validate(self, valid_iter, moving_average=None):

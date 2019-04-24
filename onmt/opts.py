@@ -493,6 +493,8 @@ def train_opts(parser):
               help="Number of warmup steps for custom decay.")
 
     group = parser.add_argument_group('Logging')
+    group.add('--no_pbar', '-no_pbar', action='store_true',
+              help="Don't show a progress bar.")
     group.add('--report_every', '-report_every', type=int, default=50,
               help="Print stats at this interval.")
     group.add('--log_file', '-log_file', type=str, default="",
