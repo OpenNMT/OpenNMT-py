@@ -59,6 +59,7 @@ class VecEmbedding(nn.Module):
         super(VecEmbedding, self).__init__()
         self.embedding_size = emb_dim
         self.proj = nn.Linear(vec_size, emb_dim, bias=False)
+        self.word_padding_idx = 0  # vector seqs are zero-padded
 
     def forward(self, x):
         return self.proj(x).squeeze(2)
