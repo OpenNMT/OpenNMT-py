@@ -6,7 +6,7 @@ Follow instructions on [README_OpenNMT-py.md](README_OpenNMT-py.md) to install
 
 ## Data
 
-Use https://github.com/sinantie/NeuralAmr to generate the linearized and anonymized data.
+Our models expect linearized and anonymized AMR. The directory ```NeuralAmrReentrancies``` contains a modified version of the anonymization system of https://github.com/sinantie/NeuralAmr that preserve reentrancies information required by our graph encoders. Before running the following experiments, use ```NeuralAmrReentrancies``` to generate the linearized and anonymized data, follow the instructions at https://github.com/sinantie/NeuralAmr#de-anonymizing-parallel-corpus-eg-ldc-versions.
 
 ## Experiments
 
