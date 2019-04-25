@@ -1,0 +1,2057 @@
+# AMR release; corpus: lpp; section: test; number of AMRs: 143 (generated on Fri Mar 4, 2016 at 21:03:52)
+
+# ::id lpp_1943.146 ::date 2012-07-31T11:20:57 ::annotator ISI-AMR-05 ::preferred
+# ::snt Chapter 4 .
+# ::zh IV。
+# ::save-date Tue Apr 16, 2013 ::file lpp_1943_146.txt
+(c / chapter
+  :mod 4)
+
+# ::id lpp_1943.147 ::date 2012-07-31T11:21:36 ::annotator ISI-AMR-05 ::preferred
+# ::snt I had thus learned a second fact of great importance : this was that the planet the little prince came from was scarcely any larger than a house !
+# ::zh 我还了解到另一件重要的事，就是他老家所在的那个星球比一座房子大不了多少。
+# ::save-date Fri Apr 19, 2013 ::file lpp_1943_147.txt
+(c2 / cause-01
+      :ARG1 (l / learn-01
+            :ARG0 (i / i)
+            :ARG1 (f / fact
+                  :ord (o / ordinal-entity :value 2)
+                  :mod (i2 / important
+                        :degree (g / great))
+                  :domain (l2 / large
+                        :degree (m / more
+                              :mod (a / any
+                                    :degree (s2 / scarce)))
+                        :compared-to (h / house)
+                        :domain (p / planet
+                              :ARG3-of (c / come-01
+                                    :ARG1 (p2 / prince
+                                          :mod (l3 / little))))))))
+
+# ::id lpp_1943.148 ::date 2012-07-31T11:26:53 ::annotator ISI-AMR-05 ::preferred
+# ::snt But that did not really surprise me much .
+# ::zh 这倒并没有使我感到太奇怪。
+# ::save-date Tue Oct 6, 2015 ::file lpp_1943_148.txt
+(c / contrast-01
+      :ARG2 (s / surprise-01 :polarity -
+            :ARG0 (t / that)
+            :ARG1 (i / i)
+            :degree (m / much)
+            :ARG1-of (r / real-04)))
+
+# ::id lpp_1943.149 ::date 2012-07-31T11:30:36 ::annotator ISI-AMR-05 ::preferred
+# ::snt I knew very well that in addition to the great planets -- such as the Earth , Jupiter , Mars , Venus -- to which we have given names , there are also hundreds of others , some of which are so small that one has a hard time seeing them through the telescope .
+# ::zh 我知道除地球、木星、火星、金星这几个有名称的大行星以外，还有成百个别的星球，它们有的小得很，就是用望远镜也很难看见。
+# ::save-date Tue Nov 4, 2014 ::file lpp_1943_149.txt
+(k / know-01
+      :ARG0 (i / i)
+      :ARG1 (e / exist-01
+            :ARG1 (a2 / and
+                  :op1 (p / planet
+                        :mod (g / great)
+                        :example (p2 / planet :wiki "Earth" :name (n / name :op1 "Earth"))
+                        :example (p3 / planet :wiki "Jupiter" :name (n2 / name :op1 "Jupiter"))
+                        :example (p4 / planet :wiki "Mars" :name (n3 / name :op1 "Mars"))
+                        :example (p5 / planet :wiki "Venus" :name (n4 / name :op1 "Venus"))
+                        :ARG1-of (n5 / name-01
+                              :ARG0 (w3 / we)))
+                  :op2 (p7 / planet
+                        :ARG2-of (i2 / include-91
+                              :ARG1 (p6 / planet
+                                    :mod (s2 / small
+                                          :degree (s3 / so)
+                                          :ARG0-of (c / cause-01
+                                                :ARG1 (d / difficult
+                                                      :domain (s4 / see-01
+                                                            :ARG1 p6
+                                                            :instrument (t / telescope)))))))
+                        :mod (o / other)
+                        :quant (m / multiple :op1 100)
+                        :mod (a / also))))
+      :mod (w / well
+            :degree (v / very)))
+
+# ::id lpp_1943.150 ::date 2012-07-31T11:42:19 ::annotator ISI-AMR-05 ::preferred
+# ::snt When an astronomer discovers one of these he does not give it a name , but only a number .
+# ::zh 当一个天文学者发现了其中一个星星，他就给它编上一个号码，
+# ::save-date Tue Jun 3, 2014 ::file lpp_1943_150.txt
+(g / give-01
+      :ARG0 (a / astronomer)
+      :ARG1 (n2 / number)
+      :ARG2 (t / thing :quant 1
+            :ARG1-of (i / include-91
+                  :ARG2 (t2 / this)))
+      :mod (o2 / only)
+      :time (d / discover-01
+            :ARG0 a
+            :ARG1 t)
+      :ARG1-of (i2 / instead-of-91
+            :ARG2 (n3 / name-01
+                  :ARG0 a
+                  :ARG1 t)))
+
+# ::id lpp_1943.151 ::date 2012-07-31T11:45:22 ::annotator ISI-AMR-05 ::preferred
+# ::snt He might call it , for example , " Asteroid 325 . "
+# ::zh 例如把它称作“325小行星”。
+# ::save-date Sat Mar 1, 2014 ::file lpp_1943_151.txt
+(p / possible-01
+      :ARG1 (c / call-01
+            :ARG0 (h / he)
+            :ARG1 (i / it)
+            :ARG2 (n2 / name :op1 "Asteroid" :op2 325)
+            :ARG0-of (e / exemplify-01)))
+
+# ::id lpp_1943.152 ::date 2012-07-31T11:46:51 ::annotator ISI-AMR-05 ::preferred
+# ::snt I have serious reason to believe that the planet from which the little prince came is the asteroid known as B-612 .
+# ::zh 我有重要的根据认为小王子所来自的那个星球是小行星B612。
+# ::save-date Wed Apr 8, 2015 ::file lpp_1943_152.txt
+(c / cause-01
+      :ARG0 (r / reason
+            :ARG1-of (s / serious-02))
+      :ARG1 (b / believe-01
+            :ARG0 (i / i)
+            :ARG1 (c2 / come-01
+                  :ARG1 (p2 / prince
+                        :mod (l / little))
+                  :ARG3 (a / asteroid :wiki - :name (n4 / name :op1 "B-612")
+                        :domain (p / planet)))))
+
+# ::id lpp_1943.153 ::date 2012-07-31T11:50:14 ::annotator ISI-AMR-05 ::preferred
+# ::snt This asteroid has only once been seen through the telescope .
+# ::zh 这颗小行星仅仅被用望远镜看见过一次。
+# ::save-date Mon Sep 16, 2013 ::file lpp_1943_153.txt
+(s / see-01
+      :ARG1 (a / asteroid
+            :mod (t / this))
+      :instrument (t2 / telescope)
+      :ARG1-of (h / have-frequency-91
+            :ARG2 1
+            :mod (o / only)))
+
+# ::id lpp_1943.154 ::date 2012-07-31T11:50:54 ::annotator ISI-AMR-05 ::preferred
+# ::snt That was by a Turkish astronomer , in 1909 .
+# ::zh 在1909年被一个土耳其天文学家
+# ::save-date Sat Jan 25, 2014 ::file lpp_1943_154.txt
+(s / see-01
+      :ARG0 (a / astronomer
+            :mod (c / country :wiki "Turkey"
+                  :name (n / name :op1 "Turkey")))
+      :time (d / date-entity :year 1909))
+
+# ::id lpp_1943.155 ::date 2012-07-31T11:53:09 ::annotator ISI-AMR-05 ::preferred
+# ::snt On making his discovery , the astronomer had presented it to the International Astronomical Congress , in a great demonstration .
+# ::zh 当时他曾经在一次国际天文学家代表大会上对他的发现作了重要的论证。
+# ::save-date Thu Jan 28, 2016 ::file lpp_1943_155.txt
+(p / present-01
+      :ARG0 a
+      :ARG1 (i / it)
+      :ARG2 (o / organization :wiki "International_Astronautical_Congress" :name (n / name :op1 "International" :op2 "Astronomical" :op3 "Congress"))
+      :manner (d2 / demonstrate-01
+            :ARG0 a
+            :mod (g / great))
+      :time (d3 / discover-01
+            :ARG0 (a / astronomer)))
+
+# ::id lpp_1943.156 ::date 2012-07-31T11:56:31 ::annotator ISI-AMR-05 ::preferred
+# ::snt But he was in Turkish costume , and so nobody would believe what he said .
+# ::zh 但由于他所穿衣服的缘故，那时没有人相信他。
+# ::save-date Fri Apr 19, 2013 ::file lpp_1943_156.txt
+(c4 / contrast-01
+      :ARG2 (c / costume-01
+            :ARG1 (h / he)
+            :manner (c2 / country :wiki "Turkey"
+                  :name (n / name :op1 "Turkey"))
+            :ARG0-of (c3 / cause-01
+                  :ARG1 (b2 / believe-01
+                        :ARG0 (s / somebody :polarity -)
+                        :ARG1 (t / thing
+                              :ARG1-of (s2 / say-01
+                                    :ARG0 h))))))
+
+# ::id lpp_1943.157 ::date 2012-07-31T11:59:50 ::annotator ISI-AMR-05 ::preferred
+# ::snt Grown - ups are like that ...
+# ::zh 那些大人们就是这样。
+# ::save-date Tue Jul 31, 2012 ::file lpp_1943_157.txt
+(r / resemble-01
+      :ARG1 (g / grown-up)
+      :ARG2 (t / that))
+
+# ::id lpp_1943.158 ::date 2012-07-31T12:01:11 ::annotator ISI-AMR-05 ::preferred
+# ::snt Fortunately , however , for the reputation of Asteroid B-612 , a Turkish dictator made a law that his subjects , under pain of death , should change to European costume .
+# ::zh 幸好，土耳其的一个独裁者，为了小行星B612的声誉，迫使他的人民都要穿欧式服装，否则就处以死刑。
+# ::save-date Mon Nov 3, 2014 ::file lpp_1943_158.txt
+(c5 / contrast-01
+      :ARG2 (m / make-01
+            :ARG0 (p3 / person
+                  :ARG0-of (h / have-org-role-91
+                        :ARG1 (c / country :wiki "Turkey" :name (n / name :op1 "Turkey"))
+                        :ARG2 (d / dictator)))
+            :ARG1 (l / law
+                  :topic (c2 / change-01
+                        :ARG0 (s / subject
+                              :poss p3)
+                        :ARG3 (c3 / costume
+                              :mod (c4 / continent :wiki "Europe" :name (n2 / name :op1 "Europe")))
+                        :manner (t / threaten-01
+                              :ARG0 d
+                              :ARG1 (p / penalize-01
+                                    :ARG1 s
+                                    :topic (d2 / die-01
+                                          :ARG1 s))
+                              :ARG2 s)))
+            :ARG2-of (f / fortunate-01
+                  :ARG1 (r / reputation
+                        :poss (p2 / planet :wiki - :name (n3 / name :op1 "Asteroid" :op2 "B-612"))))))
+
+# ::id lpp_1943.159 ::date 2012-07-31T12:09:20 ::annotator ISI-AMR-05 ::preferred
+# ::snt So in 1920 the astronomer gave his demonstration all over again , dressed with impressive style and elegance .
+# ::zh 1920年，这位天文学家穿了一身非常漂亮的服装，重新作了一次论证。
+# ::save-date Mon Feb 15, 2016 ::file lpp_1943_159.txt
+(c / cause-01
+      :ARG1 (d4 / demonstrate-01
+            :ARG0 (a / astronomer
+                  :ARG1-of (d2 / dress-01
+                        :ARG2 (a4 / and
+                              :op1 (s / style)
+                              :op2 (e / elegance)
+                              :ARG0-of (i / impress-01))))
+            :time (d3 / date-entity :year 1920)
+            :mod (a3 / again
+                  :mod (a2 / all-over))))
+
+# ::id lpp_1943.160 ::date 2012-07-31T12:14:42 ::annotator ISI-AMR-05 ::preferred
+# ::snt And this time everybody accepted his report .
+# ::zh 这一次所有的人都同意他的看法。
+# ::save-date Sat Dec 29, 2012 ::file lpp_1943_160.txt
+(a / and
+  :op2 (a2 / accept-01
+         :ARG0 (e / everybody)
+         :ARG1 (t3 / thing
+                 :ARG1-of (r / report-01
+                            :ARG0 (h2 / he)))
+         :time (t / time
+                 :mod (t2 / this))))
+
+# ::id lpp_1943.161 ::date 2012-07-31T12:16:54 ::annotator ISI-AMR-05 ::preferred
+# ::snt If I have told you these details about the asteroid , and made a note of its number for you , it is on account of the grown - ups and their ways .
+# ::zh 我给你们讲关于小行星B612的这些细节，并且告诉你们它的编号，这是由于这些大人的缘故。
+# ::save-date Wed Apr 17, 2013 ::file lpp_1943_161.txt
+(a / account-01
+  :ARG1 a3
+  :ARG2 (a2 / and
+          :op1 (g / grown-up)
+          :op2 (w / way
+                 :poss g))
+  :condition (a3 / and
+               :op1 (t / tell-01
+                      :ARG0 (i / i)
+                      :ARG1 (d / detail
+                              :mod (t2 / this)
+                              :topic (a4 / asteroid))
+                      :ARG2 (y / you))
+               :op2 (n3 / note-01
+                      :ARG0 i
+                      :ARG1 (n4 / number
+                              :poss a4)
+                      :ARG2 y)))
+
+# ::id lpp_1943.162 ::date 2012-07-31T12:45:29 ::annotator ISI-AMR-05 ::preferred
+# ::snt WHen you tell them that you have made a new friend , they never ask you any questions about essential matters .
+# ::zh 当你对大人们讲起你的一个新朋友时，他们从来不向你提出实质性的问题。
+# ::save-date Fri Feb 5, 2016 ::file lpp_1943_162.txt
+(q2 / question-01 :polarity -
+      :ARG0 (t2 / they)
+      :ARG1 (m / matter
+            :mod (e / essential))
+      :ARG2 (y / you)
+      :time (t3 / tell-01
+            :ARG0 y
+            :ARG1 (m2 / make-01
+                  :ARG0 y
+                  :ARG1 (h / have-rel-role-91
+                        :ARG0 (p / person)
+                        :ARG1 y
+                        :ARG2 (f / friend)
+                        :ARG1-of (n / new-01)))
+            :ARG2 (t / they))
+      :time (e2 / ever)
+      :mod (a2 / any))
+
+# ::id lpp_1943.163 ::date 2012-07-31T12:50:12 ::annotator ISI-AMR-05 ::preferred
+# ::snt They never say to you , " What does his voice sound like ?
+# ::zh 他们从来不讲：“他说话声音如何啊？
+# ::save-date Wed Apr 17, 2013 ::file lpp_1943_163.txt
+(s / say-01
+  :ARG0 (t / they)
+  :ARG1 (s2 / sound-01
+          :ARG1 (v / voice
+                  :poss (h / he))
+          :ARG2 (a2 / amr-unknown))
+  :ARG2 (y / you)
+  :time (e / ever)
+  :polarity -)
+
+# ::id lpp_1943.164 ::date 2012-07-31T12:52:25 ::annotator ISI-AMR-05 ::preferred
+# ::snt What games does he love best ?
+# ::zh 他喜爱什么样的游戏啊？
+# ::save-date Mon Dec 14, 2015 ::file lpp_1943_164.txt
+(l / love-01
+      :ARG0 (h / he)
+      :ARG1 (a2 / amr-unknown
+            :domain (g2 / game))
+      :degree (g / good
+            :degree (m / most)))
+
+# ::id lpp_1943.165 ::date 2012-07-31T12:53:52 ::annotator ISI-AMR-05 ::preferred
+# ::snt Does he collect butterflies ? "
+# ::zh 他是否收集蝴蝶标本呀？”
+# ::save-date Tue Jul 31, 2012 ::file lpp_1943_165.txt
+(c / collect-01
+      :ARG0 (h / he)
+      :ARG1 (b / butterfly)
+      :mode interrogative)
+
+# ::id lpp_1943.166 ::date 2012-07-31T12:54:16 ::annotator ISI-AMR-05 ::preferred
+# ::snt Instead , they demand : " How old is he ?
+# ::zh 他们却问你：“他多大年纪呀？
+# ::save-date Tue Jun 3, 2014 ::file lpp_1943_166.txt
+(d / demand-01
+      :ARG0 (t / they)
+      :ARG1 (a2 / age-01
+            :ARG1 (h2 / he)
+            :ARG2 (a3 / amr-unknown))
+      :ARG1-of (i2 / instead-of-91))
+
+# ::id lpp_1943.167 ::date 2012-07-31T12:55:19 ::annotator ISI-AMR-05 ::preferred
+# ::snt How many brothers has he ?
+# ::zh 弟兄几个呀？
+# ::save-date Thu Apr 17, 2014 ::file lpp_1943_167.txt
+(h / have-rel-role-91
+      :ARG0 (p / person
+            :quant (a / amr-unknown))
+      :ARG1 (h2 / he)
+      :ARG2 (b / brother))
+
+# ::id lpp_1943.168 ::date 2012-07-31T12:55:47 ::annotator ISI-AMR-05 ::preferred
+# ::snt How much does he weigh ?
+# ::zh 体重多少呀？
+# ::save-date Tue Jul 31, 2012 ::file lpp_1943_168.txt
+(w / weigh-01
+      :ARG1 (h / he)
+      :ARG3 (a / amr-unknown))
+
+# ::id lpp_1943.169 ::date 2012-07-31T12:56:22 ::annotator ISI-AMR-05 ::preferred
+# ::snt How much money does his father make ? "
+# ::zh 他父亲挣多少钱呀？”
+# ::save-date Thu Apr 17, 2014 ::file lpp_1943_169.txt
+(m / make-05
+      :ARG0 (p / person
+            :ARG0-of (h2 / have-rel-role-91
+                  :ARG1 (h / he)
+                  :ARG2 (f / father)))
+      :ARG1 (m2 / monetary-quantity
+            :quant (a / amr-unknown)))
+
+# ::id lpp_1943.170 ::date 2012-07-31T12:57:01 ::annotator ISI-AMR-05 ::preferred
+# ::snt Only from these figures do they think they have learned anything about him .
+# ::zh 他们以为这样才算了解朋友。
+# ::save-date Tue Jul 31, 2012 ::file lpp_1943_170.txt
+(t / think-01
+      :ARG0 (t2 / they)
+      :ARG1 (l / learn-01
+            :ARG0 t2
+            :ARG1 (a / anything
+                  :topic (h / he))
+            :source (f / figure
+                  :mod (t3 / this
+                        :mod (o / only)))))
+
+# ::id lpp_1943.171 ::date 2012-07-31T13:01:40 ::annotator ISI-AMR-05 ::preferred
+# ::snt If you were to say to the grown - ups : " I saw a beautiful house made of rosy brick , with geraniums in the windows and doves on the roof , " they would not be able to get any idea of that house at all .
+# ::zh 如果你对大人们说：“我看到一幢用玫瑰色的砖盖成的漂亮的房子，它的窗户上有天竺葵，屋顶上还有鸽子…”他们怎么也想象不出这种房子有多么好。
+# ::save-date Sat Jul 25, 2015 ::file lpp_1943_171.txt
+(p / possible-01 :polarity -
+      :ARG1 (g / get-01
+            :ARG0 g2
+            :ARG1 (i / idea
+                  :mod (a / any)
+                  :mod (a2 / at
+                        :mod (a3 / all))
+                  :topic h2))
+      :condition (s / say-01
+            :ARG0 (y / you)
+            :ARG1 (s2 / see-01
+                  :ARG0 y
+                  :ARG1 (h2 / house
+                        :ARG1-of (m / make-01
+                              :ARG2 (b / brick
+                                    :mod (r / rosy)))
+                        :accompanier (a4 / and
+                              :op1 (g3 / geranium
+                                    :location (w / window))
+                              :op2 (d / dove
+                                    :location (r2 / roof)))
+                        :ARG1-of (b2 / beautiful-02)))
+            :ARG2 (g2 / grown-up)))
+
+# ::id lpp_1943.172 ::date 2012-07-31T13:10:42 ::annotator ISI-AMR-05 ::preferred
+# ::snt You would have to say to them : " I saw a house that cost $ 20,000 . "
+# ::zh 必须对他们说：“我看见了一幢价值十万法郎的房子。”
+# ::save-date Wed Apr 17, 2013 ::file lpp_1943_172.txt
+(o / obligate-01
+  :ARG1 y
+  :ARG2 (s / say-01
+          :ARG0 (y / you)
+          :ARG1 (s2 / see-01
+                  :ARG0 y
+                  :ARG1 (h / house
+                          :ARG1-of (c / cost-01
+                                     :ARG2 (m / monetary-quantity
+                                             :unit (d / dollar)
+                                             :quant 20000))))
+          :ARG2 (t / they)))
+
+# ::id lpp_1943.173 ::date 2012-07-31T13:13:23 ::annotator ISI-AMR-05 ::preferred
+# ::snt Then they would exclaim : " Oh , what a pretty house that is ! "
+# ::zh 那么他们就惊叫道：“多么漂亮的房子啊？
+# ::save-date Wed Apr 17, 2013 ::file lpp_1943_173.txt
+(e / exclaim-01
+  :ARG0 (t / they)
+  :ARG1 (p2 / pretty
+          :domain (h2 / house
+                    :mod (t4 / that)))
+  :time (t3 / then))
+
+# ::id lpp_1943.174 ::date 2012-07-31T13:16:43 ::annotator ISI-AMR-05 ::preferred
+# ::snt Just so , you might say to them : " The proof that the little prince existed is that he was charming , that he laughed , and that he was looking for a sheep .
+# ::zh 要是你对他们说：“小王子存在的证据就是他非常漂亮，他笑着，想要一只羊。
+# ::save-date Fri Apr 19, 2013 ::file lpp_1943_174.txt
+(p / possible-01
+      :ARG1 (s2 / say-01
+            :ARG0 (y / you)
+            :ARG1 (p2 / prove-01
+                  :ARG0 (a / and
+                        :op1 (c / charming
+                              :domain (h / he))
+                        :op2 (l / laugh-01
+                              :ARG0 h)
+                        :op3 (l2 / look-01
+                              :ARG0 h
+                              :ARG1 (s3 / sheep)))
+                  :ARG1 (e / exist-01
+                        :ARG1 (p3 / prince
+                              :mod (l3 / little))))
+            :ARG2 (t / they)
+            :manner (j / just-so)))
+
+# ::id lpp_1943.175 ::date 2012-07-31T13:20:04 ::annotator ISI-AMR-05 ::preferred
+# ::snt If anybody wants a sheep , that is a proof that he exists . "
+# ::zh 他想要一只小羊，这就证明他的存在。”
+# ::save-date Wed Apr 17, 2013 ::file lpp_1943_175.txt
+(p / prove-01
+  :ARG0 (w / want-01
+          :ARG0 (a / anybody)
+          :ARG1 (s / sheep))
+  :ARG1 (e / exist-01
+          :ARG1 a))
+
+# ::id lpp_1943.176 ::date 2012-07-31T13:21:18 ::annotator ISI-AMR-05 ::preferred
+# ::snt And what good would it do to tell them that ?
+# ::zh 但是告诉他们有什么好处呢？
+# ::save-date Wed Nov 4, 2015 ::file lpp_1943_176.txt
+(a / and
+      :op2 (d / do-02
+            :ARG0 (t / tell-01
+                  :ARG1 (t3 / that)
+                  :ARG2 (t2 / they))
+            :ARG1 (g / good-04
+                  :ARG2 t2
+                  :quant (a2 / amr-unknown))))
+
+# ::id lpp_1943.177 ::date 2012-07-31T13:24:50 ::annotator ISI-AMR-05 ::preferred
+# ::snt They would shrug their shoulders , and treat you like a child .
+# ::zh 他们一定会耸耸肩膀，把你当作孩子看待！
+# ::save-date Tue Jul 31, 2012 ::file lpp_1943_177.txt
+(a / and
+      :op1 (s / shrug-01
+            :ARG0 (t / they)
+            :ARG1 (s2 / shoulder
+                  :poss t))
+      :op2 (t2 / treat-01
+            :ARG0 t
+            :ARG1 (y / you)
+            :ARG2 (c / child)))
+
+# ::id lpp_1943.178 ::date 2012-07-31T13:26:24 ::annotator ISI-AMR-05 ::preferred
+# ::snt But if you said to them : " The planet he came from is Asteroid B-612 , " then they would be convinced , and leave you in peace from their questions .
+# ::zh 但是，如果你对他们说：“小王子来自的星球就是小行星B612”，那么他们就十分信服，他们就不会提出一大堆问题来和你纠缠。
+# ::save-date Fri Jul 17, 2015 ::file lpp_1943_178.txt
+(c3 / contrast-01
+      :ARG2 (a / and
+            :op1 (c / convince-01
+                  :ARG1 (t / they))
+            :op2 (l / leave-14
+                  :ARG0 t
+                  :ARG1 (p2 / peace
+                        :topic (q2 / question-01 :polarity -
+                              :ARG0 t)
+                        :domain y))
+            :condition (s / say-01
+                  :ARG0 (y / you)
+                  :ARG1 (c2 / come-01
+                        :ARG1 (h / he)
+                        :ARG3 (p / planet :wiki - :name (n / name :op1 "Asteroid" :op2 "B-612")))
+                  :ARG2 t)))
+
+# ::id lpp_1943.179 ::date 2012-07-31T13:32:54 ::annotator ISI-AMR-05 ::preferred
+# ::snt They are like that .
+# ::zh 他们就是这样的。
+# ::save-date Tue Jul 31, 2012 ::file lpp_1943_179.txt
+(r / resemble-01
+      :ARG1 (t / they)
+      :ARG2 (t2 / that))
+
+# ::id lpp_1943.180 ::date 2012-07-31T13:33:25 ::annotator ISI-AMR-05 ::preferred
+# ::snt One must not hold it against them .
+# ::zh 小孩子们对大人们应该宽厚些，
+# ::save-date Mon Nov 3, 2014 ::file lpp_1943_180.txt
+(o / obligate-01
+      :ARG1 (o2 / one)
+      :ARG2 (h / hold-01 :polarity -
+            :ARG0 o2
+            :ARG1 (i / it)
+            :ARG2 (a / against
+                  :op1 (t / they))))
+
+# ::id lpp_1943.181 ::date 2012-07-31T13:36:08 ::annotator ISI-AMR-05 ::preferred
+# ::snt Children should always show great forbearance toward grown - up people .
+# ::zh 不要埋怨他们。
+# ::save-date Mon Nov 3, 2014 ::file lpp_1943_181.txt
+(r / recommend-01
+      :ARG1 (s / show-01
+            :ARG0 (c / child)
+            :ARG1 (f / forbearance
+                  :mod (g / great))
+            :ARG2 (g2 / grown-up)
+            :time (a / always)))
+
+# ::id lpp_1943.182 ::date 2012-07-31T13:39:23 ::annotator ISI-AMR-05 ::preferred
+# ::snt But certainly , for us who understand life , figures are a matter of indifference .
+# ::zh 当然，对我们懂得生活的人来说，我们才不在乎那些编号呢！
+# ::save-date Wed Apr 17, 2013 ::file lpp_1943_182.txt
+(c2 / contrast-01
+  :ARG2 (c / certain
+          :domain (i2 / indifferent-01
+                    :ARG1 (w2 / we
+                            :ARG0-of (u / understand-01
+                                       :ARG1 (l / life)))
+                    :ARG2 (f2 / figure))))
+
+# ::id lpp_1943.183 ::date 2012-07-31T13:42:49 ::annotator ISI-AMR-05 ::preferred
+# ::snt I should have liked to begin this story in the fashion of the fairy - tales .
+# ::zh 我真愿意象讲神话那样来开始这个故事，
+# ::save-date Wed Apr 17, 2013 ::file lpp_1943_183.txt
+(l / like-02
+  :ARG0 (i / i)
+  :ARG1 (b / begin-01
+          :ARG0 i
+          :ARG1 (s / story
+                  :mod (t / this))
+          :manner (f / fashion
+                    :mod (t2 / tale
+                           :mod (f2 / fairy)))))
+
+# ::id lpp_1943.184 ::annotator ISI-AMR-05 ::preferred
+# ::snt I should have like to say : " Once upon a time there was a little prince who lived on a planet that was scarcely any bigger than himself , and who had need of a sheep ... "
+# ::zh 我真想这样说：“从前呀，有一个小王子，他住在一个和他身体差不多大的星球上，他希望有一个朋友…”
+# ::save-date Wed Sep 17, 2014 ::file lpp_1943_184.txt
+(l / like-02
+      :ARG0 (i / i)
+      :ARG1 (s / say-01
+            :ARG0 i
+            :ARG1 (p / prince
+                  :mod (l2 / little)
+                  :ARG0-of (l3 / live-01
+                        :location (p2 / planet
+                              :mod (b / big
+                                    :degree (m / more
+                                          :quant (s2 / scarce))
+                                    :compared-to p)))
+                  :ARG0-of (n / need-01
+                        :ARG1 (s3 / sheep))
+                  :time (o / once-upon-a-time))))
+
+# ::id lpp_1943.185 ::annotator ISI-AMR-05 ::preferred
+# ::snt To those who understand life , that would have given a much greater air of truth to my story .
+# ::zh 对懂得生活的人来说，这样说就显得真实。
+# ::save-date Wed Apr 17, 2013 ::file lpp_1943_185.txt
+(g / give-01
+  :ARG0 (t / that)
+  :ARG1 (t3 / truth
+          :quant (a / air
+                   :mod (g2 / great
+                          :degree (m / more
+                                    :degree (m2 / much)))))
+  :ARG2 (s / story
+          :poss (i / i))
+  :beneficiary (p / person
+                 :ARG0-of (u / understand-01
+                            :ARG1 (l / life))))
+
+# ::id lpp_1943.186 ::date 2012-08-07T06:41:26 ::annotator ISI-AMR-05 ::preferred
+# ::snt For I do not want any one to read my book carelessly .
+# ::zh 我可不喜欢人们轻率地读我的书。
+# ::save-date Tue Aug 7, 2012 ::file lpp_1943_186.txt
+(c / cause-01
+      :ARG0 (w / want-01
+            :ARG0 (i / i)
+            :ARG1 (r / read-01
+                  :ARG0 (a / anyone)
+                  :ARG1 (b / book
+                        :poss i)
+                  :manner (c2 / careless))
+            :polarity -))
+
+# ::id lpp_1943.187 ::date 2012-08-07T06:44:38 ::annotator ISI-AMR-05 ::preferred
+# ::snt I have suffered too much grief in setting down these memories .
+# ::zh 我在讲述这些往事时心情是很难过的。
+# ::save-date Tue Aug 7, 2012 ::file lpp_1943_187.txt
+(s / suffer-01
+      :ARG0 (i / i)
+      :ARG1 (g / grief
+            :quant (m / much
+                  :degree (t / too)))
+      :time (s2 / set-down-09
+            :ARG0 i
+            :ARG1 (m2 / memory
+                  :mod (t2 / this))))
+
+# ::id lpp_1943.188 ::date 2012-08-07T06:55:50 ::annotator ISI-AMR-05 ::preferred
+# ::snt Six years have already passed since my friend went away from me , with his sheep .
+# ::zh 我的朋友带着他的小羊已经离去六年了。
+# ::save-date Fri Apr 18, 2014 ::file lpp_1943_188.txt
+(g / go-02
+      :ARG0 (p / person
+            :ARG0-of (h / have-rel-role-91
+                  :ARG1 (i / i)
+                  :ARG2 (f / friend)))
+      :direction (a / away
+            :op1 i)
+      :accompanier (s / sheep
+            :poss p)
+      :time (b / before
+            :op1 (n / now)
+            :quant (t / temporal-quantity :quant 6
+                  :unit (y / year)))
+      :time (a3 / already))
+
+# ::id lpp_1943.189 ::date 2012-08-07T07:14:00 ::annotator ISI-AMR-05 ::preferred
+# ::snt If I try to describe him here , it is to make sure that I shall not forget him .
+# ::zh 我之所以在这里尽力把他描写出来，就是为了不要忘记他。
+# ::save-date Wed Apr 17, 2013 ::file lpp_1943_189.txt
+(e / ensure-01
+  :ARG1 (f / forget-01
+          :ARG0 i
+          :ARG1 (h3 / he)
+          :polarity -)
+  :condition (t / try-01
+               :ARG0 (i / i)
+               :ARG1 (d / describe-01
+                       :ARG0 i
+                       :ARG1 (h / he)
+                       :location (h2 / here))))
+
+# ::id lpp_1943.190 ::date 2012-08-07T07:24:50 ::annotator ISI-AMR-05 ::preferred
+# ::snt To forget a friend is sad .
+# ::zh 忘记一个朋友，这太叫人悲伤了。
+# ::save-date Sun Jul 26, 2015 ::file lpp_1943_190.txt
+(s / sad-02
+      :ARG0 (f3 / forget-01
+            :ARG1 (p / person
+                  :ARG0-of (h / have-rel-role-91
+                        :ARG2 (f / friend)))))
+
+# ::id lpp_1943.191 ::date 2012-08-07T07:39:32 ::annotator ISI-AMR-05 ::preferred
+# ::snt Not every one has had a friend .
+# ::zh 并不是所有的人都有过一个朋友。
+# ::save-date Fri Apr 18, 2014 ::file lpp_1943_191.txt
+(h / have-03 :polarity -
+      :ARG0 (e / everyone)
+      :ARG1 (p / person
+            :ARG0-of (h2 / have-rel-role-91
+                  :ARG1 e
+                  :ARG2 (f / friend))))
+
+# ::id lpp_1943.192 ::date 2012-08-07T07:40:05 ::annotator ISI-AMR-05 ::preferred
+# ::snt And if I forget him , I may become like the grown - ups who are no longer interested in anything but figures ...
+# ::zh 再说，我也可能变成那些大人那样，只对数字感兴趣。
+# ::save-date Tue Nov 4, 2014 ::file lpp_1943_192.txt
+(a / and
+      :op2 (p / possible-01
+            :ARG1 (r / resemble-01
+                  :ARG1 (i / i)
+                  :ARG2 (g / grown-up
+                        :ARG1-of (i2 / interest-01 :polarity -
+                              :ARG2 (a2 / anything
+                                    :ARG2-of (e / except-01
+                                          :ARG1 (f / figure))))))
+            :condition (f2 / forget-01
+                  :ARG0 i
+                  :ARG1 (h / he))))
+
+# ::id lpp_1943.193 ::date 2012-08-07T07:46:17 ::annotator ISI-AMR-05 ::preferred
+# ::snt It is for that purpose , again , that I have bought a box of paints and some pencils .
+# ::zh 也正是为了这个缘故，我买了一盒颜料和一些铅笔。
+# ::save-date Wed Apr 17, 2013 ::file lpp_1943_193.txt
+(b / buy-01
+  :ARG0 (i / i)
+  :ARG1 (a / and
+          :op1 (p / paint
+                 :location (b2 / box))
+          :op2 (p2 / pencil
+                 :quant (s / some)))
+  :purpose (t2 / that))
+
+# ::id lpp_1943.194 ::date 2012-08-07T07:49:27 ::annotator ISI-AMR-05 ::preferred
+# ::snt It is hard to take up drawing again at my age , when I have never made any pictures except those of the boa constrictor from the outside and the boa constrictor from the inside , since I was six .
+# ::zh 象我这样年纪的人，而且除了六岁时画过闭着肚皮的和开着肚皮的巨蟒外，别的什么也没有尝试过，现在，重新再来画画，真费劲啊！
+# ::save-date Sat Jul 25, 2015 ::file lpp_1943_194.txt
+(h / hard-02
+      :ARG1 (t / take-up-31
+            :ARG0 (i / i
+                  :age (t4 / temporal-quantity
+                        :duration-of (m / make-01 :polarity -
+                              :ARG1 (p / picture
+                                    :mod (a5 / any)
+                                    :ARG2-of (e2 / except-01
+                                          :ARG1 (a6 / and
+                                                :op1 (p2 / picture
+                                                      :topic (b / boa
+                                                            :mod (c2 / constrictor)
+                                                            :direction (f / from
+                                                                  :op1 (o / outside))))
+                                                :op2 (p3 / picture
+                                                      :topic (b2 / boa
+                                                            :mod (c3 / constrictor)
+                                                            :direction (f2 / from
+                                                                  :op1 (i2 / inside)))))))
+                              :time (e / ever)
+                              :time (s / since
+                                    :op1 (a3 / age-01
+                                          :ARG1 i
+                                          :ARG2 (t6 / temporal-quantity :quant 6
+                                                :unit (y2 / year)))))))
+            :ARG1 (d / draw-01)
+            :mod (a / again))
+      :ARG1-of (c / cause-01))
+
+# ::id lpp_1943.195 ::date 2012-08-07T10:20:58 ::annotator ISI-AMR-05 ::preferred
+# ::snt I shall certainly try to make my portraits as true to life as possible .
+# ::zh 当然，我一定要把这些画尽量地画得逼真，
+# ::save-date Sun Apr 12, 2015 ::file lpp_1943_195.txt
+(t / try-01
+      :ARG0 (i / i)
+      :ARG1 (m / make-02
+            :ARG0 i
+            :ARG1 (t2 / true-02
+                  :ARG1 (p / portrait
+                        :topic i)
+                  :ARG2 (l / life)
+                  :degree (m2 / most)
+                  :compared-to (p2 / possible-01)))
+      :mod (c / certain))
+
+# ::id lpp_1943.196 ::date 2012-08-07T10:27:53 ::annotator ISI-AMR-05 ::preferred
+# ::snt But I am not at all sure of success .
+# ::zh 但我自己也没有把握。
+# ::save-date Thu Jul 9, 2015 ::file lpp_1943_196.txt
+(c / contrast-01
+      :ARG2 (s / sure-02 :polarity -
+            :ARG0 (i / i)
+            :degree (a / at
+                  :op1 (a2 / all))
+            :ARG1-of (s2 / succeed-01
+                  :ARG0 i)))
+
+# ::id lpp_1943.197 ::date 2012-08-07T10:33:57 ::annotator ISI-AMR-05 ::preferred
+# ::snt One drawing goes along all right , and another has no resemblance to its subject .
+# ::zh 一张画得还可以，另一张就不象了。
+# ::save-date Tue Feb 23, 2016 ::file lpp_1943_197.txt
+(a / and
+      :op1 (g / go-06
+            :ARG1 (p2 / picture :quant 1
+                  :ARG1-of (d / draw-01))
+            :ARG2 (a2 / along)
+            :mod (a3 / all-right))
+      :op2 (r2 / resemble-01 :polarity -
+            :ARG1 (p / picture
+                  :ARG1-of (d2 / draw-01)
+                  :mod (a4 / another))
+            :ARG2 (s / subject
+                  :poss p)))
+
+# ::id lpp_1943.198 ::date 2012-08-07T10:38:22 ::annotator ISI-AMR-05 ::preferred
+# ::snt I make some errors , too , in the little prince 's height : in one place he is too tall and in another too short .
+# ::zh 还有身材大小？ 我画得有点不准确。 在这个地方小王子画得太大了些，另一个地方又画得太小了些。
+# ::save-date Mon Nov 2, 2015 ::file lpp_1943_198.txt
+(e / err-01
+      :ARG0 (i / i)
+      :topic (h / high-02
+            :ARG1 (p / prince
+                  :mod (l / little)))
+      :mod (t / too)
+      :example (a / and
+            :op1 (t2 / tall
+                  :domain p
+                  :degree (t3 / too)
+                  :location (p2 / place
+                        :mod (o / one)))
+            :op2 (s / short-07
+                  :ARG1 p
+                  :degree (t4 / too)
+                  :location (p3 / place
+                        :mod (a2 / another))))
+      :mod (s2 / some))
+
+# ::id lpp_1943.199 ::date 2012-08-07T10:41:07 ::annotator ISI-AMR-05 ::preferred
+# ::snt And I feel some doubts about the color of his costume .
+# ::zh 对他衣服的颜色我也拿不准。
+# ::save-date Wed Apr 17, 2013 ::file lpp_1943_199.txt
+(a / and
+  :op2 (f / feel-01
+         :ARG0 (i / i)
+         :ARG1 (d / doubt-01
+                 :ARG0 i
+                 :ARG1 (c / color
+                         :poss (c2 / costume
+                                 :poss (h / he)))
+                 :quant (s / some))))
+
+# ::id lpp_1943.200 ::date 2012-08-07T10:42:32 ::annotator ISI-AMR-05 ::preferred
+# ::snt So I fumble along as best I can , now good , now bad , and I hope generally fair - to - middling .
+# ::zh 于是我就摸索着这么试试那么改改，画个大概齐。
+# ::save-date Wed Jan 20, 2016 ::file lpp_1943_200.txt
+(c / cause-01
+      :ARG1 (f / fumble-01
+            :ARG0 (i / i)
+            :ARG1 (a / along)
+            :manner (g / good-03
+                  :degree (m / most)
+                  :example (g2 / good-03
+                        :time (n / now))
+                  :example (b / bad-02
+                        :time (n2 / now))
+                  :example (f2 / fair-04
+                        :ARG1-of (g3 / general-02)
+                        :ARG1-of (h / hope-01
+                              :ARG0 i)
+                        :prep-to (m2 / middling))
+                  :compared-to (p / possible-01))))
+
+# ::id lpp_1943.201 ::date 2012-08-07T10:54:07 ::annotator ISI-AMR-05 ::preferred
+# ::snt In certain more important details I shall make mistakes , also .
+# ::zh 我很可能在某些重要的细节上画错了。
+# ::save-date Fri Jul 24, 2015 ::file lpp_1943_201.txt
+(m2 / mistake-02
+      :ARG0 (i / i)
+      :ARG1 (d / detail
+            :mod (i2 / important
+                  :degree (m3 / more))
+            :mod (c / certain))
+      :mod (a / also))
+
+# ::id lpp_1943.202 ::date 2012-08-07T10:57:15 ::annotator ISI-AMR-05 ::preferred
+# ::snt But that is something that will not be my fault .
+# ::zh 这就得请大家原谅我了。
+# ::save-date Wed Apr 17, 2013 ::file lpp_1943_202.txt
+(c / contrast-01
+  :ARG2 (f2 / fault-01
+          :ARG1 (i / i)
+          :ARG2 (s2 / something
+                  :mod (t2 / that))
+          :polarity -))
+
+# ::id lpp_1943.203 ::date 2012-08-07T10:58:32 ::annotator ISI-AMR-05 ::preferred
+# ::snt My friend never explained anything to me .
+# ::zh 因为我的这个朋友，从来也不加说明解释。
+# ::save-date Fri Apr 18, 2014 ::file lpp_1943_203.txt
+(e / explain-01 :polarity -
+      :ARG0 (p / person
+            :ARG0-of (h / have-rel-role-91
+                  :ARG1 i
+                  :ARG2 (f / friend)))
+      :ARG1 (a / anything)
+      :ARG2 (i / i)
+      :time (e2 / ever))
+
+# ::id lpp_1943.204 ::date 2012-08-07T11:00:55 ::annotator ISI-AMR-05 ::preferred
+# ::snt He thought , perhaps , that I was like himself .
+# ::zh 他认为我同他一样。
+# ::save-date Tue Aug 7, 2012 ::file lpp_1943_204.txt
+(t / think-01
+      :ARG0 (h / he)
+      :ARG1 (r / resemble-01
+            :ARG1 (i / i)
+            :ARG2 h)
+      :mod (p / perhaps))
+
+# ::id lpp_1943.205 ::date 2012-08-07T11:01:49 ::annotator ISI-AMR-05 ::preferred
+# ::snt But I , alas , do not know how to see sheep through the walls of boxes .
+# ::zh 可是，很遗憾，我却不能透过盒子看见小羊。
+# ::save-date Mon Nov 3, 2014 ::file lpp_1943_205.txt
+(c / contrast-01
+      :ARG2 (k / know-01 :polarity -
+            :ARG0 (i / i)
+            :ARG1 (t2 / thing
+                  :manner-of (s / see-01
+                        :ARG1 (s2 / sheep)
+                        :path (t / through
+                              :op1 (w / wall
+                                    :consist-of (b2 / box))))))
+      :mod (a / alas))
+
+# ::id lpp_1943.206 ::date 2012-08-07T11:08:47 ::annotator ISI-AMR-05 ::preferred
+# ::snt Perhaps I am a little like the grown - ups .
+# ::zh 我大概有点和大人们差不多。
+# ::save-date Fri Apr 19, 2013 ::file lpp_1943_206.txt
+(r / resemble-01
+      :ARG1 (i / i)
+      :ARG2 (g / grown-up)
+      :mod (p / perhaps)
+      :quant (l / little))
+
+# ::id lpp_1943.207 ::date 2012-08-07T11:10:01 ::annotator ISI-AMR-05 ::preferred
+# ::snt I have had to grow old .
+# ::zh 我一定是变老了。
+# ::save-date Wed Apr 17, 2013 ::file lpp_1943_207.txt
+(o / obligate-01
+  :ARG1 (i / i)
+  :ARG2 (g / grow-02
+          :ARG1 i
+          :ARG2 (o2 / old)))
+
+# ::id lpp_1943.208 ::date 2012-11-05T18:05:56 ::annotator ISI-AMR-05 ::preferred
+# ::snt Chapter 5 .
+# ::zh V。
+# ::save-date Tue Apr 9, 2013 ::file lpp_1943_208.txt
+(c / chapter :mod 5)
+
+# ::id lpp_1943.209 ::date 2012-11-05T18:08:04 ::annotator ISI-AMR-05 ::preferred
+# ::snt As each day passed I would learn , in our talk , something about the little prince 's planet , his departure from it , his journey .
+# ::zh 每天我都了解到一些关于小王子的星球，他的出走和旅行等事情。
+# ::save-date Mon Apr 15, 2013 ::file lpp_1943_209.txt
+(l / learn-01
+      :ARG0 (i / i)
+      :ARG1 (a / and
+            :op1 (s / something
+                  :topic (p2 / planet
+                        :poss (p3 / prince
+                              :mod (l2 / little))))
+            :op2 (d2 / depart-01
+                  :ARG0 p3
+                  :ARG1 p2)
+            :op3 (j / journey-01
+                  :ARG0 p3))
+      :time (p / pass-03
+            :ARG1 (d / day
+                  :mod (e / each)))
+      :source (t / talk-01
+            :ARG0 (w / we)))
+
+# ::id lpp_1943.210 ::date 2012-11-05T18:11:27 ::annotator ISI-AMR-05 ::preferred
+# ::snt The information would come very slowly , as it might chance to fall from his thoughts .
+# ::zh 这些都是偶然从各种反应中慢慢得到的。
+# ::save-date Wed Nov 11, 2015 ::file lpp_1943_210.txt
+(c / come-01
+      :ARG1 (i / information)
+      :ARG1-of (s / slow-05
+            :degree (v / very))
+      :time (f / fall-01
+            :ARG1 i
+            :ARG3 (t / thing
+                  :ARG1-of (t2 / think-01
+                        :ARG0 (h / he)))
+            :ARG1-of (c2 / chance-01)))
+
+# ::id lpp_1943.211 ::date 2012-11-07T13:27:59 ::annotator ISI-AMR-05 ::preferred
+# ::snt It was in this way that I heard , on the third day , about the catastrophe of the baobabs .
+# ::zh 就这样，第三天我就了解到关于猴面包树的悲剧。
+# ::save-date Tue Apr 9, 2013 ::file lpp_1943_211.txt
+(h / hear-01
+      :ARG0 (i / i)
+      :ARG1 (c / catastrophe
+            :poss (b / baobab))
+      :manner (t / this)
+      :time (d / day
+            :ord (o / ordinal-entity :value 3)))
+
+# ::id lpp_1943.212 ::date 2012-11-07T13:29:02 ::annotator ISI-AMR-05 ::preferred
+# ::snt This time , once more , I had the sheep to thank for it .
+# ::zh 这一次又是因为羊的事情，
+# ::save-date Tue Feb 23, 2016 ::file lpp_1943_212.txt
+(o / obligate-01
+      :ARG2 (t / thank-01
+            :ARG0 (i / i)
+            :ARG1 (s / sheep)
+            :ARG2 (i2 / it))
+      :time (t2 / time
+            :mod (t3 / this))
+      :mod (a / again :frequency 1))
+
+# ::id lpp_1943.213 ::date 2012-11-07T13:30:26 ::annotator ISI-AMR-05 ::preferred
+# ::snt For the little prince asked me abruptly -- as if seized by a grave doubt -- " It is true , is n't it , that sheep eat little bushes ? "
+# ::zh 突然小王子好象是非常担心地问我道：“羊吃小灌木，这是真的吗？”
+# ::save-date Fri Dec 11, 2015 ::file lpp_1943_213.txt
+(a / ask-01
+      :ARG0 (p / prince
+            :mod (l2 / little))
+      :ARG1 (t / true-01
+            :ARG1 (e / eat-01
+                  :ARG0 (s / sheep)
+                  :ARG1 (b / bush
+                        :mod (l / little)))
+            :ARG1-of (r / request-confirmation-91
+                  :ARG0 p
+                  :ARG2 i2))
+      :ARG2 (i2 / i)
+      :manner (a2 / abrupt)
+      :conj-as-if (s2 / seize-01
+            :ARG0 (d / doubt-01
+                  :ARG0 p
+                  :mod (g / grave))
+            :ARG1 p))
+
+# ::id lpp_1943.214 ::date 2012-11-07T13:34:56 ::annotator ISI-AMR-05 ::preferred
+# ::snt " Yes , that is true . "
+# ::zh “是的，是真的。”
+# ::save-date Mon Nov 2, 2015 ::file lpp_1943_214.txt
+(t / true-01
+      :ARG1 (t2 / that))
+
+# ::id lpp_1943.215 ::date 2012-11-07T13:35:42 ::annotator ISI-AMR-05 ::preferred
+# ::snt " Ah !
+# ::zh “啊？
+# ::save-date Wed May 15, 2013 ::file lpp_1943_215.txt
+(a / ah :mode expressive)
+
+# ::id lpp_1943.216 ::date 2012-11-07T13:37:55 ::annotator ISI-AMR-05 ::preferred
+# ::snt I am glad ! "
+# ::zh 我真高兴。”
+# ::save-date Sat Jul 25, 2015 ::file lpp_1943_216.txt
+(g / glad-02
+      :ARG1 (i / i))
+
+# ::id lpp_1943.217 ::date 2012-11-07T13:38:33 ::annotator ISI-AMR-05 ::preferred
+# ::snt I did not understand why it was so important that sheep should eat little bushes .
+# ::zh 我不明白羊吃小灌木这件事为什么如此重要。
+# ::save-date Tue Apr 9, 2013 ::file lpp_1943_217.txt
+(u / understand-01 :polarity -
+      :ARG0 (i / i)
+      :ARG1 (i2 / important
+            :mod (s2 / so)
+            :domain (r / recommend-01
+                  :ARG1 (e / eat-01
+                        :ARG0 (s / sheep)
+                        :ARG1 (b / bush
+                              :mod (l / little))))
+            :ARG1-of (c / cause-01
+                  :ARG0 (a / amr-unknown))))
+
+# ::id lpp_1943.218 ::date 2012-11-07T13:42:11 ::annotator ISI-AMR-05 ::preferred
+# ::snt But the little prince added : " Then it follows that they also eat baobabs ? "
+# ::zh 可小王子又说道：“因此，它们也吃猴面包树罗？”
+# ::save-date Thu Oct 29, 2015 ::file lpp_1943_218.txt
+(c / contrast-01
+      :ARG1 (a / add-01
+            :ARG0 (p / prince
+                  :mod (l / little))
+            :ARG1 (f / follow-05 :mode interrogative
+                  :ARG1 (e / eat-01
+                        :ARG0 (t / they)
+                        :ARG1 (b / baobab)
+                        :mod (a2 / also))
+                  :ARG1-of (h / have-condition-91))))
+
+# ::id lpp_1943.219 ::date 2012-11-07T13:43:31 ::annotator ISI-AMR-05 ::preferred
+# ::snt I pointed out to the little prince that baobabs were not little bushes , but , on the contrary , trees as big as castles ; and that even if he took a whole herd of elephants away with him , the herd would not eat up one single baobab .
+# ::zh 我对小王子说，猴面包树可不是小灌木，而是像教堂那么大的大树；即便是带回一群大象，也啃不了一棵猴面包树。
+# ::save-date Sun Jun 28, 2015 ::file lpp_1943_219.txt
+(p2 / point-out-02
+      :ARG0 (i / i)
+      :ARG1 (a / and
+            :op1 (t2 / tree
+                  :mod (b5 / big
+                        :compared-to (c / castle)
+                        :degree (e4 / equal))
+                  :domain (b2 / baobab)
+                  :ARG1-of (i2 / instead-of-91
+                        :ARG2 (b3 / bush
+                              :mod (l3 / little)
+                              :domain b2)))
+            :op2 (e / eat-up-02 :polarity -
+                  :ARG0 h
+                  :ARG1 (b / baobab :quant 1
+                        :ARG1-of (s / single-02))
+                  :concession (e3 / even-if
+                        :op1 (t / take-01
+                              :ARG0 p
+                              :ARG1 (h / herd
+                                    :consist-of (e2 / elephant)
+                                    :mod (w / whole))
+                              :ARG3 (a2 / away)))))
+      :beneficiary (p / prince
+            :mod (l2 / little)))
+
+# ::id lpp_1943.220 ::date 2012-11-07T13:48:45 ::annotator ISI-AMR-05 ::preferred
+# ::snt The idea of the herd of elephants made the little prince laugh .
+# ::zh 一群大象这种想法使小王子发笑：“
+# ::save-date Tue Apr 9, 2013 ::file lpp_1943_220.txt
+(m / make-02
+      :ARG0 (i / idea
+            :topic (h / herd
+                  :consist-of (e / elephant)))
+      :ARG1 (l / laugh-01
+            :ARG0 (p / prince
+                  :mod (l2 / little))))
+
+# ::id lpp_1943.221 ::date 2012-11-07T14:01:45 ::annotator ISI-AMR-05 ::preferred
+# ::snt " We would have to put them one on top of the other , " he said .
+# ::zh 那可得把这些大象一只叠一只地垒起来。”
+# ::save-date Sat Apr 27, 2013 ::file lpp_1943_221.txt
+(s / say-01
+      :ARG0 (h / he)
+      :ARG1 (o / obligate-01
+            :ARG2 (s2 / stack-01
+                  :ARG0 (w / we)
+                  :ARG1 (t / they))))
+
+# ::id lpp_1943.222 ::date 2012-11-07T14:04:22 ::annotator ISI-AMR-05 ::preferred
+# ::snt But he made a wise comment : " Before they grow so big , the baobabs start out by being little . "
+# ::zh 他很有见识地说：“猴面包树在长大之前，开始也是小小的。”
+# ::save-date Fri May 29, 2015 ::file lpp_1943_222.txt
+(c2 / contrast-01
+      :ARG2 (c / comment-01
+            :ARG0 (h / he)
+            :ARG1 (s / start-out-05
+                  :ARG0 (b2 / baobab)
+                  :ARG2 (l / little)
+                  :time (b4 / before
+                        :op1 (g / grow-02
+                              :ARG1 b2
+                              :ARG2 (b5 / big
+                                    :degree (s2 / so)))))
+            :manner (w / wise)))
+
+# ::id lpp_1943.223 ::date 2012-11-07T14:07:23 ::annotator ISI-AMR-05 ::preferred
+# ::snt " That is strictly correct , "
+# ::zh “那是不错。
+# ::save-date Sun Jul 26, 2015 ::file lpp_1943_223.txt
+(c / correct-02
+      :ARG1 (t / that)
+      :mod (s / strict))
+
+# ::id lpp_1943.224 ::date 2012-11-07T14:13:23 ::annotator ISI-AMR-05 ::preferred
+# ::snt I said .
+# ::zh 我说。
+# ::save-date Wed Nov 7, 2012 ::file lpp_1943_224.txt
+(s / say-01
+  :ARG0 (i / i))
+
+# ::id lpp_1943.225 ::date 2012-11-07T14:18:39 ::annotator ISI-AMR-05 ::preferred
+# ::snt " But why do you want the sheep to eat the little baobabs ? "
+# ::zh 可是为什么你想叫你的羊去吃小猴面包树呢？”
+# ::save-date Tue Apr 9, 2013 ::file lpp_1943_225.txt
+(c / contrast-01
+      :ARG2 (c2 / cause-01
+            :ARG0 (a / amr-unknown)
+            :ARG1 (w / want-01
+                  :ARG0 (y / you)
+                  :ARG1 (e / eat-01
+                        :ARG0 (s / sheep)
+                        :ARG1 (b / baobab
+                              :mod (l / little))))))
+
+# ::id lpp_1943.226 ::date 2012-11-07T14:19:33 ::annotator ISI-AMR-05 ::preferred
+# ::snt He answered me at once , " Oh , come , come ! " , as if he were speaking of something that was self - evident .
+# ::zh 他回答我道：“唉！ 这还用说！” 似乎这是不言而喻的。
+# ::save-date Tue Feb 23, 2016 ::file lpp_1943_226.txt
+(a / answer-01
+      :ARG0 (h / he)
+      :ARG1 (i2 / i)
+      :ARG2 (c / come-on-25)
+      :time (i / immediate)
+      :conj-as-if (s / speak-01
+            :ARG0 h
+            :ARG1 (s2 / something
+                  :ARG0-of (e / evidence-01
+                        :ARG1 s2))))
+
+# ::id lpp_1943.227 ::date 2012-11-07T14:46:09 ::annotator ISI-AMR-05 ::preferred
+# ::snt And I was obliged to make a great mental effort to solve this problem , without any assistance .
+# ::zh 似乎这是不言而喻的。 可是我自己要费很大的心劲才能弄懂这个问题。
+# ::save-date Thu Jan 21, 2016 ::file lpp_1943_227.txt
+(a / and
+      :op1 (o / oblige-02
+            :ARG2 (e / effort-01
+                  :ARG0 (i / i)
+                  :ARG1 (s / solve-01
+                        :ARG0 i
+                        :ARG1 (p / problem
+                              :mod (t / this))
+                        :ARG2-of (a2 / assist-01 :polarity -
+                              :ARG1 i))
+                  :manner (m2 / mental)
+                  :mod (g / great))))
+
+# ::id lpp_1943.228 ::date 2012-11-07T14:47:55 ::annotator ISI-AMR-05 ::preferred
+# ::snt Indeed , as I learned , there were on the planet where the little prince lived -- as on all planets -- good plants and bad plants .
+# ::zh 原来，在小王子的星球上就象其他所有星球上一样，有好草和坏草；
+# ::save-date Wed Apr 29, 2015 ::file lpp_1943_228.txt
+(b2 / be-located-at-91
+      :ARG1 (a3 / and
+            :op1 (p / plant
+                  :ARG1-of (g / good-02))
+            :op2 (p2 / plant
+                  :ARG1-of (b / bad-07))
+            :mod (i / indeed))
+      :ARG2 (a / and
+            :op1 (p3 / planet
+                  :location-of (l / live-01
+                        :ARG0 (p4 / prince
+                              :mod (l2 / little))))
+            :op2 (p5 / planet
+                  :mod (a2 / all)))
+      :ARG1-of (l3 / learn-01
+            :ARG0 (i2 / i)))
+
+# ::id lpp_1943.229 ::date 2012-11-07T15:36:08 ::annotator ISI-AMR-05 ::preferred
+# ::snt In consequence , there were good seeds from good plants , and bad seeds from bad plants .
+# ::zh 因此，也就有益草的草籽和毒草的草籽，
+# ::save-date Wed Apr 29, 2015 ::file lpp_1943_229.txt
+(a / and
+      :op1 (s / seed
+            :ARG1-of (g / good-02)
+            :source (p / plant
+                  :ARG1-of (g2 / good-02)))
+      :op2 (s2 / seed
+            :ARG1-of (b / bad-07)
+            :source (p2 / plant
+                  :ARG1-of (b2 / bad-07)))
+      :ARG1-of (c2 / cause-01))
+
+# ::id lpp_1943.230 ::date 2012-11-07T15:42:40 ::annotator ISI-AMR-05 ::preferred
+# ::snt But seeds are invisible .
+# ::zh 可是草籽是看不见的。
+# ::save-date Wed Jul 15, 2015 ::file lpp_1943_230.txt
+(c / contrast-01
+      :ARG2 (p / possible-01 :polarity -
+            :ARG1 (s2 / see-01
+                  :ARG1 (s / seed))))
+
+# ::id lpp_1943.231 ::date 2012-11-08T07:38:34 ::annotator ISI-AMR-05 ::preferred
+# ::snt They sleep deep in the heart of the earth 's darkness , until some one among them is seized with the desire to awaken .
+# ::zh 它们沉睡在泥土里，直到其中的一粒忽然想要苏醒过来…
+# ::save-date Sun Jul 26, 2015 ::file lpp_1943_231.txt
+(s / sleep-01
+      :ARG0 (t / they)
+      :location (h / heart
+            :ARG2-of (d / deep-02)
+            :part-of (d2 / darkness
+                  :poss (e / earth)))
+      :time (u / until
+            :op1 (s2 / seize-01
+                  :ARG0 (d3 / desire-01
+                        :ARG1 (w / wake-01
+                              :ARG1 s))
+                  :ARG1 (s3 / someone
+                        :ARG1-of (i / include-91
+                              :ARG2 t)))))
+
+# ::id lpp_1943.232 ::date 2012-11-08T07:41:45 ::annotator ISI-AMR-05 ::preferred
+# ::snt Then this little seed will stretch itself and begin -- timidly at first -- to push a charming little sprig inoffensively upward toward the sun .
+# ::zh 于是它就伸展开身子，开始腼腆地朝着太阳长出一棵秀丽可爱的小嫩苗。
+# ::save-date Tue Apr 16, 2013 ::file lpp_1943_232.txt
+(a / and
+      :op1 (s / stretch-01
+            :ARG0 (s2 / seed
+                  :mod (l / little)
+                  :mod (t2 / this))
+            :ARG1 s2)
+      :op2 (b / begin-01
+            :ARG0 s2
+            :ARG1 (p / push-01
+                  :ARG0 s2
+                  :ARG1 (s3 / sprig
+                        :mod (l2 / little)
+                        :ARG0-of (c / charm-01))
+                  :ARG2 (u / upward
+                        :direction (s4 / sun))
+                  :manner (o / offensive :polarity -))
+            :manner (t3 / timid
+                  :time (a2 / at-first)))
+      :time (t / then))
+
+# ::id lpp_1943.233 ::date 2012-11-08T07:45:11 ::annotator ISI-AMR-05 ::preferred
+# ::snt If it is only a sprout of radish or the sprig of a rose - bush , one would let it grow wherever it might wish .
+# ::zh 如果是小萝卜或是玫瑰的嫩苗，就让它去自由地生长。
+# ::save-date Thu May 2, 2013 ::file lpp_1943_233.txt
+(a / allow-01
+      :ARG0 (o / one)
+      :ARG1 (g / grow-01
+            :ARG1 i
+            :location (w2 / wish-01
+                  :ARG0 i
+                  :ARG1-of (p / possible-01)))
+      :condition (o2 / or
+            :op1 (s / sprout
+                  :part-of (r / radish))
+            :op2 (s2 / sprig
+                  :part-of (b2 / bush
+                        :mod (r2 / rose)))
+            :mod (o3 / only)
+            :domain (i / it)))
+
+# ::id lpp_1943.234 ::date 2012-11-08T07:48:33 ::annotator ISI-AMR-05 ::preferred
+# ::snt But when it is a bad plant , one must destroy it as soon as possible , the very first instant that one recognizes it .
+# ::zh 如果是一棵坏苗，一旦被辨认出来，就应该马上把它拔掉。
+# ::save-date Mon Jun 8, 2015 ::file lpp_1943_234.txt
+(c / contrast-01
+      :ARG2 (o / obligate-01
+            :ARG2 (d / destroy-01
+                  :ARG0 (o2 / one)
+                  :ARG1 i2
+                  :time (i / instant
+                        :time-of (r / recognize-01
+                              :ARG0 o2
+                              :ARG1 i2)
+                        :ord (o3 / ordinal-entity :value 1
+                              :degree (v / very)))
+                  :time (s / soon
+                        :degree (m / most)
+                        :compared-to (p2 / possible-01
+                              :ARG1 d)))
+            :condition (p / plant
+                  :ARG1-of (b / bad-07)
+                  :domain (i2 / it))))
+
+# ::id lpp_1943.235 ::date 2012-11-08T08:05:11 ::annotator ISI-AMR-05 ::preferred
+# ::snt Now there were some terrible seeds on the planet that was the home of the little prince ; and these were the seeds of the baobab .
+# ::zh 因为在小王子的星球上，，有些非常可怕的种子…这就是猴面包树的种子。
+# ::save-date Thu Nov 5, 2015 ::file lpp_1943_235.txt
+(b2 / be-located-at-91
+      :ARG1 (s / seed
+            :ARG1-of (t / terrible-01)
+            :quant (s2 / some)
+            :poss (b / baobab))
+      :ARG2 (p / planet
+            :location-of (h / home
+                  :poss (p2 / prince
+                        :mod (l / little))))
+      :time (n / now))
+
+# ::id lpp_1943.236 ::date 2012-11-08T08:08:22 ::annotator ISI-AMR-05 ::preferred
+# ::snt The soil of that planet was infested with them .
+# ::zh 在那里的泥土里，这种种子多得成灾。
+# ::save-date Mon Apr 15, 2013 ::file lpp_1943_236.txt
+(i / infest-01
+      :ARG1 (s / soil
+            :poss (p / planet
+                  :mod (t2 / that)))
+      :ARG2 (t / they))
+
+# ::id lpp_1943.237 ::date 2012-11-08T08:09:16 ::annotator ISI-AMR-05 ::preferred
+# ::snt A baobab is something you will never , never be able to get rid of if you attend to it too late .
+# ::zh 而一棵猴面包树苗，假如你拔得太迟，就再也无法把它清除掉。
+# ::save-date Tue Jul 14, 2015 ::file lpp_1943_237.txt
+(p / possible-01 :polarity -
+      :ARG1 (e / eliminate-01
+            :ARG0 (y / you)
+            :ARG1 (b / baobab)
+            :time (e2 / ever))
+      :condition (a / attend-02
+            :ARG0 y
+            :ARG1 b
+            :time (l / late
+                  :degree (t / too))))
+
+# ::id lpp_1943.238 ::date 2012-11-08T08:10:42 ::annotator ISI-AMR-05 ::preferred
+# ::snt It spreads over the entire planet .
+# ::zh 它就会盘踞整个星球。
+# ::save-date Thu Nov 8, 2012 ::file lpp_1943_238.txt
+(s / spread-01
+  :ARG1 (i / it)
+  :ARG2 (p / planet
+          :mod (e / entire)))
+
+# ::id lpp_1943.239 ::date 2012-11-08T08:11:46 ::annotator ISI-AMR-05 ::preferred
+# ::snt It bores clear through it with its roots .
+# ::zh 它的树根能把星球钻透，
+# ::save-date Fri May 29, 2015 ::file lpp_1943_239.txt
+(b / bore-01
+      :ARG0 (i / it)
+      :ARG2 (t2 / through
+            :op1 (i2 / it)
+            :mod (c / clear-03))
+      :ARG3 (r / root
+            :poss i))
+
+# ::id lpp_1943.240 ::date 2012-11-08T08:19:24 ::annotator ISI-AMR-05 ::preferred
+# ::snt And if the planet is too small , and the baobabs are too many , they split it in pieces ...
+# ::zh 如果星球很小，而猴面包树很多，它就把整个星球搞得支离破碎。
+# ::save-date Tue Apr 16, 2013 ::file lpp_1943_240.txt
+(a / and
+      :op1 (s / split-01
+            :ARG0 b
+            :ARG1 p2
+            :ARG2 (p / piece)
+            :condition (a2 / and
+                  :op1 (s2 / small
+                        :degree (t2 / too)
+                        :domain (p2 / planet))
+                  :op2 (b / baobab
+                        :quant (m / many
+                              :degree (t3 / too))))))
+
+# ::id lpp_1943.241 ::date 2012-11-08T08:21:39 ::annotator ISI-AMR-05 ::preferred
+# ::snt " It is a question of discipline , " the little prince said to me later on .
+# ::zh “这是个纪律问题。” 小王子后来向我解释道。
+# ::save-date Tue Apr 16, 2013 ::file lpp_1943_241.txt
+(s / say-01
+      :ARG0 (p / prince
+            :mod (l / little))
+      :ARG1 (q / question
+            :topic (d / discipline)
+            :domain (i / it))
+      :ARG2 (i2 / i)
+      :time (l2 / late
+            :degree (m / more)))
+
+# ::id lpp_1943.242 ::date 2012-11-08T08:23:57 ::annotator ISI-AMR-05 ::preferred
+# ::snt " When you 've finished your own toilet in the morning , then it is time to attend to the toilet of your planet , just so , with the greatest care .
+# ::zh “当你早上梳洗完毕以后，必须仔细地给星球梳洗，
+# ::save-date Tue Jul 14, 2015 ::file lpp_1943_242.txt
+(a / attend-02
+      :ARG0 (y2 / you)
+      :ARG1 (t2 / toilet
+            :poss (p / planet
+                  :poss y)
+            :ARG1-of (r / resemble-01
+                  :ARG2 t))
+      :manner (c / care-04
+            :extent (g / great
+                  :degree (m2 / most)))
+      :time (f / finish-01
+            :ARG0 (y / you)
+            :ARG1 (t / toilet
+                  :poss y)
+            :time (d / date-entity :dayperiod (m / morning))))
+
+# ::id lpp_1943.243 ::date 2012-11-08T08:28:08 ::annotator ISI-AMR-05 ::preferred
+# ::snt You must see to it that you pull up regularly all the baobabs , at the very first moment when they can be distinguished from the rosebushes which they resemble so closely in their earliest youth .
+# ::zh 必须规定自己按时去拔掉猴面包树苗。 这种树苗小的时候与玫瑰苗差不多，一旦可以把它们区别开的时候，就要把它拔掉。
+# ::save-date Tue Mar 1, 2016 ::file lpp_1943_243.txt
+(o2 / obligate-01
+      :ARG1 (p / pull-01
+            :ARG0 (y / you)
+            :ARG1 (b / baobab
+                  :mod (a / all))
+            :ARG1-of (r / regular-02)
+            :time (m / moment
+                  :ord (o / ordinal-entity :value 1
+                        :degree (v / very))
+                  :time-of (p2 / possible-01
+                        :ARG1 (d / distinguish-01
+                              :ARG1 b
+                              :ARG2 (r2 / rosebush
+                                    :ARG2-of (r3 / resemble-01
+                                          :ARG1 b
+                                          :ARG1-of (c / close-10
+                                                :degree (s / so))
+                                          :time (e / early
+                                                :op1 (y2 / youth
+                                                      :poss b)
+                                                :degree (m2 / most)))))))))
+
+# ::id lpp_1943.244 ::date 2012-11-08T08:31:41 ::annotator ISI-AMR-05 ::preferred
+# ::snt It is very tedious work , " the little prince added , " but very easy . "
+# ::zh 这是一件非常乏味的工作，但很容易。” 小王子说。
+# ::save-date Tue Apr 16, 2013 ::file lpp_1943_244.txt
+(a / add-01
+      :ARG0 (p / prince
+            :mod (l / little))
+      :ARG1 (c / contrast-01
+            :ARG1 (t / tedious
+                  :degree (v / very)
+                  :domain (w / work-01))
+            :ARG2 (e / easy-05
+                  :degree (v2 / very)
+                  :ARG1 w)))
+
+# ::id lpp_1943.245 ::date 2012-11-08T08:35:39 ::annotator ISI-AMR-05 ::preferred
+# ::snt And one day he said to me : " You ought to make a beautiful drawing , so that the children where you live can see exactly how all this is .
+# ::zh 有一天，他劝我用心地画一副漂亮的图画，好叫我家乡的孩子们对这件事有一个深刻的印象。
+# ::save-date Sat Jul 25, 2015 ::file lpp_1943_245.txt
+(a / and
+      :op1 (s / say-01
+            :ARG0 (h / he)
+            :ARG1 (r / recommend-01
+                  :ARG0 h
+                  :ARG1 (d3 / draw-01
+                        :ARG0 i
+                        :ARG1 (p2 / picture
+                              :ARG1-of (b / beautiful-02))
+                        :purpose (p / possible-01
+                              :ARG1 (s2 / see-01
+                                    :ARG0 (c / child
+                                          :location (l / live-01
+                                                :ARG0 i))
+                                    :ARG1 (t / this
+                                          :mod (a2 / all))
+                                    :manner (e / exact))))
+                  :ARG2 i)
+            :ARG2 (i / i)
+            :time (d / day
+                  :mod (o / one))))
+
+# ::id lpp_1943.246 ::date 2012-11-08T08:41:55 ::annotator ISI-AMR-05 ::preferred
+# ::snt That would be very useful to them if they were to travel some day .
+# ::zh 他还对我说：“如果将来有一天他们出外旅行，这对他们是很有用的。
+# ::save-date Mon Jul 6, 2015 ::file lpp_1943_246.txt
+(u / useful-05
+      :ARG0 (t2 / they)
+      :ARG1 (t / that)
+      :degree (v / very)
+      :condition (t3 / travel-01
+            :ARG0 t2
+            :time (d / day
+                  :mod (s / some))))
+
+# ::id lpp_1943.247 ::date 2012-11-13T07:34:31 ::annotator ISI-AMR-05 ::preferred
+# ::snt Sometimes , " he added , " there is no harm in putting off a piece of work until another day .
+# ::zh 有时候，人们把自己的工作推到以后去做，并没有什么妨害，
+# ::save-date Tue Apr 16, 2013 ::file lpp_1943_247.txt
+(a / add-01
+      :ARG0 (h / he)
+      :ARG1 (h2 / harm-01 :polarity -
+            :ARG0 (p / put-off-06
+                  :ARG1 (t / thing
+                        :ARG1-of (w / work-01)
+                        :quant (p3 / piece))
+                  :ARG2 (d / day
+                        :mod (a2 / another)))
+            :time (s / sometimes)))
+
+# ::id lpp_1943.248 ::date 2012-11-13T07:36:12 ::annotator ISI-AMR-05 ::preferred
+# ::snt But when it is a matter of baobabs , that always means a catastrophe .
+# ::zh 但要遇到拔猴面包树苗这种事，那就非造成大灾难不可。
+# ::save-date Sat Mar 14, 2015 ::file lpp_1943_248.txt
+(c2 / contrast-01
+      :ARG2 (m3 / mean-01
+            :ARG1 (t / that)
+            :ARG2 (c / catastrophe)
+            :time (a / always)
+            :condition (b / baobab)))
+
+# ::id lpp_1943.249 ::date 2012-11-13T07:39:23 ::annotator ISI-AMR-05 ::preferred
+# ::snt I knew a planet that was inhabited by a lazy man .
+# ::zh 我遇到过一个星球，上面住着一个懒家伙，
+# ::save-date Wed Mar 18, 2015 ::file lpp_1943_249.txt
+(k / know-02
+      :ARG0 (i / i)
+      :ARG1 (p / planet
+            :ARG1-of (i2 / inhabit-01
+                  :ARG0 (m / man
+                        :mod (l / lazy)))))
+
+# ::id lpp_1943.250 ::date 2012-11-13T07:40:51 ::annotator ISI-AMR-05 ::preferred
+# ::snt He neglected three little bushes ... "
+# ::zh 他放过了三棵小树苗…”
+# ::save-date Tue Nov 13, 2012 ::file lpp_1943_250.txt
+(n / neglect-01
+  :ARG0 (h / he)
+  :ARG1 (b / bush
+          :mod (l / little)
+          :quant 3))
+
+# ::id lpp_1943.251 ::date 2012-11-13T07:41:17 ::annotator ISI-AMR-05 ::preferred
+# ::snt So , as the little prince described it to me , I have made a drawing of that planet .
+# ::zh 于是，根据小王子的说明，我把这个星球画了下来。
+# ::save-date Tue Apr 16, 2013 ::file lpp_1943_251.txt
+(d / draw-01
+      :ARG0 (i / i)
+      :ARG1 (p / planet
+            :mod (t / that))
+      :manner (d2 / describe-01
+            :ARG0 (p2 / prince
+                  :mod (l / little))
+            :ARG1 p
+            :beneficiary i)
+      :ARG1-of (c / cause-01))
+
+# ::id lpp_1943.252 ::date 2012-11-13T07:43:35 ::annotator ISI-AMR-05 ::preferred
+# ::snt I do not much like to take the tone of a moralist .
+# ::zh 我从来不大愿意以道学家的口吻来说话，
+# ::save-date Tue Jul 28, 2015 ::file lpp_1943_252.txt
+(l / like-01 :polarity -
+      :ARG0 (i / i)
+      :ARG1 (t / take-01
+            :ARG0 i
+            :ARG1 (t2 / tone
+                  :poss (m2 / moralist)))
+      :degree (m / much))
+
+# ::id lpp_1943.253 ::date 2012-11-13T07:45:07 ::annotator ISI-AMR-05 ::preferred
+# ::snt But the danger of the baobabs is so little understood , and such considerable risks would be run by anyone who might get lost on an asteroid , that for once I am breaking through my reserve .
+# ::zh 可是猴面包树的危险，大家都不大了解，对迷失在小行星上的人来说，危险性非常之大，因此这一回，我贸然打破了我的这种不喜欢教训人的惯例。
+# ::save-date Thu May 2, 2013 ::file lpp_1943_253.txt
+(c2 / contrast-01
+      :ARG2 (c3 / cause-01
+            :ARG0 (a / and
+                  :op1 (u / understand-01
+                        :ARG1 (d / danger
+                              :poss (b2 / baobab))
+                        :degree (l / little
+                              :degree (s / so)))
+                  :op2 (r / risk-01
+                        :ARG0 (a2 / anyone
+                              :ARG1-of (l2 / lose-02
+                                    :location (a3 / asteroid)
+                                    :ARG1-of (p / possible-01)))
+                        :degree (c / considerable
+                              :mod (s2 / such))))
+            :ARG1 (b3 / break-away-14
+                  :ARG0 (i / i)
+                  :ARG1 (r3 / reserve
+                        :poss i)
+                  :mod (f / for-once))))
+
+# ::id lpp_1943.254 ::date 2012-11-13T07:52:33 ::annotator ISI-AMR-05 ::preferred
+# ::snt " Children , "
+# ::zh “孩子们，”
+# ::save-date Tue Apr 23, 2013 ::file lpp_1943_254.txt
+(c2 / child)
+
+# ::id lpp_1943.255 ::date 2012-11-13T07:53:50 ::annotator ISI-AMR-05 ::preferred
+# ::snt I say plainly , " watch out for the baobabs ! "
+# ::zh 我说：要当心那些猴面包树呀！”
+# ::save-date Tue Apr 23, 2013 ::file lpp_1943_255.txt
+(s / say-01
+      :ARG0 (i / i)
+      :ARG1 (w / watch-out-02 :mode imperative
+            :ARG0 (y / you)
+            :ARG1 (b / baobab))
+      :manner (p / plain))
+
+# ::id lpp_1943.256 ::date 2012-11-13T07:54:27 ::annotator ISI-AMR-05 ::preferred
+# ::snt My friends , like myself , have been skirting this danger for a long time , without ever knowing it ; and so it is for them that I have worked so hard over this drawing .
+# ::zh 为了叫我的朋友们警惕这种危险——他们同我一样长期以来和这种危险接触，却没有意识到它的危险性——我花了很大的功夫画了这副画。
+# ::save-date Sat Jul 25, 2015 ::file lpp_1943_256.txt
+(c / cause-01
+      :ARG0 (s / skirt-02
+            :ARG0 (a / and
+                  :op1 (p2 / person
+                        :ARG0-of (h2 / have-rel-role-91
+                              :ARG1 (i / i)
+                              :ARG2 (f / friend)))
+                  :op2 i)
+            :ARG1 (d / danger
+                  :mod (t / this))
+            :ARG1-of (k / know-01 :polarity -
+                  :ARG0 p2
+                  :time (e / ever))
+            :ARG1-of (l / long-03))
+      :ARG1 (w / work-01
+            :ARG0 i
+            :ARG1 (p / picture
+                  :ARG1-of (d2 / draw-01)
+                  :mod (t3 / this))
+            :ARG1-of (h / hard-02
+                  :degree (s2 / so))
+            :beneficiary p2))
+
+# ::id lpp_1943.257 ::date 2012-11-13T07:57:38 ::annotator ISI-AMR-05 ::preferred
+# ::snt The lesson which I pass on by this means is worth all the trouble it has cost me .
+# ::zh 我提出的这个教训意义是很重大的，花点功夫是很值得的。
+# ::save-date Wed Jan 20, 2016 ::file lpp_1943_257.txt
+(w / worth-02
+      :ARG1 (l / lesson
+            :ARG1-of (p / pass-on-09
+                  :ARG0 (i / i)
+                  :manner (t2 / this)))
+      :ARG2 (t / trouble
+            :ARG2-of (c / cost-01
+                  :ARG1 l
+                  :ARG3 i)
+            :mod (a / all)))
+
+# ::id lpp_1943.258 ::date 2012-11-13T08:01:21 ::annotator ISI-AMR-05 ::preferred
+# ::snt Perhaps you will ask me , " Why are there no other drawing in this book as magnificent and impressive as this drawing of the baobabs ? "
+# ::zh 你们也许要问，为什么这本书中别的画都没有这副画那么壮观呢？
+# ::save-date Thu Oct 29, 2015 ::file lpp_1943_258.txt
+(p / possible-01
+      :ARG1 (a / ask-01
+            :ARG0 (y / you)
+            :ARG1 (p2 / picture :polarity -
+                  :ARG1-of (d / draw-01)
+                  :mod (o / other)
+                  :location (b / book
+                        :mod (t / this))
+                  :mod (m / magnificent
+                        :degree (e / equal)
+                        :compared-to (p3 / picture
+                              :ARG1-of (d2 / draw-01)
+                              :mod (t2 / this)
+                              :topic (b2 / baobab)))
+                  :ARG0-of (i / impress-01
+                        :degree (e2 / equal)
+                        :compared-to p3)
+                  :ARG0-of (c / cause-01
+                        :ARG1 (a2 / amr-unknown)))
+            :ARG2 (i2 / i)))
+
+# ::id lpp_1943.259 ::date 2012-11-13T08:04:09 ::annotator ISI-AMR-05 ::preferred
+# ::snt The reply is simple .
+# ::zh 回答很简单：
+# ::save-date Sun Jul 26, 2015 ::file lpp_1943_259.txt
+(s / simple-02
+      :ARG1 (t / thing
+            :ARG2-of (r / reply-01)))
+
+# ::id lpp_1943.260 ::date 2012-11-13T08:04:46 ::annotator ISI-AMR-05 ::preferred
+# ::snt I have tried .
+# ::zh 我也试了。
+# ::save-date Tue Nov 13, 2012 ::file lpp_1943_260.txt
+(t / try-01
+  :ARG0 (i / i))
+
+# ::id lpp_1943.261 ::date 2012-11-13T08:05:06 ::annotator ISI-AMR-05 ::preferred
+# ::snt But with the others I have not been successful .
+# ::zh 别的画我也曾经试图画得好些，却没成功。
+# ::save-date Tue Apr 16, 2013 ::file lpp_1943_261.txt
+(c / contrast-01
+      :ARG2 (s / succeed-01 :polarity -
+            :ARG0 (i / i)
+            :ARG1 (o / other)))
+
+# ::id lpp_1943.262 ::date 2012-11-13T08:06:04 ::annotator ISI-AMR-05 ::preferred
+# ::snt When I made the drawing of the baobabs I was carried beyond myself by the inspiring force of urgent necessity .
+# ::zh 而当我画猴面包树时，有一种急切的心情在激励着我。
+# ::save-date Tue Apr 16, 2013 ::file lpp_1943_262.txt
+(c / carry-01
+      :ARG0 (f / force-01
+            :ARG0 (n / necessity
+                  :mod (u / urgent))
+            :ARG0-of (i2 / inspire-01))
+      :ARG1 (i / i)
+      :destination (b / beyond
+            :op1 i)
+      :time (d / draw-01
+            :ARG0 i
+            :ARG1 (b2 / baobab)))
+
+# ::id lpp_1943.263 ::date 2012-11-13T08:13:15 ::annotator ISI-AMR-05 ::preferred
+# ::snt Chapter 6 .
+# ::zh VI。
+# ::save-date Tue Apr 16, 2013 ::file lpp_1943_263.txt
+(c / chapter :mod 6)
+
+# ::id lpp_1943.264 ::date 2012-11-13T08:13:30 ::annotator ISI-AMR-05 ::preferred
+# ::snt Oh , little prince !
+# ::zh 啊，小王子！
+# ::save-date Thu May 2, 2013 ::file lpp_1943_264.txt
+(p / prince
+      :mod (l / little))
+
+# ::id lpp_1943.265 ::date 2012-11-13T08:14:20 ::annotator ISI-AMR-05 ::preferred
+# ::snt Bit by bit I came to understand the secrets of your sad little life ...
+# ::zh 就这样，我逐渐懂得了你那忧郁的生活。
+# ::save-date Sun Jul 26, 2015 ::file lpp_1943_265.txt
+(u / understand-01
+      :ARG0 (i / i)
+      :ARG1 (s / secret
+            :poss (l / life
+                  :poss (y / you)
+                  :mod (l2 / little)
+                  :ARG1-of (s2 / sad-02)))
+      :manner (b / bit-by-bit))
+
+# ::id lpp_1943.266 ::date 2012-11-13T08:20:17 ::annotator ISI-AMR-05 ::preferred
+# ::snt For a long time you had found your only entertainment in the quiet pleasure of looking at the sunset .
+# ::zh 过去相当长的时间里你唯一的乐趣就是观赏那夕阳西下的温柔晚景。
+# ::save-date Mon Nov 16, 2015 ::file lpp_1943_266.txt
+(f / find-01
+      :ARG0 (y / you)
+      :ARG1 (e / entertain-01
+            :ARG0 (l2 / look-01
+                  :ARG0 y
+                  :ARG1 (s / sunset)
+                  :mod (p / pleasure
+                        :ARG1-of (q / quiet-04)))
+            :ARG1 y
+            :mod (o / only))
+      :ARG1-of (l / long-03))
+
+# ::id lpp_1943.267 ::date 2012-11-13T08:22:25 ::annotator ISI-AMR-05 ::preferred
+# ::snt I learned that new detail on the morning of the fourth day , when you said to me : " I am very fond of sunsets .
+# ::zh 这个新的细节，是我在第四天早晨知道的。 你当时对我说道：“我喜欢看日落。
+# ::save-date Fri Feb 26, 2016 ::file lpp_1943_267.txt
+(l / learn-01
+      :ARG0 (i / i)
+      :ARG1 (d / detail
+            :ARG1-of (n / new-01)
+            :mod (t / that))
+      :time (d3 / date-entity
+            :dayperiod (m / morning)
+            :mod (d2 / day
+                  :ord (o / ordinal-entity :value 4)))
+      :time (s / say-01
+            :ARG0 (y / you)
+            :ARG1 (l2 / like-01
+                  :ARG0 y
+                  :ARG1 (s2 / sunset)
+                  :degree (v / very))
+            :ARG2 i))
+
+# ::id lpp_1943.268 ::date 2012-11-14T10:39:36 ::annotator ISI-AMR-05 ::preferred
+# ::snt Come , let us go look at a sunset now . "
+# ::zh 我们去看一回日落吧！”
+# ::save-date Tue Apr 16, 2013 ::file lpp_1943_268.txt
+(a / and
+      :op1 (c / come-01 :mode imperative
+            :ARG1 (y / you))
+      :op2 (g / go-05 :mode imperative
+            :ARG0 w
+            :ARG1 (l / look-01
+                  :ARG0 (w / we)
+                  :ARG1 (s / sunset)
+                  :time (n / now))))
+
+# ::id lpp_1943.269 ::date 2012-11-14T10:40:30 ::annotator ISI-AMR-05 ::preferred
+# ::snt " But we must wait , "
+# ::zh “可是得等着…”
+# ::save-date Mon Apr 15, 2013 ::file lpp_1943_269.txt
+(c / contrast-01
+      :ARG2 (o / obligate-01
+            :ARG2 (w2 / wait-01
+                  :ARG1 (w / we))))
+
+# ::id lpp_1943.270 ::date 2012-11-14T10:41:07 ::annotator ISI-AMR-05 ::preferred
+# ::snt I said .
+# ::zh 我说。
+# ::save-date Wed Nov 14, 2012 ::file lpp_1943_270.txt
+(s / say-01
+  :ARG0 (i / i))
+
+# ::id lpp_1943.271 ::date 2012-11-14T10:41:19 ::annotator ISI-AMR-05 ::preferred
+# ::snt " Wait ?
+# ::zh “等什么？”
+# ::save-date Wed Apr 17, 2013 ::file lpp_1943_271.txt
+(w / wait-01 :mode interrogative)
+
+# ::id lpp_1943.272 ::date 2012-11-14T10:43:11 ::annotator ISI-AMR-05 ::preferred
+# ::snt For what ? "
+# ::zh “等什么？”
+# ::save-date Wed Apr 17, 2013 ::file lpp_1943_272.txt
+(w / wait-01
+      :ARG2 (a / amr-unknown))
+
+# ::id lpp_1943.273 ::date 2012-11-14T10:58:40 ::annotator ISI-AMR-05 ::preferred
+# ::snt " For the sunset .
+# ::zh “等太阳落山。”
+# ::save-date Wed Apr 17, 2013 ::file lpp_1943_273.txt
+(w / wait-01
+      :ARG2 (s / sunset))
+
+# ::id lpp_1943.274 ::date 2012-11-14T10:59:03 ::annotator ISI-AMR-05 ::preferred
+# ::snt We must wait until it is time . "
+# ::zh 我们必须等到那个时候。
+# ::save-date Mon Apr 15, 2013 ::file lpp_1943_274.txt
+(o / obligate-01
+      :ARG2 (w2 / wait-01
+            :ARG1 (w / we)
+            :duration (u / until
+                  :op1 (t / time))))
+
+# ::id lpp_1943.275 ::date 2012-11-14T11:00:13 ::annotator ISI-AMR-05 ::preferred
+# ::snt At first you seemed to be very much surprised .
+# ::zh 开始，你显得很惊奇的样子，
+# ::save-date Wed Aug 7, 2013 ::file lpp_1943_275.txt
+(s / seem-01
+      :ARG1 (s2 / surprise-01
+            :ARG1 (y / you)
+            :degree (m / much
+                  :degree (v / very)))
+      :time (a / at-first))
+
+# ::id lpp_1943.276 ::date 2012-11-14T11:01:40 ::annotator ISI-AMR-05 ::preferred
+# ::snt And then you laughed to yourself .
+# ::zh 随后你笑自己的糊涂。
+# ::save-date Wed Apr 17, 2013 ::file lpp_1943_276.txt
+(a / and
+      :op1 (l / laugh-01
+            :ARG0 (y / you)
+            :ARG2 y
+            :time (t / then)))
+
+# ::id lpp_1943.277 ::date 2012-11-14T11:02:27 ::annotator ISI-AMR-05 ::preferred
+# ::snt You said to me : " I am always thinking that I am at home ! "
+# ::zh 你对我说：“我总以为是在我的家乡呢！”
+# ::save-date Tue Apr 23, 2013 ::file lpp_1943_277.txt
+(s / say-01
+      :ARG0 (y / you)
+      :ARG1 (t / think-01
+            :ARG0 y
+            :ARG1 (b / be-located-at-91
+                  :ARG1 y
+                  :ARG2 (h / home))
+            :time (a / always))
+      :ARG2 (i / i))
+
+# ::id lpp_1943.278 ::date 2012-11-15T08:05:52 ::annotator ISI-AMR-05 ::preferred
+# ::snt Just so .
+# ::zh 确实，
+# ::save-date Thu Nov 15, 2012 ::file lpp_1943_278.txt
+(s / so
+  :mod (j / just))
+
+# ::id lpp_1943.279 ::date 2012-11-15T08:06:03 ::annotator ISI-AMR-05 ::preferred
+# ::snt Everybody knows that when it is noon in the United States the sun is setting over France .
+# ::zh 大家都知道，在美国是正午时分，
+# ::save-date Wed Apr 17, 2013 ::file lpp_1943_279.txt
+(k / know-01
+      :ARG0 (e / everybody)
+      :ARG1 (s / set-11
+            :ARG1 (s2 / sun)
+            :location (c2 / country :wiki "France"
+                  :name (n3 / name :op1 "France"))
+            :time (d / date-entity :time "12:00"
+                  :location (c / country :wiki "United_States"
+                        :name (n2 / name :op1 "United" :op2 "States")))))
+
+# ::id lpp_1943.280 ::date 2012-11-15T08:10:26 ::annotator ISI-AMR-05 ::preferred
+# ::snt If you could fly to France in one minute , you could go straight into the sunset , right from noon .
+# ::zh 在法国，正夕阳西下，只要在一分钟内赶到法国就可看到日落。
+# ::save-date Mon Jul 20, 2015 ::file lpp_1943_280.txt
+(p / possible-01
+      :ARG1 (g / go-02
+            :ARG0 y
+            :ARG3 (d / date-entity :time "12:00")
+            :ARG4 (s / sunset)
+            :ARG1-of (s2 / straight-04))
+      :condition (p2 / possible-01
+            :ARG1 (f / fly-01
+                  :ARG1 (y / you)
+                  :duration (t / temporal-quantity :quant 1
+                        :unit (m / minute))
+                  :destination (c / country :wiki "France" :name (n / name :op1 "France")))))
+
+# ::id lpp_1943.281 ::date 2012-11-15T08:12:55 ::annotator ISI-AMR-05 ::preferred
+# ::snt Unfortunately , France is too far away for that .
+# ::zh 可惜法国是那么的遥远。
+# ::save-date Wed Apr 17, 2013 ::file lpp_1943_281.txt
+(f / fortunate-01 :polarity -
+      :ARG2 (b / be-located-at-91
+            :ARG1 (c / country :wiki "France"
+                  :name (n / name :op1 "France"))
+            :ARG2 (a / away
+                  :extent (f2 / far
+                        :degree (t / too)))
+            :purpose (t2 / that)))
+
+# ::id lpp_1943.282 ::date 2012-11-15T08:15:37 ::annotator ISI-AMR-05 ::preferred
+# ::snt But on your tiny planet , my little prince , all you need do is move your chair a few steps .
+# ::zh 而在你那样的小行星上，你只要把你的椅子挪动几步就行了。
+# ::save-date Tue Apr 23, 2013 ::file lpp_1943_282.txt
+(s2 / say-01
+      :ARG1 (c2 / contrast-01
+            :ARG2 (o / obligate-01
+                  :ARG2 (m / move-01
+                        :ARG0 p2
+                        :ARG1 (c / chair
+                              :poss p2)
+                        :extent (s / step
+                              :quant (f / few))
+                        :mod (o2 / only))
+                  :location (p / planet
+                        :mod (t / tiny)
+                        :poss (p2 / prince
+                              :mod (l / little)
+                              :poss (i / i)))))
+      :ARG2 p2)
+
+# ::id lpp_1943.283 ::date 2012-11-15T08:23:41 ::annotator ISI-AMR-05 ::preferred
+# ::snt You can see the day end and the twilight falling whenever you like ...
+# ::zh 这样，你便可随时看到你想看的夕阳余辉…“
+# ::save-date Tue Mar 1, 2016 ::file lpp_1943_283.txt
+(p / possible-01
+      :ARG1 (s / see-01
+            :ARG0 (y / you)
+            :ARG1 (a / and
+                  :op1 (e / end-01
+                        :ARG1 (d / day))
+                  :op2 (f / fall-04
+                        :ARG1 (t / twilight)))
+            :time (l / like-02
+                  :ARG0 y
+                  :ARG1 s
+                  :mod (a2 / any))))
+
+# ::id lpp_1943.284 ::date 2012-11-15T08:25:42 ::annotator ISI-AMR-05 ::preferred
+# ::snt " One day , " you said to me , " I saw the sunset forty - four times ! "
+# ::zh 一天，我看见过四十三次日落。” 你对我说。
+# ::save-date Mon Sep 16, 2013 ::file lpp_1943_284.txt
+(s / say-01
+      :ARG0 (y / you)
+      :ARG1 (s2 / see-01 :frequency 44
+            :ARG0 y
+            :ARG1 (s3 / sunset)
+            :time (d / day
+                  :mod (o / one)))
+      :ARG2 (i / i))
+
+# ::id lpp_1943.285 ::date 2012-11-15T08:26:53 ::annotator ISI-AMR-05 ::preferred
+# ::snt And a little later you added : " You know -- one loves the sunset , when one is so sad ... "
+# ::zh 过一会儿，你又说：“你知道，当人们感到非常苦闷时，总是喜欢日落的。”
+# ::save-date Sun Jul 26, 2015 ::file lpp_1943_285.txt
+(a / and
+      :op1 (a2 / add-01
+            :ARG0 (y / you)
+            :ARG1 (l3 / love-01
+                  :ARG0 (o / one)
+                  :ARG1 (s / sunset)
+                  :time (s2 / sad-02
+                        :ARG1 o
+                        :mod (s3 / so)))
+            :time (l / late
+                  :degree (m / more
+                        :quant (l2 / little)))))
+
+# ::id lpp_1943.286 ::date 2012-11-18T16:24:12 ::annotator ISI-AMR-05 ::preferred
+# ::snt " Were you so sad , then ? "
+# ::zh 你怎么会这么苦闷？”
+# ::save-date Sun Jul 26, 2015 ::file lpp_1943_286.txt
+(s / sad-02 :mode interrogative
+      :ARG1 (y / you)
+      :time (t / then)
+      :degree (s2 / so))
+
+# ::id lpp_1943.287 ::date 2012-11-18T16:24:48 ::annotator ISI-AMR-05 ::preferred
+# ::snt I asked , " on the day of the forty - four sunsets ? "
+# ::zh 我问：“一天四十三次，
+# ::save-date Thu Oct 29, 2015 ::file lpp_1943_287.txt
+(a / ask-01
+      :ARG0 (i / i)
+      :ARG1 (b / be-temporally-at-91 :mode interrogative
+            :ARG2 (d / day
+                  :ARG0-of (h / have-03
+                        :ARG1 (s / sunset :quant 44)))))
+
+# ::id lpp_1943.288 ::date 2012-11-18T16:25:48 ::annotator ISI-AMR-05 ::preferred
+# ::snt But the little prince made no reply .
+# ::zh 但是小王子没有回答。
+# ::save-date Sun Dec 9, 2012 ::file lpp_1943_288.txt
+(c / contrast-01
+      :ARG2 (r / reply-01 :polarity -
+            :ARG0 (p / prince
+                  :mod (l / little))))
+

@@ -1,0 +1,110 @@
+corpus          = amr
+#corpus          = gigaword
+
+# amr settings
+## LDC v1.5
+#amr.down.base           = /path/to/LDC2015E86_DEFT_Phase_2_AMR_Annotation_R1/data/alignments/split/
+#amr.jamr.alignments       = /path/to/LDC2015E86_DEFT_Phase_2_AMR_Annotation_R1/data/amrs/split/jamr-alignments-all.txt
+## Little Prince v.1.6
+amr.down.base            = data/ldc2015e86/
+amr.jamr.alignments      = data/ldc2015e86/deft-p2-amr-r1-amrs-all-alignments.txt
+
+amr.roles.path              =
+amr.down.deAnonymize    = false
+amr.down.useNeClusters = true 
+amr.down.includeReentrances = true
+# add special role marker for re-entrance nodes, e.g., (open-up :arg0-r ( industry ))
+amr.down.reentrancesRoles   = false
+amr.down.outputBrackets     = true
+amr.down.markLeaves         = false
+amr.down.concatBracketsWithRoles = false
+amr.down.outputSense = false
+# randomly re-order children of every node (note that we first compute the re-ordering, and then we use the same for every node of each example
+amr.down.reshuffleChildren  = false
+amr.down.lowercase      = true
+amr.down.output        = tmp/
+amr.down.input          = training,dev,test
+# Only supporting linearize at this time
+amr.export.type         = linearize
+# dfs, majority, classifier (only supporting dfs at this time)
+amr.linearize.type      = dfs
+amr.threshold.amr       = 1
+amr.threshold.nl        = 1
+
+amr.concepts.ne         = thing,person,family,animal,language,nationality,ethnic-group,regional-group,religious-group,businessman,\
+                            organization,company,government-organization,military,criminal-organization,political-party,revolution,\
+                            school,university,research-institute,conglomerate,comet,club,gang,\
+                            team,league,agency,group,\
+                            rocket,missile,fleet,vessel,freighter,\
+                            lawyer,doctor,activist,prince,alias,poet,\
+                            location,city,city-district,county,state,province,territory,country,local-region,country-region,world-region,continent,town,village,estate,\
+                            region,district,\
+                            ocean,sea,lake,river,gulf,bay,strait,canal,\
+                            peninsula,mountain,volcano,valley,canyon,island,desert,forest,\
+                            moon,planet,star,constellation,\
+                            facility,airport,station,port,tunnel,bridge,road,railway-line,canal,\
+                            building,theater,museum,palace,hotel,worship-place,sports-facility,street,restaurant,\
+                            market,park,zoo,amusement-park,\
+                            event,incident,natural-disaster,earthquake,war,conference,game,festival,film,\
+                            product,vehicle,ship,aircraft,aircraft-type,spaceship,car-make,cigarette,\
+                            work-of-art,picture,music,show,broadcast-program,\
+                            publication,book,newspaper,magazine,journal,\
+                            natural-object,\
+                            law,treaty,award,food-dish,music-key,\
+                            molecular-physical-entity,small-molecule,protein,protein-family,protein-segment,amino-acid,macro-molecular-complex,enzyme,rna,virus,\
+                            pathway,gene,dna-sequence,cell,cell-line,organism,disease
+amr.concepts.neClusters =  person:person,family,animal,businessman,lawyer,doctor,activist,prince,alias#\
+                            organization:organization,company,government-organization,military,criminal-organization,political-party,revolution,school,university,\
+                            research-institute,conglomerate,comet,club,gang,team,league,agency,group,ethnic-group,regional-group,religious-group#\
+                            location:location,city,city-district,county,state,province,territory,country,local-region,country-region,world-region,continent,town,\
+                            village,estate,region,district,ocean,sea,lake,river,gulf,bay,strait,canal,\
+                            peninsula,mountain,volcano,valley,canyon,island,desert,forest,moon,planet,star,constellation,\
+                            facility,airport,station,port,tunnel,bridge,road,railway-line,canal,\
+                            building,theater,museum,palace,hotel,worship-place,sports-facility,street,restaurant,market,park,zoo,amusement-park#\
+                            other:rocket,missile,fleet,vessel,freighter,thing,language,nationality,event,incident,natural-disaster,earthquake,war,conference,game,\
+                            festival,film,product,vehicle,ship,aircraft,aircraft-type,spaceship,car-make,cigarette,\
+                            work-of-art,picture,music,show,broadcast-program,\
+                            publication,book,newspaper,magazine,journal,\
+                            natural-object,law,treaty,award,food-dish,music-key,\
+                            molecular-physical-entity,small-molecule,protein,protein-family,protein-segment,amino-acid,macro-molecular-complex,enzyme,rna,virus,\
+                            pathway,gene,dna-sequence,cell,cell-line,organism,disease
+amr.concepts.quantity   = monetary-quantity,distance-quantity,area-quantity,volume-quantity,temporal-quantity,\
+                          frequency-quantity,speed-quantity,acceleration-quantity,mass-quantity,force-quantity,\
+                          pressure-quantity,energy-quantity,power-quantity,charge-quantity,potential-quantity,\
+                          resistance-quantity,inductance-quantity,magnetic-field-quantity,magnetic-flux-quantity,radiation-quantity,\
+                          fuel-consumption-quantity,numerical-quantity,information-quantity,concentration-quantity,catalytic-activity-quantity,\
+                          acidity-quantity,seismic-quantity,temperature-quantity,mass-quantity-c,monetary-quantity-c,seismic-quantity-c,temporal-quantity-c
+amr.concepts.value      = ordinal-entity,percentage-entity,percentage-entity-c,phone-number-entity
+amr.roles.date          = calendar,century,day,dayperiod,decade,era,mod,month,part,quant,quarter,season,weekday,year
+
+amr.linearize.filter    = date-entity,date-entity-c,email-address-entity,ordinal-entity,percentage-entity,\
+                          percentage-entity-c,phone-number-entity,race/identity,rate-entity-91,rate-entity-91-c,score-entity,url-entity,\
+                          acceleration-quantity,acidity-quantity,area-quantity,distance-quantity,energy-quantity,\
+                          fuel-consumption-quantity,information-quantity,mass-quantity,mass-quantity-c,monetary-quantity,\
+                          monetary-quantity-c,numerical-quantity,power-quantity,seismic-quantity,seismic-quantity-c,speed-quantity,\
+                          temperature-quantity,temporal-quantity,temporal-quantity-c,volume-quantity,\
+                          :snt1,:snt2,:snt3,:snt4,:snt5,:snt6,:snt7,:name,:quant,:unit,:value,:year,:domain-of
+#                          :op1,:op10,:op11,:op12,:op13,:op14,:op15,:op16,:op17,:op2,:op3,:op4,:op5,:op6,:op7,:op8,:op9,\
+#                          :snt1,:snt2,:snt3,:snt4,:snt5,:snt6,:snt7,:ARG0,:ARG1,:ARG2,:name,:quant,:unit,:value,:year,:domain-of
+
+gigaword.down.input     =   /scratch/data/gigaword/gigaword_all.ner.txt
+#gigaword.down.input     =   /home/ikonstas/UW/seq2seq-attn/input_data_noTime_reEntrances_sense_brackets/test-nl.txt
+gigaword.down.amrAnonymization = resources/training-anonymized-alignments.txt
+#gigaword.down.amrVocabulary = /home/ikonstas/data/AmrLinearParallelCorpus/thres-amr-0-nl-0-fixedALIGNS-noSrcSOS-multi-allowSizeOnes-reEntrances-sense-brackets/training-nl-vocab.txt
+gigaword.down.amrVocabulary = /home/ikonstas/data/AmrLinearParallelCorpus/thres-amr-0-nl-0-fixedALIGNS-noSrcSOS-multi-allowSizeOnes-neClusters-reEntrances-brackets/training-nl-vocab.txt
+gigaword.down.output    = /scratch/tmp/
+
+#options are giga, pred_ner
+gigaword.down.infix    = giga
+# options are: ner (i.e., the input is already NER'ed), raw (i.e., the input is raw text and will get NER'ed internally),
+# rawWithId (i.e., same as above, but each input line has the format: unique_id \t raw_text) 
+gigaword.annotation     = ner
+# use coarse-grained (true) or fine-grained, AMR-based ontology of NEs
+gigaword.annotation.useNeClusters = true
+# filter out sentences that don't have 100% overlap with the training vocabulary (true for giga, false for pred_ner)
+gigaword.annotation.filterVocabulary = true
+
+# database settings (currently NOT USED)
+dbms            = none
+mysql.driver    = com.mysql.jdbc.Driver
+derby.driver    = org.apache.derby.jdbc.EmbeddedDriver
