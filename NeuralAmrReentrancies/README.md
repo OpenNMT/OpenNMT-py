@@ -1,3 +1,5 @@
+You can find the original repo at: https://github.com/sinantie/NeuralAmr
+
 # Neural AMR
 
 [Torch](http://torch.ch) implementation of sequence-to-sequence models for AMR parsing and generation based on the [Harvard NLP](https://github.com/sinantie/NeuralAmr/edit/master/README.md) framework. We provide the code for pre-processing, anonymizing, de-anonymizing, training and predicting from and to AMR. We are also including pre-trained models on 20M sentences from Gigaword and fine-tuned on the AMR [LDC2015E86: DEFT Phase 2 AMR Annotation R1 Corpus](https://catalog.ldc.upenn.edu/LDC2015E86). You can find all the details in the following paper:
