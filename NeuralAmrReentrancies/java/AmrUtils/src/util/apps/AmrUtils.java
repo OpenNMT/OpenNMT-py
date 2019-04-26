@@ -153,7 +153,7 @@ public class AmrUtils {
         if (!failedToParse) {
             amrSentence.applyAlignmentHeuristics(new HashMap<>(), false, true, false);
             String alignments = alignmentsToString(amrSentence.getAnonymizationAlignments());
-            return "r / " +((AmrLinearize) amrSentence.getAmr()).toStringBrackets(false, false, false, false) + "#" + alignments + "#" + toVisJs(((AmrLinearize) amrSentence.getAmr()).getGraph());
+            return "rootvar / " +((AmrLinearize) amrSentence.getAmr()).toStringBrackets(false, false, false, false) + "#" + alignments + "#" + toVisJs(((AmrLinearize) amrSentence.getAmr()).getGraph());
         }
         return "FAILED_TO_PARSE#" + errorMessage;
     }
