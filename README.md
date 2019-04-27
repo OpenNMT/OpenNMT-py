@@ -2,7 +2,7 @@ This is a fork of OpenNMT-py (https://github.com/OpenNMT/OpenNMT-py), v0.4 with 
 
 ## Install
 
-Follow instructions on [README_OpenNMT-py.md](README_OpenNMT-py.md) to install
+Follow instructions on [README_OpenNMT.md](README_OpenNMT.md) to install
 
 ## Data
 
