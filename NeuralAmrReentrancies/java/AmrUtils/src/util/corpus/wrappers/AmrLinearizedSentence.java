@@ -184,7 +184,9 @@ public class AmrLinearizedSentence extends AmrSentence
                     concept.setName(concept.getVar() + ' ' + '/' + ' ' + concept.getName());
             }
         }*/
-        it.next();
+        /*AmrComponent rtoken = it.next();
+        AmrConcept rconcept = (AmrConcept)rtoken;
+        System.out.println(rconcept.getVar() + ' ' + rconcept.getName());*/
         while(it.hasNext())
         {
             AmrComponent token = it.next();
@@ -192,7 +194,7 @@ public class AmrLinearizedSentence extends AmrSentence
             {
                 AmrConcept concept = (AmrConcept)token;
                 if (!concept.getVar().isEmpty())
-                    concept.setName(concept.getVar() + ' ' + '/' + ' ' + concept.getName());        
+                    concept.setName(concept.getVar() + ' ' + '/' + ' ' + concept.getName());       
             }
         }
     }

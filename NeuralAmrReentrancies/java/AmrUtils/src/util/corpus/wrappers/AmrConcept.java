@@ -130,10 +130,10 @@ public class AmrConcept extends AmrComponent
     }
     
     public static StringBuilder print(AmrConcept node, String role, StringBuilder str, boolean outputBrackets, boolean reshuffleChildren, 
-            boolean markLeaves, boolean outputSense, boolean concatBracketsWithRoles) {
+            boolean markLeaves, boolean outputSense, boolean concatBracketsWithRoles, boolean root) {
         if(!node.getName().equals("")) {
             // don't output brackets for nodes with one or less children
-            str.append(outputBrackets && node.getChildren().size() > 0 ? (concatBracketsWithRoles ? (role + "( ") : " ( ") : " ").append(outputSense ? node : node.getName());
+            str.append(outputBrackets && (root || node.getChildren().size() > 0) ? (concatBracketsWithRoles ? (role + "( ") : " ( ") : " ").append(outputSense ? node : node.getName());
             str.append(outputBrackets && node.getChildren().isEmpty() && markLeaves ? " *" : "");
         } 
         List<AmrProposition> childrenSet = node.getChildren();
@@ -144,8 +144,8 @@ public class AmrConcept extends AmrComponent
             if(!childRole.equals(":unk")) {                
                 str.append(" ").append(!concatBracketsWithRoles ? childRole : (child.getArgument().getChildren().isEmpty() ? childRole : ""));                
             }
-            print(child.getArgument(), childRole, str, outputBrackets, reshuffleChildren, markLeaves, outputSense, concatBracketsWithRoles);
+            print(child.getArgument(), childRole, str, outputBrackets, reshuffleChildren, markLeaves, outputSense, concatBracketsWithRoles, false);
         }
-        return str.append(outputBrackets && node.getChildren().size() > 0 ? (concatBracketsWithRoles ? (" )" + role) : " ) ") : "");
+        return str.append(outputBrackets && (root || node.getChildren().size() > 0) ? (concatBracketsWithRoles ? (" )" + role) : " ) ") : "");
     }
 }

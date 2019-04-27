@@ -479,7 +479,7 @@ public class AmrLinearize extends Amr
     {        
         StringBuilder str = new StringBuilder();
         AmrConcept root = (AmrConcept) linearizedGraph.get(0);
-        String out = AmrConcept.print(root, "", str, false, false, false, false, false).toString().toLowerCase().trim();
+        String out = AmrConcept.print(root, "", str, false, false, false, false, false, true).toString().toLowerCase().trim();
         return out;
 //        return linearizedGraph.stream().map(comp -> lowerCaseOutput ? comp.getName().toLowerCase() : comp.getName())
 //                .collect(Collectors.joining(" "));
@@ -490,7 +490,8 @@ public class AmrLinearize extends Amr
     {        
         StringBuilder str = new StringBuilder();
         AmrConcept root = (AmrConcept) linearizedGraph.get(0);
-        String out = AmrConcept.print(root, "", str, true, reshuffleChildren, markLeaves, outputSense, concatBracketsWithRoles).toString().toLowerCase().trim();
+        String out = AmrConcept.print(root, "", str, true, reshuffleChildren, markLeaves, outputSense, concatBracketsWithRoles, true).toString().toLowerCase().trim();
+        System.out.println(out);
         // remove first and last parentheses...kind of redundant. Sorry, LISP fans.
         return (out.split(" ").length > 1 && out.length() > 2 ? out.substring(2, out.length() - 2) : out).trim(); 
     }           
