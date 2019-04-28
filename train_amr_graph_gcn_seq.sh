@@ -37,5 +37,5 @@ python train.py \
     -start_decay_steps 6000 \
     -learning_rate 1 \
     -dropout 0.5 \
-    -seed 123 \ 
+    -seed 123 \
     -gpu_ranks ${GPUIDS}

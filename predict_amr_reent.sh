@@ -1,10 +1,10 @@
 #!/bin/bash
 
 GPU_ID="${2:-0}"
-DATASET=dev
+DATASET=test
 
 MODELS_DIR="${1:-models/graph_gcn_seq}"
-INPUT_DATA=ldc2017t10
+INPUT_DATA=ldc2015e86
 OUT_DIR=${MODELS_DIR}/preds/
 MODEL=${MODELS_DIR}/best.pt
 

@@ -1,0 +1,63 @@
+Generation Experiment: ../models/graph_gcn_seq/preds/{amr-model_step_12500.pt}.pred.txt
+
+Generated 1371 out of 1371 examples.
+
+----------------------
+Performance statistics
+----------------------
+
+
+-----------
+BLEU scores
+-----------
+Averaged Bleu scores: 0.2051
+
+Individual N-gram scoring
+        1-gram   2-gram   3-gram   4-gram   5-gram   6-gram   7-gram   8-gram   9-gram   ...
+        ------   ------   ------   ------   ------   ------   ------   ------   ------ 
+BLEU:  0.5120   0.2140   0.1067   0.0569 
+Cumulative N-gram scoring
+        1-gram   2-gram   3-gram   4-gram   5-gram   6-gram   7-gram   8-gram   9-gram   ...
+        ------   ------   ------   ------   ------   ------   ------   ------   ------ 
+BLEU:  0.2495   0.2861   0.2536   0.2051 
+
+Anonymized BLEU scores
+-----------
+Averaged Bleu scores: 0.2845
+
+Individual N-gram scoring
+        1-gram   2-gram   3-gram   4-gram   5-gram   6-gram   7-gram   8-gram   9-gram   ...
+        ------   ------   ------   ------   ------   ------   ------   ------   ------ 
+BLEU:  0.6228   0.3177   0.1853   0.1122 
+Cumulative N-gram scoring
+        1-gram   2-gram   3-gram   4-gram   5-gram   6-gram   7-gram   8-gram   9-gram   ...
+        ------   ------   ------   ------   ------   ------   ------   ------   ------ 
+BLEU:  0.2912   0.3536   0.3322   0.2845 
+
+METEOR scores
+-------------
+Test words:		27976.0
+Reference words:	28694.0
+Chunks:			9024.0
+Precision:		0.5196388879389939
+Recall:			0.5006406044678056
+f1:			0.5099628658595636
+fMean:			0.5034012987098937
+Fragmentation penalty:	0.5319021193425695
+
+Final score:		0.2356
+-----------
+
+
+Anonymized METEOR scores
+-------------
+Test words:		26893.0
+Reference words:	28694.0
+Chunks:			8957.0
+Precision:		0.6815583759094437
+Recall:			0.6216425755584757
+f1:			0.6502231351451374
+fMean:			0.6299494038611709
+Fragmentation penalty:	0.5164981829616387
+
+Final score:		0.3046

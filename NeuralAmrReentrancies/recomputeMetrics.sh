@@ -4,7 +4,7 @@ CLASSPATH=lib/AmrUtils.jar:lib/Helper.jar:lib/jewelcli-0.7.6.jar:lib/meteor-1.5.
 
 # options are: dev, test
 DATASET=test
-DATA_PATHNAME="${2:-../OpenNMT-py-AMR-dev/ldc2017t10/}"
+DATA_PATHNAME="${2:-../ldc2015e86/}"
 REF_PATH=${DATA_PATHNAME}/${DATASET}-nl.txt
 REF_ANON_PATH=${DATA_PATHNAME}/${DATASET}-nl-anon.txt
 ANONYMIZED_PATH=${DATA_PATHNAME}/${DATASET}-anonymized-alignments.txt
@@ -12,7 +12,7 @@ IDS_FILENAME=${DATA_PATHNAME}/${DATASET}-ids.txt
 
 # Folder containing file(s) with ANONYMIZED predictions. In case there are multiple files, for example from different
 # epoch runs, then the code automatically processes all of them and reports back the one with the highest multiBLEU score.
-INPUT_PATH="${1:-../OpenNMT-py-test/models/graph_gcn_seq/preds/}"
+INPUT_PATH="${1:-../models/graph_gcn_seq/preds/}"
 
 java -cp ${CLASSPATH}	util.metrics.RecomputeMetrics \
 --inputFolder ${INPUT_PATH} \
