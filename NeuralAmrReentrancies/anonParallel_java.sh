@@ -7,8 +7,8 @@ TMP_DIR=tmp/
 # Little Prince parallel corpus output folder with lots of files containing meta-data such as vocabs, histograms etc.
 #DATA_DIR=data/little-prince-meta
 #OUT_DIR=data/little-prince-input_data
-DATA_DIR=data/ldc2017t10/meta
-OUT_DIR=data/ldc2017t10/out/
+DATA_DIR=data/ldc2015e86/meta
+OUT_DIR=data/ldc2015e86/out/
 # usually change suffix to reflect various flavours of dataset features controlled via settings.properties (e.g., output sense, brackets etc)
 suffix=_neClusters_reEntrances_brackets
 
@@ -27,9 +27,9 @@ cut -f 1,3 ${DATA_DIR}/test-dfs-linear.txt > ${DATA_DIR}/test-nl-anon.txt
 cut -f 1,3 ${DATA_DIR}/dev-dfs-linear.txt > ${DATA_DIR}/dev-nl-anon.txt
 
 # Create src, targ, alignment files without ids for Harvard seq2seq code
-cut -f 2 ${DATA_DIR}/training-dfs-linear.txt | sed -e "s/\^[0-9.]*//g" > ${DATA_DIR}/training-dfs-linear_src.txt
-cut -f 2 ${DATA_DIR}/dev-dfs-linear.txt | sed -e "s/\^[0-9.]*//g" > ${DATA_DIR}/dev-dfs-linear_src.txt
-cut -f 2 ${DATA_DIR}/test-dfs-linear.txt | sed -e "s/\^[0-9.]*//g"  > ${DATA_DIR}/test-dfs-linear_src.txt
+cut -f 2 ${DATA_DIR}/training-dfs-linear.txt | sed -e "s/\^[0-9.]*//g" | sed 's/( \/ (/\//g' > ${DATA_DIR}/training-dfs-linear_src.txt
+cut -f 2 ${DATA_DIR}/dev-dfs-linear.txt | sed -e "s/\^[0-9.]*//g" | sed 's/( \/ (/\//g' > ${DATA_DIR}/dev-dfs-linear_src.txt
+cut -f 2 ${DATA_DIR}/test-dfs-linear.txt | sed -e "s/\^[0-9.]*//g" | sed 's/( \/ (/\//g' > ${DATA_DIR}/test-dfs-linear_src.txt
 
 cut -f 3 ${DATA_DIR}/training-dfs-linear.txt | tr '[:upper:]' '[:lower:]' > ${DATA_DIR}/training-dfs-linear_targ.txt
 cut -f 3 ${DATA_DIR}/dev-dfs-linear.txt | tr '[:upper:]' '[:lower:]' > ${DATA_DIR}/dev-dfs-linear_targ.txt

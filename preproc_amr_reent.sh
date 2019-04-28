@@ -1,7 +1,7 @@
 #!/bin/bash
 
 OUT_DIR=data/"${1:-amr_reent}"
-DATA_DIR="ldc2017t10"
+DATA_DIR="ldc2015e86"
 
 mkdir -p ${OUT_DIR}
 
