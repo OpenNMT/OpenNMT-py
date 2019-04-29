@@ -285,7 +285,7 @@ def _build_field_vocab(field, counter, size_multiple=1, **kwargs):
         _pad_vocab_to_multiple(field.vocab, size_multiple)
 
 
-def _load_vocab(vocab_path, name, counters):
+def _load_vocab(vocab_path, name, counters, min_freq):
     # counters changes in place
     vocab = _read_vocab_file(vocab_path, name)
     vocab_size = len(vocab)
@@ -293,7 +293,7 @@ def _load_vocab(vocab_path, name, counters):
     for i, token in enumerate(vocab):
         # keep the order of tokens specified in the vocab file by
         # adding them to the counter with decreasing counting values
-        counters[name][token] = vocab_size - i
+        counters[name][token] = vocab_size - i + min_freq
     return vocab, vocab_size
 
 
@@ -351,13 +351,15 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
     # Load vocabulary
     if src_vocab_path:
         src_vocab, src_vocab_size = _load_vocab(
-            src_vocab_path, "src", counters)
+            src_vocab_path, "src", counters,
+            src_words_min_frequency)
     else:
         src_vocab = None
 
     if tgt_vocab_path:
         tgt_vocab, tgt_vocab_size = _load_vocab(
-            tgt_vocab_path, "tgt", counters)
+            tgt_vocab_path, "tgt", counters,
+            tgt_words_min_frequency)
     else:
         tgt_vocab = None
 
