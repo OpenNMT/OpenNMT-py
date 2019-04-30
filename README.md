@@ -36,6 +36,10 @@ pip install -r requirements.txt
 
 Note that we currently only support PyTorch 1.0.0
 
+## Flask App
+* translation:  curl -d '{"text":"hello world", "in":"en", "out": ""}' -H "Content-Type: application/json" -X POST http://127.0.0.1:5000/translate
+* summarization: curl -d '{"text":"Take this input and summarize for me. Not sure why summarization makes the text so small. so small, so small so small"}' -H "Content-Type: application/json" -X POST http://127.0.0.1:5000/summary
+
 ## Features
 
 - [data preprocessing](http://opennmt.net/OpenNMT-py/options/preprocess.html)
