@@ -348,7 +348,7 @@ def train_opts(parser):
                    "Use 0 to not use initialization")
     group.add('--param_init_glorot', '-param_init_glorot', action='store_true',
               help="Init parameters with xavier_uniform. "
-                   "Required for transfomer.")
+                   "Required for transformer.")
 
     group.add('--train_from', '-train_from', default='', type=str,
               help="If training from a checkpoint then this is the "
