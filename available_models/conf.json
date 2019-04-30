@@ -4,17 +4,12 @@
                 {   
                         "id": 100,
                         "model": "gigaword_copy_acc_51.78_ppl_11.71_e20.pt",
-                        "timeout": 600,
+                        "timeout": 1000,
                         "on_timeout": "to_cpu",
                         "load": true,
                         "opt": {
-                                "gpu": 0,
                                 "beam_size": 5
-                        },  
-                        "tokenizer": {
-                                "type": "sentencepiece",
-                                "model": "gigaword_copy_acc_51.78_ppl_11.71_e20.pt"
-                        }   
+                        }
                 },{ 
                         "model": "gigaword_copy_acc_51.78_ppl_11.71_e20.pt",
                         "timeout": -1, 
