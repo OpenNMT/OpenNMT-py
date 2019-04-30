@@ -40,14 +40,14 @@ Change directories to `yt2t`. We'll rename the videos to follow the "vid#.avi" f
         fpath_new = os.path.join(YTC, f_new)
         os.rename(fpath_old, fpath_new)
 
-Make sure all the videos have the same (low) framerate using
+Make sure all the videos have the same (low) framerate by changing to the YouTubeClips directory and using
 
 .. code-block:: bash
 
     for fi in $( ls ); do ffmpeg -y -i $fi -r 2 $fi; done
 
 Now we want to convert the frames into sequences of CNN feature vectors.
-(We'll use the environment variable ``Y2T2`` to refer to the `yt2t` directory.)
+(We'll use the environment variable ``Y2T2`` to refer to the `yt2t` directory, so change directories back and use)
 
 .. code-block:: bash
 
@@ -110,6 +110,7 @@ Change directories back to ``YT2T``:
 
     train_files = open("yt2t_train_files.txt", "w")
     val_files = open("yt2t_val_files.txt", "w")
+    val_folded = open("yt2t_val_folded_files.txt", "w")
     test_files = open("yt2t_test_files.txt", "w")
 
     train_cap = open("yt2t_train_cap.txt", "w")
@@ -131,6 +132,8 @@ Change directories back to ``YT2T``:
                 train_files.write(vid_path + "\n")
                 train_cap.write(an + "\n")
             elif split_name in val:
+                if i == 0:
+                    val_folded.write(vid_path + "\n")
                 val_files.write(vid_path + "\n")
                 val_cap.write(an + "\n")
             else:
