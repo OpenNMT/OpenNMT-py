@@ -14,7 +14,7 @@ def random_string(size=4):
 
 @app.route('/')
 def hello_world():
-    return render_template('index.html')
+    return "Welcome to DL backend of Open Curriculum"
 
 
 @app.route('/translate', methods=['POST'])

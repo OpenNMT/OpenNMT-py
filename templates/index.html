@@ -1,0 +1,54 @@
+<html>
+
+<head><title>Open-Curriculum translation and summarization</title>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+</head>
+
+<body>
+    <div class="container">
+
+<div class="page-header">
+                <h1><center><i>Translation</i></center></h1>
+              </div>
+    </div>
+        
+    <!-- <form action="/generate_output" method="get" id="form1">
+        Input sentence<br>
+        <input type="text" name="text"><br>
+        <button type="submit" form="form1" value="Submit">Generate!</button>
+    </form> -->
+    <br> <br> <br> <br> <br> <br> <br> <br> <br>
+    <div class="container center_div">
+            <!-- <div class="form-group row"> -->
+                    
+        <h4>
+        <form class = 'form-group' action="/summary" method="POST">
+            <div class="card border-primary mb-3" style="box-shadow: 0 6px 10px 0 rgba(0,0,0,0.2);transition: 0.3s;"">
+					
+					<div class="container-fluid">
+                        <br>
+                            <label for="">Input Sentence</label><br><br>
+                            <input type="text" name="text" class="form-control"></input><br>
+                            <input type="text" name="in" class="form-control"></input><br>
+                            <input type="text" name="out" class="form-control"></input><br>
+                            <input type="submit" value="Translate" class="btn btn-primary"></input><br><br>
+					</div>
+					
+				</div>
+            
+        </form>
+        </h4>
+    </div>
+    
+
+</body>
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+
+<!-- jQuery library -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+<!-- Latest compiled JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+</html>
