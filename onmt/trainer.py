@@ -383,6 +383,7 @@ class Trainer(object):
                     if j > 0:
                         # not incrementing training step in case of bptt
                         self.optim._training_step -= 1
+                        self.optim._decay_step -= 1
 
                 # If truncated, don't backprop fully.
                 # TO CHECK
