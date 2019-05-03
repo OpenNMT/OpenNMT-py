@@ -607,7 +607,7 @@ class MultipleDatasetIterator(object):
         self.batch_size_fn = max_tok_len \
             if opt.batch_type == "tokens" else None
         self.batch_size_multiple = 8 if opt.model_dtype == "fp16" else 1
-        self.device = device
+        self.device = "cuda" if device >= 0 else "cpu"
         # Temporarily load one shard to retrieve sort_key for data_type
         temp_dataset = torch.load(self.iterables[0]._paths[0])
         self.sort_key = temp_dataset.sort_key
