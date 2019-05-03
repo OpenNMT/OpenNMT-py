@@ -153,7 +153,8 @@ class Trainer(object):
         for i in range(len(self.dropout_steps)):
             if step > 1 and step == self.dropout_steps[i] + 1:
                 self.model.update_dropout(self.dropout[i])
-                logger.info(self.model)
+                logger.info("Updated dropout to %f from step %d"
+                            % (self.dropout[i], step))
 
     def _accum_batches(self, iterator):
         batches = []
