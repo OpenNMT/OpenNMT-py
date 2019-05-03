@@ -652,7 +652,7 @@ class DatasetLazyIter(object):
 
     def __init__(self, dataset_paths, fields, batch_size, batch_size_fn,
                  batch_size_multiple, device, is_train, repeat=True,
-                 num_batches_multiple=1, yield_raw_example=True):
+                 num_batches_multiple=1, yield_raw_example=False):
         self._paths = dataset_paths
         self.fields = fields
         self.batch_size = batch_size
@@ -766,4 +766,5 @@ def build_dataset_iter(corpus_type, fields, opt, is_train=True, multi=False):
         device,
         is_train,
         repeat=not opt.single_pass,
-        num_batches_multiple=max(opt.accum_count) * opt.world_size)
+        num_batches_multiple=max(opt.accum_count) * opt.world_size,
+        yield_raw_example=multi)
