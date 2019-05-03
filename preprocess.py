@@ -71,13 +71,15 @@ def build_save_dataset(corpus_type, fields, src_reader, tgt_reader, opt):
             # Load vocabulary
             if opt.src_vocab:
                 src_vocab, src_vocab_size = _load_vocab(
-                    opt.src_vocab, "src", counters)
+                    opt.src_vocab, "src", counters,
+                    opt.src_words_min_frequency)
             else:
                 src_vocab = None
 
             if opt.tgt_vocab:
                 tgt_vocab, tgt_vocab_size = _load_vocab(
-                    opt.tgt_vocab, "tgt", counters)
+                    opt.tgt_vocab, "tgt", counters,
+                    opt.tgt_words_min_frequency)
             else:
                 tgt_vocab = None
 
