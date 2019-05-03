@@ -132,14 +132,14 @@ def build_save_dataset(corpus_type, fields, src_reader, tgt_reader, opt):
             del dataset
             gc.collect()
 
-        if corpus_type == "train":
-            fields = _build_fields_vocab(
-                fields, counters, opt.data_type,
-                opt.share_vocab, opt.vocab_size_multiple,
-                opt.src_vocab_size, opt.src_words_min_frequency,
-                opt.tgt_vocab_size, opt.tgt_words_min_frequency)
-            vocab_path = opt.save_data + '.vocab.pt'
-            torch.save(fields, vocab_path)
+    if corpus_type == "train":
+        fields = _build_fields_vocab(
+            fields, counters, opt.data_type,
+            opt.share_vocab, opt.vocab_size_multiple,
+            opt.src_vocab_size, opt.src_words_min_frequency,
+            opt.tgt_vocab_size, opt.tgt_words_min_frequency)
+        vocab_path = opt.save_data + '.vocab.pt'
+        torch.save(fields, vocab_path)
 
 
 def build_save_vocab(train_dataset, fields, opt):
