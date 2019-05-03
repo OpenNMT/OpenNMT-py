@@ -3,6 +3,7 @@ import glob
 import os
 import codecs
 import math
+import random
 
 from collections import Counter, defaultdict
 from itertools import chain, cycle
@@ -23,8 +24,6 @@ from onmt.inputters.image_dataset import (  # noqa: F401
 
 import gc
 
-import onmt
-import random
 
 # monkey-patch to make torchtext Vocab's pickleable
 def _getstate(self):
@@ -310,6 +309,42 @@ def _build_fv_from_multifield(multifield, counters, build_fv_args,
         logger.info(" * %s vocab size: %d." % (name, len(field.vocab)))
 
 
+def _build_fields_vocab(fields, counters, data_type, share_vocab,
+                        vocab_size_multiple,
+                        src_vocab_size, src_words_min_frequency,
+                        tgt_vocab_size, tgt_words_min_frequency):
+    build_fv_args = defaultdict(dict)
+    build_fv_args["src"] = dict(
+        max_size=src_vocab_size, min_freq=src_words_min_frequency)
+    build_fv_args["tgt"] = dict(
+        max_size=tgt_vocab_size, min_freq=tgt_words_min_frequency)
+    tgt_multifield = fields["tgt"]
+    _build_fv_from_multifield(
+        tgt_multifield,
+        counters,
+        build_fv_args,
+        size_multiple=vocab_size_multiple if not share_vocab else 1)
+    if data_type == 'text':
+        src_multifield = fields["src"]
+        _build_fv_from_multifield(
+            src_multifield,
+            counters,
+            build_fv_args,
+            size_multiple=vocab_size_multiple if not share_vocab else 1)
+        if share_vocab:
+            # `tgt_vocab_size` is ignored when sharing vocabularies
+            logger.info(" * merging src and tgt vocab...")
+            src_field = src_multifield.base_field
+            tgt_field = tgt_multifield.base_field
+            _merge_field_vocabs(
+                src_field, tgt_field, vocab_size=src_vocab_size,
+                min_freq=src_words_min_frequency,
+                vocab_size_multiple=vocab_size_multiple)
+            logger.info(" * merged vocab size: %d." % len(src_field.vocab))
+
+    return fields
+
+
 def build_vocab(train_dataset_files, fields, data_type, share_vocab,
                 src_vocab_path, src_vocab_size, src_words_min_frequency,
                 tgt_vocab_path, tgt_vocab_size, tgt_words_min_frequency,
@@ -392,34 +427,12 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
             del dataset
             gc.collect()
 
-    build_fv_args = defaultdict(dict)
-    build_fv_args["src"] = dict(
-        max_size=src_vocab_size, min_freq=src_words_min_frequency)
-    build_fv_args["tgt"] = dict(
-        max_size=tgt_vocab_size, min_freq=tgt_words_min_frequency)
-    tgt_multifield = fields["tgt"]
-    _build_fv_from_multifield(
-        tgt_multifield,
-        counters,
-        build_fv_args,
-        size_multiple=vocab_size_multiple if not share_vocab else 1)
-    if data_type == 'text':
-        src_multifield = fields["src"]
-        _build_fv_from_multifield(
-            src_multifield,
-            counters,
-            build_fv_args,
-            size_multiple=vocab_size_multiple if not share_vocab else 1)
-        if share_vocab:
-            # `tgt_vocab_size` is ignored when sharing vocabularies
-            logger.info(" * merging src and tgt vocab...")
-            src_field = src_multifield.base_field
-            tgt_field = tgt_multifield.base_field
-            _merge_field_vocabs(
-                src_field, tgt_field, vocab_size=src_vocab_size,
-                min_freq=src_words_min_frequency,
-                vocab_size_multiple=vocab_size_multiple)
-            logger.info(" * merged vocab size: %d." % len(src_field.vocab))
+    fields = _build_fields_vocab(
+        fields, counters, data_type,
+        share_vocab, vocab_size_multiple,
+        src_vocab_size, src_words_min_frequency,
+        tgt_vocab_size, tgt_words_min_frequency)
+
     return fields  # is the return necessary?
 
 
@@ -499,8 +512,9 @@ def batch_iter(data, batch_size, batch_size_fn=None, batch_size_multiple=1):
 
 def _pool(data, batch_size, batch_size_fn, batch_size_multiple,
           sort_key, random_shuffler):
-    for p in torchtext.data.batch(data, batch_size * 500,
-        batch_size_fn=batch_size_fn):
+    for p in torchtext.data.batch(
+            data, batch_size * 500,
+            batch_size_fn=batch_size_fn):
         p_batch = batch_iter(
             sorted(p, key=sort_key),
             batch_size,
@@ -588,7 +602,8 @@ class MultipleDatasetIterator(object):
         self.iterables = iterables
         self.weights = opt.data_weights
         self.batch_size = opt.batch_size
-        self.batch_size_fn = max_tok_len if opt.batch_type == "tokens" else None
+        self.batch_size_fn = max_tok_len \
+            if opt.batch_type == "tokens" else None
         self.batch_size_multiple = 8 if opt.model_dtype == "fp16" else 1
         self.device = device
         # Temporarily load one shard to retrieve sort_key for data_type
@@ -608,12 +623,12 @@ class MultipleDatasetIterator(object):
 
     def __iter__(self):
         for minibatch in _pool(
-            self._iter_examples(),
-            self.batch_size,
-            self.batch_size_fn,
-            self.batch_size_multiple,
-            self.sort_key,
-            random.shuffle):
+                self._iter_examples(),
+                self.batch_size,
+                self.batch_size_fn,
+                self.batch_size_multiple,
+                self.sort_key,
+                random.shuffle):
             minibatch = sorted(minibatch, key=self.sort_key, reverse=True)
             yield torchtext.data.Batch(minibatch,
                                        self.iterables[0].dataset,

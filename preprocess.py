@@ -16,9 +16,8 @@ from onmt.utils.misc import split_corpus
 import onmt.inputters as inputters
 import onmt.opts as opts
 from onmt.utils.parse import ArgumentParser
-from onmt.inputters.inputter import _build_fv_from_multifield,\
-                                    _load_vocab,\
-                                    _merge_field_vocabs
+from onmt.inputters.inputter import _build_fields_vocab,\
+                                    _load_vocab
 
 
 def check_existing_pt_files(opt):
@@ -36,6 +35,7 @@ def build_save_dataset(corpus_type, fields, src_reader, tgt_reader, opt):
     assert corpus_type in ['train', 'valid']
 
     if corpus_type == 'train':
+        counters = defaultdict(Counter)
         srcs = opt.train_src
         tgts = opt.train_tgt
         ids = opt.train_ids
@@ -59,7 +59,6 @@ def build_save_dataset(corpus_type, fields, src_reader, tgt_reader, opt):
             filter_pred = None
 
         if corpus_type == "train":
-            counters = defaultdict(Counter)
             if opt.src_vocab:
                 try:
                     logger.info("Using existing vocabulary...")
@@ -132,40 +131,11 @@ def build_save_dataset(corpus_type, fields, src_reader, tgt_reader, opt):
             gc.collect()
 
         if corpus_type == "train":
-            build_fv_args = defaultdict(dict)
-            build_fv_args["src"] = dict(
-                max_size=opt.src_vocab_size,
-                min_freq=opt.src_words_min_frequency)
-            build_fv_args["tgt"] = dict(
-                max_size=opt.tgt_vocab_size,
-                min_freq=opt.tgt_words_min_frequency)
-            tgt_multifield = fields["tgt"]
-            _build_fv_from_multifield(
-                tgt_multifield,
-                counters,
-                build_fv_args,
-                size_multiple=opt.vocab_size_multiple
-                if not opt.share_vocab else 1)
-            if opt.data_type == 'text':
-                src_multifield = fields["src"]
-                _build_fv_from_multifield(
-                    src_multifield,
-                    counters,
-                    build_fv_args,
-                    size_multiple=opt.vocab_size_multiple
-                    if not opt.share_vocab else 1)
-                if opt.share_vocab:
-                    # `tgt_vocab_size` is ignored when sharing vocabularies
-                    logger.info(" * merging src and tgt vocab...")
-                    src_field = src_multifield.base_field
-                    tgt_field = tgt_multifield.base_field
-                    _merge_field_vocabs(
-                        src_field, tgt_field, vocab_size=opt.src_vocab_size,
-                        min_freq=opt.src_words_min_frequency,
-                        vocab_size_multiple=opt.vocab_size_multiple)
-                    logger.info(" * merged vocab size: %d."
-                                % len(src_field.vocab))
-
+            fields = _build_fields_vocab(
+                fields, counters, opt.data_type,
+                opt.share_vocab, opt.vocab_size_multiple,
+                opt.src_vocab_size, opt.src_words_min_frequency,
+                opt.tgt_vocab_size, opt.tgt_words_min_frequency)
             vocab_path = opt.save_data + '.vocab.pt'
             torch.save(fields, vocab_path)
 
@@ -177,7 +147,6 @@ def build_save_vocab(train_dataset, fields, opt):
         opt.tgt_vocab, opt.tgt_vocab_size, opt.tgt_words_min_frequency,
         vocab_size_multiple=opt.vocab_size_multiple
     )
-
     vocab_path = opt.save_data + '.vocab.pt'
     torch.save(fields, vocab_path)
 

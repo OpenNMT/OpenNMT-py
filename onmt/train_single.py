@@ -4,7 +4,7 @@ import os
 
 import torch
 
-from onmt.inputters.inputter import build_dataset_iter, max_tok_len, \
+from onmt.inputters.inputter import build_dataset_iter, \
     load_old_vocab, old_style_vocab, MultipleDatasetIterator
 from onmt.model_builder import build_model
 from onmt.utils.optimizers import Optimizer
