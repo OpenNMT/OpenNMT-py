@@ -23,6 +23,8 @@ from onmt.inputters.image_dataset import (  # noqa: F401
 
 import gc
 
+import onmt
+import random
 
 # monkey-patch to make torchtext Vocab's pickleable
 def _getstate(self):
@@ -495,29 +497,41 @@ def batch_iter(data, batch_size, batch_size_fn=None, batch_size_multiple=1):
         yield minibatch
 
 
+def _pool(data, batch_size, batch_size_fn, batch_size_multiple,
+          sort_key, random_shuffler):
+    for p in torchtext.data.batch(data, batch_size * 500,
+        batch_size_fn=batch_size_fn):
+        p_batch = batch_iter(
+            sorted(p, key=sort_key),
+            batch_size,
+            batch_size_fn=batch_size_fn,
+            batch_size_multiple=batch_size_multiple)
+        for b in list(p_batch):
+            yield b
+
+
 class OrderedIterator(torchtext.data.Iterator):
 
     def __init__(self,
                  dataset,
                  batch_size,
                  batch_size_multiple=1,
+                 yield_raw_example=False,
                  **kwargs):
         super(OrderedIterator, self).__init__(dataset, batch_size, **kwargs)
         self.batch_size_multiple = batch_size_multiple
+        self.yield_raw_example = yield_raw_example
+        self.dataset = dataset
 
     def create_batches(self):
         if self.train:
-            def _pool(data, random_shuffler):
-                for p in torchtext.data.batch(data, self.batch_size * 100):
-                    p_batch = batch_iter(
-                        sorted(p, key=self.sort_key),
-                        self.batch_size,
-                        batch_size_fn=self.batch_size_fn,
-                        batch_size_multiple=self.batch_size_multiple)
-                    for b in random_shuffler(list(p_batch)):
-                        yield b
-
-            self.batches = _pool(self.data(), self.random_shuffler)
+            self.batches = _pool(
+                self.data(),
+                self.batch_size,
+                self.batch_size_fn,
+                self.batch_size_multiple,
+                self.sort_key,
+                self.random_shuffler)
         else:
             self.batches = []
             for b in batch_iter(
@@ -526,6 +540,84 @@ class OrderedIterator(torchtext.data.Iterator):
                     batch_size_fn=self.batch_size_fn,
                     batch_size_multiple=self.batch_size_multiple):
                 self.batches.append(sorted(b, key=self.sort_key))
+
+    def __iter__(self):
+        """
+        Extended version of the definition in torchtext.data.Iterator.
+        Added yield_raw_example behaviour to yield a torchtext.data.Example
+        instead of a torchtext.data.Batch object.
+        """
+        while True:
+            self.init_epoch()
+            for idx, minibatch in enumerate(self.batches):
+                # fast-forward if loaded from state
+                if self._iterations_this_epoch > idx:
+                    continue
+                self.iterations += 1
+                self._iterations_this_epoch += 1
+                if self.sort_within_batch:
+                    # NOTE: `rnn.pack_padded_sequence` requires that a
+                    # minibatch be sorted by decreasing order, which
+                    #  requires reversing relative to typical sort keys
+                    if self.sort:
+                        minibatch.reverse()
+                    else:
+                        minibatch.sort(key=self.sort_key, reverse=True)
+                if self.yield_raw_example:
+                    yield minibatch[0]
+                else:
+                    yield torchtext.data.Batch(
+                        minibatch,
+                        self.dataset,
+                        self.device)
+            if not self.repeat:
+                return
+
+
+class MultipleDatasetIterator(object):
+    """
+    This takes a list of iterable objects (DatasetLazyIter) and their
+    respective weights, and yields a batch in the wanted proportions.
+    """
+    def __init__(self,
+                 iterables,
+                 device,
+                 opt):
+        self.index = -1
+        self.iterators = [iter(iterable) for iterable in iterables]
+        self.iterables = iterables
+        self.weights = opt.data_weights
+        self.batch_size = opt.batch_size
+        self.batch_size_fn = max_tok_len if opt.batch_type == "tokens" else None
+        self.batch_size_multiple = 8 if opt.model_dtype == "fp16" else 1
+        self.device = device
+        # Temporarily load one shard to retrieve sort_key for data_type
+        temp_dataset = torch.load(self.iterables[0]._paths[0])
+        self.sort_key = temp_dataset.sort_key
+        del temp_dataset
+
+    def _iter_datasets(self):
+        for weight in self.weights:
+            self.index = (self.index + 1) % len(self.iterators)
+            for i in range(weight):
+                yield self.iterators[self.index]
+
+    def _iter_examples(self):
+        for iterator in cycle(self._iter_datasets()):
+            yield next(iterator)
+
+    def __iter__(self):
+        for minibatch in _pool(
+            self._iter_examples(),
+            self.batch_size,
+            self.batch_size_fn,
+            self.batch_size_multiple,
+            self.sort_key,
+            random.shuffle):
+            minibatch = sorted(minibatch, key=self.sort_key, reverse=True)
+            yield torchtext.data.Batch(minibatch,
+                                       self.iterables[0].dataset,
+                                       self.device)
 
 
 class DatasetLazyIter(object):
@@ -543,7 +635,7 @@ class DatasetLazyIter(object):
 
     def __init__(self, dataset_paths, fields, batch_size, batch_size_fn,
                  batch_size_multiple, device, is_train, repeat=True,
-                 num_batches_multiple=1):
+                 num_batches_multiple=1, yield_raw_example=True):
         self._paths = dataset_paths
         self.fields = fields
         self.batch_size = batch_size
@@ -553,6 +645,7 @@ class DatasetLazyIter(object):
         self.is_train = is_train
         self.repeat = repeat
         self.num_batches_multiple = num_batches_multiple
+        self.yield_raw_example = yield_raw_example
 
     def _iter_dataset(self, path):
         cur_dataset = torch.load(path)
@@ -568,9 +661,11 @@ class DatasetLazyIter(object):
             train=self.is_train,
             sort=False,
             sort_within_batch=True,
-            repeat=False
+            repeat=False,
+            yield_raw_example=self.yield_raw_example
         )
         for batch in cur_iter:
+            self.dataset = cur_iter.dataset
             yield batch
 
         cur_dataset.examples = None
@@ -623,7 +718,7 @@ def max_tok_len(new, count, sofar):
     return max(src_elements, tgt_elements)
 
 
-def build_dataset_iter(corpus_type, fields, opt, is_train=True):
+def build_dataset_iter(corpus_type, fields, opt, is_train=True, multi=False):
     """
     This returns user-defined train/validate data iterator for the trainer
     to iterate over. We implement simple ordered iterator strategy here,
@@ -633,9 +728,15 @@ def build_dataset_iter(corpus_type, fields, opt, is_train=True):
         glob.glob(opt.data + '.' + corpus_type + '*.pt')))
     if not dataset_paths:
         return None
-    batch_size = opt.batch_size if is_train else opt.valid_batch_size
-    batch_fn = max_tok_len if is_train and opt.batch_type == "tokens" else None
-    batch_size_multiple = 8 if opt.model_dtype == "fp16" else 1
+    if multi:
+        batch_size = 1
+        batch_fn = None
+        batch_size_multiple = 1
+    else:
+        batch_size = opt.batch_size if is_train else opt.valid_batch_size
+        batch_fn = max_tok_len \
+            if is_train and opt.batch_type == "tokens"else None
+        batch_size_multiple = 8 if opt.model_dtype == "fp16" else 1
 
     device = "cuda" if opt.gpu_ranks else "cpu"
 
