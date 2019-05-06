@@ -116,12 +116,8 @@ class RandomSampling(DecodeStrategy):
 
         self.ensure_min_length(log_probs)
         self.block_ngram_repeats(log_probs)
-        topk_ids, topk_scores = sample_with_temperature(
+        topk_ids, self.topk_scores = sample_with_temperature(
             log_probs, self.sampling_temp, self.keep_topk)
-        if self.topk_scores is not None:
-            self.topk_scores += topk_scores
-        else:
-            self.topk_scores = topk_scores
 
         self.is_finished = topk_ids.eq(self.eos)
 
@@ -149,7 +145,6 @@ class RandomSampling(DecodeStrategy):
             return
         is_alive = ~self.is_finished.view(-1)
         self.alive_seq = self.alive_seq[is_alive]
-        self.topk_scores = self.topk_scores[is_alive]
         if self.alive_attn is not None:
             self.alive_attn = self.alive_attn[:, is_alive]
         self.select_indices = is_alive.nonzero().view(-1)
