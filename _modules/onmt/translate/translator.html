@@ -982,7 +982,7 @@
             <span class="n">memory_lengths</span><span class="o">=</span><span class="n">src_lengths</span><span class="p">,</span> <span class="n">src_map</span><span class="o">=</span><span class="n">src_map</span><span class="p">)</span>
 
         <span class="n">log_probs</span><span class="p">[:,</span> <span class="p">:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_pad_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="n">gold</span> <span class="o">=</span> <span class="n">tgt_in</span>
+        <span class="n">gold</span> <span class="o">=</span> <span class="n">tgt</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
         <span class="n">gold_scores</span> <span class="o">=</span> <span class="n">log_probs</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">gold</span><span class="p">)</span>
         <span class="n">gold_scores</span> <span class="o">=</span> <span class="n">gold_scores</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
 
