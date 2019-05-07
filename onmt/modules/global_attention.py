@@ -114,7 +114,7 @@ class GlobalAttention(nn.Module):
 
         if self.attn_type in ["general", "dot"]:
             if self.attn_type == "general":
-                h_t_ = self.linear_in(h_t_)
+                h_t = self.linear_in(h_t)
             h_s_ = h_s.transpose(1, 2)
             # (batch, t_len, d) x (batch, d, s_len) --> (batch, t_len, s_len)
             return torch.bmm(h_t, h_s_)
