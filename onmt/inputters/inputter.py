@@ -515,7 +515,7 @@ def batch_iter(data, batch_size, batch_size_fn=None, batch_size_multiple=1):
 def _pool(data, batch_size, batch_size_fn, batch_size_multiple,
           sort_key, random_shuffler):
     for p in torchtext.data.batch(
-            data, batch_size * 500,
+            data, batch_size * 8192,
             batch_size_fn=batch_size_fn):
         p_batch = batch_iter(
             sorted(p, key=sort_key),
@@ -752,7 +752,7 @@ def build_dataset_iter(corpus_type, fields, opt, is_train=True, multi=False):
     else:
         batch_size = opt.batch_size if is_train else opt.valid_batch_size
         batch_fn = max_tok_len \
-            if is_train and opt.batch_type == "tokens"else None
+            if is_train and opt.batch_type == "tokens" else None
         batch_size_multiple = 8 if opt.model_dtype == "fp16" else 1
 
     device = "cuda" if opt.gpu_ranks else "cpu"
