@@ -23,7 +23,7 @@ from onmt.inputters.inputter import _build_fields_vocab,\
 def check_existing_pt_files(opt):
     """ Check if there are existing .pt files to avoid overwriting them """
     pattern = opt.save_data + '.{}*.pt'
-    for t in ['train', 'valid', 'vocab']:
+    for t in ['train', 'valid']:
         path = pattern.format(t)
         if glob.glob(path):
             sys.stderr.write("Please backup existing pt files: %s, "
@@ -62,17 +62,13 @@ def build_save_dataset(corpus_type, fields, src_reader, tgt_reader, opt):
             if opt.src_vocab:
                 try:
                     logger.info("Using existing vocabulary...")
-                    vocab = torch.load(opt.src_vocab)
-                    # return vocab to dump with standard name
-                    return vocab
+                    src_vocab = torch.load(opt.src_vocab)
                 except torch.serialization.pickle.UnpicklingError:
                     logger.info("Building vocab from text file...")
 
-            # Load vocabulary
-            if opt.src_vocab:
-                src_vocab, src_vocab_size = _load_vocab(
-                    opt.src_vocab, "src", counters,
-                    opt.src_words_min_frequency)
+                    src_vocab, src_vocab_size = _load_vocab(
+                        opt.src_vocab, "src", counters,
+                        opt.src_words_min_frequency)
             else:
                 src_vocab = None
 

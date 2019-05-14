@@ -3,7 +3,6 @@ import glob
 import os
 import codecs
 import math
-import random
 
 from collections import Counter, defaultdict
 from itertools import chain, cycle
@@ -12,6 +11,7 @@ import torch
 import torchtext.data
 from torchtext.data import Field
 from torchtext.vocab import Vocab
+from torchtext.data.utils import RandomShuffler
 
 from onmt.inputters.text_dataset import text_fields, TextMultiField
 from onmt.inputters.image_dataset import image_fields
@@ -522,7 +522,7 @@ def _pool(data, batch_size, batch_size_fn, batch_size_multiple,
             batch_size,
             batch_size_fn=batch_size_fn,
             batch_size_multiple=batch_size_multiple)
-        for b in list(p_batch):
+        for b in random_shuffler(list(p_batch)):
             yield b
 
 
@@ -541,13 +541,20 @@ class OrderedIterator(torchtext.data.Iterator):
 
     def create_batches(self):
         if self.train:
-            self.batches = _pool(
-                self.data(),
-                self.batch_size,
-                self.batch_size_fn,
-                self.batch_size_multiple,
-                self.sort_key,
-                self.random_shuffler)
+            if self.yield_raw_example:
+                self.batches = batch_iter(
+                    self.data(),
+                    1,
+                    batch_size_fn=None,
+                    batch_size_multiple=1)
+            else:
+                self.batches = _pool(
+                    self.data(),
+                    self.batch_size,
+                    self.batch_size_fn,
+                    self.batch_size_multiple,
+                    self.sort_key,
+                    self.random_shuffler)
         else:
             self.batches = []
             for b in batch_iter(
@@ -611,6 +618,7 @@ class MultipleDatasetIterator(object):
         # Temporarily load one shard to retrieve sort_key for data_type
         temp_dataset = torch.load(self.iterables[0]._paths[0])
         self.sort_key = temp_dataset.sort_key
+        self.random_shuffler = RandomShuffler()
         del temp_dataset
 
     def _iter_datasets(self):
@@ -630,7 +638,7 @@ class MultipleDatasetIterator(object):
                 self.batch_size_fn,
                 self.batch_size_multiple,
                 self.sort_key,
-                random.shuffle):
+                self.random_shuffler):
             minibatch = sorted(minibatch, key=self.sort_key, reverse=True)
             yield torchtext.data.Batch(minibatch,
                                        self.iterables[0].dataset,
