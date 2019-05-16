@@ -100,6 +100,8 @@ class ArgumentParser(cfargparse.ArgumentParser):
             raise AssertionError(
                   "-gpu_ranks should have master(=0) rank "
                   "unless -world_size is greater than len(gpu_ranks).")
+        assert len(opt.data_ids) == len(opt.data_weights), \
+            "Please check -data_ids and -data_weights options!"
 
         assert len(opt.dropout) == len(opt.dropout_steps), \
             "Number of dropout values must match number of accum_steps"
@@ -118,9 +120,14 @@ class ArgumentParser(cfargparse.ArgumentParser):
             "-shuffle is not implemented. Please shuffle \
             your data before pre-processing."
 
-        assert os.path.isfile(opt.train_src) \
-            and os.path.isfile(opt.train_tgt), \
-            "Please check path of your train src and tgt files!"
+        assert len(opt.train_src) == len(opt.train_tgt), \
+            "Please provide same number of src and tgt train files!"
+
+        assert len(opt.train_src) == len(opt.train_ids), \
+            "Please provide proper -train_ids for your data!"
+
+        for file in opt.train_src + opt.train_tgt:
+            assert os.path.isfile(file), "Please check path of %s" % file
 
         assert not opt.valid_src or os.path.isfile(opt.valid_src), \
             "Please check path of your valid src file!"

@@ -11,6 +11,7 @@ import torch
 import torchtext.data
 from torchtext.data import Field
 from torchtext.vocab import Vocab
+from torchtext.data.utils import RandomShuffler
 
 from onmt.inputters.text_dataset import text_fields, TextMultiField
 from onmt.inputters.image_dataset import image_fields
@@ -308,6 +309,42 @@ def _build_fv_from_multifield(multifield, counters, build_fv_args,
         logger.info(" * %s vocab size: %d." % (name, len(field.vocab)))
 
 
+def _build_fields_vocab(fields, counters, data_type, share_vocab,
+                        vocab_size_multiple,
+                        src_vocab_size, src_words_min_frequency,
+                        tgt_vocab_size, tgt_words_min_frequency):
+    build_fv_args = defaultdict(dict)
+    build_fv_args["src"] = dict(
+        max_size=src_vocab_size, min_freq=src_words_min_frequency)
+    build_fv_args["tgt"] = dict(
+        max_size=tgt_vocab_size, min_freq=tgt_words_min_frequency)
+    tgt_multifield = fields["tgt"]
+    _build_fv_from_multifield(
+        tgt_multifield,
+        counters,
+        build_fv_args,
+        size_multiple=vocab_size_multiple if not share_vocab else 1)
+    if data_type == 'text':
+        src_multifield = fields["src"]
+        _build_fv_from_multifield(
+            src_multifield,
+            counters,
+            build_fv_args,
+            size_multiple=vocab_size_multiple if not share_vocab else 1)
+        if share_vocab:
+            # `tgt_vocab_size` is ignored when sharing vocabularies
+            logger.info(" * merging src and tgt vocab...")
+            src_field = src_multifield.base_field
+            tgt_field = tgt_multifield.base_field
+            _merge_field_vocabs(
+                src_field, tgt_field, vocab_size=src_vocab_size,
+                min_freq=src_words_min_frequency,
+                vocab_size_multiple=vocab_size_multiple)
+            logger.info(" * merged vocab size: %d." % len(src_field.vocab))
+
+    return fields
+
+
 def build_vocab(train_dataset_files, fields, data_type, share_vocab,
                 src_vocab_path, src_vocab_size, src_words_min_frequency,
                 tgt_vocab_path, tgt_vocab_size, tgt_words_min_frequency,
@@ -392,34 +429,12 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
             del dataset
             gc.collect()
 
-    build_fv_args = defaultdict(dict)
-    build_fv_args["src"] = dict(
-        max_size=src_vocab_size, min_freq=src_words_min_frequency)
-    build_fv_args["tgt"] = dict(
-        max_size=tgt_vocab_size, min_freq=tgt_words_min_frequency)
-    tgt_multifield = fields["tgt"]
-    _build_fv_from_multifield(
-        tgt_multifield,
-        counters,
-        build_fv_args,
-        size_multiple=vocab_size_multiple if not share_vocab else 1)
-    if data_type == 'text':
-        src_multifield = fields["src"]
-        _build_fv_from_multifield(
-            src_multifield,
-            counters,
-            build_fv_args,
-            size_multiple=vocab_size_multiple if not share_vocab else 1)
-        if share_vocab:
-            # `tgt_vocab_size` is ignored when sharing vocabularies
-            logger.info(" * merging src and tgt vocab...")
-            src_field = src_multifield.base_field
-            tgt_field = tgt_multifield.base_field
-            _merge_field_vocabs(
-                src_field, tgt_field, vocab_size=src_vocab_size,
-                min_freq=src_words_min_frequency,
-                vocab_size_multiple=vocab_size_multiple)
-            logger.info(" * merged vocab size: %d." % len(src_field.vocab))
+    fields = _build_fields_vocab(
+        fields, counters, data_type,
+        share_vocab, vocab_size_multiple,
+        src_vocab_size, src_words_min_frequency,
+        tgt_vocab_size, tgt_words_min_frequency)
+
     return fields  # is the return necessary?
 
 
@@ -497,29 +512,52 @@ def batch_iter(data, batch_size, batch_size_fn=None, batch_size_multiple=1):
         yield minibatch
 
 
+def _pool(data, batch_size, batch_size_fn, batch_size_multiple,
+          sort_key, random_shuffler, pool_factor):
+    for p in torchtext.data.batch(
+            data, batch_size * pool_factor,
+            batch_size_fn=batch_size_fn):
+        p_batch = batch_iter(
+            sorted(p, key=sort_key),
+            batch_size,
+            batch_size_fn=batch_size_fn,
+            batch_size_multiple=batch_size_multiple)
+        for b in random_shuffler(list(p_batch)):
+            yield b
+
+
 class OrderedIterator(torchtext.data.Iterator):
 
     def __init__(self,
                  dataset,
                  batch_size,
+                 pool_factor=1,
                  batch_size_multiple=1,
+                 yield_raw_example=False,
                  **kwargs):
         super(OrderedIterator, self).__init__(dataset, batch_size, **kwargs)
         self.batch_size_multiple = batch_size_multiple
+        self.yield_raw_example = yield_raw_example
+        self.dataset = dataset
+        self.pool_factor = pool_factor
 
     def create_batches(self):
         if self.train:
-            def _pool(data, random_shuffler):
-                for p in torchtext.data.batch(data, self.batch_size * 100):
-                    p_batch = batch_iter(
-                        sorted(p, key=self.sort_key),
-                        self.batch_size,
-                        batch_size_fn=self.batch_size_fn,
-                        batch_size_multiple=self.batch_size_multiple)
-                    for b in random_shuffler(list(p_batch)):
-                        yield b
-
-            self.batches = _pool(self.data(), self.random_shuffler)
+            if self.yield_raw_example:
+                self.batches = batch_iter(
+                    self.data(),
+                    1,
+                    batch_size_fn=None,
+                    batch_size_multiple=1)
+            else:
+                self.batches = _pool(
+                    self.data(),
+                    self.batch_size,
+                    self.batch_size_fn,
+                    self.batch_size_multiple,
+                    self.sort_key,
+                    self.random_shuffler,
+                    self.pool_factor)
         else:
             self.batches = []
             for b in batch_iter(
@@ -528,6 +566,88 @@ class OrderedIterator(torchtext.data.Iterator):
                     batch_size_fn=self.batch_size_fn,
                     batch_size_multiple=self.batch_size_multiple):
                 self.batches.append(sorted(b, key=self.sort_key))
+
+    def __iter__(self):
+        """
+        Extended version of the definition in torchtext.data.Iterator.
+        Added yield_raw_example behaviour to yield a torchtext.data.Example
+        instead of a torchtext.data.Batch object.
+        """
+        while True:
+            self.init_epoch()
+            for idx, minibatch in enumerate(self.batches):
+                # fast-forward if loaded from state
+                if self._iterations_this_epoch > idx:
+                    continue
+                self.iterations += 1
+                self._iterations_this_epoch += 1
+                if self.sort_within_batch:
+                    # NOTE: `rnn.pack_padded_sequence` requires that a
+                    # minibatch be sorted by decreasing order, which
+                    #  requires reversing relative to typical sort keys
+                    if self.sort:
+                        minibatch.reverse()
+                    else:
+                        minibatch.sort(key=self.sort_key, reverse=True)
+                if self.yield_raw_example:
+                    yield minibatch[0]
+                else:
+                    yield torchtext.data.Batch(
+                        minibatch,
+                        self.dataset,
+                        self.device)
+            if not self.repeat:
+                return
+
+
+class MultipleDatasetIterator(object):
+    """
+    This takes a list of iterable objects (DatasetLazyIter) and their
+    respective weights, and yields a batch in the wanted proportions.
+    """
+    def __init__(self,
+                 iterables,
+                 device,
+                 opt):
+        self.index = -1
+        self.iterators = [iter(iterable) for iterable in iterables]
+        self.iterables = iterables
+        self.weights = opt.data_weights
+        self.batch_size = opt.batch_size
+        self.batch_size_fn = max_tok_len \
+            if opt.batch_type == "tokens" else None
+        self.batch_size_multiple = 8 if opt.model_dtype == "fp16" else 1
+        self.device = "cuda" if device >= 0 else "cpu"
+        # Temporarily load one shard to retrieve sort_key for data_type
+        temp_dataset = torch.load(self.iterables[0]._paths[0])
+        self.sort_key = temp_dataset.sort_key
+        self.random_shuffler = RandomShuffler()
+        self.pool_factor = opt.pool_factor
+        del temp_dataset
+
+    def _iter_datasets(self):
+        for weight in self.weights:
+            self.index = (self.index + 1) % len(self.iterators)
+            for i in range(weight):
+                yield self.iterators[self.index]
+
+    def _iter_examples(self):
+        for iterator in cycle(self._iter_datasets()):
+            yield next(iterator)
+
+    def __iter__(self):
+        for minibatch in _pool(
+                self._iter_examples(),
+                self.batch_size,
+                self.batch_size_fn,
+                self.batch_size_multiple,
+                self.sort_key,
+                self.random_shuffler,
+                self.pool_factor):
+            minibatch = sorted(minibatch, key=self.sort_key, reverse=True)
+            yield torchtext.data.Batch(minibatch,
+                                       self.iterables[0].dataset,
+                                       self.device)
 
 
 class DatasetLazyIter(object):
@@ -544,8 +664,8 @@ class DatasetLazyIter(object):
     """
 
     def __init__(self, dataset_paths, fields, batch_size, batch_size_fn,
-                 batch_size_multiple, device, is_train, repeat=True,
-                 num_batches_multiple=1):
+                 batch_size_multiple, device, is_train, pool_factor,
+                 repeat=True, num_batches_multiple=1, yield_raw_example=False):
         self._paths = dataset_paths
         self.fields = fields
         self.batch_size = batch_size
@@ -555,6 +675,8 @@ class DatasetLazyIter(object):
         self.is_train = is_train
         self.repeat = repeat
         self.num_batches_multiple = num_batches_multiple
+        self.yield_raw_example = yield_raw_example
+        self.pool_factor = pool_factor
 
     def _iter_dataset(self, path):
         cur_dataset = torch.load(path)
@@ -564,15 +686,18 @@ class DatasetLazyIter(object):
         cur_iter = OrderedIterator(
             dataset=cur_dataset,
             batch_size=self.batch_size,
+            pool_factor=self.pool_factor,
             batch_size_multiple=self.batch_size_multiple,
             batch_size_fn=self.batch_size_fn,
             device=self.device,
             train=self.is_train,
             sort=False,
             sort_within_batch=True,
-            repeat=False
+            repeat=False,
+            yield_raw_example=self.yield_raw_example
         )
         for batch in cur_iter:
+            self.dataset = cur_iter.dataset
             yield batch
 
         cur_dataset.examples = None
@@ -625,7 +750,7 @@ def max_tok_len(new, count, sofar):
     return max(src_elements, tgt_elements)
 
 
-def build_dataset_iter(corpus_type, fields, opt, is_train=True):
+def build_dataset_iter(corpus_type, fields, opt, is_train=True, multi=False):
     """
     This returns user-defined train/validate data iterator for the trainer
     to iterate over. We implement simple ordered iterator strategy here,
@@ -635,9 +760,15 @@ def build_dataset_iter(corpus_type, fields, opt, is_train=True):
         glob.glob(opt.data + '.' + corpus_type + '*.pt')))
     if not dataset_paths:
         return None
-    batch_size = opt.batch_size if is_train else opt.valid_batch_size
-    batch_fn = max_tok_len if is_train and opt.batch_type == "tokens" else None
-    batch_size_multiple = 8 if opt.model_dtype == "fp16" else 1
+    if multi:
+        batch_size = 1
+        batch_fn = None
+        batch_size_multiple = 1
+    else:
+        batch_size = opt.batch_size if is_train else opt.valid_batch_size
+        batch_fn = max_tok_len \
+            if is_train and opt.batch_type == "tokens" else None
+        batch_size_multiple = 8 if opt.model_dtype == "fp16" else 1
 
     device = "cuda" if opt.gpu_ranks else "cpu"
 
@@ -649,5 +780,7 @@ def build_dataset_iter(corpus_type, fields, opt, is_train=True):
         batch_size_multiple,
         device,
         is_train,
+        opt.pool_factor,
         repeat=not opt.single_pass,
-        num_batches_multiple=max(opt.accum_count) * opt.world_size)
+        num_batches_multiple=max(opt.accum_count) * opt.world_size,
+        yield_raw_example=multi)

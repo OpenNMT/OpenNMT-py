@@ -189,10 +189,12 @@ def preprocess_opts(parser):
               help="Type of the source input. "
                    "Options are [text|img|audio].")
 
-    group.add('--train_src', '-train_src', required=True,
-              help="Path to the training source data")
-    group.add('--train_tgt', '-train_tgt', required=True,
-              help="Path to the training target data")
+    group.add('--train_src', '-train_src', required=True, nargs='+',
+              help="Path(s) to the training source data")
+    group.add('--train_tgt', '-train_tgt', required=True, nargs='+',
+              help="Path(s) to the training target data")
+    group.add('--train_ids', '-train_ids', nargs='+', default=[None],
+              help="ids to name training shards, used for corpus weighting")
     group.add('--valid_src', '-valid_src',
               help="Path to the validation source data")
     group.add('--valid_tgt', '-valid_tgt',
@@ -308,6 +310,12 @@ def train_opts(parser):
               help='Path prefix to the ".train.pt" and '
                    '".valid.pt" file path from preprocess.py')
 
+    group.add('--data_ids', '-data_ids', nargs='+', default=[None],
+              help="In case there are several corpora.")
+    group.add('--data_weights', '-data_weights', type=int, nargs='+',
+              default=[1], help="""Weights of different corpora,
+              should follow the same order as in -data_ids.""")
+
     group.add('--save_model', '-save_model', default='model',
               help="Model filename (the model will be saved as "
                    "<save_model>_N.pt where N is the number "
@@ -382,6 +390,13 @@ def train_opts(parser):
               choices=["sents", "tokens"],
               help="Batch grouping for batch_size. Standard "
                    "is sents. Tokens will do dynamic batching")
+    group.add('--pool_factor', '-pool_factor', type=int, default=8192,
+              help="""Factor used in data loading and batch creations.
+              It will load the equivalent of `pool_factor` batches,
+              sort them by the according `sort_key` to produce
+              homogeneous batches and reduce padding, and yield
+              the produced batches in a shuffled way.
+              Inspired by torchtext's pool mechanism.""")
     group.add('--normalization', '-normalization', default='sents',
               choices=["sents", "tokens"],
               help='Normalization method of the gradient.')
