@@ -142,3 +142,5 @@ class AudioEncoder(EncoderBase):
 
     def update_dropout(self, dropout):
         self.dropout.p = dropout
+        for i in range(self.enc_layers - 1):
+            getattr(self, 'rnn_%d' % i).dropout = dropout
