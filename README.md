@@ -34,7 +34,7 @@ All dependencies can be installed via:
 pip install -r requirements.txt
 ```
 
-Note that we currently only support PyTorch 1.0.0
+Note that we currently only support PyTorch 1.1 (should work with 1.0)
 
 ## Features
 
