@@ -90,6 +90,11 @@
 <li class="toctree-l2"><a class="reference internal" href="#how-do-i-use-pretrained-embeddings-e-g-glove">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#how-do-i-use-the-transformer-model-do-you-support-multi-gpu">How do I use the Transformer model? Do you support multi-gpu?</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#preprocessing">Preprocessing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#training">Training</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="CONTRIBUTING.html">Contributors</a></li>
@@ -185,8 +190,8 @@
 <h1>FAQ<a class="headerlink" href="#faq" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="how-do-i-use-pretrained-embeddings-e-g-glove">
 <h2>How do I use Pretrained embeddings (e.g. GloVe)?<a class="headerlink" href="#how-do-i-use-pretrained-embeddings-e-g-glove" title="Permalink to this headline">¶</a></h2>
-<p>Using vocabularies from OpenNMT-py preprocessing outputs, <code class="docutils literal notranslate"><span class="pre">embeddings_to_torch.py</span></code> to generate encoder and decoder embeddings initialized with GloVes values.</p>
-<p>the script is a slightly modified version of ylhsiehs one2.</p>
+<p>Using vocabularies from OpenNMT-py preprocessing outputs, <code class="docutils literal notranslate"><span class="pre">embeddings_to_torch.py</span></code> to generate encoder and decoder embeddings initialized with GloVe’s values.</p>
+<p>the script is a slightly modified version of ylhsieh’s one2.</p>
 <p>Usage:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">embeddings_to_torch</span><span class="o">.</span><span class="n">py</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">emb_file_both</span> <span class="n">EMB_FILE_BOTH</span><span class="p">]</span>
                        <span class="p">[</span><span class="o">-</span><span class="n">emb_file_enc</span> <span class="n">EMB_FILE_ENC</span><span class="p">]</span>
@@ -283,6 +288,37 @@ If you want to use GPU id 1 and 3 of your OS, you will need to export CUDA_VISIB
 <h2>How can I ensemble Models at inference?<a class="headerlink" href="#how-can-i-ensemble-models-at-inference" title="Permalink to this headline">¶</a></h2>
 <p>You can specify several models in the translate.py command line: -model model1_seed1 model2_seed2
 Bear in mind that your models must share the same traget vocabulary.</p>
+</div>
+<div class="section" id="how-can-i-weight-different-corpora-at-training">
+<h2>How can I weight different corpora at training?<a class="headerlink" href="#how-can-i-weight-different-corpora-at-training" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="preprocessing">
+<h3>Preprocessing<a class="headerlink" href="#preprocessing" title="Permalink to this headline">¶</a></h3>
+<p>We introduced <code class="docutils literal notranslate"><span class="pre">-train_ids</span></code> which is a list of IDs that will be given to the preprocessed shards.</p>
+<p>E.g. we have two corpora : <code class="docutils literal notranslate"><span class="pre">parallel.en</span></code> and  <code class="docutils literal notranslate"><span class="pre">parallel.de</span></code> + <code class="docutils literal notranslate"><span class="pre">from_backtranslation.en</span></code> <code class="docutils literal notranslate"><span class="pre">from_backtranslation.de</span></code>, we can pass the following in the <code class="docutils literal notranslate"><span class="pre">preprocess.py</span></code> command:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">...</span>
+<span class="o">-</span><span class="n">train_src</span> <span class="n">parallel</span><span class="o">.</span><span class="n">en</span> <span class="n">from_backtranslation</span><span class="o">.</span><span class="n">en</span> \
+<span class="o">-</span><span class="n">train_tgt</span> <span class="n">parallel</span><span class="o">.</span><span class="n">de</span> <span class="n">from_backtranslation</span><span class="o">.</span><span class="n">de</span> \
+<span class="o">-</span><span class="n">train_ids</span> <span class="n">A</span> <span class="n">B</span> \
+<span class="o">-</span><span class="n">save_data</span> <span class="n">my_data</span> \
+<span class="o">...</span>
+</pre></div>
+</div>
+<p>and it will dump <code class="docutils literal notranslate"><span class="pre">my_data.train_A.X.pt</span></code> based on <code class="docutils literal notranslate"><span class="pre">parallel.en</span></code>//<code class="docutils literal notranslate"><span class="pre">parallel.de</span></code> and <code class="docutils literal notranslate"><span class="pre">my_data.train_B.X.pt</span></code> based on <code class="docutils literal notranslate"><span class="pre">from_backtranslation.en</span></code>//<code class="docutils literal notranslate"><span class="pre">from_backtranslation.de</span></code>.</p>
+</div>
+<div class="section" id="training">
+<h3>Training<a class="headerlink" href="#training" title="Permalink to this headline">¶</a></h3>
+<p>We introduced <code class="docutils literal notranslate"><span class="pre">-data_ids</span></code> based on the same principle as above, as well as <code class="docutils literal notranslate"><span class="pre">-data_weights</span></code>, which is the list of the weight each corpus should have.
+E.g.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">...</span>
+<span class="o">-</span><span class="n">data</span> <span class="n">my_data</span> \
+<span class="o">-</span><span class="n">data_ids</span> <span class="n">A</span> <span class="n">B</span> \
+<span class="o">-</span><span class="n">data_weights</span> <span class="mi">1</span> <span class="mi">7</span> \
+<span class="o">...</span>
+</pre></div>
+</div>
+<p>will mean that we’ll look for <code class="docutils literal notranslate"><span class="pre">my_data.train_A.*.pt</span></code> and <code class="docutils literal notranslate"><span class="pre">my_data.train_B.*.pt</span></code>, and that when building batches, we’ll take 1 example from corpus A, then 7 examples from corpus B, and so on.</p>
+<p><strong>Warning</strong>: This means that we’ll load as many shards as we have <code class="docutils literal notranslate"><span class="pre">-data_ids</span></code>, in order to produce batches containing data from every corpus. It may be a good idea to reduce the <code class="docutils literal notranslate"><span class="pre">-shard_size</span></code> at preprocessing.</p>
+</div>
 </div>
 </div>
 

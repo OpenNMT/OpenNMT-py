@@ -223,6 +223,8 @@
                 <span class="p">[</span><span class="o">--</span><span class="n">reuse_copy_attn</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">copy_loss_by_seqlength</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">coverage_attn</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">lambda_coverage</span> <span class="n">LAMBDA_COVERAGE</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">loss_scale</span> <span class="n">LOSS_SCALE</span><span class="p">]</span> <span class="o">--</span><span class="n">data</span> <span class="n">DATA</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">data_ids</span> <span class="n">DATA_IDS</span> <span class="p">[</span><span class="n">DATA_IDS</span> <span class="o">...</span><span class="p">]]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">data_weights</span> <span class="n">DATA_WEIGHTS</span> <span class="p">[</span><span class="n">DATA_WEIGHTS</span> <span class="o">...</span><span class="p">]]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">save_model</span> <span class="n">SAVE_MODEL</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">save_checkpoint_steps</span> <span class="n">SAVE_CHECKPOINT_STEPS</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">keep_checkpoint</span> <span class="n">KEEP_CHECKPOINT</span><span class="p">]</span>
@@ -237,7 +239,8 @@
                 <span class="p">[</span><span class="o">--</span><span class="n">pre_word_vecs_enc</span> <span class="n">PRE_WORD_VECS_ENC</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">pre_word_vecs_dec</span> <span class="n">PRE_WORD_VECS_DEC</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">fix_word_vecs_enc</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">fix_word_vecs_dec</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">batch_size</span> <span class="n">BATCH_SIZE</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">batch_type</span> <span class="p">{</span><span class="n">sents</span><span class="p">,</span><span class="n">tokens</span><span class="p">}]</span> <span class="p">[</span><span class="o">--</span><span class="n">normalization</span> <span class="p">{</span><span class="n">sents</span><span class="p">,</span><span class="n">tokens</span><span class="p">}]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">batch_type</span> <span class="p">{</span><span class="n">sents</span><span class="p">,</span><span class="n">tokens</span><span class="p">}]</span> <span class="p">[</span><span class="o">--</span><span class="n">pool_factor</span> <span class="n">POOL_FACTOR</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">normalization</span> <span class="p">{</span><span class="n">sents</span><span class="p">,</span><span class="n">tokens</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">accum_count</span> <span class="n">ACCUM_COUNT</span> <span class="p">[</span><span class="n">ACCUM_COUNT</span> <span class="o">...</span><span class="p">]]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">accum_steps</span> <span class="n">ACCUM_STEPS</span> <span class="p">[</span><span class="n">ACCUM_STEPS</span> <span class="o">...</span><span class="p">]]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">valid_steps</span> <span class="n">VALID_STEPS</span><span class="p">]</span>
@@ -263,7 +266,7 @@
                 <span class="p">[</span><span class="o">--</span><span class="n">decay_method</span> <span class="p">{</span><span class="n">noam</span><span class="p">,</span><span class="n">noamwd</span><span class="p">,</span><span class="n">rsqrt</span><span class="p">,</span><span class="n">none</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">warmup_steps</span> <span class="n">WARMUP_STEPS</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">report_every</span> <span class="n">REPORT_EVERY</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">log_file</span> <span class="n">LOG_FILE</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">log_file_level</span> <span class="p">{</span><span class="n">ERROR</span><span class="p">,</span><span class="n">DEBUG</span><span class="p">,</span><span class="n">CRITICAL</span><span class="p">,</span><span class="n">WARNING</span><span class="p">,</span><span class="n">NOTSET</span><span class="p">,</span><span class="n">INFO</span><span class="p">,</span><span class="mi">40</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">50</span><span class="p">,</span><span class="mi">30</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">20</span><span class="p">}]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">log_file_level</span> <span class="p">{</span><span class="n">ERROR</span><span class="p">,</span><span class="n">WARNING</span><span class="p">,</span><span class="n">CRITICAL</span><span class="p">,</span><span class="n">INFO</span><span class="p">,</span><span class="n">NOTSET</span><span class="p">,</span><span class="n">DEBUG</span><span class="p">,</span><span class="mi">40</span><span class="p">,</span><span class="mi">30</span><span class="p">,</span><span class="mi">50</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">10</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">exp_host</span> <span class="n">EXP_HOST</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">exp</span> <span class="n">EXP</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">tensorboard</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">tensorboard_log_dir</span> <span class="n">TENSORBOARD_LOG_DIR</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">sample_rate</span> <span class="n">SAMPLE_RATE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">window_size</span> <span class="n">WINDOW_SIZE</span><span class="p">]</span>
@@ -478,6 +481,17 @@
 <dt><kbd>--data, -data</kbd></dt>
 <dd><p>Path prefix to the “.train.pt” and “.valid.pt” file path from preprocess.py</p>
 </dd>
+<dt><kbd>--data_ids, -data_ids</kbd></dt>
+<dd><p>In case there are several corpora.</p>
+<p>Default: [None]</p>
+</dd>
+<dt><kbd>--data_weights, -data_weights</kbd></dt>
+<dd><dl class="simple">
+<dt>Weights of different corpora,</dt><dd><p>should follow the same order as in -data_ids.</p>
+</dd>
+</dl>
+<p>Default: [1]</p>
+</dd>
 <dt><kbd>--save_model, -save_model</kbd></dt>
 <dd><p>Model filename (the model will be saved as &lt;save_model&gt;_N.pt where N is the number of steps</p>
 <p>Default: “model”</p>
@@ -571,6 +585,17 @@
 <dd><p>Possible choices: sents, tokens</p>
 <p>Batch grouping for batch_size. Standard is sents. Tokens will do dynamic batching</p>
 <p>Default: “sents”</p>
+</dd>
+<dt><kbd>--pool_factor, -pool_factor</kbd></dt>
+<dd><dl class="simple">
+<dt>Factor used in data loading and batch creations.</dt><dd><p>It will load the equivalent of <cite>pool_factor</cite> batches,
+sort them by the according <cite>sort_key</cite> to produce
+homogeneous batches and reduce padding, and yield
+the produced batches in a shuffled way.
+Inspired by torchtext’s pool mechanism.</p>
+</dd>
+</dl>
+<p>Default: 8192</p>
 </dd>
 <dt><kbd>--normalization, -normalization</kbd></dt>
 <dd><p>Possible choices: sents, tokens</p>
@@ -705,7 +730,7 @@
 <p>Default: “”</p>
 </dd>
 <dt><kbd>--log_file_level, -log_file_level</kbd></dt>
-<dd><p>Possible choices: ERROR, DEBUG, CRITICAL, WARNING, NOTSET, INFO, 40, 10, 50, 30, 0, 20</p>
+<dd><p>Possible choices: ERROR, WARNING, CRITICAL, INFO, NOTSET, DEBUG, 40, 30, 50, 20, 0, 10</p>
 <p>Default: “0”</p>
 </dd>
 <dt><kbd>--exp_host, -exp_host</kbd></dt>
