@@ -57,7 +57,7 @@ class CNNDecoder(DecoderBase):
             opt.global_attention,
             opt.copy_attn,
             opt.cnn_kernel_width,
-            opt.dropout,
+            opt.dropout[0] if type(opt.dropout) is list else opt.dropout,
             embeddings,
             opt.copy_attn_type)
 
@@ -127,3 +127,7 @@ class CNNDecoder(DecoderBase):
         self.state["previous_input"] = tgt
         # TODO change the way attns is returned dict => list or tuple (onnx)
         return dec_outs, attns
+
+    def update_dropout(self, dropout):
+        for layer in self.conv_layers:
+            layer.dropout.p = dropout

@@ -84,6 +84,7 @@ class ArgumentParser(cfargparse.ArgumentParser):
                   "-epochs is deprecated please use -train_steps.")
         if opt.truncated_decoder > 0 and max(opt.accum_count) > 1:
             raise AssertionError("BPTT is not compatible with -accum > 1")
+
         if opt.gpuid:
             raise AssertionError(
                   "gpuid is deprecated see world_size and gpu_ranks")
@@ -99,6 +100,9 @@ class ArgumentParser(cfargparse.ArgumentParser):
             raise AssertionError(
                   "-gpu_ranks should have master(=0) rank "
                   "unless -world_size is greater than len(gpu_ranks).")
+
+        assert len(opt.dropout) == len(opt.dropout_steps), \
+            "Number of dropout values must match number of accum_steps"
 
     @classmethod
     def validate_translate_opts(cls, opt):

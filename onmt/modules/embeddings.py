@@ -245,3 +245,7 @@ class Embeddings(nn.Module):
             source = self.make_embedding(source)
 
         return source
+
+    def update_dropout(self, dropout):
+        if self.position_encoding:
+            self._modules['make_embedding'][1].dropout.p = dropout

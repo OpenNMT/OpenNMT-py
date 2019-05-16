@@ -41,6 +41,7 @@ class ImageEncoder(EncoderBase):
         self.batch_norm3 = nn.BatchNorm2d(512)
 
         src_size = 512
+        dropout = dropout[0] if type(dropout) is list else dropout
         self.rnn = nn.LSTM(src_size, int(rnn_size / self.num_directions),
                            num_layers=num_layers,
                            dropout=dropout,
@@ -61,7 +62,7 @@ class ImageEncoder(EncoderBase):
             opt.enc_layers,
             opt.brnn,
             opt.enc_rnn_size,
-            opt.dropout,
+            opt.dropout[0] if type(opt.dropout) is list else opt.dropout,
             image_channel_size
         )
 
@@ -125,3 +126,6 @@ class ImageEncoder(EncoderBase):
         out = torch.cat(all_outputs, 0)
 
         return hidden_t, out, lengths
+
+    def update_dropout(self, dropout):
+        self.rnn.dropout = dropout
