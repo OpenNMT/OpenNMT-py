@@ -5,6 +5,12 @@
 ## [Unreleased]
 ### Fixes and improvements
 
+## [0.9.0](https://github.com/OpenNMT/OpenNMT-py/tree/0.9.0) (2019-05-16)
+* Faster vocab building when processing shards (no reloading)
+* New dataweighting feature
+* New dropout scheduler.
+* Small fixes and add-ons
+
 ## [0.8.2](https://github.com/OpenNMT/OpenNMT-py/tree/0.8.2) (2019-02-16)
 * Update documentation and Library example
 * Revamp args
