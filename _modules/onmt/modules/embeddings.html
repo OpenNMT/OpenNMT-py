@@ -420,7 +420,11 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_embedding</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">source</span></div></div>
+        <span class="k">return</span> <span class="n">source</span></div>
+
+    <span class="k">def</span> <span class="nf">update_dropout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dropout</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">position_encoding</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_modules</span><span class="p">[</span><span class="s1">&#39;make_embedding&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">dropout</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">dropout</span></div>
 </pre></div>
 
            </div>

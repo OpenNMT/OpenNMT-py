@@ -226,6 +226,11 @@
         <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">(</span><span class="n">context</span><span class="p">)</span> <span class="o">+</span> <span class="n">inputs</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">feed_forward</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
 
+    <span class="k">def</span> <span class="nf">update_dropout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dropout</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">self_attn</span><span class="o">.</span><span class="n">update_dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">feed_forward</span><span class="o">.</span><span class="n">update_dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">dropout</span>
+
 
 <div class="viewcode-block" id="TransformerEncoder"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.encoders.TransformerEncoder">[docs]</a><span class="k">class</span> <span class="nc">TransformerEncoder</span><span class="p">(</span><span class="n">EncoderBase</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;The Transformer encoder from &quot;Attention is All You Need&quot;</span>
@@ -278,7 +283,7 @@
             <span class="n">opt</span><span class="o">.</span><span class="n">enc_rnn_size</span><span class="p">,</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">heads</span><span class="p">,</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">transformer_ff</span><span class="p">,</span>
-            <span class="n">opt</span><span class="o">.</span><span class="n">dropout</span><span class="p">,</span>
+            <span class="n">opt</span><span class="o">.</span><span class="n">dropout</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">dropout</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">list</span> <span class="k">else</span> <span class="n">opt</span><span class="o">.</span><span class="n">dropout</span><span class="p">,</span>
             <span class="n">embeddings</span><span class="p">,</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">max_relative_positions</span><span class="p">)</span></div>
 
@@ -298,7 +303,12 @@
             <span class="n">out</span> <span class="o">=</span> <span class="n">layer</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">mask</span><span class="p">)</span>
         <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">emb</span><span class="p">,</span> <span class="n">out</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">(),</span> <span class="n">lengths</span></div></div>
+        <span class="k">return</span> <span class="n">emb</span><span class="p">,</span> <span class="n">out</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">(),</span> <span class="n">lengths</span></div>
+
+    <span class="k">def</span> <span class="nf">update_dropout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dropout</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span><span class="o">.</span><span class="n">update_dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformer</span><span class="p">:</span>
+            <span class="n">layer</span><span class="o">.</span><span class="n">update_dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span></div>
 </pre></div>
 
            </div>

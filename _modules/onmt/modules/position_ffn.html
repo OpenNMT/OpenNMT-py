@@ -210,7 +210,11 @@
 
         <span class="n">inter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout_1</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">w_1</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span><span class="p">(</span><span class="n">x</span><span class="p">))))</span>
         <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout_2</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">w_2</span><span class="p">(</span><span class="n">inter</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">output</span> <span class="o">+</span> <span class="n">x</span></div></div>
+        <span class="k">return</span> <span class="n">output</span> <span class="o">+</span> <span class="n">x</span></div>
+
+    <span class="k">def</span> <span class="nf">update_dropout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dropout</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dropout_1</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">dropout</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dropout_2</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">dropout</span></div>
 </pre></div>
 
            </div>

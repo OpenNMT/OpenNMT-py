@@ -402,7 +402,10 @@
                   <span class="n">query_len</span><span class="p">,</span> <span class="n">key_len</span><span class="p">)[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> \
             <span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
 
-        <span class="k">return</span> <span class="n">output</span><span class="p">,</span> <span class="n">top_attn</span></div></div>
+        <span class="k">return</span> <span class="n">output</span><span class="p">,</span> <span class="n">top_attn</span></div>
+
+<div class="viewcode-block" id="MultiHeadedAttention.update_dropout"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.MultiHeadedAttention.update_dropout">[docs]</a>    <span class="k">def</span> <span class="nf">update_dropout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dropout</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">dropout</span></div></div>
 </pre></div>
 
            </div>

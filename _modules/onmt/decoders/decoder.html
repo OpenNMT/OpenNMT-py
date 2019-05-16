@@ -327,7 +327,8 @@
             <span class="n">opt</span><span class="o">.</span><span class="n">coverage_attn</span><span class="p">,</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">context_gate</span><span class="p">,</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">copy_attn</span><span class="p">,</span>
-            <span class="n">opt</span><span class="o">.</span><span class="n">dropout</span><span class="p">,</span>
+            <span class="n">opt</span><span class="o">.</span><span class="n">dropout</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">dropout</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">list</span>
+            <span class="k">else</span> <span class="n">opt</span><span class="o">.</span><span class="n">dropout</span><span class="p">,</span>
             <span class="n">embeddings</span><span class="p">,</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">reuse_copy_attn</span><span class="p">,</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">copy_attn_type</span><span class="p">)</span></div>
@@ -407,7 +408,11 @@
             <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">attns</span><span class="p">:</span>
                 <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">attns</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
                     <span class="n">attns</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">attns</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
-        <span class="k">return</span> <span class="n">dec_outs</span><span class="p">,</span> <span class="n">attns</span></div></div>
+        <span class="k">return</span> <span class="n">dec_outs</span><span class="p">,</span> <span class="n">attns</span></div>
+
+    <span class="k">def</span> <span class="nf">update_dropout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dropout</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">dropout</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span><span class="o">.</span><span class="n">update_dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="StdRNNDecoder"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.decoders.StdRNNDecoder">[docs]</a><span class="k">class</span> <span class="nc">StdRNNDecoder</span><span class="p">(</span><span class="n">RNNDecoderBase</span><span class="p">):</span>
@@ -602,7 +607,12 @@
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">_input_size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Using input feed by concatenating input with attention vectors.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span><span class="o">.</span><span class="n">embedding_size</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_size</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span><span class="o">.</span><span class="n">embedding_size</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_size</span>
+
+    <span class="k">def</span> <span class="nf">update_dropout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dropout</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">dropout</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rnn</span><span class="o">.</span><span class="n">dropout</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">dropout</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span><span class="o">.</span><span class="n">update_dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span></div>
 </pre></div>
 
            </div>

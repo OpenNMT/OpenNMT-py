@@ -217,6 +217,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">batch_norm3</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">(</span><span class="mi">512</span><span class="p">)</span>
 
         <span class="n">src_size</span> <span class="o">=</span> <span class="mi">512</span>
+        <span class="n">dropout</span> <span class="o">=</span> <span class="n">dropout</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">list</span> <span class="k">else</span> <span class="n">dropout</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rnn</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LSTM</span><span class="p">(</span><span class="n">src_size</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">rnn_size</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_directions</span><span class="p">),</span>
                            <span class="n">num_layers</span><span class="o">=</span><span class="n">num_layers</span><span class="p">,</span>
                            <span class="n">dropout</span><span class="o">=</span><span class="n">dropout</span><span class="p">,</span>
@@ -237,7 +238,7 @@
             <span class="n">opt</span><span class="o">.</span><span class="n">enc_layers</span><span class="p">,</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">brnn</span><span class="p">,</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">enc_rnn_size</span><span class="p">,</span>
-            <span class="n">opt</span><span class="o">.</span><span class="n">dropout</span><span class="p">,</span>
+            <span class="n">opt</span><span class="o">.</span><span class="n">dropout</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">dropout</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">list</span> <span class="k">else</span> <span class="n">opt</span><span class="o">.</span><span class="n">dropout</span><span class="p">,</span>
             <span class="n">image_channel_size</span>
         <span class="p">)</span></div>
 
@@ -300,7 +301,10 @@
             <span class="n">all_outputs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">outputs</span><span class="p">)</span>
         <span class="n">out</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">all_outputs</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">hidden_t</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">lengths</span></div></div>
+        <span class="k">return</span> <span class="n">hidden_t</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">lengths</span></div>
+
+    <span class="k">def</span> <span class="nf">update_dropout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dropout</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rnn</span><span class="o">.</span><span class="n">dropout</span> <span class="o">=</span> <span class="n">dropout</span></div>
 </pre></div>
 
            </div>

@@ -220,7 +220,11 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">init_state</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">enc_state</span><span class="p">)</span>
         <span class="n">dec_out</span><span class="p">,</span> <span class="n">attns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="p">(</span><span class="n">tgt</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span>
                                       <span class="n">memory_lengths</span><span class="o">=</span><span class="n">lengths</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">dec_out</span><span class="p">,</span> <span class="n">attns</span></div></div>
+        <span class="k">return</span> <span class="n">dec_out</span><span class="p">,</span> <span class="n">attns</span></div>
+
+    <span class="k">def</span> <span class="nf">update_dropout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dropout</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="o">.</span><span class="n">update_dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">update_dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span></div>
 </pre></div>
 
            </div>

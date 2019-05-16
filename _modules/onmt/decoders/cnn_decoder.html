@@ -233,7 +233,7 @@
             <span class="n">opt</span><span class="o">.</span><span class="n">global_attention</span><span class="p">,</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">copy_attn</span><span class="p">,</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">cnn_kernel_width</span><span class="p">,</span>
-            <span class="n">opt</span><span class="o">.</span><span class="n">dropout</span><span class="p">,</span>
+            <span class="n">opt</span><span class="o">.</span><span class="n">dropout</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">dropout</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">list</span> <span class="k">else</span> <span class="n">opt</span><span class="o">.</span><span class="n">dropout</span><span class="p">,</span>
             <span class="n">embeddings</span><span class="p">,</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">copy_attn_type</span><span class="p">)</span></div>
 
@@ -302,7 +302,11 @@
         <span class="c1"># Update the state.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;previous_input&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tgt</span>
         <span class="c1"># TODO change the way attns is returned dict =&gt; list or tuple (onnx)</span>
-        <span class="k">return</span> <span class="n">dec_outs</span><span class="p">,</span> <span class="n">attns</span></div></div>
+        <span class="k">return</span> <span class="n">dec_outs</span><span class="p">,</span> <span class="n">attns</span></div>
+
+    <span class="k">def</span> <span class="nf">update_dropout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dropout</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv_layers</span><span class="p">:</span>
+            <span class="n">layer</span><span class="o">.</span><span class="n">dropout</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">dropout</span></div>
 </pre></div>
 
            </div>
