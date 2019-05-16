@@ -390,6 +390,13 @@ def train_opts(parser):
               choices=["sents", "tokens"],
               help="Batch grouping for batch_size. Standard "
                    "is sents. Tokens will do dynamic batching")
+    group.add('--pool_factor', '-pool_factor', type=int, default=8192,
+              help="""Factor used in data loading and batch creations.
+              It will load the equivalent of `pool_factor` batches,
+              sort them by the according `sort_key` to produce
+              homogeneous batches and reduce padding, and yield
+              the produced batches in a shuffled way.
+              Inspired by torchtext's pool mechanism.""")
     group.add('--normalization', '-normalization', default='sents',
               choices=["sents", "tokens"],
               help='Normalization method of the gradient.')

@@ -513,9 +513,9 @@ def batch_iter(data, batch_size, batch_size_fn=None, batch_size_multiple=1):
 
 
 def _pool(data, batch_size, batch_size_fn, batch_size_multiple,
-          sort_key, random_shuffler):
+          sort_key, random_shuffler, pool_factor):
     for p in torchtext.data.batch(
-            data, batch_size * 8192,
+            data, batch_size * pool_factor,
             batch_size_fn=batch_size_fn):
         p_batch = batch_iter(
             sorted(p, key=sort_key),
@@ -531,6 +531,7 @@ class OrderedIterator(torchtext.data.Iterator):
     def __init__(self,
                  dataset,
                  batch_size,
+                 pool_factor=1,
                  batch_size_multiple=1,
                  yield_raw_example=False,
                  **kwargs):
@@ -538,6 +539,7 @@ class OrderedIterator(torchtext.data.Iterator):
         self.batch_size_multiple = batch_size_multiple
         self.yield_raw_example = yield_raw_example
         self.dataset = dataset
+        self.pool_factor = pool_factor
 
     def create_batches(self):
         if self.train:
@@ -554,7 +556,8 @@ class OrderedIterator(torchtext.data.Iterator):
                     self.batch_size_fn,
                     self.batch_size_multiple,
                     self.sort_key,
-                    self.random_shuffler)
+                    self.random_shuffler,
+                    self.pool_factor)
         else:
             self.batches = []
             for b in batch_iter(
@@ -619,6 +622,7 @@ class MultipleDatasetIterator(object):
         temp_dataset = torch.load(self.iterables[0]._paths[0])
         self.sort_key = temp_dataset.sort_key
         self.random_shuffler = RandomShuffler()
+        self.pool_factor = opt.pool_factor
         del temp_dataset
 
     def _iter_datasets(self):
@@ -638,7 +642,8 @@ class MultipleDatasetIterator(object):
                 self.batch_size_fn,
                 self.batch_size_multiple,
                 self.sort_key,
-                self.random_shuffler):
+                self.random_shuffler,
+                self.pool_factor):
             minibatch = sorted(minibatch, key=self.sort_key, reverse=True)
             yield torchtext.data.Batch(minibatch,
                                        self.iterables[0].dataset,
@@ -659,8 +664,8 @@ class DatasetLazyIter(object):
     """
 
     def __init__(self, dataset_paths, fields, batch_size, batch_size_fn,
-                 batch_size_multiple, device, is_train, repeat=True,
-                 num_batches_multiple=1, yield_raw_example=False):
+                 batch_size_multiple, device, is_train, pool_factor,
+                 repeat=True, num_batches_multiple=1, yield_raw_example=False):
         self._paths = dataset_paths
         self.fields = fields
         self.batch_size = batch_size
@@ -671,6 +676,7 @@ class DatasetLazyIter(object):
         self.repeat = repeat
         self.num_batches_multiple = num_batches_multiple
         self.yield_raw_example = yield_raw_example
+        self.pool_factor = pool_factor
 
     def _iter_dataset(self, path):
         cur_dataset = torch.load(path)
@@ -680,6 +686,7 @@ class DatasetLazyIter(object):
         cur_iter = OrderedIterator(
             dataset=cur_dataset,
             batch_size=self.batch_size,
+            pool_factor=self.pool_factor,
             batch_size_multiple=self.batch_size_multiple,
             batch_size_fn=self.batch_size_fn,
             device=self.device,
@@ -773,6 +780,7 @@ def build_dataset_iter(corpus_type, fields, opt, is_train=True, multi=False):
         batch_size_multiple,
         device,
         is_train,
+        opt.pool_factor,
         repeat=not opt.single_pass,
         num_batches_multiple=max(opt.accum_count) * opt.world_size,
         yield_raw_example=multi)
