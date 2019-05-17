@@ -110,7 +110,6 @@ class Dataset(TorchtextDataset):
                  filter_pred=None):
         self.sort_key = sort_key
         can_copy = 'src_map' in fields and 'alignment' in fields
-
         read_iters = [r.read(dat[1], dat[0], dir_) for r, dat, dir_
                       in zip(readers, data, dirs)]
 
@@ -127,6 +126,8 @@ class Dataset(TorchtextDataset):
                 self.src_vocabs.append(src_ex_vocab)
             ex_fields = {k: [(k, v)] for k, v in fields.items() if
                          k in ex_dict}
+            if 'weights' in ex_dict.keys():
+                ex_dict['weights'] = float(ex_dict['weights'])
             ex = Example.fromdict(ex_dict, ex_fields)
             examples.append(ex)
 

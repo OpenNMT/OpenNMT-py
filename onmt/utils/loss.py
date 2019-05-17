@@ -35,9 +35,9 @@ def build_loss_compute(model, tgt_field, opt, train=True):
             opt.label_smoothing, len(tgt_field.vocab), ignore_index=padding_idx
         )
     elif isinstance(model.generator[-1], LogSparsemax):
-        criterion = SparsemaxLoss(ignore_index=padding_idx, reduction='sum')
+        criterion = SparsemaxLoss(ignore_index=padding_idx, reduction='none')
     else:
-        criterion = nn.NLLLoss(ignore_index=padding_idx, reduction='sum')
+        criterion = nn.NLLLoss(ignore_index=padding_idx, reduction='none')
 
     # if the loss function operates on vectors of raw logits instead of
     # probabilities, only the first part of the generator needs to be
@@ -110,6 +110,18 @@ class LossComputeBase(nn.Module):
             **kwargs(optional): additional info for computing loss.
         """
         return NotImplementedError
+
+    def _weighted_sum(self, loss, weights):
+        """
+        Custom reduction for loss, based on a specific weight for
+        each example in batch.
+
+        """
+        if weights is None:
+            weights = torch.ones(loss.size()).to(loss.device) * 2
+        weights = weights.float()
+        weighted_sum = (loss * weights).sum()
+        return weighted_sum
 
     def __call__(self,
                  batch,
@@ -210,7 +222,9 @@ class LabelSmoothingLoss(nn.Module):
         model_prob.scatter_(1, target.unsqueeze(1), self.confidence)
         model_prob.masked_fill_((target == self.ignore_index).unsqueeze(1), 0)
 
-        return F.kl_div(output, model_prob, reduction='sum')
+        no_reduc = F.kl_div(output, model_prob, reduction='none')
+
+        return no_reduc.sum(dim=-1)
 
 
 class NMTLossCompute(LossComputeBase):
@@ -229,11 +243,18 @@ class NMTLossCompute(LossComputeBase):
 
     def _compute_loss(self, batch, output, target):
         bottled_output = self._bottle(output)
-
         scores = self.generator(bottled_output)
         gtruth = target.view(-1)
 
         loss = self.criterion(scores, gtruth)
+
+        if hasattr(batch, "weights"):
+            weights = batch.weights.unsqueeze(0).expand(target.size(0), -1)
+            weights = weights.contiguous().view(-1)
+            weighted_loss = self._weighted_sum(loss, weights)
+            loss = weighted_loss
+        else:
+            loss = loss.sum()
         stats = self._stats(loss.clone(), scores, gtruth)
 
         return loss, stats

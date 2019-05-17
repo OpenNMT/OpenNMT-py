@@ -10,6 +10,7 @@ import gc
 import torch
 from functools import partial
 from collections import Counter, defaultdict
+from itertools import cycle
 
 from onmt.utils.logging import init_logger, logger
 from onmt.utils.misc import split_corpus
@@ -31,7 +32,12 @@ def check_existing_pt_files(opt):
             sys.exit(1)
 
 
-def build_save_dataset(corpus_type, fields, src_reader, tgt_reader, opt):
+def build_save_dataset(corpus_type,
+                       fields,
+                       src_reader,
+                       tgt_reader,
+                       weights_reader,
+                       opt):
     assert corpus_type in ['train', 'valid']
 
     if corpus_type == 'train':
@@ -39,17 +45,24 @@ def build_save_dataset(corpus_type, fields, src_reader, tgt_reader, opt):
         srcs = opt.train_src
         tgts = opt.train_tgt
         ids = opt.train_ids
+        weights = opt.sentence_weights if opt.sentence_weights is not None \
+            else [None]*len(opt.train_src)
     else:
         srcs = [opt.valid_src]
         tgts = [opt.valid_tgt]
         ids = [None]
+        weights = [None]
 
-    for src, tgt, maybe_id in zip(srcs, tgts, ids):
+    for src, tgt, maybe_id, maybe_weights in zip(srcs, tgts, ids, weights):
         logger.info("Reading source and target files: %s %s." % (src, tgt))
 
         src_shards = split_corpus(src, opt.shard_size)
         tgt_shards = split_corpus(tgt, opt.shard_size)
-        shard_pairs = zip(src_shards, tgt_shards)
+        if maybe_weights is not None:
+            weight_shards = split_corpus(maybe_weights, opt.shard_size)
+        else:
+            weight_shards = cycle(iter([cycle(iter([1]))]))
+        shard_pairs = zip(src_shards, tgt_shards, weight_shards)
         dataset_paths = []
         if (corpus_type == "train" or opt.filter_valid) and tgt is not None:
             filter_pred = partial(
@@ -79,17 +92,20 @@ def build_save_dataset(corpus_type, fields, src_reader, tgt_reader, opt):
             else:
                 tgt_vocab = None
 
-        for i, (src_shard, tgt_shard) in enumerate(shard_pairs):
+        for i, (src_shard, tgt_shard, weights_shard) in enumerate(shard_pairs):
             assert len(src_shard) == len(tgt_shard)
             logger.info("Building shard %d." % i)
             dataset = inputters.Dataset(
                 fields,
-                readers=([src_reader, tgt_reader]
-                         if tgt_reader else [src_reader]),
-                data=([("src", src_shard), ("tgt", tgt_shard)]
-                      if tgt_reader else [("src", src_shard)]),
-                dirs=([opt.src_dir, None]
-                      if tgt_reader else [opt.src_dir]),
+                readers=([src_reader, tgt_reader, weights_reader]
+                         if tgt_reader else [src_reader, weights_reader]),
+                data=([("src", src_shard),
+                       ("tgt", tgt_shard),
+                       ("weights", weights_shard)] if tgt_reader
+                      else [("src", src_shard),
+                            ("weights", weights_shard)]),
+                dirs=([opt.src_dir, None, None]
+                      if tgt_reader else [opt.src_dir, None]),
                 sort_key=inputters.str2sortkey[opt.data_type],
                 filter_pred=filter_pred
             )
@@ -188,14 +204,16 @@ def main(opt):
 
     src_reader = inputters.str2reader[opt.data_type].from_opt(opt)
     tgt_reader = inputters.str2reader["text"].from_opt(opt)
+    weights_reader = inputters.str2reader["text"].from_opt(opt)
 
     logger.info("Building & saving training data...")
     build_save_dataset(
-        'train', fields, src_reader, tgt_reader, opt)
+        'train', fields, src_reader, tgt_reader, weights_reader, opt)
 
     if opt.valid_src and opt.valid_tgt:
         logger.info("Building & saving validation data...")
-        build_save_dataset('valid', fields, src_reader, tgt_reader, opt)
+        build_save_dataset(
+            'valid', fields, src_reader, tgt_reader, weights_reader, opt)
 
 
 def _get_parser():

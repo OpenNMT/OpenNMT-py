@@ -195,6 +195,9 @@ def preprocess_opts(parser):
               help="Path(s) to the training target data")
     group.add('--train_ids', '-train_ids', nargs='+', default=[None],
               help="ids to name training shards, used for corpus weighting")
+    group.add('--sentence_weights', '-sentence_weights',
+              nargs='+', default=None,
+              help="Path(s) to the training examples sentence weights")
     group.add('--valid_src', '-valid_src',
               help="Path to the validation source data")
     group.add('--valid_tgt', '-valid_tgt',
