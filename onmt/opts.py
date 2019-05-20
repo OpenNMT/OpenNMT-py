@@ -196,7 +196,7 @@ def preprocess_opts(parser):
     group.add('--train_ids', '-train_ids', nargs='+', default=[None],
               help="ids to name training shards, used for corpus weighting")
     group.add('--sentence_weights', '-sentence_weights',
-              nargs='+', default=None,
+              nargs='+', default=None, action=CastNone,
               help="Path(s) to the training examples sentence weights")
     group.add('--valid_src', '-valid_src',
               help="Path to the validation source data")
@@ -736,6 +736,18 @@ class StoreLoggingLevelAction(configargparse.Action):
         # Get the key 'value' in the dict, or just use 'value'
         level = StoreLoggingLevelAction.LEVELS.get(value, value)
         setattr(namespace, self.dest, level)
+
+
+class CastNone(configargparse.Action):
+    def __init__(self, option_strings, dest, help=None, **kwargs):
+        super(CastNone, self).__init__(
+            option_strings, dest, help=help, **kwargs)
+
+    def __call__(self, parser, namespace, value, option_string=None):
+        for i, item in enumerate(value):
+            if item.lower() == "none":
+                value[i] = None
+        setattr(namespace, self.dest, value)
 
 
 class DeprecateAction(configargparse.Action):
