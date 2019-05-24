@@ -3,10 +3,12 @@
 import os
 import signal
 import torch
+import queue
 
 import onmt.opts as opts
 import onmt.utils.distributed
 
+from itertools import cycle
 from onmt.utils.logging import logger
 from onmt.train_single import main as single_main
 from onmt.utils.parse import ArgumentParser
@@ -17,9 +19,35 @@ def main(opt):
     ArgumentParser.update_model_opts(opt)
     ArgumentParser.validate_model_opts(opt)
 
+    # Load checkpoint if we resume from a previous training.
+    if opt.train_from:
+        logger.info('Loading checkpoint from %s' % opt.train_from)
+        checkpoint = torch.load(opt.train_from,
+                                map_location=lambda storage, loc: storage)
+
+        model_opt = ArgumentParser.ckpt_model_opts(checkpoint["opt"])
+        ArgumentParser.update_model_opts(model_opt)
+        ArgumentParser.validate_model_opts(model_opt)
+        logger.info('Loading vocab from checkpoint at %s.' % opt.train_from)
+        vocab = checkpoint['vocab']
+    else:
+        checkpoint = None
+        model_opt = opt
+        vocab = torch.load(opt.data + '.vocab.pt')
+
+    # check for code where vocab is saved instead of fields
+    # (in the future this will be done in a smarter way)
+    if old_style_vocab(vocab):
+        fields = load_old_vocab(
+            vocab, opt.model_type, dynamic_dict=opt.copy_attn)
+    else:
+        fields = vocab
+    train_iter = build_dataset_iter("train", fields, opt)
+
     nb_gpu = len(opt.gpu_ranks)
 
     if opt.world_size > 1:
+        queues = []
         mp = torch.multiprocessing.get_context('spawn')
         # Create a thread to listen for errors in the child processes.
         error_queue = mp.SimpleQueue()
@@ -27,11 +55,18 @@ def main(opt):
         # Train with multiprocessing.
         procs = []
         for device_id in range(nb_gpu):
+            queues += [(device_id, mp.Queue(),)]
             procs.append(mp.Process(target=run, args=(
-                opt, device_id, error_queue, ), daemon=True))
+                opt, device_id, error_queue, queues[-1]), daemon=True))
             procs[device_id].start()
             logger.info(" Starting process pid: %d  " % procs[device_id].pid)
             error_handler.add_child(procs[device_id].pid)
+        
+        procs.append(mp.Process(target=batch_producer, args=(train_iter, queues,),
+                     daemon=True))
+        procs[-1].start()
+        error_handler.add_child(procs[-1].pid)
+
         for p in procs:
             p.join()
 
@@ -41,14 +76,33 @@ def main(opt):
         single_main(opt, -1)
 
 
-def run(opt, device_id, error_queue):
+def batch_producer(generator_to_serve, queues):
+    generator_to_serve = iter(generator_to_serve)
+    
+    for b in generator_to_serve:
+        for device_id, q in cycle(queues):
+            if not q.full():
+                t = [b.src, b.tgt, b.indices]
+                for e in t:
+                    if isinstance(t, tuple):
+                        for _ in e:
+                            _.to(torch.device(device_id))
+                    else:
+                        e.to(torch.device(device_id))
+                q.put(b)
+                break
+                
+
+                
+    
+def run(opt, device_id, error_queue, batch_queue):
     """ run process """
     try:
         gpu_rank = onmt.utils.distributed.multi_init(opt, device_id)
         if gpu_rank != opt.gpu_ranks[device_id]:
             raise AssertionError("An error occurred in \
                   Distributed initialization")
-        single_main(opt, device_id)
+        single_main(opt, device_id, batch_queue)
     except KeyboardInterrupt:
         pass  # killed by parent, do nothing
     except Exception:

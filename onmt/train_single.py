@@ -39,7 +39,7 @@ def configure_process(opt, device_id):
     set_random_seed(opt.seed, device_id >= 0)
 
 
-def main(opt, device_id):
+def main(opt, device_id, batch_queue):
     # NOTE: It's important that ``opt`` has been validated and updated
     # at this point.
     configure_process(opt, device_id)
@@ -98,15 +98,24 @@ def main(opt, device_id):
     trainer = build_trainer(
         opt, device_id, model, fields, optim, model_saver=model_saver)
 
-    train_iterables = []
-    if len(opt.data_ids) > 1:
-        for train_id in opt.data_ids:
-            shard_base = "train_" + train_id
-            iterable = build_dataset_iter(shard_base, fields, opt, multi=True)
-            train_iterables.append(iterable)
-        train_iter = MultipleDatasetIterator(train_iterables, device_id, opt)
-    else:
-        train_iter = build_dataset_iter("train", fields, opt)
+    # train_iterables = []
+    # if len(opt.data_ids) > 1:
+    #     for train_id in opt.data_ids:
+    #         shard_base = "train_" + train_id
+    #         iterable = build_dataset_iter(shard_base, fields, opt, multi=True)
+    #         train_iterables.append(iterable)
+    #     train_iter = MultipleDatasetIterator(train_iterables, device_id, opt)
+    # else:
+    #     train_iter = build_dataset_iter("train", fields, opt)
+    def train_iter():
+        while True:
+            src, tgt, indices = batch_queue.get()
+            batch = torchtext.data.Batch(device=torch.cuda.current_device())
+            batch.src = (pickled_batch[0][0],
+                         pickled_batch[0][1])
+            batch.tgt = pickled_batch[1]
+            batch.indices = pickled_batch[2]
+            yield batch
 
     valid_iter = build_dataset_iter(
         "valid", fields, opt, is_train=False)
@@ -120,7 +129,7 @@ def main(opt, device_id):
         logger.warning("Option single_pass is enabled, ignoring train_steps.")
         train_steps = 0
     trainer.train(
-        train_iter,
+        train_iter,    
         train_steps,
         save_checkpoint_steps=opt.save_checkpoint_steps,
         valid_iter=valid_iter,
