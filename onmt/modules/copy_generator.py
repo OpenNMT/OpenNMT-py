@@ -16,12 +16,14 @@ def collapse_copy_scores(scores, batch, tgt_vocab, src_vocabs=None,
     for b in range(scores.size(batch_dim)):
         blank = []
         fill = []
-        # batch_id = batch_offset[b] if batch_offset is not None else b
-        # index = batch.indices.data[batch_id]
-        # src_vocab = src_vocabs[index]
+
         if src_vocabs is None:
             src_vocab = batch.src_ex_vocab[b]
-            # print(src_vocab)
+        else:
+            batch_id = batch_offset[b] if batch_offset is not None else b
+            index = batch.indices.data[batch_id]
+            src_vocab = src_vocabs[index]
+
         for i in range(1, len(src_vocab)):
             sw = src_vocab.itos[i]
             ti = tgt_vocab.stoi[sw]

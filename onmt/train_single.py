@@ -40,7 +40,7 @@ def configure_process(opt, device_id):
     set_random_seed(opt.seed, device_id >= 0)
 
 
-def main(opt, device_id, batch_queue, semaphore):
+def main(opt, device_id, batch_queue=None, semaphore=None):
     # NOTE: It's important that ``opt`` has been validated and updated
     # at this point.
     configure_process(opt, device_id)
@@ -99,48 +99,28 @@ def main(opt, device_id, batch_queue, semaphore):
     trainer = build_trainer(
         opt, device_id, model, fields, optim, model_saver=model_saver)
 
-    # train_iterables = []
-    # if len(opt.data_ids) > 1:
-    #     for train_id in opt.data_ids:
-    #         shard_base = "train_" + train_id
-    #         iterable = build_dataset_iter(shard_base, fields, opt, multi=True)
-    #         train_iterables.append(iterable)
-    #     train_iter = MultipleDatasetIterator(train_iterables, device_id, opt)
-    # else:
-    #     train_iter = build_dataset_iter("train", fields, opt)
-    def _train_iter():
-        while True:
-            clean = True
-            if clean:
+    if batch_queue is not None:
+        train_iterables = []
+        if len(opt.data_ids) > 1:
+            for train_id in opt.data_ids:
+                shard_base = "train_" + train_id
+                iterable = build_dataset_iter(shard_base, fields, opt, multi=True)
+                train_iterables.append(iterable)
+            train_iter = MultipleDatasetIterator(train_iterables, device_id, opt)
+        else:
+            train_iter = build_dataset_iter("train", fields, opt)
+    else:
+        assert semaphore is not None, "Using batch_queue requires semaphore as well"
+
+        def _train_iter():
+            while True:
                 batch = batch_queue.get()
                 cur_device = torch.cuda.current_device()
-                print("[CONSUMER] Get batch on device %d, tgt.device: %s" % (cur_device, str(batch.tgt.device)))
-                # src, tgt, indices = batch_queue.get()
                 semaphore.release()
 
-                assert str(batch.tgt.device) == "cuda:%d" % cur_device, "Wrong device for tgt, %s != cuda:%s\n%s" % (str(batch.tgt.device), str(cur_device), str(batch))
-                yield batch
-            else:
-                src, tgt, indices = batch_queue.get()
-                semaphore.release()
-                cur_device = torch.cuda.current_device()
-                print("[CONSUMER] Get batch on device %d, tgt.device: %s" % (cur_device, str(tgt.device)))
-
-                batch = torchtext.data.Batch(device=torch.cuda.current_device())
-                batch.src = src
-                batch.tgt = tgt
-                batch.indices = indices
-                batch.fields = fields
-                batch.input_fields = [k for k, v in fields.items() if
-                                     v is not None and not v.is_target]
-                batch.target_fields = [k for k, v in fields.items() if
-                                      v is not None and v.is_target]
-                batch.dataset = None
-                batch.batch_size = len(indices)
-                assert str(batch.tgt.device) == "cuda:%d" % cur_device, "Wrong device for tgt, %s != cuda:%s\n%s" % (str(batch.tgt.device), str(cur_device), str(batch))
                 yield batch
 
-    train_iter = _train_iter()
+        train_iter = _train_iter()
 
     valid_iter = build_dataset_iter(
         "valid", fields, opt, is_train=False)

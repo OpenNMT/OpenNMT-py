@@ -43,7 +43,16 @@ def main(opt):
             vocab, opt.model_type, dynamic_dict=opt.copy_attn)
     else:
         fields = vocab
-    train_iter = build_dataset_iter("train", fields, opt)
+
+    if len(opt.data_ids) > 1:
+        train_iterables = []
+        for train_id in opt.data_ids:
+            shard_base = "train_" + train_id
+            iterable = build_dataset_iter(shard_base, fields, opt, multi=True)
+            train_iterables.append(iterable)
+        train_iter = MultipleDatasetIterator(train_iterables, device_id, opt)
+    else:
+        train_iter = build_dataset_iter("train", fields, opt)
 
     nb_gpu = len(opt.gpu_ranks)
 
@@ -88,36 +97,23 @@ def batch_producer(generator_to_serve, queues, semaphore):
 
         for device_id, q in enumerate(queues):
             if not q.full():
-                clean = True
-                if clean:
-                    b.dataset = None 
-                    if isinstance(b.src, tuple):
-                        b.src = tuple([_.to(torch.device(device_id)) 
-                                       for _ in b.src])
-                    else:
-                        b.src = b.src.to(torch.device(device_id))
-                    b.tgt = b.tgt.to(torch.device(device_id))
-                    b.indices = b.indices.to(torch.device(device_id))
-                    b.alignment = b.alignment.to(torch.device(device_id)) if hasattr(b, 'alignment') else None
-                    b.src_map = b.src_map.to(torch.device(device_id)) if hasattr(b, 'src_map') else None
-                    
-                    # hack to dodge unpicklable `dict_keys`
-                    b.fields = list(b.fields)
-                    q.put(b, False)
-                    print("[PRODUCER] Producing batch for device: %d (tgt device: %s), queue: %s, sem: %d" % (device_id, str(b.tgt.device), str(q), v))
-                
+                b.dataset = None 
+                if isinstance(b.src, tuple):
+                    b.src = tuple([_.to(torch.device(device_id)) 
+                                   for _ in b.src])
                 else:
-                    t = [b.src, b.tgt, b.indices]
-                    t = [
-                        e.to(torch.device(device_id))
-                        if not isinstance(e, tuple)
-                        else tuple([_.to(torch.device(device_id)) for _ in e])
-                        for e in t
-                    ]
-                    q.put(t, False)
-                    print("[PRODUCER] Producing batch for device: %d (tgt device: %s), queue: %s, sem: %d" % (device_id, str(t[1].device), str(q), v))
-
-                # print("[PRODUCER][DONE] Producing batch for device: %d (tgt device: %s), queue: %s, sem: %d" % (device_id, str(b.tgt.device), str(q), v))
+                    b.src = b.src.to(torch.device(device_id))
+                b.tgt = b.tgt.to(torch.device(device_id))
+                b.indices = b.indices.to(torch.device(device_id))
+                b.alignment = b.alignment.to(torch.device(device_id)) \
+                    if hasattr(b, 'alignment') else None
+                b.src_map = b.src_map.to(torch.device(device_id)) \
+                    if hasattr(b, 'src_map') else None
+                
+                # hack to dodge unpicklable `dict_keys`
+                b.fields = list(b.fields)
+                q.put(b, False)
+                
                 break
         else:
             raise ValueError("Hmmm, should not happen, I mean, never.")
