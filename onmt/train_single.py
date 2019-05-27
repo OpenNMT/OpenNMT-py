@@ -3,7 +3,6 @@
 import os
 
 import torch
-import torchtext
 
 from onmt.inputters.inputter import build_dataset_iter, \
     load_old_vocab, old_style_vocab, MultipleDatasetIterator
@@ -104,18 +103,20 @@ def main(opt, device_id, batch_queue=None, semaphore=None):
         if len(opt.data_ids) > 1:
             for train_id in opt.data_ids:
                 shard_base = "train_" + train_id
-                iterable = build_dataset_iter(shard_base, fields, opt, multi=True)
+                iterable = build_dataset_iter(
+                    shard_base, fields, opt, multi=True)
                 train_iterables.append(iterable)
-            train_iter = MultipleDatasetIterator(train_iterables, device_id, opt)
+            train_iter = MultipleDatasetIterator(
+                train_iterables, device_id, opt)
         else:
             train_iter = build_dataset_iter("train", fields, opt)
     else:
-        assert semaphore is not None, "Using batch_queue requires semaphore as well"
+        assert semaphore is not None, \
+            "Using batch_queue requires semaphore as well"
 
         def _train_iter():
             while True:
                 batch = batch_queue.get()
-                cur_device = torch.cuda.current_device()
                 semaphore.release()
 
                 yield batch
@@ -134,7 +135,7 @@ def main(opt, device_id, batch_queue=None, semaphore=None):
         logger.warning("Option single_pass is enabled, ignoring train_steps.")
         train_steps = 0
     trainer.train(
-        train_iter,    
+        train_iter,
         train_steps,
         save_checkpoint_steps=opt.save_checkpoint_steps,
         valid_iter=valid_iter,

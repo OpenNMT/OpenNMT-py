@@ -125,7 +125,7 @@ def get_fields(
             use_vocab=False, dtype=torch.float,
             postprocessing=make_src, sequential=False)
         fields["src_map"] = src_map
-        
+
         src_ex_vocab = RawField()
         # setattr(src_ex_vocab, 'sequential', True)
         fields["src_ex_vocab"] = src_ex_vocab

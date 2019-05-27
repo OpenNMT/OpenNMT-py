@@ -10,7 +10,6 @@
 """
 
 from copy import deepcopy
-import itertools
 import torch
 import traceback
 

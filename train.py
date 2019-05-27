@@ -3,17 +3,16 @@
 import os
 import signal
 import torch
-import queue
 
 import onmt.opts as opts
 import onmt.utils.distributed
 
-from itertools import cycle
 from onmt.utils.logging import logger
 from onmt.train_single import main as single_main
 from onmt.utils.parse import ArgumentParser
 from onmt.inputters.inputter import build_dataset_iter, \
-    load_old_vocab, old_style_vocab
+    load_old_vocab, old_style_vocab, MultipleDatasetIterator
+
 
 def main(opt):
     ArgumentParser.validate_train_opts(opt)
@@ -50,7 +49,8 @@ def main(opt):
             shard_base = "train_" + train_id
             iterable = build_dataset_iter(shard_base, fields, opt, multi=True)
             train_iterables.append(iterable)
-        train_iter = MultipleDatasetIterator(train_iterables, device_id, opt)
+        train_iter = MultipleDatasetIterator(
+            train_iterables, "cuda" if opt.gpu_ranks else "cpu", opt)
     else:
         train_iter = build_dataset_iter("train", fields, opt)
 
@@ -73,7 +73,7 @@ def main(opt):
             procs[device_id].start()
             logger.info(" Starting process pid: %d  " % procs[device_id].pid)
             error_handler.add_child(procs[device_id].pid)
-        
+
         procs.append(mp.Process(target=batch_producer,
                                 args=(train_iter, queues, semaphore,),
                      daemon=True))
@@ -91,15 +91,15 @@ def main(opt):
 
 def batch_producer(generator_to_serve, queues, semaphore):
     generator_to_serve = iter(generator_to_serve)
-    
+
     for b in generator_to_serve:
-        v = semaphore.acquire()
+        semaphore.acquire()
 
         for device_id, q in enumerate(queues):
             if not q.full():
-                b.dataset = None 
+                b.dataset = None
                 if isinstance(b.src, tuple):
-                    b.src = tuple([_.to(torch.device(device_id)) 
+                    b.src = tuple([_.to(torch.device(device_id))
                                    for _ in b.src])
                 else:
                     b.src = b.src.to(torch.device(device_id))
@@ -109,15 +109,14 @@ def batch_producer(generator_to_serve, queues, semaphore):
                     if hasattr(b, 'alignment') else None
                 b.src_map = b.src_map.to(torch.device(device_id)) \
                     if hasattr(b, 'src_map') else None
-                
+
                 # hack to dodge unpicklable `dict_keys`
                 b.fields = list(b.fields)
                 q.put(b, False)
-                
+
                 break
         else:
             raise ValueError("Hmmm, should not happen, I mean, never.")
-
 
 
 def run(opt, device_id, error_queue, batch_queue, semaphore):
