@@ -9,7 +9,7 @@ from itertools import chain, cycle
 
 import torch
 import torchtext.data
-from torchtext.data import Field
+from torchtext.data import Field, RawField
 from torchtext.vocab import Vocab
 from torchtext.data.utils import RandomShuffler
 
@@ -125,6 +125,10 @@ def get_fields(
             use_vocab=False, dtype=torch.float,
             postprocessing=make_src, sequential=False)
         fields["src_map"] = src_map
+        
+        src_ex_vocab = RawField()
+        # setattr(src_ex_vocab, 'sequential', True)
+        fields["src_ex_vocab"] = src_ex_vocab
 
         align = Field(
             use_vocab=False, dtype=torch.long,

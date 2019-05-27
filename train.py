@@ -88,8 +88,9 @@ def batch_producer(generator_to_serve, queues, semaphore):
 
         for device_id, q in enumerate(queues):
             if not q.full():
-                clean = False
+                clean = True
                 if clean:
+                    b.dataset = None 
                     if isinstance(b.src, tuple):
                         b.src = tuple([_.to(torch.device(device_id)) 
                                        for _ in b.src])
@@ -97,6 +98,9 @@ def batch_producer(generator_to_serve, queues, semaphore):
                         b.src = b.src.to(torch.device(device_id))
                     b.tgt = b.tgt.to(torch.device(device_id))
                     b.indices = b.indices.to(torch.device(device_id))
+                    b.alignment = b.alignment.to(torch.device(device_id)) if hasattr(b, 'alignment') else None
+                    b.src_map = b.src_map.to(torch.device(device_id)) if hasattr(b, 'src_map') else None
+                    
                     # hack to dodge unpicklable `dict_keys`
                     b.fields = list(b.fields)
                     q.put(b, False)

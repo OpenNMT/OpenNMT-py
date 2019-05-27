@@ -110,7 +110,7 @@ def main(opt, device_id, batch_queue, semaphore):
     #     train_iter = build_dataset_iter("train", fields, opt)
     def _train_iter():
         while True:
-            clean = False
+            clean = True
             if clean:
                 batch = batch_queue.get()
                 cur_device = torch.cuda.current_device()
