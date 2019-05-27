@@ -12,7 +12,8 @@ from itertools import cycle
 from onmt.utils.logging import logger
 from onmt.train_single import main as single_main
 from onmt.utils.parse import ArgumentParser
-
+from onmt.inputters.inputter import build_dataset_iter, \
+    load_old_vocab, old_style_vocab
 
 def main(opt):
     ArgumentParser.validate_train_opts(opt)
@@ -49,20 +50,23 @@ def main(opt):
     if opt.world_size > 1:
         queues = []
         mp = torch.multiprocessing.get_context('spawn')
+        semaphore = mp.Semaphore(opt.world_size)
         # Create a thread to listen for errors in the child processes.
         error_queue = mp.SimpleQueue()
         error_handler = ErrorHandler(error_queue)
         # Train with multiprocessing.
         procs = []
         for device_id in range(nb_gpu):
-            queues += [(device_id, mp.Queue(),)]
+            q = mp.Queue(1)
+            queues += [q]
             procs.append(mp.Process(target=run, args=(
-                opt, device_id, error_queue, queues[-1]), daemon=True))
+                opt, device_id, error_queue, q, semaphore), daemon=True))
             procs[device_id].start()
             logger.info(" Starting process pid: %d  " % procs[device_id].pid)
             error_handler.add_child(procs[device_id].pid)
         
-        procs.append(mp.Process(target=batch_producer, args=(train_iter, queues,),
+        procs.append(mp.Process(target=batch_producer,
+                                args=(train_iter, queues, semaphore,),
                      daemon=True))
         procs[-1].start()
         error_handler.add_child(procs[-1].pid)
@@ -76,33 +80,54 @@ def main(opt):
         single_main(opt, -1)
 
 
-def batch_producer(generator_to_serve, queues):
+def batch_producer(generator_to_serve, queues, semaphore):
     generator_to_serve = iter(generator_to_serve)
     
     for b in generator_to_serve:
-        for device_id, q in cycle(queues):
-            if not q.full():
-                t = [b.src, b.tgt, b.indices]
-                for e in t:
-                    if isinstance(t, tuple):
-                        for _ in e:
-                            _.to(torch.device(device_id))
-                    else:
-                        e.to(torch.device(device_id))
-                q.put(b)
-                break
-                
+        v = semaphore.acquire()
 
+        for device_id, q in enumerate(queues):
+            if not q.full():
+                clean = False
+                if clean:
+                    if isinstance(b.src, tuple):
+                        b.src = tuple([_.to(torch.device(device_id)) 
+                                       for _ in b.src])
+                    else:
+                        b.src = b.src.to(torch.device(device_id))
+                    b.tgt = b.tgt.to(torch.device(device_id))
+                    b.indices = b.indices.to(torch.device(device_id))
+                    # hack to dodge unpicklable `dict_keys`
+                    b.fields = list(b.fields)
+                    q.put(b, False)
+                    print("[PRODUCER] Producing batch for device: %d (tgt device: %s), queue: %s, sem: %d" % (device_id, str(b.tgt.device), str(q), v))
                 
-    
-def run(opt, device_id, error_queue, batch_queue):
+                else:
+                    t = [b.src, b.tgt, b.indices]
+                    t = [
+                        e.to(torch.device(device_id))
+                        if not isinstance(e, tuple)
+                        else tuple([_.to(torch.device(device_id)) for _ in e])
+                        for e in t
+                    ]
+                    q.put(t, False)
+                    print("[PRODUCER] Producing batch for device: %d (tgt device: %s), queue: %s, sem: %d" % (device_id, str(t[1].device), str(q), v))
+
+                # print("[PRODUCER][DONE] Producing batch for device: %d (tgt device: %s), queue: %s, sem: %d" % (device_id, str(b.tgt.device), str(q), v))
+                break
+        else:
+            raise ValueError("Hmmm, should not happen, I mean, never.")
+
+
+
+def run(opt, device_id, error_queue, batch_queue, semaphore):
     """ run process """
     try:
         gpu_rank = onmt.utils.distributed.multi_init(opt, device_id)
         if gpu_rank != opt.gpu_ranks[device_id]:
             raise AssertionError("An error occurred in \
                   Distributed initialization")
-        single_main(opt, device_id, batch_queue)
+        single_main(opt, device_id, batch_queue, semaphore)
     except KeyboardInterrupt:
         pass  # killed by parent, do nothing
     except Exception:

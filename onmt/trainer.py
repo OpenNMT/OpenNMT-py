@@ -161,6 +161,8 @@ class Trainer(object):
         normalization = 0
         self.accum_count = self._accum_count(self.optim.training_step)
         for batch in iterator:
+            # print("in iterator")
+            # print("batch: ", str(batch.src))
             batches.append(batch)
             if self.norm_method == "tokens":
                 num_tokens = batch.tgt[1:, :, 0].ne(
@@ -221,14 +223,14 @@ class Trainer(object):
         report_stats = onmt.utils.Statistics()
         self._start_report_manager(start_time=total_stats.start_time)
 
-        if self.n_gpu > 1:
-            train_iter = itertools.islice(
-                train_iter, self.gpu_rank, None, self.n_gpu)
+        # if self.n_gpu > 1:
+        #     train_iter = itertools.islice(
+        #         train_iter, self.gpu_rank, None, self.n_gpu)
 
         for i, (batches, normalization) in enumerate(
                 self._accum_batches(train_iter)):
             step = self.optim.training_step
-
+            # print("train iter")
             # UPDATE DROPOUT
             self._maybe_update_dropout(step)
 

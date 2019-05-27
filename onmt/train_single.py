@@ -3,6 +3,7 @@
 import os
 
 import torch
+import torchtext
 
 from onmt.inputters.inputter import build_dataset_iter, \
     load_old_vocab, old_style_vocab, MultipleDatasetIterator
@@ -39,7 +40,7 @@ def configure_process(opt, device_id):
     set_random_seed(opt.seed, device_id >= 0)
 
 
-def main(opt, device_id, batch_queue):
+def main(opt, device_id, batch_queue, semaphore):
     # NOTE: It's important that ``opt`` has been validated and updated
     # at this point.
     configure_process(opt, device_id)
@@ -107,15 +108,39 @@ def main(opt, device_id, batch_queue):
     #     train_iter = MultipleDatasetIterator(train_iterables, device_id, opt)
     # else:
     #     train_iter = build_dataset_iter("train", fields, opt)
-    def train_iter():
+    def _train_iter():
         while True:
-            src, tgt, indices = batch_queue.get()
-            batch = torchtext.data.Batch(device=torch.cuda.current_device())
-            batch.src = (pickled_batch[0][0],
-                         pickled_batch[0][1])
-            batch.tgt = pickled_batch[1]
-            batch.indices = pickled_batch[2]
-            yield batch
+            clean = False
+            if clean:
+                batch = batch_queue.get()
+                cur_device = torch.cuda.current_device()
+                print("[CONSUMER] Get batch on device %d, tgt.device: %s" % (cur_device, str(batch.tgt.device)))
+                # src, tgt, indices = batch_queue.get()
+                semaphore.release()
+
+                assert str(batch.tgt.device) == "cuda:%d" % cur_device, "Wrong device for tgt, %s != cuda:%s\n%s" % (str(batch.tgt.device), str(cur_device), str(batch))
+                yield batch
+            else:
+                src, tgt, indices = batch_queue.get()
+                semaphore.release()
+                cur_device = torch.cuda.current_device()
+                print("[CONSUMER] Get batch on device %d, tgt.device: %s" % (cur_device, str(tgt.device)))
+
+                batch = torchtext.data.Batch(device=torch.cuda.current_device())
+                batch.src = src
+                batch.tgt = tgt
+                batch.indices = indices
+                batch.fields = fields
+                batch.input_fields = [k for k, v in fields.items() if
+                                     v is not None and not v.is_target]
+                batch.target_fields = [k for k, v in fields.items() if
+                                      v is not None and v.is_target]
+                batch.dataset = None
+                batch.batch_size = len(indices)
+                assert str(batch.tgt.device) == "cuda:%d" % cur_device, "Wrong device for tgt, %s != cuda:%s\n%s" % (str(batch.tgt.device), str(cur_device), str(batch))
+                yield batch
+
+    train_iter = _train_iter()
 
     valid_iter = build_dataset_iter(
         "valid", fields, opt, is_train=False)
