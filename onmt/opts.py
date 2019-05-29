@@ -343,6 +343,8 @@ def train_opts(parser):
               help="IP of master for torch.distributed training.")
     group.add('--master_port', '-master_port', default=10000, type=int,
               help="Port of master for torch.distributed training.")
+    group.add('--queue_size', '-queue_size', default=400, type=int,
+              help="Size of queue for each process in producer/consumer")
 
     group.add('--seed', '-seed', type=int, default=-1,
               help="Random seed used for the experiments "

@@ -7,11 +7,13 @@ import torch
 import onmt.opts as opts
 import onmt.utils.distributed
 
-from onmt.utils.logging import logger
+from onmt.utils.logging import init_logger, logger
 from onmt.train_single import main as single_main
 from onmt.utils.parse import ArgumentParser
-from onmt.inputters.inputter import build_dataset_iter, \
+from onmt.inputters.inputter import build_dataset_iter, build_dataset_iter_multiple ,\
     load_old_vocab, old_style_vocab, MultipleDatasetIterator
+
+from itertools import cycle
 
 
 def main(opt):
@@ -44,13 +46,11 @@ def main(opt):
         fields = vocab
 
     if len(opt.data_ids) > 1:
-        train_iterables = []
+        train_shards = []
         for train_id in opt.data_ids:
             shard_base = "train_" + train_id
-            iterable = build_dataset_iter(shard_base, fields, opt, multi=True)
-            train_iterables.append(iterable)
-        train_iter = MultipleDatasetIterator(
-            train_iterables, "cuda" if opt.gpu_ranks else "cpu", opt)
+            train_shards.append(shard_base)
+        train_iter = build_dataset_iter_multiple(train_shards, fields, opt)
     else:
         train_iter = build_dataset_iter("train", fields, opt)
 
@@ -59,23 +59,22 @@ def main(opt):
     if opt.world_size > 1:
         queues = []
         mp = torch.multiprocessing.get_context('spawn')
-        semaphore = mp.Semaphore(opt.world_size)
+        semaphore = mp.Semaphore(opt.world_size * opt.queue_size)
         # Create a thread to listen for errors in the child processes.
         error_queue = mp.SimpleQueue()
         error_handler = ErrorHandler(error_queue)
         # Train with multiprocessing.
         procs = []
         for device_id in range(nb_gpu):
-            q = mp.Queue(1)
+            q = mp.Queue(opt.queue_size)
             queues += [q]
             procs.append(mp.Process(target=run, args=(
                 opt, device_id, error_queue, q, semaphore), daemon=True))
             procs[device_id].start()
             logger.info(" Starting process pid: %d  " % procs[device_id].pid)
             error_handler.add_child(procs[device_id].pid)
-
         procs.append(mp.Process(target=batch_producer,
-                                args=(train_iter, queues, semaphore,),
+                                args=(train_iter, queues, semaphore, opt,),
                      daemon=True))
         procs[-1].start()
         error_handler.add_child(procs[-1].pid)
@@ -89,34 +88,37 @@ def main(opt):
         single_main(opt, -1)
 
 
-def batch_producer(generator_to_serve, queues, semaphore):
+def batch_producer(generator_to_serve, queues, semaphore, opt):
+    init_logger(opt.log_file)
     generator_to_serve = iter(generator_to_serve)
+    queue_generator = cycle(queues)
 
-    for b in generator_to_serve:
+    def next_batch(device_id):
+        new_batch = next(generator_to_serve)
         semaphore.acquire()
+        return new_batch
 
-        for device_id, q in enumerate(queues):
-            if not q.full():
-                b.dataset = None
-                if isinstance(b.src, tuple):
-                    b.src = tuple([_.to(torch.device(device_id))
-                                   for _ in b.src])
-                else:
-                    b.src = b.src.to(torch.device(device_id))
-                b.tgt = b.tgt.to(torch.device(device_id))
-                b.indices = b.indices.to(torch.device(device_id))
-                b.alignment = b.alignment.to(torch.device(device_id)) \
-                    if hasattr(b, 'alignment') else None
-                b.src_map = b.src_map.to(torch.device(device_id)) \
-                    if hasattr(b, 'src_map') else None
+    b = next_batch(0)
 
-                # hack to dodge unpicklable `dict_keys`
-                b.fields = list(b.fields)
-                q.put(b, False)
+    for device_id, q in cycle(enumerate(queues)):
+        if not q.full():
+            b.dataset = None
+            if isinstance(b.src, tuple):
+                b.src = tuple([_.to(torch.device(device_id))
+                               for _ in b.src])
+            else:
+                b.src = b.src.to(torch.device(device_id))
+            b.tgt = b.tgt.to(torch.device(device_id))
+            b.indices = b.indices.to(torch.device(device_id))
+            b.alignment = b.alignment.to(torch.device(device_id)) \
+                if hasattr(b, 'alignment') else None
+            b.src_map = b.src_map.to(torch.device(device_id)) \
+                if hasattr(b, 'src_map') else None
 
-                break
-        else:
-            raise ValueError("Hmmm, should not happen, I mean, never.")
+            # hack to dodge unpicklable `dict_keys`
+            b.fields = list(b.fields)
+            q.put(b, False)
+            b = next_batch(device_id)
 
 
 def run(opt, device_id, error_queue, batch_queue, semaphore):

@@ -98,7 +98,7 @@ def main(opt, device_id, batch_queue=None, semaphore=None):
     trainer = build_trainer(
         opt, device_id, model, fields, optim, model_saver=model_saver)
 
-    if batch_queue is not None:
+    if batch_queue is None:
         train_iterables = []
         if len(opt.data_ids) > 1:
             for train_id in opt.data_ids:
@@ -118,7 +118,6 @@ def main(opt, device_id, batch_queue=None, semaphore=None):
             while True:
                 batch = batch_queue.get()
                 semaphore.release()
-
                 yield batch
 
         train_iter = _train_iter()
