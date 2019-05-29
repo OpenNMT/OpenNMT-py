@@ -91,7 +91,6 @@ def main(opt):
 def batch_producer(generator_to_serve, queues, semaphore, opt):
     init_logger(opt.log_file)
     generator_to_serve = iter(generator_to_serve)
-    queue_generator = cycle(queues)
 
     def next_batch(device_id):
         new_batch = next(generator_to_serve)

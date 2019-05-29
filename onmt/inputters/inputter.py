@@ -617,7 +617,8 @@ class MultipleDatasetIterator(object):
         self.index = -1
         self.iterables = []
         for shard in train_shards:
-            self.iterables.append(build_dataset_iter(shard, fields, opt, multi=True))
+            self.iterables.append(
+                build_dataset_iter(shard, fields, opt, multi=True))
         self.init_iterators = True
         self.weights = opt.data_weights
         self.batch_size = opt.batch_size
