@@ -10,8 +10,8 @@ import onmt.utils.distributed
 from onmt.utils.logging import init_logger, logger
 from onmt.train_single import main as single_main
 from onmt.utils.parse import ArgumentParser
-from onmt.inputters.inputter import build_dataset_iter, build_dataset_iter_multiple ,\
-    load_old_vocab, old_style_vocab, MultipleDatasetIterator
+from onmt.inputters.inputter import build_dataset_iter, \
+    load_old_vocab, old_style_vocab, build_dataset_iter_multiple
 
 from itertools import cycle
 
