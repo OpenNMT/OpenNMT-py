@@ -74,8 +74,8 @@ def main(opt):
             logger.info(" Starting process pid: %d  " % procs[device_id].pid)
             error_handler.add_child(procs[device_id].pid)
         producer = mp.Process(target=batch_producer,
-                                args=(train_iter, queues, semaphore, opt,),
-                     daemon=True)
+                              args=(train_iter, queues, semaphore, opt,),
+                              daemon=True)
         producer.start()
         error_handler.add_child(producer.pid)
 
