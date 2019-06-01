@@ -73,14 +73,15 @@ def main(opt):
             procs[device_id].start()
             logger.info(" Starting process pid: %d  " % procs[device_id].pid)
             error_handler.add_child(procs[device_id].pid)
-        procs.append(mp.Process(target=batch_producer,
+        producer = mp.Process(target=batch_producer,
                                 args=(train_iter, queues, semaphore, opt,),
-                     daemon=True))
-        procs[-1].start()
-        error_handler.add_child(procs[-1].pid)
+                     daemon=True)
+        producer.start()
+        error_handler.add_child(producer.pid)
 
         for p in procs:
             p.join()
+        producer.terminate()
 
     elif nb_gpu == 1:  # case 1 GPU only
         single_main(opt, 0)
