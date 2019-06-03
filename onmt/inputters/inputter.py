@@ -127,7 +127,6 @@ def get_fields(
         fields["src_map"] = src_map
 
         src_ex_vocab = RawField()
-        # setattr(src_ex_vocab, 'sequential', True)
         fields["src_ex_vocab"] = src_ex_vocab
 
         align = Field(
