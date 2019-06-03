@@ -10,7 +10,6 @@
 """
 
 from copy import deepcopy
-import itertools
 import torch
 import traceback
 
@@ -221,14 +220,9 @@ class Trainer(object):
         report_stats = onmt.utils.Statistics()
         self._start_report_manager(start_time=total_stats.start_time)
 
-        if self.n_gpu > 1:
-            train_iter = itertools.islice(
-                train_iter, self.gpu_rank, None, self.n_gpu)
-
         for i, (batches, normalization) in enumerate(
                 self._accum_batches(train_iter)):
             step = self.optim.training_step
-
             # UPDATE DROPOUT
             self._maybe_update_dropout(step)
 
