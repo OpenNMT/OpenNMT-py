@@ -93,12 +93,25 @@ def main(opt):
 def batch_producer(generator_to_serve, queues, semaphore, opt):
     init_logger(opt.log_file)
     set_random_seed(opt.seed, False)
-    generator_to_serve = iter(generator_to_serve)
+    # generator_to_serve = iter(generator_to_serve)
+
+    def pred(x):
+        """
+        Filters batches that belong only
+        to gpu_ranks of current node
+        """
+        for rank in opt.gpu_ranks:
+            if x[0] % opt.world_size == rank:
+                print(x[0], rank)
+                return True
+
+    generator_to_serve = filter(
+        pred, enumerate(generator_to_serve))
 
     def next_batch(device_id):
         new_batch = next(generator_to_serve)
         semaphore.acquire()
-        return new_batch
+        return new_batch[1]
 
     b = next_batch(0)
 
