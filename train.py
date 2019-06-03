@@ -27,15 +27,9 @@ def main(opt):
         logger.info('Loading checkpoint from %s' % opt.train_from)
         checkpoint = torch.load(opt.train_from,
                                 map_location=lambda storage, loc: storage)
-
-        model_opt = ArgumentParser.ckpt_model_opts(checkpoint["opt"])
-        ArgumentParser.update_model_opts(model_opt)
-        ArgumentParser.validate_model_opts(model_opt)
         logger.info('Loading vocab from checkpoint at %s.' % opt.train_from)
         vocab = checkpoint['vocab']
     else:
-        checkpoint = None
-        model_opt = opt
         vocab = torch.load(opt.data + '.vocab.pt')
 
     # check for code where vocab is saved instead of fields
@@ -93,12 +87,24 @@ def main(opt):
 def batch_producer(generator_to_serve, queues, semaphore, opt):
     init_logger(opt.log_file)
     set_random_seed(opt.seed, False)
-    generator_to_serve = iter(generator_to_serve)
+    # generator_to_serve = iter(generator_to_serve)
+
+    def pred(x):
+        """
+        Filters batches that belong only
+        to gpu_ranks of current node
+        """
+        for rank in opt.gpu_ranks:
+            if x[0] % opt.world_size == rank:
+                return True
+
+    generator_to_serve = filter(
+        pred, enumerate(generator_to_serve))
 
     def next_batch(device_id):
         new_batch = next(generator_to_serve)
         semaphore.acquire()
-        return new_batch
+        return new_batch[1]
 
     b = next_batch(0)
 
