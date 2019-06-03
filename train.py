@@ -102,7 +102,6 @@ def batch_producer(generator_to_serve, queues, semaphore, opt):
         """
         for rank in opt.gpu_ranks:
             if x[0] % opt.world_size == rank:
-                print(x[0], rank)
                 return True
 
     generator_to_serve = filter(
