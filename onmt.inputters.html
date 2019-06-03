@@ -185,13 +185,13 @@
 <h2>Data Readers<a class="headerlink" href="#data-readers" title="Permalink to this headline">¶</a></h2>
 <dl class="exception">
 <dt id="onmt.inputters.datareader_base.MissingDependencyException">
-<em class="property">exception </em><code class="descclassname">onmt.inputters.datareader_base.</code><code class="descname">MissingDependencyException</code><a class="reference internal" href="_modules/onmt/inputters/datareader_base.html#MissingDependencyException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.inputters.datareader_base.MissingDependencyException" title="Permalink to this definition">¶</a></dt>
+<em class="property">exception </em><code class="sig-prename descclassname">onmt.inputters.datareader_base.</code><code class="sig-name descname">MissingDependencyException</code><a class="reference internal" href="_modules/onmt/inputters/datareader_base.html#MissingDependencyException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.inputters.datareader_base.MissingDependencyException" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
 </dd></dl>
 
 <dl class="class">
 <dt id="onmt.inputters.DataReaderBase">
-<em class="property">class </em><code class="descclassname">onmt.inputters.</code><code class="descname">DataReaderBase</code><a class="reference internal" href="_modules/onmt/inputters/datareader_base.html#DataReaderBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.inputters.DataReaderBase" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">onmt.inputters.</code><code class="sig-name descname">DataReaderBase</code><a class="reference internal" href="_modules/onmt/inputters/datareader_base.html#DataReaderBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.inputters.DataReaderBase" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Read data from file system and yield as dicts.</p>
 <dl class="field-list simple">
@@ -201,9 +201,9 @@
     If any are missing, this will be raised.</p>
 </dd>
 </dl>
-<dl class="classmethod">
+<dl class="method">
 <dt id="onmt.inputters.DataReaderBase.from_opt">
-<em class="property">classmethod </em><code class="descname">from_opt</code><span class="sig-paren">(</span><em>opt</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/datareader_base.html#DataReaderBase.from_opt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.inputters.DataReaderBase.from_opt" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><code class="sig-name descname">from_opt</code><span class="sig-paren">(</span><em class="sig-param">opt</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/datareader_base.html#DataReaderBase.from_opt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.inputters.DataReaderBase.from_opt" title="Permalink to this definition">¶</a></dt>
 <dd><p>Alternative constructor.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -214,7 +214,7 @@
 
 <dl class="method">
 <dt id="onmt.inputters.DataReaderBase.read">
-<code class="descname">read</code><span class="sig-paren">(</span><em>data</em>, <em>side</em>, <em>src_dir</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/datareader_base.html#DataReaderBase.read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.inputters.DataReaderBase.read" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">read</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">side</em>, <em class="sig-param">src_dir</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/datareader_base.html#DataReaderBase.read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.inputters.DataReaderBase.read" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read data from file system and yield as dicts.</p>
 </dd></dl>
 
@@ -222,11 +222,11 @@
 
 <dl class="class">
 <dt id="onmt.inputters.TextDataReader">
-<em class="property">class </em><code class="descclassname">onmt.inputters.</code><code class="descname">TextDataReader</code><a class="reference internal" href="_modules/onmt/inputters/text_dataset.html#TextDataReader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.inputters.TextDataReader" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">onmt.inputters.</code><code class="sig-name descname">TextDataReader</code><a class="reference internal" href="_modules/onmt/inputters/text_dataset.html#TextDataReader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.inputters.TextDataReader" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.inputters.datareader_base.DataReaderBase</span></code></p>
 <dl class="method">
 <dt id="onmt.inputters.TextDataReader.read">
-<code class="descname">read</code><span class="sig-paren">(</span><em>sequences</em>, <em>side</em>, <em>_dir=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/text_dataset.html#TextDataReader.read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.inputters.TextDataReader.read" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">read</code><span class="sig-paren">(</span><em class="sig-param">sequences</em>, <em class="sig-param">side</em>, <em class="sig-param">_dir=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/text_dataset.html#TextDataReader.read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.inputters.TextDataReader.read" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read text data from disk.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -250,7 +250,7 @@ fields.</p>
 
 <dl class="class">
 <dt id="onmt.inputters.ImageDataReader">
-<em class="property">class </em><code class="descclassname">onmt.inputters.</code><code class="descname">ImageDataReader</code><span class="sig-paren">(</span><em>truncate=None</em>, <em>channel_size=3</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/image_dataset.html#ImageDataReader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.inputters.ImageDataReader" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">onmt.inputters.</code><code class="sig-name descname">ImageDataReader</code><span class="sig-paren">(</span><em class="sig-param">truncate=None</em>, <em class="sig-param">channel_size=3</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/image_dataset.html#ImageDataReader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.inputters.ImageDataReader" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.inputters.datareader_base.DataReaderBase</span></code></p>
 <p>Read image data from disk.</p>
 <dl class="field-list simple">
@@ -266,9 +266,9 @@ fields.</p>
     importing any of <code class="docutils literal notranslate"><span class="pre">PIL</span></code>, <code class="docutils literal notranslate"><span class="pre">torchvision</span></code>, or <code class="docutils literal notranslate"><span class="pre">cv2</span></code> fail.</p>
 </dd>
 </dl>
-<dl class="classmethod">
+<dl class="method">
 <dt id="onmt.inputters.ImageDataReader.from_opt">
-<em class="property">classmethod </em><code class="descname">from_opt</code><span class="sig-paren">(</span><em>opt</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/image_dataset.html#ImageDataReader.from_opt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.inputters.ImageDataReader.from_opt" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><code class="sig-name descname">from_opt</code><span class="sig-paren">(</span><em class="sig-param">opt</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/image_dataset.html#ImageDataReader.from_opt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.inputters.ImageDataReader.from_opt" title="Permalink to this definition">¶</a></dt>
 <dd><p>Alternative constructor.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -279,7 +279,7 @@ fields.</p>
 
 <dl class="method">
 <dt id="onmt.inputters.ImageDataReader.read">
-<code class="descname">read</code><span class="sig-paren">(</span><em>images</em>, <em>side</em>, <em>img_dir=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/image_dataset.html#ImageDataReader.read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.inputters.ImageDataReader.read" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">read</code><span class="sig-paren">(</span><em class="sig-param">images</em>, <em class="sig-param">side</em>, <em class="sig-param">img_dir=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/image_dataset.html#ImageDataReader.read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.inputters.ImageDataReader.read" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read data into dicts.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -303,7 +303,7 @@ In either case, the filenames may be relative to <code class="docutils literal n
 
 <dl class="class">
 <dt id="onmt.inputters.AudioDataReader">
-<em class="property">class </em><code class="descclassname">onmt.inputters.</code><code class="descname">AudioDataReader</code><span class="sig-paren">(</span><em>sample_rate=0</em>, <em>window_size=0</em>, <em>window_stride=0</em>, <em>window=None</em>, <em>normalize_audio=True</em>, <em>truncate=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/audio_dataset.html#AudioDataReader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.inputters.AudioDataReader" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">onmt.inputters.</code><code class="sig-name descname">AudioDataReader</code><span class="sig-paren">(</span><em class="sig-param">sample_rate=0</em>, <em class="sig-param">window_size=0</em>, <em class="sig-param">window_stride=0</em>, <em class="sig-param">window=None</em>, <em class="sig-param">normalize_audio=True</em>, <em class="sig-param">truncate=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/audio_dataset.html#AudioDataReader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.inputters.AudioDataReader" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.inputters.datareader_base.DataReaderBase</span></code></p>
 <p>Read audio data from disk.</p>
 <dl class="field-list simple">
@@ -325,9 +325,9 @@ by std or not.</p></li>
     importing any of <code class="docutils literal notranslate"><span class="pre">torchaudio</span></code>, <code class="docutils literal notranslate"><span class="pre">librosa</span></code>, or <code class="docutils literal notranslate"><span class="pre">numpy</span></code> fail.</p>
 </dd>
 </dl>
-<dl class="classmethod">
+<dl class="method">
 <dt id="onmt.inputters.AudioDataReader.from_opt">
-<em class="property">classmethod </em><code class="descname">from_opt</code><span class="sig-paren">(</span><em>opt</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/audio_dataset.html#AudioDataReader.from_opt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.inputters.AudioDataReader.from_opt" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><code class="sig-name descname">from_opt</code><span class="sig-paren">(</span><em class="sig-param">opt</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/audio_dataset.html#AudioDataReader.from_opt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.inputters.AudioDataReader.from_opt" title="Permalink to this definition">¶</a></dt>
 <dd><p>Alternative constructor.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -338,7 +338,7 @@ by std or not.</p></li>
 
 <dl class="method">
 <dt id="onmt.inputters.AudioDataReader.read">
-<code class="descname">read</code><span class="sig-paren">(</span><em>data</em>, <em>side</em>, <em>src_dir=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/audio_dataset.html#AudioDataReader.read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.inputters.AudioDataReader.read" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">read</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">side</em>, <em class="sig-param">src_dir=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/audio_dataset.html#AudioDataReader.read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.inputters.AudioDataReader.read" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read data into dicts.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -365,7 +365,7 @@ In either case, the filenames may be relative to <code class="docutils literal n
 <h2>Dataset<a class="headerlink" href="#dataset" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.inputters.Dataset">
-<em class="property">class </em><code class="descclassname">onmt.inputters.</code><code class="descname">Dataset</code><span class="sig-paren">(</span><em>fields</em>, <em>readers</em>, <em>data</em>, <em>dirs</em>, <em>sort_key</em>, <em>filter_pred=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/dataset_base.html#Dataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.inputters.Dataset" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">onmt.inputters.</code><code class="sig-name descname">Dataset</code><span class="sig-paren">(</span><em class="sig-param">fields</em>, <em class="sig-param">readers</em>, <em class="sig-param">data</em>, <em class="sig-param">dirs</em>, <em class="sig-param">sort_key</em>, <em class="sig-param">filter_pred=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/dataset_base.html#Dataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.inputters.Dataset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torchtext.data.dataset.Dataset</span></code></p>
 <p>Contain data and process it.</p>
 <p>A dataset is an object that accepts sequences of raw data (sentence pairs
