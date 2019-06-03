@@ -7,6 +7,7 @@ import torch
 import onmt.opts as opts
 import onmt.utils.distributed
 
+from onmt.utils.misc import set_random_seed
 from onmt.utils.logging import init_logger, logger
 from onmt.train_single import main as single_main
 from onmt.utils.parse import ArgumentParser
@@ -91,6 +92,7 @@ def main(opt):
 
 def batch_producer(generator_to_serve, queues, semaphore, opt):
     init_logger(opt.log_file)
+    set_random_seed(opt.seed, False)
     generator_to_serve = iter(generator_to_serve)
 
     def next_batch(device_id):
@@ -101,24 +103,23 @@ def batch_producer(generator_to_serve, queues, semaphore, opt):
     b = next_batch(0)
 
     for device_id, q in cycle(enumerate(queues)):
-        if not q.full():
-            b.dataset = None
-            if isinstance(b.src, tuple):
-                b.src = tuple([_.to(torch.device(device_id))
-                               for _ in b.src])
-            else:
-                b.src = b.src.to(torch.device(device_id))
-            b.tgt = b.tgt.to(torch.device(device_id))
-            b.indices = b.indices.to(torch.device(device_id))
-            b.alignment = b.alignment.to(torch.device(device_id)) \
-                if hasattr(b, 'alignment') else None
-            b.src_map = b.src_map.to(torch.device(device_id)) \
-                if hasattr(b, 'src_map') else None
+        b.dataset = None
+        if isinstance(b.src, tuple):
+            b.src = tuple([_.to(torch.device(device_id))
+                           for _ in b.src])
+        else:
+            b.src = b.src.to(torch.device(device_id))
+        b.tgt = b.tgt.to(torch.device(device_id))
+        b.indices = b.indices.to(torch.device(device_id))
+        b.alignment = b.alignment.to(torch.device(device_id)) \
+            if hasattr(b, 'alignment') else None
+        b.src_map = b.src_map.to(torch.device(device_id)) \
+            if hasattr(b, 'src_map') else None
 
-            # hack to dodge unpicklable `dict_keys`
-            b.fields = list(b.fields)
-            q.put(b, False)
-            b = next_batch(device_id)
+        # hack to dodge unpicklable `dict_keys`
+        b.fields = list(b.fields)
+        q.put(b, False)
+        b = next_batch(device_id)
 
 
 def run(opt, device_id, error_queue, batch_queue, semaphore):
