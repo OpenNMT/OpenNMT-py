@@ -226,6 +226,7 @@
     <span class="c1"># Map source tokens to indices in the dynamic dict.</span>
     <span class="n">src_map</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">([</span><span class="n">src_ex_vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">w</span><span class="p">]</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">src</span><span class="p">])</span>
     <span class="n">example</span><span class="p">[</span><span class="s2">&quot;src_map&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">src_map</span>
+    <span class="n">example</span><span class="p">[</span><span class="s2">&quot;src_ex_vocab&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">src_ex_vocab</span>
 
     <span class="k">if</span> <span class="s2">&quot;tgt&quot;</span> <span class="ow">in</span> <span class="n">example</span><span class="p">:</span>
         <span class="n">tgt</span> <span class="o">=</span> <span class="n">tgt_field</span><span class="o">.</span><span class="n">tokenize</span><span class="p">(</span><span class="n">example</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">])</span>

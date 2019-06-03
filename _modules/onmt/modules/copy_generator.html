@@ -181,7 +181,7 @@
 <span class="kn">from</span> <span class="nn">onmt.utils.loss</span> <span class="k">import</span> <span class="n">LossComputeBase</span>
 
 
-<span class="k">def</span> <span class="nf">collapse_copy_scores</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">tgt_vocab</span><span class="p">,</span> <span class="n">src_vocabs</span><span class="p">,</span>
+<span class="k">def</span> <span class="nf">collapse_copy_scores</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">tgt_vocab</span><span class="p">,</span> <span class="n">src_vocabs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                          <span class="n">batch_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">batch_offset</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Given scores from an expanded dictionary</span>
@@ -192,9 +192,14 @@
     <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">scores</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">batch_dim</span><span class="p">)):</span>
         <span class="n">blank</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">fill</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">batch_id</span> <span class="o">=</span> <span class="n">batch_offset</span><span class="p">[</span><span class="n">b</span><span class="p">]</span> <span class="k">if</span> <span class="n">batch_offset</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">b</span>
-        <span class="n">index</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">indices</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">batch_id</span><span class="p">]</span>
-        <span class="n">src_vocab</span> <span class="o">=</span> <span class="n">src_vocabs</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">src_vocabs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">src_vocab</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">src_ex_vocab</span><span class="p">[</span><span class="n">b</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">batch_id</span> <span class="o">=</span> <span class="n">batch_offset</span><span class="p">[</span><span class="n">b</span><span class="p">]</span> <span class="k">if</span> <span class="n">batch_offset</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">b</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">indices</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">batch_id</span><span class="p">]</span>
+            <span class="n">src_vocab</span> <span class="o">=</span> <span class="n">src_vocabs</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">src_vocab</span><span class="p">)):</span>
             <span class="n">sw</span> <span class="o">=</span> <span class="n">src_vocab</span><span class="o">.</span><span class="n">itos</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
             <span class="n">ti</span> <span class="o">=</span> <span class="n">tgt_vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">sw</span><span class="p">]</span>
@@ -392,7 +397,7 @@
         <span class="c1"># and is used only for stats</span>
         <span class="n">scores_data</span> <span class="o">=</span> <span class="n">collapse_copy_scores</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_unbottle</span><span class="p">(</span><span class="n">scores</span><span class="o">.</span><span class="n">clone</span><span class="p">(),</span> <span class="n">batch</span><span class="o">.</span><span class="n">batch_size</span><span class="p">),</span>
-            <span class="n">batch</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tgt_vocab</span><span class="p">,</span> <span class="n">batch</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">src_vocabs</span><span class="p">)</span>
+            <span class="n">batch</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tgt_vocab</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="n">scores_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bottle</span><span class="p">(</span><span class="n">scores_data</span><span class="p">)</span>
 
         <span class="c1"># this block does not depend on the loss value computed above</span>
