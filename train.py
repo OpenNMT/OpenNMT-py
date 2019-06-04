@@ -124,7 +124,7 @@ def batch_producer(generator_to_serve, queues, semaphore, opt):
 
         # hack to dodge unpicklable `dict_keys`
         b.fields = list(b.fields)
-        q.put(b, False)
+        q.put(b)
         b = next_batch(device_id)
 
 
