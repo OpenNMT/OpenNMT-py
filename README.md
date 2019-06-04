@@ -57,7 +57,7 @@ Note that we currently only support PyTorch 1.1 (should work with 1.0)
 - Inference time loss functions.
 - [Conv2Conv convolution model]
 - SRU "RNNs faster than CNN" paper
-- FP16 training (mixed-precision with Apex)
+- Mixed-precision training with [APEX](https://github.com/NVIDIA/apex), optimized on [Tensor Cores](https://developer.nvidia.com/tensor-cores)
 
 ## Quickstart
 
