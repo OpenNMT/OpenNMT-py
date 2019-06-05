@@ -473,7 +473,7 @@ def train_opts(parser):
     group.add('--lamb_eps', '-lamb_eps', type=float, default=1e-8,
               help="The epsilon parameter used by Lamb.")
     group.add('--lamb_wd', '-lamb_wd', type=float, default=0.0,
-              help="The weight decay parameter used by Lamb." )
+              help="The weight decay parameter used by Lamb.")
     group.add('--label_smoothing', '-label_smoothing', type=float, default=0.0,
               help="Label smoothing value epsilon. "
                    "Probabilities of all non-true labels "

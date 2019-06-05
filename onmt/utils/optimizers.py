@@ -531,18 +531,20 @@ class Lamb(torch.optim.Optimizer):
     """Implements Lamb algorithm.
     Based on https://github.com/cybertronai/pytorch-lamb
     which is itself based on `torch.optimizers.Adam`.
-    It has been proposed in `Reducing BERT Pre-Training Time from 3 Days to 76 Minutes`_.
+    It has been proposed in `Reducing BERT Pre-Training Time
+    from 3 Days to 76 Minutes`_.
     Arguments:
-        params (iterable): iterable of parameters to optimize or dicts defining
-            parameter groups
+        params (iterable): iterable of parameters to optimize or
+            dicts defining parameter groups
         lr (float, optional): learning rate (default: 1e-3)
-        betas (Tuple[float, float], optional): coefficients used for computing
-            running averages of gradient and its square (default: (0.9, 0.999))
+        betas (Tuple[float, float], optional): coefficients used
+            for computing running averages of gradient and
+            its square (default: (0.9, 0.999))
         eps (float, optional): term added to the denominator to improve
             numerical stability (default: 1e-8)
         weight_decay (float, optional): weight decay (L2 penalty) (default: 0)
-        adam (bool, optional): always use trust ratio = 1, which turns this into
-            Adam. Useful for comparison purposes.
+        adam (bool, optional): always use trust ratio = 1,
+            which turns this into Adam. Useful for comparison purposes.
     .. _Reducing BERT Pre-Training Time from 3 Days to 76 Minutes:
         https://arxiv.org/abs/1904.00962
     """
@@ -554,9 +556,11 @@ class Lamb(torch.optim.Optimizer):
         if not 0.0 <= eps:
             raise ValueError("Invalid epsilon value: {}".format(eps))
         if not 0.0 <= betas[0] < 1.0:
-            raise ValueError("Invalid beta parameter at index 0: {}".format(betas[0]))
+            raise ValueError("Invalid beta parameter at index 0: {}".
+                             format(betas[0]))
         if not 0.0 <= betas[1] < 1.0:
-            raise ValueError("Invalid beta parameter at index 1: {}".format(betas[1]))
+            raise ValueError("Invalid beta parameter at index 1: {}".
+                             format(betas[1]))
         defaults = dict(lr=lr, betas=betas, eps=eps,
                         weight_decay=weight_decay)
         self.adam = adam
@@ -578,7 +582,9 @@ class Lamb(torch.optim.Optimizer):
                     continue
                 grad = p.grad.data
                 if grad.is_sparse:
-                    raise RuntimeError('Lamb does not support sparse gradients, consider SparseAdam instad.')
+                    raise RuntimeError(
+                        "Lamb does not support sparse gradients,"
+                        "consider SparseAdam instead.")
 
                 state = self.state[p]
 
@@ -609,13 +615,15 @@ class Lamb(torch.optim.Optimizer):
                 bias_correction1 = 1 - beta1 ** state['step']
                 bias_correction2 = 1 - beta2 ** state['step']
                 # Apply bias to lr to avoid broadcast.
-                step_size = group['lr'] * math.sqrt(bias_correction2) / bias_correction1
+                step_size = group['lr'] * \
+                    math.sqrt(bias_correction2) / bias_correction1
 
                 adam_step = exp_avg / denom
-                # L2 norm uses sum, but here since we're dividing, use mean to avoid overflow.
+                # L2 norm uses sum, but here since we're dividing,
+                # use mean to avoid overflow.
                 r1 = p.data.pow(2).mean().sqrt()
                 r2 = adam_step.pow(2).mean().sqrt()
-                r = 1 if r1 == 0 or r2 == 0 else  min(r1/r2, 10)
+                r = 1 if r1 == 0 or r2 == 0 else min(r1/r2, 10)
                 state['r1'] = r1
                 state['r2'] = r2
                 state['r'] = r
