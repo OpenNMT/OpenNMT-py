@@ -527,11 +527,10 @@ class AdaFactor(torch.optim.Optimizer):
         return loss
 
 
-# Code below is an implementation of https://arxiv.org/pdf/1904.00962.pdf
-# inspired but modified from https://github.com/cybertronai/pytorch-lamb
-
 class Lamb(torch.optim.Optimizer):
     """Implements Lamb algorithm.
+    Based on https://github.com/cybertronai/pytorch-lamb
+    which is itself based on `torch.optimizers.Adam`.
     It has been proposed in `Reducing BERT Pre-Training Time from 3 Days to 76 Minutes`_.
     Arguments:
         params (iterable): iterable of parameters to optimize or dicts defining
@@ -591,6 +590,7 @@ class Lamb(torch.optim.Optimizer):
                     # Exponential moving average of squared gradient values
                     state['exp_avg_sq'] = torch.zeros_like(p.data)
 
+                # in the paper, exp_avg is m_t and exp_avg_sq is v_t
                 exp_avg, exp_avg_sq = state['exp_avg'], state['exp_avg_sq']
                 beta1, beta2 = group['betas']
 
@@ -599,9 +599,11 @@ class Lamb(torch.optim.Optimizer):
                 if group['weight_decay'] != 0:
                     grad.add_(group['weight_decay'], p.data)
 
-                # Decay the first and second moment running average coefficient
+                # m = beta1 * m + (1 - beta1) * grad
                 exp_avg.mul_(beta1).add_(1 - beta1, grad)
+                # v = beta2 * m + (1 - beta2) * grad**2
                 exp_avg_sq.mul_(beta2).addcmul_(1 - beta2, grad, grad)
+
                 denom = exp_avg_sq.sqrt().add_(group['eps'])
 
                 bias_correction1 = 1 - beta1 ** state['step']
