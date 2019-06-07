@@ -108,6 +108,14 @@ def make_learning_rate_decay_fn(opt):
             noam_decay,
             warmup_steps=opt.warmup_steps,
             model_size=opt.rnn_size)
+    elif opt.decay_method == 'noamwd':
+        return functools.partial(
+            noamwd_decay,
+            warmup_steps=opt.warmup_steps,
+            model_size=opt.rnn_size,
+            rate=opt.learning_rate_decay,
+            decay_steps=opt.decay_steps,
+            start_step=opt.start_decay_steps)
     elif opt.decay_method == 'rsqrt':
         return functools.partial(
             rsqrt_decay, warmup_steps=opt.warmup_steps)
@@ -126,6 +134,16 @@ def noam_decay(step, warmup_steps, model_size):
     return (
         model_size ** (-0.5) *
         min(step ** (-0.5), step * warmup_steps**(-1.5)))
+
+
+def noamwd_decay(step, warmup_steps,
+                 model_size, rate, decay_steps, start_step=0):
+    """Learning rate schedule optimized for huge batches
+    """
+    return (
+        model_size ** (-0.5) *
+        min(step ** (-0.5), step * warmup_steps**(-1.5)) *
+        rate ** (max(step - start_step + decay_steps, 0) // decay_steps))
 
 
 def exponential_decay(step, rate, decay_steps, start_step=0):

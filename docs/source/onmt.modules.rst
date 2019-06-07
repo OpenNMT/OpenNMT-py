@@ -48,7 +48,7 @@ Attention
 
 
 
-Architecture: Transfomer
+Architecture: Transformer
 ----------------------------
 
 .. autoclass:: onmt.modules.PositionalEncoding

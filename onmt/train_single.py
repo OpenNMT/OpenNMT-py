@@ -5,7 +5,7 @@ import os
 import torch
 
 from onmt.inputters.inputter import build_dataset_iter, \
-    load_old_vocab, old_style_vocab
+    load_old_vocab, old_style_vocab, build_dataset_iter_multiple
 from onmt.model_builder import build_model
 from onmt.utils.optimizers import Optimizer
 from onmt.utils.misc import set_random_seed
@@ -39,17 +39,18 @@ def configure_process(opt, device_id):
     set_random_seed(opt.seed, device_id >= 0)
 
 
-def main(opt, device_id):
+def main(opt, device_id, batch_queue=None, semaphore=None):
     # NOTE: It's important that ``opt`` has been validated and updated
     # at this point.
     configure_process(opt, device_id)
     init_logger(opt.log_file)
+    assert len(opt.accum_count) == len(opt.accum_steps), \
+        'Number of accum_count values must match number of accum_steps'
     # Load checkpoint if we resume from a previous training.
     if opt.train_from:
         logger.info('Loading checkpoint from %s' % opt.train_from)
         checkpoint = torch.load(opt.train_from,
                                 map_location=lambda storage, loc: storage)
-
         model_opt = ArgumentParser.ckpt_model_opts(checkpoint["opt"])
         ArgumentParser.update_model_opts(model_opt)
         ArgumentParser.validate_model_opts(model_opt)
@@ -96,7 +97,28 @@ def main(opt, device_id):
     trainer = build_trainer(
         opt, device_id, model, fields, optim, model_saver=model_saver)
 
-    train_iter = build_dataset_iter("train", fields, opt)
+    if batch_queue is None:
+        if len(opt.data_ids) > 1:
+            train_shards = []
+            for train_id in opt.data_ids:
+                shard_base = "train_" + train_id
+                train_shards.append(shard_base)
+            train_iter = build_dataset_iter_multiple(train_shards, fields, opt)
+        else:
+            train_iter = build_dataset_iter("train", fields, opt)
+
+    else:
+        assert semaphore is not None, \
+            "Using batch_queue requires semaphore as well"
+
+        def _train_iter():
+            while True:
+                batch = batch_queue.get()
+                semaphore.release()
+                yield batch
+
+        train_iter = _train_iter()
+
     valid_iter = build_dataset_iter(
         "valid", fields, opt, is_train=False)
 
@@ -108,6 +130,7 @@ def main(opt, device_id):
     if opt.single_pass and train_steps > 0:
         logger.warning("Option single_pass is enabled, ignoring train_steps.")
         train_steps = 0
+
     trainer.train(
         train_iter,
         train_steps,

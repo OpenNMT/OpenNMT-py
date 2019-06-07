@@ -372,7 +372,10 @@ class Translator(object):
                             "{:*>10.7f} ", "{:>10.7f} ", max_index)
                         output += row_format.format(word, *row) + '\n'
                         row_format = "{:>10.10} " + "{:>10.7f} " * len(srcs)
-                    os.write(1, output.encode('utf-8'))
+                    if self.logger:
+                        self.logger.info(output)
+                    else:
+                        os.write(1, output.encode('utf-8'))
 
         end_time = time.time()
 
@@ -803,7 +806,7 @@ class Translator(object):
             memory_lengths=src_lengths, src_map=src_map)
 
         log_probs[:, :, self._tgt_pad_idx] = 0
-        gold = tgt_in
+        gold = tgt[1:]
         gold_scores = log_probs.gather(2, gold)
         gold_scores = gold_scores.sum(dim=0).view(-1)
 

@@ -2,21 +2,21 @@
 
 ## How do I use Pretrained embeddings (e.g. GloVe)?
 
-Using vocabularies from OpenNMT-py preprocessing outputs, `embeddings_to_torch.py` to generate encoder and decoder embeddings initialized with GloVes values.
+Using vocabularies from OpenNMT-py preprocessing outputs, `embeddings_to_torch.py` to generate encoder and decoder embeddings initialized with GloVe's values.
 
-the script is a slightly modified version of ylhsiehs one2.
+the script is a slightly modified version of ylhsieh's one2.
 
 Usage:
 
 ```
-embeddings_to_torch.py [-h] -emb_file EMB_FILE -output_file OUTPUT_FILE -dict_file DICT_FILE [-verbose]
-
-emb_file: GloVe like embedding file i.e. CSV [word] [dim1] ... [dim_d]
-
-output_file: a filename to save the output as PyTorch serialized tensors2
-
-dict_file: dict output from OpenNMT-py preprocessing
+embeddings_to_torch.py [-h] [-emb_file_both EMB_FILE_BOTH]
+                       [-emb_file_enc EMB_FILE_ENC]
+                       [-emb_file_dec EMB_FILE_DEC] -output_file
+                       OUTPUT_FILE -dict_file DICT_FILE [-verbose]
+                       [-skip_lines SKIP_LINES]
+                       [-type {GloVe,word2vec}]
 ```
+Run embeddings_to_torch.py -h for more usagecomplete info.
 
 Example
 
@@ -43,7 +43,7 @@ python preprocess.py \
 3) prepare embeddings:
 
 ```
-./tools/embeddings_to_torch.py -emb_file "glove_dir/glove.6B.100d.txt" \
+./tools/embeddings_to_torch.py -emb_file_both "glove_dir/glove.6B.100d.txt" \
 -dict_file "data/data.vocab.pt" \
 -output_file "data/embeddings"
 ```
@@ -105,4 +105,34 @@ if you use a regular network card (1 Gbps) then we suggest to use a higher accum
 You can specify several models in the translate.py command line: -model model1_seed1 model2_seed2
 Bear in mind that your models must share the same traget vocabulary.
 
+## How can I weight different corpora at training?
 
+### Preprocessing
+
+We introduced `-train_ids` which is a list of IDs that will be given to the preprocessed shards.
+
+E.g. we have two corpora : `parallel.en` and  `parallel.de` + `from_backtranslation.en` `from_backtranslation.de`, we can pass the following in the `preprocess.py` command:
+```
+...
+-train_src parallel.en from_backtranslation.en \
+-train_tgt parallel.de from_backtranslation.de \
+-train_ids A B \
+-save_data my_data \
+...
+```
+and it will dump `my_data.train_A.X.pt` based on `parallel.en`//`parallel.de` and `my_data.train_B.X.pt` based on `from_backtranslation.en`//`from_backtranslation.de`.
+
+### Training
+
+We introduced `-data_ids` based on the same principle as above, as well as `-data_weights`, which is the list of the weight each corpus should have.
+E.g.
+```
+...
+-data my_data \
+-data_ids A B \
+-data_weights 1 7 \
+...
+```
+will mean that we'll look for `my_data.train_A.*.pt` and `my_data.train_B.*.pt`, and that when building batches, we'll take 1 example from corpus A, then 7 examples from corpus B, and so on.
+
+**Warning**: This means that we'll load as many shards as we have `-data_ids`, in order to produce batches containing data from every corpus. It may be a good idea to reduce the `-shard_size` at preprocessing.

@@ -50,6 +50,11 @@ class TransformerEncoderLayer(nn.Module):
         out = self.dropout(context) + inputs
         return self.feed_forward(out)
 
+    def update_dropout(self, dropout):
+        self.self_attn.update_dropout(dropout)
+        self.feed_forward.update_dropout(dropout)
+        self.dropout.p = dropout
+
 
 class TransformerEncoder(EncoderBase):
     """The Transformer encoder from "Attention is All You Need"
@@ -102,7 +107,7 @@ class TransformerEncoder(EncoderBase):
             opt.enc_rnn_size,
             opt.heads,
             opt.transformer_ff,
-            opt.dropout,
+            opt.dropout[0] if type(opt.dropout) is list else opt.dropout,
             embeddings,
             opt.max_relative_positions)
 
@@ -123,3 +128,8 @@ class TransformerEncoder(EncoderBase):
         out = self.layer_norm(out)
 
         return emb, out.transpose(0, 1).contiguous(), lengths
+
+    def update_dropout(self, dropout):
+        self.embeddings.update_dropout(dropout)
+        for layer in self.transformer:
+            layer.update_dropout(dropout)
