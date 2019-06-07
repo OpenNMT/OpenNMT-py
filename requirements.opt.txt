@@ -3,7 +3,7 @@ torchvision==0.2.1
 joblib
 librosa
 Pillow
-git+https://github.com/pytorch/audio
+git+https://github.com/pytorch/audio/tree/d92de5b
 pyrouge
 pyonmttok
 opencv-python
