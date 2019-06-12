@@ -180,9 +180,9 @@ class CopyGeneratorLoss(nn.Module):
 class CopyGeneratorLossCompute(NMTLossCompute):
     """Copy Generator Loss Computation."""
     def __init__(self, criterion, generator, tgt_vocab, normalize_by_length,
-                 coverage_loss=None):
+                 lambda_coverage=0.0):
         super(CopyGeneratorLossCompute, self).__init__(
-            criterion, generator, coverage_loss=coverage_loss)
+            criterion, generator, lambda_coverage=lambda_coverage)
         self.tgt_vocab = tgt_vocab
         self.normalize_by_length = normalize_by_length
 

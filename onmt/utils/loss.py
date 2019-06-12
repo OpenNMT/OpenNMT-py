@@ -226,7 +226,7 @@ class NMTLossCompute(LossComputeBase):
     """
 
     def __init__(self, criterion, generator, normalization="sents",
-                 lambda_coverage=False):
+                 lambda_coverage=0.0):
         super(NMTLossCompute, self).__init__(criterion, generator)
         self.lambda_coverage = lambda_coverage
 
