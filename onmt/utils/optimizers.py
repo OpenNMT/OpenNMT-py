@@ -311,6 +311,7 @@ class Optimizer(object):
         """Wrapper for backward pass. Some optimizer requires ownership of the
         backward pass."""
         if self._with_fp16_wrapper:
+            import apex
             with apex.amp.scale_loss(loss, self._optimizer) as scaled_loss:
                 scaled_loss.backward()
         else:
@@ -328,6 +329,7 @@ class Optimizer(object):
                 self._optimizer.update_master_grads()
             if hasattr(self._optimizer, "clip_master_grads") and \
                self._max_grad_norm > 0:
+                import apex
                 torch.nn.utils.glip_grad_norm_(
                     apex.amp.master_params(self), self._max_grad_norm)
         for group in self._optimizer.param_groups:
