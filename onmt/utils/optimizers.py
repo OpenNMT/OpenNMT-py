@@ -87,8 +87,10 @@ def build_torch_optimizer(model, opt):
         import apex
         loss_scale = "dynamic" if opt.loss_scale == 0 else opt.loss_scale
         model, optimizer = apex.amp.initialize(
-            [model, model.generator], optimizer, opt_level="O2",
-            keep_batchnorm_fp32=False, loss_scale=loss_scale)
+            [model, model.generator],
+            optimizer,
+            opt_level=opt.apex_opt_level,
+            loss_scale=loss_scale)
 
     return optimizer
 
