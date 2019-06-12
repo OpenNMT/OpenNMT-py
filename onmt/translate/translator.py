@@ -594,6 +594,19 @@ class Translator(object):
             # or [ tgt_len, batch_size, vocab ] when full sentence
         return log_probs, attn
 
+    def _augment(
+            self,
+            log_probs,
+            b=0.3,
+            soft_penalty=-5,
+            alpha=0.66,
+            prev_tok=None):
+        vocab_size = log_probs.size(-1)
+        m = torch.distributions.Bernoulli(b)
+        keep = torch.gt(m.sample(log_probs.size()), 0)
+        print(log_probs)
+        log_probs[keep].add_(soft_penalty)
+        print(log_probs)
     def _translate_batch(
             self,
             batch,
@@ -659,6 +672,7 @@ class Translator(object):
             memory_lengths=memory_lengths)
 
         for step in range(max_length):
+            print(step)
             decoder_input = beam.current_predictions.view(1, -1, 1)
 
             log_probs, attn = self._decode_and_generate(
@@ -671,11 +685,16 @@ class Translator(object):
                 step=step,
                 batch_offset=beam._batch_offset)
 
+            if step == 0:
+                self._augment(log_probs, 0.3, -5, 1, None)
+
             beam.advance(log_probs, attn)
             any_beam_is_finished = beam.is_finished.any()
             if any_beam_is_finished:
                 beam.update_finished()
+                print('finished')
                 if beam.done:
+                    print('done')
                     break
 
             select_indices = beam.current_origin
@@ -695,7 +714,7 @@ class Translator(object):
 
             self.model.decoder.map_state(
                 lambda state, dim: state.index_select(dim, select_indices))
-
+        print('fin')
         results["scores"] = beam.scores
         results["predictions"] = beam.predictions
         results["attention"] = beam.attention
