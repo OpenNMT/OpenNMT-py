@@ -167,7 +167,8 @@ def count_features(path):
 def main(opt):
     ArgumentParser.validate_preprocess_args(opt)
     torch.manual_seed(opt.seed)
-    check_existing_pt_files(opt)
+    if not(opt.overwrite):
+        check_existing_pt_files(opt)
 
     init_logger(opt.log_file)
     logger.info("Extracting features...")

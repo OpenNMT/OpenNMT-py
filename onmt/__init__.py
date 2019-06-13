@@ -17,4 +17,4 @@ sys.modules["onmt.Optim"] = onmt.utils.optimizers
 __all__ = [onmt.inputters, onmt.encoders, onmt.decoders, onmt.models,
            onmt.utils, onmt.modules, "Trainer"]
 
-__version__ = "0.9.0"
+__version__ = "0.9.1"
