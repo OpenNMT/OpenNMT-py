@@ -222,6 +222,9 @@ def preprocess_opts(parser):
                    "shard_size>0 means segment dataset into multiple shards, "
                    "each shard has shard_size samples")
 
+    group.add('--overwrite', '-overwrite', action="store_true",
+              help="Overwrite existing shards if any.")
+
     # Dictionary options, for text corpus
 
     group = parser.add_argument_group('Vocab')
