@@ -771,10 +771,11 @@ def build_dataset_iter(corpus_type, fields, opt, is_train=True, multi=False):
     """
     dataset_paths = list(sorted(
         glob.glob(opt.data + '.' + corpus_type + '.[0-9]*.pt')))
-    assert dataset_paths != [], \
-        "Check data %s - %s" % (opt.data, corpus_type)
     if not dataset_paths:
-        return None
+        if is_train:
+            raise ValueError('Training data %s not found' % opt.data)
+        else:
+            return None
     if multi:
         batch_size = 1
         batch_fn = None
