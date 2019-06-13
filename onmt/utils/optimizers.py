@@ -90,7 +90,8 @@ def build_torch_optimizer(model, opt):
             [model, model.generator],
             optimizer,
             opt_level=opt.apex_opt_level,
-            loss_scale=loss_scale)
+            loss_scale=loss_scale,
+            keep_batchnorm_fp32=False if opt.optim == "fusedadam" else None)
 
     return optimizer
 
