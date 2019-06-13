@@ -63,10 +63,6 @@ class ArgumentParser(cfargparse.ArgumentParser):
             if model_opt.model_type != "text":
                 raise AssertionError(
                     "--share_embeddings requires --model_type text.")
-        if model_opt.model_dtype == "fp16":
-            logger.warning(
-                "FP16 is experimental, the generated checkpoints may "
-                "be incompatible with a future version")
 
     @classmethod
     def ckpt_model_opts(cls, ckpt_opt):
