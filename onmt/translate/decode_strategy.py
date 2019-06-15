@@ -1,5 +1,5 @@
 import torch
-
+import collections
 
 class DecodeStrategy(object):
     """Base class for generation strategies.
@@ -117,6 +117,21 @@ class DecodeStrategy(object):
                     ngrams.add(tuple(gram))
                 if fail:
                     log_probs[path_idx] = -10e20
+
+    def penalize_repetitions(self, log_probs):
+        cur_len = len(self)
+        if cur_len > 1:
+            for path_idx in range(self.alive_seq.shape[0]):
+                # skip BOS
+                hyp = self.alive_seq[path_idx, 1:]
+                counts = collections.Counter()
+                for i in range(cur_len - 1):
+                    if hyp[i].item() in self.exclusion_tokens:
+                        counts[hyp[i].item()] += 0.5
+                    else:
+                        counts[hyp[i].item()] += 1
+                for i in counts:
+                    log_probs[path_idx][i] = log_probs[path_idx][i] - (counts[i] * 5)
 
     def advance(self, log_probs, attn):
         """DecodeStrategy subclasses should override :func:`advance()`.

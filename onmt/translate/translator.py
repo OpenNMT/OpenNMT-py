@@ -597,16 +597,38 @@ class Translator(object):
     def _augment(
             self,
             log_probs,
-            b=0.3,
+            m,
             soft_penalty=-5,
             alpha=0.66,
-            prev_tok=None):
-        vocab_size = log_probs.size(-1)
-        m = torch.distributions.Bernoulli(b)
+            prev_tok=None,
+            step=0):
+        
         keep = torch.gt(m.sample(log_probs.size()), 0)
-        print(log_probs)
-        log_probs[keep].add_(soft_penalty)
-        print(log_probs)
+        self._discount_add(log_probs, keep, soft_penalty * (alpha ** step))
+        #self._discount_gather(log_probs, prev_tok, soft_penalty)
+
+    def _discount_add(
+        self,
+        log_probs,
+        indices,
+        soft_penalty):
+        if indices is not None:
+            updated_probs = log_probs[indices].add_(soft_penalty)
+            log_probs.masked_scatter_(indices, updated_probs)
+
+    def _discount_gather(
+        self,
+        log_probs,
+        indices,
+        soft_penalty):
+        if indices is not None:
+            updated_values = log_probs.gather(1, indices.view(-1,1)).transpose(-1,0)
+            updated_values.add_(soft_penalty)
+            j = torch.arange(log_probs.size(0))
+            log_probs[j, indices] = updated_values
+
+            #log_probs[indices].add_(soft_penalty)
+
     def _translate_batch(
             self,
             batch,
@@ -670,9 +692,9 @@ class Translator(object):
             block_ngram_repeat=self.block_ngram_repeat,
             exclusion_tokens=self._exclusion_idxs,
             memory_lengths=memory_lengths)
+        m = torch.distributions.Bernoulli(0.3)
 
         for step in range(max_length):
-            print(step)
             decoder_input = beam.current_predictions.view(1, -1, 1)
 
             log_probs, attn = self._decode_and_generate(
@@ -684,17 +706,18 @@ class Translator(object):
                 src_map=src_map,
                 step=step,
                 batch_offset=beam._batch_offset)
-
+             
             if step == 0:
-                self._augment(log_probs, 0.3, -5, 1, None)
-
+                self._augment(log_probs, m, -5, 1, None, 0)
+            else:
+                topk = beam.topk_ids.view(-1)
+                self._augment(log_probs, m, -5, 0.66, topk , step)
+            beam.penalize_repetitions(log_probs)
             beam.advance(log_probs, attn)
             any_beam_is_finished = beam.is_finished.any()
             if any_beam_is_finished:
                 beam.update_finished()
-                print('finished')
                 if beam.done:
-                    print('done')
                     break
 
             select_indices = beam.current_origin
@@ -714,7 +737,6 @@ class Translator(object):
 
             self.model.decoder.map_state(
                 lambda state, dim: state.index_select(dim, select_indices))
-        print('fin')
         results["scores"] = beam.scores
         results["predictions"] = beam.predictions
         results["attention"] = beam.attention
