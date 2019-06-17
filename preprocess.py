@@ -72,20 +72,20 @@ def build_save_dataset(corpus_type,
             filter_pred = None
 
         if corpus_type == "train":
-            if opt.src_vocab:
+            existing_fields = None
+            if opt.src_vocab != "":
                 try:
                     logger.info("Using existing vocabulary...")
-                    src_vocab = torch.load(opt.src_vocab)
+                    existing_fields = torch.load(opt.src_vocab)
                 except torch.serialization.pickle.UnpicklingError:
                     logger.info("Building vocab from text file...")
-
                     src_vocab, src_vocab_size = _load_vocab(
                         opt.src_vocab, "src", counters,
                         opt.src_words_min_frequency)
             else:
                 src_vocab = None
 
-            if opt.tgt_vocab:
+            if opt.tgt_vocab != "":
                 tgt_vocab, tgt_vocab_size = _load_vocab(
                     opt.tgt_vocab, "tgt", counters,
                     opt.tgt_words_min_frequency)
@@ -109,7 +109,7 @@ def build_save_dataset(corpus_type,
                 sort_key=inputters.str2sortkey[opt.data_type],
                 filter_pred=filter_pred
             )
-            if corpus_type == "train":
+            if corpus_type == "train" and existing_fields is None:
                 for ex in dataset.examples:
                     for name, field in fields.items():
                         try:
@@ -123,7 +123,8 @@ def build_save_dataset(corpus_type,
                                 f_iter, all_data):
                             has_vocab = (sub_n == 'src' and src_vocab) or \
                                         (sub_n == 'tgt' and tgt_vocab)
-                            if sub_f.sequential and not has_vocab:
+                            if (hasattr(sub_f, 'sequential')
+                                    and sub_f.sequential and not has_vocab):
                                 val = fd
                                 counters[sub_n].update(val)
             if maybe_id:
@@ -145,12 +146,15 @@ def build_save_dataset(corpus_type,
             gc.collect()
 
     if corpus_type == "train":
-        fields = _build_fields_vocab(
-            fields, counters, opt.data_type,
-            opt.share_vocab, opt.vocab_size_multiple,
-            opt.src_vocab_size, opt.src_words_min_frequency,
-            opt.tgt_vocab_size, opt.tgt_words_min_frequency)
         vocab_path = opt.save_data + '.vocab.pt'
+        if existing_fields is None:
+            fields = _build_fields_vocab(
+                fields, counters, opt.data_type,
+                opt.share_vocab, opt.vocab_size_multiple,
+                opt.src_vocab_size, opt.src_words_min_frequency,
+                opt.tgt_vocab_size, opt.tgt_words_min_frequency)
+        else:
+            fields = existing_fields
         torch.save(fields, vocab_path)
 
 
@@ -179,7 +183,8 @@ def count_features(path):
 def main(opt):
     ArgumentParser.validate_preprocess_args(opt)
     torch.manual_seed(opt.seed)
-    check_existing_pt_files(opt)
+    if not(opt.overwrite):
+        check_existing_pt_files(opt)
 
     init_logger(opt.log_file)
     logger.info("Extracting features...")

@@ -179,6 +179,10 @@ def model_opts(parser):
     group.add('--loss_scale', '-loss_scale', type=float, default=0,
               help="For FP16 training, the static loss scale to use. If not "
                    "set, the loss scale is dynamically computed.")
+    group.add('--apex_opt_level', '-apex_opt_level', type=str, default="O2",
+              choices=["O0", "O1", "O2", "O3"],
+              help="For FP16 training, the opt_level to use."
+                   "See https://nvidia.github.io/apex/amp.html#opt-levels.")
 
 
 def preprocess_opts(parser):
@@ -220,6 +224,9 @@ def preprocess_opts(parser):
                    "shard_size=0 means no segmentation "
                    "shard_size>0 means segment dataset into multiple shards, "
                    "each shard has shard_size samples")
+
+    group.add('--overwrite', '-overwrite', action="store_true",
+              help="Overwrite existing shards if any.")
 
     # Dictionary options, for text corpus
 
@@ -346,6 +353,8 @@ def train_opts(parser):
               help="IP of master for torch.distributed training.")
     group.add('--master_port', '-master_port', default=10000, type=int,
               help="Port of master for torch.distributed training.")
+    group.add('--queue_size', '-queue_size', default=400, type=int,
+              help="Size of queue for each process in producer/consumer")
 
     group.add('--seed', '-seed', type=int, default=-1,
               help="Random seed used for the experiments "
