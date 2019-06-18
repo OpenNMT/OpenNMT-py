@@ -47,7 +47,7 @@ class TranslationBuilder(object):
         if self.replace_unk and attn is not None and src is not None:
             for i in range(len(tokens)):
                 if tokens[i] == tgt_field.unk_token:
-                    _, max_index = attn[i].max(0)
+                    _, max_index = attn[i][:len(src_raw)].max(0)
                     tokens[i] = src_raw[max_index.item()]
                     if self.phrase_table != "":
                         with open(self.phrase_table, "r") as f:
