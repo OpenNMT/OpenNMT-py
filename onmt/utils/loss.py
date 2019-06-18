@@ -118,8 +118,8 @@ class LossComputeBase(nn.Module):
 
         """
         if weights is None:
-            weights = torch.ones(loss.size()).to(loss.device) * 2
-        weights = weights.float()
+            weights = torch.ones(loss.size()).to(loss.device)
+        weights = weights.float().to(loss.device)
         weighted_sum = (loss * weights).sum()
         return weighted_sum
 
