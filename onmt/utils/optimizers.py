@@ -331,7 +331,7 @@ class Optimizer(object):
             if hasattr(self._optimizer, "clip_master_grads") and \
                self._max_grad_norm > 0:
                 import apex
-                torch.nn.utils.glip_grad_norm_(
+                torch.nn.utils.clip_grad_norm_(
                     apex.amp.master_params(self), self._max_grad_norm)
         for group in self._optimizer.param_groups:
             group['lr'] = learning_rate
