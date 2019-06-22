@@ -47,7 +47,7 @@ def build_embeddings(opt, text_field, for_encoder=True):
         feat_merge=opt.feat_merge,
         feat_vec_exponent=opt.feat_vec_exponent,
         feat_vec_size=opt.feat_vec_size,
-        dropout=opt.dropout,
+        dropout=opt.dropout[0] if type(opt.dropout) is list else opt.dropout,
         word_padding_idx=word_padding_idx,
         feat_padding_idx=feat_pad_indices,
         word_vocab_size=num_word_embeddings,
@@ -218,8 +218,6 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
 
     model.generator = generator
     model.to(device)
-    if model_opt.model_dtype == 'fp16':
-        model.half()
 
     return model
 

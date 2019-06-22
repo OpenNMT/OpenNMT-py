@@ -179,6 +179,10 @@ def model_opts(parser):
     group.add('--loss_scale', '-loss_scale', type=float, default=0,
               help="For FP16 training, the static loss scale to use. If not "
                    "set, the loss scale is dynamically computed.")
+    group.add('--apex_opt_level', '-apex_opt_level', type=str, default="O2",
+              choices=["O0", "O1", "O2", "O3"],
+              help="For FP16 training, the opt_level to use."
+                   "See https://nvidia.github.io/apex/amp.html#opt-levels.")
 
 
 def preprocess_opts(parser):
@@ -189,10 +193,12 @@ def preprocess_opts(parser):
               help="Type of the source input. "
                    "Options are [text|img|audio|vec].")
 
-    group.add('--train_src', '-train_src', required=True,
-              help="Path to the training source data")
-    group.add('--train_tgt', '-train_tgt', required=True,
-              help="Path to the training target data")
+    group.add('--train_src', '-train_src', required=True, nargs='+',
+              help="Path(s) to the training source data")
+    group.add('--train_tgt', '-train_tgt', required=True, nargs='+',
+              help="Path(s) to the training target data")
+    group.add('--train_ids', '-train_ids', nargs='+', default=[None],
+              help="ids to name training shards, used for corpus weighting")
     group.add('--valid_src', '-valid_src',
               help="Path to the validation source data")
     group.add('--valid_tgt', '-valid_tgt',
@@ -215,6 +221,9 @@ def preprocess_opts(parser):
                    "shard_size=0 means no segmentation "
                    "shard_size>0 means segment dataset into multiple shards, "
                    "each shard has shard_size samples")
+
+    group.add('--overwrite', '-overwrite', action="store_true",
+              help="Overwrite existing shards if any.")
 
     # Dictionary options, for text corpus
 
@@ -308,6 +317,12 @@ def train_opts(parser):
               help='Path prefix to the ".train.pt" and '
                    '".valid.pt" file path from preprocess.py')
 
+    group.add('--data_ids', '-data_ids', nargs='+', default=[None],
+              help="In case there are several corpora.")
+    group.add('--data_weights', '-data_weights', type=int, nargs='+',
+              default=[1], help="""Weights of different corpora,
+              should follow the same order as in -data_ids.""")
+
     group.add('--save_model', '-save_model', default='model',
               help="Model filename (the model will be saved as "
                    "<save_model>_N.pt where N is the number "
@@ -335,6 +350,8 @@ def train_opts(parser):
               help="IP of master for torch.distributed training.")
     group.add('--master_port', '-master_port', default=10000, type=int,
               help="Port of master for torch.distributed training.")
+    group.add('--queue_size', '-queue_size', default=400, type=int,
+              help="Size of queue for each process in producer/consumer")
 
     group.add('--seed', '-seed', type=int, default=-1,
               help="Random seed used for the experiments "
@@ -348,7 +365,7 @@ def train_opts(parser):
                    "Use 0 to not use initialization")
     group.add('--param_init_glorot', '-param_init_glorot', action='store_true',
               help="Init parameters with xavier_uniform. "
-                   "Required for transfomer.")
+                   "Required for transformer.")
 
     group.add('--train_from', '-train_from', default='', type=str,
               help="If training from a checkpoint then this is the "
@@ -382,6 +399,13 @@ def train_opts(parser):
               choices=["sents", "tokens"],
               help="Batch grouping for batch_size. Standard "
                    "is sents. Tokens will do dynamic batching")
+    group.add('--pool_factor', '-pool_factor', type=int, default=8192,
+              help="""Factor used in data loading and batch creations.
+              It will load the equivalent of `pool_factor` batches,
+              sort them by the according `sort_key` to produce
+              homogeneous batches and reduce padding, and yield
+              the produced batches in a shuffled way.
+              Inspired by torchtext's pool mechanism.""")
     group.add('--normalization', '-normalization', default='sents',
               choices=["sents", "tokens"],
               help='Normalization method of the gradient.')
@@ -426,8 +450,10 @@ def train_opts(parser):
               help="If the norm of the gradient vector exceeds this, "
                    "renormalize it to have the norm equal to "
                    "max_grad_norm")
-    group.add('--dropout', '-dropout', type=float, default=0.3,
+    group.add('--dropout', '-dropout', type=float, default=[0.3], nargs='+',
               help="Dropout probability; applied in LSTM stacks.")
+    group.add('--dropout_steps', '-dropout_steps', type=int, nargs='+',
+              default=[0], help="Steps at which dropout changes.")
     group.add('--truncated_decoder', '-truncated_decoder', type=int, default=0,
               help="""Truncated bptt.""")
     group.add('--adam_beta1', '-adam_beta1', type=float, default=0.9,

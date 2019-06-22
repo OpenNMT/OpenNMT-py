@@ -806,7 +806,7 @@ class Translator(object):
             memory_lengths=src_lengths, src_map=src_map)
 
         log_probs[:, :, self._tgt_pad_idx] = 0
-        gold = tgt_in
+        gold = tgt[1:]
         gold_scores = log_probs.gather(2, gold)
         gold_scores = gold_scores.sum(dim=0).view(-1)
 

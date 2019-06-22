@@ -151,7 +151,8 @@ class RNNDecoderBase(DecoderBase):
             opt.coverage_attn,
             opt.context_gate,
             opt.copy_attn,
-            opt.dropout,
+            opt.dropout[0] if type(opt.dropout) is list
+            else opt.dropout,
             embeddings,
             opt.reuse_copy_attn,
             opt.copy_attn_type)
@@ -232,6 +233,10 @@ class RNNDecoderBase(DecoderBase):
                 if type(attns[k]) == list:
                     attns[k] = torch.stack(attns[k])
         return dec_outs, attns
+
+    def update_dropout(self, dropout):
+        self.dropout.p = dropout
+        self.embeddings.update_dropout(dropout)
 
 
 class StdRNNDecoder(RNNDecoderBase):
@@ -427,3 +432,8 @@ class InputFeedRNNDecoder(RNNDecoderBase):
     def _input_size(self):
         """Using input feed by concatenating input with attention vectors."""
         return self.embeddings.embedding_size + self.hidden_size
+
+    def update_dropout(self, dropout):
+        self.dropout.p = dropout
+        self.rnn.dropout.p = dropout
+        self.embeddings.update_dropout(dropout)

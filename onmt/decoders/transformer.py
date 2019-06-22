@@ -89,6 +89,12 @@ class TransformerDecoderLayer(nn.Module):
 
         return output, attn
 
+    def update_dropout(self, dropout):
+        self.self_attn.update_dropout(dropout)
+        self.context_attn.update_dropout(dropout)
+        self.feed_forward.update_dropout(dropout)
+        self.drop.p = dropout
+
 
 class TransformerDecoder(DecoderBase):
     """The Transformer decoder from "Attention is All You Need".
@@ -152,7 +158,7 @@ class TransformerDecoder(DecoderBase):
             opt.transformer_ff,
             opt.copy_attn,
             opt.self_attn_type,
-            opt.dropout,
+            opt.dropout[0] if type(opt.dropout) is list else opt.dropout,
             embeddings,
             opt.max_relative_positions)
 
@@ -231,3 +237,8 @@ class TransformerDecoder(DecoderBase):
                 layer_cache["self_keys"] = None
                 layer_cache["self_values"] = None
             self.state["cache"]["layer_{}".format(i)] = layer_cache
+
+    def update_dropout(self, dropout):
+        self.embeddings.update_dropout(dropout)
+        for layer in self.transformer_layers:
+            layer.update_dropout(dropout)
