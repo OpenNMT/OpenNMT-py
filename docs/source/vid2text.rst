@@ -1,3 +1,9 @@
+Video to Text
+=============
+
+Recurrent
+---------
+
 This tutorial shows how to replicate the results from
 `"Describing Videos by Exploiting Temporal Structure" <https://arxiv.org/pdf/1502.08029.pdf>`_
 [`code <https://github.com/yaoli/arctic-capgen-vid>`_]
@@ -261,3 +267,18 @@ improvement. Our architecture follows the general encoder + attentional decoder 
 actual attention implementation is slightly different. The paper downsamples by choosing 26 equally spaced frames from
 the first 240, while we downsample the video to 2 fps. Also, we use ResNet features instead of GoogLeNet, and we
 lowercase while the paper does not, so some improvement is expected.
+
+Transformer
+-----------
+
+Now create a folder called *yt2t_2*. Copy *youtube2text_iccv15* directory and *YouTubeClips.tar* into
+the new directory and untar *YouTubeClips*. Rerun the renaming code. Subssample at 5 FPS using
+
+..  code-block:: bash
+
+    for fi in $( ls ); do ffmpeg -y -i $fi -r 5 $fi; done
+
+Set ``$YT2T`` to this new directory and change to the ``OpenNMT-py`` directory. Run the feature extraction
+code again, run the annotation splitting code again, and rerun the preprocessing script.
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
