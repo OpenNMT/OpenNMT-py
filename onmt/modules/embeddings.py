@@ -55,14 +55,32 @@ class PositionalEncoding(nn.Module):
 
 
 class VecEmbedding(nn.Module):
-    def __init__(self, vec_size, emb_dim):
+    def __init__(self, vec_size,
+                 emb_dim,
+                 position_encoding=False,
+                 dropout=0):
         super(VecEmbedding, self).__init__()
         self.embedding_size = emb_dim
         self.proj = nn.Linear(vec_size, emb_dim, bias=False)
         self.word_padding_idx = 0  # vector seqs are zero-padded
+        self.position_encoding = position_encoding
 
-    def forward(self, x):
-        return self.proj(x).squeeze(2)
+        if self.position_encoding:
+            self.pe = PositionalEncoding(dropout, self.embedding_size)
+
+    def forward(self, x, step=None):
+        """
+        Args:
+            x (FloatTensor): input, ``(len, batch, 1, vec_feats)``.
+
+        Returns:
+            FloatTensor: embedded vecs ``(len, batch, embedding_size)``.
+        """
+        x = self.proj(x).squeeze(2)
+        if self.position_encoding:
+            x = self.pe(x, step=step)
+
+        return x
 
     def load_pretrained_vectors(self, file):
         assert not file

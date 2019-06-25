@@ -38,7 +38,7 @@ class TransformerEncoderLayer(nn.Module):
         """
         Args:
             inputs (FloatTensor): ``(batch_size, src_len, model_dim)``
-            mask (LongTensor): ``(batch_size, src_len, src_len)``
+            mask (LongTensor): ``(batch_size, 1, src_len)``
 
         Returns:
             (FloatTensor):

@@ -30,7 +30,13 @@ def build_embeddings(opt, text_field, for_encoder=True):
     emb_dim = opt.src_word_vec_size if for_encoder else opt.tgt_word_vec_size
 
     if opt.model_type == "vec" and for_encoder:
-        return VecEmbedding(opt.feat_vec_size, emb_dim)
+        return VecEmbedding(
+            opt.feat_vec_size,
+            emb_dim,
+            position_encoding=opt.position_encoding,
+            dropout=(opt.dropout[0] if type(opt.dropout) is list
+                     else opt.dropout),
+        )
 
     pad_indices = [f.vocab.stoi[f.pad_token] for _, f in text_field]
     word_padding_idx, feat_pad_indices = pad_indices[0], pad_indices[1:]
