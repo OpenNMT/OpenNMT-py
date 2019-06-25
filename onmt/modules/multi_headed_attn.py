@@ -87,7 +87,7 @@ class MultiHeadedAttention(nn.Module):
            query (FloatTensor): set of `query_len`
                query vectors  ``(batch, query_len, dim)``
            mask: binary mask indicating which keys have
-               non-zero attention ``(batch, query_len, key_len)``
+               zero attention ``(batch, query_len, key_len)``
         Returns:
            (FloatTensor, FloatTensor):
 
