@@ -1028,8 +1028,8 @@ key vectors <code class="docutils literal notranslate"><span class="pre">(batch,
 value vectors <code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">key_len,</span> <span class="pre">dim)</span></code></p></li>
 <li><p><strong>query</strong> (<em>FloatTensor</em>) – set of <cite>query_len</cite>
 query vectors  <code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">query_len,</span> <span class="pre">dim)</span></code></p></li>
-<li><p><strong>mask</strong> – binary mask indicating which keys have
-non-zero attention <code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">query_len,</span> <span class="pre">key_len)</span></code></p></li>
+<li><p><strong>mask</strong> – binary mask 1/0 indicating which keys have
+zero / non-zero attention <code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">query_len,</span> <span class="pre">key_len)</span></code></p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>

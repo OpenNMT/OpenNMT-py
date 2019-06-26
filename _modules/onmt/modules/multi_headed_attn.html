@@ -262,8 +262,8 @@
 <span class="sd">               value vectors ``(batch, key_len, dim)``</span>
 <span class="sd">           query (FloatTensor): set of `query_len`</span>
 <span class="sd">               query vectors  ``(batch, query_len, dim)``</span>
-<span class="sd">           mask: binary mask indicating which keys have</span>
-<span class="sd">               non-zero attention ``(batch, query_len, key_len)``</span>
+<span class="sd">           mask: binary mask 1/0 indicating which keys have</span>
+<span class="sd">               zero / non-zero attention ``(batch, query_len, key_len)``</span>
 <span class="sd">        Returns:</span>
 <span class="sd">           (FloatTensor, FloatTensor):</span>
 
