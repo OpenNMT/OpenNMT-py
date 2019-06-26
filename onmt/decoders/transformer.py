@@ -72,7 +72,7 @@ class TransformerDecoderLayer(nn.Module):
             query, attn = self.self_attn(input_norm, input_norm, input_norm,
                                          mask=dec_mask,
                                          layer_cache=layer_cache,
-                                         type="self")
+                                         attn_type="self")
         elif isinstance(self.self_attn, AverageAttention):
             query, attn = self.self_attn(input_norm, mask=dec_mask,
                                          layer_cache=layer_cache, step=step)
@@ -83,7 +83,7 @@ class TransformerDecoderLayer(nn.Module):
         mid, attn = self.context_attn(memory_bank, memory_bank, query_norm,
                                       mask=src_pad_mask,
                                       layer_cache=layer_cache,
-                                      type="context")
+                                      attn_type="context")
         output = self.feed_forward(self.drop(mid) + query)
 
         return output, attn
@@ -233,7 +233,8 @@ class TransformerDecoder(DecoderBase):
         for i, layer in enumerate(self.transformer_layers):
             layer_cache = {"memory_keys": None, "memory_values": None}
             if isinstance(layer.self_attn, AverageAttention):
-                layer_cache["prev_g"] = torch.zeros((batch_size, 1, depth))
+                layer_cache["prev_g"] = torch.zeros((batch_size, 1, depth),
+                                                    device=memory_bank.device)
             else:
                 layer_cache["self_keys"] = None
                 layer_cache["self_values"] = None
