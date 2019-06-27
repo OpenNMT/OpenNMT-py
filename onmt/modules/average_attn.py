@@ -4,7 +4,7 @@
 import torch
 import torch.nn as nn
 
-# from onmt.modules.position_ffn import PositionwiseFeedForward
+from onmt.modules.position_ffn import PositionwiseFeedForward
 
 
 class AverageAttention(nn.Module):
@@ -19,13 +19,13 @@ class AverageAttention(nn.Module):
        dropout (float): dropout parameter
     """
 
-    def __init__(self, model_dim, dropout=0.1):
+    def __init__(self, model_dim, dropout=0.1, aan_useffn=False):
         self.model_dim = model_dim
-
+        self.aan_useffn = aan_useffn
         super(AverageAttention, self).__init__()
-        # removing ffn as sugested https://github.com/bzhangGo/transformer-aan
-        # self.average_layer = PositionwiseFeedForward(model_dim, model_dim,
-        #                                             dropout)
+        if aan_useffn:
+            self.average_layer = PositionwiseFeedForward(model_dim, model_dim,
+                                                         dropout)
         self.gating_layer = nn.Linear(model_dim * 2, model_dim * 2)
 
     def cumulative_average_mask(self, batch_size, inputs_len, device):
@@ -100,8 +100,8 @@ class AverageAttention(nn.Module):
           inputs, self.cumulative_average_mask(batch_size,
                                                inputs_len, inputs.device)
           if layer_cache is None else step, layer_cache=layer_cache)
-        # removing ffn as sugested https://github.com/bzhangGo/transformer-aan
-        # average_outputs = self.average_layer(average_outputs)
+        if self.aan_useffn:
+            average_outputs = self.average_layer(average_outputs)
         gating_outputs = self.gating_layer(torch.cat((inputs,
                                                       average_outputs), -1))
         input_gate, forget_gate = torch.chunk(gating_outputs, 2, dim=2)
