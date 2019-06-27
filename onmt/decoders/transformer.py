@@ -8,6 +8,7 @@ import torch.nn as nn
 from onmt.decoders.decoder import DecoderBase
 from onmt.modules import MultiHeadedAttention, AverageAttention
 from onmt.modules.position_ffn import PositionwiseFeedForward
+from onmt.utils.misc import sequence_mask
 
 
 class TransformerDecoderLayer(nn.Module):
@@ -191,11 +192,7 @@ class TransformerDecoder(DecoderBase):
         if step == 0:
             self._init_cache(memory_bank)
 
-        src = self.state["src"]
-        src_words = src[:, :, 0].transpose(0, 1)
         tgt_words = tgt[:, :, 0].transpose(0, 1)
-        src_batch, src_len = src_words.size()
-        tgt_batch, tgt_len = tgt_words.size()
 
         emb = self.embeddings(tgt, step=step)
         assert emb.dim() == 3  # len x batch x embedding_dim
@@ -204,7 +201,9 @@ class TransformerDecoder(DecoderBase):
         src_memory_bank = memory_bank.transpose(0, 1).contiguous()
 
         pad_idx = self.embeddings.word_padding_idx
-        src_pad_mask = src_words.data.eq(pad_idx).unsqueeze(1)  # [B, 1, T_src]
+        src_lens = kwargs["memory_lengths"]
+        src_max_len = self.state["src"].shape[0]
+        src_pad_mask = ~sequence_mask(src_lens, src_max_len).unsqueeze(1)
         tgt_pad_mask = tgt_words.data.eq(pad_idx).unsqueeze(1)  # [B, 1, T_tgt]
 
         for i, layer in enumerate(self.transformer_layers):
