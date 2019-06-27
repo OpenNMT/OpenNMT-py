@@ -25,6 +25,11 @@ def build_loss_compute(model, tgt_field, opt, train=True):
 
     padding_idx = tgt_field.vocab.stoi[tgt_field.pad_token]
     unk_idx = tgt_field.vocab.stoi[tgt_field.unk_token]
+
+    if opt.lambda_coverage != 0:
+        assert opt.coverage_attn, "--coverage_attn needs to be set in " \
+            "order to use --lambda_coverage != 0"
+
     if opt.copy_attn:
         criterion = onmt.modules.CopyGeneratorLoss(
             len(tgt_field.vocab), opt.copy_attn_force,
@@ -47,10 +52,12 @@ def build_loss_compute(model, tgt_field, opt, train=True):
     loss_gen = model.generator[0] if use_raw_logits else model.generator
     if opt.copy_attn:
         compute = onmt.modules.CopyGeneratorLossCompute(
-            criterion, loss_gen, tgt_field.vocab, opt.copy_loss_by_seqlength
+            criterion, loss_gen, tgt_field.vocab, opt.copy_loss_by_seqlength,
+            lambda_coverage=opt.lambda_coverage
         )
     else:
-        compute = NMTLossCompute(criterion, loss_gen)
+        compute = NMTLossCompute(
+            criterion, loss_gen, lambda_coverage=opt.lambda_coverage)
     compute.to(device)
 
     return compute
@@ -218,25 +225,52 @@ class NMTLossCompute(LossComputeBase):
     Standard NMT Loss Computation.
     """
 
-    def __init__(self, criterion, generator, normalization="sents"):
+    def __init__(self, criterion, generator, normalization="sents",
+                 lambda_coverage=0.0):
         super(NMTLossCompute, self).__init__(criterion, generator)
+        self.lambda_coverage = lambda_coverage
 
     def _make_shard_state(self, batch, output, range_, attns=None):
-        return {
+        shard_state = {
             "output": output,
             "target": batch.tgt[range_[0] + 1: range_[1], :, 0],
         }
+        if self.lambda_coverage != 0.0:
+            coverage = attns.get("coverage", None)
+            std = attns.get("std", None)
+            assert attns is not None
+            assert std is not None, "lambda_coverage != 0.0 requires " \
+                "attention mechanism"
+            assert coverage is not None, "lambda_coverage != 0.0 requires " \
+                "coverage attention"
 
-    def _compute_loss(self, batch, output, target):
+            shard_state.update({
+                "std_attn": attns.get("std"),
+                "coverage_attn": coverage
+            })
+        return shard_state
+
+    def _compute_loss(self, batch, output, target, std_attn=None,
+                      coverage_attn=None):
+
         bottled_output = self._bottle(output)
 
         scores = self.generator(bottled_output)
         gtruth = target.view(-1)
 
         loss = self.criterion(scores, gtruth)
+        if self.lambda_coverage != 0.0:
+            coverage_loss = self._compute_coverage_loss(
+                std_attn=std_attn, coverage_attn=coverage_attn)
+            loss += coverage_loss
         stats = self._stats(loss.clone(), scores, gtruth)
 
         return loss, stats
+
+    def _compute_coverage_loss(self, std_attn, coverage_attn):
+        covloss = torch.min(std_attn, coverage_attn).sum(2).view(-1)
+        covloss *= self.lambda_coverage
+        return covloss
 
 
 def filter_shard_state(state, shard_size=None):
