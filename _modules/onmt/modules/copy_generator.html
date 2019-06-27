@@ -178,7 +178,7 @@
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
 
 <span class="kn">from</span> <span class="nn">onmt.utils.misc</span> <span class="k">import</span> <span class="n">aeq</span>
-<span class="kn">from</span> <span class="nn">onmt.utils.loss</span> <span class="k">import</span> <span class="n">LossComputeBase</span>
+<span class="kn">from</span> <span class="nn">onmt.utils.loss</span> <span class="k">import</span> <span class="n">NMTLossCompute</span>
 
 
 <span class="k">def</span> <span class="nf">collapse_copy_scores</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">tgt_vocab</span><span class="p">,</span> <span class="n">src_vocabs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -353,10 +353,12 @@
         <span class="k">return</span> <span class="n">loss</span>
 
 
-<span class="k">class</span> <span class="nc">CopyGeneratorLossCompute</span><span class="p">(</span><span class="n">LossComputeBase</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">CopyGeneratorLossCompute</span><span class="p">(</span><span class="n">NMTLossCompute</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Copy Generator Loss Computation.&quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">criterion</span><span class="p">,</span> <span class="n">generator</span><span class="p">,</span> <span class="n">tgt_vocab</span><span class="p">,</span> <span class="n">normalize_by_length</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">CopyGeneratorLossCompute</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">criterion</span><span class="p">,</span> <span class="n">generator</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">criterion</span><span class="p">,</span> <span class="n">generator</span><span class="p">,</span> <span class="n">tgt_vocab</span><span class="p">,</span> <span class="n">normalize_by_length</span><span class="p">,</span>
+                 <span class="n">lambda_coverage</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">CopyGeneratorLossCompute</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">criterion</span><span class="p">,</span> <span class="n">generator</span><span class="p">,</span> <span class="n">lambda_coverage</span><span class="o">=</span><span class="n">lambda_coverage</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tgt_vocab</span> <span class="o">=</span> <span class="n">tgt_vocab</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">normalize_by_length</span> <span class="o">=</span> <span class="n">normalize_by_length</span>
 
@@ -366,14 +368,17 @@
             <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="s2">&quot;using -copy_attn you need to pass in &quot;</span>
                                  <span class="s2">&quot;-dynamic_dict during preprocess stage.&quot;</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;output&quot;</span><span class="p">:</span> <span class="n">output</span><span class="p">,</span>
-            <span class="s2">&quot;target&quot;</span><span class="p">:</span> <span class="n">batch</span><span class="o">.</span><span class="n">tgt</span><span class="p">[</span><span class="n">range_</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span> <span class="n">range_</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">],</span>
+        <span class="n">shard_state</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">CopyGeneratorLossCompute</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_make_shard_state</span><span class="p">(</span>
+            <span class="n">batch</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">range_</span><span class="p">,</span> <span class="n">attns</span><span class="p">)</span>
+
+        <span class="n">shard_state</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
             <span class="s2">&quot;copy_attn&quot;</span><span class="p">:</span> <span class="n">attns</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;copy&quot;</span><span class="p">),</span>
             <span class="s2">&quot;align&quot;</span><span class="p">:</span> <span class="n">batch</span><span class="o">.</span><span class="n">alignment</span><span class="p">[</span><span class="n">range_</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span> <span class="n">range_</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
-        <span class="p">}</span>
+        <span class="p">})</span>
+        <span class="k">return</span> <span class="n">shard_state</span>
 
-    <span class="k">def</span> <span class="nf">_compute_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">copy_attn</span><span class="p">,</span> <span class="n">align</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_compute_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">copy_attn</span><span class="p">,</span> <span class="n">align</span><span class="p">,</span>
+                      <span class="n">std_attn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">coverage_attn</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute the loss.</span>
 
 <span class="sd">        The args must match :func:`self._make_shard_state()`.</span>
@@ -385,13 +390,17 @@
 <span class="sd">            copy_attn: the copy attention value.</span>
 <span class="sd">            align: the align info.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="n">target</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">align</span> <span class="o">=</span> <span class="n">align</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_bottle</span><span class="p">(</span><span class="n">output</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bottle</span><span class="p">(</span><span class="n">copy_attn</span><span class="p">),</span> <span class="n">batch</span><span class="o">.</span><span class="n">src_map</span>
         <span class="p">)</span>
         <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">criterion</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">align</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lambda_coverage</span> <span class="o">!=</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="n">coverage_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_coverage_loss</span><span class="p">(</span><span class="n">std_attn</span><span class="p">,</span>
+                                                        <span class="n">coverage_attn</span><span class="p">)</span>
+            <span class="n">loss</span> <span class="o">+=</span> <span class="n">coverage_loss</span>
 
         <span class="c1"># this block does not depend on the loss value computed above</span>
         <span class="c1"># and is used only for stats</span>
