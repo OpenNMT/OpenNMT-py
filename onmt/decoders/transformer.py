@@ -23,7 +23,8 @@ class TransformerDecoderLayer(nn.Module):
     """
 
     def __init__(self, d_model, heads, d_ff, dropout,
-                 self_attn_type="scaled-dot", max_relative_positions=0):
+                 self_attn_type="scaled-dot", max_relative_positions=0,
+                 aan_useffn=False):
         super(TransformerDecoderLayer, self).__init__()
 
         if self_attn_type == "scaled-dot":
@@ -31,7 +32,8 @@ class TransformerDecoderLayer(nn.Module):
                 heads, d_model, dropout=dropout,
                 max_relative_positions=max_relative_positions)
         elif self_attn_type == "average":
-            self.self_attn = AverageAttention(d_model, dropout=dropout)
+            self.self_attn = AverageAttention(d_model, dropout=dropout,
+                                              aan_useffn=aan_useffn)
 
         self.context_attn = MultiHeadedAttention(
             heads, d_model, dropout=dropout)
@@ -72,7 +74,7 @@ class TransformerDecoderLayer(nn.Module):
             query, attn = self.self_attn(input_norm, input_norm, input_norm,
                                          mask=dec_mask,
                                          layer_cache=layer_cache,
-                                         type="self")
+                                         attn_type="self")
         elif isinstance(self.self_attn, AverageAttention):
             query, attn = self.self_attn(input_norm, mask=dec_mask,
                                          layer_cache=layer_cache, step=step)
@@ -83,7 +85,7 @@ class TransformerDecoderLayer(nn.Module):
         mid, attn = self.context_attn(memory_bank, memory_bank, query_norm,
                                       mask=src_pad_mask,
                                       layer_cache=layer_cache,
-                                      type="context")
+                                      attn_type="context")
         output = self.feed_forward(self.drop(mid) + query)
 
         return output, attn
@@ -127,7 +129,7 @@ class TransformerDecoder(DecoderBase):
 
     def __init__(self, num_layers, d_model, heads, d_ff,
                  copy_attn, self_attn_type, dropout, embeddings,
-                 max_relative_positions):
+                 max_relative_positions, aan_useffn):
         super(TransformerDecoder, self).__init__()
 
         self.embeddings = embeddings
@@ -138,7 +140,8 @@ class TransformerDecoder(DecoderBase):
         self.transformer_layers = nn.ModuleList(
             [TransformerDecoderLayer(d_model, heads, d_ff, dropout,
              self_attn_type=self_attn_type,
-             max_relative_positions=max_relative_positions)
+             max_relative_positions=max_relative_positions,
+             aan_useffn=aan_useffn)
              for i in range(num_layers)])
 
         # previously, there was a GlobalAttention module here for copy
@@ -159,7 +162,8 @@ class TransformerDecoder(DecoderBase):
             opt.self_attn_type,
             opt.dropout[0] if type(opt.dropout) is list else opt.dropout,
             embeddings,
-            opt.max_relative_positions)
+            opt.max_relative_positions,
+            opt.aan_useffn)
 
     def init_state(self, src, memory_bank, enc_hidden):
         """Initialize decoder state."""
@@ -233,7 +237,8 @@ class TransformerDecoder(DecoderBase):
         for i, layer in enumerate(self.transformer_layers):
             layer_cache = {"memory_keys": None, "memory_values": None}
             if isinstance(layer.self_attn, AverageAttention):
-                layer_cache["prev_g"] = torch.zeros((batch_size, 1, depth))
+                layer_cache["prev_g"] = torch.zeros((batch_size, 1, depth),
+                                                    device=memory_bank.device)
             else:
                 layer_cache["self_keys"] = None
                 layer_cache["self_values"] = None
