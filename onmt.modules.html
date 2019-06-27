@@ -574,7 +574,7 @@ or <cite>copy_attn</cite> support.</p>
 <h2>Attention<a class="headerlink" href="#attention" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.modules.AverageAttention">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.modules.</code><code class="sig-name descname">AverageAttention</code><span class="sig-paren">(</span><em class="sig-param">model_dim</em>, <em class="sig-param">dropout=0.1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/modules/average_attn.html#AverageAttention"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.modules.AverageAttention" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">onmt.modules.</code><code class="sig-name descname">AverageAttention</code><span class="sig-paren">(</span><em class="sig-param">model_dim</em>, <em class="sig-param">dropout=0.1</em>, <em class="sig-param">aan_useffn=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/modules/average_attn.html#AverageAttention"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.modules.AverageAttention" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.module.Module</span></code></p>
 <p>Average Attention module from
 “Accelerating Neural Transformer via an Average Attention Network”
@@ -614,7 +614,7 @@ of the previous step.</p></li>
 
 <dl class="method">
 <dt id="onmt.modules.AverageAttention.cumulative_average_mask">
-<code class="sig-name descname">cumulative_average_mask</code><span class="sig-paren">(</span><em class="sig-param">batch_size</em>, <em class="sig-param">inputs_len</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/modules/average_attn.html#AverageAttention.cumulative_average_mask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.modules.AverageAttention.cumulative_average_mask" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">cumulative_average_mask</code><span class="sig-paren">(</span><em class="sig-param">batch_size</em>, <em class="sig-param">inputs_len</em>, <em class="sig-param">device</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/modules/average_attn.html#AverageAttention.cumulative_average_mask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.modules.AverageAttention.cumulative_average_mask" title="Permalink to this definition">¶</a></dt>
 <dd><p>Builds the mask to compute the cumulative average as described in
 <a class="reference internal" href="ref.html#dblp-journals-corr-abs-1805-00631" id="id6">[ZXS18]</a> – Figure 3</p>
 <dl class="field-list simple">
@@ -911,7 +911,7 @@ of the FNN.</p></li>
 
 <dl class="class">
 <dt id="onmt.decoders.TransformerDecoder">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.decoders.</code><code class="sig-name descname">TransformerDecoder</code><span class="sig-paren">(</span><em class="sig-param">num_layers</em>, <em class="sig-param">d_model</em>, <em class="sig-param">heads</em>, <em class="sig-param">d_ff</em>, <em class="sig-param">copy_attn</em>, <em class="sig-param">self_attn_type</em>, <em class="sig-param">dropout</em>, <em class="sig-param">embeddings</em>, <em class="sig-param">max_relative_positions</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/decoders/transformer.html#TransformerDecoder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.decoders.TransformerDecoder" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">onmt.decoders.</code><code class="sig-name descname">TransformerDecoder</code><span class="sig-paren">(</span><em class="sig-param">num_layers</em>, <em class="sig-param">d_model</em>, <em class="sig-param">heads</em>, <em class="sig-param">d_ff</em>, <em class="sig-param">copy_attn</em>, <em class="sig-param">self_attn_type</em>, <em class="sig-param">dropout</em>, <em class="sig-param">embeddings</em>, <em class="sig-param">max_relative_positions</em>, <em class="sig-param">aan_useffn</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/decoders/transformer.html#TransformerDecoder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.decoders.TransformerDecoder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.decoders.decoder.DecoderBase</span></code></p>
 <p>The Transformer decoder from “Attention is All You Need”.
 <a class="reference internal" href="ref.html#dblp-journals-corr-vaswanispujgkp17" id="id9">[VSP+17]</a></p>
@@ -1017,7 +1017,7 @@ must be divisible by head_count</p></li>
 </dl>
 <dl class="method">
 <dt id="onmt.modules.MultiHeadedAttention.forward">
-<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">key</em>, <em class="sig-param">value</em>, <em class="sig-param">query</em>, <em class="sig-param">mask=None</em>, <em class="sig-param">layer_cache=None</em>, <em class="sig-param">type=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/modules/multi_headed_attn.html#MultiHeadedAttention.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.modules.MultiHeadedAttention.forward" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">key</em>, <em class="sig-param">value</em>, <em class="sig-param">query</em>, <em class="sig-param">mask=None</em>, <em class="sig-param">layer_cache=None</em>, <em class="sig-param">attn_type=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/modules/multi_headed_attn.html#MultiHeadedAttention.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.modules.MultiHeadedAttention.forward" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute the context vector and the attention vectors.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>

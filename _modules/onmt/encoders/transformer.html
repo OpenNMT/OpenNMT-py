@@ -222,7 +222,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">input_norm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
         <span class="n">context</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">self_attn</span><span class="p">(</span><span class="n">input_norm</span><span class="p">,</span> <span class="n">input_norm</span><span class="p">,</span> <span class="n">input_norm</span><span class="p">,</span>
-                                    <span class="n">mask</span><span class="o">=</span><span class="n">mask</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;self&quot;</span><span class="p">)</span>
+                                    <span class="n">mask</span><span class="o">=</span><span class="n">mask</span><span class="p">,</span> <span class="n">attn_type</span><span class="o">=</span><span class="s2">&quot;self&quot;</span><span class="p">)</span>
         <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">(</span><span class="n">context</span><span class="p">)</span> <span class="o">+</span> <span class="n">inputs</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">feed_forward</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
 
