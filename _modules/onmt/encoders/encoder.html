@@ -96,6 +96,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../Summarization.html">Summarization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../im2text.html">Image to Text</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../speech2text.html">Speech to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../vid2text.html">Video to Text</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Scripts</span></p>
 <ul>
@@ -211,7 +212,7 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 
     <span class="k">def</span> <span class="nf">_check_args</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">lengths</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hidden</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="n">_</span><span class="p">,</span> <span class="n">n_batch</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">src</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+        <span class="n">n_batch</span> <span class="o">=</span> <span class="n">src</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">lengths</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">n_batch_</span><span class="p">,</span> <span class="o">=</span> <span class="n">lengths</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
             <span class="n">aeq</span><span class="p">(</span><span class="n">n_batch</span><span class="p">,</span> <span class="n">n_batch_</span><span class="p">)</span>

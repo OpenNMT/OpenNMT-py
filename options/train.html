@@ -98,6 +98,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../Summarization.html">Summarization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../im2text.html">Image to Text</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../speech2text.html">Speech to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../vid2text.html">Video to Text</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Scripts</span></p>
 <ul class="current">
@@ -202,7 +203,8 @@
                 <span class="p">[</span><span class="o">--</span><span class="n">feat_merge</span> <span class="p">{</span><span class="n">concat</span><span class="p">,</span><span class="nb">sum</span><span class="p">,</span><span class="n">mlp</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">feat_vec_size</span> <span class="n">FEAT_VEC_SIZE</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">feat_vec_exponent</span> <span class="n">FEAT_VEC_EXPONENT</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">model_type</span> <span class="p">{</span><span class="n">text</span><span class="p">,</span><span class="n">img</span><span class="p">,</span><span class="n">audio</span><span class="p">}]</span> <span class="p">[</span><span class="o">--</span><span class="n">model_dtype</span> <span class="p">{</span><span class="n">fp32</span><span class="p">,</span><span class="n">fp16</span><span class="p">}]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">model_type</span> <span class="p">{</span><span class="n">text</span><span class="p">,</span><span class="n">img</span><span class="p">,</span><span class="n">audio</span><span class="p">,</span><span class="n">vec</span><span class="p">}]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">model_dtype</span> <span class="p">{</span><span class="n">fp32</span><span class="p">,</span><span class="n">fp16</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">encoder_type</span> <span class="p">{</span><span class="n">rnn</span><span class="p">,</span><span class="n">brnn</span><span class="p">,</span><span class="n">mean</span><span class="p">,</span><span class="n">transformer</span><span class="p">,</span><span class="n">cnn</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">decoder_type</span> <span class="p">{</span><span class="n">rnn</span><span class="p">,</span><span class="n">transformer</span><span class="p">,</span><span class="n">cnn</span><span class="p">}]</span> <span class="p">[</span><span class="o">--</span><span class="n">layers</span> <span class="n">LAYERS</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">enc_layers</span> <span class="n">ENC_LAYERS</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">dec_layers</span> <span class="n">DEC_LAYERS</span><span class="p">]</span>
@@ -268,7 +270,7 @@
                 <span class="p">[</span><span class="o">--</span><span class="n">decay_method</span> <span class="p">{</span><span class="n">noam</span><span class="p">,</span><span class="n">noamwd</span><span class="p">,</span><span class="n">rsqrt</span><span class="p">,</span><span class="n">none</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">warmup_steps</span> <span class="n">WARMUP_STEPS</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">report_every</span> <span class="n">REPORT_EVERY</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">log_file</span> <span class="n">LOG_FILE</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">log_file_level</span> <span class="p">{</span><span class="n">ERROR</span><span class="p">,</span><span class="n">INFO</span><span class="p">,</span><span class="n">WARNING</span><span class="p">,</span><span class="n">DEBUG</span><span class="p">,</span><span class="n">CRITICAL</span><span class="p">,</span><span class="n">NOTSET</span><span class="p">,</span><span class="mi">40</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">30</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">50</span><span class="p">,</span><span class="mi">0</span><span class="p">}]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">log_file_level</span> <span class="p">{</span><span class="n">NOTSET</span><span class="p">,</span><span class="n">INFO</span><span class="p">,</span><span class="n">CRITICAL</span><span class="p">,</span><span class="n">ERROR</span><span class="p">,</span><span class="n">WARNING</span><span class="p">,</span><span class="n">DEBUG</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">50</span><span class="p">,</span><span class="mi">40</span><span class="p">,</span><span class="mi">30</span><span class="p">,</span><span class="mi">10</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">exp_host</span> <span class="n">EXP_HOST</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">exp</span> <span class="n">EXP</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">tensorboard</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">tensorboard_log_dir</span> <span class="n">TENSORBOARD_LOG_DIR</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">sample_rate</span> <span class="n">SAMPLE_RATE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">window_size</span> <span class="n">WINDOW_SIZE</span><span class="p">]</span>
@@ -337,8 +339,8 @@
 <h2>Model- Encoder-Decoder<a class="headerlink" href="#Model- Encoder-Decoder" title="Permalink to this headline">¶</a></h2>
 <dl class="option-list">
 <dt><kbd>--model_type, -model_type</kbd></dt>
-<dd><p>Possible choices: text, img, audio</p>
-<p>Type of source model to use. Allows the system to incorporate non-text inputs. Options are [text|img|audio].</p>
+<dd><p>Possible choices: text, img, audio, vec</p>
+<p>Type of source model to use. Allows the system to incorporate non-text inputs. Options are [text|img|audio|vec].</p>
 <p>Default: “text”</p>
 </dd>
 <dt><kbd>--model_dtype, -model_dtype</kbd></dt>
@@ -745,7 +747,7 @@ Inspired by torchtext’s pool mechanism.</p>
 <p>Default: “”</p>
 </dd>
 <dt><kbd>--log_file_level, -log_file_level</kbd></dt>
-<dd><p>Possible choices: ERROR, INFO, WARNING, DEBUG, CRITICAL, NOTSET, 40, 20, 30, 10, 50, 0</p>
+<dd><p>Possible choices: NOTSET, INFO, CRITICAL, ERROR, WARNING, DEBUG, 0, 20, 50, 40, 30, 10</p>
 <p>Default: “0”</p>
 </dd>
 <dt><kbd>--exp_host, -exp_host</kbd></dt>

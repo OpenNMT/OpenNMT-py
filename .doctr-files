@@ -63,6 +63,7 @@
 ./_sources/quickstart.md.txt
 ./_sources/ref.rst.txt
 ./_sources/speech2text.md.txt
+./_sources/vid2text.rst.txt
 ./_static/basic.css
 ./_static/css/badge_only.css
 ./_static/css/theme.css
@@ -139,3 +140,4 @@
 ./search.html
 ./searchindex.js
 ./speech2text.html
+./vid2text.html

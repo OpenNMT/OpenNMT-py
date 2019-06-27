@@ -1,0 +1,755 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Video to Text &mdash; OpenNMT-py  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Preprocess" href="options/preprocess.html" />
+    <link rel="prev" title="Speech to Text" href="speech2text.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> OpenNMT-py
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="main.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CONTRIBUTING.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ref.html">References</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Examples</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="Library.html">Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extended.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Summarization.html">Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="im2text.html">Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="speech2text.html">Speech to Text</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Video to Text</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#recurrent">Recurrent</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#transformer">Transformer</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">Scripts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="options/preprocess.html">Preprocess</a></li>
+<li class="toctree-l1"><a class="reference internal" href="options/train.html">Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="options/translate.html">Translate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="options/server.html">Server</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="onmt.html">Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.translation.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.translate.translation_server.html">Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.inputters.html">Data Loaders</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">OpenNMT-py</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Video to Text</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/vid2text.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="video-to-text">
+<h1>Video to Text<a class="headerlink" href="#video-to-text" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="recurrent">
+<h2>Recurrent<a class="headerlink" href="#recurrent" title="Permalink to this headline">¶</a></h2>
+<p>This tutorial shows how to replicate the results from
+<a class="reference external" href="https://arxiv.org/pdf/1502.08029.pdf">“Describing Videos by Exploiting Temporal Structure”</a>
+[<a class="reference external" href="https://github.com/yaoli/arctic-capgen-vid">code</a>]
+using OpenNMT-py.</p>
+<p>Get <cite>YouTubeClips.tar</cite> from <a class="reference external" href="http://www.cs.utexas.edu/users/ml/clamp/videoDescription/">here</a>.
+Use <code class="docutils literal notranslate"><span class="pre">tar</span> <span class="pre">-xvf</span> <span class="pre">YouTubeClips.tar</span></code> to decompress the archive.</p>
+<p>Now, visit <a class="reference external" href="https://github.com/yaoli/arctic-capgen-vid">this repo</a>.
+Follow the “preprocessed YouTube2Text download link.”
+We’ll be throwing away the Googlenet features. We just need the captions.
+Use <code class="docutils literal notranslate"><span class="pre">unzip</span> <span class="pre">youtube2text_iccv15.zip</span></code> to decompress the files.</p>
+<p>Get to the following directory structure:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">yt2t</span>
+<span class="o">|-</span><span class="n">YouTubeClips</span>
+<span class="o">|-</span><span class="n">youtube2text_iccv15</span>
+</pre></div>
+</div>
+<p>Change directories to <cite>yt2t</cite>. We’ll rename the videos to follow the “vid#.avi” format:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+
+<span class="n">YT</span> <span class="o">=</span> <span class="s2">&quot;youtube2text_iccv15&quot;</span>
+<span class="n">YTC</span> <span class="o">=</span> <span class="s2">&quot;YouTubeClips&quot;</span>
+
+<span class="c1"># load the YouTube hash -&gt; vid### map.</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">YT</span><span class="p">,</span> <span class="s2">&quot;dict_youtube_mapping.pkl&quot;</span><span class="p">),</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">yt2vid</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;latin-1&quot;</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">YTC</span><span class="p">):</span>
+    <span class="n">hashy</span><span class="p">,</span> <span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+    <span class="n">vid</span> <span class="o">=</span> <span class="n">yt2vid</span><span class="p">[</span><span class="n">hashy</span><span class="p">]</span>
+    <span class="n">fpath_old</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">YTC</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+    <span class="n">f_new</span> <span class="o">=</span> <span class="n">vid</span> <span class="o">+</span> <span class="n">ext</span>
+    <span class="n">fpath_new</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">YTC</span><span class="p">,</span> <span class="n">f_new</span><span class="p">)</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">fpath_old</span><span class="p">,</span> <span class="n">fpath_new</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Make sure all the videos have the same (low) framerate by changing to the YouTubeClips directory and using</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="k">fi</span> in <span class="k">$(</span> ls <span class="k">)</span><span class="p">;</span> <span class="k">do</span> ffmpeg -y -i <span class="nv">$fi</span> -r <span class="m">2</span> <span class="nv">$fi</span><span class="p">;</span> <span class="k">done</span>
+</pre></div>
+</div>
+<p>Now we want to convert the frames into sequences of CNN feature vectors.
+(We’ll use the environment variable <code class="docutils literal notranslate"><span class="pre">Y2T2</span></code> to refer to the <cite>yt2t</cite> directory, so change directories back and use)</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">YT2T</span><span class="o">=</span><span class="sb">`</span><span class="nb">pwd</span><span class="sb">`</span>
+</pre></div>
+</div>
+<p>Then change directories back to the <cite>OpenNMT-py</cite> directory.
+Use <cite>tools/img_feature_extractor.py</cite>.
+Set the <code class="docutils literal notranslate"><span class="pre">--world_size</span></code> argument to the number of GPUs you have available
+(You can use the environment variable <code class="docutils literal notranslate"><span class="pre">CUDA_VISIBLE_DEVICES</span></code> to restrict the GPUs used).</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">PYTHONPATH</span><span class="o">=</span><span class="nv">$PWD</span>:<span class="nv">$PYTHONPATH</span> python tools/vid_feature_extractor.py --root_dir <span class="nv">$YT2T</span>/YouTubeClips --out_dir <span class="nv">$YT2T</span>/r152
+</pre></div>
+</div>
+<p>Ensure the count is equal to 1970.
+You can use <code class="docutils literal notranslate"><span class="pre">ls</span> <span class="pre">-1</span> <span class="pre">$YT2T/r152</span> <span class="pre">|</span> <span class="pre">wc</span> <span class="pre">-l</span></code>.
+If not, rerun the script. It will only process on the missing feature vectors.
+(Note this is unexpected behavior and consider opening an issue.)</p>
+<p>Now we turn our attention to the annotations. Each video has multiple associated captions. We want to
+train the model on each video + single caption pair. We’ll collect all the captions per video, then we’ll
+flatten them into files listing the feature vector sequence filenames (repeating for each caption) and the
+annotations. We skip the test videos since they are handled separately at translation time.</p>
+<p>Change directories back to <code class="docutils literal notranslate"><span class="pre">YT2T</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span> <span class="nv">$YT2T</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">random</span> <span class="kn">import</span> <span class="n">shuffle</span>
+
+
+<span class="n">YT</span> <span class="o">=</span> <span class="s2">&quot;youtube2text_iccv15&quot;</span>
+<span class="n">SHUFFLE</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">YT</span><span class="p">,</span> <span class="s2">&quot;CAP.pkl&quot;</span><span class="p">),</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">ann</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;latin-1&quot;</span><span class="p">)</span>
+
+<span class="n">vid2anns</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="k">for</span> <span class="n">vid_name</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">ann</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">vid2anns</span><span class="p">[</span><span class="n">vid_name</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;tokenized&quot;</span><span class="p">])</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">vid2anns</span><span class="p">[</span><span class="n">vid_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;tokenized&quot;</span><span class="p">]]</span>
+
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">YT</span><span class="p">,</span> <span class="s2">&quot;train.pkl&quot;</span><span class="p">),</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">train</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;latin-1&quot;</span><span class="p">)</span>
+
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">YT</span><span class="p">,</span> <span class="s2">&quot;valid.pkl&quot;</span><span class="p">),</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">val</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;latin-1&quot;</span><span class="p">)</span>
+
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">YT</span><span class="p">,</span> <span class="s2">&quot;test.pkl&quot;</span><span class="p">),</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">test</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;latin-1&quot;</span><span class="p">)</span>
+
+<span class="n">train_files</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;yt2t_train_files.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+<span class="n">val_files</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;yt2t_val_files.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+<span class="n">val_folded</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;yt2t_val_folded_files.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+<span class="n">test_files</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;yt2t_test_files.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+
+<span class="n">train_cap</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;yt2t_train_cap.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+<span class="n">val_cap</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;yt2t_val_cap.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+
+<span class="n">vid_names</span> <span class="o">=</span> <span class="n">vid2anns</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+<span class="k">if</span> <span class="n">SHUFFLE</span><span class="p">:</span>
+    <span class="n">vid_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">vid_names</span><span class="p">)</span>
+    <span class="n">shuffle</span><span class="p">(</span><span class="n">vid_names</span><span class="p">)</span>
+
+
+<span class="k">for</span> <span class="n">vid_name</span> <span class="ow">in</span> <span class="n">vid_names</span><span class="p">:</span>
+    <span class="n">anns</span> <span class="o">=</span> <span class="n">vid2anns</span><span class="p">[</span><span class="n">vid_name</span><span class="p">]</span>
+    <span class="n">vid_path</span> <span class="o">=</span> <span class="n">vid_name</span> <span class="o">+</span> <span class="s2">&quot;.npy&quot;</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">an</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">anns</span><span class="p">):</span>
+        <span class="n">an</span> <span class="o">=</span> <span class="n">an</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="p">)</span>  <span class="c1"># some caps have newlines</span>
+        <span class="n">split_name</span> <span class="o">=</span> <span class="n">vid_name</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">split_name</span> <span class="ow">in</span> <span class="n">train</span><span class="p">:</span>
+            <span class="n">train_files</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">vid_path</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">train_cap</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">an</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">split_name</span> <span class="ow">in</span> <span class="n">val</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">val_folded</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">vid_path</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">val_files</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">vid_path</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">val_cap</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">an</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Don&#39;t need to save out the test captions,</span>
+            <span class="c1"># just the files. And, don&#39;t need to repeat</span>
+            <span class="c1"># it for each caption</span>
+            <span class="k">assert</span> <span class="n">split_name</span> <span class="ow">in</span> <span class="n">test</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">test_files</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">vid_path</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Return to the <cite>OpenNMT-py</cite> directory. Now we preprocess the data for training.
+We preprocess with a small shard size of 1000. This keeps the amount of data in memory (RAM) to a
+manageable 10 G. If you have more RAM, you can increase the shard size.</p>
+<p>Preprocess the data with</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python preprocess.py -data_type vec -train_src <span class="nv">$YT2T</span>/yt2t_train_files.txt -src_dir <span class="nv">$YT2T</span>/r152/ -train_tgt <span class="nv">$YT2T</span>/yt2t_train_cap.txt -valid_src <span class="nv">$YT2T</span>/yt2t_val_files.txt -valid_tgt <span class="nv">$YT2T</span>/yt2t_val_cap.txt -save_data data/yt2t --shard_size <span class="m">1000</span>
+</pre></div>
+</div>
+<p>Train with</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python train.py -data data/yt2t -save_model yt2t-model -world_size <span class="m">2</span> -gpu_ranks <span class="m">0</span> <span class="m">1</span> -model_type vec -batch_size <span class="m">64</span> -train_steps <span class="m">10000</span> -valid_steps <span class="m">500</span> -save_checkpoint_steps <span class="m">500</span> -encoder_type brnn -optim adam -learning_rate .0001 -feat_vec_size <span class="m">2048</span>
+</pre></div>
+</div>
+<p>Translate with</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>python translate.py -model yt2t-model_step_7200.pt -src $YT2T/yt2t_test_files.txt -output pred.txt -verbose -data_type vec -src_dir $YT2T/r152 -gpu 0 -batch_size 10
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Generally, you want to keep the model that has the lowest validation perplexity. That turned out to be
+at step 7200, but choosing a different validation frequency or random seed could result in different results.</p>
+</div>
+<p>Then you can use <a class="reference external" href="https://github.com/tylin/coco-caption/tree/master/pycocoevalcap">coco-caption</a> to evaluate the predictions.
+(Note that the fork <a class="reference external" href="https://github.com/flauted/coco-caption">flauted</a> can be used for Python 3 compatibility).
+Install the git repository with pip using</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install git+&lt;clone URL&gt;
+</pre></div>
+</div>
+<p>Then use the following Python code to evaluate:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pprint</span>
+<span class="kn">from</span> <span class="nn">pycocoevalcap.bleu.bleu</span> <span class="kn">import</span> <span class="n">Bleu</span>
+<span class="kn">from</span> <span class="nn">pycocoevalcap.meteor.meteor</span> <span class="kn">import</span> <span class="n">Meteor</span>
+<span class="kn">from</span> <span class="nn">pycocoevalcap.rouge.rouge</span> <span class="kn">import</span> <span class="n">Rouge</span>
+<span class="kn">from</span> <span class="nn">pycocoevalcap.cider.cider</span> <span class="kn">import</span> <span class="n">Cider</span>
+<span class="kn">from</span> <span class="nn">pycocoevalcap.spice.spice</span> <span class="kn">import</span> <span class="n">Spice</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">pred</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;pred.txt&quot;</span><span class="p">)</span>
+
+    <span class="kn">import</span> <span class="nn">pickle</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+
+    <span class="n">YT</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;YT2T&quot;</span><span class="p">],</span> <span class="s2">&quot;youtube2text_iccv15&quot;</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">YT</span><span class="p">,</span> <span class="s2">&quot;CAP.pkl&quot;</span><span class="p">),</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">ann</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;latin-1&quot;</span><span class="p">)</span>
+
+    <span class="n">vid2anns</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">vid_name</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">ann</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">vid2anns</span><span class="p">[</span><span class="n">vid_name</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;tokenized&quot;</span><span class="p">])</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">vid2anns</span><span class="p">[</span><span class="n">vid_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;tokenized&quot;</span><span class="p">]]</span>
+
+    <span class="n">test_files</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;YT2T&quot;</span><span class="p">],</span> <span class="s2">&quot;yt2t_test_files.txt&quot;</span><span class="p">))</span>
+
+    <span class="n">scorers</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;Bleu&quot;</span><span class="p">:</span> <span class="n">Bleu</span><span class="p">(</span><span class="mi">4</span><span class="p">),</span>
+        <span class="s2">&quot;Meteor&quot;</span><span class="p">:</span> <span class="n">Meteor</span><span class="p">(),</span>
+        <span class="s2">&quot;Rouge&quot;</span><span class="p">:</span> <span class="n">Rouge</span><span class="p">(),</span>
+        <span class="s2">&quot;Cider&quot;</span><span class="p">:</span> <span class="n">Cider</span><span class="p">(),</span>
+        <span class="s2">&quot;Spice&quot;</span><span class="p">:</span> <span class="n">Spice</span><span class="p">()</span>
+    <span class="p">}</span>
+
+    <span class="n">gts</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">outp</span><span class="p">,</span> <span class="n">filename</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">test_files</span><span class="p">):</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="n">filename</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">outp</span> <span class="o">=</span> <span class="n">outp</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">vid_id</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">filename</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">anns</span> <span class="o">=</span> <span class="n">vid2anns</span><span class="p">[</span><span class="n">vid_id</span><span class="p">]</span>
+        <span class="n">gts</span><span class="p">[</span><span class="n">vid_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">anns</span>
+        <span class="n">res</span><span class="p">[</span><span class="n">vid_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">outp</span><span class="p">]</span>
+
+    <span class="n">scores</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">scorer</span> <span class="ow">in</span> <span class="n">scorers</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">score</span><span class="p">,</span> <span class="n">all_scores</span> <span class="o">=</span> <span class="n">scorer</span><span class="o">.</span><span class="n">compute_score</span><span class="p">(</span><span class="n">gts</span><span class="p">,</span> <span class="n">res</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">score</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">sc</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">score</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="n">scores</span><span class="p">[</span><span class="n">name</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span> <span class="o">=</span> <span class="n">sc</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">scores</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">score</span>
+    <span class="n">pprint</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Here are our results</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s1">&#39;Bleu1&#39;</span><span class="p">:</span> <span class="mf">0.7888553878084233</span><span class="p">,</span>
+ <span class="s1">&#39;Bleu2&#39;</span><span class="p">:</span> <span class="mf">0.6729376621109295</span><span class="p">,</span>
+ <span class="s1">&#39;Bleu3&#39;</span><span class="p">:</span> <span class="mf">0.5778428507344473</span><span class="p">,</span>
+ <span class="s1">&#39;Bleu4&#39;</span><span class="p">:</span> <span class="mf">0.47633625833397897</span><span class="p">,</span>
+ <span class="s1">&#39;Cider&#39;</span><span class="p">:</span> <span class="mf">0.7122415518428051</span><span class="p">,</span>
+ <span class="s1">&#39;Meteor&#39;</span><span class="p">:</span> <span class="mf">0.31829562714082704</span><span class="p">,</span>
+ <span class="s1">&#39;Rouge&#39;</span><span class="p">:</span> <span class="mf">0.6811305229481235</span><span class="p">,</span>
+ <span class="s1">&#39;Spice&#39;</span><span class="p">:</span> <span class="mf">0.044147089472463576</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>So how does this stack up against the paper? These results should be compared to the “Global (Temporal Attention)”
+row in Table 1. The authors report BLEU4 0.4028, METEOR 0.2900, and CIDEr 0.4801. So, our results are a significant
+improvement. Our architecture follows the general encoder + attentional decoder described in the paper, but the
+actual attention implementation is slightly different. The paper downsamples by choosing 26 equally spaced frames from
+the first 240, while we downsample the video to 2 fps. Also, we use ResNet features instead of GoogLeNet, and we
+lowercase while the paper does not, so some improvement is expected.</p>
+</div>
+<div class="section" id="transformer">
+<h2>Transformer<a class="headerlink" href="#transformer" title="Permalink to this headline">¶</a></h2>
+<p>Now we will try to replicate the baseline transformer results from
+<a class="reference external" href="http://proceedings.mlr.press/v95/chen18b.html">“TVT: Two-View Transformer Network for Video Captioning”</a>
+on the MSVD (YouTube2Text) dataset. See Table 3, Base model(R).</p>
+<p>In Section 4.3, the authors report most of their preprocessing and hyperparameters.</p>
+<p>Create a folder called <em>yt2t_2</em>. Copy <em>youtube2text_iccv15</em> directory and <em>YouTubeClips.tar</em> into
+the new directory and untar <em>YouTubeClips</em>. Rerun the renaming code. Subssample at 5 FPS using</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="k">fi</span> in <span class="k">$(</span> ls <span class="k">)</span><span class="p">;</span> <span class="k">do</span> ffmpeg -y -i <span class="nv">$fi</span> -r <span class="m">5</span> <span class="nv">$fi</span><span class="p">;</span> <span class="k">done</span>
+</pre></div>
+</div>
+<p>Set the environment variable <code class="docutils literal notranslate"><span class="pre">$YT2T</span></code> to this new directory and change to the repo directory.
+Run the feature extraction command again to extract ResNet features on the frames.
+Then use this reprocessing code. Note that it shuffles the data differently, and it performs
+tokenization similar to what the authors report.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">string</span>
+
+<span class="n">seed</span> <span class="o">=</span> <span class="mi">2345</span>
+<span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+
+
+<span class="n">YT</span> <span class="o">=</span> <span class="s2">&quot;youtube2text_iccv15&quot;</span>
+<span class="n">SHUFFLE</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">YT</span><span class="p">,</span> <span class="s2">&quot;CAP.pkl&quot;</span><span class="p">),</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">ann</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;latin-1&quot;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">clean</span><span class="p">(</span><span class="n">caption</span><span class="p">):</span>
+    <span class="n">caption</span> <span class="o">=</span> <span class="n">caption</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="n">caption</span> <span class="o">=</span> <span class="n">caption</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\r</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="p">)</span>
+    <span class="c1"># remove punctuation</span>
+    <span class="n">caption</span> <span class="o">=</span> <span class="n">caption</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">maketrans</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">string</span><span class="o">.</span><span class="n">punctuation</span><span class="p">))</span>
+    <span class="c1"># multiple whitespace</span>
+    <span class="n">caption</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">caption</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">caption</span>
+
+
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">YT</span><span class="p">,</span> <span class="s2">&quot;train.pkl&quot;</span><span class="p">),</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">train</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;latin-1&quot;</span><span class="p">)</span>
+
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">YT</span><span class="p">,</span> <span class="s2">&quot;valid.pkl&quot;</span><span class="p">),</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">val</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;latin-1&quot;</span><span class="p">)</span>
+
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">YT</span><span class="p">,</span> <span class="s2">&quot;test.pkl&quot;</span><span class="p">),</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">test</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;latin-1&quot;</span><span class="p">)</span>
+
+<span class="n">train_data</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">val_data</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">test_data</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">vid_name</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">ann</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="n">vid_path</span> <span class="o">=</span> <span class="n">vid_name</span> <span class="o">+</span> <span class="s2">&quot;.npy&quot;</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+        <span class="n">split_name</span> <span class="o">=</span> <span class="n">vid_name</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="n">datum</span> <span class="o">=</span> <span class="p">(</span><span class="n">vid_path</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">clean</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;caption&quot;</span><span class="p">]))</span>
+        <span class="k">if</span> <span class="n">split_name</span> <span class="ow">in</span> <span class="n">train</span><span class="p">:</span>
+            <span class="n">train_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">datum</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">split_name</span> <span class="ow">in</span> <span class="n">val</span><span class="p">:</span>
+            <span class="n">val_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">datum</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">split_name</span> <span class="ow">in</span> <span class="n">test</span><span class="p">:</span>
+            <span class="n">test_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">datum</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="bp">False</span>
+
+<span class="k">if</span> <span class="n">SHUFFLE</span><span class="p">:</span>
+    <span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">train_data</span><span class="p">)</span>
+
+<span class="n">train_files</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;yt2t_train_files.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+<span class="n">train_cap</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;yt2t_train_cap.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">vid_path</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">an</span> <span class="ow">in</span> <span class="n">train_data</span><span class="p">:</span>
+    <span class="n">train_files</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">vid_path</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">train_cap</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">an</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="n">train_files</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<span class="n">train_cap</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<span class="n">val_files</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;yt2t_val_files.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+<span class="n">val_folded</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;yt2t_val_folded_files.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+<span class="n">val_cap</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;yt2t_val_cap.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">vid_path</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">an</span> <span class="ow">in</span> <span class="n">val_data</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">val_folded</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">vid_path</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">val_files</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">vid_path</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">val_cap</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">an</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="n">val_files</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<span class="n">val_folded</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<span class="n">val_cap</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<span class="n">test_files</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;yt2t_test_files.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">vid_path</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">an</span> <span class="ow">in</span> <span class="n">test_data</span><span class="p">:</span>
+    <span class="c1"># Don&#39;t need to save out the test captions,</span>
+    <span class="c1"># just the files. And, don&#39;t need to repeat</span>
+    <span class="c1"># it for each caption</span>
+    <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">test_files</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">vid_path</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="n">test_files</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Then preprocess the data with max-length filtering. (Note you will be prompted to remove the
+old data. Do this, i.e. <code class="docutils literal notranslate"><span class="pre">rm</span> <span class="pre">data/yt2t.*.pt.</span></code>)</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python preprocess.py -data_type vec -train_src <span class="nv">$YT2T</span>/yt2t_train_files.txt -src_dir <span class="nv">$YT2T</span>/r152/ -train_tgt <span class="nv">$YT2T</span>/yt2t_train_cap.txt -valid_src <span class="nv">$YT2T</span>/yt2t_val_files.txt -valid_tgt <span class="nv">$YT2T</span>/yt2t_val_cap.txt -save_data data/yt2t --shard_size <span class="m">1000</span> --src_seq_length <span class="m">50</span> --tgt_seq_length <span class="m">20</span>
+</pre></div>
+</div>
+<p>Delete the old checkpoints and train a transformer model on this data.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>rm -r yt2t-model_step_*.pt<span class="p">;</span> python train.py -data data/yt2t -save_model yt2t-model -world_size <span class="m">2</span> -gpu_ranks <span class="m">0</span> <span class="m">1</span> -model_type vec -batch_size <span class="m">64</span> -train_steps <span class="m">8000</span> -valid_steps <span class="m">400</span> -save_checkpoint_steps <span class="m">400</span> -optim adam -learning_rate .0001 -feat_vec_size <span class="m">2048</span> -layers <span class="m">4</span> -rnn_size <span class="m">512</span> -word_vec_size <span class="m">512</span> -transformer_ff <span class="m">2048</span> -heads <span class="m">8</span> -encoder_type transformer -decoder_type transformer -position_encoding -dropout <span class="m">0</span>.3 -param_init <span class="m">0</span> -param_init_glorot -report_every <span class="m">400</span> --share_decoder_embedding --seed <span class="m">7000</span>
+</pre></div>
+</div>
+<p>Note we use the hyperparameters described in the paper.
+We estimate the length of 20 epochs with <code class="docutils literal notranslate"><span class="pre">-train_steps</span></code>. Note that this depends on
+using a world size of 2. If you use a different world size, scale the <code class="docutils literal notranslate"><span class="pre">-train_steps</span></code> (and
+<code class="docutils literal notranslate"><span class="pre">-save_checkpoint_steps</span></code>, along with other parameters) accordingly.</p>
+<p>The batch size is not specified in the paper, so we assume one checkpoint
+per our estimated epoch. And, sharing
+the decoder embeddings is not mentioned, although we find this helps performance. Like the paper, we perform
+“early-stopping” with the COCO scores. We use beam search on the early stopping,
+although this too is not mentioned. You can reproduce our early-stops with these scripts
+(namely, running <cite>find_val_stops.sh</cite> and then <cite>test_early_stops.sh</cite> -
+<cite>process_results.py</cite> is a dependency of <cite>find_val_stops.sh</cite>):</p>
+<div class="literal-block-wrapper docutils container" id="id1">
+<div class="code-block-caption"><span class="caption-text"><cite>process_results.py</cite></span><a class="headerlink" href="#id1" title="Permalink to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">argparse</span>
+
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+
+
+<span class="k">def</span> <span class="nf">load_results</span><span class="p">(</span><span class="n">fname</span><span class="o">=</span><span class="s2">&quot;results.txt&quot;</span><span class="p">):</span>
+    <span class="n">index</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">filename</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">f</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="n">step</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">filename</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="nb">next</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>  <span class="c1"># blank</span>
+            <span class="nb">next</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>  <span class="c1"># spice junk</span>
+            <span class="nb">next</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>  <span class="c1"># length stats</span>
+            <span class="nb">next</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>  <span class="c1"># ratios</span>
+            <span class="n">scores</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+                <span class="n">score_line</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">f</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;{&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span>
+                <span class="n">metric</span><span class="p">,</span> <span class="n">score</span> <span class="o">=</span> <span class="n">score_line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;: &quot;</span><span class="p">)</span>
+                <span class="n">metric</span> <span class="o">=</span> <span class="n">metric</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;&#39;&quot;</span><span class="p">)</span>
+                <span class="n">score_num</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">score</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;}&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">))</span>
+                <span class="n">scores</span><span class="p">[</span><span class="n">metric</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">score_num</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">score</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;}&quot;</span><span class="p">):</span>
+                    <span class="k">break</span>
+            <span class="nb">next</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>  <span class="c1"># blank</span>
+            <span class="nb">next</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>  <span class="c1"># blank</span>
+            <span class="nb">next</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>  <span class="c1"># blank</span>
+            <span class="n">index</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">step</span><span class="p">)</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">index</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">df</span>
+
+
+<span class="k">def</span> <span class="nf">find_absolute_stops</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">df</span><span class="o">.</span><span class="n">idxmax</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">find_early_stops</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">stop_count</span><span class="p">):</span>
+    <span class="n">maxes</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">argmaxes</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">count_since_max</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">ended_metrics</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">metric</span><span class="p">,</span> <span class="n">score</span> <span class="ow">in</span> <span class="n">row</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">metric</span> <span class="ow">in</span> <span class="n">ended_metrics</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">score</span> <span class="o">&gt;=</span> <span class="n">maxes</span><span class="p">[</span><span class="n">metric</span><span class="p">]:</span>
+                <span class="n">maxes</span><span class="p">[</span><span class="n">metric</span><span class="p">]</span> <span class="o">=</span> <span class="n">score</span>
+                <span class="n">argmaxes</span><span class="p">[</span><span class="n">metric</span><span class="p">]</span> <span class="o">=</span> <span class="n">index</span>
+                <span class="n">count_since_max</span><span class="p">[</span><span class="n">metric</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">count_since_max</span><span class="p">[</span><span class="n">metric</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="n">count_since_max</span><span class="p">[</span><span class="n">metric</span><span class="p">]</span> <span class="o">==</span> <span class="n">stop_count</span><span class="p">:</span>
+                    <span class="n">ended_metrics</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">metric</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ended_metrics</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">row</span><span class="p">):</span>
+                        <span class="k">break</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">argmaxes</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">find_stops</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">stop_count</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">stop_count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">find_early_stops</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">stop_count</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">find_absolute_stops</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="s2">&quot;Find locations of best scores&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-s&quot;</span><span class="p">,</span> <span class="s2">&quot;--stop_count&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Stop after this many scores worse than running max (0 to disable).&quot;</span><span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">load_results</span><span class="p">()</span>
+    <span class="n">maxes</span> <span class="o">=</span> <span class="n">find_stops</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">stop_count</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">metric</span><span class="p">,</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">maxes</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+        <span class="k">print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;{metric} maxed @ {idx}&quot;</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
+        <span class="k">print</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="literal-block-wrapper docutils container" id="id2">
+<div class="code-block-caption"><span class="caption-text"><cite>find_val_stops.sh</cite></span><a class="headerlink" href="#id2" title="Permalink to this code">¶</a></div>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>rm results.txt
+touch results.txt
+<span class="k">for</span> file in <span class="k">$(</span> ls -1v yt2t-model_step*.pt <span class="k">)</span>
+<span class="k">do</span>
+    <span class="nb">echo</span> <span class="nv">$file</span>
+    python translate.py -model <span class="nv">$file</span> -src <span class="nv">$YT2T</span>/yt2t_val_folded_files.txt -output pred.txt -verbose -data_type vec -src_dir <span class="nv">$YT2T</span>/r152 -gpu <span class="m">0</span> -batch_size <span class="m">16</span> -max_length <span class="m">20</span> &gt;/dev/null <span class="m">2</span>&gt;/dev/null
+    <span class="nb">echo</span> -e <span class="s2">&quot;</span><span class="nv">$file</span><span class="s2">\n&quot;</span> &gt;&gt; results.txt
+    python coco.py -s val &gt;&gt; results.txt
+    <span class="nb">echo</span> -e <span class="s2">&quot;\n\n&quot;</span> &gt;&gt; results.txt
+<span class="k">done</span>
+python process_results.py -s <span class="m">10</span> &gt; val_stops.txt
+</pre></div>
+</div>
+</div>
+<div class="literal-block-wrapper docutils container" id="id3">
+<div class="code-block-caption"><span class="caption-text"><cite>test_early_stops.sh</cite></span><a class="headerlink" href="#id3" title="Permalink to this code">¶</a></div>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>rm test_results.txt
+touch test_results.txt
+<span class="k">while</span> <span class="nv">IFS</span><span class="o">=</span><span class="s1">&#39;&#39;</span> <span class="nb">read</span> -r line <span class="o">||</span> <span class="o">[[</span> -n <span class="s2">&quot;</span><span class="nv">$line</span><span class="s2">&quot;</span> <span class="o">]]</span><span class="p">;</span> <span class="k">do</span>
+    <span class="k">if</span> <span class="o">[[</span> <span class="nv">$line</span> <span class="o">==</span> *<span class="s2">&quot;maxed&quot;</span>* <span class="o">]]</span><span class="p">;</span> <span class="k">then</span>
+        <span class="nv">metric</span><span class="o">=</span><span class="k">$(</span><span class="nb">echo</span> <span class="nv">$line</span> <span class="p">|</span> awk <span class="s1">&#39;{print $1}&#39;</span><span class="k">)</span>
+    <span class="nv">step</span><span class="o">=</span><span class="k">$(</span><span class="nb">echo</span> <span class="nv">$line</span> <span class="p">|</span> awk <span class="s1">&#39;{print $NF}&#39;</span><span class="k">)</span>
+    <span class="nb">echo</span> <span class="nv">$metric</span> early stopped @ <span class="nv">$step</span> <span class="p">|</span> tee -a test_results.txt
+    python translate.py -model <span class="s2">&quot;yt2t-model_step_</span><span class="si">${</span><span class="nv">step</span><span class="si">}</span><span class="s2">.pt&quot;</span> -src <span class="nv">$YT2T</span>/yt2t_test_files.txt -output pred.txt -data_type vec -src_dir <span class="nv">$YT2T</span>/r152 -gpu <span class="m">0</span> -batch_size <span class="m">16</span> -max_length <span class="m">20</span> &gt;/dev/null <span class="m">2</span>&gt;/dev/null
+    python coco.py -s <span class="s1">&#39;test&#39;</span> &gt;&gt; test_results.txt
+    <span class="nb">echo</span> -e <span class="s2">&quot;\n\n&quot;</span> &gt;&gt; test_results.txt
+    <span class="k">fi</span>
+<span class="k">done</span> &lt; val_stops.txt
+cat test_results.txt
+</pre></div>
+</div>
+</div>
+<p>Thus we test the checkpoint at step 2000 and find the following scores:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Meteor</span> <span class="n">early</span> <span class="n">stopped</span> <span class="o">@</span> <span class="mi">2000</span>
+<span class="n">SPICE</span> <span class="n">evaluation</span> <span class="n">took</span><span class="p">:</span> <span class="mf">2.522</span> <span class="n">s</span>
+<span class="p">{</span><span class="s1">&#39;testlen&#39;</span><span class="p">:</span> <span class="mi">3410</span><span class="p">,</span> <span class="s1">&#39;reflen&#39;</span><span class="p">:</span> <span class="mi">3417</span><span class="p">,</span> <span class="s1">&#39;guess&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">3410</span><span class="p">,</span> <span class="mi">2740</span><span class="p">,</span> <span class="mi">2070</span><span class="p">,</span> <span class="mi">1400</span><span class="p">],</span> <span class="s1">&#39;correct&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">2664</span><span class="p">,</span> <span class="mi">1562</span><span class="p">,</span> <span class="mi">887</span><span class="p">,</span> <span class="mi">386</span><span class="p">]}</span>
+<span class="n">ratio</span><span class="p">:</span> <span class="mf">0.9979514193734276</span>
+<span class="p">{</span><span class="s1">&#39;Bleu1&#39;</span><span class="p">:</span> <span class="mf">0.7796296150773093</span><span class="p">,</span>
+ <span class="s1">&#39;Bleu2&#39;</span><span class="p">:</span> <span class="mf">0.6659837622637965</span><span class="p">,</span>
+ <span class="s1">&#39;Bleu3&#39;</span><span class="p">:</span> <span class="mf">0.5745524496015597</span><span class="p">,</span>
+ <span class="s1">&#39;Bleu4&#39;</span><span class="p">:</span> <span class="mf">0.4779574102543823</span><span class="p">,</span>
+ <span class="s1">&#39;Cider&#39;</span><span class="p">:</span> <span class="mf">0.7541600090591118</span><span class="p">,</span>
+ <span class="s1">&#39;Meteor&#39;</span><span class="p">:</span> <span class="mf">0.3259497476899707</span><span class="p">,</span>
+ <span class="s1">&#39;Rouge&#39;</span><span class="p">:</span> <span class="mf">0.6800279518634998</span><span class="p">,</span>
+ <span class="s1">&#39;Spice&#39;</span><span class="p">:</span> <span class="mf">0.046435637924854</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>Note our scores are an improvement over the recurrent approach.</p>
+<p>The paper reports
+BLEU4 50.25, CIDEr 72.11, METEOR 33.41, ROUGE 70.16.</p>
+<p>The CIDEr score is higher than the paper (but, considering the sensitivity of this
+metric, not by much), while the other metrics are slightly lower.
+This could be indicative of an implementation difference. Note that Table 5 reports
+24M parameters for a 2-layer transformer with ResNet inputs, while we find a few M less. This
+could be due to generator or embedding differences, or perhaps linear layers on the
+residual connections. Alternatively, the difference could be the initial tokenization.
+The paper reports 9861 tokens, while we find fewer.</p>
+<p>Part of this could be due to using
+the annotations from the other repository, where perhaps some annotations have been
+stripped. We also do not know the batch size or checkpoint frequency from the original
+work.</p>
+<p>Different random initializations could account for some of the difference, although
+our random seed gives good results.</p>
+<p>Overall, however, the scores are nearly reproduced
+and the scores are favorable.</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="options/preprocess.html" class="btn btn-neutral float-right" title="Preprocess" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="speech2text.html" class="btn btn-neutral float-left" title="Speech to Text" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, srush
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
