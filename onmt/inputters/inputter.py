@@ -508,11 +508,16 @@ def batch_iter(data, batch_size, batch_size_fn=None, batch_size_multiple=1):
                 yield minibatch
                 minibatch, size_so_far = [], 0
             else:
-                yield minibatch[:-overflowed]
-                minibatch = minibatch[-overflowed:]
-                size_so_far = 0
-                for i, ex in enumerate(minibatch):
-                    size_so_far = batch_size_fn(ex, i + 1, size_so_far)
+                if overflowed == len(minibatch):
+                    logger.warning(
+                        "An example was ignored, more tokens"
+                        " than allowed by tokens batch_size")
+                else:
+                    yield minibatch[:-overflowed]
+                    minibatch = minibatch[-overflowed:]
+                    size_so_far = 0
+                    for i, ex in enumerate(minibatch):
+                        size_so_far = batch_size_fn(ex, i + 1, size_so_far)
     if minibatch:
         yield minibatch
 
