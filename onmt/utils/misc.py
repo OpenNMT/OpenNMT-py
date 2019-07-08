@@ -34,7 +34,7 @@ def sequence_mask(lengths, max_len=None):
     """
     batch_size = lengths.numel()
     max_len = max_len or lengths.max()
-    return (torch.arange(0, max_len)
+    return (torch.arange(0, max_len, device=lengths.device)
             .type_as(lengths)
             .repeat(batch_size, 1)
             .lt(lengths.unsqueeze(1)))
