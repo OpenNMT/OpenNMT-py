@@ -268,6 +268,7 @@
 <span class="s2">                                        parameter for model #</span><span class="si">%d</span><span class="s2">&quot;&quot;&quot;</span> <span class="o">%</span> <span class="n">i</span><span class="p">)</span>
             <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;timeout&#39;</span><span class="p">:</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;timeout&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
                       <span class="s1">&#39;load&#39;</span><span class="p">:</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;load&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+                      <span class="s1">&#39;preprocess_opt&#39;</span><span class="p">:</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;preprocess&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
                       <span class="s1">&#39;tokenizer_opt&#39;</span><span class="p">:</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;tokenizer&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
                       <span class="s1">&#39;on_timeout&#39;</span><span class="p">:</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;on_timeout&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
                       <span class="s1">&#39;model_root&#39;</span><span class="p">:</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;model_root&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">models_root</span><span class="p">)</span>
@@ -361,6 +362,8 @@
 <span class="sd">    Args:</span>
 <span class="sd">        opt (dict): Options for the Translator</span>
 <span class="sd">        model_id (int): Model ID</span>
+<span class="sd">        preprocess_opt (dict): Options for preprocess processus or None</span>
+<span class="sd">                               (extend for CJK)</span>
 <span class="sd">        tokenizer_opt (dict): Options for the tokenizer or None</span>
 <span class="sd">        load (bool): whether to load the model during :func:`__init__()`</span>
 <span class="sd">        timeout (int): Seconds before running :func:`do_timeout()`</span>
@@ -371,14 +374,15 @@
 <span class="sd">            it must contain the model and tokenizer file</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">model_id</span><span class="p">,</span> <span class="n">tokenizer_opt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">load</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                 <span class="n">timeout</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">on_timeout</span><span class="o">=</span><span class="s2">&quot;to_cpu&quot;</span><span class="p">,</span> <span class="n">model_root</span><span class="o">=</span><span class="s2">&quot;./&quot;</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">model_id</span><span class="p">,</span> <span class="n">preprocess_opt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tokenizer_opt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">load</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">on_timeout</span><span class="o">=</span><span class="s2">&quot;to_cpu&quot;</span><span class="p">,</span> <span class="n">model_root</span><span class="o">=</span><span class="s2">&quot;./&quot;</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model_root</span> <span class="o">=</span> <span class="n">model_root</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">opt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_opt</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">n_best</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Values of n_best &gt; 1 are not supported&quot;</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">model_id</span> <span class="o">=</span> <span class="n">model_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">preprocess_opt</span> <span class="o">=</span> <span class="n">preprocess_opt</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span> <span class="o">=</span> <span class="n">tokenizer_opt</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span> <span class="o">=</span> <span class="n">timeout</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">on_timeout</span> <span class="o">=</span> <span class="n">on_timeout</span>
@@ -461,6 +465,19 @@
             <span class="k">raise</span> <span class="n">ServerModelError</span><span class="p">(</span><span class="s2">&quot;Runtime Error: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
 
         <span class="n">timer</span><span class="o">.</span><span class="n">tick</span><span class="p">(</span><span class="s2">&quot;model_loading&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">preprocess_opt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading preprocessor&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">preprocessor</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">preprocess_opt</span><span class="p">[</span><span class="s1">&#39;ZH_simplify&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="kn">from</span> <span class="nn">snownlp</span> <span class="k">import</span> <span class="n">SnowNLP</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">preprocessor</span><span class="p">[</span><span class="s1">&#39;ZH_simplify&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SnowNLP</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">preprocess_opt</span><span class="p">[</span><span class="s1">&#39;ZH_segmentation&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="kn">import</span> <span class="nn">pkuseg</span>
+                <span class="n">seg</span> <span class="o">=</span> <span class="n">pkuseg</span><span class="o">.</span><span class="n">pkuseg</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">preprocessor</span><span class="p">[</span><span class="s1">&#39;ZH_segmentation&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">seg</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">preprocessor</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid value for preprocess.&quot;</span><span class="p">)</span>
+
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading tokenizer&quot;</span><span class="p">)</span>
 
@@ -557,7 +574,8 @@
                 <span class="k">if</span> <span class="n">match_after</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">whitespaces_after</span> <span class="o">=</span> <span class="n">match_after</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
                 <span class="n">head_spaces</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">whitespaces_before</span><span class="p">)</span>
-                <span class="n">tok</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maybe_tokenize</span><span class="p">(</span><span class="n">src</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+                <span class="n">preprocessed_src</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maybe_preprocess</span><span class="p">(</span><span class="n">src</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+                <span class="n">tok</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maybe_tokenize</span><span class="p">(</span><span class="n">preprocessed_src</span><span class="p">)</span>
                 <span class="n">texts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tok</span><span class="p">)</span>
                 <span class="n">sslength</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tok</span><span class="o">.</span><span class="n">split</span><span class="p">()))</span>
                 <span class="n">tail_spaces</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">whitespaces_after</span><span class="p">)</span>
@@ -672,6 +690,35 @@
         <span class="sd">&quot;&quot;&quot;Move the model to GPU.&quot;&quot;&quot;</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">set_device</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">gpu</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">cuda</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ServerModel.maybe_preprocess"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.maybe_preprocess">[docs]</a>    <span class="k">def</span> <span class="nf">maybe_preprocess</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Preprocess the sequence (or not)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">preprocess_opt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">preprocess</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">sequence</span></div>
+
+<div class="viewcode-block" id="ServerModel.preprocess"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.preprocess">[docs]</a>    <span class="k">def</span> <span class="nf">preprocess</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Preprocess a single sequence.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            sequence (str): The sequence to preprocess.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            sequence (str): The preprocessed sequence.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">preprocessor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No preprocessor loaded&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;ZH_simplify&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">preprocessor</span><span class="p">:</span>
+            <span class="n">call</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">preprocessor</span><span class="p">[</span><span class="s1">&#39;ZH_simplify&#39;</span><span class="p">]</span>  <span class="c1"># SnowNLP</span>
+            <span class="n">sequence</span> <span class="o">=</span> <span class="n">call</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span><span class="o">.</span><span class="n">han</span>
+        <span class="k">if</span> <span class="s1">&#39;ZH_segmentation&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">preprocessor</span><span class="p">:</span>
+            <span class="n">call</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">preprocessor</span><span class="p">[</span><span class="s1">&#39;ZH_segmentation&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">cut</span>  <span class="c1"># pkuseg.pkuseg()</span>
+            <span class="n">segments</span> <span class="o">=</span> <span class="n">call</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span>
+            <span class="n">sequence</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">segments</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">sequence</span></div>
 
 <div class="viewcode-block" id="ServerModel.maybe_tokenize"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.maybe_tokenize">[docs]</a>    <span class="k">def</span> <span class="nf">maybe_tokenize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Tokenize the sequence (or not).</span>

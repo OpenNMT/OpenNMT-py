@@ -188,7 +188,7 @@
 <h2>Models<a class="headerlink" href="#models" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.translate.translation_server.ServerModel">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.translate.translation_server.</code><code class="sig-name descname">ServerModel</code><span class="sig-paren">(</span><em class="sig-param">opt</em>, <em class="sig-param">model_id</em>, <em class="sig-param">tokenizer_opt=None</em>, <em class="sig-param">load=False</em>, <em class="sig-param">timeout=-1</em>, <em class="sig-param">on_timeout='to_cpu'</em>, <em class="sig-param">model_root='./'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#ServerModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.ServerModel" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">onmt.translate.translation_server.</code><code class="sig-name descname">ServerModel</code><span class="sig-paren">(</span><em class="sig-param">opt</em>, <em class="sig-param">model_id</em>, <em class="sig-param">preprocess_opt=None</em>, <em class="sig-param">tokenizer_opt=None</em>, <em class="sig-param">load=False</em>, <em class="sig-param">timeout=-1</em>, <em class="sig-param">on_timeout='to_cpu'</em>, <em class="sig-param">model_root='./'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#ServerModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.ServerModel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Wrap a model with server functionality.</p>
 <dl class="field-list simple">
@@ -196,6 +196,8 @@
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>opt</strong> (<em>dict</em>) – Options for the Translator</p></li>
 <li><p><strong>model_id</strong> (<em>int</em>) – Model ID</p></li>
+<li><p><strong>preprocess_opt</strong> (<em>dict</em>) – Options for preprocess processus or None
+(extend for CJK)</p></li>
 <li><p><strong>tokenizer_opt</strong> (<em>dict</em>) – Options for the tokenizer or None</p></li>
 <li><p><strong>load</strong> (<em>bool</em>) – whether to load the model during <code class="xref py py-func docutils literal notranslate"><span class="pre">__init__()</span></code></p></li>
 <li><p><strong>timeout</strong> (<em>int</em>) – Seconds before running <a class="reference internal" href="#onmt.translate.translation_server.ServerModel.do_timeout" title="onmt.translate.translation_server.ServerModel.do_timeout"><code class="xref py py-func docutils literal notranslate"><span class="pre">do_timeout()</span></code></a>
@@ -230,6 +232,12 @@ attr`self.on_timemout` value</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="onmt.translate.translation_server.ServerModel.maybe_preprocess">
+<code class="sig-name descname">maybe_preprocess</code><span class="sig-paren">(</span><em class="sig-param">sequence</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#ServerModel.maybe_preprocess"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.ServerModel.maybe_preprocess" title="Permalink to this definition">¶</a></dt>
+<dd><p>Preprocess the sequence (or not)</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="onmt.translate.translation_server.ServerModel.maybe_tokenize">
 <code class="sig-name descname">maybe_tokenize</code><span class="sig-paren">(</span><em class="sig-param">sequence</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#ServerModel.maybe_tokenize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.ServerModel.maybe_tokenize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tokenize the sequence (or not).</p>
@@ -249,6 +257,23 @@ attr`self.on_timemout` value</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>opt (argparse.Namespace)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.translate.translation_server.ServerModel.preprocess">
+<code class="sig-name descname">preprocess</code><span class="sig-paren">(</span><em class="sig-param">sequence</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#ServerModel.preprocess"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.ServerModel.preprocess" title="Permalink to this definition">¶</a></dt>
+<dd><p>Preprocess a single sequence.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>sequence</strong> (<em>str</em>) – The sequence to preprocess.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The preprocessed sequence.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>sequence (str)</p>
 </dd>
 </dl>
 </dd></dl>
