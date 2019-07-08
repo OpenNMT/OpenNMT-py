@@ -91,6 +91,7 @@ class TranslationServer(object):
                                         parameter for model #%d""" % i)
             kwargs = {'timeout': conf.get('timeout', None),
                       'load': conf.get('load', None),
+                      'preprocess_opt': conf.get('preprocess', None),
                       'tokenizer_opt': conf.get('tokenizer', None),
                       'on_timeout': conf.get('on_timeout', None),
                       'model_root': conf.get('model_root', self.models_root)
@@ -184,6 +185,8 @@ class ServerModel(object):
     Args:
         opt (dict): Options for the Translator
         model_id (int): Model ID
+        preprocess_opt (dict): Options for preprocess processus or None
+                               (extend for CJK)
         tokenizer_opt (dict): Options for the tokenizer or None
         load (bool): whether to load the model during :func:`__init__()`
         timeout (int): Seconds before running :func:`do_timeout()`
@@ -194,14 +197,15 @@ class ServerModel(object):
             it must contain the model and tokenizer file
     """
 
-    def __init__(self, opt, model_id, tokenizer_opt=None, load=False,
-                 timeout=-1, on_timeout="to_cpu", model_root="./"):
+    def __init__(self, opt, model_id, preprocess_opt=None, tokenizer_opt=None,
+                 load=False, timeout=-1, on_timeout="to_cpu", model_root="./"):
         self.model_root = model_root
         self.opt = self.parse_opt(opt)
         if self.opt.n_best > 1:
             raise ValueError("Values of n_best > 1 are not supported")
 
         self.model_id = model_id
+        self.preprocess_opt = preprocess_opt
         self.tokenizer_opt = tokenizer_opt
         self.timeout = timeout
         self.on_timeout = on_timeout
@@ -284,6 +288,19 @@ class ServerModel(object):
             raise ServerModelError("Runtime Error: %s" % str(e))
 
         timer.tick("model_loading")
+        if self.preprocess_opt is not None:
+            self.logger.info("Loading preprocessor")
+            self.preprocessor = {}
+            if self.preprocess_opt['ZH_simplify'] is True:
+                from snownlp import SnowNLP
+                self.preprocessor['ZH_simplify'] = SnowNLP
+            if self.preprocess_opt['ZH_segmentation'] is True:
+                import pkuseg
+                seg = pkuseg.pkuseg()
+                self.preprocessor['ZH_segmentation'] = seg
+            if len(self.preprocessor) == 0:
+                raise ValueError("Invalid value for preprocess.")
+
         if self.tokenizer_opt is not None:
             self.logger.info("Loading tokenizer")
 
@@ -380,7 +397,8 @@ class ServerModel(object):
                 if match_after is not None:
                     whitespaces_after = match_after.group(0)
                 head_spaces.append(whitespaces_before)
-                tok = self.maybe_tokenize(src.strip())
+                preprocessed_src = self.maybe_preprocess(src.strip())
+                tok = self.maybe_tokenize(preprocessed_src)
                 texts.append(tok)
                 sslength.append(len(tok.split()))
                 tail_spaces.append(whitespaces_after)
@@ -495,6 +513,35 @@ class ServerModel(object):
         """Move the model to GPU."""
         torch.cuda.set_device(self.opt.gpu)
         self.translator.model.cuda()
+
+    def maybe_preprocess(self, sequence):
+        """Preprocess the sequence (or not)
+
+        """
+
+        if self.preprocess_opt is not None:
+            return self.preprocess(sequence)
+        return sequence
+
+    def preprocess(self, sequence):
+        """Preprocess a single sequence.
+
+        Args:
+            sequence (str): The sequence to preprocess.
+
+        Returns:
+            sequence (str): The preprocessed sequence.
+        """
+        if self.preprocessor is None:
+            raise ValueError("No preprocessor loaded")
+        if 'ZH_simplify' in self.preprocessor:
+            call = self.preprocessor['ZH_simplify']  # SnowNLP
+            sequence = call(sequence).han
+        if 'ZH_segmentation' in self.preprocessor:
+            call = self.preprocessor['ZH_segmentation'].cut  # pkuseg.pkuseg()
+            segments = call(sequence)
+            sequence = " ".join(segments)
+        return sequence
 
     def maybe_tokenize(self, sequence):
         """Tokenize the sequence (or not).
