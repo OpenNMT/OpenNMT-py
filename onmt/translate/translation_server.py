@@ -187,6 +187,7 @@ class ServerModel(object):
         opt (dict): Options for the Translator
         model_id (int): Model ID
         preprocess_opt (list): Options for preprocess processus or None
+
                                (extend for CJK)
         tokenizer_opt (dict): Options for the tokenizer or None
         postprocess_opt (list): Options for postprocess processus or None
@@ -424,7 +425,9 @@ class ServerModel(object):
             try:
                 scores, predictions = self.translator.translate(
                     texts_to_translate,
-                    batch_size=self.opt.batch_size)
+                    batch_size=len(texts_to_translate)
+                    if self.opt.batch_size == 0
+                    else self.opt.batch_size)
             except (RuntimeError, Exception) as e:
                 err = "Error: %s" % str(e)
                 self.logger.error(err)
