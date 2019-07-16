@@ -14,12 +14,12 @@ def zh_traditional_standard(line):
 
 
 # Chinese simplify -> Chinese traditional (HongKong)
-def zh_traditional_HK(line):
+def zh_traditional_hk(line):
     return HanLP.s2hk(line)
 
 
 # Chinese simplify -> Chinese traditional (Taiwan)
-def zh_traditional_TW(line):
+def zh_traditional_tw(line):
     return HanLP.s2tw(line)
 
 
