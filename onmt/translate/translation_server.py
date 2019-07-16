@@ -187,7 +187,6 @@ class ServerModel(object):
         opt (dict): Options for the Translator
         model_id (int): Model ID
         preprocess_opt (list): Options for preprocess processus or None
-
                                (extend for CJK)
         tokenizer_opt (dict): Options for the tokenizer or None
         postprocess_opt (list): Options for postprocess processus or None
@@ -297,12 +296,10 @@ class ServerModel(object):
         if self.preprocess_opt is not None:
             self.logger.info("Loading preprocessor")
             self.preprocessor = []
+
             for function_path in self.preprocess_opt:
                 function = get_function_by_path(function_path)
                 self.preprocessor.append(function)
-
-            if len(self.preprocessor) == 0:
-                print("No preprocess function loaded.")
 
         if self.tokenizer_opt is not None:
             self.logger.info("Loading tokenizer")
@@ -345,12 +342,10 @@ class ServerModel(object):
         if self.postprocess_opt is not None:
             self.logger.info("Loading postprocessor")
             self.postprocessor = []
+
             for function_path in self.postprocess_opt:
                 function = get_function_by_path(function_path)
                 self.postprocessor.append(function)
-
-            if len(self.postprocessor) == 0:
-                print("No postprocess function loaded.")
 
         self.load_time = timer.tick()
         self.reset_unload_timer()
