@@ -9,7 +9,7 @@ import json
 import threading
 import re
 import traceback
-
+import importlib
 import torch
 import onmt.opts
 
@@ -93,6 +93,7 @@ class TranslationServer(object):
                       'load': conf.get('load', None),
                       'preprocess_opt': conf.get('preprocess', None),
                       'tokenizer_opt': conf.get('tokenizer', None),
+                      'postprocess_opt': conf.get('postprocess', None),
                       'on_timeout': conf.get('on_timeout', None),
                       'model_root': conf.get('model_root', self.models_root)
                       }
@@ -185,9 +186,11 @@ class ServerModel(object):
     Args:
         opt (dict): Options for the Translator
         model_id (int): Model ID
-        preprocess_opt (dict): Options for preprocess processus or None
+        preprocess_opt (list): Options for preprocess processus or None
                                (extend for CJK)
         tokenizer_opt (dict): Options for the tokenizer or None
+        postprocess_opt (list): Options for postprocess processus or None
+                                (extend for CJK)
         load (bool): whether to load the model during :func:`__init__()`
         timeout (int): Seconds before running :func:`do_timeout()`
             Negative values means no timeout
@@ -198,7 +201,8 @@ class ServerModel(object):
     """
 
     def __init__(self, opt, model_id, preprocess_opt=None, tokenizer_opt=None,
-                 load=False, timeout=-1, on_timeout="to_cpu", model_root="./"):
+                 postprocess_opt=None, load=False, timeout=-1,
+                 on_timeout="to_cpu", model_root="./"):
         self.model_root = model_root
         self.opt = self.parse_opt(opt)
         if self.opt.n_best > 1:
@@ -207,6 +211,7 @@ class ServerModel(object):
         self.model_id = model_id
         self.preprocess_opt = preprocess_opt
         self.tokenizer_opt = tokenizer_opt
+        self.postprocess_opt = postprocess_opt
         self.timeout = timeout
         self.on_timeout = on_timeout
 
@@ -290,16 +295,11 @@ class ServerModel(object):
         timer.tick("model_loading")
         if self.preprocess_opt is not None:
             self.logger.info("Loading preprocessor")
-            self.preprocessor = {}
-            if self.preprocess_opt['ZH_simplify'] is True:
-                from snownlp import SnowNLP
-                self.preprocessor['ZH_simplify'] = SnowNLP
-            if self.preprocess_opt['ZH_segmentation'] is True:
-                import pkuseg
-                seg = pkuseg.pkuseg()
-                self.preprocessor['ZH_segmentation'] = seg
-            if len(self.preprocessor) == 0:
-                raise ValueError("Invalid value for preprocess.")
+            self.preprocessor = []
+
+            for function_path in self.preprocess_opt:
+                function = get_function_by_path(function_path)
+                self.preprocessor.append(function)
 
         if self.tokenizer_opt is not None:
             self.logger.info("Loading tokenizer")
@@ -338,6 +338,14 @@ class ServerModel(object):
                 self.tokenizer = tokenizer
             else:
                 raise ValueError("Invalid value for tokenizer type")
+
+        if self.postprocess_opt is not None:
+            self.logger.info("Loading postprocessor")
+            self.postprocessor = []
+
+            for function_path in self.postprocess_opt:
+                function = get_function_by_path(function_path)
+                self.postprocessor.append(function)
 
         self.load_time = timer.tick()
         self.reset_unload_timer()
@@ -443,6 +451,8 @@ class ServerModel(object):
         results = [self.maybe_detokenize(item)
                    for item in results]
 
+        results = [self.maybe_postprocess(item)
+                   for item in results]
         # build back results with empty texts
         for i in empty_indices:
             results.insert(i, "")
@@ -534,13 +544,8 @@ class ServerModel(object):
         """
         if self.preprocessor is None:
             raise ValueError("No preprocessor loaded")
-        if 'ZH_simplify' in self.preprocessor:
-            call = self.preprocessor['ZH_simplify']  # SnowNLP
-            sequence = call(sequence).han
-        if 'ZH_segmentation' in self.preprocessor:
-            call = self.preprocessor['ZH_segmentation'].cut  # pkuseg.pkuseg()
-            segments = call(sequence)
-            sequence = " ".join(segments)
+        for function in self.preprocessor:
+            sequence = function(sequence)
         return sequence
 
     def maybe_tokenize(self, sequence):
@@ -599,3 +604,39 @@ class ServerModel(object):
             detok = self.tokenizer.detokenize(sequence.split())
 
         return detok
+
+    def maybe_postprocess(self, sequence):
+        """Postprocess the sequence (or not)
+
+        """
+
+        if self.postprocess_opt is not None:
+            return self.postprocess(sequence)
+        return sequence
+
+    def postprocess(self, sequence):
+        """Preprocess a single sequence.
+
+        Args:
+            sequence (str): The sequence to process.
+
+        Returns:
+            sequence (str): The postprocessed sequence.
+        """
+        if self.postprocessor is None:
+            raise ValueError("No postprocessor loaded")
+        for function in self.postprocessor:
+            sequence = function(sequence)
+        return sequence
+
+
+def get_function_by_path(path, args=[], kwargs={}):
+    module_name = ".".join(path.split(".")[:-1])
+    function_name = path.split(".")[-1]
+    try:
+        module = importlib.import_module(module_name)
+    except ValueError as e:
+        print("Cannot import module '%s'" % module_name)
+        raise e
+    function = getattr(module, function_name)
+    return function
