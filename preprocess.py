@@ -108,7 +108,7 @@ def build_save_dataset(corpus_type, fields, src_reader, tgt_reader, opt):
                             has_vocab = (sub_n == 'src' and
                                          src_vocab is not None) or \
                                         (sub_n == 'tgt' and
-                                         tgt_vocabis not None)
+                                         tgt_vocab is not None)
                             if (hasattr(sub_f, 'sequential')
                                     and sub_f.sequential and not has_vocab):
                                 val = fd
