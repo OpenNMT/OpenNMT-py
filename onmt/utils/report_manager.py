@@ -76,6 +76,8 @@ class ReportMgrBase(object):
             self._report_training(
                 step, num_steps, learning_rate, report_stats)
             self.progress_step += 1
+            if isinstance(report_stats, onmt.utils.BertStatistics):
+                return onmt.utils.BertStatistics()
             return onmt.utils.Statistics()
         else:
             return report_stats

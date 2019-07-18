@@ -4,7 +4,7 @@ import os
 import signal
 import torch
 
-import onmt.opts as opts
+import onmt.opts_bert as opts
 import onmt.utils.distributed
 
 from onmt.utils.misc import set_random_seed
@@ -18,9 +18,10 @@ from itertools import cycle
 
 
 def main(opt):
-    ArgumentParser.validate_train_opts(opt)
-    ArgumentParser.update_model_opts(opt)
-    ArgumentParser.validate_model_opts(opt)
+    # JUST FOR verify the options
+    # ArgumentParser.validate_train_opts(opt)
+    # ArgumentParser.update_model_opts(opt)
+    # ArgumentParser.validate_model_opts(opt)
 
     # Load checkpoint if we resume from a previous training.
     if opt.train_from:
@@ -28,13 +29,16 @@ def main(opt):
         checkpoint = torch.load(opt.train_from,
                                 map_location=lambda storage, loc: storage)
         logger.info('Loading vocab from checkpoint at %s.' % opt.train_from)
-        vocab = checkpoint['vocab']
+        # vocab = checkpoint['vocab']   TODO:test
+        vocab = torch.load(opt.data + '.vocab.pt')
     else:
         vocab = torch.load(opt.data + '.vocab.pt')
 
     # check for code where vocab is saved instead of fields
     # (in the future this will be done in a smarter way)
-    if old_style_vocab(vocab):
+    if opt.is_bert:
+        fields = vocab
+    elif old_style_vocab(vocab):
         fields = load_old_vocab(
             vocab, opt.model_type, dynamic_dict=opt.copy_attn)
     else:
@@ -114,17 +118,27 @@ def batch_producer(generator_to_serve, queues, semaphore, opt):
 
     for device_id, q in cycle(enumerate(queues)):
         b.dataset = None
-        if isinstance(b.src, tuple):
-            b.src = tuple([_.to(torch.device(device_id))
-                           for _ in b.src])
+        if opt.is_bert:
+            if isinstance(b.tokens, tuple):
+                b.tokens = tuple([_.to(torch.device(device_id))
+                                 for _ in b.tokens])
+            else:
+                b.tokens = b.tokens.to(torch.device(device_id))
+            b.segment_ids = b.segment_ids.to(torch.device(device_id))
+            b.is_next = b.is_next.to(torch.device(device_id))
+            b.lm_labels_ids = b.lm_labels_ids.to(torch.device(device_id))
         else:
-            b.src = b.src.to(torch.device(device_id))
-        b.tgt = b.tgt.to(torch.device(device_id))
-        b.indices = b.indices.to(torch.device(device_id))
-        b.alignment = b.alignment.to(torch.device(device_id)) \
-            if hasattr(b, 'alignment') else None
-        b.src_map = b.src_map.to(torch.device(device_id)) \
-            if hasattr(b, 'src_map') else None
+            if isinstance(b.src, tuple):
+                b.src = tuple([_.to(torch.device(device_id))
+                              for _ in b.src])
+            else:
+                b.src = b.src.to(torch.device(device_id))
+            b.tgt = b.tgt.to(torch.device(device_id))
+            b.indices = b.indices.to(torch.device(device_id))
+            b.alignment = b.alignment.to(torch.device(device_id)) \
+                if hasattr(b, 'alignment') else None
+            b.src_map = b.src_map.to(torch.device(device_id)) \
+                if hasattr(b, 'src_map') else None
 
         # hack to dodge unpicklable `dict_keys`
         b.fields = list(b.fields)
@@ -188,8 +202,10 @@ def _get_parser():
     parser = ArgumentParser(description='train.py')
 
     opts.config_opts(parser)
-    opts.model_opts(parser)
-    opts.train_opts(parser)
+    # opts.model_opts(parser)
+    # opts.train_opts(parser)
+    opts.bert_model_opts(parser)
+    opts.bert_pretrainning(parser)
     return parser
 
 

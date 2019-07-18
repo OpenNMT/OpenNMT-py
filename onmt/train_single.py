@@ -6,7 +6,7 @@ import torch
 
 from onmt.inputters.inputter import build_dataset_iter, \
     load_old_vocab, old_style_vocab, build_dataset_iter_multiple
-from onmt.model_builder import build_model
+from onmt.model_builder import build_model, build_bert
 from onmt.utils.optimizers import Optimizer
 from onmt.utils.misc import set_random_seed
 from onmt.trainer import build_trainer
@@ -51,11 +51,13 @@ def main(opt, device_id, batch_queue=None, semaphore=None):
         logger.info('Loading checkpoint from %s' % opt.train_from)
         checkpoint = torch.load(opt.train_from,
                                 map_location=lambda storage, loc: storage)
-        model_opt = ArgumentParser.ckpt_model_opts(checkpoint["opt"])
-        ArgumentParser.update_model_opts(model_opt)
-        ArgumentParser.validate_model_opts(model_opt)
+        # model_opt = ArgumentParser.ckpt_model_opts(checkpoint["opt"])
+        model_opt = opt  # TODO: test
+        # ArgumentParser.update_model_opts(model_opt)  # TODO
+        # ArgumentParser.validate_model_opts(model_opt)  # TODO
         logger.info('Loading vocab from checkpoint at %s.' % opt.train_from)
-        vocab = checkpoint['vocab']
+        # vocab = checkpoint['vocab']
+        vocab = torch.load(opt.data + '.vocab.pt')  # TODO
     else:
         checkpoint = None
         model_opt = opt
@@ -63,39 +65,54 @@ def main(opt, device_id, batch_queue=None, semaphore=None):
 
     # check for code where vocab is saved instead of fields
     # (in the future this will be done in a smarter way)
-    if old_style_vocab(vocab):
+    if opt.is_bert:  # TODO: test amelioration
+        fields = vocab
+    elif old_style_vocab(vocab):
         fields = load_old_vocab(
             vocab, opt.model_type, dynamic_dict=opt.copy_attn)
     else:
         fields = vocab
 
-    # Report src and tgt vocab sizes, including for features
-    for side in ['src', 'tgt']:
-        f = fields[side]
-        try:
-            f_iter = iter(f)
-        except TypeError:
-            f_iter = [(side, f)]
-        for sn, sf in f_iter:
-            if sf.use_vocab:
-                logger.info(' * %s vocab size = %d' % (sn, len(sf.vocab)))
+    if opt.is_bert:
+        # Report bert tokens vocab sizes, including for features
+        f = fields['tokens']
+        if f.use_vocab:  # NOTE: useless!
+            logger.info(' * %s vocab size = %d' % ("BERT", len(f.vocab)))
+    else:
+        # Report src and tgt vocab sizes, including for features
+        for side in ['src', 'tgt']:
+            f = fields[side]
+            try:
+                f_iter = iter(f)
+            except TypeError:
+                f_iter = [(side, f)]
+            for sn, sf in f_iter:
+                if sf.use_vocab:
+                    logger.info(' * %s vocab size = %d' % (sn, len(sf.vocab)))
 
     # Build model.
-    model = build_model(model_opt, opt, fields, checkpoint)
-    n_params, enc, dec = _tally_parameters(model)
-    logger.info('encoder: %d' % enc)
-    logger.info('decoder: %d' % dec)
-    logger.info('* number of parameters: %d' % n_params)
+    if opt.is_bert:
+        model = build_bert(model_opt, opt, fields, checkpoint)
+        n_params = 0
+        for param in model.parameters():
+            n_params += param.nelement()
+        logger.info('* number of parameters: %d' % n_params)
+    else:
+        model = build_model(model_opt, opt, fields, checkpoint)
+        n_params, enc, dec = _tally_parameters(model)
+        logger.info('encoder: %d' % enc)
+        logger.info('decoder: %d' % dec)
+        logger.info('* number of parameters: %d' % n_params)
     _check_save_model_path(opt)
 
-    # Build optimizer.
-    optim = Optimizer.from_opt(model, opt, checkpoint=checkpoint)
+    # Build optimizer.  # TODO: checkpoint=checkpoint  # DEBUG
+    optim = Optimizer.from_opt(model, opt, checkpoint=None)
 
     # Build model saver
     model_saver = build_model_saver(model_opt, opt, model, fields, optim)
 
     trainer = build_trainer(
-        opt, device_id, model, fields, optim, model_saver=model_saver)
+            opt, device_id, model, fields, optim, model_saver=model_saver)
 
     if batch_queue is None:
         if len(opt.data_ids) > 1:

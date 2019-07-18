@@ -1,0 +1,148 @@
+import torch
+import torch.nn as nn
+from onmt.modules.bert_embed import BertEmbeddings
+from onmt.encoders.transformer import TransformerEncoderLayer
+
+
+class BERT(nn.Module):
+    """
+    BERT Implementation: https://arxiv.org/abs/1810.04805
+    Use a Transformer Encoder as Language modeling.
+    """
+    def __init__(self, vocab_size, num_layers=12, d_model=768, heads=12,
+                 dropout=0.1, max_relative_positions=0):
+        super(BERT, self).__init__()
+        self.vocab_size = vocab_size
+        self.num_layers = num_layers
+        self.d_model = d_model  # = hidden_size = embed_size
+        self.heads = heads
+        self.dropout = dropout
+        # Feed-Forward size is set to be 4H as in paper
+        self.d_ff = 4 * d_model
+
+        # Build Embeddings according to vocab_size and d_model
+        # --DONE--: BERTEmbeddings()
+        # ref. build_embeddings in onmt.model_builder.py
+        # BERT input embeddings is sum of:
+        #   1. Token embeddings
+        #   2. Segmentation embeddings
+        #   3. Position embeddings
+        self.embeddings = BertEmbeddings(vocab_size=vocab_size,
+                           embed_size=d_model, dropout=dropout)
+
+        # Transformer Encoder Block
+        self.transformer_encoder = nn.ModuleList(
+            [TransformerEncoderLayer(d_model, heads, self.d_ff, dropout,
+                max_relative_positions=max_relative_positions,
+                activation='GeLU', is_bert=True) for _ in range(num_layers)])
+
+        self.layer_norm = BertLayerNorm(d_model, eps=1e-12)
+        self.pooler = BertPooler(d_model)
+        # TODO: self.apply(self.init_bert_weight)
+
+    def forward(self, input_ids, token_type_ids=None, input_mask=None,
+                output_all_encoded_layers=False):
+        """
+        Args:
+            input_ids: shape [batch, seq] padding ids=0
+            token_type_ids: shape [batch, seq], A(0), B(1), pad(0)
+            input_mask: shape [batch, seq], 1 for masked position(that padding)
+            output_all_encoded_layers: if out contain all hidden layer
+        Returns:
+            all_encoder_layers: list of out in shape (batch, src, d_model)
+        """
+        # # version 1: coder timo waiting for mask of size [B,1,T,T]
+        # [batch, seq] -> [batch, 1, seq]
+        # -> [batch, seq, seq] -> [batch, 1, seq, seq]
+        # attention masking for padded token
+        # mask: torch.ByteTensor([batch, 1, seq, seq])
+        # mask = (input_ids > 0).unsqueeze(1)
+        #        .repeat(1, input_ids.size(1), 1).unsqueeze(1)
+        # # This version mask 0, different masked_fill in Attention
+
+        # # version 2: hugging face waiting for mask of size [B,1,1,T]
+        # if attention_mask is None:
+        #     attention_mask = torch.ones_like(input_ids)
+        # if token_type_ids is None:
+        #     token_type_ids = torch.zeros_like(input_ids)
+        # # extended_attention_mask.shape = [batch_size, 1, 1, seq_length]
+        # -> broadcast to [batch, num_heads, from_seq_length, to_seq_length]
+        # extended_attention_mask = attention_mask.unsqueeze(1).unsqueeze(2)
+        # # for fp16 compatibility
+        # extended_attention_mask = extended_attention_mask
+        # .to(dtype=next(self.parameters()).dtype)
+        # -10000.0 for mask, 0 otherwise
+        # extended_attention_mask = (1.0 - extended_attention_mask) * -10000.0
+
+        # # version 3: OpenNMT waiting for mask of size [B, 1, T],
+        # while in MultiHeadAttention part2 -> [B, 1, 1, T]
+        # TODO: create_attention_mask_from_input_mask
+        # padding_idx = self.embeddings.word_padding_idx
+        # mask = input_ids.data.eq(padding_idx).unsqueeze(1)
+        if input_mask is None:
+            # input_mask = torch.ones_like(input_ids)
+            # shape: 2D tensor [batch, seq]
+            padding_idx = self.embeddings.word_padding_idx
+            # input_mask = input_ids.data.ne(padding_idx)
+            # shape: 2D tensor [batch, seq]: 1 for tokens, 0 for paddings
+            input_mask = input_ids.data.eq(padding_idx)
+        # if token_type_ids is None:
+        # NOTE: not needed! already done in bert_embed.py
+        #     token_type_ids = torch.zeros_like(input_ids)
+        # [batch, seq] -> [batch, 1, seq]
+        attention_mask = input_mask.unsqueeze(1)
+
+        # embedding vectors: [batch, seq, hidden_size]
+        out = self.embeddings(input_ids, token_type_ids)
+
+        all_encoder_layers = []
+        for layer in self.transformer_encoder:
+            out = layer(out, attention_mask)
+            if output_all_encoded_layers:
+                all_encoder_layers.append(self.layer_norm(out))
+        out = self.layer_norm(out)
+        if not output_all_encoded_layers:
+            all_encoder_layers.append(out)
+        pooled_out = self.pooler(out)
+        return all_encoder_layers, pooled_out
+
+    def update_dropout(self, dropout):
+        self.dropout = dropout
+        self.embeddings.update_dropout(dropout)
+        for layer in self.transformer_encoder:
+            layer.update_dropout(dropout)
+
+
+class BertPooler(nn.Module):
+    def __init__(self, hidden_size):
+        super(BertPooler, self).__init__()
+        self.dense = nn.Linear(hidden_size, hidden_size)
+        self.activation_fn = nn.Tanh()
+
+    def forward(self, hidden_states):
+        """
+        Args:
+            hidden_states: last layer's hidden_states,(batch, src, d_model)
+        Returns:
+            pooled_output: transformed output of last layer's hidden_states
+        """
+        first_token_tensor = hidden_states[:, 0, :]  # [batch, d_model]
+        pooled_output = self.activation_fn(self.dense(first_token_tensor))
+        return pooled_output
+
+
+class BertLayerNorm(nn.Module):
+    def __init__(self, hidden_size, eps=1e-12):
+        """Construct a layernorm module in the TF style
+           (epsilon inside the square root).
+        """
+        super(BertLayerNorm, self).__init__()
+        self.weight = nn.Parameter(torch.ones(hidden_size))
+        self.bias = nn.Parameter(torch.zeros(hidden_size))
+        self.variance_epsilon = eps
+
+    def forward(self, x):
+        u = x.mean(-1, keepdim=True)
+        s = (x - u).pow(2).mean(-1, keepdim=True)
+        x = (x - u) / torch.sqrt(s + self.variance_epsilon)
+        return self.weight * x + self.bias

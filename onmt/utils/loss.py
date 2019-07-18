@@ -56,6 +56,111 @@ def build_loss_compute(model, tgt_field, opt, train=True):
     return compute
 
 
+def build_bert_loss_compute(opt, train=True):
+    """FOR BERT PRETRAINING.
+    Returns a LossCompute subclass which wraps around an nn.Module subclass
+    (such as nn.NLLLoss) which defines the loss criterion.
+    """
+    device = torch.device("cuda" if onmt.utils.misc.use_gpu(opt) else "cpu")
+    # BERT use -1 for unmasked token in lm_label_ids
+    criterion = nn.NLLLoss(ignore_index=-1, reduction='mean')
+    compute = BertLoss(criterion).to(device)
+    return compute
+
+
+class BertLoss(nn.Module):
+    def __init__(self, criterion):
+        super(BertLoss, self).__init__()
+        self.criterion = criterion
+
+    @property
+    def padding_idx(self):
+        return self.criterion.ignore_index
+
+    def _bottle(self, _v):
+        return _v.view(-1, _v.size(2))
+
+    def _stats(self, loss, mlm_scores, mlm_target,
+               nx_sent_scores, nx_sent_target):
+        """
+        Args:
+            loss (:obj:`FloatTensor`): the loss computed by the loss criterion.
+            scores (:obj:`FloatTensor`): a score for each possible output
+            target (:obj:`FloatTensor`): true targets
+
+        Returns:
+            :obj:`onmt.utils.Statistics` : statistics for this batch.
+        """
+        # masked lm task
+        pred_mlm = mlm_scores.argmax(1)  # (batch*seq, vocab) -> (batch*seq)
+        non_padding = mlm_target.ne(self.padding_idx)  # mask: (batch*seq)
+        mlm_match = pred_mlm.eq(mlm_target).masked_select(non_padding)
+        num_correct = mlm_match.sum().item()
+        num_non_padding = non_padding.sum().item()
+
+        # next sentence prediction task
+        pred_nx_sent = nx_sent_scores.argmax(-1)  # (batch_size, 2) -> (2)
+        num_correct_nx_sent = nx_sent_target.eq(pred_nx_sent).sum().item()
+        num_sentence = len(nx_sent_target)
+        # print("lm: {}/{}".format(num_correct, num_non_padding))
+        # print("nx: {}/{}".format(num_correct_nx_sent, num_sentence))
+        return onmt.utils.BertStatistics(loss.item(), num_non_padding,
+                                         num_correct, num_sentence,
+                                         num_correct_nx_sent)
+
+    # TODO: currently not support trunc_size & shard_size
+    # def _make_shard_state(self, batch, output):
+    #     return {
+    #         "output": output,
+    #         "target": batch.tgt[range_[0] + 1: range_[1], :, 0],
+    #     }
+
+    # def _compute_loss(self, batch, output, target):
+    #     bottled_output = self._bottle(output)
+
+    #     scores = self.generator(bottled_output)
+    #     gtruth = target.view(-1)
+
+    #     loss = self.criterion(scores, gtruth)
+    #     stats = self._stats(loss.clone(), scores, gtruth)
+
+    #     return loss, stats
+
+    def forward(self, batch, outputs, normalization=1.0):  # TODO: shard=0
+        """
+        Args:
+            batch: batch of examples
+            outputs: tuple of log proba for next sentense & lm
+                (seq_class_log_prob:(batch, 2),
+                prediction_log_prob:(batch, seq, vocab))
+        """
+        assert isinstance(outputs, tuple)
+        seq_class_log_prob, prediction_log_prob = outputs
+        assert list(seq_class_log_prob.size()) == [len(batch), 2]
+
+        gtruth_next_sentence = batch.is_next  # (batch,)
+        gtruth_masked_lm = batch.lm_labels_ids  # (batch, seq)
+        # (batch, seq, vocab) -> (batch * seq, vocab)
+        bottled_prediction_log_prob = self._bottle(prediction_log_prob)
+        bottled_gtruth_masked_lm = gtruth_masked_lm.view(-1)  # (batch * seq)
+        # loss mean by number of sentence
+        next_loss = self.criterion(seq_class_log_prob, gtruth_next_sentence)
+        # loss mean by number of masked token
+        mask_loss = self.criterion(bottled_prediction_log_prob,
+                                   bottled_gtruth_masked_lm)
+        total_loss = next_loss + mask_loss  # total_loss reduced by mean
+        # loss_accum_normalized = total_loss  #/ float(normalization)
+        # print("loss: ({} + {})/{} = {}".format(next_loss, mask_loss,
+        #                float(normalization), loss_accum_normalized))
+        # print("nx: {}/{}".format(num_correct_nx_sent, num_sentence))
+        stats = self._stats(total_loss.clone(),
+                            bottled_prediction_log_prob,
+                            bottled_gtruth_masked_lm,
+                            seq_class_log_prob,
+                            gtruth_next_sentence)
+        return total_loss, stats
+
+
 class LossComputeBase(nn.Module):
     """
     Class for managing efficient loss computation. Handles

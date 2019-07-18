@@ -137,6 +137,39 @@ def get_fields(
     return fields
 
 
+def get_bert_fields(pad='[PAD]', bos='[CLS]', eos='[SEP]', unk='[UNK]'):
+    fields = {}
+    # tokens_kwargs = {"n_feats": 0,
+    #                  "include_lengths": True,
+    #                  "pad": "[PAD]", "bos": "[CLS]", "eos": "[SEP]",
+    #                  "truncate": src_truncate,
+    #                  "base_name": "tokens"}
+    # fields["tokens"] = text_fields(**tokens_kwargs)
+    tokens = Field(sequential=True, use_vocab=True, pad_token=pad,
+                   unk_token=unk, include_lengths=True, batch_first=True)
+    fields["tokens"] = tokens
+
+    segment_ids = Field(use_vocab=False, dtype=torch.long,
+                        sequential=True, pad_token=0, batch_first=True)
+    fields["segment_ids"] = segment_ids
+
+    is_next = Field(use_vocab=False, dtype=torch.long,
+                    sequential=False, batch_first=True)  # 0/1
+    fields["is_next"] = is_next
+
+    # masked_lm_positions = Field(use_vocab=False, dtype=torch.int,
+    # sequential=False)  # indices that masked: [int]
+    # fields["masked_lm_positions"] = masked_lm_positions
+
+    # masked_lm_labels = Field(use_vocab=True, sequential=False)# tokens masked
+    # fields["masked_lm_labels"] = masked_lm_labels
+
+    lm_labels_ids = Field(sequential=True, use_vocab=False,
+                          pad_token=-1, batch_first=True)
+    fields["lm_labels_ids"] = lm_labels_ids
+    return fields
+
+
 def load_old_vocab(vocab, data_type="text", dynamic_dict=False):
     """Update a legacy vocab/field format.
 
@@ -344,6 +377,23 @@ def _build_fields_vocab(fields, counters, data_type, share_vocab,
                 min_freq=src_words_min_frequency,
                 vocab_size_multiple=vocab_size_multiple)
             logger.info(" * merged vocab size: %d." % len(src_field.vocab))
+
+    return fields
+
+
+def _build_bert_fields_vocab(fields, counters, vocab_size,
+                             tokens_min_frequency=0, vocab_size_multiple=1):
+    tokens_field = fields["tokens"]
+    tokens_counter = counters["tokens"]
+    # NOTE: Do not use _build_field_vocab
+    #       as the special tokens is fixed in origin bert vocab file
+    # _build_field_vocab(tokens_field, tokens_counter,
+    #                    size_multiple=vocab_size_multiple,
+    #                    max_size=vocab_size, min_freq=tokens_min_frequency)
+    tokens_field.vocab = tokens_field.vocab_cls(tokens_counter, specials=[],
+                         max_size=vocab_size, min_freq=tokens_min_frequency)
+    if vocab_size_multiple > 1:
+        _pad_vocab_to_multiple(tokens_field.vocab, vocab_size_multiple)
 
     return fields
 
@@ -748,19 +798,32 @@ def max_tok_len(new, count, sofar):
     such that the total number of src/tgt tokens (including padding)
     in a batch <= batch_size
     """
-    # Maintains the longest src and tgt length in the current batch
-    global max_src_in_batch, max_tgt_in_batch  # this is a hack
-    # Reset current longest length at a new batch (count=1)
-    if count == 1:
-        max_src_in_batch = 0
-        max_tgt_in_batch = 0
-    # Src: [<bos> w1 ... wN <eos>]
-    max_src_in_batch = max(max_src_in_batch, len(new.src[0]) + 2)
-    # Tgt: [w1 ... wM <eos>]
-    max_tgt_in_batch = max(max_tgt_in_batch, len(new.tgt[0]) + 1)
-    src_elements = count * max_src_in_batch
-    tgt_elements = count * max_tgt_in_batch
-    return max(src_elements, tgt_elements)
+    if hasattr(new, 'is_next'):
+        # when a example has the attr 'is_next',
+        # this means we are loading Bert Data
+        # Maintains the longest token length in the current batch
+        global max_tokens_in_batch
+        # Reset current longest length at a new batch (count=1)
+        if count == 1:
+            max_tokens_in_batch = 0
+        # tokens: ['[CLS]', '[MASK]', ..., '[SEP]','This',...,'B','[SEP]']
+        max_tokens_in_batch = max(max_tokens_in_batch, len(new.tokens))
+        tokens_nelem = count * max_tokens_in_batch
+        return tokens_nelem
+    else:
+        # Maintains the longest src and tgt length in the current batch
+        global max_src_in_batch, max_tgt_in_batch  # this is a hack
+        # Reset current longest length at a new batch (count=1)
+        if count == 1:
+            max_src_in_batch = 0
+            max_tgt_in_batch = 0
+        # Src: [<bos> w1 ... wN <eos>]
+        max_src_in_batch = max(max_src_in_batch, len(new.src[0]) + 2)
+        # Tgt: [w1 ... wM <eos>]
+        max_tgt_in_batch = max(max_tgt_in_batch, len(new.tgt[0]) + 1)
+        src_elements = count * max_src_in_batch
+        tgt_elements = count * max_tgt_in_batch
+        return max(src_elements, tgt_elements)
 
 
 def build_dataset_iter(corpus_type, fields, opt, is_train=True, multi=False):

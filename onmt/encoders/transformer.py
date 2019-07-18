@@ -4,6 +4,7 @@ Implementation of "Attention is All You Need"
 
 import torch.nn as nn
 
+import onmt
 from onmt.encoders.encoder import EncoderBase
 from onmt.modules import MultiHeadedAttention
 from onmt.modules.position_ffn import PositionwiseFeedForward
@@ -23,15 +24,20 @@ class TransformerEncoderLayer(nn.Module):
     """
 
     def __init__(self, d_model, heads, d_ff, dropout,
-                 max_relative_positions=0):
+                 max_relative_positions=0, activation='ReLU', is_bert=False):
         super(TransformerEncoderLayer, self).__init__()
 
         self.self_attn = MultiHeadedAttention(
             heads, d_model, dropout=dropout,
             max_relative_positions=max_relative_positions)
-        self.feed_forward = PositionwiseFeedForward(d_model, d_ff, dropout)
-        self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
+        self.feed_forward = PositionwiseFeedForward(d_model, d_ff, dropout, activation, is_bert)
+        self.layer_norm = onmt.models.BertLayerNorm(d_model, eps=1e-12) if is_bert else nn.LayerNorm(d_model, eps=1e-6)
         self.dropout = nn.Dropout(dropout)
+        self.is_bert = is_bert
+
+    def residual(self, output, x):
+        maybe_norm = self.layer_norm(x) if self.is_bert else x
+        return output + maybe_norm
 
     def forward(self, inputs, mask):
         """
@@ -47,7 +53,7 @@ class TransformerEncoderLayer(nn.Module):
         input_norm = self.layer_norm(inputs)
         context, _ = self.self_attn(input_norm, input_norm, input_norm,
                                     mask=mask, type="self")
-        out = self.dropout(context) + inputs
+        out = self.residual(self.dropout(context), inputs)
         return self.feed_forward(out)
 
     def update_dropout(self, dropout):
