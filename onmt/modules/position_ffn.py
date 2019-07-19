@@ -14,6 +14,10 @@ class PositionwiseFeedForward(nn.Module):
         d_ff (int): the hidden layer size of the second-layer
             of the FNN.
         dropout (float): dropout probability in :math:`[0, 1)`.
+        activation (str): activation function to use. ['ReLU', 'GeLU']
+        is_bert (bool): default False. When set True,
+                        layer_norm will be performed on the
+                        direct connection of residual block.
     """
 
     def __init__(self, d_model, d_ff, dropout=0.1,

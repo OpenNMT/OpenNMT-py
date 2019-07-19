@@ -168,6 +168,8 @@ class BertStatistics(Statistics):
 
         """
         assert isinstance(stat, BertStatistics)
+        # Loss for BERT is computed and reduced by average.
+        # Which is different from the NMTModel reduced by sum.
         self.loss = (self.loss * self.n_update + stat.loss *
                      stat.n_update) / (self.n_update + stat.n_update)
         self.n_update += 1

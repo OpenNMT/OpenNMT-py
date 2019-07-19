@@ -31,14 +31,10 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
         model_saver(:obj:`onmt.models.ModelSaverBase`): the utility object
             used to save the model
     """
-    if opt.is_bert:
-        train_loss = onmt.utils.loss.build_bert_loss_compute(opt)
-        valid_loss = onmt.utils.loss.build_bert_loss_compute(opt, train=False)
-    else:
-        tgt_field = dict(fields)["tgt"].base_field
-        train_loss = onmt.utils.loss.build_loss_compute(model, tgt_field, opt)
-        valid_loss = onmt.utils.loss.build_loss_compute(
-            model, tgt_field, opt, train=False)        
+    tgt_field = dict(fields)["tgt"].base_field if not opt.is_bert else None
+    train_loss = onmt.utils.loss.build_loss_compute(model, tgt_field, opt)
+    valid_loss = onmt.utils.loss.build_loss_compute(
+                    model, tgt_field, opt, train=False)        
 
     trunc_size = opt.truncated_decoder  # Badly named...
     shard_size = opt.max_generator_batches if opt.model_dtype == 'fp32' else 0
@@ -171,9 +167,7 @@ class Trainer(object):
         self.accum_count = self._accum_count(self.optim.training_step)
         for batch in iterator:
             batches.append(batch)
-            if self.is_bert:
-                normalization += 1
-            else:
+            if self.is_bert is False:  # Bert don't need normalization
                 if self.norm_method == "tokens":
                     num_tokens = batch.tgt[1:, :, 0].ne(
                         self.train_loss.padding_idx).sum()                    
@@ -258,7 +252,7 @@ class Trainer(object):
 
             # Training Step: Forward -> compute Loss -> optimize
             if self.is_bert:
-                self._bert_gradient_accumulation(batches, normalization, total_stats, report_stats)
+                self._bert_gradient_accumulation(batches, total_stats, report_stats)
             else:
                 self._gradient_accumulation(
                 batches, normalization, total_stats,
@@ -328,7 +322,6 @@ class Trainer(object):
         valid_model.eval()
 
         with torch.no_grad():
-            # TODO:if not Bert
             if self.is_bert:
                 stats = onmt.utils.BertStatistics()
                 for batch in valid_iter:
@@ -340,7 +333,12 @@ class Trainer(object):
                     is_next = batch.is_next
                     lm_labels_ids = batch.lm_labels_ids  # -1 padding, others for predict in lm task
                     # F-prop through the model. # NOTE: keyword args: input_mask, output_all_encoded_layers
-                    seq_class_log_prob, prediction_log_prob = valid_model(input_ids, token_type_ids)
+                    # Version 2:
+                    all_encoder_layers, pooled_out = valid_model.bert(input_ids, token_type_ids)
+                    seq_class_log_prob, prediction_log_prob = valid_model.cls(all_encoder_layers, pooled_out)
+                    # Version 1:
+                    # seq_class_log_prob, prediction_log_prob = valid_model(input_ids, token_type_ids)
+                    # TODO： Heads
                     outputs = (seq_class_log_prob, prediction_log_prob)
                     # Compute loss.
                     _, batch_stats = self.valid_loss(batch, outputs)
@@ -501,8 +499,10 @@ class Trainer(object):
                 valid_stats=valid_stats)
 
 
-    def _bert_gradient_accumulation(self, true_batches, normalization, total_stats,
-                               report_stats):
+    def _bert_gradient_accumulation(self, true_batches, total_stats, report_stats):
+        """As the loss will be reduced by mean, normalization is not needed anymore.
+           But we still need to average between GPUs.
+        """
         if self.accum_count > 1:
             self.optim.zero_grad()
 

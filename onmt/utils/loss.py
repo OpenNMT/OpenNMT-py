@@ -22,50 +22,56 @@ def build_loss_compute(model, tgt_field, opt, train=True):
     for when using a copy mechanism.
     """
     device = torch.device("cuda" if onmt.utils.misc.use_gpu(opt) else "cpu")
-
-    padding_idx = tgt_field.vocab.stoi[tgt_field.pad_token]
-    unk_idx = tgt_field.vocab.stoi[tgt_field.unk_token]
-    if opt.copy_attn:
-        criterion = onmt.modules.CopyGeneratorLoss(
-            len(tgt_field.vocab), opt.copy_attn_force,
-            unk_index=unk_idx, ignore_index=padding_idx
-        )
-    elif opt.label_smoothing > 0 and train:
-        criterion = LabelSmoothingLoss(
-            opt.label_smoothing, len(tgt_field.vocab), ignore_index=padding_idx
-        )
-    elif isinstance(model.generator[-1], LogSparsemax):
-        criterion = SparsemaxLoss(ignore_index=padding_idx, reduction='sum')
+    if opt.is_bert is True:
+        assert hasattr(model, 'bert')
+        assert tgt_field is None
+        # BERT use -1 for unmasked token in lm_label_ids
+        criterion = nn.NLLLoss(ignore_index=-1, reduction='mean')
+        compute = BertLoss(criterion)
     else:
-        criterion = nn.NLLLoss(ignore_index=padding_idx, reduction='sum')
+        assert isinstance(model, onmt.models.NMTModel)
+        padding_idx = tgt_field.vocab.stoi[tgt_field.pad_token]
+        unk_idx = tgt_field.vocab.stoi[tgt_field.unk_token]
+        if opt.copy_attn:
+            criterion = onmt.modules.CopyGeneratorLoss(
+                len(tgt_field.vocab), opt.copy_attn_force,
+                unk_index=unk_idx, ignore_index=padding_idx
+            )
+        elif opt.label_smoothing > 0 and train:
+            criterion = LabelSmoothingLoss(
+                opt.label_smoothing, len(tgt_field.vocab), ignore_index=padding_idx
+            )
+        elif isinstance(model.generator[-1], LogSparsemax):
+            criterion = SparsemaxLoss(ignore_index=padding_idx, reduction='sum')
+        else:
+            criterion = nn.NLLLoss(ignore_index=padding_idx, reduction='sum')
 
-    # if the loss function operates on vectors of raw logits instead of
-    # probabilities, only the first part of the generator needs to be
-    # passed to the NMTLossCompute. At the moment, the only supported
-    # loss function of this kind is the sparsemax loss.
-    use_raw_logits = isinstance(criterion, SparsemaxLoss)
-    loss_gen = model.generator[0] if use_raw_logits else model.generator
-    if opt.copy_attn:
-        compute = onmt.modules.CopyGeneratorLossCompute(
-            criterion, loss_gen, tgt_field.vocab, opt.copy_loss_by_seqlength
-        )
-    else:
-        compute = NMTLossCompute(criterion, loss_gen)
+        # if the loss function operates on vectors of raw logits instead of
+        # probabilities, only the first part of the generator needs to be
+        # passed to the NMTLossCompute. At the moment, the only supported
+        # loss function of this kind is the sparsemax loss.
+        use_raw_logits = isinstance(criterion, SparsemaxLoss)
+        loss_gen = model.generator[0] if use_raw_logits else model.generator
+        if opt.copy_attn:
+            compute = onmt.modules.CopyGeneratorLossCompute(
+                criterion, loss_gen, tgt_field.vocab, opt.copy_loss_by_seqlength
+            )
+        else:
+            compute = NMTLossCompute(criterion, loss_gen)
     compute.to(device)
-
     return compute
 
 
-def build_bert_loss_compute(opt, train=True):
-    """FOR BERT PRETRAINING.
-    Returns a LossCompute subclass which wraps around an nn.Module subclass
-    (such as nn.NLLLoss) which defines the loss criterion.
-    """
-    device = torch.device("cuda" if onmt.utils.misc.use_gpu(opt) else "cpu")
-    # BERT use -1 for unmasked token in lm_label_ids
-    criterion = nn.NLLLoss(ignore_index=-1, reduction='mean')
-    compute = BertLoss(criterion).to(device)
-    return compute
+# def build_bert_loss_compute(opt, train=True):
+#     """FOR BERT PRETRAINING.
+#     Returns a LossCompute subclass which wraps around an nn.Module subclass
+#     (such as nn.NLLLoss) which defines the loss criterion.
+#     """
+#     device = torch.device("cuda" if onmt.utils.misc.use_gpu(opt) else "cpu")
+#     # BERT use -1 for unmasked token in lm_label_ids
+#     criterion = nn.NLLLoss(ignore_index=-1, reduction='mean')
+#     compute = BertLoss(criterion).to(device)
+#     return compute
 
 
 class BertLoss(nn.Module):

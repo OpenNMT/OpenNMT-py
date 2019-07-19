@@ -205,7 +205,7 @@ def _get_parser():
     # opts.model_opts(parser)
     # opts.train_opts(parser)
     opts.bert_model_opts(parser)
-    opts.bert_pretrainning(parser)
+    opts.bert_pretraining(parser)
     return parser
 
 

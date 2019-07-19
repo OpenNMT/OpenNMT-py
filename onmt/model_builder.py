@@ -20,7 +20,7 @@ from onmt.utils.logging import logger
 from onmt.utils.parse import ArgumentParser
 
 from onmt.models import BertLM, BERT, BertPreTrainingHeads
-from onmt.modules.bert_embed import BertEmbeddings
+from onmt.modules.bert_embeddings import BertEmbeddings
 from collections import OrderedDict
 
 
@@ -347,7 +347,7 @@ def build_bert_model(model_opt, opt, fields, checkpoint=None, gpu_id=None):
         gpu_id (int or NoneType): Which GPU to use.
 
     Returns:
-        the NMTModel.
+        the BERT model.
     """
     logger.info('Building BERT model...')
     # Build embeddings.
@@ -366,19 +366,27 @@ def build_bert_model(model_opt, opt, fields, checkpoint=None, gpu_id=None):
     elif not gpu:
         device = torch.device("cpu")
 
-
+    """Main part for transfer learning:
+       set opt.task to `pretraining` if want finetuning;
+       set opt.task to `classification` if want use Bert to classification task;
+       set opt.task to `generation` if want use Bert to generate a sequence.
+       The pooled_output from bert encoder will be feed to classification generator;
+       The all_encoder_layers from bert encoder will be feed to generation generator;
+    """
     # Build Generator.
     # if model_opt.task == 'pretraining':
     generator = BertPreTrainingHeads(bert_encoder.d_model, bert_encoder.vocab_size,
                             bert_encoder.embeddings.word_embeddings.weight)
-    # # if model_opt.task == 'classification':
-    # generator = nn.Sequential(nn.Linear(bert_encoder.d_model, opt.num_labels),
-    #                           nn.LogSoftmax(dim=-1))
-    # # if model_opt.task == 'generation':
-    # generator = MaskedLanguageModel(bert_encoder.d_model, bert_encoder.vocab_size,
+    #     if model_opt.share_embeddings:
+    #         generator.mask_lm.decode.weight = bert_emb.word_embeddings.weight
+    # if model_opt.task == 'classification':
+    #     generator = nn.Sequential(nn.Linear(bert_encoder.d_model, opt.num_labels),
+    #                                 nn.LogSoftmax(dim=-1))
+    # if model_opt.task == 'generation':
+    #     generator = MaskedLanguageModel(bert_encoder.d_model, bert_encoder.vocab_size,
     #                         bert_encoder.embeddings.word_embeddings.weight)
-    # if model_opt.share_embeddings:
-    #     generator.mask_lm.decode.weight = bert_emb.word_embeddings.weight
+    #     if model_opt.share_embeddings:
+    #         generator.mask_lm.decode.weight = bert_emb.word_embeddings.weight
 
     model = nn.Sequential(OrderedDict([
                             ('bert', bert_encoder),

@@ -1,3 +1,7 @@
+"""
+This file is massively inspired from huggingface and adapted into onmt custom.
+Ref: https://github.com/huggingface/pytorch-transformers/blob/master/examples/lm_finetuning/pregenerate_training_data.py
+"""
 from argparse import ArgumentParser
 from pathlib import Path
 from tqdm import tqdm, trange

@@ -1,7 +1,7 @@
 import os
 import torch
 import torch.nn as nn
-
+from torchtext.data import Field
 from collections import deque
 from onmt.utils.logging import logger
 
@@ -9,20 +9,20 @@ from copy import deepcopy
 
 
 def build_model_saver(model_opt, opt, model, fields, optim):
-    if opt.is_bert:
-        model_saver = BertModelSaver(opt.save_model,
-                                     model,
-                                     model_opt,
-                                     fields,
-                                     optim,
-                                     opt.keep_checkpoint)
-    else:
-        model_saver = ModelSaver(opt.save_model,
-                                 model,
-                                 model_opt,
-                                 fields,
-                                 optim,
-                                 opt.keep_checkpoint)
+    # if opt.is_bert:
+    #     model_saver = BertModelSaver(opt.save_model,
+    #                                  model,
+    #                                  model_opt,
+    #                                  fields,
+    #                                  optim,
+    #                                  opt.keep_checkpoint)
+    # else:
+    model_saver = ModelSaver(opt.save_model,
+                                model,
+                                model_opt,
+                                fields,
+                                optim,
+                                opt.keep_checkpoint)
     return model_saver
 
 
@@ -108,9 +108,16 @@ class ModelSaver(ModelSaverBase):
         real_model = (model.module
                       if isinstance(model, nn.DataParallel)
                       else model)
-        real_generator = (real_model.generator.module
-                          if isinstance(real_model.generator, nn.DataParallel)
-                          else real_model.generator)
+        if hasattr(real_model, "generator"):
+            print('NMT generator saving')
+            real_generator = (real_model.generator.module
+                            if isinstance(real_model.generator, nn.DataParallel)
+                            else real_model.generator)
+        if hasattr(real_model, "cls"):
+            print('BERT generator saving')
+            real_generator = (real_model.cls.module
+                            if isinstance(real_model.cls, nn.DataParallel)
+                            else real_model.cls)
 
         model_state_dict = real_model.state_dict()
         model_state_dict = {k: v for k, v in model_state_dict.items()
@@ -121,15 +128,38 @@ class ModelSaver(ModelSaverBase):
         # were not originally here.
 
         vocab = deepcopy(self.fields)
-        for side in ["src", "tgt"]:
-            keys_to_pop = []
-            if hasattr(vocab[side], "fields"):
-                unk_token = vocab[side].fields[0][1].vocab.itos[0]
-                for key, value in vocab[side].fields[0][1].vocab.stoi.items():
-                    if value == 0 and key != unk_token:
-                        keys_to_pop.append(key)
-                for key in keys_to_pop:
-                    vocab[side].fields[0][1].vocab.stoi.pop(key, None)
+        for name, field in vocab.items():
+            if isinstance(field, Field):
+                if hasattr(field, "vocab"):
+                    assert name == 'tokens'
+                    keys_to_pop = []
+                    unk_token = field.unk_token
+                    unk_id = field.vocab.stoi[unk_token]
+                    for key, value in field.vocab.stoi.items():
+                        if value == unk_id and key != unk_token:
+                            keys_to_pop.append(key)
+                        for key in keys_to_pop:
+                            field.vocab.stoi.pop(key, None)
+            else:
+                if hasattr(field, "fields"):
+                    assert name in ["src", "tgt"]
+                    keys_to_pop = []
+                    unk_token = field.fields[0][1].vocab.itos[0]
+                    for key, value in field.fields[0][1].vocab.stoi.items():
+                        if value == 0 and key != unk_token:
+                            keys_to_pop.append(key)
+                    for key in keys_to_pop:
+                        field.fields[0][1].vocab.stoi.pop(key, None)
+
+        # for side in ["src", "tgt"]:
+        #     keys_to_pop = []
+        #     if hasattr(vocab[side], "fields"):
+        #         unk_token = vocab[side].fields[0][1].vocab.itos[0]
+        #         for key, value in vocab[side].fields[0][1].vocab.stoi.items():
+        #             if value == 0 and key != unk_token:
+        #                 keys_to_pop.append(key)
+        #         for key in keys_to_pop:
+        #             vocab[side].fields[0][1].vocab.stoi.pop(key, None)
 
         checkpoint = {
             'model': model_state_dict,

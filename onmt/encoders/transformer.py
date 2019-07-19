@@ -21,6 +21,11 @@ class TransformerEncoderLayer(nn.Module):
         heads (int): the number of head for MultiHeadedAttention.
         d_ff (int): the second-layer of the PositionwiseFeedForward.
         dropout (float): dropout probability(0-1.0).
+        activation (str): activation function to chose from
+                          ['ReLU', 'GeLU']
+        is_bert (bool): default False. When set True,
+                        layer_norm will be performed on the
+                        direct connection of residual block.
     """
 
     def __init__(self, d_model, heads, d_ff, dropout,

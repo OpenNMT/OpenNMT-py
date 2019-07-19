@@ -3,6 +3,10 @@ import torch.nn as nn
 import math
 
 
+"""
+Adapted from huggingface implementation to reproduce the result
+https://github.com/huggingface/pytorch-transformers/blob/master/pytorch_transformers/modeling_bert.py
+"""
 class GELU(nn.Module):
     """ Implementation of the gelu activation function
 

@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from onmt.modules.bert_embed import BertEmbeddings
+from onmt.modules.bert_embeddings import BertEmbeddings
 from onmt.encoders.transformer import TransformerEncoderLayer
 
 
@@ -52,7 +52,10 @@ class BERT(nn.Module):
             input_mask: shape [batch, seq], 1 for masked position(that padding)
             output_all_encoded_layers: if out contain all hidden layer
         Returns:
-            all_encoder_layers: list of out in shape (batch, src, d_model)
+            all_encoder_layers: list of out in shape (batch, src, d_model),
+                                to be used for generation task
+            pooled_output: shape (batch, d_model),
+                           to be used for classification task
         """
         # # version 1: coder timo waiting for mask of size [B,1,T,T]
         # [batch, seq] -> [batch, 1, seq]
@@ -90,7 +93,7 @@ class BERT(nn.Module):
             # shape: 2D tensor [batch, seq]: 1 for tokens, 0 for paddings
             input_mask = input_ids.data.eq(padding_idx)
         # if token_type_ids is None:
-        # NOTE: not needed! already done in bert_embed.py
+        # NOTE: not needed! already done in bert_embeddings.py
         #     token_type_ids = torch.zeros_like(input_ids)
         # [batch, seq] -> [batch, 1, seq]
         attention_mask = input_mask.unsqueeze(1)
