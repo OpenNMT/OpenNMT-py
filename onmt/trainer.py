@@ -134,8 +134,9 @@ class Trainer(object):
         self.earlystopper = earlystopper
         self.dropout = dropout
         self.dropout_steps = dropout_steps
-        self.is_bert = True if isinstance(self.model, 
-                       onmt.models.language_model.BertLM) else False # NOTE: NEW parameter for bert training
+        self.is_bert = True if hasattr(self.model, 'bert') else False
+        # self.is_bert = True if isinstance(self.model, 
+        #                onmt.models.language_model.BertLM) else False # NOTE: NEW parameter for bert training
         
         for i in range(len(self.accum_count_l)):
             assert self.accum_count_l[i] > 0
@@ -532,7 +533,11 @@ class Trainer(object):
                 # 2. F-prop all to get log likelihood of two task.
             if self.accum_count == 1:
                 self.optim.zero_grad()
-            seq_class_log_prob, prediction_log_prob = self.model(input_ids, token_type_ids)
+            # Version 2:
+            all_encoder_layers, pooled_out = self.model.bert(input_ids, token_type_ids)
+            seq_class_log_prob, prediction_log_prob = self.model.cls(all_encoder_layers, pooled_out)
+            # Version 1:
+            # seq_class_log_prob, prediction_log_prob = self.model(input_ids, token_type_ids)
             # NOTE: (batch_size, 2), (batch_size, seq_size, vocab_size)
             outputs = (seq_class_log_prob, prediction_log_prob)
                 # outputs, attns = self.model(src, tgt, src_lengths, bptt=bptt)

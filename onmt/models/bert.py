@@ -10,7 +10,7 @@ class BERT(nn.Module):
     Use a Transformer Encoder as Language modeling.
     """
     def __init__(self, vocab_size, num_layers=12, d_model=768, heads=12,
-                 dropout=0.1, max_relative_positions=0):
+                 dropout=0.1, max_relative_positions=0, embeds=None):
         super(BERT, self).__init__()
         self.vocab_size = vocab_size
         self.num_layers = num_layers
@@ -27,8 +27,11 @@ class BERT(nn.Module):
         #   1. Token embeddings
         #   2. Segmentation embeddings
         #   3. Position embeddings
-        self.embeddings = BertEmbeddings(vocab_size=vocab_size,
-                           embed_size=d_model, dropout=dropout)
+        if embeds is not None:
+            self.embeddings = embeds
+        else:
+            self.embeddings = BertEmbeddings(vocab_size=vocab_size,
+                               embed_size=d_model, dropout=dropout)
 
         # Transformer Encoder Block
         self.transformer_encoder = nn.ModuleList(

@@ -39,6 +39,8 @@ class BertEmbeddings(nn.Module):
             dropout: dropout rate
         """
         super(BertEmbeddings, self).__init__()
+        self.vocab_size = vocab_size
+        self.embed_size = embed_size
         self.word_padding_idx = pad_idx
         self.word_embeddings = TokenEmb(vocab_size, hidden_size=embed_size,
                                         padding_idx=pad_idx)

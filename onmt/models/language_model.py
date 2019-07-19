@@ -10,7 +10,7 @@ class BertLM(nn.Module):
     BERT Language Model for pretraining, trained with 2 task :
     Next Sentence Prediction Model + Masked Language Model
     """
-    def __init__(self, bert: onmt.models.BERT):
+    def __init__(self, bert):
         """
         Args:
             bert: BERT model which should be trained

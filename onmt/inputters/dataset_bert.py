@@ -3,7 +3,7 @@ from torchtext.data import Dataset as TorchtextDataset
 from torchtext.data import Example
 
 
-def bert_sort_key(ex):
+def bert_text_sort_key(ex):
     """Sort using the number of tokens in the sequence."""
     return len(ex.tokens)
 
@@ -17,7 +17,7 @@ class BertDataset(TorchtextDataset):
             are going to be transfored into Examples
     """
 
-    def __init__(self, fields_dict, instances, sort_key=bert_sort_key, filter_pred=None):
+    def __init__(self, fields_dict, instances, sort_key=bert_text_sort_key, filter_pred=None):
         self.sort_key = sort_key
         examples = []
         # NOTE: need to adapt ?

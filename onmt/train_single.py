@@ -6,7 +6,7 @@ import torch
 
 from onmt.inputters.inputter import build_dataset_iter, \
     load_old_vocab, old_style_vocab, build_dataset_iter_multiple
-from onmt.model_builder import build_model, build_bert
+from onmt.model_builder import build_model, build_bert, build_bert_model
 from onmt.utils.optimizers import Optimizer
 from onmt.utils.misc import set_random_seed
 from onmt.trainer import build_trainer
@@ -92,7 +92,8 @@ def main(opt, device_id, batch_queue=None, semaphore=None):
 
     # Build model.
     if opt.is_bert:
-        model = build_bert(model_opt, opt, fields, checkpoint)
+        # model = build_bert(model_opt, opt, fields, checkpoint)  # V1
+        model = build_bert_model(model_opt, opt, fields, checkpoint)  # V2
         n_params = 0
         for param in model.parameters():
             n_params += param.nelement()
