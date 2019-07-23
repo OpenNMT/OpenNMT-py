@@ -156,7 +156,8 @@ class TestModel(unittest.TestCase):
         word_field = self.get_field()
 
         enc = ImageEncoder(
-            opt.enc_layers, opt.brnn, opt.enc_rnn_size, opt.dropout)
+            opt.enc_layers, opt.brnn, opt.enc_rnn_size,
+            opt.dropout, opt.attention_dropout)
 
         embeddings = build_embeddings(opt, word_field, for_encoder=False)
         dec = build_decoder(opt, embeddings)
@@ -193,6 +194,7 @@ class TestModel(unittest.TestCase):
         enc = AudioEncoder(opt.rnn_type, opt.enc_layers, opt.dec_layers,
                            opt.brnn, opt.enc_rnn_size, opt.dec_rnn_size,
                            opt.audio_enc_pooling, opt.dropout,
+                           opt.attention_dropout,
                            opt.sample_rate, opt.window_size)
 
         embeddings = build_embeddings(opt, word_field, for_encoder=False)
