@@ -28,9 +28,11 @@ def main(opt):
         logger.info('Loading checkpoint from %s' % opt.train_from)
         checkpoint = torch.load(opt.train_from,
                                 map_location=lambda storage, loc: storage)
-        logger.info('Loading vocab from checkpoint at %s.' % opt.train_from)
-        # vocab = checkpoint['vocab']   TODO:test
-        vocab = torch.load(opt.data + '.vocab.pt')
+        if 'vocab' in checkpoint:
+            logger.info('Loading vocab from checkpoint at %s.' % opt.train_from)
+            vocab = checkpoint['vocab']
+        else:
+            vocab = torch.load(opt.data + '.vocab.pt')
     else:
         vocab = torch.load(opt.data + '.vocab.pt')
 

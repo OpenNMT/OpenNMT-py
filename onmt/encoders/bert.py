@@ -4,44 +4,43 @@ from onmt.modules.bert_embeddings import BertEmbeddings
 from onmt.encoders.transformer import TransformerEncoderLayer
 
 
-class BERT(nn.Module):
+class BertEncoder(nn.Module):
     """
     BERT Implementation: https://arxiv.org/abs/1810.04805
     Use a Transformer Encoder as Language modeling.
     """
-    def __init__(self, vocab_size, num_layers=12, d_model=768, heads=12,
-                 dropout=0.1, max_relative_positions=0, embeds=None):
-        super(BERT, self).__init__()
-        self.vocab_size = vocab_size
+    def __init__(self, embeddings, num_layers=12, d_model=768,
+                 heads=12, d_ff=3072, dropout=0.1,
+                 max_relative_positions=0):
+        super(BertEncoder, self).__init__()
         self.num_layers = num_layers
-        self.d_model = d_model  # = hidden_size = embed_size
+        self.d_model = d_model
         self.heads = heads
         self.dropout = dropout
-        # Feed-Forward size is set to be 4H as in paper
-        self.d_ff = 4 * d_model
+        # Feed-Forward size should be 4*d_model as in paper
+        self.d_ff = d_ff
 
-        # Build Embeddings according to vocab_size and d_model
-        # --DONE--: BERTEmbeddings()
-        # ref. build_embeddings in onmt.model_builder.py
-        # BERT input embeddings is sum of:
-        #   1. Token embeddings
-        #   2. Segmentation embeddings
-        #   3. Position embeddings
-        if embeds is not None:
-            self.embeddings = embeds
-        else:
-            self.embeddings = BertEmbeddings(vocab_size=vocab_size,
-                               embed_size=d_model, dropout=dropout)
-
+        self.embeddings = embeddings
         # Transformer Encoder Block
         self.transformer_encoder = nn.ModuleList(
-            [TransformerEncoderLayer(d_model, heads, self.d_ff, dropout,
+            [TransformerEncoderLayer(d_model, heads, d_ff, dropout,
                 max_relative_positions=max_relative_positions,
-                activation='GeLU', is_bert=True) for _ in range(num_layers)])
+                activation='gelu', is_bert=True) for _ in range(num_layers)])
 
         self.layer_norm = BertLayerNorm(d_model, eps=1e-12)
         self.pooler = BertPooler(d_model)
-        # TODO: self.apply(self.init_bert_weight)
+
+    @classmethod
+    def from_opt(cls, opt, embeddings):
+        """Alternate constructor."""
+        return cls(
+            embeddings,
+            opt.enc_layers,
+            opt.enc_rnn_size,
+            opt.heads,
+            opt.transformer_ff,
+            opt.dropout[0] if type(opt.dropout) is list else opt.dropout,
+            opt.max_relative_positions)
 
     def forward(self, input_ids, token_type_ids=None, input_mask=None,
                 output_all_encoded_layers=False):
@@ -57,44 +56,13 @@ class BERT(nn.Module):
             pooled_output: shape (batch, d_model),
                            to be used for classification task
         """
-        # # version 1: coder timo waiting for mask of size [B,1,T,T]
-        # [batch, seq] -> [batch, 1, seq]
-        # -> [batch, seq, seq] -> [batch, 1, seq, seq]
-        # attention masking for padded token
-        # mask: torch.ByteTensor([batch, 1, seq, seq])
-        # mask = (input_ids > 0).unsqueeze(1)
-        #        .repeat(1, input_ids.size(1), 1).unsqueeze(1)
-        # # This version mask 0, different masked_fill in Attention
-
-        # # version 2: hugging face waiting for mask of size [B,1,1,T]
-        # if attention_mask is None:
-        #     attention_mask = torch.ones_like(input_ids)
-        # if token_type_ids is None:
-        #     token_type_ids = torch.zeros_like(input_ids)
-        # # extended_attention_mask.shape = [batch_size, 1, 1, seq_length]
-        # -> broadcast to [batch, num_heads, from_seq_length, to_seq_length]
-        # extended_attention_mask = attention_mask.unsqueeze(1).unsqueeze(2)
-        # # for fp16 compatibility
-        # extended_attention_mask = extended_attention_mask
-        # .to(dtype=next(self.parameters()).dtype)
-        # -10000.0 for mask, 0 otherwise
-        # extended_attention_mask = (1.0 - extended_attention_mask) * -10000.0
-
-        # # version 3: OpenNMT waiting for mask of size [B, 1, T],
+        # OpenNMT waiting for mask of size [B, 1, T],
         # while in MultiHeadAttention part2 -> [B, 1, 1, T]
-        # TODO: create_attention_mask_from_input_mask
-        # padding_idx = self.embeddings.word_padding_idx
-        # mask = input_ids.data.eq(padding_idx).unsqueeze(1)
         if input_mask is None:
-            # input_mask = torch.ones_like(input_ids)
             # shape: 2D tensor [batch, seq]
             padding_idx = self.embeddings.word_padding_idx
-            # input_mask = input_ids.data.ne(padding_idx)
             # shape: 2D tensor [batch, seq]: 1 for tokens, 0 for paddings
             input_mask = input_ids.data.eq(padding_idx)
-        # if token_type_ids is None:
-        # NOTE: not needed! already done in bert_embeddings.py
-        #     token_type_ids = torch.zeros_like(input_ids)
         # [batch, seq] -> [batch, 1, seq]
         attention_mask = input_mask.unsqueeze(1)
 

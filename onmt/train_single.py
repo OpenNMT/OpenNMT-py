@@ -6,7 +6,7 @@ import torch
 
 from onmt.inputters.inputter import build_dataset_iter, \
     load_old_vocab, old_style_vocab, build_dataset_iter_multiple
-from onmt.model_builder import build_model, build_bert, build_bert_model
+from onmt.model_builder import build_model, build_bert_model
 from onmt.utils.optimizers import Optimizer
 from onmt.utils.misc import set_random_seed
 from onmt.trainer import build_trainer
@@ -51,13 +51,18 @@ def main(opt, device_id, batch_queue=None, semaphore=None):
         logger.info('Loading checkpoint from %s' % opt.train_from)
         checkpoint = torch.load(opt.train_from,
                                 map_location=lambda storage, loc: storage)
-        # model_opt = ArgumentParser.ckpt_model_opts(checkpoint["opt"])
-        model_opt = opt  # TODO: test
-        # ArgumentParser.update_model_opts(model_opt)  # TODO
-        # ArgumentParser.validate_model_opts(model_opt)  # TODO
-        logger.info('Loading vocab from checkpoint at %s.' % opt.train_from)
-        # vocab = checkpoint['vocab']
-        vocab = torch.load(opt.data + '.vocab.pt')  # TODO
+        if 'opt' in checkpoint:
+            model_opt = ArgumentParser.ckpt_model_opts(checkpoint["opt"])
+            ArgumentParser.update_model_opts(model_opt)
+            ArgumentParser.validate_model_opts(model_opt)
+        else:
+            model_opt = opt
+
+        if 'vocab' in checkpoint:
+            logger.info('Loading vocab from checkpoint at %s.' % opt.train_from)
+            vocab = checkpoint['vocab']
+        else:
+            vocab = torch.load(opt.data + '.vocab.pt')
     else:
         checkpoint = None
         model_opt = opt
@@ -92,7 +97,6 @@ def main(opt, device_id, batch_queue=None, semaphore=None):
 
     # Build model.
     if opt.is_bert:
-        # model = build_bert(model_opt, opt, fields, checkpoint)  # V1
         model = build_bert_model(model_opt, opt, fields, checkpoint)  # V2
         n_params = 0
         for param in model.parameters():
@@ -106,8 +110,8 @@ def main(opt, device_id, batch_queue=None, semaphore=None):
         logger.info('* number of parameters: %d' % n_params)
     _check_save_model_path(opt)
 
-    # Build optimizer.  # TODO: checkpoint=checkpoint  # DEBUG
-    optim = Optimizer.from_opt(model, opt, checkpoint=None)
+    # Build optimizer.
+    optim = Optimizer.from_opt(model, opt, checkpoint=checkpoint)
 
     # Build model saver
     model_saver = build_model_saver(model_opt, opt, model, fields, optim)

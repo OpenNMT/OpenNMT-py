@@ -3,6 +3,19 @@ import torch.nn as nn
 import math
 
 
+def get_activation_fn(activation):
+    if activation is 'gelu':
+        fn = GELU()
+    elif activation is 'relu':
+        fn = nn.ReLU()
+    elif activation is 'tanh':
+        fn = nn.Tanh()
+    else:
+        raise ValueError("Please pass a valid \
+                          activation function")
+    return fn
+
+
 """
 Adapted from huggingface implementation to reproduce the result
 https://github.com/huggingface/pytorch-transformers/blob/master/pytorch_transformers/modeling_bert.py

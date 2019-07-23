@@ -9,7 +9,7 @@ from torch.nn.init import xavier_uniform_
 
 import onmt.inputters as inputters
 import onmt.modules
-from onmt.encoders import str2enc
+from onmt.encoders import str2enc, BertEncoder
 
 from onmt.decoders import str2dec
 
@@ -19,7 +19,8 @@ from onmt.utils.misc import use_gpu
 from onmt.utils.logging import logger
 from onmt.utils.parse import ArgumentParser
 
-from onmt.models import BertLM, BERT, BertPreTrainingHeads
+from onmt.models import BertPreTrainingHeads, ClassificationHead, \
+                        TokenGenerationHead
 from onmt.modules.bert_embeddings import BertEmbeddings
 from collections import OrderedDict
 
@@ -229,14 +230,51 @@ def build_model(model_opt, opt, fields, checkpoint):
     return model
 
 
-def build_bert(model_opt, opt, fields, checkpoint):
-    logger.info('Building BERT model...')
-    model = build_bertLM(model_opt, fields, use_gpu(opt), checkpoint)
-    logger.info(model)
-    return model
+def build_bert_embeddings(opt, fields):
+    token_fields_vocab = fields['tokens'].vocab
+    vocab_size = len(token_fields_vocab)
+    emb_size = opt.word_vec_size
+    bert_emb = BertEmbeddings(vocab_size, emb_size,
+                              dropout=opt.dropout[0])
+    return bert_emb
 
 
-def build_bertLM(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
+def build_bert_encoder(model_opt, fields, embeddings):
+    bert = BertEncoder(embeddings, num_layers=model_opt.layers,
+                       d_model=model_opt.word_vec_size, heads=model_opt.heads,
+                       d_ff=model_opt.transformer_ff, dropout=model_opt.dropout[0],
+                       max_relative_positions=model_opt.max_relative_positions)
+    return bert
+
+
+def build_bert_generator(model_opt, fields, bert_encoder):
+    """Main part for transfer learning:
+       set opt.task_type to `pretraining` if want finetuning;
+       set opt.task_type to `classification` if want use Bert to classification task;
+       set opt.task_type to `generation` if want use Bert to generate tokens.
+       Both all_encoder_layers and pooled_output will be feed to generator,
+       pretraining task will use the two,
+       while only pooled_output will be used for classification generator;
+       only all_encoder_layers will be used for generation generator;
+    """
+    task = model_opt.task_type
+    if task == 'pretraining':
+        generator = BertPreTrainingHeads(bert_encoder.d_model,
+                                         bert_encoder.embeddings.vocab_size)
+        if model_opt.reuse_embeddings:
+            generator.mask_lm.decode.weight = bert_encoder.embeddings.word_embeddings.weight
+    elif task == 'generation':
+        generator = TokenGenerationHead(bert_encoder.d_model,
+                                         bert_encoder.vocab_size)
+        if model_opt.reuse_embeddings:
+            generator.decode.weight = bert_encoder.embeddings.word_embeddings.weight
+    elif task == 'classification':
+        n_class = model_opt.classification
+        generator = ClassificationHead(bert_encoder.d_model, n_class)
+    return generator
+
+
+def build_bert_model(model_opt, opt, fields, checkpoint=None, gpu_id=None):
     """Build a model from opts.
 
     Args:
@@ -251,102 +289,6 @@ def build_bertLM(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
         gpu_id (int or NoneType): Which GPU to use.
 
     Returns:
-        the BertLM, composed of Bert with 2 generator heads for 2 task.
-    """
-    # TODO: compability of opt.vocab_size
-    # Build BertEmbeddings
-    # tokens_fields = fields['tokens']
-    # vocab_size = len(tokens_fields.vocab)
-
-    # Build BertModel(= encoder), BertEmbeddings also built inside Bert.
-    if gpu and gpu_id is not None:
-        device = torch.device("cuda", gpu_id)
-    elif gpu and not gpu_id:
-        device = torch.device("cuda")
-    elif not gpu:
-        device = torch.device("cpu")
-    bert = build_bert_encoder(model_opt, fields, gpu, checkpoint)
-    # BertEmbeddings is built inside Bert
-    # tokens_emb = bert.embeddings
-    model = BertLM(bert)
-
-    # # if model_opt.task == 'classification':
-    # generator = nn.Sequential(nn.Linear(bert_encoder.d_model, opt.num_labels),
-    #                           nn.LogSoftmax(dim=-1))
-    # # if model_opt.task == 'generation':
-    # generator = MaskedLanguageModel(bert_encoder.d_model, bert_encoder.vocab_size,
-    #                         bert_encoder.embeddings.word_embeddings.weight)
-    # model.cls = generator
-    # load states from checkpoints
-    if checkpoint is not None:
-        logger.info("load states from checkpoints...")
-        # TODO: check model.load_state_dict(...)
-        model.load_state_dict(checkpoint['model'], strict=False)
-    else:
-        logger.info("No checkpoint, Initialize Parameters...")
-        if model_opt.param_init_normal != 0.0:
-            normal_std = model_opt.param_init_normal
-            for p in model.parameters():
-                p.data.normal_(mean=0, std=normal_std)
-        elif model_opt.param_init != 0.0:
-            for p in model.parameters():
-                p.data.uniform_(-model_opt.param_init, model_opt.param_init)
-        elif model_opt.param_init_glorot:
-            for p in model.parameters():
-                if p.dim() > 1:
-                    xavier_uniform_(p)
-        else:
-            raise AttributeError("Initialization method haven't be used!")
-
-    model.to(device)
-    return model
-
-
-def build_bert_encoder(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
-    # TODO: need to be more elegent
-    token_fields_vocab = fields['tokens'].vocab
-    vocab_size = len(token_fields_vocab)
-    bert = BERT(vocab_size, num_layers=model_opt.layers,
-                d_model=model_opt.word_vec_size, heads=model_opt.heads,
-                dropout=model_opt.dropout[0],
-                max_relative_positions=model_opt.max_relative_positions)
-    return bert
-
-
-def build_bert_embeddings(opt, fields):
-    token_fields_vocab = fields['tokens'].vocab
-    vocab_size = len(token_fields_vocab)
-    emb_size = opt.word_vec_size
-    bert_emb = BertEmbeddings(vocab_size, emb_size,
-                              dropout=opt.dropout[0])
-    return bert_emb
-
-
-def build_bert_encoder_v2(model_opt, fields, embs):
-    # TODO: need to be more elegent
-    vocab_size = embs.vocab_size
-    bert = BERT(vocab_size, num_layers=model_opt.layers,
-                d_model=model_opt.word_vec_size, heads=model_opt.heads,
-                dropout=model_opt.dropout[0], embeds=embs,
-                max_relative_positions=model_opt.max_relative_positions)
-    return bert
-
-
-def build_bert_model(model_opt, opt, fields, checkpoint=None, gpu_id=None):
-    """Build a model from opts.
-
-    Args:
-        model_opt: the option loaded from checkpoint. It's important that
-            the opts have been updated and validated. See
-            :class:`onmt.utils.parse.ArgumentParser`.
-        fields (dict[str, torchtext.data.Field]):
-            `Field` objects for the model.
-        gpu (bool): whether to use gpu.
-        checkpoint: the model gnerated by train phase, or a resumed snapshot
-                    model from a stopped training.
-        gpu_id (int or NoneType): Which GPU to use.
-
-    Returns:
         the BERT model.
     """
     logger.info('Building BERT model...')
@@ -354,10 +296,8 @@ def build_bert_model(model_opt, opt, fields, checkpoint=None, gpu_id=None):
     bert_emb = build_bert_embeddings(model_opt, fields)
 
     # Build encoder.
-    bert_encoder = build_bert_encoder_v2(model_opt, fields, bert_emb)
+    bert_encoder = build_bert_encoder(model_opt, fields, bert_emb)
 
-
-    # Build NMTModel(= encoder + decoder).
     gpu = use_gpu(opt)
     if gpu and gpu_id is not None:
         device = torch.device("cuda", gpu_id)
@@ -366,45 +306,39 @@ def build_bert_model(model_opt, opt, fields, checkpoint=None, gpu_id=None):
     elif not gpu:
         device = torch.device("cpu")
 
-    """Main part for transfer learning:
-       set opt.task to `pretraining` if want finetuning;
-       set opt.task to `classification` if want use Bert to classification task;
-       set opt.task to `generation` if want use Bert to generate a sequence.
-       The pooled_output from bert encoder will be feed to classification generator;
-       The all_encoder_layers from bert encoder will be feed to generation generator;
-    """
     # Build Generator.
-    # if model_opt.task == 'pretraining':
-    generator = BertPreTrainingHeads(bert_encoder.d_model, bert_encoder.vocab_size,
-                            bert_encoder.embeddings.word_embeddings.weight)
-    #     if model_opt.share_embeddings:
-    #         generator.mask_lm.decode.weight = bert_emb.word_embeddings.weight
-    # if model_opt.task == 'classification':
-    #     generator = nn.Sequential(nn.Linear(bert_encoder.d_model, opt.num_labels),
-    #                                 nn.LogSoftmax(dim=-1))
-    # if model_opt.task == 'generation':
-    #     generator = MaskedLanguageModel(bert_encoder.d_model, bert_encoder.vocab_size,
-    #                         bert_encoder.embeddings.word_embeddings.weight)
-    #     if model_opt.share_embeddings:
-    #         generator.mask_lm.decode.weight = bert_emb.word_embeddings.weight
+    generator = build_bert_generator(model_opt, fields, bert_encoder)
 
+    # Build Bert Model(= encoder + generator).
     model = nn.Sequential(OrderedDict([
                             ('bert', bert_encoder),
-                            ('cls', generator)]))
+                            ('generator', generator)]))
     # Load the model states from checkpoint or initialize them.
     if checkpoint is not None:
-        model.load_state_dict(checkpoint['model'], strict=False)
-        # generator.load_state_dict(checkpoint['generator'], strict=False)
+        assert 'model' in checkpoint
+        logger.info("Load Model Parameters...")
+        model.bert.load_state_dict(checkpoint['model'], strict=False)
+        if model_opt.task_type == 'pretraining':
+            logger.info("Load generator Parameters...")
+            model.generator.load_state_dict(checkpoint['generator'], strict=False)
+        else:
+            logger.info("Initialize generator Parameters...")
+            for p in model.generator.parameters():
+                    if p.dim() > 1:
+                        xavier_uniform_(p)
     else:
         logger.info("No checkpoint, Initialize Parameters...")
         if model_opt.param_init_normal != 0.0:
+            logger.info('Initialize weights using a normal distribution')
             normal_std = model_opt.param_init_normal
             for p in model.parameters():
                 p.data.normal_(mean=0, std=normal_std)
         elif model_opt.param_init != 0.0:
+            logger.info('Initialize weights using a uniform distribution')
             for p in model.parameters():
                 p.data.uniform_(-model_opt.param_init, model_opt.param_init)
         elif model_opt.param_init_glorot:
+            logger.info('Glorot initialization')
             for p in model.parameters():
                 if p.dim() > 1:
                     xavier_uniform_(p)

@@ -131,8 +131,6 @@ class Trainer(object):
         self.dropout = dropout
         self.dropout_steps = dropout_steps
         self.is_bert = True if hasattr(self.model, 'bert') else False
-        # self.is_bert = True if isinstance(self.model, 
-        #                onmt.models.language_model.BertLM) else False # NOTE: NEW parameter for bert training
         
         for i in range(len(self.accum_count_l)):
             assert self.accum_count_l[i] > 0
@@ -335,7 +333,7 @@ class Trainer(object):
                     # F-prop through the model. # NOTE: keyword args: input_mask, output_all_encoded_layers
                     # Version 2:
                     all_encoder_layers, pooled_out = valid_model.bert(input_ids, token_type_ids)
-                    seq_class_log_prob, prediction_log_prob = valid_model.cls(all_encoder_layers, pooled_out)
+                    seq_class_log_prob, prediction_log_prob = valid_model.generator(all_encoder_layers, pooled_out)
                     # Version 1:
                     # seq_class_log_prob, prediction_log_prob = valid_model(input_ids, token_type_ids)
                     # TODO： Heads
@@ -535,7 +533,7 @@ class Trainer(object):
                 self.optim.zero_grad()
             # Version 2:
             all_encoder_layers, pooled_out = self.model.bert(input_ids, token_type_ids)
-            seq_class_log_prob, prediction_log_prob = self.model.cls(all_encoder_layers, pooled_out)
+            seq_class_log_prob, prediction_log_prob = self.model.generator(all_encoder_layers, pooled_out)
             # Version 1:
             # seq_class_log_prob, prediction_log_prob = self.model(input_ids, token_type_ids)
             # NOTE: (batch_size, 2), (batch_size, seq_size, vocab_size)

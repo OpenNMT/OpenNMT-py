@@ -49,17 +49,17 @@ def convert_key(key, max_layers):
                         r'bert.encoder.layer.'+str(max_layers-1)+'.output.LayerNorm', key)
     elif 'bert.pooler' in key:
         key = key
-    elif 'cls.next_sentence' in key:
-        key = re.sub(r'cls.next_sentence.linear\.(.*)',
+    elif 'generator.next_sentence' in key:
+        key = re.sub(r'generator.next_sentence.linear\.(.*)',
                         r'cls.seq_relationship.\1', key)
-    elif 'cls.mask_lm' in key:
-        key = re.sub(r'cls.mask_lm.bias',
+    elif 'generator.mask_lm' in key:
+        key = re.sub(r'generator.mask_lm.bias',
                         r'cls.predictions.bias', key)
-        key = re.sub(r'cls.mask_lm.decode.weight',
+        key = re.sub(r'generator.mask_lm.decode.weight',
                         r'cls.predictions.decoder.weight', key)
-        key = re.sub(r'cls.mask_lm.transform.dense\.(.*)',
+        key = re.sub(r'generator.mask_lm.transform.dense\.(.*)',
                         r'cls.predictions.transform.dense.\1', key)
-        key = re.sub(r'cls.mask_lm.transform.layer_norm\.(.*)',
+        key = re.sub(r'generator.mask_lm.transform.layer_norm\.(.*)',
                         r'cls.predictions.transform.LayerNorm.\1', key)
     else:
         raise ValueError("Unexpected keys!")    
@@ -69,13 +69,20 @@ def convert_key(key, max_layers):
 def load_bert_weights(bert_model, weights_dict, n_layers=12):
     bert_model_keys = bert_model.state_dict().keys()
     weights_keys = weights_dict.keys()
-    model_weights = OrderedDict()
-
+    bert_weights = OrderedDict()
+    generator_weights = OrderedDict()
+    model_weights = {"bert": bert_weights,
+                     "generator": generator_weights}
     try:
         for key in bert_model_keys:
             key_huggingface = convert_key(key, n_layers)
             # model_weights[key] = converted_key
-            model_weights[key] = weights_dict[key_huggingface]
+            if 'generator' not in key:
+                truncted_key = re.sub(r'bert\.(.*)', r'\1', key)
+                model_weights['bert'][truncted_key] = weights_dict[key_huggingface]
+            else:
+                truncted_key = re.sub(r'generator\.(.*)', r'\1', key)
+                model_weights['generator'][truncted_key] = weights_dict[key_huggingface]
     except ValueError:
         print("Unsuccessful convert!")
         exit()
@@ -84,35 +91,36 @@ def load_bert_weights(bert_model, weights_dict, n_layers=12):
 
 def main():
     parser = ArgumentParser()
-    parser.add_argument("--layers", type=int, default=None)
-    parser.add_argument("--bert_model", type=str, default="bert-base-multilingual-uncased")#,  # required=True,
+    parser.add_argument("--layers", type=int, default=None, required=True)
+    # parser.add_argument("--bert_model", type=str, default="bert-base-multilingual-uncased")#,  # required=True,
                         # choices=["bert-base-uncased", "bert-large-uncased", "bert-base-cased",
                         #          "bert-base-multilingual-uncased", "bert-base-chinese"])
-    parser.add_argument("--bert_model_weights_path", type=str, default="PreTrainedBertckp/")                    
-    parser.add_argument("--output_dir", type=Path, default="PreTrainedBertckp/")
-    parser.add_argument("--output_name", type=str, default="onmt-bert-base-multilingual-uncased.pt")
+    # parser.add_argument("--bert_model_weights_path", type=str, default="PreTrainedBertckp/")
+    # parser.add_argument("--output_dir", type=Path, default="PreTrainedBertckp/")
+    # parser.add_argument("--output_name", type=str, default="onmt-bert-base-multilingual-uncased.weights")
+    parser.add_argument("--bert_model_weights_file", "-i", type=str, default="PreTrainedBertckp/bert-base-multilingual-uncased.pt")
+    parser.add_argument("--output_name", "-o", type=str, default="PreTrainedBertckp/onmt-bert-base-multilingual-uncased.weights")
     args = parser.parse_args()
-    bert_model_weights = args.bert_model_weights_path + args.bert_model +".pt"
-    print(bert_model_weights)
-    args.output_dir.mkdir(exist_ok=True)
-    outfile = args.output_dir.joinpath(args.output_name)
-    
-    # pretrained_model_name_or_path = args.bert_model
-    # bert_pretrained = BertForPreTraining.from_pretrained(pretrained_model_name_or_path, cache=args.output_dir)
 
-    if args.layers is None:
-        if 'large' in args.bert_model:
-            n_layers = 24
-        else:
-            n_layers = 12
-    else:
-        n_layers = args.layers
+    n_layers = args.layers
+    print("Model contain {} layers.".format(n_layers))
+
+    bert_model_weights = args.bert_model_weights_file
+    print("Load weights from {}.".format(bert_model_weights))
 
     bert_weights = torch.load(bert_model_weights)
-    bert = onmt.models.BERT(105879)
-    bertlm = onmt.models.BertLM(bert)
+    embeddings = onmt.modules.bert_embeddings.BertEmbeddings(105879)
+    bert_encoder = onmt.encoders.BertEncoder(embeddings)
+    generator = onmt.models.BertPreTrainingHeads(bert_encoder.d_model, bert_encoder.vocab_size)
+    bertlm = torch.nn.Sequential(OrderedDict([
+                            ('bert', bert_encoder),
+                            ('generator', generator)]))
     model_weights = load_bert_weights(bertlm, bert_weights, n_layers)
-    ckp={'model': model_weights}
+
+    ckp={'model': model_weights['bert'], 'generator': model_weights['generator']}
+
+    outfile = args.output_name
+    print("Converted weights file in {}".format(outfile))
     torch.save(ckp, outfile)
 
 

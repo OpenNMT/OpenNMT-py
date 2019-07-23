@@ -3,7 +3,7 @@
 import torch.nn as nn
 
 import onmt
-from onmt.utils.fn_activation import GELU
+from onmt.utils import get_activation_fn
 
 
 class PositionwiseFeedForward(nn.Module):
@@ -21,15 +21,15 @@ class PositionwiseFeedForward(nn.Module):
     """
 
     def __init__(self, d_model, d_ff, dropout=0.1,
-                 activation='ReLU', is_bert=False):
+                 activation='relu', is_bert=False):
         super(PositionwiseFeedForward, self).__init__()
         self.w_1 = nn.Linear(d_model, d_ff)
         self.w_2 = nn.Linear(d_ff, d_model)
-        self.layer_norm = (onmt.models.BertLayerNorm(d_model, eps=1e-12)
+        self.layer_norm = (onmt.encoders.BertLayerNorm(d_model, eps=1e-12)
                            if is_bert
                            else nn.LayerNorm(d_model, eps=1e-6))
         self.dropout_1 = nn.Dropout(dropout)
-        self.relu = GELU() if activation == 'GeLU' else nn.ReLU()
+        self.activation = get_activation_fn(activation)
         self.dropout_2 = nn.Dropout(dropout)
         self.is_bert = is_bert
 
@@ -47,7 +47,7 @@ class PositionwiseFeedForward(nn.Module):
             (FloatTensor): Output ``(batch_size, input_len, model_dim)``.
         """
 
-        inter = self.dropout_1(self.relu(self.w_1(self.layer_norm(x))))
+        inter = self.dropout_1(self.activation(self.w_1(self.layer_norm(x))))
         output = self.dropout_2(self.w_2(inter))
         return self.residual(output, x)
 

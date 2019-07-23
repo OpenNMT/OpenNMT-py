@@ -11,26 +11,20 @@ def bert_text_sort_key(ex):
 class BertDataset(TorchtextDataset):
     """Defines a BERT dataset composed of Examples along with its Fields.
     Args:
-        fields_dict (dict[str, Field]): a dict with the structure
-            returned by :func:`onmt.inputters.get_bert_fields()`.
-        instances (Iterable[dict[]]): a list of document instance that
-            are going to be transfored into Examples
+        fields_dict (dict[str, Field]): a dict containing all Field with
+            its name.
+        instances (Iterable[dict[]]): a list of dictionary, each dict
+            represent one Example with its field specified by fields_dict.
     """
 
-    def __init__(self, fields_dict, instances, sort_key=bert_text_sort_key, filter_pred=None):
+    def __init__(self, fields_dict, instances,
+                 sort_key=bert_text_sort_key, filter_pred=None):
         self.sort_key = sort_key
         examples = []
-        # NOTE: need to adapt ?
         ex_fields = {k: [(k, v)] for k, v in fields_dict.items()}
-        # print(ex_fields)
         for instance in instances:
-            # print("###################")
-            # print(instance)
-            # print("###################")
             ex = Example.fromdict(instance, ex_fields)
-            # print(ex)
             examples.append(ex)
-            # exit(1)
         fields_list = list(fields_dict.items())
 
         super(BertDataset, self).__init__(examples, fields_list, filter_pred)
