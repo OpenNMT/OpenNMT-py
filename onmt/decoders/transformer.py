@@ -23,7 +23,7 @@ class TransformerDecoderLayer(nn.Module):
       self_attn_type (string): type of self-attention scaled-dot, average
     """
 
-    def __init__(self, d_model, heads, d_ff, dropout,
+    def __init__(self, d_model, heads, d_ff, dropout, attention_dropout,
                  self_attn_type="scaled-dot", max_relative_positions=0,
                  aan_useffn=False):
         super(TransformerDecoderLayer, self).__init__()
@@ -33,11 +33,12 @@ class TransformerDecoderLayer(nn.Module):
                 heads, d_model, dropout=dropout,
                 max_relative_positions=max_relative_positions)
         elif self_attn_type == "average":
-            self.self_attn = AverageAttention(d_model, dropout=dropout,
+            self.self_attn = AverageAttention(d_model,
+                                              dropout=attention_dropout,
                                               aan_useffn=aan_useffn)
 
         self.context_attn = MultiHeadedAttention(
-            heads, d_model, dropout=dropout)
+            heads, d_model, dropout=attention_dropout)
         self.feed_forward = PositionwiseFeedForward(d_model, d_ff, dropout)
         self.layer_norm_1 = nn.LayerNorm(d_model, eps=1e-6)
         self.layer_norm_2 = nn.LayerNorm(d_model, eps=1e-6)
@@ -91,9 +92,9 @@ class TransformerDecoderLayer(nn.Module):
 
         return output, attn
 
-    def update_dropout(self, dropout):
-        self.self_attn.update_dropout(dropout)
-        self.context_attn.update_dropout(dropout)
+    def update_dropout(self, dropout, attention_dropout):
+        self.self_attn.update_dropout(attention_dropout)
+        self.context_attn.update_dropout(attention_dropout)
         self.feed_forward.update_dropout(dropout)
         self.drop.p = dropout
 
@@ -129,8 +130,8 @@ class TransformerDecoder(DecoderBase):
     """
 
     def __init__(self, num_layers, d_model, heads, d_ff,
-                 copy_attn, self_attn_type, dropout, embeddings,
-                 max_relative_positions, aan_useffn):
+                 copy_attn, self_attn_type, dropout, attention_dropout,
+                 embeddings, max_relative_positions, aan_useffn):
         super(TransformerDecoder, self).__init__()
 
         self.embeddings = embeddings
@@ -140,7 +141,7 @@ class TransformerDecoder(DecoderBase):
 
         self.transformer_layers = nn.ModuleList(
             [TransformerDecoderLayer(d_model, heads, d_ff, dropout,
-             self_attn_type=self_attn_type,
+             attention_dropout, self_attn_type=self_attn_type,
              max_relative_positions=max_relative_positions,
              aan_useffn=aan_useffn)
              for i in range(num_layers)])
@@ -162,6 +163,8 @@ class TransformerDecoder(DecoderBase):
             opt.copy_attn,
             opt.self_attn_type,
             opt.dropout[0] if type(opt.dropout) is list else opt.dropout,
+            opt.attention_dropout[0] if type(opt.attention_dropout)
+            is list else opt.dropout,
             embeddings,
             opt.max_relative_positions,
             opt.aan_useffn)
@@ -243,7 +246,7 @@ class TransformerDecoder(DecoderBase):
                 layer_cache["self_values"] = None
             self.state["cache"]["layer_{}".format(i)] = layer_cache
 
-    def update_dropout(self, dropout):
+    def update_dropout(self, dropout, attention_dropout):
         self.embeddings.update_dropout(dropout)
         for layer in self.transformer_layers:
-            layer.update_dropout(dropout)
+            layer.update_dropout(dropout, attention_dropout)

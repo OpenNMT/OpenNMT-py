@@ -100,7 +100,10 @@ class ArgumentParser(cfargparse.ArgumentParser):
             "Please check -data_ids and -data_weights options!"
 
         assert len(opt.dropout) == len(opt.dropout_steps), \
-            "Number of dropout values must match number of accum_steps"
+            "Number of dropout values must match accum_steps values"
+
+        assert len(opt.attention_dropout) == len(opt.dropout_steps), \
+            "Number of attention_dropout values must match accum_steps values"
 
     @classmethod
     def validate_translate_opts(cls, opt):

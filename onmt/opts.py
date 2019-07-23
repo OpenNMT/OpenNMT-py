@@ -454,6 +454,9 @@ def train_opts(parser):
                    "max_grad_norm")
     group.add('--dropout', '-dropout', type=float, default=[0.3], nargs='+',
               help="Dropout probability; applied in LSTM stacks.")
+    group.add('--attention_dropout', '-attention_dropout', type=float,
+              default=[0.1], nargs='+',
+              help="Attention Dropout probability.")
     group.add('--dropout_steps', '-dropout_steps', type=int, nargs='+',
               default=[0], help="Steps at which dropout changes.")
     group.add('--truncated_decoder', '-truncated_decoder', type=int, default=0,

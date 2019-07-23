@@ -23,12 +23,12 @@ class TransformerEncoderLayer(nn.Module):
         dropout (float): dropout probability(0-1.0).
     """
 
-    def __init__(self, d_model, heads, d_ff, dropout,
+    def __init__(self, d_model, heads, d_ff, dropout, attention_dropout,
                  max_relative_positions=0):
         super(TransformerEncoderLayer, self).__init__()
 
         self.self_attn = MultiHeadedAttention(
-            heads, d_model, dropout=dropout,
+            heads, d_model, dropout=attention_dropout,
             max_relative_positions=max_relative_positions)
         self.feed_forward = PositionwiseFeedForward(d_model, d_ff, dropout)
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
@@ -51,8 +51,8 @@ class TransformerEncoderLayer(nn.Module):
         out = self.dropout(context) + inputs
         return self.feed_forward(out)
 
-    def update_dropout(self, dropout):
-        self.self_attn.update_dropout(dropout)
+    def update_dropout(self, dropout, attention_dropout):
+        self.self_attn.update_dropout(attention_dropout)
         self.feed_forward.update_dropout(dropout)
         self.dropout.p = dropout
 
@@ -88,14 +88,14 @@ class TransformerEncoder(EncoderBase):
         * memory_bank ``(src_len, batch_size, model_dim)``
     """
 
-    def __init__(self, num_layers, d_model, heads, d_ff, dropout, embeddings,
-                 max_relative_positions):
+    def __init__(self, num_layers, d_model, heads, d_ff, dropout,
+                 attention_dropout, embeddings, max_relative_positions):
         super(TransformerEncoder, self).__init__()
 
         self.embeddings = embeddings
         self.transformer = nn.ModuleList(
             [TransformerEncoderLayer(
-                d_model, heads, d_ff, dropout,
+                d_model, heads, d_ff, dropout, attention_dropout,
                 max_relative_positions=max_relative_positions)
              for i in range(num_layers)])
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
@@ -109,6 +109,8 @@ class TransformerEncoder(EncoderBase):
             opt.heads,
             opt.transformer_ff,
             opt.dropout[0] if type(opt.dropout) is list else opt.dropout,
+            opt.attention_dropout[0] if type(opt.attention_dropout)
+            is list else opt.attention_dropout,
             embeddings,
             opt.max_relative_positions)
 
@@ -127,7 +129,7 @@ class TransformerEncoder(EncoderBase):
 
         return emb, out.transpose(0, 1).contiguous(), lengths
 
-    def update_dropout(self, dropout):
+    def update_dropout(self, dropout, attention_dropout):
         self.embeddings.update_dropout(dropout)
         for layer in self.transformer:
-            layer.update_dropout(dropout)
+            layer.update_dropout(dropout, attention_dropout)
