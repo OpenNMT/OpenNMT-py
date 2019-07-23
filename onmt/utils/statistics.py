@@ -139,15 +139,25 @@ class Statistics(object):
 class BertStatistics(Statistics):
     """ Bert Statistics as the loss is reduced by mean """
     def __init__(self, loss=0, n_words=0, n_correct=0,
-                 n_sentence=0, n_correct_nx_sentence=0):
+                 n_sentence=0, n_correct_sentence=0):
         super(BertStatistics, self).__init__(loss, n_words, n_correct)
         self.n_update = 0 if n_words == 0 else 1
         self.n_sentence = n_sentence
-        self.n_correct_nx_sentence = n_correct_nx_sentence
+        self.n_correct_sentence = n_correct_sentence
 
-    def next_sentence_accuracy(self):
-        """ compute accuracy """
-        return 100 * (self.n_correct_nx_sentence / self.n_sentence)
+    def accuracy(self):
+        """ compute token level accuracy """
+        if self.n_words != 0:
+            return 100 * (self.n_correct / self.n_words)
+        else:
+            return None
+
+    def sentence_accuracy(self):
+        """ compute sentence level accuracy """
+        if self.n_sentence != 0:
+            return 100 * (self.n_correct_sentence / self.n_sentence)
+        else:
+            return None
 
     def xent(self):
         """ compute cross entropy """
@@ -176,7 +186,7 @@ class BertStatistics(Statistics):
         self.n_words += stat.n_words
         self.n_correct += stat.n_correct
         self.n_sentence += stat.n_sentence
-        self.n_correct_nx_sentence += stat.n_correct_nx_sentence
+        self.n_correct_sentence += stat.n_correct_sentence
 
         if update_n_src_words:
             self.n_src_words += stat.n_src_words
@@ -193,18 +203,43 @@ class BertStatistics(Statistics):
         step_fmt = "%2d" % step
         if num_steps > 0:
             step_fmt = "%s/%5d" % (step_fmt, num_steps)
-        logger.info(
-            ("Step %s; acc(mlm/nx):%6.2f/%6.2f; total ppl: %5.2f; " +
-             "xent: %4.2f; lr: %7.5f; %3.0f/%3.0f tok/s; %6.0f sec")
-            % (step_fmt,
-               self.accuracy(),
-               self.next_sentence_accuracy(),
-               self.ppl(),
-               self.xent(),
-               learning_rate,
-               self.n_src_words / (t + 1e-5),
-               self.n_words / (t + 1e-5),
-               time.time() - start))
+        if self.n_words == 0:  # sentence level task
+            logger.info(
+                ("Step %s; acc(sent):%6.2f; ppl: %5.2f; " +
+                "xent: %4.2f; lr: %7.5f; %3.0f/%3.0f tok/s; %6.0f sec")
+                % (step_fmt,
+                self.sentence_accuracy(),
+                self.ppl(),
+                self.xent(),
+                learning_rate,
+                self.n_src_words / (t + 1e-5),
+                self.n_words / (t + 1e-5),
+                time.time() - start))
+        elif self.n_sentence == 0:  # token level task
+            logger.info(
+                ("Step %s; acc(token):%6.2f; ppl: %5.2f; " +
+                "xent: %4.2f; lr: %7.5f; %3.0f/%3.0f tok/s; %6.0f sec")
+                % (step_fmt,
+                self.accuracy(),
+                self.ppl(),
+                self.xent(),
+                learning_rate,
+                self.n_src_words / (t + 1e-5),
+                self.n_words / (t + 1e-5),
+                time.time() - start))
+        else:  # pretraining
+            logger.info(
+                ("Step %s; acc(mlm/nx):%6.2f/%6.2f; total ppl: %5.2f; " +
+                "xent: %4.2f; lr: %7.5f; %3.0f/%3.0f tok/s; %6.0f sec")
+                % (step_fmt,
+                self.accuracy(),
+                self.sentence_accuracy(),
+                self.ppl(),
+                self.xent(),
+                learning_rate,
+                self.n_src_words / (t + 1e-5),
+                self.n_words / (t + 1e-5),
+                time.time() - start))
         sys.stdout.flush()
 
     def log_tensorboard(self, prefix, writer, learning_rate, step):
@@ -212,8 +247,11 @@ class BertStatistics(Statistics):
         t = self.elapsed_time()
         writer.add_scalar(prefix + "/xent", self.xent(), step)
         writer.add_scalar(prefix + "/ppl", self.ppl(), step)
-        writer.add_scalar(prefix + "/accuracy(mlm)", self.accuracy(), step)
-        writer.add_scalar(prefix + "/accuracy(nx)",
-                          self.next_sentence_accuracy(), step)
+        if self.n_words != 0:
+            writer.add_scalar(prefix + "/accuracy(token)",
+                              self.accuracy(), step)
+        if self.n_sentence != 0:
+            writer.add_scalar(prefix + "/accuracy(sent)",
+                              self.sentence_accuracy(), step)
         writer.add_scalar(prefix + "/tgtper", self.n_words / t, step)
         writer.add_scalar(prefix + "/lr", learning_rate, step)

@@ -137,7 +137,8 @@ def get_fields(
     return fields
 
 
-def get_bert_fields(pad='[PAD]', bos='[CLS]', eos='[SEP]', unk='[UNK]'):
+def get_bert_fields(task='pretraining', pad='[PAD]', bos='[CLS]',
+                    eos='[SEP]', unk='[UNK]'):
     fields = {}
     # tokens_kwargs = {"n_feats": 0,
     #                  "include_lengths": True,
@@ -152,21 +153,28 @@ def get_bert_fields(pad='[PAD]', bos='[CLS]', eos='[SEP]', unk='[UNK]'):
     segment_ids = Field(use_vocab=False, dtype=torch.long,
                         sequential=True, pad_token=0, batch_first=True)
     fields["segment_ids"] = segment_ids
+    if task == 'pretraining':
+        is_next = Field(use_vocab=False, dtype=torch.long,
+                        sequential=False, batch_first=True)  # 0/1
+        fields["is_next"] = is_next
 
-    is_next = Field(use_vocab=False, dtype=torch.long,
-                    sequential=False, batch_first=True)  # 0/1
-    fields["is_next"] = is_next
+        lm_labels_ids = Field(sequential=True, use_vocab=False,
+                              pad_token=-1, batch_first=True)
+        fields["lm_labels_ids"] = lm_labels_ids
 
-    # masked_lm_positions = Field(use_vocab=False, dtype=torch.int,
-    # sequential=False)  # indices that masked: [int]
-    # fields["masked_lm_positions"] = masked_lm_positions
+    elif task == 'classification':
+        category = Field(use_vocab=False, dtype=torch.long,
+                         sequential=False, batch_first=True)  # 0/1
+        fields["category"] = category
 
-    # masked_lm_labels = Field(use_vocab=True, sequential=False)# tokens masked
-    # fields["masked_lm_labels"] = masked_lm_labels
+    elif task == 'generation':
+        token_labels_ids = Field(sequential=True, use_vocab=False,
+                                 pad_token=-1, batch_first=True)
+        fields["token_labels_ids"] = token_labels_ids
 
-    lm_labels_ids = Field(sequential=True, use_vocab=False,
-                          pad_token=-1, batch_first=True)
-    fields["lm_labels_ids"] = lm_labels_ids
+    else:
+        raise ValueError("task '{}' has not been implemented yet!".format(task))
+
     return fields
 
 

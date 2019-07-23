@@ -126,10 +126,11 @@ class ClassificationHead(nn.Module):
             pooled: last layer's output of bert encoder, shape (batch, src, d_model)
         Returns:
             class_log_prob: shape (batch_size, 2)
+            None: this is a placeholder for token level prediction task
         """
         score = self.linear(pooled)  # (batch, n_class)
         class_log_prob = self.softmax(score)  # (batch, n_class)
-        return class_log_prob
+        return class_log_prob, None
 
 
 class TokenGenerationHead(nn.Module):
@@ -157,10 +158,11 @@ class TokenGenerationHead(nn.Module):
         Args:
             x: last layer output of bert, shape (batch, seq, d_model)
         Returns:
+            None: this is a placeholder for sentence level task
             prediction_log_prob: shape (batch, seq, vocab)
         """
         last_hidden = x[-1]
         y = self.transform(last_hidden)  # (batch, seq, d_model)
         prediction_scores = self.decode(y) + self.bias  # (batch, seq, vocab)
         prediction_log_prob = self.softmax(prediction_scores)
-        return prediction_log_prob
+        return None, prediction_log_prob
