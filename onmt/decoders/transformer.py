@@ -140,8 +140,8 @@ class TransformerDecoder(DecoderBase):
         self.state = {}
 
         self.transformer_layers = nn.ModuleList(
-            [TransformerDecoderLayer(d_model, heads, d_ff, attention_dropout,
-             self_attn_type=self_attn_type,
+            [TransformerDecoderLayer(d_model, heads, d_ff, dropout,
+             attention_dropout, self_attn_type=self_attn_type,
              max_relative_positions=max_relative_positions,
              aan_useffn=aan_useffn)
              for i in range(num_layers)])
