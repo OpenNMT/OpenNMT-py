@@ -200,12 +200,12 @@
 <span class="sd">        dropout (float): dropout probability(0-1.0).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d_model</span><span class="p">,</span> <span class="n">heads</span><span class="p">,</span> <span class="n">d_ff</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d_model</span><span class="p">,</span> <span class="n">heads</span><span class="p">,</span> <span class="n">d_ff</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span> <span class="n">attention_dropout</span><span class="p">,</span>
                  <span class="n">max_relative_positions</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">TransformerEncoderLayer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">self_attn</span> <span class="o">=</span> <span class="n">MultiHeadedAttention</span><span class="p">(</span>
-            <span class="n">heads</span><span class="p">,</span> <span class="n">d_model</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="n">dropout</span><span class="p">,</span>
+            <span class="n">heads</span><span class="p">,</span> <span class="n">d_model</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="n">attention_dropout</span><span class="p">,</span>
             <span class="n">max_relative_positions</span><span class="o">=</span><span class="n">max_relative_positions</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">feed_forward</span> <span class="o">=</span> <span class="n">PositionwiseFeedForward</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">d_ff</span><span class="p">,</span> <span class="n">dropout</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
@@ -228,8 +228,8 @@
         <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">(</span><span class="n">context</span><span class="p">)</span> <span class="o">+</span> <span class="n">inputs</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">feed_forward</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">update_dropout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dropout</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">self_attn</span><span class="o">.</span><span class="n">update_dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">update_dropout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span> <span class="n">attention_dropout</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">self_attn</span><span class="o">.</span><span class="n">update_dropout</span><span class="p">(</span><span class="n">attention_dropout</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">feed_forward</span><span class="o">.</span><span class="n">update_dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">dropout</span>
 
@@ -265,14 +265,14 @@
 <span class="sd">        * memory_bank ``(src_len, batch_size, model_dim)``</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">,</span> <span class="n">d_model</span><span class="p">,</span> <span class="n">heads</span><span class="p">,</span> <span class="n">d_ff</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">,</span>
-                 <span class="n">max_relative_positions</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">,</span> <span class="n">d_model</span><span class="p">,</span> <span class="n">heads</span><span class="p">,</span> <span class="n">d_ff</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span>
+                 <span class="n">attention_dropout</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">,</span> <span class="n">max_relative_positions</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">TransformerEncoder</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span> <span class="o">=</span> <span class="n">embeddings</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">transformer</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">(</span>
             <span class="p">[</span><span class="n">TransformerEncoderLayer</span><span class="p">(</span>
-                <span class="n">d_model</span><span class="p">,</span> <span class="n">heads</span><span class="p">,</span> <span class="n">d_ff</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span>
+                <span class="n">d_model</span><span class="p">,</span> <span class="n">heads</span><span class="p">,</span> <span class="n">d_ff</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span> <span class="n">attention_dropout</span><span class="p">,</span>
                 <span class="n">max_relative_positions</span><span class="o">=</span><span class="n">max_relative_positions</span><span class="p">)</span>
              <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_layers</span><span class="p">)])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
@@ -286,6 +286,8 @@
             <span class="n">opt</span><span class="o">.</span><span class="n">heads</span><span class="p">,</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">transformer_ff</span><span class="p">,</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">dropout</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">dropout</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">list</span> <span class="k">else</span> <span class="n">opt</span><span class="o">.</span><span class="n">dropout</span><span class="p">,</span>
+            <span class="n">opt</span><span class="o">.</span><span class="n">attention_dropout</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">attention_dropout</span><span class="p">)</span>
+            <span class="ow">is</span> <span class="nb">list</span> <span class="k">else</span> <span class="n">opt</span><span class="o">.</span><span class="n">attention_dropout</span><span class="p">,</span>
             <span class="n">embeddings</span><span class="p">,</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">max_relative_positions</span><span class="p">)</span></div>
 
@@ -304,10 +306,10 @@
 
         <span class="k">return</span> <span class="n">emb</span><span class="p">,</span> <span class="n">out</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">(),</span> <span class="n">lengths</span></div>
 
-    <span class="k">def</span> <span class="nf">update_dropout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dropout</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">update_dropout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span> <span class="n">attention_dropout</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span><span class="o">.</span><span class="n">update_dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformer</span><span class="p">:</span>
-            <span class="n">layer</span><span class="o">.</span><span class="n">update_dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span></div>
+            <span class="n">layer</span><span class="o">.</span><span class="n">update_dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">,</span> <span class="n">attention_dropout</span><span class="p">)</span></div>
 </pre></div>
 
            </div>

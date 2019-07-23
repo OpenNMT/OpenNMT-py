@@ -257,6 +257,7 @@
                 <span class="p">[</span><span class="o">--</span><span class="n">adagrad_accumulator_init</span> <span class="n">ADAGRAD_ACCUMULATOR_INIT</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">max_grad_norm</span> <span class="n">MAX_GRAD_NORM</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">dropout</span> <span class="n">DROPOUT</span> <span class="p">[</span><span class="n">DROPOUT</span> <span class="o">...</span><span class="p">]]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">attention_dropout</span> <span class="n">ATTENTION_DROPOUT</span> <span class="p">[</span><span class="n">ATTENTION_DROPOUT</span> <span class="o">...</span><span class="p">]]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">dropout_steps</span> <span class="n">DROPOUT_STEPS</span> <span class="p">[</span><span class="n">DROPOUT_STEPS</span> <span class="o">...</span><span class="p">]]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">truncated_decoder</span> <span class="n">TRUNCATED_DECODER</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">adam_beta1</span> <span class="n">ADAM_BETA1</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">adam_beta2</span> <span class="n">ADAM_BETA2</span><span class="p">]</span>
@@ -270,7 +271,7 @@
                 <span class="p">[</span><span class="o">--</span><span class="n">decay_method</span> <span class="p">{</span><span class="n">noam</span><span class="p">,</span><span class="n">noamwd</span><span class="p">,</span><span class="n">rsqrt</span><span class="p">,</span><span class="n">none</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">warmup_steps</span> <span class="n">WARMUP_STEPS</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">report_every</span> <span class="n">REPORT_EVERY</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">log_file</span> <span class="n">LOG_FILE</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">log_file_level</span> <span class="p">{</span><span class="n">WARNING</span><span class="p">,</span><span class="n">ERROR</span><span class="p">,</span><span class="n">NOTSET</span><span class="p">,</span><span class="n">INFO</span><span class="p">,</span><span class="n">DEBUG</span><span class="p">,</span><span class="n">CRITICAL</span><span class="p">,</span><span class="mi">30</span><span class="p">,</span><span class="mi">40</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">50</span><span class="p">}]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">log_file_level</span> <span class="p">{</span><span class="n">ERROR</span><span class="p">,</span><span class="n">WARNING</span><span class="p">,</span><span class="n">NOTSET</span><span class="p">,</span><span class="n">DEBUG</span><span class="p">,</span><span class="n">CRITICAL</span><span class="p">,</span><span class="n">INFO</span><span class="p">,</span><span class="mi">40</span><span class="p">,</span><span class="mi">30</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">50</span><span class="p">,</span><span class="mi">20</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">exp_host</span> <span class="n">EXP_HOST</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">exp</span> <span class="n">EXP</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">tensorboard</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">tensorboard_log_dir</span> <span class="n">TENSORBOARD_LOG_DIR</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">sample_rate</span> <span class="n">SAMPLE_RATE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">window_size</span> <span class="n">WINDOW_SIZE</span><span class="p">]</span>
@@ -675,6 +676,10 @@ Inspired by torchtext’s pool mechanism.</p>
 <dd><p>Dropout probability; applied in LSTM stacks.</p>
 <p>Default: [0.3]</p>
 </dd>
+<dt><kbd>--attention_dropout, -attention_dropout</kbd></dt>
+<dd><p>Attention Dropout probability.</p>
+<p>Default: [0.1]</p>
+</dd>
 <dt><kbd>--dropout_steps, -dropout_steps</kbd></dt>
 <dd><p>Steps at which dropout changes.</p>
 <p>Default: [0]</p>
@@ -747,7 +752,7 @@ Inspired by torchtext’s pool mechanism.</p>
 <p>Default: “”</p>
 </dd>
 <dt><kbd>--log_file_level, -log_file_level</kbd></dt>
-<dd><p>Possible choices: WARNING, ERROR, NOTSET, INFO, DEBUG, CRITICAL, 30, 40, 0, 20, 10, 50</p>
+<dd><p>Possible choices: ERROR, WARNING, NOTSET, DEBUG, CRITICAL, INFO, 40, 30, 0, 10, 50, 20</p>
 <p>Default: “0”</p>
 </dd>
 <dt><kbd>--exp_host, -exp_host</kbd></dt>
