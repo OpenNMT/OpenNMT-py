@@ -132,6 +132,12 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
         the NMTModel.
     """
 
+    # for back compat when attention_dropout was not defined
+    try:
+        model_opt.attention_dropout
+    except AttributeError:
+        model_opt.attention_dropout = model_opt.dropout
+
     # Build embeddings.
     if model_opt.model_type == "text" or model_opt.model_type == "vec":
         src_field = fields["src"]
