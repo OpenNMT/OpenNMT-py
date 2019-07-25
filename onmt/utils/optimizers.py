@@ -639,7 +639,7 @@ class BertAdam(torch.optim.Optimizer):
         weight_decay: Weight decay. Default: 0.01
         # TODO: exclude LayerNorm from weight decay?
         max_grad_norm: Maximum norm for the gradients (-1 means no clipping).
-    """
+    """  # TODO: add parameter to opt
     def __init__(self, params, lr=None, betas=(0.9, 0.999),
                  eps=1e-6, weight_decay=0.01, max_grad_norm=1.0, **kwargs):
         if not 0.0 <= lr:
@@ -675,7 +675,7 @@ class BertAdam(torch.optim.Optimizer):
                     continue
                 grad = p.grad.data
                 if grad.is_sparse:
-                    raise RuntimeError('Adam : not support sparse gradients,' +
+                    raise RuntimeError('Adam: not support sparse gradients,' +
                                        'please consider SparseAdam instead')
 
                 state = self.state[p]
@@ -695,7 +695,7 @@ class BertAdam(torch.optim.Optimizer):
                 # if group['max_grad_norm'] > 0:
                 #     clip_grad_norm_(p, group['max_grad_norm'])
 
-                # Decay the first and second moment running average coefficient
+                # Decay first and second moment running average coefficient
                 # In-place operations to update the averages at the same time
                 # exp_avg = exp_avg * beta1 + (1-beta1)*grad
                 exp_avg.mul_(beta1).add_(1 - beta1, grad)
@@ -708,8 +708,8 @@ class BertAdam(torch.optim.Optimizer):
                 # is *not* the correct way of using L2/weight decay with Adam,
                 # since it will interact with m/v parameters in strange ways.
                 #
-                # Instead we want to decay the weights in a manner that doesn't
-                # interact with the m/v. This is equivalent to add the square
+                # Instead we want to decay the weights that does not interact
+                # with the m/v. This is equivalent to add the square
                 # of the weights to the loss with plain (non-momentum) SGD.
                 if group['weight_decay'] > 0.0:
                     update += group['weight_decay'] * p.data

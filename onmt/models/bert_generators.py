@@ -43,16 +43,16 @@ class MaskedLanguageModel(nn.Module):
         """
         super(MaskedLanguageModel, self).__init__()
         self.transform = BertPredictionTransform(hidden_size)
-        
+
         self.decode = nn.Linear(hidden_size, vocab_size, bias=False)
         self.bias = nn.Parameter(torch.zeros(vocab_size))
-        
+
         self.softmax = nn.LogSoftmax(dim=-1)
 
     def forward(self, x):
         """
         Args:
-            x: last layer output of bert, shape (batch, seq, d_model)
+            x: first output of bert encoder, (batch, seq, d_model)
         Returns:
             prediction_log_prob: shape (batch, seq, vocab)
         """
@@ -79,12 +79,12 @@ class NextSentencePrediction(nn.Module):
     def forward(self, x):
         """
         Args:
-            x: last layer's output of bert encoder, shape (batch, src, d_model)
+            x: second output of bert encoder, (batch, d_model)
         Returns:
             seq_class_prob: shape (batch_size, 2)
         """
         seq_relationship_score = self.linear(x)  # (batch, 2)
-        seq_class_log_prob = self.softmax(seq_relationship_score)  # (batch, 2)
+        seq_class_log_prob = self.softmax(seq_relationship_score)
         return seq_class_log_prob
 
 
@@ -92,7 +92,7 @@ class BertPredictionTransform(nn.Module):
     def __init__(self, hidden_size):
         super(BertPredictionTransform, self).__init__()
         self.dense = nn.Linear(hidden_size, hidden_size)
-        self.activation = get_activation_fn('gelu')  #GELU()  # get_activation fn
+        self.activation = get_activation_fn('gelu')
         self.layer_norm = onmt.encoders.BertLayerNorm(hidden_size, eps=1e-12)
 
     def forward(self, hidden_states):
@@ -122,8 +122,8 @@ class ClassificationHead(nn.Module):
     def forward(self, all_hidden, pooled):
         """
         Args:
-            all_hidden: first output argument of Bert encoder (batch, src, d_model)
-            pooled: last layer's output of bert encoder, shape (batch, src, d_model)
+            all_hidden: first output of Bert encoder (batch, src, d_model)
+            pooled: second output of bert encoder, shape (batch, src, d_model)
         Returns:
             class_log_prob: shape (batch_size, 2)
             None: this is a placeholder for token level prediction task
@@ -147,7 +147,7 @@ class TokenGenerationHead(nn.Module):
         """
         super(TokenGenerationHead, self).__init__()
         self.transform = BertPredictionTransform(hidden_size)
-        
+
         self.decode = nn.Linear(hidden_size, vocab_size, bias=False)
         self.bias = nn.Parameter(torch.zeros(vocab_size))
 

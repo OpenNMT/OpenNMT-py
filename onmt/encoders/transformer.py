@@ -35,8 +35,9 @@ class TransformerEncoderLayer(nn.Module):
         self.self_attn = MultiHeadedAttention(
             heads, d_model, dropout=dropout,
             max_relative_positions=max_relative_positions)
-        self.feed_forward = PositionwiseFeedForward(d_model, d_ff, dropout, activation, is_bert)
-        self.layer_norm = (onmt.encoders.BertLayerNorm(d_model,eps=1e-12)
+        self.feed_forward = PositionwiseFeedForward(d_model, d_ff, dropout,
+                                                    activation, is_bert)
+        self.layer_norm = (onmt.encoders.BertLayerNorm(d_model, eps=1e-12)
                            if is_bert
                            else nn.LayerNorm(d_model, eps=1e-6))
         self.dropout = nn.Dropout(dropout)

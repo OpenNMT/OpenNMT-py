@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-from onmt.modules.bert_embeddings import BertEmbeddings
 from onmt.encoders.transformer import TransformerEncoderLayer
 
 
@@ -22,10 +21,10 @@ class BertEncoder(nn.Module):
 
         self.embeddings = embeddings
         # Transformer Encoder Block
-        self.transformer_encoder = nn.ModuleList(
+        self.encoder = nn.ModuleList(
             [TransformerEncoderLayer(d_model, heads, d_ff, dropout,
-                max_relative_positions=max_relative_positions,
-                activation='gelu', is_bert=True) for _ in range(num_layers)])
+             max_relative_positions=max_relative_positions,
+             activation='gelu', is_bert=True) for _ in range(num_layers)])
 
         self.layer_norm = BertLayerNorm(d_model, eps=1e-12)
         self.pooler = BertPooler(d_model)
@@ -68,9 +67,8 @@ class BertEncoder(nn.Module):
 
         # embedding vectors: [batch, seq, hidden_size]
         out = self.embeddings(input_ids, token_type_ids)
-
         all_encoder_layers = []
-        for layer in self.transformer_encoder:
+        for layer in self.encoder:
             out = layer(out, attention_mask)
             if output_all_encoded_layers:
                 all_encoder_layers.append(self.layer_norm(out))
@@ -83,7 +81,7 @@ class BertEncoder(nn.Module):
     def update_dropout(self, dropout):
         self.dropout = dropout
         self.embeddings.update_dropout(dropout)
-        for layer in self.transformer_encoder:
+        for layer in self.encoder:
             layer.update_dropout(dropout)
 
 

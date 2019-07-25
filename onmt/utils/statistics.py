@@ -141,7 +141,7 @@ class BertStatistics(Statistics):
     def __init__(self, loss=0, n_words=0, n_correct=0,
                  n_sentence=0, n_correct_sentence=0):
         super(BertStatistics, self).__init__(loss, n_words, n_correct)
-        self.n_update = 0 if n_words == 0 else 1
+        self.n_update = 0 if n_words == 0 and n_sentence == 0 else 1
         self.n_sentence = n_sentence
         self.n_correct_sentence = n_correct_sentence
 
@@ -206,40 +206,40 @@ class BertStatistics(Statistics):
         if self.n_words == 0:  # sentence level task
             logger.info(
                 ("Step %s; acc(sent):%6.2f; ppl: %5.2f; " +
-                "xent: %4.2f; lr: %7.5f; %3.0f/%3.0f tok/s; %6.0f sec")
+                 "xent: %4.2f; lr: %7.5f; %3.0f tok/%3.0f sent/s; %6.0f sec")
                 % (step_fmt,
-                self.sentence_accuracy(),
-                self.ppl(),
-                self.xent(),
-                learning_rate,
-                self.n_src_words / (t + 1e-5),
-                self.n_words / (t + 1e-5),
-                time.time() - start))
+                   self.sentence_accuracy(),
+                   self.ppl(),
+                   self.xent(),
+                   learning_rate,
+                   self.n_src_words / (t + 1e-5),
+                   self.n_sentence / (t + 1e-5),
+                   time.time() - start))
         elif self.n_sentence == 0:  # token level task
             logger.info(
                 ("Step %s; acc(token):%6.2f; ppl: %5.2f; " +
-                "xent: %4.2f; lr: %7.5f; %3.0f/%3.0f tok/s; %6.0f sec")
+                 "xent: %4.2f; lr: %7.5f; %3.0f/%3.0f tok/s; %6.0f sec")
                 % (step_fmt,
-                self.accuracy(),
-                self.ppl(),
-                self.xent(),
-                learning_rate,
-                self.n_src_words / (t + 1e-5),
-                self.n_words / (t + 1e-5),
-                time.time() - start))
+                   self.accuracy(),
+                   self.ppl(),
+                   self.xent(),
+                   learning_rate,
+                   self.n_src_words / (t + 1e-5),
+                   self.n_words / (t + 1e-5),
+                   time.time() - start))
         else:  # pretraining
             logger.info(
                 ("Step %s; acc(mlm/nx):%6.2f/%6.2f; total ppl: %5.2f; " +
-                "xent: %4.2f; lr: %7.5f; %3.0f/%3.0f tok/s; %6.0f sec")
+                 "xent: %4.2f; lr: %7.5f; %3.0f/%3.0f tok/s; %6.0f sec")
                 % (step_fmt,
-                self.accuracy(),
-                self.sentence_accuracy(),
-                self.ppl(),
-                self.xent(),
-                learning_rate,
-                self.n_src_words / (t + 1e-5),
-                self.n_words / (t + 1e-5),
-                time.time() - start))
+                   self.accuracy(),
+                   self.sentence_accuracy(),
+                   self.ppl(),
+                   self.xent(),
+                   learning_rate,
+                   self.n_src_words / (t + 1e-5),
+                   self.n_words / (t + 1e-5),
+                   time.time() - start))
         sys.stdout.flush()
 
     def log_tensorboard(self, prefix, writer, learning_rate, step):

@@ -34,7 +34,7 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
     tgt_field = dict(fields)["tgt"].base_field if not opt.is_bert else None
     train_loss = onmt.utils.loss.build_loss_compute(model, tgt_field, opt)
     valid_loss = onmt.utils.loss.build_loss_compute(
-                    model, tgt_field, opt, train=False)        
+                    model, tgt_field, opt, train=False)
 
     trunc_size = opt.truncated_decoder  # Badly named...
     shard_size = opt.max_generator_batches if opt.model_dtype == 'fp32' else 0
@@ -131,17 +131,17 @@ class Trainer(object):
         self.dropout = dropout
         self.dropout_steps = dropout_steps
         self.is_bert = True if hasattr(self.model, 'bert') else False
-        
+
         for i in range(len(self.accum_count_l)):
             assert self.accum_count_l[i] > 0
             if self.accum_count_l[i] > 1:
                 assert self.trunc_size == 0, \
                     """To enable accumulated gradients,
                        you must disable target sequence truncating."""
-        
+
         if self.is_bert:
             assert self.trunc_size == 0
-            """ Bert currently not support target sequence truncating"""  # TODO
+            """ Bert currently not support target sequence truncating"""
 
         # Set model in training mode.
         self.model.train()
@@ -168,7 +168,7 @@ class Trainer(object):
             if self.is_bert is False:  # Bert don't need normalization
                 if self.norm_method == "tokens":
                     num_tokens = batch.tgt[1:, :, 0].ne(
-                        self.train_loss.padding_idx).sum()                    
+                        self.train_loss.padding_idx).sum()
                     normalization += num_tokens.item()
                 else:
                     normalization += batch.batch_size
@@ -241,21 +241,23 @@ class Trainer(object):
                             n_minibatch %d"
                             % (self.gpu_rank, i + 1, len(batches)))
 
-            if self.n_gpu > 1:  # NOTE: DEBUG
-                list_norm = onmt.utils.distributed.all_gather_list(normalization)
+            if self.n_gpu > 1:
+                l_norm = onmt.utils.distributed.all_gather_list(normalization)
+                # NOTE: DEBUG
                 # current_rank = torch.distributed.get_rank()
                 # print("-> RANK: {}".format(current_rank))
                 # print(list_norm)
-                normalization = sum(list_norm)
+                normalization = sum(l_norm)
 
             # Training Step: Forward -> compute Loss -> optimize
             if self.is_bert:
-                self._bert_gradient_accumulation(batches, total_stats, report_stats)
+                self._bert_gradient_accumulation(
+                    batches, total_stats, report_stats)
             else:
                 self._gradient_accumulation(
-                batches, normalization, total_stats,
-                report_stats)
-            
+                    batches, normalization, total_stats,
+                    report_stats)
+
             # Moving average
             if self.average_decay > 0 and i % self.average_every == 0:
                 self._update_average(step)
@@ -264,9 +266,7 @@ class Trainer(object):
                 step, train_steps,
                 self.optim.learning_rate(),
                 report_stats)
-            # NOTE: DEBUG
-            # exit()
-            
+
             # Part: validation
             if valid_iter is not None and step % valid_steps == 0:
                 if self.gpu_verbose_level > 0:
@@ -323,34 +323,35 @@ class Trainer(object):
             if self.is_bert:
                 stats = onmt.utils.BertStatistics()
                 for batch in valid_iter:
-                    # input_ids: Size([batch_size, max_seq_length_in_batch]), seq_lengths: Size([batch_size])
-                    input_ids, seq_lengths = batch.tokens if isinstance(batch.tokens, tuple) \
-                                    else (batch.tokens, None)
-                    # segment_ids, lm_labels_ids: Size([batch_size, max_seq_length_in_batch]), is_next: Size([batch_size])
-                    token_type_ids = batch.segment_ids  # 0 for sens A, 1 for sens B. 0 padding
-                    is_next = batch.is_next
-                    lm_labels_ids = batch.lm_labels_ids  # -1 padding, others for predict in lm task
-                    # F-prop through the model. # NOTE: keyword args: input_mask, output_all_encoded_layers
-                    # Version 2:
-                    all_encoder_layers, pooled_out = valid_model.bert(input_ids, token_type_ids)
-                    seq_class_log_prob, prediction_log_prob = valid_model.generator(all_encoder_layers, pooled_out)
-                    # Version 1:
-                    # seq_class_log_prob, prediction_log_prob = valid_model(input_ids, token_type_ids)
-                    # TODO： Heads
+                    # input_ids: Size([batch_size, max_seq_length_in_batch]),
+                    # seq_lengths: Size([batch_size])
+                    if isinstance(batch.tokens, tuple):
+                        input_ids, _ = batch.tokens
+                    else:
+                        input_ids, _ = (batch.tokens, None)
+                    # segment_ids: Size([batch_size, max_seq_length_in_batch])
+                    # 0 for sens A, 1 for sens B. 0 padding
+                    token_type_ids = batch.segment_ids
+                    # F-prop through the model.
+                    all_encoder_layers, pooled_out = \
+                        valid_model.bert(input_ids, token_type_ids)
+                    seq_class_log_prob, prediction_log_prob = \
+                        valid_model.generator(all_encoder_layers, pooled_out)
+
                     outputs = (seq_class_log_prob, prediction_log_prob)
                     # Compute loss.
                     _, batch_stats = self.valid_loss(batch, outputs)
 
                     # Update statistics.
-                    stats.update(batch_stats)               
+                    stats.update(batch_stats)
             else:
                 stats = onmt.utils.Statistics()
                 for batch in valid_iter:
-                    src, src_lengths = batch.src if isinstance(batch.src, tuple) \
-                                    else (batch.src, None)
+                    src, src_lengths = batch.src if isinstance(
+                        batch.src, tuple) else (batch.src, None)
                     tgt = batch.tgt
 
-                    # F-prop through the model. 
+                    # F-prop through the model.
                     outputs, attns = valid_model(src, tgt, src_lengths)
 
                     # Compute loss.
@@ -358,7 +359,7 @@ class Trainer(object):
 
                     # Update statistics.
                     stats.update(batch_stats)
-            
+
         if moving_average:
             del valid_model
         else:
@@ -496,53 +497,41 @@ class Trainer(object):
                 learning_rate, step, train_stats=train_stats,
                 valid_stats=valid_stats)
 
-
-    def _bert_gradient_accumulation(self, true_batches, total_stats, report_stats):
-        """As the loss will be reduced by mean, normalization is not needed anymore.
+    def _bert_gradient_accumulation(self, true_batches,
+                                    total_stats, report_stats):
+        """As the loss will be reduced by mean, normalization is not needed.
            But we still need to average between GPUs.
         """
         if self.accum_count > 1:
             self.optim.zero_grad()
 
         for k, batch in enumerate(true_batches):
-            # target_size = batch.tgt.size(0)  
-            # NOTE: for batch in BERT : batch_first is True -> [batch, seq, vocab]
-            # # Truncated BPTT: reminder not compatible with accum > 1
-            # if self.trunc_size:  # TODO
-            #     trunc_size = self.trunc_size
-            # else:
-            #     trunc_size = target_size
+            # target_size = batch.tgt.size(0)
+            # NOTE: for batch in BERT :
+            # batch_first is True -> [batch, seq, vocab]
+            if isinstance(batch.tokens, tuple):
+                input_ids, seq_lengths = batch.tokens
+            else:
+                input_ids, seq_lengths = (batch.tokens, None)
 
-            input_ids, seq_lengths = batch.tokens if isinstance(batch.tokens, tuple) \
-                else (batch.tokens, None)
             if seq_lengths is not None:
                 report_stats.n_src_words += seq_lengths.sum().item()
 
-            # tgt_outer = batch.tgt
             token_type_ids = batch.segment_ids
-            is_next = batch.is_next
-            lm_labels_ids = batch.lm_labels_ids
-            # bptt = False
-            # TODO: to be removed, as not support bptt yet!
-            # for j in range(0, target_size-1, trunc_size):
-                # 1. Create truncated target.
-                # tgt = tgt_outer[j: j + trunc_size]
 
-                # 2. F-prop all to get log likelihood of two task.
+            # 1. F-prop all to get log likelihood of two task.
             if self.accum_count == 1:
                 self.optim.zero_grad()
-            # Version 2:
-            all_encoder_layers, pooled_out = self.model.bert(input_ids, token_type_ids)
-            seq_class_log_prob, prediction_log_prob = self.model.generator(all_encoder_layers, pooled_out)
-            # Version 1:
-            # seq_class_log_prob, prediction_log_prob = self.model(input_ids, token_type_ids)
+
+            all_encoder_layers, pooled_out = self.model.bert(
+                input_ids, token_type_ids)
+            seq_class_log_prob, prediction_log_prob = self.model.generator(
+                all_encoder_layers, pooled_out)
             # NOTE: (batch_size, 2), (batch_size, seq_size, vocab_size)
             outputs = (seq_class_log_prob, prediction_log_prob)
-                # outputs, attns = self.model(src, tgt, src_lengths, bptt=bptt)
-                # bptt = True
 
-                # 3. Compute loss.
-            try: # NOTE: unuse normalisation
+            # 2. Compute loss.
+            try:
                 loss, batch_stats = self.train_loss(batch, outputs)
                 # NOTE: DEBUG
                 # loss_list = onmt.utils.distributed.all_gather_list(loss)
@@ -565,32 +554,26 @@ class Trainer(object):
                 logger.info("At step %d, we removed a batch - accum %d",
                             self.optim.training_step, k)
 
-            # 4. Update the parameters and statistics.
+            # 3. Update the parameters and statistics.
             if self.accum_count == 1:
                 # Multi GPU gradient gather
                 if self.n_gpu > 1:
                     grads = [p.grad.data for p in self.model.parameters()
-                                if p.requires_grad
-                                and p.grad is not None]
+                             if p.requires_grad
+                             and p.grad is not None]
                     # current_rank = torch.distributed.get_rank()
                     # print("{}-> RANK: {}, grads BEFORE:{}".format(
                     # k, current_rank, grads[0]))
                     # NOTE: average the gradient across the GPU
                     onmt.utils.distributed.all_reduce_and_rescale_tensors(
                         grads, float(self.n_gpu))
-                    # reduced_grads = [p.grad.data for p in self.model.parameters()
+                    # reduced_grads = [p.grad.data for p in
+                    #         self.model.parameters()
                     #         if p.requires_grad
                     #         and p.grad is not None]
                     # print("{}-> RANK: {}, grads AFTER:{}".format(
                     # k, current_rank, reduced_grads[0]))
                 self.optim.step()
-
-            # If truncated, don't backprop fully.
-            # TO CHECK
-            # if dec_state is not None:
-            #    dec_state.detach()
-            # if self.model.decoder.state is not None:  # TODO: ??
-            #     self.model.decoder.detach_state()
 
         # in case of multi step gradient accumulation,
         # update only after accum batches

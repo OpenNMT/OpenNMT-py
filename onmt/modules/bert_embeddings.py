@@ -24,13 +24,13 @@ class BertEmbeddings(nn.Module):
         self.embed_size = embed_size
         self.word_padding_idx = pad_idx
         # Token embeddings: for input tokens
-        self.word_embeddings = nn.Embedding(vocab_size, embed_size,
-                                        padding_idx=pad_idx)
+        self.word_embeddings = nn.Embedding(
+            vocab_size, embed_size, padding_idx=pad_idx)
         # Position embeddings: for Position Encoding
         self.position_embeddings = nn.Embedding(max_position, embed_size)
         # Segmentation embeddings: for distinguish sentences A/B
-        self.token_type_embeddings = nn.Embedding(num_sentence, embed_size,
-                                                padding_idx=pad_idx)
+        self.token_type_embeddings = nn.Embedding(
+            num_sentence, embed_size, padding_idx=pad_idx)
 
         self.dropout = nn.Dropout(dropout)
 
@@ -43,8 +43,8 @@ class BertEmbeddings(nn.Module):
             embeddings: word embeds in shape [batch, seq, hidden_size].
         """
         seq_length = input_ids.size(1)
-        position_ids = torch.arange(seq_length, dtype=torch.long,
-                       device=input_ids.device)  # [0, 1,..., seq_length-1]
+        position_ids = torch.arange(
+            seq_length, dtype=torch.long, device=input_ids.device)
         # [[0,1,...,seq_length-1]] -> [[0,1,...,seq_length-1] *batch_size]
         position_ids = position_ids.unsqueeze(0).expand_as(input_ids)
 
@@ -54,7 +54,6 @@ class BertEmbeddings(nn.Module):
         word_embeds = self.word_embeddings(input_ids)
         position_embeds = self.position_embeddings(position_ids)
         token_type_embeds = self.token_type_embeddings(token_type_ids)
-
         embeddings = word_embeds + position_embeds + token_type_embeds
         # NOTE: in our version, LayerNorm is done in EncoderLayer
         # before fed into Attention comparing to original implementation

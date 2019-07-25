@@ -173,7 +173,7 @@ def get_bert_fields(task='pretraining', pad='[PAD]', bos='[CLS]',
         fields["token_labels_ids"] = token_labels_ids
 
     else:
-        raise ValueError("task '{}' has not been implemented yet!".format(task))
+        raise ValueError("task %s has not been implemented yet!" % task)
 
     return fields
 
@@ -398,8 +398,9 @@ def _build_bert_fields_vocab(fields, counters, vocab_size,
     # _build_field_vocab(tokens_field, tokens_counter,
     #                    size_multiple=vocab_size_multiple,
     #                    max_size=vocab_size, min_freq=tokens_min_frequency)
-    tokens_field.vocab = tokens_field.vocab_cls(tokens_counter, specials=[],
-                         max_size=vocab_size, min_freq=tokens_min_frequency)
+    tokens_field.vocab = tokens_field.vocab_cls(
+        tokens_counter, specials=[], max_size=vocab_size,
+        min_freq=tokens_min_frequency)
     if vocab_size_multiple > 1:
         _pad_vocab_to_multiple(tokens_field.vocab, vocab_size_multiple)
 
@@ -806,8 +807,8 @@ def max_tok_len(new, count, sofar):
     such that the total number of src/tgt tokens (including padding)
     in a batch <= batch_size
     """
-    if hasattr(new, 'is_next'):
-        # when a example has the attr 'is_next',
+    if hasattr(new, 'tokens'):
+        # when a example has the attr 'tokens',
         # this means we are loading Bert Data
         # Maintains the longest token length in the current batch
         global max_tokens_in_batch

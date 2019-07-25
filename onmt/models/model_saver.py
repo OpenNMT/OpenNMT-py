@@ -10,11 +10,11 @@ from copy import deepcopy
 
 def build_model_saver(model_opt, opt, model, fields, optim):
     model_saver = ModelSaver(opt.save_model,
-                                model,
-                                model_opt,
-                                fields,
-                                optim,
-                                opt.keep_checkpoint)
+                             model,
+                             model_opt,
+                             fields,
+                             optim,
+                             opt.keep_checkpoint)
     return model_saver
 
 
@@ -101,12 +101,14 @@ class ModelSaver(ModelSaverBase):
                       if isinstance(model, nn.DataParallel)
                       else model)
         real_generator = (real_model.generator.module
-                        if isinstance(real_model.generator, nn.DataParallel)
-                        else real_model.generator)
-
-        model_state_dict = real_model.state_dict()
-        model_state_dict = {k: v for k, v in model_state_dict.items()
-                            if 'generator' not in k}
+                          if isinstance(real_model.generator, nn.DataParallel)
+                          else real_model.generator)
+        if hasattr(real_model, 'bert'):
+            model_state_dict = real_model.bert.state_dict()
+        else:
+            model_state_dict = real_model.state_dict()
+            model_state_dict = {k: v for k, v in model_state_dict.items()
+                                if 'generator' not in k}
         generator_state_dict = real_generator.state_dict()
 
         # NOTE: We need to trim the vocab to remove any unk tokens that
@@ -115,7 +117,8 @@ class ModelSaver(ModelSaverBase):
         vocab = deepcopy(self.fields)
         for name, field in vocab.items():
             if isinstance(field, Field):
-                if hasattr(field, "vocab"):
+                if hasattr(field, "vocab") and \
+                   hasattr(field, "unk_token"):
                     assert name == 'tokens'
                     keys_to_pop = []
                     unk_token = field.unk_token
@@ -123,8 +126,8 @@ class ModelSaver(ModelSaverBase):
                     for key, value in field.vocab.stoi.items():
                         if value == unk_id and key != unk_token:
                             keys_to_pop.append(key)
-                        for key in keys_to_pop:
-                            field.vocab.stoi.pop(key, None)
+                    for key in keys_to_pop:
+                        field.vocab.stoi.pop(key, None)
             else:
                 if hasattr(field, "fields"):
                     assert name in ["src", "tgt"]

@@ -29,7 +29,8 @@ def main(opt):
         checkpoint = torch.load(opt.train_from,
                                 map_location=lambda storage, loc: storage)
         if 'vocab' in checkpoint:
-            logger.info('Loading vocab from checkpoint at %s.' % opt.train_from)
+            logger.info('Loading vocab from checkpoint at %s.'
+                        % opt.train_from)
             vocab = checkpoint['vocab']
         else:
             vocab = torch.load(opt.data + '.vocab.pt')
@@ -127,8 +128,17 @@ def batch_producer(generator_to_serve, queues, semaphore, opt):
             else:
                 b.tokens = b.tokens.to(torch.device(device_id))
             b.segment_ids = b.segment_ids.to(torch.device(device_id))
-            b.is_next = b.is_next.to(torch.device(device_id))
-            b.lm_labels_ids = b.lm_labels_ids.to(torch.device(device_id))
+            if opt.task_type == 'pretraining':
+                b.is_next = b.is_next.to(torch.device(device_id))
+                b.lm_labels_ids = b.lm_labels_ids.to(torch.device(device_id))
+            elif opt.task_type == 'classification':
+                b.category = b.category.to(torch.device(device_id))
+            elif opt.task_type == 'prediction':
+                b.token_labels_ids = b.token_labels_ids.to(
+                    torch.device(device_id))
+            else:
+                raise ValueError("task type Error")
+
         else:
             if isinstance(b.src, tuple):
                 b.src = tuple([_.to(torch.device(device_id))

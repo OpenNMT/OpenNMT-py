@@ -240,18 +240,19 @@ def build_bert_embeddings(opt, fields):
 
 
 def build_bert_encoder(model_opt, fields, embeddings):
-    bert = BertEncoder(embeddings, num_layers=model_opt.layers,
-                       d_model=model_opt.word_vec_size, heads=model_opt.heads,
-                       d_ff=model_opt.transformer_ff, dropout=model_opt.dropout[0],
-                       max_relative_positions=model_opt.max_relative_positions)
+    bert = BertEncoder(
+        embeddings, num_layers=model_opt.layers,
+        d_model=model_opt.word_vec_size, heads=model_opt.heads,
+        d_ff=model_opt.transformer_ff, dropout=model_opt.dropout[0],
+        max_relative_positions=model_opt.max_relative_positions)
     return bert
 
 
 def build_bert_generator(model_opt, fields, bert_encoder):
     """Main part for transfer learning:
-       set opt.task_type to `pretraining` if want finetuning;
-       set opt.task_type to `classification` if want use Bert to classification task;
-       set opt.task_type to `generation` if want use Bert to generate tokens.
+       set opt.task_type to `pretraining` if want finetuning Bert;
+       set opt.task_type to `classification` if want sentence level task;
+       set opt.task_type to `generation` if want token level task.
        Both all_encoder_layers and pooled_output will be feed to generator,
        pretraining task will use the two,
        while only pooled_output will be used for classification generator;
@@ -259,15 +260,17 @@ def build_bert_generator(model_opt, fields, bert_encoder):
     """
     task = model_opt.task_type
     if task == 'pretraining':
-        generator = BertPreTrainingHeads(bert_encoder.d_model,
-                                         bert_encoder.embeddings.vocab_size)
+        generator = BertPreTrainingHeads(
+            bert_encoder.d_model, bert_encoder.embeddings.vocab_size)
         if model_opt.reuse_embeddings:
-            generator.mask_lm.decode.weight = bert_encoder.embeddings.word_embeddings.weight
+            generator.mask_lm.decode.weight = \
+                bert_encoder.embeddings.word_embeddings.weight
     elif task == 'generation':
-        generator = TokenGenerationHead(bert_encoder.d_model,
-                                         bert_encoder.vocab_size)
+        generator = TokenGenerationHead(
+            bert_encoder.d_model, bert_encoder.vocab_size)
         if model_opt.reuse_embeddings:
-            generator.decode.weight = bert_encoder.embeddings.word_embeddings.weight
+            generator.decode.weight = \
+                bert_encoder.embeddings.word_embeddings.weight
     elif task == 'classification':
         n_class = model_opt.classification
         generator = ClassificationHead(bert_encoder.d_model, n_class)
@@ -313,37 +316,41 @@ def build_bert_model(model_opt, opt, fields, checkpoint=None, gpu_id=None):
     model = nn.Sequential(OrderedDict([
                             ('bert', bert_encoder),
                             ('generator', generator)]))
+
     # Load the model states from checkpoint or initialize them.
+    model_init = {'bert': False, 'generator': False}
     if checkpoint is not None:
         assert 'model' in checkpoint
+        if model.bert.state_dict().keys() != checkpoint['model'].keys():
+            raise ValueError("Provide checkpoint don't match actual model!")
         logger.info("Load Model Parameters...")
-        model.bert.load_state_dict(checkpoint['model'], strict=False)
-        if model_opt.task_type == 'pretraining':
+        model.bert.load_state_dict(checkpoint['model'], strict=True)
+        model_init['bert'] = True
+        if model.generator.state_dict().keys() == checkpoint['generator'].keys():
             logger.info("Load generator Parameters...")
-            model.generator.load_state_dict(checkpoint['generator'], strict=False)
-        else:
-            logger.info("Initialize generator Parameters...")
-            for p in model.generator.parameters():
+            model.generator.load_state_dict(checkpoint['generator'], strict=True)
+            model_init['generator'] = True
+
+    for sub_module, is_init in model_init.items():
+        if not is_init:
+            logger.info("Initialize {} Parameters...".format(sub_module))
+            if model_opt.param_init_normal != 0.0:
+                logger.info('Initialize weights using a normal distribution')
+                normal_std = model_opt.param_init_normal
+                for p in model.sub_module.parameters():
+                    p.data.normal_(mean=0, std=normal_std)
+            elif model_opt.param_init != 0.0:
+                logger.info('Initialize weights using a uniform distribution')
+                for p in model.sub_module.parameters():
+                    p.data.uniform_(-model_opt.param_init,
+                                    model_opt.param_init)
+            elif model_opt.param_init_glorot:
+                logger.info('Glorot initialization')
+                for p in model.sub_module.parameters():
                     if p.dim() > 1:
                         xavier_uniform_(p)
-    else:
-        logger.info("No checkpoint, Initialize Parameters...")
-        if model_opt.param_init_normal != 0.0:
-            logger.info('Initialize weights using a normal distribution')
-            normal_std = model_opt.param_init_normal
-            for p in model.parameters():
-                p.data.normal_(mean=0, std=normal_std)
-        elif model_opt.param_init != 0.0:
-            logger.info('Initialize weights using a uniform distribution')
-            for p in model.parameters():
-                p.data.uniform_(-model_opt.param_init, model_opt.param_init)
-        elif model_opt.param_init_glorot:
-            logger.info('Glorot initialization')
-            for p in model.parameters():
-                if p.dim() > 1:
-                    xavier_uniform_(p)
-        else:
-            raise AttributeError("Initialization method haven't be used!")
+            else:
+                raise AttributeError("Initialization method haven't be used!")
 
     model.to(device)
     logger.info(model)
