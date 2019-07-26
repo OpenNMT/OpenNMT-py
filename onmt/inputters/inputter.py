@@ -140,12 +140,6 @@ def get_fields(
 def get_bert_fields(task='pretraining', pad='[PAD]', bos='[CLS]',
                     eos='[SEP]', unk='[UNK]'):
     fields = {}
-    # tokens_kwargs = {"n_feats": 0,
-    #                  "include_lengths": True,
-    #                  "pad": "[PAD]", "bos": "[CLS]", "eos": "[SEP]",
-    #                  "truncate": src_truncate,
-    #                  "base_name": "tokens"}
-    # fields["tokens"] = text_fields(**tokens_kwargs)
     tokens = Field(sequential=True, use_vocab=True, pad_token=pad,
                    unk_token=unk, include_lengths=True, batch_first=True)
     fields["tokens"] = tokens

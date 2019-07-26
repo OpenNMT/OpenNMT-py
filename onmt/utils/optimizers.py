@@ -192,8 +192,6 @@ def linear_decay(step, warmup_steps, total_steps):
     """
     if not 0 <= warmup_steps < total_steps:
         raise ValueError("Invalid decay: check warmup_step & train_steps")
-    if step > total_steps:
-        raise ValueError("Invalid step: step surpass train_steps!")
     if step < warmup_steps:
         return step / warmup_steps * 1.0
     else:
@@ -217,8 +215,6 @@ def cosine_decay(step, warmup_steps, total_steps, cycles=0.5):
 
     if not 0 <= warmup_steps < total_steps:
         raise ValueError("Invalid decay: check warmup_step & train_steps")
-    if step > total_steps:
-        raise ValueError("Invalid step: step surpass train_steps!")
     if step < warmup_steps:
         return step / warmup_steps * 1.0
     else:
@@ -236,8 +232,6 @@ def cosine_hard_restart_decay(step, warmup_steps, total_steps, cycles=1.0):
     assert(cycles >= 1.0)
     if not 0 <= warmup_steps < total_steps:
         raise ValueError("Invalid decay: check warmup_step & train_steps")
-    if step > total_steps:
-        raise ValueError("Invalid step: step surpass train_steps!")
     if step < warmup_steps:
         return step / warmup_steps * 1.0
     else:
@@ -252,8 +246,6 @@ def cosine_warmup_restart_decay(step, warmup_steps, total_steps, cycles=1.0):
     """
     if not 0 <= warmup_steps < total_steps:
         raise ValueError("Invalid decay: check warmup_step & train_steps")
-    if step > total_steps:
-        raise ValueError("Invalid step: step surpass train_steps!")
     if not cycles * warmup_steps / total_steps < 1.0:
         raise ValueError("Invalid decay: Error for decay! Check cycles!")
     warmup_ratio = warmup_steps * cycles / total_steps

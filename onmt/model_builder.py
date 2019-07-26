@@ -337,16 +337,16 @@ def build_bert_model(model_opt, opt, fields, checkpoint=None, gpu_id=None):
             if model_opt.param_init_normal != 0.0:
                 logger.info('Initialize weights using a normal distribution')
                 normal_std = model_opt.param_init_normal
-                for p in model.sub_module.parameters():
+                for p in getattr(model, sub_module).parameters():
                     p.data.normal_(mean=0, std=normal_std)
             elif model_opt.param_init != 0.0:
                 logger.info('Initialize weights using a uniform distribution')
-                for p in model.sub_module.parameters():
+                for p in getattr(model, sub_module).parameters():
                     p.data.uniform_(-model_opt.param_init,
                                     model_opt.param_init)
             elif model_opt.param_init_glorot:
                 logger.info('Glorot initialization')
-                for p in model.sub_module.parameters():
+                for p in getattr(model, sub_module).parameters():
                     if p.dim() > 1:
                         xavier_uniform_(p)
             else:

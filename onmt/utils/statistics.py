@@ -248,10 +248,10 @@ class BertStatistics(Statistics):
         writer.add_scalar(prefix + "/xent", self.xent(), step)
         writer.add_scalar(prefix + "/ppl", self.ppl(), step)
         if self.n_words != 0:
-            writer.add_scalar(prefix + "/accuracy(token)",
+            writer.add_scalar(prefix + "/accuracy_token",
                               self.accuracy(), step)
         if self.n_sentence != 0:
-            writer.add_scalar(prefix + "/accuracy(sent)",
+            writer.add_scalar(prefix + "/accuracy_sent",
                               self.sentence_accuracy(), step)
         writer.add_scalar(prefix + "/tgtper", self.n_words / t, step)
         writer.add_scalar(prefix + "/lr", learning_rate, step)

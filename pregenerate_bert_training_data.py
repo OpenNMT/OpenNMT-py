@@ -264,7 +264,7 @@ def main():
                         # choices=["bert-base-uncased", "bert-large-uncased", "bert-base-cased",
                         #          "bert-base-multilingual", "bert-base-chinese"])
     # parser.add_argument("--vocab_pathname", type=Path, required=True) # vocab file correspand to bert_model
-    
+
     parser.add_argument("--do_lower_case", default=True)  # action="store_true")
 
     parser.add_argument("--reduce_memory", action="store_true",
@@ -333,7 +333,7 @@ def main():
                 dataset.save(epoch_filename) 
                 num_doc_instances = len(docs_instances)
                 print("output file {}, num_example {}, max_seq_len {}".format(epoch_filename,num_doc_instances,args.max_seq_len))
-                    
+
             metrics_file = args.output_dir / f"{args.output_name}.metrics.{args.corpus_type}.{epoch}.json"
             with metrics_file.open('w') as metrics_file:
                 metrics = {
@@ -350,7 +350,7 @@ def main():
         fields = _build_bert_fields_vocab(fields, counters, vocab_size, args.tokens_min_frequency, args.vocab_size_multiple) #
         bert_vocab_file = args.output_dir / f"{args.output_name}.vocab.pt"
         torch.save(fields, bert_vocab_file)
-      
+
 
 if __name__ == '__main__':
     main()
