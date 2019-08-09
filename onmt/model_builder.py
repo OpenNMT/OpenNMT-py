@@ -20,7 +20,7 @@ from onmt.utils.logging import logger
 from onmt.utils.parse import ArgumentParser
 
 from onmt.models import BertPreTrainingHeads, ClassificationHead, \
-                        TokenGenerationHead
+                        TokenGenerationHead, TokenTaggingHead
 from onmt.modules.bert_embeddings import BertEmbeddings
 from collections import OrderedDict
 
@@ -259,6 +259,8 @@ def build_bert_generator(model_opt, fields, bert_encoder):
        only all_encoder_layers will be used for generation generator;
     """
     task = model_opt.task_type
+    dropout = model_opt.dropout[0] if type(model_opt.dropout) is list \
+        else model_opt.dropout
     if task == 'pretraining':
         generator = BertPreTrainingHeads(
             bert_encoder.d_model, bert_encoder.embeddings.vocab_size)
@@ -272,8 +274,13 @@ def build_bert_generator(model_opt, fields, bert_encoder):
             generator.decode.weight = \
                 bert_encoder.embeddings.word_embeddings.weight
     elif task == 'classification':
-        n_class = model_opt.classification
-        generator = ClassificationHead(bert_encoder.d_model, n_class)
+        n_class = len(fields["category"].vocab.stoi) #model_opt.labels
+        logger.info('Generator of classification with %s class.' % n_class)
+        generator = ClassificationHead(bert_encoder.d_model, n_class, dropout)
+    elif task == 'tagging':
+        n_class = len(fields["token_labels"].vocab.stoi)
+        logger.info('Generator of tagging with %s tag.' % n_class)
+        generator = TokenTaggingHead(bert_encoder.d_model, n_class, dropout)
     return generator
 
 

@@ -9,7 +9,7 @@ from itertools import chain, cycle
 
 import torch
 import torchtext.data
-from torchtext.data import Field, RawField
+from torchtext.data import Field, RawField, LabelField
 from torchtext.vocab import Vocab
 from torchtext.data.utils import RandomShuffler
 
@@ -144,7 +144,7 @@ def get_bert_fields(task='pretraining', pad='[PAD]', bos='[CLS]',
                    unk_token=unk, include_lengths=True, batch_first=True)
     fields["tokens"] = tokens
 
-    segment_ids = Field(use_vocab=False, dtype=torch.long,
+    segment_ids = Field(use_vocab=False, dtype=torch.long, unk_token=None,
                         sequential=True, pad_token=0, batch_first=True)
     fields["segment_ids"] = segment_ids
     if task == 'pretraining':
@@ -157,14 +157,14 @@ def get_bert_fields(task='pretraining', pad='[PAD]', bos='[CLS]',
         fields["lm_labels_ids"] = lm_labels_ids
 
     elif task == 'classification':
-        category = Field(use_vocab=False, dtype=torch.long,
-                         sequential=False, batch_first=True)  # 0/1
+        category = LabelField(sequential=False, use_vocab=True,
+                              pad_token=None, batch_first=True)
         fields["category"] = category
 
-    elif task == 'generation':
-        token_labels_ids = Field(sequential=True, use_vocab=False,
-                                 pad_token=-1, batch_first=True)
-        fields["token_labels_ids"] = token_labels_ids
+    elif task == 'generation' or task == 'tagging':
+        token_labels = Field(sequential=True, use_vocab=True, unk_token=None,
+                             pad_token=pad, batch_first=True)
+        fields["token_labels"] = token_labels
 
     else:
         raise ValueError("task %s has not been implemented yet!" % task)
@@ -383,8 +383,8 @@ def _build_fields_vocab(fields, counters, data_type, share_vocab,
     return fields
 
 
-def _build_bert_fields_vocab(fields, counters, vocab_size,
-                             tokens_min_frequency=0, vocab_size_multiple=1):
+def _build_bert_fields_vocab(fields, counters, vocab_size, label_name=None,
+                             tokens_min_frequency=1, vocab_size_multiple=1):
     tokens_field = fields["tokens"]
     tokens_counter = counters["tokens"]
     # NOTE: Do not use _build_field_vocab
@@ -398,6 +398,15 @@ def _build_bert_fields_vocab(fields, counters, vocab_size,
     if vocab_size_multiple > 1:
         _pad_vocab_to_multiple(tokens_field.vocab, vocab_size_multiple)
 
+    if label_name is not None:
+        label_field = fields[label_name]
+        label_counter = counters[label_name]
+        all_specials = [label_field.unk_token, label_field.pad_token,
+                        label_field.init_token, label_field.eos_token]
+        specials = [tok for tok in all_specials if tok is not None]
+
+        label_field.vocab = label_field.vocab_cls(
+            label_counter, specials=specials)
     return fields
 
 
@@ -630,7 +639,7 @@ class OrderedIterator(torchtext.data.Iterator):
         instead of a torchtext.data.Batch object.
         """
         while True:
-            self.init_epoch()
+            self.init_epoch()  # Inside, create_batches() will be called
             for idx, minibatch in enumerate(self.batches):
                 # fast-forward if loaded from state
                 if self._iterations_this_epoch > idx:

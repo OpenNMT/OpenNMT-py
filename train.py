@@ -133,8 +133,8 @@ def batch_producer(generator_to_serve, queues, semaphore, opt):
                 b.lm_labels_ids = b.lm_labels_ids.to(torch.device(device_id))
             elif opt.task_type == 'classification':
                 b.category = b.category.to(torch.device(device_id))
-            elif opt.task_type == 'prediction':
-                b.token_labels_ids = b.token_labels_ids.to(
+            elif opt.task_type == 'prediction' or opt.task_type == 'tagging':
+                b.token_labels = b.token_labels.to(
                     torch.device(device_id))
             else:
                 raise ValueError("task type Error")

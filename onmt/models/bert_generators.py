@@ -107,30 +107,63 @@ class BertPredictionTransform(nn.Module):
 
 class ClassificationHead(nn.Module):
     """
-    n-class classification head
+    n-class Sentence classification head
     """
 
-    def __init__(self, hidden_size, n_class):
+    def __init__(self, hidden_size, n_class, dropout=0.1):
         """
         Args:
             hidden_size: BERT model output size
         """
         super(ClassificationHead, self).__init__()
+        self.dropout = nn.Dropout(dropout)
         self.linear = nn.Linear(hidden_size, n_class)
         self.softmax = nn.LogSoftmax(dim=-1)
 
     def forward(self, all_hidden, pooled):
         """
         Args:
-            all_hidden: first output of Bert encoder (batch, src, d_model)
-            pooled: second output of bert encoder, shape (batch, src, d_model)
+            all_hidden: layer output of BERT, list [(batch, seq, d_model)]
+            pooled: last layer hidden [CLS] of BERT, (batch, d_model)
         Returns:
             class_log_prob: shape (batch_size, 2)
             None: this is a placeholder for token level prediction task
         """
+        pooled = self.dropout(pooled)
         score = self.linear(pooled)  # (batch, n_class)
         class_log_prob = self.softmax(score)  # (batch, n_class)
         return class_log_prob, None
+
+
+class TokenTaggingHead(nn.Module):
+    """
+    n-class Token Tagging head
+    """
+
+    def __init__(self, hidden_size, n_class, dropout=0.1):
+        """
+        Args:
+            hidden_size: BERT model output size
+        """
+        super(TokenTaggingHead, self).__init__()
+        self.dropout = nn.Dropout(dropout)
+        self.linear = nn.Linear(hidden_size, n_class)
+        self.softmax = nn.LogSoftmax(dim=-1)
+
+    def forward(self, all_hidden, pooled):
+        """
+        Args:
+            all_hidden: layer output of BERT, list [(batch, seq, d_model)]
+            pooled: last layer hidden [CLS] of BERT, (batch, d_model)
+        Returns:
+            None: this is a placeholder for sentence level task
+            tok_class_log_prob: shape (batch, seq, n_class)
+        """
+        last_hidden = all_hidden[-1]
+        last_hidden = self.dropout(last_hidden)  # (batch, seq, d_model)
+        score = self.linear(last_hidden)  # (batch, seq, n_class)
+        tok_class_log_prob = self.softmax(score)  # (batch, seq, n_class)
+        return None, tok_class_log_prob
 
 
 class TokenGenerationHead(nn.Module):
@@ -153,15 +186,15 @@ class TokenGenerationHead(nn.Module):
 
         self.softmax = nn.LogSoftmax(dim=-1)
 
-    def forward(self, x, pooled):
+    def forward(self, all_hidden, pooled):
         """
         Args:
-            x: last layer output of bert, shape (batch, seq, d_model)
+            all_hidden: layer output of BERT, list [(batch, seq, d_model)]
         Returns:
             None: this is a placeholder for sentence level task
             prediction_log_prob: shape (batch, seq, vocab)
         """
-        last_hidden = x[-1]
+        last_hidden = all_hidden[-1]
         y = self.transform(last_hidden)  # (batch, seq, d_model)
         prediction_scores = self.decode(y) + self.bias  # (batch, seq, vocab)
         prediction_log_prob = self.softmax(prediction_scores)

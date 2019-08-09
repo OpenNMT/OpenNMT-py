@@ -50,7 +50,7 @@ class BertEncoder(nn.Module):
             input_mask: shape [batch, seq], 1 for masked position(that padding)
             output_all_encoded_layers: if out contain all hidden layer
         Returns:
-            all_encoder_layers: list of out in shape (batch, src, d_model),
+            all_encoder_layers: list of out in shape (batch, seq, d_model),
                                 to be used for generation task
             pooled_output: shape (batch, d_model),
                            to be used for classification task

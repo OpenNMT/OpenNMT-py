@@ -118,7 +118,7 @@ class ModelSaver(ModelSaverBase):
         for name, field in vocab.items():
             if isinstance(field, Field):
                 if hasattr(field, "vocab") and \
-                   hasattr(field, "unk_token"):
+                   (field.unk_token is not None):
                     assert name == 'tokens'
                     keys_to_pop = []
                     unk_token = field.unk_token

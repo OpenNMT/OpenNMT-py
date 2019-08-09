@@ -139,11 +139,12 @@ class Statistics(object):
 class BertStatistics(Statistics):
     """ Bert Statistics as the loss is reduced by mean """
     def __init__(self, loss=0, n_words=0, n_correct=0,
-                 n_sentence=0, n_correct_sentence=0):
+                 n_sentence=0, n_correct_sentence=0, f1=0):
         super(BertStatistics, self).__init__(loss, n_words, n_correct)
         self.n_update = 0 if n_words == 0 and n_sentence == 0 else 1
         self.n_sentence = n_sentence
         self.n_correct_sentence = n_correct_sentence
+        self.f1 = f1
 
     def accuracy(self):
         """ compute token level accuracy """
@@ -187,6 +188,8 @@ class BertStatistics(Statistics):
         self.n_correct += stat.n_correct
         self.n_sentence += stat.n_sentence
         self.n_correct_sentence += stat.n_correct_sentence
+        self.f1 = (self.f1 * self.n_update + stat.f1 *
+                   stat.n_update) / (self.n_update + stat.n_update)
 
         if update_n_src_words:
             self.n_src_words += stat.n_src_words
@@ -203,7 +206,7 @@ class BertStatistics(Statistics):
         step_fmt = "%2d" % step
         if num_steps > 0:
             step_fmt = "%s/%5d" % (step_fmt, num_steps)
-        if self.n_words == 0:  # sentence level task
+        if self.n_words == 0:  # sentence level task: Acc, PPL, X-entropy
             logger.info(
                 ("Step %s; acc(sent):%6.2f; ppl: %5.2f; " +
                  "xent: %4.2f; lr: %7.5f; %3.0f tok/%3.0f sent/s; %6.0f sec")
@@ -215,13 +218,13 @@ class BertStatistics(Statistics):
                    self.n_src_words / (t + 1e-5),
                    self.n_sentence / (t + 1e-5),
                    time.time() - start))
-        elif self.n_sentence == 0:  # token level task
+        elif self.n_sentence == 0:  # token level task: Tok Acc, F1, X-entropy
             logger.info(
-                ("Step %s; acc(token):%6.2f; ppl: %5.2f; " +
+                ("Step %s; acc(token):%6.2f; f1: %5.4f; " +
                  "xent: %4.2f; lr: %7.5f; %3.0f/%3.0f tok/s; %6.0f sec")
                 % (step_fmt,
                    self.accuracy(),
-                   self.ppl(),
+                   self.f1,
                    self.xent(),
                    learning_rate,
                    self.n_src_words / (t + 1e-5),
@@ -247,10 +250,12 @@ class BertStatistics(Statistics):
         t = self.elapsed_time()
         writer.add_scalar(prefix + "/xent", self.xent(), step)
         writer.add_scalar(prefix + "/ppl", self.ppl(), step)
-        if self.n_words != 0:
+        if self.n_words != 0:  # Token level task
             writer.add_scalar(prefix + "/accuracy_token",
                               self.accuracy(), step)
-        if self.n_sentence != 0:
+            writer.add_scalar(prefix + "/F1",
+                              self.f1, step)
+        if self.n_sentence != 0:  # Sentence level task
             writer.add_scalar(prefix + "/accuracy_sent",
                               self.sentence_accuracy(), step)
         writer.add_scalar(prefix + "/tgtper", self.n_words / t, step)

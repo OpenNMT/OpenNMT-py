@@ -1,5 +1,5 @@
 """
-This file is massively inspired from huggingface and adapted into onmt custom.
+This file is lifted from huggingface and adapted for onmt structure.
 Ref: https://github.com/huggingface/pytorch-transformers/blob/master/examples/lm_finetuning/pregenerate_training_data.py
 """
 from argparse import ArgumentParser
@@ -18,6 +18,7 @@ from onmt.inputters.dataset_bert import BertDataset
 import os
 from collections import Counter, defaultdict
 import torch
+
 
 class DocumentDatabase:
     def __init__(self, reduce_memory=False):
@@ -347,7 +348,7 @@ def main():
         vocab_list = list(tokenizer.vocab.keys())
         counters = defaultdict(Counter)
         _, vocab_size = _build_bert_vocab(vocab_list, "tokens", counters)
-        fields = _build_bert_fields_vocab(fields, counters, vocab_size, args.tokens_min_frequency, args.vocab_size_multiple) #
+        fields = _build_bert_fields_vocab(fields, counters, vocab_size, None, args.tokens_min_frequency, args.vocab_size_multiple) #
         bert_vocab_file = args.output_dir / f"{args.output_name}.vocab.pt"
         torch.save(fields, bert_vocab_file)
 

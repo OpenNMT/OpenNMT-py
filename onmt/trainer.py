@@ -31,7 +31,14 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
         model_saver(:obj:`onmt.models.ModelSaverBase`): the utility object
             used to save the model
     """
-    tgt_field = dict(fields)["tgt"].base_field if not opt.is_bert else None
+    if not opt.is_bert:
+        tgt_field = dict(fields)["tgt"].base_field
+    elif opt.task_type == 'tagging' or opt.task_type == 'generation':
+        tgt_field = fields["token_labels"]
+    elif opt.task_type == 'classification':
+        tgt_field = fields["category"]
+    else:  # pretraining task
+        tgt_field = fields["lm_labels_ids"]
     train_loss = onmt.utils.loss.build_loss_compute(model, tgt_field, opt)
     valid_loss = onmt.utils.loss.build_loss_compute(
                     model, tgt_field, opt, train=False)

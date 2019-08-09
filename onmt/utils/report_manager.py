@@ -147,12 +147,14 @@ class ReportMgr(ReportMgrBase):
         """
         if train_stats is not None:
             self.log('Train perplexity: %g' % train_stats.ppl())
-            if isinstance(train_stats, onmt.utils.BertStatistics) \
-               and train_stats.accuracy() is None:
+            if train_stats.accuracy() is None:
+                assert isinstance(train_stats, onmt.utils.BertStatistics)
                 accuracy = train_stats.sentence_accuracy()
             else:
                 accuracy = train_stats.accuracy()
             self.log('Train accuracy: %g' % accuracy)
+            if hasattr(train_stats, 'f1') and train_stats.f1 != 0:
+                self.log('Train F1: %g' % train_stats.f1)
 
             self.maybe_log_tensorboard(train_stats,
                                        "train",
@@ -161,12 +163,14 @@ class ReportMgr(ReportMgrBase):
 
         if valid_stats is not None:
             self.log('Validation perplexity: %g' % valid_stats.ppl())
-            if isinstance(valid_stats, onmt.utils.BertStatistics) \
-               and valid_stats.accuracy() is None:
+            if valid_stats.accuracy() is None:
+                assert isinstance(valid_stats, onmt.utils.BertStatistics)
                 accuracy = valid_stats.sentence_accuracy()
             else:
                 accuracy = valid_stats.accuracy()
             self.log('Validation accuracy: %g' % accuracy)
+            if hasattr(valid_stats, 'f1') and valid_stats.f1 != 0:
+                self.log('Validation F1: %g' % valid_stats.f1)
 
             self.maybe_log_tensorboard(valid_stats,
                                        "valid",

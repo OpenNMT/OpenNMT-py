@@ -64,7 +64,7 @@ def mapping_key(key, max_layers):
         key = re.sub(r'generator.mask_lm.transform.layer_norm\.(.*)',
                      r'cls.predictions.transform.LayerNorm.\1', key)
     else:
-        raise ValueError("Unexpected keys!")
+        raise KeyError("Unexpected keys! Please provide HuggingFace weights")
     return key
 
 
@@ -74,9 +74,26 @@ def convert_bert_weights(bert_model, weights, n_layers=12):
     generator_weights = OrderedDict()
     model_weights = {"bert": bert_weights,
                      "generator": generator_weights}
+    hugface_keys = weights.keys()
     try:
         for key in bert_model_keys:
             hugface_key = mapping_key(key, n_layers)
+            if hugface_key not in hugface_keys:
+                if 'LayerNorm' in hugface_key:
+                    # Fix LayerNorm of old huggingface ckp
+                    hugface_key = re.sub(r'LayerNorm.weight',
+                                         r'LayerNorm.gamma', hugface_key)
+                    hugface_key = re.sub(r'LayerNorm.bias',
+                                         r'LayerNorm.beta', hugface_key)
+                    if hugface_key in hugface_keys:
+                        print("[OLD Weights file]gamma/beta is used in " +
+                              "naming BertLayerNorm.")
+                    else:
+                        raise KeyError("Key %s not found in weight file"
+                                       % hugface_key)
+                else:
+                    raise KeyError("Key %s not found in weight file"
+                                   % hugface_key)
             if 'generator' not in key:
                 onmt_key = re.sub(r'bert\.(.*)', r'\1', key)
                 model_weights['bert'][onmt_key] = weights[hugface_key]

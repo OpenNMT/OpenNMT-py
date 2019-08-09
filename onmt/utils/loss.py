@@ -10,6 +10,7 @@ import torch.nn.functional as F
 import onmt
 from onmt.modules.sparse_losses import SparsemaxLoss
 from onmt.modules.sparse_activations import LogSparsemax
+from sklearn.metrics import f1_score
 
 
 def build_loss_compute(model, tgt_field, opt, train=True):
@@ -24,9 +25,14 @@ def build_loss_compute(model, tgt_field, opt, train=True):
     device = torch.device("cuda" if onmt.utils.misc.use_gpu(opt) else "cpu")
     if opt.is_bert is True:
         assert hasattr(model, 'bert')
-        assert tgt_field is None
-        # BERT use -1 for unmasked token in lm_label_ids
-        criterion = nn.NLLLoss(ignore_index=-1, reduction='mean')
+        if tgt_field.pad_token is not None:
+            if tgt_field.use_vocab:
+                padding_idx = tgt_field.vocab.stoi[tgt_field.pad_token]
+            else:  # target is pre-numerized: -1 for unmasked token in mlm
+                padding_idx = tgt_field.pad_token
+            criterion = nn.NLLLoss(ignore_index=padding_idx, reduction='mean')
+        else:  # sentence level
+            criterion = nn.NLLLoss(reduction='mean')
         task = opt.task_type
         compute = BertLoss(criterion, task)
     else:
@@ -67,7 +73,7 @@ class BertLoss(nn.Module):
     def __init__(self, criterion, task):
         super(BertLoss, self).__init__()
         self.criterion = criterion
-        self.task =task
+        self.task = task
 
     @property
     def padding_idx(self):
@@ -91,14 +97,14 @@ class BertLoss(nn.Module):
         """
         if self.task == 'pretraining':
             # masked lm task: token level
-            pred_tokens = tokens_scores.argmax(1)  # (batch*seq, vocab) -> (batch*seq)
-            non_padding = tokens_target.ne(self.padding_idx)  # mask: (batch*seq)
+            pred_tokens = tokens_scores.argmax(1)  # (B*S, V) -> (B*S)
+            non_padding = tokens_target.ne(self.padding_idx)  # mask: (B*S)
             tokens_match = pred_tokens.eq(tokens_target).masked_select(non_padding)
             n_correct_tokens = tokens_match.sum().item()
             n_tokens = non_padding.sum().item()
-
+            f1 = 0
             # next sentence prediction task: sentence level
-            pred_sents = sents_scores.argmax(-1)  # (batch_size, 2) -> (2)
+            pred_sents = sents_scores.argmax(-1)  # (B, 2) -> (2)
             n_correct_sents = sents_target.eq(pred_sents).sum().item()
             n_sentences = len(sents_target)
 
@@ -106,29 +112,46 @@ class BertLoss(nn.Module):
             # token level task: Not valide
             n_correct_tokens = 0
             n_tokens = 0
+            f1 = 0
             # sentence level task:
-            pred_sents = sents_scores.argmax(-1)  # (batch_size, n_label) -> (n_label)
+            pred_sents = sents_scores.argmax(-1)  # (B, n_label) -> (n_label)
             n_correct_sents = sents_target.eq(pred_sents).sum().item()
             n_sentences = len(sents_target)
 
-        elif self.task == 'generation':
+        elif self.task == 'tagging':
             # token level task:
-            pred_tokens = tokens_scores.argmax(1)  # (batch*seq, vocab) -> (batch*seq)
-            non_padding = tokens_target.ne(self.padding_idx)  # mask: (batch*seq)
+            pred_tokens = tokens_scores.argmax(1)  # (B*S, V) -> (B*S)
+            non_padding = tokens_target.ne(self.padding_idx)  # mask: (B*S)
             tokens_match = pred_tokens.eq(tokens_target).masked_select(non_padding)
             n_correct_tokens = tokens_match.sum().item()
             n_tokens = non_padding.sum().item()
+            # for f1:
+            tokens_target_select = tokens_target.masked_select(non_padding)
+            pred_tokens_select = pred_tokens.masked_select(non_padding)
+            f1 = f1_score(tokens_target_select.cpu(),
+                          pred_tokens_select.cpu(), average="micro")
+
+            # sentence level task: Not valide
+            n_correct_sents = 0
+            n_sentences = 0
+
+        elif self.task == 'generation':
+            # token level task:
+            pred_tokens = tokens_scores.argmax(1)  # (B*S, V) -> (B*S)
+            non_padding = tokens_target.ne(self.padding_idx)  # mask: (B*S)
+            tokens_match = pred_tokens.eq(tokens_target).masked_select(non_padding)
+            n_correct_tokens = tokens_match.sum().item()
+            n_tokens = non_padding.sum().item()
+            f1 = 0
             # sentence level task: Not valide
             n_correct_sents = 0
             n_sentences = 0
         else:
-            raise ValueError("task '{}' has not been implemented yet!".format(self.task))
+            raise ValueError("task %s not available!" % (self.task))
 
-        # print("lm: {}/{}".format(n_correct_tokens, n_tokens))
-        # print("nx: {}/{}".format(n_correct_sents, n_sentences))
         return onmt.utils.BertStatistics(loss.item(), n_tokens,
                                          n_correct_tokens, n_sentences,
-                                         n_correct_sents)
+                                         n_correct_sents, f1)
 
 
     def forward(self, batch, outputs):
@@ -144,15 +167,14 @@ class BertLoss(nn.Module):
         if self.task == 'pretraining':
             assert list(seq_class_log_prob.size()) == [len(batch), 2]
             # masked lm task: token level(loss mean by number of tokens)
-                # targets:
-            gtruth_tokens = batch.lm_labels_ids  # (batch, seq)
-            bottled_gtruth_tokens = gtruth_tokens.view(-1)  # (batch * seq)
-                # prediction: (batch, seq, vocab) -> (batch * seq, vocab)
+            gtruth_tokens = batch.lm_labels_ids  # (B, S)
+            bottled_gtruth_tokens = gtruth_tokens.view(-1)  # (B, S)
+            # prediction: (B, S, V) -> (B * S, V)
             bottled_prediction_log_prob = self._bottle(prediction_log_prob)
             mask_loss = self.criterion(bottled_prediction_log_prob,
                                        bottled_gtruth_tokens)
             # next sentence prediction task: sentence level(mean by sentence)
-            gtruth_sentences = batch.is_next  # (batch,)
+            gtruth_sentences = batch.is_next  # (B,)
             next_loss = self.criterion(seq_class_log_prob, gtruth_sentences)
             total_loss = next_loss + mask_loss  # total_loss reduced by mean
 
@@ -166,25 +188,23 @@ class BertLoss(nn.Module):
             gtruth_sentences = batch.category
             total_loss = self.criterion(seq_class_log_prob, gtruth_sentences)
 
-        elif self.task == 'generation':
+        elif self.task == 'tagging' or self.task == 'generation':
             assert seq_class_log_prob is None
-            assert hasattr(batch, 'token_labels_ids')
+            assert hasattr(batch, 'token_labels')
             # token level task: loss mean by number of tokens
-            gtruth_tokens = batch.token_labels_ids  # (batch, seq)
-            bottled_gtruth_tokens = gtruth_tokens.view(-1)  # (batch * seq)
-                # prediction: (batch, seq, vocab) -> (batch * seq, vocab)
+            gtruth_tokens = batch.token_labels  # (B, S)
+            bottled_gtruth_tokens = gtruth_tokens.view(-1)  # (B, S)
+            # prediction: (B, S, V) -> (B * S, V)
             bottled_prediction_log_prob = self._bottle(prediction_log_prob)
             total_loss = self.criterion(bottled_prediction_log_prob,
                                         bottled_gtruth_tokens)
             # sentence level task: Not valide
             seq_class_log_prob = None
             gtruth_sentences = None
+
         else:
-            raise ValueError("task '{}' has not been implemented yet!".format(self.task))
-        # loss_accum_normalized = total_loss  #/ float(normalization)
-        # print("loss: ({} + {})/{} = {}".format(next_loss, mask_loss,
-        #                float(normalization), loss_accum_normalized))
-        # print("nx: {}/{}".format(n_correct_sents, n_sentences))
+            raise ValueError("task %s not available!" % (self.task))
+
         stats = self._stats(total_loss.clone(),
                             bottled_prediction_log_prob,
                             bottled_gtruth_tokens,
