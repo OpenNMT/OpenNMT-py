@@ -73,6 +73,11 @@ class BeamSearch(DecodeStrategy):
 
         # beam state
         self.top_beam_finished = torch.zeros([batch_size], dtype=torch.uint8)
+        # BoolTensor was introduced in pytorch 1.2
+        try:
+            self.top_beam_finished = self.top_beam_finished.bool()
+        except AttributeError:
+            pass
         self.best_scores = torch.full([batch_size], -1e10, dtype=torch.float,
                                       device=mb_device)
 
