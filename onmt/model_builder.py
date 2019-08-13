@@ -362,3 +362,21 @@ def build_bert_model(model_opt, opt, fields, checkpoint=None, gpu_id=None):
     model.to(device)
     logger.info(model)
     return model
+
+def load_bert_model(opt, model_path):
+    checkpoint = torch.load(model_path,
+                            map_location=lambda storage, loc: storage)
+    logger.info("Checkpoint from {} Loaded.".format(model_path))
+    model_opt = ArgumentParser.ckpt_model_opts(checkpoint['opt'])
+    ArgumentParser.update_model_opts(model_opt)
+    # ArgumentParser.validate_model_opts(model_opt)
+    vocab = checkpoint['vocab']
+    fields = vocab
+    model = build_bert_model(model_opt, opt, fields, checkpoint, gpu_id=opt.gpu)
+
+    if opt.fp32:
+        model.float()
+    model.eval()
+    model.bert.eval()
+    model.generator.eval()
+    return fields, model, model_opt

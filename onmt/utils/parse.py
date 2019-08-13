@@ -5,6 +5,7 @@ import torch
 
 import onmt.opts as opts
 from onmt.utils.logging import logger
+from onmt.utils.bert_tokenization import PRETRAINED_VOCAB_ARCHIVE_MAP
 
 
 class ArgumentParser(cfargparse.ArgumentParser):
@@ -134,3 +135,25 @@ class ArgumentParser(cfargparse.ArgumentParser):
             "Please check path of your src vocab!"
         assert not opt.tgt_vocab or os.path.isfile(opt.tgt_vocab), \
             "Please check path of your tgt vocab!"
+
+    @classmethod
+    def validate_predict_opts(cls, opt):
+        if opt.delimiter is None:
+            if opt.task == 'classification':
+                opt.delimiter = ' ||| '
+            else:
+                opt.delimiter = ' '
+        logger.info("NOTICE: opt.delimiter set to `%s`" % opt.delimiter)
+        assert opt.bert_model in PRETRAINED_VOCAB_ARCHIVE_MAP.keys(), \
+            "Unsupported Pretrain model '%s'" % (opt.bert_model)
+        if '-cased' in opt.bert_model and opt.do_lower_case is True:
+            logger.info("WARNING: The pre-trained model you are loading " +
+                        "is cased model, you shouldn't set `do_lower_case`," +
+                        "we turned it off for you.")
+            opt.do_lower_case = False
+        elif '-cased' not in opt.bert_model and opt.do_lower_case is False:
+            logger.info("WARNING: The pre-trained model you are loading " +
+                        "is uncased model, you should set `do_lower_case`, " +
+                        "we turned it on for you.")
+            opt.do_lower_case = True
+        return opt

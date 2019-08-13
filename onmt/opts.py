@@ -715,6 +715,59 @@ def translate_opts(parser):
                    "model faster and smaller")
 
 
+def predict_opts(parser):
+    """ Prediction [Using Pretrained model] options """
+    group = parser.add_argument_group('Model')
+    group.add("--bert_model", type=str,
+              default="bert-base-uncased",
+              choices=["bert-base-uncased", "bert-large-uncased",
+                       "bert-base-cased", "bert-large-cased",
+                       "bert-base-multilingual-uncased",
+                       "bert-base-multilingual-cased",
+                       "bert-base-chinese"],
+              help="Bert pretrained tokenizer model to use.")
+    group.add("--model", type=str, default=None, required=True,
+              help="Path to Bert model that for predicting.")
+    group.add('--task', type=str, default=None, required=True,
+              choices=["classification", "tagging"],
+              help="Target task to perform")
+
+    group = parser.add_argument_group('Data')
+    group.add('--data', '-i', type=str, default=None, required=True,
+              help="predicting data for classification / tagging" +
+              "Classification: Sentence1 ||| Sentence2, " +
+              "Tagging: one tokenized sentence a line")
+    group.add("--do_lower_case", action="store_true", help='lowercase data')
+    group.add('--delimiter', '-d', type=str, default=None,
+              help="Delimiter used for seperate sentence/word. " +
+              "Default: ' ||| ' for sentence used in [CLS], " +
+              " ' ' for word used in [TAG].")
+    group.add("--max_seq_len", type=int, default=256,
+              help="max sequence length for prepared data,"
+              "set the limite of position encoding")
+    group.add('--output', '-output', default=None, required=True,
+              help="Path to output the predictions")
+    group.add('--shard_size', '-shard_size', type=int, default=10000,
+              help="Divide data into smaller multiple data files, "
+                   "then build shards, each shard will have "
+                   "opt.shard_size samples except last shard. "
+                   "shard_size=0 means no segmentation "
+                   "shard_size>0 segment data into multiple shards, "
+                   "each shard has shard_size samples")
+
+    group = parser.add_argument_group('Efficiency')
+    group.add('--batch_size', '-batch_size', type=int, default=8,
+              help='Batch size')
+    group.add('--gpu', '-gpu', type=int, default=-1, help="Device to run on")
+    group.add('--seed', '-seed', type=int, default=829, help="Random seed")
+    group.add('--log_file', '-log_file', type=str, default="",
+              help="Output logs to a file under this path.")
+    group.add('--fp32', '-fp32', action='store_true',
+              help="Force the model to be in FP32 "
+                   "because FP16 is very slow on GTX1080(ti).")
+    group.add('--verbose', '-verbose', action="store_true",
+              help='Print scores and predictions for each sentence')
+
 # Copyright 2016 The Chromium Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.

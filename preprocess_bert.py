@@ -1,77 +1,18 @@
 from argparse import ArgumentParser
 from tqdm import tqdm
 import csv
-from random import random, shuffle
+from random import shuffle
 from onmt.utils.bert_tokenization import BertTokenizer, \
     PRETRAINED_VOCAB_ARCHIVE_MAP
 import json
 from onmt.inputters.inputter import get_bert_fields, \
     _build_bert_fields_vocab
-from onmt.inputters.dataset_bert import BertDataset
+from onmt.inputters.dataset_bert import BertDataset, \
+    create_sentence_instance, create_sentence_pair_instance
 from collections import Counter, defaultdict
 import torch
 import os
 import codecs
-
-
-def truncate_seq(tokens, max_num_tokens):
-    """Truncates a sequences to a maximum sequence length."""
-    while True:
-        total_length = len(tokens)
-        if total_length <= max_num_tokens:
-            break
-        assert len(tokens) >= 1
-        # We want to sometimes truncate from the front and sometimes
-        # from the back to add more randomness and avoid biases.
-        if random() < 0.5:
-            del tokens[0]
-        else:
-            tokens.pop()
-
-
-def truncate_seq_pair(tokens_a, tokens_b, max_num_tokens):
-    """Truncates a pair of sequences to a maximum sequence length.
-       Lifted from Google's BERT repo."""
-    while True:
-        total_length = len(tokens_a) + len(tokens_b)
-        if total_length <= max_num_tokens:
-            break
-        trunc_tokens = tokens_a if len(tokens_a) > len(tokens_b) else tokens_b
-        assert len(trunc_tokens) >= 1
-
-        # We want to sometimes truncate from the front and sometimes from the
-        # back to add more randomness and avoid biases.
-        if random() < 0.5:
-            del trunc_tokens[0]
-        else:
-            trunc_tokens.pop()
-
-
-def create_sentence_instance(sentence, tokenizer,
-                             max_seq_length, random_trunc=False):
-    tokens = tokenizer.tokenize(sentence)
-    # Account for [CLS], [SEP], [SEP]
-    max_num_tokens = max_seq_length - 2
-    if len(tokens) > max_num_tokens:
-        if random_trunc is True:
-            truncate_seq(tokens, max_num_tokens)
-        else:
-            tokens = tokens[:max_num_tokens]
-    tokens_processed = ["[CLS]"] + tokens + ["[SEP]"]
-    segment_ids = [0 for _ in range(len(tokens) + 2)]
-    return tokens_processed, segment_ids
-
-
-def create_sentence_pair_instance(sent_a, sent_b, tokenizer, max_seq_length):
-    tokens_a = tokenizer.tokenize(sent_a)
-    tokens_b = tokenizer.tokenize(sent_b)
-    # Account for [CLS], [SEP], [SEP]
-    max_num_tokens = max_seq_length - 3
-    truncate_seq_pair(tokens_a, tokens_b, max_num_tokens)
-    tokens_processed = ["[CLS]"] + tokens_a + ["[SEP]"] + tokens_b + ["[SEP]"]
-    segment_ids = [0 for _ in range(len(tokens_a) + 2)] + \
-                  [1 for _ in range(len(tokens_b) + 1)]
-    return tokens_processed, segment_ids
 
 
 def create_instances_from_csv(records, skip_head, tokenizer, max_seq_length,
@@ -89,20 +30,14 @@ def create_instances_from_csv(records, skip_head, tokenizer, max_seq_length,
                 sentence_b = record[column_b].strip()
                 tokens_processed, segment_ids = create_sentence_pair_instance(
                     sentence_a, sentence_b, tokenizer, max_seq_length)
-            if label_column is not None:
-                label = record[label_column].strip()
-                if label not in labels:
-                    labels.append(label)
-                instance = {
-                    "tokens": tokens_processed,
-                    "segment_ids": segment_ids,
-                    "category": label}
-            else:  # TODO: prediction dataset
-                label = None
-                instance = {
-                    "tokens": tokens_processed,
-                    "segment_ids": segment_ids,
-                    "category": label}
+
+            label = record[label_column].strip()
+            if label not in labels:
+                labels.append(label)
+            instance = {
+                "tokens": tokens_processed,
+                "segment_ids": segment_ids,
+                "category": label}
             instances.append(instance)
     return instances, labels
 
@@ -145,7 +80,7 @@ def create_instances_from_file(records, label, tokenizer, max_seq_length):
 def build_instances_from_files(data, labels, tokenizer,
                                max_seq_len, do_shuffle):
     instances = []
-    for filename in data:  #zip(data, labels):
+    for filename in data:
         label = filename.split('/')[-2]
         with codecs.open(filename, "r", encoding="utf-8") as f:
             lines = f.readlines()
@@ -283,11 +218,17 @@ def validate_preprocess_bert_opts(opts):
             "For sequence tagging, only one column for input tokens."
         opts.input_columns = opts.input_columns[0]
 
+        assert args.label_column is not None,\
+            "For sequence tagging, label column should be given."
+
     if opts.data_type == "csv":
         assert len(opts.data) == 1,\
             "For csv, only one file is needed."
         assert len(opts.input_columns) in [1, 2],\
             "Please indicate N.colomn for sentence A (and B)"
+        assert args.label_column is not None,\
+            "For csv file, label column should be given."
+
         # if opts.label_column is not None:
         #     assert len(opts.labels) != 0,\
         #         "label list is needed when csv contain label column"
@@ -306,7 +247,7 @@ def _get_parser():
                         required=True, help="input datas to prepare: [CLS]" +
                         "Single file for csv with column indicate label," +
                         "One file for each class as path/label/file; [TAG]" +
-                        "Single file contain (tok, tag) in each line,"+
+                        "Single file contain (tok, tag) in each line," +
                         "Sentence separated by blank line.")
     parser.add_argument('--data_type', type=str, default="csv",
                         choices=["csv", "txt"],
@@ -392,7 +333,8 @@ def main(args):
                 args.labels = labels
             print("Labels:", args.labels)
             instances = build_instances_from_files(
-                args.data, args.labels, tokenizer, args.max_seq_len, args.do_shuffle)
+                args.data, args.labels, tokenizer,
+                args.max_seq_len, args.do_shuffle)
         else:
             raise NotImplementedError("Not support other file type yet!")
 
@@ -401,8 +343,7 @@ def main(args):
         filename = args.data[0]
         print("Load data file %s with skip head %s" % (
             filename, args.skip_head))
-        token_column = args.input_columns
-        tag_column = args.label_column
+        token_column, tag_column = args.input_columns, args.label_column
         instances, labels = build_tag_instances_from_file(
             filename, args.skip_head, tokenizer, args.max_seq_len,
             token_column, tag_column, args.labels, args.do_shuffle,
@@ -429,15 +370,10 @@ def main(args):
     if args.corpus_type == "train":
         print("Generating vocab from corresponding text file...")
         if args.task == "classification":
-            if len(args.labels) == 0:  # TODO
-                raise AttributeError("Labels should be given")
-            else:
-                named_labels = ("category", args.labels)
-                print("Save Labels:", named_labels, "in vocab file.")
-
+            named_labels = ("category", args.labels)
         if args.task == "tagging":
             named_labels = ("token_labels", args.labels)
-            print("Save Labels:", named_labels, "in vocab file.")
+        print("Save Labels:", named_labels, "in vocab file.")
 
         fields_vocab = build_vocab_from_tokenizer(
             fields, tokenizer, named_labels,

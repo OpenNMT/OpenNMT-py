@@ -8,8 +8,9 @@ from onmt.translate.random_sampling import RandomSampling
 from onmt.translate.penalties import PenaltyBuilder
 from onmt.translate.translation_server import TranslationServer, \
     ServerModelError
+from onmt.translate.predictor import Classifier, Tagger
 
 __all__ = ['Translator', 'Translation', 'Beam', 'BeamSearch',
            'GNMTGlobalScorer', 'TranslationBuilder',
            'PenaltyBuilder', 'TranslationServer', 'ServerModelError',
-           "DecodeStrategy", "RandomSampling"]
+           "DecodeStrategy", "RandomSampling", "Classifier", "Tagger"]

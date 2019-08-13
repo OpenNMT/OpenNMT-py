@@ -87,7 +87,7 @@ def convert_bert_weights(bert_model, weights, n_layers=12):
                                          r'LayerNorm.beta', hugface_key)
                     if hugface_key in hugface_keys:
                         print("[OLD Weights file]gamma/beta is used in " +
-                              "naming BertLayerNorm.")
+                              "naming BertLayerNorm. Mapping succeed.")
                     else:
                         raise KeyError("Key %s not found in weight file"
                                        % hugface_key)
@@ -120,21 +120,19 @@ def main():
                         help="output onmt version Bert weight file Path")
     args = parser.parse_args()
 
-    n_layers = args.layers
-    print("Model contain {} layers.".format(n_layers))
+    print("Model contain {} layers.".format(args.layers))
 
-    bert_model_weights = args.bert_model_weights_file
-    print("Load weights from {}.".format(bert_model_weights))
+    print("Load weights from {}.".format(args.bert_model_weights_file))
 
-    bert_weights = torch.load(bert_model_weights)
-    embeddings = BertEmbeddings(105879)
+    bert_weights = torch.load(args.bert_model_weights_file)
+    embeddings = BertEmbeddings(28996)  # vocab don't bother the conversion
     bert_encoder = BertEncoder(embeddings)
     generator = BertPreTrainingHeads(bert_encoder.d_model,
                                      embeddings.vocab_size)
     bertlm = torch.nn.Sequential(OrderedDict([
                             ('bert', bert_encoder),
                             ('generator', generator)]))
-    model_weights = convert_bert_weights(bertlm, bert_weights, n_layers)
+    model_weights = convert_bert_weights(bertlm, bert_weights, args.layers)
 
     ckp = {'model': model_weights['bert'],
            'generator': model_weights['generator']}
