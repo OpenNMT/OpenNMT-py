@@ -55,7 +55,7 @@ class Predictor(object):
         fields (dict[str, torchtext.data.Field]): A dict of field.
         gpu (int): GPU device. Set to negative for no GPU.
         data_type (str): Source data type.
-        verbose (bool): Print/log every translation.
+        verbose (bool): Print/log every predition.
         report_time (bool): Print/log total time/frequency.
         out_file (TextIO or codecs.StreamReaderWriter): Output file.
         logger (logging.Logger or NoneType): Logger.
@@ -90,9 +90,6 @@ class Predictor(object):
         self.report_time = report_time
         self.out_file = out_file
         self.logger = logger
-
-        # self.use_filter_pred = False
-        # self._filter_pred = None
 
         set_random_seed(seed, self._use_cuda)
 
@@ -143,7 +140,7 @@ class Classifier(Predictor):
         fields (dict[str, torchtext.data.Field]): A dict of field.
         gpu (int): GPU device. Set to negative for no GPU.
         data_type (str): Source data type.
-        verbose (bool): Print/log every translation.
+        verbose (bool): Print/log every predition.
         report_time (bool): Print/log total time/frequency.
         out_file (TextIO or codecs.StreamReaderWriter): Output file.
         logger (logging.Logger or NoneType): Logger.
@@ -180,15 +177,12 @@ class Classifier(Predictor):
             batch_size (int): size of examples per mini-batch
 
         Returns:
-            (`list`, `list`)
-
-            * all_scores is a list of `batch_size` lists of `n_best` scores
             * all_predictions is a list of `batch_size` lists
-                of `n_best` predictions
+                of sentence classification
         """
 
         dataset = inputters.ClassifierDataset(
-            self.fields, data, tokenizer, delimiter, max_seq_len)
+            self.fields, data, tokenizer, max_seq_len, delimiter)
 
         data_iter = torchtext.data.Iterator(
             dataset=dataset,
@@ -246,7 +240,7 @@ class Tagger(Predictor):
         fields (dict[str, torchtext.data.Field]): A dict of field.
         gpu (int): GPU device. Set to negative for no GPU.
         data_type (str): Source data type.
-        verbose (bool): Print/log every translation.
+        verbose (bool): Print/log every predition.
         report_time (bool): Print/log total time/frequency.
         out_file (TextIO or codecs.StreamReaderWriter): Output file.
         logger (logging.Logger or NoneType): Logger.
@@ -285,14 +279,11 @@ class Tagger(Predictor):
             batch_size (int): size of examples per mini-batch
 
         Returns:
-            (`list`, `list`)
-
-            * all_scores is a list of `batch_size` lists of `n_best` scores
             * all_predictions is a list of `batch_size` lists
-                of `n_best` predictions
+                of token taggings
         """
         dataset = inputters.TaggerDataset(
-            self.fields, data, tokenizer, delimiter, max_seq_len)
+            self.fields, data, tokenizer, max_seq_len, delimiter)
 
         data_iter = torchtext.data.Iterator(
             dataset=dataset,
@@ -327,7 +318,7 @@ class Tagger(Predictor):
         return all_predictions
 
     def tagging_batch(self, batch):
-        """Translate a batch of sentences."""
+        """Tagging a batch of sentences."""
         with torch.no_grad():
             # Batch
             input_ids, seq_lengths = batch.tokens

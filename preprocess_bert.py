@@ -260,8 +260,8 @@ def _get_parser():
     parser.add_argument('--label_column', type=int, default=None,
                         help="CSV: Column where contain label")
     parser.add_argument('--labels', type=str, nargs='+', default=[],
-                        help="CSV: labels of sentence;" +
-                        "TXT: labels for sentence in files.")
+                        help="Candidate labels. If not given, build from " +
+                        "input file and sort in alphabetic order.")
     parser.add_argument('--delimiter', '-d', type=str, default=' ',
                         help="CSV: delimiter used for seperate column.")
 

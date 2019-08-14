@@ -4,7 +4,7 @@ import os
 import signal
 import torch
 
-import onmt.opts_bert as opts
+import onmt.opts as opts
 import onmt.utils.distributed
 
 from onmt.utils.misc import set_random_seed
@@ -19,9 +19,9 @@ from itertools import cycle
 
 def main(opt):
     # JUST FOR verify the options
-    # ArgumentParser.validate_train_opts(opt)
-    # ArgumentParser.update_model_opts(opt)
-    # ArgumentParser.validate_model_opts(opt)
+    ArgumentParser.validate_train_opts(opt)
+    ArgumentParser.update_model_opts(opt)
+    ArgumentParser.validate_model_opts(opt)
 
     # Load checkpoint if we resume from a previous training.
     if opt.train_from:
@@ -214,10 +214,8 @@ def _get_parser():
     parser = ArgumentParser(description='train.py')
 
     opts.config_opts(parser)
-    # opts.model_opts(parser)
-    # opts.train_opts(parser)
-    opts.bert_model_opts(parser)
-    opts.bert_pretraining(parser)
+    opts.model_opts(parser)
+    opts.train_opts(parser)
     return parser
 
 

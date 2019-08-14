@@ -22,8 +22,9 @@ def main(opt):
         classifier = build_classifier(opt)
         for i, data_shard in enumerate(data_shards):
             logger.info("Classify shard %d." % i)
+            data = [seq.decode("utf-8") for seq in data_shard]
             classifier.classify(
-                data_shard,
+                data,
                 opt.batch_size,
                 tokenizer,
                 delimiter=opt.delimiter,
@@ -33,8 +34,9 @@ def main(opt):
         tagger = build_tagger(opt)
         for i, data_shard in enumerate(data_shards):
             logger.info("Tagging shard %d." % i)
+            data = [seq.decode("utf-8") for seq in data_shard]
             tagger.tagging(
-                data_shard,
+                data,
                 opt.batch_size,
                 tokenizer,
                 delimiter=opt.delimiter,

@@ -110,21 +110,23 @@ class ClassifierDataset(BertDataset):
     Args:
         fields_dict (dict[str, Field]): a dict containing all Field with
             its name.
-        data (list[]): a list of sequence, each sequence can be one sentence
-            or one sentence pair seperate by ' ||| '.
+        data (list[]): a list of sequence (sentence or sentence pair),
+            possible with its label becoming tuple(list[]).
     """
 
     def __init__(self, fields_dict, data, tokenizer,
-                 delimiter=' ||| ', max_seq_len=256):
-        data = [seq.decode("utf-8") for seq in data]
+                 max_seq_len=256, delimiter=' ||| '):
+        if isinstance(data, tuple) is False:
+            data = data, [None for _ in range(len(data))]
         instances = self.create_instances(
             data, tokenizer, delimiter, max_seq_len)
         super(ClassifierDataset, self).__init__(fields_dict, instances)
 
-    def create_instances(self, datas, tokenizer, delimiter, max_seq_len):
+    def create_instances(self, data, tokenizer,
+                         delimiter, max_seq_len):
         instances = []
-        for data in datas:
-            sentences = data.strip().split(delimiter, 1)
+        for sentence, label in zip(*data):
+            sentences = sentence.strip().split(delimiter, 1)
             if len(sentences) == 2:
                 sent_a, sent_b = sentences
                 tokens, segment_ids = create_sentence_pair_instance(
@@ -136,7 +138,7 @@ class ClassifierDataset(BertDataset):
             instance = {
                 "tokens": tokens,
                 "segment_ids": segment_ids,
-                "category": None}
+                "category": label}
             instances.append(instance)
         return instances
 
@@ -146,31 +148,36 @@ class TaggerDataset(BertDataset):
     Args:
         fields_dict (dict[str, Field]): a dict containing all Field with
             its name.
-        data (list[]): a list of sequence, each sequence is composed with
-            tokens that to be tagging.
+        data (list[]|tuple(list[])): a list of sequence, each sequence is
+            composed with tokens that to be tagging. Can also combined with
+            its tags as tuple([tokens], [tags])
     """
 
     def __init__(self, fields_dict, data, tokenizer,
-                 delimiter=' ', max_seq_len=256):
+                 max_seq_len=256, delimiter=' '):
         targer_field = fields_dict["token_labels"]
         self.pad_tok = targer_field.pad_token
         self.predict_tok = targer_field.vocab.itos[-1]
-        data = [seq.decode("utf-8") for seq in data]
+        if isinstance(data, tuple) is False:
+            data = (data, [None for _ in range(len(data))])
         instances = self.create_instances(
             data, tokenizer, delimiter, max_seq_len)
         super(TaggerDataset, self).__init__(fields_dict, instances)
 
     def create_instances(self, datas, tokenizer, delimiter, max_seq_len):
         instances = []
-        for data in datas:
-            words = data.strip().split(delimiter)
+        for words, taggings in zip(*datas):
+            if isinstance(words, str):  # build from raw sentence
+                words = words.strip().split(delimiter)
+            if taggings is None:  # when predicting
+                taggings = [self.predict_tok for _ in range(len(words))]
             sentence = []
             tags = []
             max_num_tokens = max_seq_len - 2
-            for word in words:
+            for word, tag in zip(words, taggings):
                 tokens = tokenizer.tokenize(word)
                 n_pad = len(tokens) - 1
-                paded_tag = [self.predict_tok] + [self.pad_tok] * n_pad
+                paded_tag = [tag] + [self.pad_tok] * n_pad
                 if len(sentence) + len(tokens) > max_num_tokens:
                     break
                 else:
