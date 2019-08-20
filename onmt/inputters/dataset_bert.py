@@ -157,7 +157,8 @@ class TaggerDataset(BertDataset):
                  max_seq_len=256, delimiter=' '):
         targer_field = fields_dict["token_labels"]
         self.pad_tok = targer_field.pad_token
-        self.predict_tok = targer_field.vocab.itos[-1]
+        if hasattr(targer_field, 'vocab'):  # when predicting
+            self.predict_tok = targer_field.vocab.itos[-1]
         if isinstance(data, tuple) is False:
             data = (data, [None for _ in range(len(data))])
         instances = self.create_instances(
@@ -170,6 +171,7 @@ class TaggerDataset(BertDataset):
             if isinstance(words, str):  # build from raw sentence
                 words = words.strip().split(delimiter)
             if taggings is None:  # when predicting
+                assert hasattr(self, 'predict_tok')
                 taggings = [self.predict_tok for _ in range(len(words))]
             sentence = []
             tags = []

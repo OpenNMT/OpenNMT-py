@@ -152,7 +152,7 @@ def create_tag_instances_from_file(opt):
     tag_vocab = opt.labels
     with codecs.open(opt.data, "r", encoding="utf-8") as f:
         lines = f.readlines()
-        print("total {} line of file {} loaded.".format(
+        logger.info("total {} line of file {} loaded.".format(
             len(lines), opt.data))
         sentence_sofar = []
         for line in tqdm(lines, desc="Process", unit=" lines"):
@@ -170,8 +170,8 @@ def create_tag_instances_from_file(opt):
                 if tag not in tag_vocab:
                     tag_vocab.append(tag)
                 sentence_sofar.append((token, tag))
-        print("total {} sentence loaded.".format(len(sentences)))
-        print("All tags:", tag_vocab)
+        logger.info("total {} sentence loaded.".format(len(sentences)))
+        logger.info("All tags:{}".format(tag_vocab))
 
     return sentences, taggings, tag_vocab
 
