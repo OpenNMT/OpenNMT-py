@@ -245,6 +245,11 @@
                 <span class="n">device</span><span class="o">=</span><span class="n">tgt_pad_mask</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
                 <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
             <span class="n">future_mask</span> <span class="o">=</span> <span class="n">future_mask</span><span class="o">.</span><span class="n">triu_</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">tgt_len</span><span class="p">,</span> <span class="n">tgt_len</span><span class="p">)</span>
+            <span class="c1"># BoolTensor was introduced in pytorch 1.2</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">future_mask</span> <span class="o">=</span> <span class="n">future_mask</span><span class="o">.</span><span class="n">bool</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="k">pass</span>
             <span class="n">dec_mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">gt</span><span class="p">(</span><span class="n">tgt_pad_mask</span> <span class="o">+</span> <span class="n">future_mask</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 
         <span class="n">input_norm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm_1</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>

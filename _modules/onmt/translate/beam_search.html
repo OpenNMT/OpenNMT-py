@@ -250,6 +250,11 @@
 
         <span class="c1"># beam state</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">top_beam_finished</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">batch_size</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+        <span class="c1"># BoolTensor was introduced in pytorch 1.2</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">top_beam_finished</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">top_beam_finished</span><span class="o">.</span><span class="n">bool</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">pass</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">best_scores</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">full</span><span class="p">([</span><span class="n">batch_size</span><span class="p">],</span> <span class="o">-</span><span class="mf">1e10</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">,</span>
                                       <span class="n">device</span><span class="o">=</span><span class="n">mb_device</span><span class="p">)</span>
 

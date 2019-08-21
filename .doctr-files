@@ -106,7 +106,7 @@
 ./_static/fonts/fontawesome-webfont.ttf
 ./_static/fonts/fontawesome-webfont.woff
 ./_static/fonts/fontawesome-webfont.woff2
-./_static/jquery-3.2.1.js
+./_static/jquery-3.4.1.js
 ./_static/jquery.js
 ./_static/js/modernizr.min.js
 ./_static/js/theme.js
