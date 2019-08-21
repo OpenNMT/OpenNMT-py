@@ -68,6 +68,11 @@ class TransformerDecoderLayer(nn.Module):
                 device=tgt_pad_mask.device,
                 dtype=torch.uint8)
             future_mask = future_mask.triu_(1).view(1, tgt_len, tgt_len)
+            # BoolTensor was introduced in pytorch 1.2
+            try:
+                future_mask = future_mask.bool()
+            except AttributeError:
+                pass
             dec_mask = torch.gt(tgt_pad_mask + future_mask, 0)
 
         input_norm = self.layer_norm_1(inputs)
