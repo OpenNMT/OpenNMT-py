@@ -1,9 +1,8 @@
 """Global attention modules (Luong / Bahdanau)"""
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
-from onmt.modules.sparse_activations import sparsemax
+from entmax import Sparsemax, Entmax15
 from onmt.utils.misc import aeq, sequence_mask
 
 # This class is mainly used by decoder.py for RNNs but also
@@ -77,9 +76,12 @@ class GlobalAttention(nn.Module):
             "Please select a valid attention type (got {:s}).".format(
                 attn_type))
         self.attn_type = attn_type
-        assert attn_func in ["softmax", "sparsemax"], (
-            "Please select a valid attention function.")
-        self.attn_func = attn_func
+        attn_funcs = {"softmax": nn.Softmax,
+                      "sparsemax": Sparsemax,
+                      "entmax15": Entmax15}
+        assert attn_func in attn_funcs, \
+            "Unknown attention function {}".format(attn_func)
+        self.attn_func = attn_funcs[attn_func](dim=-1)
 
         if self.attn_type == "general":
             self.linear_in = nn.Linear(dim, dim, bias=False)
@@ -182,11 +184,8 @@ class GlobalAttention(nn.Module):
             mask = mask.unsqueeze(1)  # Make it broadcastable.
             align.masked_fill_(~mask, -float('inf'))
 
-        # Softmax or sparsemax to normalize attention weights
-        if self.attn_func == "softmax":
-            align_vectors = F.softmax(align.view(batch*target_l, source_l), -1)
-        else:
-            align_vectors = sparsemax(align.view(batch*target_l, source_l), -1)
+        # normalize attention weights
+        align_vectors = self.attn_func(align.view(batch * target_l, source_l))
         align_vectors = align_vectors.view(batch, target_l, source_l)
 
         # each context vector c_t is the weighted average
