@@ -164,7 +164,7 @@ def model_opts(parser):
               help="The copy attention type to use. Leave as None to use "
                    "the same as -global_attention.")
     group.add('--generator_function', '-generator_function', default="softmax",
-              choices=["softmax", "sparsemax"],
+              choices=["softmax", "sparsemax", "entmax15"],
               help="Which function to use for generating "
                    "probabilities over the target vocabulary (choices: "
                    "softmax, sparsemax)")
