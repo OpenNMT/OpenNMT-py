@@ -59,7 +59,8 @@ def main(opt, device_id, batch_queue=None, semaphore=None):
             model_opt = opt
 
         if 'vocab' in checkpoint:
-            logger.info('Loading vocab from checkpoint at %s.' % opt.train_from)
+            logger.info('Loading vocab from checkpoint at %s.',
+                        opt.train_from)
             vocab = checkpoint['vocab']
         else:
             vocab = torch.load(opt.data + '.vocab.pt')

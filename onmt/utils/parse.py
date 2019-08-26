@@ -5,7 +5,7 @@ import torch
 
 import onmt.opts as opts
 from onmt.utils.logging import logger
-from onmt.utils.bert_tokenization import PRETRAINED_VOCAB_ARCHIVE_MAP
+from onmt.utils import PRETRAINED_VOCAB_ARCHIVE_MAP
 
 
 class ArgumentParser(cfargparse.ArgumentParser):

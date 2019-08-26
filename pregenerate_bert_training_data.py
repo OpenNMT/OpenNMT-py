@@ -9,8 +9,7 @@ from tempfile import TemporaryDirectory
 import shelve
 
 from random import random, randrange, randint, shuffle, choice
-from onmt.utils.bert_tokenization import BertTokenizer, \
-     PRETRAINED_VOCAB_ARCHIVE_MAP
+from onmt.utils import BertTokenizer, PRETRAINED_VOCAB_ARCHIVE_MAP
 from onmt.utils.file_utils import cached_path
 from preprocess_bert_new import build_vocab_from_tokenizer
 import numpy as np
@@ -59,15 +58,20 @@ class DocumentDatabase:
         if sentence_weighted:
             # With sentence weighting, we sample docs
             # proportionally to their sentence length
-            if self.doc_cumsum is None or len(self.doc_cumsum) != len(self.doc_lengths):
+            if (self.doc_cumsum is None
+               or len(self.doc_cumsum) != len(self.doc_lengths)):
                 self._precalculate_doc_weights()
             rand_start = self.doc_cumsum[current_idx]
-            rand_end = rand_start + self.cumsum_max - self.doc_lengths[current_idx]
+            rand_end = (rand_start + self.cumsum_max
+                        - self.doc_lengths[current_idx])
             sentence_index = randrange(rand_start, rand_end) % self.cumsum_max
-            sampled_doc_index = np.searchsorted(self.doc_cumsum, sentence_index, side='right')
+            sampled_doc_index = np.searchsorted(
+                self.doc_cumsum, sentence_index, side='right')
         else:
             # If sentence weighting is False, chose doc equally
-            sampled_doc_index = (current_idx + randrange(1, len(self.doc_lengths))) % len(self.doc_lengths)
+            sampled_doc_index = ((current_idx +
+                                 randrange(1, len(self.doc_lengths)))
+                                 % len(self.doc_lengths))
         assert sampled_doc_index != current_idx
         if self.reduce_memory:
             return self.document_shelf[str(sampled_doc_index)]

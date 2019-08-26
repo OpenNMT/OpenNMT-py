@@ -14,4 +14,4 @@ str2enc = {"rnn": RNNEncoder, "brnn": RNNEncoder, "cnn": CNNEncoder,
            "audio": AudioEncoder, "mean": MeanEncoder, "bert": BertEncoder}
 
 __all__ = ["EncoderBase", "TransformerEncoder", "RNNEncoder", "CNNEncoder",
-           "MeanEncoder", "str2enc", "BertEncoder"]
+           "MeanEncoder", "str2enc", "BertEncoder", "BertLayerNorm"]

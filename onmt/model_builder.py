@@ -268,7 +268,7 @@ def build_bert_generator(model_opt, fields, bert_encoder):
        Both all_encoder_layers and pooled_output will be feed to generator,
        pretraining task will use the two,
        while only pooled_output will be used for classification generator;
-       only all_encoder_layers will be used for generation generator;
+       only all_encoder_layers will be used for generation generator
     """
     task = model_opt.task_type
     dropout = model_opt.dropout[0] if type(model_opt.dropout) is list \
@@ -345,9 +345,11 @@ def build_bert_model(model_opt, opt, fields, checkpoint=None, gpu_id=None):
         logger.info("Load Model Parameters...")
         model.bert.load_state_dict(checkpoint['model'], strict=True)
         model_init['bert'] = True
-        if model.generator.state_dict().keys() == checkpoint['generator'].keys():
+        if (model.generator.state_dict().keys() ==
+           checkpoint['generator'].keys()):
             logger.info("Load generator Parameters...")
-            model.generator.load_state_dict(checkpoint['generator'], strict=True)
+            model.generator.load_state_dict(checkpoint['generator'],
+                                            strict=True)
             model_init['generator'] = True
 
     for sub_module, is_init in model_init.items():

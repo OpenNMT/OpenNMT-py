@@ -17,10 +17,6 @@ def get_activation_fn(activation):
     return fn
 
 
-"""
-Adapted from huggingface implementation to reproduce the result
-https://github.com/huggingface/pytorch-transformers/blob/master/pytorch_transformers/modeling_bert.py
-"""
 class GELU(nn.Module):
     """ Implementation of the gelu activation function
         :cite:`DBLP:journals/corr/HendrycksG16`
