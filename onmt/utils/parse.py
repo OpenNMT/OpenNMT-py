@@ -78,7 +78,7 @@ class ArgumentParser(cfargparse.ArgumentParser):
     def validate_train_opts(cls, opt):
         if opt.is_bert:
             logger.info("WE ARE IN BERT MODE.")
-            if opt.task_type is "none":
+            if opt.task_type == "none":
                 raise ValueError(
                     "Downstream task should be chosen when use BERT.")
             if opt.reuse_embeddings is True:

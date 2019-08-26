@@ -160,7 +160,7 @@ def create_tag_instances_from_file(opt):
         sentence_sofar = []
         for line in tqdm(lines, desc="Process", unit=" lines"):
             line = line.strip()
-            if line is '':
+            if line == '':
                 if len(sentence_sofar) > 0:
                     tokens, tags = zip(*sentence_sofar)
                     sentences.append(tokens)

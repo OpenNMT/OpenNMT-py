@@ -5,11 +5,11 @@ import math
 
 def get_activation_fn(activation):
     """Return an activation function Module according to its name."""
-    if activation is 'gelu':
+    if activation == 'gelu':
         fn = GELU()
-    elif activation is 'relu':
+    elif activation == 'relu':
         fn = nn.ReLU()
-    elif activation is 'tanh':
+    elif activation == 'tanh':
         fn = nn.Tanh()
     else:
         raise ValueError("Please pass a valid \
