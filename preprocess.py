@@ -105,8 +105,10 @@ def build_save_dataset(corpus_type, fields, src_reader, tgt_reader, opt):
                             all_data = getattr(ex, name)
                         for (sub_n, sub_f), fd in zip(
                                 f_iter, all_data):
-                            has_vocab = (sub_n == 'src' and src_vocab) or \
-                                        (sub_n == 'tgt' and tgt_vocab)
+                            has_vocab = (sub_n == 'src' and
+                                         src_vocab is not None) or \
+                                        (sub_n == 'tgt' and
+                                         tgt_vocab is not None)
                             if (hasattr(sub_f, 'sequential')
                                     and sub_f.sequential and not has_vocab):
                                 val = fd

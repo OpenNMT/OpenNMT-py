@@ -10,7 +10,7 @@ echo > ${LOG_FILE} # Empty the log file.
 PROJECT_ROOT=`dirname "$0"`"/../../"
 DATA_DIR="$PROJECT_ROOT/data"
 TEST_DIR="$PROJECT_ROOT/onmt/tests"
-PYTHON="python"
+PYTHON="python3"
 
 clean_up()
 {

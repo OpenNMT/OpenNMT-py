@@ -156,7 +156,8 @@ class TestModel(unittest.TestCase):
         word_field = self.get_field()
 
         enc = ImageEncoder(
-            opt.enc_layers, opt.brnn, opt.enc_rnn_size, opt.dropout)
+            opt.enc_layers, opt.brnn, opt.enc_rnn_size,
+            opt.dropout)
 
         embeddings = build_embeddings(opt, word_field, for_encoder=False)
         dec = build_decoder(opt, embeddings)

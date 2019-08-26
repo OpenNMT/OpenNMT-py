@@ -103,7 +103,7 @@ if you use a regular network card (1 Gbps) then we suggest to use a higher accum
 ## How can I ensemble Models at inference?
 
 You can specify several models in the translate.py command line: -model model1_seed1 model2_seed2
-Bear in mind that your models must share the same traget vocabulary.
+Bear in mind that your models must share the same target vocabulary.
 
 ## How can I weight different corpora at training?
 
