@@ -333,8 +333,9 @@ def build_bert_model(model_opt, opt, fields, checkpoint=None, gpu_id=None):
 
     # Build Bert Model(= encoder + generator).
     model = nn.Sequential(OrderedDict([
-                            ('bert', bert_encoder),
-                            ('generator', generator)]))
+        ('bert', bert_encoder),
+        ('generator', generator)
+    ]))
 
     # Load the model states from checkpoint or initialize them.
     model_init = {'bert': False, 'generator': False}

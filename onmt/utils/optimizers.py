@@ -635,7 +635,7 @@ class BertAdam(torch.optim.Optimizer):
 
     def __init__(self, params, lr=None, betas=(0.9, 0.999),
                  eps=1e-6, weight_decay=0.01, max_grad_norm=1.0, **kwargs):
-        if not 0.0 <= lr:
+        if not lr >= 0.0:
             raise ValueError("Invalid learning rate: {}".format(lr) +
                              " - should be >= 0.0")
         if not 0.0 <= betas[0] < 1.0:
