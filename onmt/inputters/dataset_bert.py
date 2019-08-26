@@ -153,7 +153,7 @@ class ClassifierDataset(BertDataset):
 
     def __init__(self, fields_dict, data, tokenizer,
                  max_seq_len=256, delimiter=' ||| '):
-        if isinstance(data, tuple) is False:
+        if not isinstance(data, tuple):
             data = data, [None for _ in range(len(data))]
         instances = self.create_instances(
             data, tokenizer, delimiter, max_seq_len)
@@ -213,7 +213,7 @@ class TaggerDataset(BertDataset):
         self.pad_tok = targer_field.pad_token
         if hasattr(targer_field, 'vocab'):  # when predicting
             self.predict_tok = targer_field.vocab.itos[-1]
-        if isinstance(data, tuple) is False:
+        if not isinstance(data, tuple):
             data = (data, [None for _ in range(len(data))])
         instances = self.create_instances(
             data, tokenizer, delimiter, max_seq_len)

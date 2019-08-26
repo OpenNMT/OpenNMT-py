@@ -118,7 +118,7 @@ def main(opt, device_id, batch_queue=None, semaphore=None):
     model_saver = build_model_saver(model_opt, opt, model, fields, optim)
 
     trainer = build_trainer(
-            opt, device_id, model, fields, optim, model_saver=model_saver)
+        opt, device_id, model, fields, optim, model_saver=model_saver)
 
     if batch_queue is None:
         if len(opt.data_ids) > 1:

@@ -158,7 +158,7 @@ class ArgumentParser(cfargparse.ArgumentParser):
                            "cased model, you shouldn't set `do_lower_case`," +
                            "we turned it off for you.")
             opt.do_lower_case = False
-        elif '-cased' not in opt.vocab_model and opt.do_lower_case is False:
+        elif '-cased' not in opt.vocab_model and not opt.do_lower_case:
             logger.warning("The pre-trained model you are loading is " +
                            "uncased model, you should set `do_lower_case`, " +
                            "we turned it on for you.")
@@ -209,7 +209,7 @@ class ArgumentParser(cfargparse.ArgumentParser):
                         "is cased model, you shouldn't set `do_lower_case`," +
                         "we turned it off for you.")
             opt.do_lower_case = False
-        elif '-cased' not in opt.vocab_model and opt.do_lower_case is False:
+        elif '-cased' not in opt.vocab_model and not opt.do_lower_case:
             logger.info("WARNING: The pre-trained model you are loading " +
                         "is uncased model, you should set `do_lower_case`, " +
                         "we turned it on for you.")

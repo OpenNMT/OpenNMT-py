@@ -41,7 +41,7 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
         tgt_field = fields["lm_labels_ids"]
     train_loss = onmt.utils.loss.build_loss_compute(model, tgt_field, opt)
     valid_loss = onmt.utils.loss.build_loss_compute(
-                    model, tgt_field, opt, train=False)
+        model, tgt_field, opt, train=False)
 
     trunc_size = opt.truncated_decoder  # Badly named...
     shard_size = opt.max_generator_batches if opt.model_dtype == 'fp32' else 0
@@ -137,7 +137,7 @@ class Trainer(object):
         self.earlystopper = earlystopper
         self.dropout = dropout
         self.dropout_steps = dropout_steps
-        self.is_bert = True if hasattr(self.model, 'bert') else False
+        self.is_bert = hasattr(self.model, 'bert')
 
         for i in range(len(self.accum_count_l)):
             assert self.accum_count_l[i] > 0
@@ -172,7 +172,7 @@ class Trainer(object):
         self.accum_count = self._accum_count(self.optim.training_step)
         for batch in iterator:
             batches.append(batch)
-            if self.is_bert is False:  # Bert don't need normalization
+            if not self.is_bert:  # Bert don't need normalization
                 if self.norm_method == "tokens":
                     num_tokens = batch.tgt[1:, :, 0].ne(
                         self.train_loss.padding_idx).sum()

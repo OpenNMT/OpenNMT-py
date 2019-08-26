@@ -23,7 +23,7 @@ def build_loss_compute(model, tgt_field, opt, train=True):
     for when using a copy mechanism.
     """
     device = torch.device("cuda" if onmt.utils.misc.use_gpu(opt) else "cpu")
-    if opt.is_bert is True:
+    if opt.is_bert:
         if tgt_field.pad_token is not None:
             if tgt_field.use_vocab:
                 padding_idx = tgt_field.vocab.stoi[tgt_field.pad_token]

@@ -48,7 +48,7 @@ class MaskedLanguageModel(nn.Module):
         self.decode = nn.Linear(hidden_size, vocab_size, bias=False)
         self.bias = nn.Parameter(torch.zeros(vocab_size))
 
-        self.softmax = nn.LogSoftmax(dim=-1)
+        self.log_softmax = nn.LogSoftmax(dim=-1)
 
     def forward(self, x):
         """
@@ -59,7 +59,7 @@ class MaskedLanguageModel(nn.Module):
         """
         x = self.transform(x)  # (batch, seq, d_model)
         prediction_scores = self.decode(x) + self.bias  # (batch, seq, vocab)
-        prediction_log_prob = self.softmax(prediction_scores)
+        prediction_log_prob = self.log_softmax(prediction_scores)
         return prediction_log_prob
 
 
@@ -74,7 +74,7 @@ class NextSentencePrediction(nn.Module):
     def __init__(self, hidden_size):
         super(NextSentencePrediction, self).__init__()
         self.linear = nn.Linear(hidden_size, 2)
-        self.softmax = nn.LogSoftmax(dim=-1)
+        self.log_softmax = nn.LogSoftmax(dim=-1)
 
     def forward(self, x):
         """
@@ -84,7 +84,7 @@ class NextSentencePrediction(nn.Module):
             seq_class_prob (Tensor): ``(B, 2)``
         """
         seq_relationship_score = self.linear(x)  # (batch, 2)
-        seq_class_log_prob = self.softmax(seq_relationship_score)
+        seq_class_log_prob = self.log_softmax(seq_relationship_score)
         return seq_class_log_prob
 
 
@@ -127,7 +127,7 @@ class ClassificationHead(nn.Module):
         super(ClassificationHead, self).__init__()
         self.dropout = nn.Dropout(dropout)
         self.linear = nn.Linear(hidden_size, n_class)
-        self.softmax = nn.LogSoftmax(dim=-1)
+        self.log_softmax = nn.LogSoftmax(dim=-1)
 
     def forward(self, all_hidden, pooled):
         """
@@ -141,7 +141,7 @@ class ClassificationHead(nn.Module):
 
         pooled = self.dropout(pooled)
         score = self.linear(pooled)  # (batch, n_class)
-        class_log_prob = self.softmax(score)  # (batch, n_class)
+        class_log_prob = self.log_softmax(score)  # (batch, n_class)
         return class_log_prob, None
 
 
@@ -157,7 +157,7 @@ class TokenTaggingHead(nn.Module):
         super(TokenTaggingHead, self).__init__()
         self.dropout = nn.Dropout(dropout)
         self.linear = nn.Linear(hidden_size, n_class)
-        self.softmax = nn.LogSoftmax(dim=-1)
+        self.log_softmax = nn.LogSoftmax(dim=-1)
 
     def forward(self, all_hidden, pooled):
         """
@@ -171,7 +171,7 @@ class TokenTaggingHead(nn.Module):
         last_hidden = all_hidden[-1]
         last_hidden = self.dropout(last_hidden)  # (batch, seq, d_model)
         score = self.linear(last_hidden)  # (batch, seq, n_class)
-        tok_class_log_prob = self.softmax(score)  # (batch, seq, n_class)
+        tok_class_log_prob = self.log_softmax(score)  # (batch, seq, n_class)
         return None, tok_class_log_prob
 
 
@@ -191,7 +191,7 @@ class TokenGenerationHead(nn.Module):
         self.decode = nn.Linear(hidden_size, vocab_size, bias=False)
         self.bias = nn.Parameter(torch.zeros(vocab_size))
 
-        self.softmax = nn.LogSoftmax(dim=-1)
+        self.log_softmax = nn.LogSoftmax(dim=-1)
 
     def forward(self, all_hidden, pooled):
         """
@@ -205,5 +205,5 @@ class TokenGenerationHead(nn.Module):
         last_hidden = all_hidden[-1]
         y = self.transform(last_hidden)  # (batch, seq, d_model)
         prediction_scores = self.decode(y) + self.bias  # (batch, seq, vocab)
-        prediction_log_prob = self.softmax(prediction_scores)
+        prediction_log_prob = self.log_softmax(prediction_scores)
         return None, prediction_log_prob
