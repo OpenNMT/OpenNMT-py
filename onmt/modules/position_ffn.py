@@ -14,7 +14,7 @@ class PositionwiseFeedForward(nn.Module):
         d_ff (int): the hidden layer size of the second-layer
             of the FNN.
         dropout (float): dropout probability in :math:`[0, 1)`.
-        activation (str): activation function to use. ['ReLU', 'GeLU']
+        activation (str): activation function to use. ['relu', 'gelu']
         is_bert (bool): default False. When set True,
                         layer_norm will be performed on the
                         direct connection of residual block.
@@ -34,6 +34,13 @@ class PositionwiseFeedForward(nn.Module):
         self.is_bert = is_bert
 
     def residual(self, output, x):
+        """A Residual connection.
+
+        Official BERT perform residual connection on layer normed input.
+        BERT's layer_norm is done before pass into next block while onmt's
+        layer_norm is performed at the begining.
+        """
+
         maybe_norm = self.layer_norm(x) if self.is_bert else x
         return output + maybe_norm
 

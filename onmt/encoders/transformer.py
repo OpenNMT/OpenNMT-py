@@ -44,6 +44,13 @@ class TransformerEncoderLayer(nn.Module):
         self.is_bert = is_bert
 
     def residual(self, output, x):
+        """A Residual connection.
+
+        Official BERT perform residual connection on layer normed input.
+        BERT's layer_norm is done before pass into next block while onmt's
+        layer_norm is performed at the begining.
+        """
+
         maybe_norm = self.layer_norm(x) if self.is_bert else x
         return output + maybe_norm
 
@@ -58,6 +65,7 @@ class TransformerEncoderLayer(nn.Module):
 
             * outputs ``(batch_size, src_len, model_dim)``
         """
+
         input_norm = self.layer_norm(inputs)
         context, _ = self.self_attn(input_norm, input_norm, input_norm,
                                     mask=mask, type="self")

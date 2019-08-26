@@ -16,7 +16,7 @@ def main(opt):
     logger = init_logger(opt.log_file)
     opt = ArgumentParser.validate_predict_opts(opt)
     tokenizer = BertTokenizer.from_pretrained(
-        opt.bert_model, do_lower_case=opt.do_lower_case)
+        opt.vocab_model, do_lower_case=opt.do_lower_case)
     data_shards = split_corpus(opt.data, opt.shard_size)
     if opt.task == 'classification':
         classifier = build_classifier(opt)

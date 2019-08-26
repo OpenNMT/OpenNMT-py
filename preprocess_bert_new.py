@@ -54,9 +54,12 @@ def build_vocab_from_tokenizer(fields, tokenizer, named_labels):
     counters = defaultdict(Counter)
     _, vocab_size = _build_bert_vocab(vocab_list, "tokens", counters)
 
-    label_name, label_list = named_labels
-    logger.info("Building label vocab {}...".format(named_labels))
-    _, _ = _build_bert_vocab(label_list, label_name, counters)
+    if named_labels is not None:
+        label_name, label_list = named_labels
+        logger.info("Building label vocab {}...".format(named_labels))
+        _, _ = _build_bert_vocab(label_list, label_name, counters)
+    else:
+        label_name = None
 
     fields_vocab = _build_bert_fields_vocab(fields, counters, vocab_size,
                                             label_name)

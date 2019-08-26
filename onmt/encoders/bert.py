@@ -4,10 +4,18 @@ from onmt.encoders.transformer import TransformerEncoderLayer
 
 
 class BertEncoder(nn.Module):
+    """BERT Encoder: A Transformer Encoder with BertLayerNorm and BertPooler.
+    :cite:`DBLP:journals/corr/abs-1810-04805`
+
+    Args:
+       embeddings (onmt.modules.BertEmbeddings): embeddings to use
+       num_layers (int): number of encoder layers.
+       d_model (int): size of the model
+       heads (int): number of heads
+       d_ff (int): size of the inner FF layer
+       dropout (float): dropout parameters
     """
-    BERT Implementation: https://arxiv.org/abs/1810.04805
-    Use a Transformer Encoder as Language modeling.
-    """
+
     def __init__(self, embeddings, num_layers=12, d_model=768,
                  heads=12, d_ff=3072, dropout=0.1,
                  max_relative_positions=0):
@@ -34,8 +42,8 @@ class BertEncoder(nn.Module):
         """Alternate constructor."""
         return cls(
             embeddings,
-            opt.enc_layers,
-            opt.enc_rnn_size,
+            opt.layers,
+            opt.word_vec_size,
             opt.heads,
             opt.transformer_ff,
             opt.dropout[0] if type(opt.dropout) is list else opt.dropout,
@@ -45,16 +53,15 @@ class BertEncoder(nn.Module):
                 output_all_encoded_layers=False):
         """
         Args:
-            input_ids: shape [batch, seq] padding ids=0
-            token_type_ids: shape [batch, seq], A(0), B(1), pad(0)
-            input_mask: shape [batch, seq], 1 for masked position(that padding)
-            output_all_encoded_layers: if out contain all hidden layer
+            input_ids (Tensor): ``(B, S)``, padding ids=0
+            token_type_ids (Tensor): ``(B, S)``, A(0), B(1), pad(0)
+            input_mask (Tensor): ``(B, S)``, 1 for masked (padding)
+            output_all_encoded_layers (bool): if out contain all hidden layer
         Returns:
-            all_encoder_layers: list of out in shape (batch, seq, d_model),
-                                to be used for generation task
-            pooled_output: shape (batch, d_model),
-                           to be used for classification task
+            all_encoder_layers (list of Tensor): ``(B, S, H)``, token level
+            pooled_output (Tensor): ``(B, H)``, sequence level
         """
+
         # OpenNMT waiting for mask of size [B, 1, T],
         # while in MultiHeadAttention part2 -> [B, 1, 1, T]
         if input_mask is None:
@@ -87,17 +94,25 @@ class BertEncoder(nn.Module):
 
 class BertPooler(nn.Module):
     def __init__(self, hidden_size):
+        """A pooling block (Linear layer followed by Tanh activation).
+
+        Args:
+            hidden_size (int): size of hidden layer.
+        """
+
         super(BertPooler, self).__init__()
         self.dense = nn.Linear(hidden_size, hidden_size)
         self.activation_fn = nn.Tanh()
 
     def forward(self, hidden_states):
-        """
+        """hidden_states[:, 0, :] --> {Linear, Tanh} --> Returns.
+
         Args:
-            hidden_states: last layer's hidden_states,(batch, src, d_model)
+            hidden_states (Tensor): last layer's hidden_states, ``(B, S, H)``
         Returns:
-            pooled_output: transformed output of last layer's hidden_states
+            pooled_output (Tensor): transformed output of last layer's hidden
         """
+
         first_token_tensor = hidden_states[:, 0, :]  # [batch, d_model]
         pooled_output = self.activation_fn(self.dense(first_token_tensor))
         return pooled_output
@@ -105,15 +120,21 @@ class BertPooler(nn.Module):
 
 class BertLayerNorm(nn.Module):
     def __init__(self, hidden_size, eps=1e-12):
-        """Construct a layernorm module in the TF style
-           (epsilon inside the square root).
+        """Layernorm module in the TF style(epsilon inside the square root).
+        https://www.tensorflow.org/api_docs/python/tf/contrib/layers/layer_norm.
+
+        Args:
+            hidden_size (int): size of hidden layer.
         """
+
         super(BertLayerNorm, self).__init__()
         self.weight = nn.Parameter(torch.ones(hidden_size))
         self.bias = nn.Parameter(torch.zeros(hidden_size))
         self.variance_epsilon = eps
 
     def forward(self, x):
+        """layer normalization is perform on input x."""
+
         u = x.mean(-1, keepdim=True)
         s = (x - u).pow(2).mean(-1, keepdim=True)
         x = (x - u) / torch.sqrt(s + self.variance_epsilon)

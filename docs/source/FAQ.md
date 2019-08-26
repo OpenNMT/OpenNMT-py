@@ -77,7 +77,7 @@ python  train.py -data /tmp/de2/data -save_model /tmp/extra \
         -optim adam -adam_beta2 0.998 -decay_method noam -warmup_steps 8000 -learning_rate 2 \
         -max_grad_norm 0 -param_init 0  -param_init_glorot \
         -label_smoothing 0.1 -valid_steps 10000 -save_checkpoint_steps 10000 \
-        -world_size 4 -gpu_ranks 0 1 2 3 
+        -world_size 4 -gpu_ranks 0 1 2 3
 ```
 
 Here are what each of the parameters mean:
@@ -85,8 +85,8 @@ Here are what each of the parameters mean:
 * `param_init_glorot` `-param_init 0`: correct initialization of parameters
 * `position_encoding`: add sinusoidal position encoding to each embedding
 * `optim adam`, `decay_method noam`, `warmup_steps 8000`: use special learning rate.
-* `batch_type tokens`, `normalization tokens`, `accum_count 4`: batch and normalize based on number of tokens and not sentences. Compute gradients based on four batches. 
-- `label_smoothing 0.1`: use label smoothing loss. 
+* `batch_type tokens`, `normalization tokens`, `accum_count 4`: batch and normalize based on number of tokens and not sentences. Compute gradients based on four batches.
+- `label_smoothing 0.1`: use label smoothing loss.
 
 Multi GPU settings
 First you need to make sure you export CUDA_VISIBLE_DEVICES=0,1,2,3
@@ -136,3 +136,146 @@ E.g.
 will mean that we'll look for `my_data.train_A.*.pt` and `my_data.train_B.*.pt`, and that when building batches, we'll take 1 example from corpus A, then 7 examples from corpus B, and so on.
 
 **Warning**: This means that we'll load as many shards as we have `-data_ids`, in order to produce batches containing data from every corpus. It may be a good idea to reduce the `-shard_size` at preprocessing.
+
+## How do I use BERT?
+BERT is a general-purpose "language understanding" model introduced by Google, it can be used for various downstream NLP tasks and easily adapted into a new task using transfer learning. Using BERT has two stages: Pre-training and fine-tuning. But as the Pre-training is super expensive, we do not recommande you to pre-train a BERT from scratch. Instead loading weights from a existing pretrained model and fine-tuning it is suggested. Currently we support sentence(-pair) classification and token tagging downstream task.
+
+### Use pretrained BERT weights
+To use weights from a existing huggingface's pretrained model, we provide you a script to convert huggingface's BERT model weights into ours.
+
+Usage:
+```bash
+bert_ckp_convert.py  --layers NUMBER_LAYER
+                     --bert_model_weights_file HUGGINGFACE_BERT_WEIGHTS
+                     --output_name OUTPUT_FILE
+```
+* Go to modeling_bert.py in https://github.com/huggingface/pytorch-transformers/ to check all available pretrained model.
+
+### Preprocess train/dev dataset
+To genenrate train/dev data for BERT, you can use preprocess_bert.py by providing raw data in certain format and choose a BERT Tokenizer model `-vm` coherent with pretrained model.
+#### Classification
+For classification dataset, we support input file in csv or plain text file format.
+
+* For csv file, each line should contain a instance with one or two sentence column and one column for label as in GLUE dataset, other csv format dataset should be compatible. A typical csv file should be like:
+
+  | ID | SENTENCE_A               | SENTENCE_B(Optional)      | LABEL   |
+  | -- | ------------------------ | ------------------------  | ------- |
+  | 0  | sentence a of instance 0 | sentence b of instance 0  | class 2 |
+  | 1  | sentence a of instance 0 | sentence b of instance 1  | class 1 |
+  | ...| ... | ...  | ... |
+
+  Then calling preprocess_bert.py and providing input sentence columns and label column:
+  ```bash
+  python preprocess_bert.py --task classification --corpus_type {train, valid}
+                            --file_type csv [--delimiter '\t'] [--skip_head]
+                            --input_columns 1 2 --label_column 3
+                            --data DATA_DIR/FILENAME.tsv
+                            --save_data dataset
+                            -vm bert-base-cased --max_seq_len 256 [--do_lower_case]
+                            [--sort_label_vocab] [--do_shuffle]
+  ```
+* For plain text format, we accept multiply files as input, each file contains instances for one specific class. Each line of the file contain one instance which could be composed by one sentence or two separated by ` ||| `. All input file should be arranged in following way:
+  ```
+  .../LABEL_1/filename
+  .../LABEL_2/filename
+  .../LABEL_3/filename
+  ```
+  Then call preprocess_bert.py as following to generate training data:
+  ```bash
+  python preprocess_bert.py --task classification --corpus_type {'train', 'valid'}
+                            --file_type txt [--delimiter ' ||| ']
+                            --data DIR_BASE/LABEL_1/FILENAME1 ... DIR_BASE/LABEL_N/FILENAME2
+                            --save_data dataset
+                            --vocab_model {bert-base-uncased,...}
+                            --max_seq_len 256 [--do_lower_case]
+                            [--sort_label_vocab] [--do_shuffle]
+  ```
+#### Tagging
+For tagging dataset, we support input file in plain text file format.
+
+Each line of the input file should contain token and its tagging, different fields should be separated by a delimiter(default space) while sentences are separated by a blank line.
+
+A example of input file is given below (`Token X X Label`):
+  ```
+  -DOCSTART- -X- O O
+
+  CRICKET NNP I-NP O
+  - : O O
+  LEICESTERSHIRE NNP I-NP I-ORG
+  TAKE NNP I-NP O
+  OVER IN I-PP O
+  AT NNP I-NP O
+  TOP NNP I-NP O
+  AFTER NNP I-NP O
+  INNINGS NNP I-NP O
+  VICTORY NN I-NP O
+  . . O O
+
+  LONDON NNP I-NP I-LOC
+  1996-08-30 CD I-NP O
+
+  ```
+Then call preprocess_bert.py providing token column and label column as following to generate training data for token tagging task:
+  ```bash
+  python preprocess_bert.py --task tagging --corpus_type {'train', 'valid'}
+                            --file_type txt [--delimiter ' ']
+                            --input_columns 1 --label_column 3
+                            --data DATA_DIR/FILENAME
+                            --save_data dataset
+                            --vocab_model {bert-base-uncased,...}
+                            --max_seq_len 256 [--do_lower_case]
+                            [--sort_label_vocab] [--do_shuffle]
+  ```
+#### Pretraining objective
+Even if it's not recommended, we also provide you a script to generate pretraining dataset as you may want to finetuning a existing pretrained model on masked language modeling and next sentence prediction.
+
+The script expect a single file as input, consisting of untokenized text, with one sentence per line, and one blank line between documents.
+A usage example is given below:
+```bash
+python3 pregenerate_bert_training_data.py --input_file INPUT_FILE
+                                          --output_dir OUTPUT_DIR
+                                          --output_name OUTPUT_FILE_PREFIX
+                                          --corpus_type {'train', 'valid'}
+                                          --vocab_model {bert-base-uncased,...}
+                                          [--do_lower_case] [--do_whole_word_mask] [--reduce_memory]
+                                          --epochs_to_generate 2
+                                          --max_seq_len 128
+                                          --short_seq_prob 0.1 --masked_lm_prob 0.15
+                                          --max_predictions_per_seq 20
+                                          [--save_json]
+```
+
+### Training
+After preprocessed data have been generated, you can load weights from a pretrained BERT and transfer it to downstream task with a task specific output head. This task specific head will be initialized by a method you choose if there is no such architecture in weights file specified by `--train_from`. Among all available optimizer, you are suggest to use `--optim bertadam` as it is the method used to train BERT. `warmup_steps` could be set as 1% of `train_steps` as in original paper if use linear decay method.
+
+A usage example is given below:
+```bash
+python3 train.py --is_bert --task_type {pretraining, classification, tagging}
+                 --data PREPROCESSED_DATAIFILE     
+                 --train_from CONVERTED_CHECKPOINT.pt [--param_init 0.1]
+                 --save_model MODEL_PREFIX --save_checkpoint_steps 1000
+                 [--world_size 2] [--gpu_ranks 0 1]
+                 --word_vec_size 768 --rnn_size 768
+                 --layers 12 --heads 8 --transformer_ff 3072
+                 --activation gelu --dropout 0.1 --average_decay 0.0001
+                 --batch_size 8 [--accum_count 4] --optim bertadam [--max_grad_norm 0]
+                 --learning_rate 2e-5 --learning_rate_decay 0.99 --decay_method linear
+                 --train_steps 4000 --valid_steps 200 --warmup_steps 40
+                 [--report_every 10] [--seed 3435]
+                 [--tensorboard] [--tensorboard_log_dir LOGDIR]
+```
+
+### Predicting
+After training, you can use `predict.py` to generate predicting for raw file. Make sure to use the same BERT Tokenizer model `--vocab_model` as in training data.
+
+For classification task, file to be predicting should be one sentence(-pair) a line with ` ||| ` separating sentence.
+For tagging task, each line should be a tokenized sentence with tokens separated by space.
+
+Usage:
+```bash
+python3 predict.py --task {classification, tagging}
+                   --model ONMT_BERT_CHECKPOINT.pt
+                   --vocab_model bert-base-uncased [--do_lower_case]
+                   --data DATA_2_PREDICT [--delimiter {' ||| ', ' '}] --max_seq_len 256
+                   --output PREDICT.txt [--batch_size 8] [--gpu 1] [--seed 3435]
+```

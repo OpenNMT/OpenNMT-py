@@ -12,6 +12,8 @@ from onmt.utils.misc import set_random_seed
 
 
 def build_classifier(opt, logger=None, out_file=None):
+    """Return a classifier with result redirect to `out_file`."""
+
     if out_file is None:
         out_file = codecs.open(opt.output, 'w+', 'utf-8')
 
@@ -30,6 +32,8 @@ def build_classifier(opt, logger=None, out_file=None):
 
 
 def build_tagger(opt, logger=None, out_file=None):
+    """Return a tagger with result redirect to `out_file`."""
+
     if out_file is None:
         out_file = codecs.open(opt.output, 'w+', 'utf-8')
 
@@ -51,7 +55,7 @@ class Predictor(object):
     """Predictor a batch of data with a saved model.
 
     Args:
-        model (onmt.modules.Sequential): model to use
+        model (nn.Sequential): model to use
         fields (dict[str, torchtext.data.Field]): A dict of field.
         gpu (int): GPU device. Set to negative for no GPU.
         data_type (str): Source data type.
@@ -73,13 +77,6 @@ class Predictor(object):
             seed=-1):
         self.model = model
         self.fields = fields
-        # tgt_field = dict(self.fields)["tgt"].base_field
-        # self._tgt_vocab = tgt_field.vocab
-        # self._tgt_eos_idx = self._tgt_vocab.stoi[tgt_field.eos_token]
-        # self._tgt_pad_idx = self._tgt_vocab.stoi[tgt_field.pad_token]
-        # self._tgt_bos_idx = self._tgt_vocab.stoi[tgt_field.init_token]
-        # self._tgt_unk_idx = self._tgt_vocab.stoi[tgt_field.unk_token]
-        # self._tgt_vocab_len = len(self._tgt_vocab)
 
         self._gpu = gpu
         self._use_cuda = gpu > -1
@@ -136,7 +133,7 @@ class Classifier(Predictor):
     """classify a batch of sentences with a saved model.
 
     Args:
-        model (onmt.modules.Sequential): BERT model to use for classify
+        model (nn.Sequential): BERT model to use for classify
         fields (dict[str, torchtext.data.Field]): A dict of field.
         gpu (int): GPU device. Set to negative for no GPU.
         data_type (str): Source data type.
@@ -173,12 +170,11 @@ class Classifier(Predictor):
         """Classify content of ``data``.
 
         Args:
-            data: list of sentences to classify,ex. Sentence1 ||| Sentence2.
+            data (list of str): ['Sentence1 ||| Sentence2',...].
             batch_size (int): size of examples per mini-batch
 
         Returns:
-            * all_predictions is a list of `batch_size` lists
-                of sentence classification
+            all_predictions (list of str):[c1, ..., cn].
         """
 
         dataset = inputters.ClassifierDataset(
@@ -216,16 +212,15 @@ class Classifier(Predictor):
         return all_predictions
 
     def classify_batch(self, batch):
-        """Translate a batch of sentences."""
+        """Classify a batch of sentences."""
         with torch.no_grad():
-            input_ids, seq_lengths = batch.tokens
+            input_ids, _ = batch.tokens
             token_type_ids = batch.segment_ids
             all_encoder_layers, pooled_out = self.model.bert(
                 input_ids, token_type_ids)
-            seq_class_log_prob, prediction_log_prob = self.model.generator(
+            seq_class_log_prob, _ = self.model.generator(
                 all_encoder_layers, pooled_out)
-            # outputs = (seq_class_log_prob, prediction_log_prob)
-
+            # Predicting
             pred_sents_ids = seq_class_log_prob.argmax(-1).tolist()
             pred_sents_labels = [self.label_vocab.itos[index]
                                  for index in pred_sents_ids]
@@ -236,7 +231,7 @@ class Tagger(Predictor):
     """Tagging a batch of sentences with a saved model.
 
     Args:
-        model (onmt.modules.Sequential): BERT model to use for Tagging
+        model (nn.Sequential): BERT model to use for Tagging
         fields (dict[str, torchtext.data.Field]): A dict of field.
         gpu (int): GPU device. Set to negative for no GPU.
         data_type (str): Source data type.
@@ -275,12 +270,11 @@ class Tagger(Predictor):
         """Tagging content of ``data``.
 
         Args:
-            data: list of sentences to classify,ex. Sentence1 ||| Sentence2.
+            data (list of str): ['T1 T2 ... Tn',...].
             batch_size (int): size of examples per mini-batch
 
         Returns:
-            * all_predictions is a list of `batch_size` lists
-                of token taggings
+            all_predictions (list of list of str): [['L1', ..., 'Ln'],...].
         """
         dataset = inputters.TaggerDataset(
             self.fields, data, tokenizer, max_seq_len, delimiter)
@@ -321,13 +315,13 @@ class Tagger(Predictor):
         """Tagging a batch of sentences."""
         with torch.no_grad():
             # Batch
-            input_ids, seq_lengths = batch.tokens
+            input_ids, _ = batch.tokens
             token_type_ids = batch.segment_ids
             taggings = batch.token_labels
             # Forward
             all_encoder_layers, pooled_out = self.model.bert(
                 input_ids, token_type_ids)
-            seq_class_log_prob, prediction_log_prob = self.model.generator(
+            _, prediction_log_prob = self.model.generator(
                 all_encoder_layers, pooled_out)
             # Predicting
             pred_tag_ids = prediction_log_prob.argmax(-1)

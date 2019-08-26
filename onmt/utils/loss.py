@@ -24,7 +24,6 @@ def build_loss_compute(model, tgt_field, opt, train=True):
     """
     device = torch.device("cuda" if onmt.utils.misc.use_gpu(opt) else "cpu")
     if opt.is_bert is True:
-        assert hasattr(model, 'bert')
         if tgt_field.pad_token is not None:
             if tgt_field.use_vocab:
                 padding_idx = tgt_field.vocab.stoi[tgt_field.pad_token]
@@ -70,6 +69,13 @@ def build_loss_compute(model, tgt_field, opt, train=True):
 
 
 class BertLoss(nn.Module):
+    """Class for managing BERT loss computation which is reduced by mean.
+
+    Args:
+        criterion (:obj:`nn.NLLLoss`) : module that measures loss
+            between input and target.
+        task (str): BERT downstream task.
+    """
     def __init__(self, criterion, task):
         super(BertLoss, self).__init__()
         self.criterion = criterion
@@ -86,20 +92,21 @@ class BertLoss(nn.Module):
                sents_scores, sents_target):
         """
         Args:
-            loss (:obj:`FloatTensor`): the loss computed by the loss criterion.
+            loss (:obj:`FloatTensor`): the loss reduced by mean.
             tokens_scores (:obj:`FloatTensor`): scores for each token
             tokens_target (:obj:`FloatTensor`): true targets for each token
             sents_scores (:obj:`FloatTensor`): scores for each sentence
             sents_target (:obj:`FloatTensor`): true targets for each sentence
 
         Returns:
-            :obj:`onmt.utils.Statistics` : statistics for this batch.
+            :obj:`onmt.utils.BertStatistics` : statistics for this batch.
         """
         if self.task == 'pretraining':
             # masked lm task: token level
             pred_tokens = tokens_scores.argmax(1)  # (B*S, V) -> (B*S)
             non_padding = tokens_target.ne(self.padding_idx)  # mask: (B*S)
-            tokens_match = pred_tokens.eq(tokens_target).masked_select(non_padding)
+            tokens_match = pred_tokens.eq(
+                tokens_target).masked_select(non_padding)
             n_correct_tokens = tokens_match.sum().item()
             n_tokens = non_padding.sum().item()
             f1 = 0
@@ -122,7 +129,8 @@ class BertLoss(nn.Module):
             # token level task:
             pred_tokens = tokens_scores.argmax(1)  # (B*S, V) -> (B*S)
             non_padding = tokens_target.ne(self.padding_idx)  # mask: (B*S)
-            tokens_match = pred_tokens.eq(tokens_target).masked_select(non_padding)
+            tokens_match = pred_tokens.eq(
+                tokens_target).masked_select(non_padding)
             n_correct_tokens = tokens_match.sum().item()
             n_tokens = non_padding.sum().item()
             # for f1:
@@ -139,7 +147,8 @@ class BertLoss(nn.Module):
             # token level task:
             pred_tokens = tokens_scores.argmax(1)  # (B*S, V) -> (B*S)
             non_padding = tokens_target.ne(self.padding_idx)  # mask: (B*S)
-            tokens_match = pred_tokens.eq(tokens_target).masked_select(non_padding)
+            tokens_match = pred_tokens.eq(
+                tokens_target).masked_select(non_padding)
             n_correct_tokens = tokens_match.sum().item()
             n_tokens = non_padding.sum().item()
             f1 = 0
@@ -153,15 +162,19 @@ class BertLoss(nn.Module):
                                          n_correct_tokens, n_sentences,
                                          n_correct_sents, f1)
 
-
     def forward(self, batch, outputs):
         """
         Args:
-            batch: batch of examples
-            outputs: tuple of log proba for next sentense & lm
-                (seq_class_log_prob:(batch, 2),
-                prediction_log_prob:(batch, seq, vocab))
+            batch (Tensor): batch of examples
+            outputs (tuple of Tensor): (seq_class_log_prob:``(B, 2)``,
+                prediction_log_prob:``(B, S, vocab)``)
+
+        Returns:
+            (float, BertStatistics)
+            * total_loss: total loss of input batch reduced by 'mean'.
+            * stats: A statistic object.
         """
+
         assert isinstance(outputs, tuple)
         seq_class_log_prob, prediction_log_prob = outputs
         if self.task == 'pretraining':

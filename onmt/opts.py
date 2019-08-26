@@ -363,7 +363,10 @@ def preprocess_bert_opts(parser):
                        "bert-base-cased", "bert-large-cased",
                        "bert-base-multilingual-uncased",
                        "bert-base-multilingual-cased",
-                       "bert-base-chinese"],
+                       "bert-base-chinese", "bert-base-german-cased",
+                       "bert-large-uncased-whole-word-masking",
+                       "bert-large-cased-whole-word-masking",
+                       "bert-base-cased-finetuned-mrpc"],
               help="Pretrained BertTokenizer model use to tokenizer text.")
 
     # Data processing options
@@ -381,15 +384,15 @@ def train_opts(parser):
 
     group = parser.add_argument_group('Pretrain-finetuning')
     group.add('--is_bert', '-is_bert', action='store_true')
-    group.add('--task_type', '-task_type', type=str, default='classification',
-              choices=["pretraining", "classification", "tagging"],
+    group.add('--task_type', '-task_type', type=str, default="none",
+              choices=["none", "pretraining", "classification", "tagging"],
               help="Downstream task for Bert if is_bert set True"
                    "Choose from pretraining Bert,"
                    "use pretrained Bert for classification,"
                    "use pretrained Bert for token generation.")
     group.add('--reuse_embeddings', '-reuse_embeddings', type=bool,
               default=False, help="if reuse embeddings for generator " +
-              "currently not available")
+              "only for generation or pretraining task")
 
     group = parser.add_argument_group('General')
     group.add('--data', '-data', required=True,
@@ -805,13 +808,16 @@ def translate_opts(parser):
 def predict_opts(parser):
     """ Prediction [Using Pretrained model] options """
     group = parser.add_argument_group('Model')
-    group.add("--bert_model", type=str,
+    group.add("--vocab_model", type=str,
               default="bert-base-uncased",
               choices=["bert-base-uncased", "bert-large-uncased",
                        "bert-base-cased", "bert-large-cased",
                        "bert-base-multilingual-uncased",
                        "bert-base-multilingual-cased",
-                       "bert-base-chinese"],
+                       "bert-base-chinese", "bert-base-german-cased",
+                       "bert-large-uncased-whole-word-masking",
+                       "bert-large-cased-whole-word-masking",
+                       "bert-base-cased-finetuned-mrpc"],
               help="Bert pretrained tokenizer model to use.")
     group.add("--model", type=str, default=None, required=True,
               help="Path to Bert model that for predicting.")

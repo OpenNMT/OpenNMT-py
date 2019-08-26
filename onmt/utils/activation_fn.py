@@ -4,6 +4,7 @@ import math
 
 
 def get_activation_fn(activation):
+    """Return an activation function Module according to its name."""
     if activation is 'gelu':
         fn = GELU()
     elif activation is 'relu':
@@ -22,12 +23,12 @@ https://github.com/huggingface/pytorch-transformers/blob/master/pytorch_transfor
 """
 class GELU(nn.Module):
     """ Implementation of the gelu activation function
+        :cite:`DBLP:journals/corr/HendrycksG16`
 
         For information: OpenAI GPT's gelu is slightly different
         (and gives slightly different results):
         0.5 * x * (1 + torch.tanh(math.sqrt(2 / math.pi)
                     * (x + 0.044715 * torch.pow(x, 3))))
-        see https://arxiv.org/abs/1606.08415
 
         Examples::
         >>> m = GELU()

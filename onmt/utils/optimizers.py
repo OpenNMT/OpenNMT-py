@@ -52,7 +52,7 @@ def build_torch_optimizer(model, opt):
             lr=opt.learning_rate,
             betas=betas,
             eps=1e-9)
-    elif opt.optim == 'bertadam':  # TODO:to be verified
+    elif opt.optim == 'bertadam':
         optimizer = BertAdam(
             params,
             lr=opt.learning_rate,
@@ -621,17 +621,18 @@ class AdaFactor(torch.optim.Optimizer):
 
 
 class BertAdam(torch.optim.Optimizer):
-    """Implements BERT version of Adam algorithm with weight decay fix
-       (while doesn't compensate for bias).
-        Ref: https://arxiv.org/abs/1711.05101
-    Params:
-        lr: learning rate
-        betas: Adam betas(beta1, beta2). Default: (0.9, 0.999)
-        eps: Adams epsilon. Default: 1e-6
-        weight_decay: Weight decay. Default: 0.01
-        # TODO: exclude LayerNorm from weight decay?
-        max_grad_norm: Maximum norm for the gradients (-1 means no clipping).
-    """  # TODO: add parameter to opt
+    """Implements Adam algorithm with weight decay fix
+       (used in BERT while doesn't compensate for bias).
+        :cite:`DBLP:journals/corr/abs-1711-05101`
+
+    Args:
+        lr (float): learning rate
+        betas (tuple of float): Adam (beta1, beta2). Default: (0.9, 0.999)
+        eps (float): Adams epsilon. Default: 1e-6
+        weight_decay (float): Weight decay. Default: 0.01
+        max_grad_norm (float): -1 means no gradients clipping.
+    """
+
     def __init__(self, params, lr=None, betas=(0.9, 0.999),
                  eps=1e-6, weight_decay=0.01, max_grad_norm=1.0, **kwargs):
         if not 0.0 <= lr:
@@ -653,7 +654,8 @@ class BertAdam(torch.optim.Optimizer):
 
     def step(self, closure=None):
         """Performs a single optimization step.
-        Arguments:
+
+        Args:
             closure (callable, optional): A closure that reevaluates the model
                 and returns the loss.
         """
@@ -695,7 +697,7 @@ class BertAdam(torch.optim.Optimizer):
                 exp_avg_sq.mul_(beta2).addcmul_(1 - beta2, grad, grad)
                 update = exp_avg / (exp_avg_sq.sqrt() + group['eps'])
 
-                # ref: https://arxiv.org/abs/1711.05101
+                # Ref: https://arxiv.org/abs/1711.05101
                 # Just adding the square of the weights to the loss function
                 # is *not* the correct way of using L2/weight decay with Adam,
                 # since it will interact with m/v parameters in strange ways.

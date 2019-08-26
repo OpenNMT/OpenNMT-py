@@ -10,7 +10,8 @@ def bert_text_sort_key(ex):
 
 
 def truncate_seq(tokens, max_num_tokens):
-    """Truncates a sequences to a maximum sequence length."""
+    """Truncates a sequences randomly from front or back
+    to a maximum sequence length."""
     while True:
         total_length = len(tokens)
         if total_length <= max_num_tokens:
@@ -26,7 +27,9 @@ def truncate_seq(tokens, max_num_tokens):
 
 def truncate_seq_pair(tokens_a, tokens_b, max_num_tokens):
     """Truncates a pair of sequences to a maximum sequence length.
-       Lifted from Google's BERT repo."""
+       Lifted from Google's BERT repo: create_pretraining_data.py in
+       https://github.com/google-research/bert/"""
+
     while True:
         total_length = len(tokens_a) + len(tokens_b)
         if total_length <= max_num_tokens:
@@ -44,6 +47,20 @@ def truncate_seq_pair(tokens_a, tokens_b, max_num_tokens):
 
 def create_sentence_instance(sentence, tokenizer,
                              max_seq_length, random_trunc=False):
+    """Create single processed instance in BERT format.
+
+    Args:
+        sentence (str): a raw single sentence.
+        tokenizer (onmt.utils.BertTokenizer): tokenizer to be used on data.
+        max_seq_len (int): maximum length of sequence.
+        random_trunc (bool): if false, trunc tail.
+
+    Returns:
+        (list, list):
+
+        * tokens_processed: ["[CLS]", sent_a, "[SEP]"]
+        * segment_ids: [0, ..., 0]
+    """
     tokens = tokenizer.tokenize(sentence)
     # Account for [CLS], [SEP], [SEP]
     max_num_tokens = max_seq_length - 2
@@ -58,6 +75,20 @@ def create_sentence_instance(sentence, tokenizer,
 
 
 def create_sentence_pair_instance(sent_a, sent_b, tokenizer, max_seq_length):
+    """Create single processed instance in BERT format.
+
+    Args:
+        sent_a (str): a raw single sentence.
+        sent_b (str): another raw single sentence.
+        tokenizer (onmt.utils.BertTokenizer): tokenizer to be used on data.
+        max_seq_len (int): maximum length of sequence.
+
+    Returns:
+        (list, list):
+
+        * tokens_processed: ["[CLS]", sent_a, "[SEP]", sent_b, "[SEP]"]
+        * segment_ids: [0, ..., 0, 1, ..., 1]
+    """
     tokens_a = tokenizer.tokenize(sent_a)
     tokens_b = tokenizer.tokenize(sent_b)
     # Account for [CLS], [SEP], [SEP]
@@ -71,6 +102,7 @@ def create_sentence_pair_instance(sent_a, sent_b, tokenizer, max_seq_length):
 
 class BertDataset(TorchtextDataset):
     """Defines a BERT dataset composed of Examples along with its Fields.
+
     Args:
         fields_dict (dict[str, Field]): a dict containing all Field with
             its name.
@@ -107,11 +139,16 @@ class BertDataset(TorchtextDataset):
 
 class ClassifierDataset(BertDataset):
     """Defines a BERT dataset composed of Examples along with its Fields.
+    Fields include "tokens", "segment_ids", "category".
+
     Args:
         fields_dict (dict[str, Field]): a dict containing all Field with
             its name.
         data (list[]): a list of sequence (sentence or sentence pair),
             possible with its label becoming tuple(list[]).
+        tokenizer (onmt.utils.BertTokenizer): a tokenizer to be used on data.
+        max_seq_len (int): maximum length of sequence.
+        delimiter (str): delimiter used to separate tokens in input sequence.
     """
 
     def __init__(self, fields_dict, data, tokenizer,
@@ -124,6 +161,19 @@ class ClassifierDataset(BertDataset):
 
     def create_instances(self, data, tokenizer,
                          delimiter, max_seq_len):
+        """Return data instances in the form of list of dict.
+
+        Args:
+            data (list[]): a list of sequence (sentence or sentence pair),
+                possible with its label becoming tuple(list[]).
+            tokenizer (onmt.utils.BertTokenizer): tokenizer to use on data.
+            max_seq_len (int): maximum length of sequence.
+            delimiter (str): delimiter used to separate tokens in sequence.
+
+        Returns:
+            instances (list of dict): list of sequence classification instance.
+        """
+
         instances = []
         for sentence, label in zip(*data):
             sentences = sentence.strip().split(delimiter, 1)
@@ -145,12 +195,16 @@ class ClassifierDataset(BertDataset):
 
 class TaggerDataset(BertDataset):
     """Defines a BERT dataset composed of Examples along with its Fields.
+
     Args:
         fields_dict (dict[str, Field]): a dict containing all Field with
             its name.
-        data (list[]|tuple(list[])): a list of sequence, each sequence is
+        data (list of str|tuple of list): a list of sequence, each sequence is
             composed with tokens that to be tagging. Can also combined with
-            its tags as tuple([tokens], [tags])
+            its tags as tuple([tokens], [tags]).
+        tokenizer (onmt.utils.BertTokenizer): a tokenizer to be used on data.
+        max_seq_len (int): maximum length of sequence.
+        delimiter (str): delimiter used to separate tokens in input sequence.
     """
 
     def __init__(self, fields_dict, data, tokenizer,
@@ -166,6 +220,19 @@ class TaggerDataset(BertDataset):
         super(TaggerDataset, self).__init__(fields_dict, instances)
 
     def create_instances(self, datas, tokenizer, delimiter, max_seq_len):
+        """Return data instances in the form of list of dict.
+
+        Args:
+            data (list[]): a list of sequence (sentence or sentence pair),
+                possible with its label becoming tuple(list[]).
+            tokenizer (onmt.utils.BertTokenizer): tokenizer to use on data.
+            max_seq_len (int): maximum length of sequence.
+            delimiter (str): delimiter used to separate tokens in sequence.
+
+        Returns:
+            instances (list of dict): list of tokens tagging instance.
+        """
+
         instances = []
         for words, taggings in zip(*datas):
             if isinstance(words, str):  # build from raw sentence

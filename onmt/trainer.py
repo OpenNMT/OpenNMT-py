@@ -249,12 +249,9 @@ class Trainer(object):
                             % (self.gpu_rank, i + 1, len(batches)))
 
             if self.n_gpu > 1:
-                l_norm = onmt.utils.distributed.all_gather_list(normalization)
-                # NOTE: DEBUG
-                # current_rank = torch.distributed.get_rank()
-                # print("-> RANK: {}".format(current_rank))
-                # print(list_norm)
-                normalization = sum(l_norm)
+                normalization = sum(onmt.utils.distributed
+                                    .all_gather_list
+                                    (normalization))
 
             # Training Step: Forward -> compute Loss -> optimize
             if self.is_bert:
@@ -540,22 +537,12 @@ class Trainer(object):
             # 2. Compute loss.
             try:
                 loss, batch_stats = self.train_loss(batch, outputs)
-                # NOTE: DEBUG
-                # loss_list = onmt.utils.distributed.all_gather_list(loss)
-                # current_rank = torch.distributed.get_rank()
-                # print("{}-> RANK: {}, loss:{} in {}".format(
-                # k, current_rank, loss, loss_list))
-                # print("{}-> RANK: {}, stat:{}".format(
-                # k, current_rank, batch_stats.loss))
-                # print(str(loss) + " ~ " +str(loss_list))
 
                 if loss is not None:
                     self.optim.backward(loss)
 
                 total_stats.update(batch_stats)
                 report_stats.update(batch_stats)
-                # print(str(loss.item())+ " - " + str(report_stats.loss))
-                # exit()
             except Exception:
                 traceback.print_exc()
                 logger.info("At step %d, we removed a batch - accum %d",
@@ -568,18 +555,11 @@ class Trainer(object):
                     grads = [p.grad.data for p in self.model.parameters()
                              if p.requires_grad
                              and p.grad is not None]
-                    # current_rank = torch.distributed.get_rank()
-                    # print("{}-> RANK: {}, grads BEFORE:{}".format(
-                    # k, current_rank, grads[0]))
+
                     # NOTE: average the gradient across the GPU
                     onmt.utils.distributed.all_reduce_and_rescale_tensors(
                         grads, float(self.n_gpu))
-                    # reduced_grads = [p.grad.data for p in
-                    #         self.model.parameters()
-                    #         if p.requires_grad
-                    #         and p.grad is not None]
-                    # print("{}-> RANK: {}, grads AFTER:{}".format(
-                    # k, current_rank, reduced_grads[0]))
+
                 self.optim.step()
 
         # in case of multi step gradient accumulation,

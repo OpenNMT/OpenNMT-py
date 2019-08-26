@@ -137,7 +137,14 @@ class Statistics(object):
 
 
 class BertStatistics(Statistics):
-    """ Bert Statistics as the loss is reduced by mean """
+    """ Bert Statistics as the loss is reduced by mean.
+
+    Currently calculates:
+    * accuracy in token/sentence level
+    * perplexity
+    * elapsed time
+    * micro f1 for tagging
+    """
     def __init__(self, loss=0, n_words=0, n_correct=0,
                  n_sentence=0, n_correct_sentence=0, f1=0):
         super(BertStatistics, self).__init__(loss, n_words, n_correct)
@@ -173,8 +180,8 @@ class BertStatistics(Statistics):
         Update statistics by suming values with another `Statistics` object
 
         Args:
-            stat: another statistic object
-            update_n_src_words(bool): whether to update (sum) `n_src_words`
+            stat (BertStatistics): another statistic object
+            update_n_src_words (bool): whether to update (sum) `n_src_words`
                 or not
 
         """

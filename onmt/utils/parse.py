@@ -76,6 +76,16 @@ class ArgumentParser(cfargparse.ArgumentParser):
 
     @classmethod
     def validate_train_opts(cls, opt):
+        if opt.is_bert:
+            logger.info("WE ARE IN BERT MODE.")
+            if opt.task_type is "none":
+                raise ValueError(
+                    "Downstream task should be chosen when use BERT.")
+            if opt.reuse_embeddings is True:
+                if opt.task_type != "pretraining":
+                    opt.reuse_embeddings = False
+                    logger.warning(
+                        "reuse_embeddings not available for this task.")
         if opt.epochs:
             raise AssertionError(
                   "-epochs is deprecated please use -train_steps.")
@@ -189,14 +199,14 @@ class ArgumentParser(cfargparse.ArgumentParser):
             else:
                 opt.delimiter = ' '
         logger.info("NOTICE: opt.delimiter set to `%s`" % opt.delimiter)
-        assert opt.bert_model in PRETRAINED_VOCAB_ARCHIVE_MAP.keys(), \
-            "Unsupported Pretrain model '%s'" % (opt.bert_model)
-        if '-cased' in opt.bert_model and opt.do_lower_case is True:
+        assert opt.vocab_model in PRETRAINED_VOCAB_ARCHIVE_MAP.keys(), \
+            "Unsupported Pretrain model '%s'" % (opt.vocab_model)
+        if '-cased' in opt.vocab_model and opt.do_lower_case is True:
             logger.info("WARNING: The pre-trained model you are loading " +
                         "is cased model, you shouldn't set `do_lower_case`," +
                         "we turned it off for you.")
             opt.do_lower_case = False
-        elif '-cased' not in opt.bert_model and opt.do_lower_case is False:
+        elif '-cased' not in opt.vocab_model and opt.do_lower_case is False:
             logger.info("WARNING: The pre-trained model you are loading " +
                         "is uncased model, you should set `do_lower_case`, " +
                         "we turned it on for you.")

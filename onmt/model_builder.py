@@ -9,7 +9,7 @@ from torch.nn.init import xavier_uniform_
 
 import onmt.inputters as inputters
 import onmt.modules
-from onmt.encoders import str2enc, BertEncoder
+from onmt.encoders import str2enc
 
 from onmt.decoders import str2dec
 
@@ -239,12 +239,8 @@ def build_bert_embeddings(opt, fields):
     return bert_emb
 
 
-def build_bert_encoder(model_opt, fields, embeddings):
-    bert = BertEncoder(
-        embeddings, num_layers=model_opt.layers,
-        d_model=model_opt.word_vec_size, heads=model_opt.heads,
-        d_ff=model_opt.transformer_ff, dropout=model_opt.dropout[0],
-        max_relative_positions=model_opt.max_relative_positions)
+def build_bert_encoder(model_opt, embeddings):
+    bert = str2enc['bert'].from_opt(model_opt, embeddings)
     return bert
 
 
@@ -274,7 +270,7 @@ def build_bert_generator(model_opt, fields, bert_encoder):
             generator.decode.weight = \
                 bert_encoder.embeddings.word_embeddings.weight
     elif task == 'classification':
-        n_class = len(fields["category"].vocab.stoi) #model_opt.labels
+        n_class = len(fields["category"].vocab.stoi)
         logger.info('Generator of classification with %s class.' % n_class)
         generator = ClassificationHead(bert_encoder.d_model, n_class, dropout)
     elif task == 'tagging':
@@ -306,7 +302,7 @@ def build_bert_model(model_opt, opt, fields, checkpoint=None, gpu_id=None):
     bert_emb = build_bert_embeddings(model_opt, fields)
 
     # Build encoder.
-    bert_encoder = build_bert_encoder(model_opt, fields, bert_emb)
+    bert_encoder = build_bert_encoder(model_opt, bert_emb)
 
     gpu = use_gpu(opt)
     if gpu and gpu_id is not None:
@@ -363,16 +359,16 @@ def build_bert_model(model_opt, opt, fields, checkpoint=None, gpu_id=None):
     logger.info(model)
     return model
 
+
 def load_bert_model(opt, model_path):
     checkpoint = torch.load(model_path,
                             map_location=lambda storage, loc: storage)
     logger.info("Checkpoint from {} Loaded.".format(model_path))
     model_opt = ArgumentParser.ckpt_model_opts(checkpoint['opt'])
-    ArgumentParser.update_model_opts(model_opt)
-    # ArgumentParser.validate_model_opts(model_opt)
     vocab = checkpoint['vocab']
     fields = vocab
-    model = build_bert_model(model_opt, opt, fields, checkpoint, gpu_id=opt.gpu)
+    model = build_bert_model(
+        model_opt, opt, fields, checkpoint, gpu_id=opt.gpu)
 
     if opt.fp32:
         model.float()
