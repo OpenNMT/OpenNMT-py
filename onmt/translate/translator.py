@@ -267,6 +267,7 @@ class Translator(object):
             tgt=None,
             src_dir=None,
             batch_size=None,
+            batch_size_fn=None,
             attn_debug=False,
             phrase_table=""):
         """Translate content of ``src`` and get gold scores from ``tgt``.
@@ -304,6 +305,7 @@ class Translator(object):
             dataset=data,
             device=self._dev,
             batch_size=batch_size,
+            batch_size_fn=batch_size_fn,
             train=False,
             sort=False,
             sort_within_batch=True,
