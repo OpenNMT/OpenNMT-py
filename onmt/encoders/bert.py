@@ -16,8 +16,8 @@ class BertEncoder(nn.Module):
        dropout (float): dropout parameters
     """
 
-    def __init__(self, embeddings, num_layers=12, d_model=768,
-                 heads=12, d_ff=3072, dropout=0.1,
+    def __init__(self, embeddings, num_layers=12, d_model=768, heads=12,
+                 d_ff=3072, dropout=0.1, attention_dropout=0.1,
                  max_relative_positions=0):
         super(BertEncoder, self).__init__()
         self.num_layers = num_layers
@@ -30,7 +30,8 @@ class BertEncoder(nn.Module):
         self.embeddings = embeddings
         # Transformer Encoder Block
         self.encoder = nn.ModuleList(
-            [TransformerEncoderLayer(d_model, heads, d_ff, dropout,
+            [TransformerEncoderLayer(d_model, heads, d_ff,
+             dropout, attention_dropout,
              max_relative_positions=max_relative_positions,
              activation='gelu', is_bert=True) for _ in range(num_layers)])
 
@@ -47,6 +48,8 @@ class BertEncoder(nn.Module):
             opt.heads,
             opt.transformer_ff,
             opt.dropout[0] if type(opt.dropout) is list else opt.dropout,
+            opt.attention_dropout[0] if type(opt.attention_dropout)
+            is list else opt.attention_dropout,
             opt.max_relative_positions)
 
     def forward(self, input_ids, token_type_ids=None, input_mask=None,

@@ -76,7 +76,8 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
                            model_dtype=opt.model_dtype,
                            earlystopper=earlystopper,
                            dropout=dropout,
-                           dropout_steps=dropout_steps)
+                           dropout_steps=dropout_steps,
+                           is_bert=opt.is_bert)
     return trainer
 
 
@@ -107,11 +108,10 @@ class Trainer(object):
     """
 
     def __init__(self, model, train_loss, valid_loss, optim,
-                 trunc_size=0, shard_size=32,
-                 norm_method="sents", accum_count=[1],
-                 accum_steps=[0],
-                 n_gpu=1, gpu_rank=1,
-                 gpu_verbose_level=0, report_manager=None, model_saver=None,
+                 trunc_size=0, shard_size=32, norm_method="sents",
+                 accum_count=[1], accum_steps=[0],
+                 n_gpu=1, gpu_rank=1, gpu_verbose_level=0,
+                 report_manager=None, model_saver=None, is_bert=False,
                  average_decay=0, average_every=1, model_dtype='fp32',
                  earlystopper=None, dropout=[0.3], dropout_steps=[0]):
         # Basic attributes.
@@ -137,7 +137,7 @@ class Trainer(object):
         self.earlystopper = earlystopper
         self.dropout = dropout
         self.dropout_steps = dropout_steps
-        self.is_bert = hasattr(self.model, 'bert')
+        self.is_bert = is_bert
 
         for i in range(len(self.accum_count_l)):
             assert self.accum_count_l[i] > 0
@@ -159,7 +159,7 @@ class Trainer(object):
                 _accum = self.accum_count_l[i]
         return _accum
 
-    def _maybe_update_dropout(self, step):  # TODO: to be test with Bert
+    def _maybe_update_dropout(self, step):
         for i in range(len(self.dropout_steps)):
             if step > 1 and step == self.dropout_steps[i] + 1:
                 self.model.update_dropout(self.dropout[i])
@@ -527,7 +527,7 @@ class Trainer(object):
             if self.accum_count == 1:
                 self.optim.zero_grad()
 
-            all_encoder_layers, pooled_out = self.model.bert(
+            all_encoder_layers, pooled_out = self.model(
                 input_ids, token_type_ids)
             seq_class_log_prob, prediction_log_prob = self.model.generator(
                 all_encoder_layers, pooled_out)

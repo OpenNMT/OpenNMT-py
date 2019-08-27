@@ -15,10 +15,10 @@ def build_classifier(opt, logger=None, out_file=None):
     """Return a classifier with result redirect to `out_file`."""
 
     if out_file is None:
-        out_file = codecs.open(opt.output, 'w+', 'utf-8')
+        out_file = codecs.open(opt.output, 'w', 'utf-8')
 
-    load_bert_model = onmt.model_builder.load_bert_model
-    fields, model, model_opt = load_bert_model(opt, opt.model)
+    load_model = onmt.model_builder.load_test_model
+    fields, model, model_opt = load_model(opt, opt.model)
 
     classifier = Classifier.from_opt(
         model,
@@ -35,10 +35,10 @@ def build_tagger(opt, logger=None, out_file=None):
     """Return a tagger with result redirect to `out_file`."""
 
     if out_file is None:
-        out_file = codecs.open(opt.output, 'w+', 'utf-8')
+        out_file = codecs.open(opt.output, 'w', 'utf-8')
 
-    load_bert_model = onmt.model_builder.load_bert_model
-    fields, model, model_opt = load_bert_model(opt, opt.model)
+    load_model = onmt.model_builder.load_test_model
+    fields, model, model_opt = load_model(opt, opt.model)
 
     tagger = Tagger.from_opt(
         model,
@@ -123,7 +123,7 @@ class Predictor(object):
             seed=opt.seed)
 
     def _log(self, msg):
-        if self.logger:
+        if self.logger is not None:
             self.logger.info(msg)
         else:
             print(msg)
@@ -216,7 +216,7 @@ class Classifier(Predictor):
         with torch.no_grad():
             input_ids, _ = batch.tokens
             token_type_ids = batch.segment_ids
-            all_encoder_layers, pooled_out = self.model.bert(
+            all_encoder_layers, pooled_out = self.model(
                 input_ids, token_type_ids)
             seq_class_log_prob, _ = self.model.generator(
                 all_encoder_layers, pooled_out)
@@ -319,7 +319,7 @@ class Tagger(Predictor):
             token_type_ids = batch.segment_ids
             taggings = batch.token_labels
             # Forward
-            all_encoder_layers, pooled_out = self.model.bert(
+            all_encoder_layers, pooled_out = self.model(
                 input_ids, token_type_ids)
             _, prediction_log_prob = self.model.generator(
                 all_encoder_layers, pooled_out)

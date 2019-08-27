@@ -6,7 +6,7 @@ import torch
 
 from onmt.inputters.inputter import build_dataset_iter, \
     load_old_vocab, old_style_vocab, build_dataset_iter_multiple
-from onmt.model_builder import build_model, build_bert_model
+from onmt.model_builder import build_model
 from onmt.utils.optimizers import Optimizer
 from onmt.utils.misc import set_random_seed
 from onmt.trainer import build_trainer
@@ -71,9 +71,7 @@ def main(opt, device_id, batch_queue=None, semaphore=None):
 
     # check for code where vocab is saved instead of fields
     # (in the future this will be done in a smarter way)
-    if opt.is_bert:  # TODO: test amelioration
-        fields = vocab
-    elif old_style_vocab(vocab):
+    if old_style_vocab(vocab):
         fields = load_old_vocab(
             vocab, opt.model_type, dynamic_dict=opt.copy_attn)
     else:
@@ -82,8 +80,7 @@ def main(opt, device_id, batch_queue=None, semaphore=None):
     if opt.is_bert:
         # Report bert tokens vocab sizes, including for features
         f = fields['tokens']
-        if f.use_vocab:  # NOTE: useless!
-            logger.info(' * %s vocab size = %d' % ("BERT", len(f.vocab)))
+        logger.info(' * %s vocab size = %d' % ("BERT", len(f.vocab)))
     else:
         # Report src and tgt vocab sizes, including for features
         for side in ['src', 'tgt']:
@@ -96,19 +93,15 @@ def main(opt, device_id, batch_queue=None, semaphore=None):
                 if sf.use_vocab:
                     logger.info(' * %s vocab size = %d' % (sn, len(sf.vocab)))
 
-    # Build model.
+    model = build_model(model_opt, opt, fields, checkpoint)
+    n_params, enc, dec = _tally_parameters(model)
+    logger.info('encoder: %d' % enc)
     if opt.is_bert:
-        model = build_bert_model(model_opt, opt, fields, checkpoint)  # V2
-        n_params = 0
-        for param in model.parameters():
-            n_params += param.nelement()
-        logger.info('* number of parameters: %d' % n_params)
+        logger.info('generator: %d' % dec)
     else:
-        model = build_model(model_opt, opt, fields, checkpoint)
-        n_params, enc, dec = _tally_parameters(model)
-        logger.info('encoder: %d' % enc)
         logger.info('decoder: %d' % dec)
-        logger.info('* number of parameters: %d' % n_params)
+    logger.info('* number of parameters: %d' % n_params)
+
     _check_save_model_path(opt)
 
     # Build optimizer.

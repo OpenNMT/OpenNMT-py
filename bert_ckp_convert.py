@@ -89,10 +89,10 @@ def convert_bert_weights(bert_model, weights, n_layers=12):
                         print("[OLD Weights file]gamma/beta is used in " +
                               "naming BertLayerNorm. Mapping succeed.")
                     else:
-                        raise KeyError("Key %s not found in weight file"
+                        raise KeyError("Failed fix LayerNorm %s, check file"
                                        % hugface_key)
                 else:
-                    raise KeyError("Key %s not found in weight file"
+                    raise KeyError("Mapped key %s not in weight file"
                                    % hugface_key)
             if 'generator' not in key:
                 onmt_key = re.sub(r'bert\.(.*)', r'\1', key)
@@ -100,9 +100,9 @@ def convert_bert_weights(bert_model, weights, n_layers=12):
             else:
                 onmt_key = re.sub(r'generator\.(.*)', r'\1', key)
                 model_weights['generator'][onmt_key] = weights[hugface_key]
-    except ValueError:
-        print("Unsuccessful convert!")
-        exit()
+    except KeyError:
+        print("Unsuccessful convert.")
+        raise
     return model_weights
 
 

@@ -138,21 +138,21 @@ will mean that we'll look for `my_data.train_A.*.pt` and `my_data.train_B.*.pt`,
 **Warning**: This means that we'll load as many shards as we have `-data_ids`, in order to produce batches containing data from every corpus. It may be a good idea to reduce the `-shard_size` at preprocessing.
 
 ## How do I use BERT?
-BERT is a general-purpose "language understanding" model introduced by Google, it can be used for various downstream NLP tasks and easily adapted into a new task using transfer learning. Using BERT has two stages: Pre-training and fine-tuning. But as the Pre-training is super expensive, we do not recommande you to pre-train a BERT from scratch. Instead loading weights from a existing pretrained model and fine-tuning it is suggested. Currently we support sentence(-pair) classification and token tagging downstream task.
+BERT is a general-purpose "language understanding" model introduced by Google, it can be used for various downstream NLP tasks and easily adapted into a new task using transfer learning. Using BERT has two stages: Pre-training and fine-tuning. But as the Pre-training is super expensive, we do not recommand you to pre-train a BERT from scratch. Instead loading weights from a existing pretrained model and fine-tuning is suggested. Currently we support sentence(-pair) classification and token tagging downstream task.
 
 ### Use pretrained BERT weights
 To use weights from a existing huggingface's pretrained model, we provide you a script to convert huggingface's BERT model weights into ours.
 
 Usage:
 ```bash
-bert_ckp_convert.py  --layers NUMBER_LAYER
-                     --bert_model_weights_file HUGGINGFACE_BERT_WEIGHTS
-                     --output_name OUTPUT_FILE
+python bert_ckp_convert.py   --layers NUMBER_LAYER
+                             --bert_model_weights_file HUGGINGFACE_BERT_WEIGHTS
+                             --output_name OUTPUT_FILE
 ```
-* Go to modeling_bert.py in https://github.com/huggingface/pytorch-transformers/ to check all available pretrained model.
+* Go to [modeling_bert.py](https://github.com/huggingface/pytorch-transformers/blob/master/pytorch_transformers/modeling_bert.py) to check all available pretrained model.
 
 ### Preprocess train/dev dataset
-To genenrate train/dev data for BERT, you can use preprocess_bert.py by providing raw data in certain format and choose a BERT Tokenizer model `-vm` coherent with pretrained model.
+To generate train/dev data for BERT, you can use preprocess_bert.py by providing raw data in certain format and choose a BERT Tokenizer model `-vm` coherent with pretrained model.
 #### Classification
 For classification dataset, we support input file in csv or plain text file format.
 
@@ -161,10 +161,10 @@ For classification dataset, we support input file in csv or plain text file form
   | ID | SENTENCE_A               | SENTENCE_B(Optional)      | LABEL   |
   | -- | ------------------------ | ------------------------  | ------- |
   | 0  | sentence a of instance 0 | sentence b of instance 0  | class 2 |
-  | 1  | sentence a of instance 0 | sentence b of instance 1  | class 1 |
+  | 1  | sentence a of instance 1 | sentence b of instance 1  | class 1 |
   | ...| ... | ...  | ... |
 
-  Then calling preprocess_bert.py and providing input sentence columns and label column:
+  Then calling `preprocess_bert.py` and providing input sentence columns and label column:
   ```bash
   python preprocess_bert.py --task classification --corpus_type {train, valid}
                             --file_type csv [--delimiter '\t'] [--skip_head]
@@ -174,13 +174,13 @@ For classification dataset, we support input file in csv or plain text file form
                             -vm bert-base-cased --max_seq_len 256 [--do_lower_case]
                             [--sort_label_vocab] [--do_shuffle]
   ```
-* For plain text format, we accept multiply files as input, each file contains instances for one specific class. Each line of the file contain one instance which could be composed by one sentence or two separated by ` ||| `. All input file should be arranged in following way:
+* For plain text format, we accept multiply files as input, each file contains instances for one specific class. Each line of the file contains one instance which could be composed by one sentence or two separated by ` ||| `. All input file should be arranged in following way:
   ```
   .../LABEL_1/filename
   .../LABEL_2/filename
   .../LABEL_3/filename
   ```
-  Then call preprocess_bert.py as following to generate training data:
+  Then call `preprocess_bert.py` as following to generate training data:
   ```bash
   python preprocess_bert.py --task classification --corpus_type {'train', 'valid'}
                             --file_type txt [--delimiter ' ||| ']
@@ -193,7 +193,7 @@ For classification dataset, we support input file in csv or plain text file form
 #### Tagging
 For tagging dataset, we support input file in plain text file format.
 
-Each line of the input file should contain token and its tagging, different fields should be separated by a delimiter(default space) while sentences are separated by a blank line.
+Each line of the input file should contain one token and its tagging, different fields should be separated by a delimiter(default space) while sentences are separated by a blank line.
 
 A example of input file is given below (`Token X X Label`):
   ```
@@ -229,10 +229,10 @@ Then call preprocess_bert.py providing token column and label column as followin
 #### Pretraining objective
 Even if it's not recommended, we also provide you a script to generate pretraining dataset as you may want to finetuning a existing pretrained model on masked language modeling and next sentence prediction.
 
-The script expect a single file as input, consisting of untokenized text, with one sentence per line, and one blank line between documents.
+The script expects a single file as input, consisting of untokenized text, with one sentence per line, and one blank line between documents.
 A usage example is given below:
 ```bash
-python3 pregenerate_bert_training_data.py --input_file INPUT_FILE
+python pregenerate_bert_training_data.py  --input_file INPUT_FILE
                                           --output_dir OUTPUT_DIR
                                           --output_name OUTPUT_FILE_PREFIX
                                           --corpus_type {'train', 'valid'}
@@ -246,11 +246,11 @@ python3 pregenerate_bert_training_data.py --input_file INPUT_FILE
 ```
 
 ### Training
-After preprocessed data have been generated, you can load weights from a pretrained BERT and transfer it to downstream task with a task specific output head. This task specific head will be initialized by a method you choose if there is no such architecture in weights file specified by `--train_from`. Among all available optimizer, you are suggest to use `--optim bertadam` as it is the method used to train BERT. `warmup_steps` could be set as 1% of `train_steps` as in original paper if use linear decay method.
+After preprocessed data have been generated, you can load weights from a pretrained BERT and transfer it to downstream task with a task specific output head. This task specific head will be initialized by a method you choose if there is no such architecture in weights file specified by `--train_from`. Among all available optimizers, you are suggested to use `--optim bertadam` as it is the method used to train BERT. `warmup_steps` could be set as 1% of `train_steps` as in original paper if use linear decay method.
 
 A usage example is given below:
 ```bash
-python3 train.py --is_bert --task_type {pretraining, classification, tagging}
+python train.py  --is_bert --task_type {pretraining, classification, tagging}
                  --data PREPROCESSED_DATAIFILE     
                  --train_from CONVERTED_CHECKPOINT.pt [--param_init 0.1]
                  --save_model MODEL_PREFIX --save_checkpoint_steps 1000
@@ -268,12 +268,12 @@ python3 train.py --is_bert --task_type {pretraining, classification, tagging}
 ### Predicting
 After training, you can use `predict.py` to generate predicting for raw file. Make sure to use the same BERT Tokenizer model `--vocab_model` as in training data.
 
-For classification task, file to be predicting should be one sentence(-pair) a line with ` ||| ` separating sentence.
+For classification task, file to be predicted should be one sentence(-pair) a line with ` ||| ` separating sentence.
 For tagging task, each line should be a tokenized sentence with tokens separated by space.
 
 Usage:
 ```bash
-python3 predict.py --task {classification, tagging}
+python predict.py  --task {classification, tagging}
                    --model ONMT_BERT_CHECKPOINT.pt
                    --vocab_model bert-base-uncased [--do_lower_case]
                    --data DATA_2_PREDICT [--delimiter {' ||| ', ' '}] --max_seq_len 256
