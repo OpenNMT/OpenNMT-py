@@ -47,6 +47,9 @@ class ArgumentParser(cfargparse.ArgumentParser):
         if model_opt.copy_attn_type is None:
             model_opt.copy_attn_type = model_opt.global_attention
 
+        if not hasattr(model_opt, 'is_bert'):
+            model_opt.is_bert = False
+
     @classmethod
     def validate_model_opts(cls, model_opt):
         assert model_opt.model_type in ["text", "img", "audio", "vec"], \

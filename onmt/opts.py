@@ -59,6 +59,7 @@ def model_opts(parser):
 
     # Encoder-Decoder Options
     group = parser.add_argument_group('Model- Encoder-Decoder')
+    group.add('--is_bert', '-is_bert', action='store_true')
     group.add('--model_type', '-model_type', default='text',
               choices=['text', 'img', 'audio', 'vec'],
               help="Type of source model to use. Allows "
@@ -385,7 +386,6 @@ def train_opts(parser):
     """ Training and saving options """
 
     group = parser.add_argument_group('Pretrain-finetuning')
-    group.add('--is_bert', '-is_bert', action='store_true')
     group.add('--task_type', '-task_type', type=str, default="none",
               choices=["none", "pretraining", "classification", "tagging"],
               help="Downstream task for Bert if is_bert set True"
