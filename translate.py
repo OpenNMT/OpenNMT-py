@@ -11,23 +11,6 @@ from onmt.translate.translator import build_translator
 import onmt.opts as opts
 from onmt.utils.parse import ArgumentParser
 
-def max_tok_len(new, count, sofar):
-    """
-    In token batching scheme, the number of sequences is limited
-    such that the total number of src/tgt tokens (including padding)
-    in a batch <= batch_size
-    """
-    # Maintains the longest src and tgt length in the current batch
-    global max_src_in_batch  # this is a hack
-    # Reset current longest length at a new batch (count=1)
-    if count == 1:
-        max_src_in_batch = 0
-        # max_tgt_in_batch = 0
-    # Src: [<bos> w1 ... wN <eos>]
-    max_src_in_batch = max(max_src_in_batch, len(new.src[0]) + 2)
-    # Tgt: [w1 ... wM <eos>]
-    src_elements = count * max_src_in_batch
-    return src_elements
 
 def main(opt):
     ArgumentParser.validate_translate_opts(opt)
@@ -46,7 +29,7 @@ def main(opt):
             tgt=tgt_shard,
             src_dir=opt.src_dir,
             batch_size=opt.batch_size,
-            batch_size_fn=max_tok_len if opt.batch_type == "tokens" else None,
+            batch_type=opt.batch_type,
             attn_debug=opt.attn_debug
             )
 
