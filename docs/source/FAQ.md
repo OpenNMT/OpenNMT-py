@@ -176,9 +176,11 @@ For classification dataset, we support input file in csv or plain text file form
   ```
 * For plain text format, we accept multiply files as input, each file contains instances for one specific class. Each line of the file contains one instance which could be composed by one sentence or two separated by ` ||| `. All input file should be arranged in following way:
   ```
-  .../LABEL_1/filename
-  .../LABEL_2/filename
-  .../LABEL_3/filename
+     .
+     ├── LABEL_A
+     │   └── FILE_WITH_INSTANCE_A
+     └── LABEL_B
+         └── FILE_WITH_INSTANCE_B
   ```
   Then call `preprocess_bert.py` as following to generate training data:
   ```bash

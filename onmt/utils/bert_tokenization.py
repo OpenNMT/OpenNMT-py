@@ -24,7 +24,7 @@ import unicodedata
 from io import open
 
 from .file_utils import cached_path
-from onmt.utils import PRETRAINED_VOCAB_ARCHIVE_MAP
+from onmt.utils.bert_vocab_archive_map import PRETRAINED_VOCAB_ARCHIVE_MAP
 
 logger = logging.getLogger(__name__)
 
