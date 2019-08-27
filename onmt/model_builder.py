@@ -234,8 +234,8 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
             checkpoint['model'] = {fix_key(k): v
                                    for k, v in checkpoint['model'].items()}
             # end of patch for backward compatibility
-        if model.state_dict().keys() != checkpoint['model'].keys():
-            raise ValueError("Checkpoint don't match actual model!")
+        # if model.state_dict().keys() != checkpoint['model'].keys():
+        #     raise ValueError("Checkpoint don't match actual model!")
         logger.info("Load Model Parameters...")
         model.load_state_dict(checkpoint['model'], strict=True)
         model_init['model'] = True
